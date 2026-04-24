@@ -137,14 +137,28 @@ This ordering guarantees that shared tables exist (or are confirmed-already-exis
 **Scenario B — fresh install of records v1.3.0:**
 
 1. Operator runs `alembic upgrade head` against an empty Postgres.
-2. Civiccore baseline runs first. Creates all 16 shared tables and applies all shared `add_column` operations.
-3. Records' migration 001 runs with guards. `idempotent_create_table('users', ...)` sees `users` exists; skips. Same for `service_accounts` and `audit_log`. The migration completes (no-op for shared parts).
-4. Records' migration 002 with guards similarly no-ops the three shared creates.
-5. Migrations 003 and 006 each no-op their one shared create.
-6. Migration 787207afc66a no-ops its 6 shared creates and shared add_columns; applies its 6 records-only creates (`fee_schedules`, `fee_line_items`, `notification_log`, `request_messages`, `request_timeline`, `response_letters`) and records-only add_columns (`records_requests`, `exemption_flags`, `search_results`).
-7. Records' migrations 004, 005, 008, 009, 010 (no edits needed) run normally.
-8. Migrations 011 through 019 with guards run normally for records-only operations and no-op for shared.
-9. Net: same end-state as Scenario A, civiccore at HEAD, records at 019.
+2. Records' (Phase-1-patched) `env.py` invokes `civiccore.migrations.runner.upgrade_to_head(connection)` before processing records' own chain.
+3. Civiccore baseline `civiccore_0001_baseline_v1` runs. On an empty DB every `inspect(conn).has_table(...)` returns False, so the baseline creates all 16 shared tables with their full final column set (capturing every shared-column addition made across records migrations 003, 011, 012, 013, 015, 016, 017, 018, 019, and the shared portions of 787207afc66a). `alembic_version_civiccore` is stamped at `civiccore_0001_baseline_v1`.
+4. Records' own chain now runs in **Alembic revision order** through the linear graph `001 → 002 → 003 → 004 → 005 → 006 → 787207afc66a → 008 → 009 → 010 → 011 → 012 → 013 → 014 → 015 → 016 → 017 → 018 → 019`. Per-migration behavior:
+   - **001** — guarded `create_table` of `users`, `service_accounts`, `audit_log` all hit `has_table == True`; full no-op.
+   - **002** — guarded creates of `data_sources`, `documents`, `document_chunks` all no-op.
+   - **003** — guarded create of `model_registry` no-ops.
+   - **004** — records-only (`search_sessions`, `search_queries`, `search_results`); unguarded; all three tables created normally.
+   - **005** — records-only (`records_requests`, `request_documents`, `document_cache`); unguarded; all three tables created normally.
+   - **006** — `exemption_rules` create guarded (no-op); `exemption_flags` and `disclosure_templates` creates unguarded (both created).
+   - **787207afc66a** — the 6 shared creates (`connector_templates`, `departments`, `system_catalog`, `city_profile`, `notification_templates`, `prompt_templates`) each no-op via guards. The 6 records-only creates (`fee_schedules`, `fee_line_items`, `notification_log`, `request_messages`, `request_timeline`, `response_letters`) run normally. Shared `add_column`s on `data_sources`, `documents`, `model_registry`, `users` each no-op via guards (columns already present from baseline). Records-only `add_column`s on `records_requests`, `exemption_flags`, `search_results` run normally.
+   - **008, 009, 010** — records-only (status enum extension, `fee_waivers` create, sent-status removal); unguarded; apply normally.
+   - **011** — `fix_schema_drift` shared-column adds each hit `has_column == True`; no-op.
+   - **012** — RBAC role upserts guarded; no-op if liaison + public roles already seeded by baseline.
+   - **013** — connector enum additions on shared `data_sources` guarded; no-op.
+   - **014** — connector-idempotency shared-schema changes guarded; no-op.
+   - **015** — `data_sources` scheduler column adds guarded; no-op.
+   - **016** — shared `sync_run_log` and `sync_failures` creates guarded; no-op.
+   - **017** — connector enum rename guarded at the data-migration layer; no-op if values already match.
+   - **018** — `city_profile.state` nullable alter guarded; no-op if already nullable.
+   - **019** — shared `data_sources` connection-config encryption pass guarded; no-op if values already encrypted.
+5. At the end, `alembic_version` = `019_encrypt_connection_config`, `alembic_version_civiccore` = `civiccore_0001_baseline_v1`. DB contains all 16 shared tables and all 15 records-only tables.
+6. Net: same end-state as Scenario A. No manual operator steps.
 
 **Scenario C — civiccore-only install (a future module installs before records):**
 
@@ -159,7 +173,7 @@ This ordering guarantees that shared tables exist (or are confirmed-already-exis
 
 Three integration tests, all on ephemeral Postgres in CI:
 
-- **fresh-install test:** empty DB → records env.py with civiccore wiring → assert all 16 shared tables present, all 13 records tables present, no migration errors, `alembic_version` at `019_encrypt_connection_config`, `alembic_version_civiccore` at `civiccore_0001_baseline_v1`.
+- **fresh-install test:** empty DB → records env.py with civiccore wiring → assert all 16 shared tables present, all 15 records-only tables present, no migration errors, `alembic_version` at `019_encrypt_connection_config`, `alembic_version_civiccore` at `civiccore_0001_baseline_v1`.
 - **upgrade test:** seed Postgres with v1.2.x schema dump → upgrade to records v1.3.0 → assert no errors, all guarded operations no-op, schema unchanged.
 - **reapplication test:** run env.py twice in succession on either of the above DBs → assert second run is a no-op (proves idempotency).
 
