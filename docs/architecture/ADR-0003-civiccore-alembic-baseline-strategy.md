@@ -1,41 +1,193 @@
-# ADR-0003: CivicCore Alembic baselines after the Phase-2 extensions migration
+# ADR-0003: CivicCore Alembic baseline and the records-side idempotent guard pass
 
 ## Status
 
 Accepted — 2026-04-23.
 
+**Supersedes the earlier draft of this ADR** ("baseline = revision after `787207afc66a`, exact rev TBD when Phase 1 PR opens"), which was rejected by audit review on the same day for being underspecified. The earlier text named neither the actual head revision nor which records migrations needed idempotent guards. This revision replaces it.
+
 ## Context
 
-Spec `02_CivicCore.md` section 14 says civiccore seeds its Alembic version history "starting from the latest CivicRecords AI migration that touched a shared table." Day-3 inventory found that the most recent multi-shared-table migration is `backend/alembic/versions/787207afc66a_phase2_extensions_12_new_tables_and_.py`, which creates **12 tables** in a single revision spanning both CivicCore-owned and records-owned ownership zones (per spec section 10).
+The full records migration graph at the time of this ADR (linear chain, root → head):
 
-Hand-splitting that migration into a civiccore migration plus a records migration would require rewriting both halves, modifying every existing deployment's Alembic history, and risks breakage for cities currently running CivicRecords AI v1.2.x.
+```
+001_initial
+  → 002_documents
+  → 003_model_registry
+  → 004_search
+  → 005_requests
+  → 006_exemptions
+  → 787207afc66a_phase2_extensions_12_new_tables_and_
+  → 008_extend_request_status_enum
+  → 009_fee_waivers
+  → 010_remove_sent_status
+  → 011_fix_schema_drift
+  → 012_add_liaison_public_roles
+  → 013_add_connector_types
+  → 014_p6a_idempotency
+  → 015_p6b_scheduler
+  → 016_p7_sync_failures
+  → 017_rename_connector_enum_values
+  → 018_city_profile_state_nullable
+  → 019_encrypt_connection_config        ← HEAD as of 2026-04-23
+```
 
-Day-3 inventory Section F.2, reviewed 2026-04-23 by audit agent: "Don't hand-split. Write an ADR with the exact baseline revision and upgrade story."
+The `787207afc66a` migration is in the middle of the chain, not at the head. There are nine subsequent records migrations (008–019), several of which add columns to or alter shared tables. "Baseline at the revision after `787207afc66a`" — as the earlier ADR draft proposed — is therefore wrong: it would leave the shared-schema state captured by 011, 013, 014, 015, 016, 017, 018, and 019 outside civiccore's history.
+
+### Shared vs records-owned schema (per spec `02_CivicCore.md` §10.1)
+
+**Shared (CivicCore-owned) tables:**
+
+| Created in | Tables |
+|---|---|
+| 001 | `users`, `service_accounts`, `audit_log` |
+| 002 | `data_sources`, `documents`, `document_chunks` |
+| 003 | `model_registry` |
+| 006 | `exemption_rules` (only — `exemption_flags` and `disclosure_templates` from this migration stay records-side) |
+| 787207afc66a | `connector_templates`, `departments`, `system_catalog`, `city_profile`, `notification_templates`, `prompt_templates` (6 of the 12 created in this migration) |
+| 016 | `sync_run_log`, `sync_failures` (connector sync state) |
+
+Plus: every `op.add_column` and `op.alter_column` operation that targets one of these tables, anywhere in the migration chain.
+
+**Records-only tables (stay):**
+
+| Created in | Tables |
+|---|---|
+| 004 | `search_sessions`, `search_queries`, `search_results` |
+| 005 | `records_requests`, `request_documents`, `document_cache` |
+| 006 | `exemption_flags`, `disclosure_templates` |
+| 009 | `fee_waivers` |
+| 787207afc66a | `fee_schedules`, `fee_line_items`, `notification_log`, `request_messages`, `request_timeline`, `response_letters` (6 of the 12) |
 
 ## Decision
 
-Civiccore's Alembic baseline is the **revision immediately after `787207afc66a`**. (The exact rev id is determined when the Phase-1 PR opens — at the time of writing, `787207afc66a` is the head of the records repo's `migrations/versions/` directory; the baseline is `head + 1` whatever that becomes.)
+### 1. Civiccore baseline revision
 
-Mechanics:
+**`civiccore_0001_baseline_v1.py`** — a single synthetic migration in civiccore's own Alembic version chain (separate version table: `alembic_version_civiccore`). Its `upgrade()` declares the **union** of shared-table schema as-of records HEAD `019_encrypt_connection_config`. Its `downgrade()` is a no-op (the baseline is unrolled by uninstalling civiccore, not by reverting the migration).
 
-1. **Civiccore's baseline migration** declares the shared-table schema using `CREATE TABLE IF NOT EXISTS` semantics (or wraps `op.create_table` in an Alembic-friendly conditional via `inspect(connection).get_table_names()`). It is a no-op against any database that already ran `787207afc66a`.
+Every operation in the baseline is idempotent:
+- Each `op.create_table('shared_name', ...)` is wrapped in `if not inspect(conn).has_table('shared_name')`.
+- Each `op.add_column('shared_name', ...)` is wrapped in `if not _has_column(conn, 'shared_name', 'col_name')`.
+- Each `op.alter_column(...)` checks the current column state before applying.
 
-2. **Existing CivicRecords AI deployments** upgrade civiccore for the first time by running:
-   ```
-   civiccore-migrate stamp head
-   civiccore-migrate upgrade head
-   ```
-   The `stamp head` recognizes that the shared tables already exist (they were created by `787207afc66a`) and marks civiccore's history as caught up. Subsequent civiccore migrations apply normally.
+The baseline is therefore a **no-op against any database that has already run records migrations 001 through 019**. It only does work against a fresh empty Postgres.
 
-3. **Fresh installs** run `civiccore-migrate upgrade head` first (which creates the shared tables), then `civicrecords-migrate upgrade head` (whose `787207afc66a` becomes a no-op for the shared portions through the same idempotent guards).
+### 2. Records-side idempotent guard pass (Phase 1 PR, ships as records v1.3.0)
 
-4. **Records keeps `787207afc66a` intact in its own history.** No surgical rewrite. The migration's "ownership" lives in records repo for backward-compatibility purposes; civiccore's baseline gives the same end-state for fresh installs without touching the records migration.
+Fourteen of the nineteen existing records migrations gain guard wrappers around shared-table operations. The records-only operations in each migration are unchanged.
 
-The records-side migration runner is taught (in the Phase-1 PR) to defer shared-table creation to civiccore: it queries Alembic's version table for `civiccore` first, and skips its own shared-table operations if civiccore is at-or-above the baseline.
+| Migration | What gets guarded |
+|---|---|
+| **001** | creates of `users`, `service_accounts`, `audit_log` |
+| **002** | creates of `data_sources`, `documents`, `document_chunks` |
+| **003** | create of `model_registry` |
+| **006** | create of `exemption_rules` only (creates of `exemption_flags` and `disclosure_templates` stay unguarded — records-only) |
+| **787207afc66a** | the 6 shared `op.create_table` calls (`connector_templates`, `departments`, `system_catalog`, `city_profile`, `notification_templates`, `prompt_templates`); the shared-table `op.add_column` calls — 8 on `data_sources`, 5 on `documents`, 3 on `model_registry`, 1 on `users` (`department_id`). The 6 records-only creates and the records-only column additions on `records_requests`, `exemption_flags`, `search_results` stay unguarded. |
+| **011_fix_schema_drift** | every `add_column` whose target is a shared table |
+| **012_liaison_public_roles** | the role inserts (RBAC roles are shared) |
+| **013_add_connector_types** | enum/column changes targeting `data_sources` |
+| **014_p6a_idempotency** | connector-related schema changes |
+| **015_p6b_scheduler** | `data_sources` column adds (schedule, last_sync_at, last_sync_status, health_status, schema_hash, etc.) |
+| **016_p7_sync_failures** | creates of `sync_run_log` and `sync_failures` |
+| **017_rename_connector_enum_values** | the enum-rename data migration |
+| **018_city_profile_state_nullable** | `alter_column` on `city_profile.state` |
+| **019_encrypt_connection_config** | the `data_sources` column-encryption pass |
+
+**Five records migrations need no edits** because they touch only records-owned tables: **004**, **005**, **008**, **009**, **010**.
+
+The guard helpers live in a new civiccore module:
+
+```python
+# civiccore/migrations/guards.py
+def idempotent_create_table(name, *args, **kwargs):
+    """op.create_table that no-ops if the table already exists."""
+def idempotent_add_column(table, column):
+    """op.add_column that no-ops if the column already exists."""
+def idempotent_alter_column(table, column, **kwargs):
+    """op.alter_column that introspects current state before applying."""
+```
+
+Each guarded migration imports from `civiccore.migrations.guards` and substitutes the wrapper for the bare `op.create_table` / `op.add_column` / `op.alter_column` call on shared-table operations. The diff per migration is mechanical and reviewable.
+
+### 3. Records env.py wiring
+
+`backend/alembic/env.py` gains six lines that invoke civiccore's runner before records' own chain:
+
+```python
+# Phase-1 addition: civiccore migrations run first, then records' own
+from civiccore.migrations.runner import upgrade_to_head as _civiccore_upgrade
+_civiccore_upgrade(connection)
+# ... existing records env.py logic continues
+```
+
+This ordering guarantees that shared tables exist (or are confirmed-already-existing) before records' guarded migrations check `has_table`.
+
+### 4. Three deployment scenarios — exact behavior
+
+**Scenario A — existing v1.2.x → v1.3.0 upgrade:**
+
+1. Operator pulls records v1.3.0 (which depends on civiccore 0.1.0).
+2. `pip install civiccore==0.1.0 civicrecords-ai==1.3.0`.
+3. Operator runs `alembic upgrade head` against records.
+4. Records' new env.py invokes `civiccore.migrations.runner.upgrade_to_head(connection)`.
+5. Civiccore baseline runs; `inspect(conn).has_table('users')` returns True (records 001 created it long ago); baseline skips the shared `create_table` calls; marks `alembic_version_civiccore` at HEAD.
+6. Records' env.py continues with records' own chain. Already at 019, nothing to do.
+7. Net: zero downtime, zero data change, civiccore now tracking shared tables.
+
+**Scenario B — fresh install of records v1.3.0:**
+
+1. Operator runs `alembic upgrade head` against an empty Postgres.
+2. Civiccore baseline runs first. Creates all 16 shared tables and applies all shared `add_column` operations.
+3. Records' migration 001 runs with guards. `idempotent_create_table('users', ...)` sees `users` exists; skips. Same for `service_accounts` and `audit_log`. The migration completes (no-op for shared parts).
+4. Records' migration 002 with guards similarly no-ops the three shared creates.
+5. Migrations 003 and 006 each no-op their one shared create.
+6. Migration 787207afc66a no-ops its 6 shared creates and shared add_columns; applies its 6 records-only creates (`fee_schedules`, `fee_line_items`, `notification_log`, `request_messages`, `request_timeline`, `response_letters`) and records-only add_columns (`records_requests`, `exemption_flags`, `search_results`).
+7. Records' migrations 004, 005, 008, 009, 010 (no edits needed) run normally.
+8. Migrations 011 through 019 with guards run normally for records-only operations and no-op for shared.
+9. Net: same end-state as Scenario A, civiccore at HEAD, records at 019.
+
+**Scenario C — civiccore-only install (a future module installs before records):**
+
+1. Operator installs the future module which depends on civiccore.
+2. Civiccore baseline creates the 16 shared tables.
+3. Operator later installs records v1.3.0 and runs `alembic upgrade head`.
+4. Civiccore baseline already at HEAD — runner is a no-op.
+5. Records' guarded migrations see shared tables present; apply records-only operations and no-op shared.
+6. Net: works.
+
+### 5. CI verification (gates Phase 1 PR merge)
+
+Three integration tests, all on ephemeral Postgres in CI:
+
+- **fresh-install test:** empty DB → records env.py with civiccore wiring → assert all 16 shared tables present, all 13 records tables present, no migration errors, `alembic_version` at `019_encrypt_connection_config`, `alembic_version_civiccore` at `civiccore_0001_baseline_v1`.
+- **upgrade test:** seed Postgres with v1.2.x schema dump → upgrade to records v1.3.0 → assert no errors, all guarded operations no-op, schema unchanged.
+- **reapplication test:** run env.py twice in succession on either of the above DBs → assert second run is a no-op (proves idempotency).
 
 ## Consequences
 
-- Existing v1.2.x deployments upgrade with one extra `stamp head` command. Document this in the records v1.3 release notes and in civiccore v0.1.0's CHANGELOG.
-- Fresh deployments need both runners invoked in order. The `civiccore` and `civicrecords-ai` packages each ship a `migrate` entry-point script; documentation calls them out explicitly.
-- The "split the migration in place" alternative is rejected: too risky for a project whose core promise is sovereignty (cities can't roll back if a migration breaks).
-- This decision applies only to the cross-cutting `787207afc66a`. All future civiccore migrations are clean and standalone.
+- **Phase 1 records-side PR scope:** 14 migration files edited (mechanical guard wrapping), `env.py` updated (6 lines), `pyproject.toml` updated (1 dependency line). No semantic schema change. Diff is large but obvious and reviewable.
+- **No data loss.** Every guard is "skip if already exists" — never destructive. Records' downgrades work as before (guards apply only to upgrade direction).
+- **No manual operator steps** for v1.2.x → v1.3.0 upgrade. The earlier ADR's "operator runs `civiccore-migrate stamp head` once" requirement is gone — guards in the baseline migration handle the existing-tables case automatically.
+- **Reversibility:** Civiccore baseline `downgrade()` is intentionally a no-op. To uninstall civiccore from an existing deployment, the operator drops the `alembic_version_civiccore` table; the actual shared tables remain (records still owns them in its own history through 019).
+- **Future civiccore migrations are clean:** civiccore_0002 onward are normal Alembic migrations with no guards. The baseline absorbs all the historical records-vs-civiccore ownership ambiguity into one synthetic revision.
+- **The fork-the-fork pattern is structurally avoided.** Clerk, code, zone, etc. depend on `civiccore >= 0.1` and never duplicate shared-table DDL.
+
+## Implementation order
+
+1. **Civiccore (Phase 1 PR Part A):**
+   - Write `civiccore/migrations/guards.py` (the three wrapper functions).
+   - Write `civiccore/migrations/runner.py` (the `upgrade_to_head(connection)` entry point).
+   - Write `civiccore/migrations/versions/civiccore_0001_baseline_v1.py`.
+   - Wire civiccore's own `alembic.ini` and `alembic/env.py`.
+   - CI: idempotency test (run baseline twice on empty DB; assert second run is no-op).
+
+2. **Civicrecords-ai (Phase 1 PR Part B):**
+   - Apply the 14-migration guard pass.
+   - Wire `backend/alembic/env.py` to call civiccore runner first.
+   - Add `civiccore = "==0.1.0"` (or `>=0.1,<0.2`) to `backend/pyproject.toml`.
+   - Apply the three CI gates above.
+   - Update records `CHANGELOG.md`: v1.3.0 release notes call out civiccore dependency.
+
+3. **Compatibility matrix** (in CivicSuite/civicsuite `docs/compatibility/index.md`): populated with civicrecords-ai v1.3.0 ↔ civiccore v0.1.0 row, "Last verified" dated.
+
+4. **Records v1.3.0 ships** as a normal patch+minor release. No manual upgrade steps for operators; the env.py wiring handles everything.
