@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python (for any helper scripts)
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Node (for any future docs site)
+node_modules/
+
+# Env
+.env
+.env.local
+
+# Static-site builds
+_site/
+.jekyll-cache/
+
+# Workspace stub files (created during initial setup; safe to delete from File Explorer)
+.placeholder
+specs/02_test.md
+specs/99_test.md
+specs/bash-test.md
+specs/short.md
