@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="CivicSuite is an open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Runs on the city's own hardware — no cloud, no telemetry, no per-seat pricing.">
+<title>CivicSuite — open-source municipal operations suite</title>
+<style>
+  :root {
+    --text: #1f2328;
+    --muted: #57606a;
+    --rule: #d0d7de;
+    --bg: #fbfbfa;
+    --card: #ffffff;
+    --accent: #0a4d75;
+    --accent-hover: #073554;
+    --code-bg: #f3f4f6;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+  header.site {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 32px;
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+  h1 {
+    font-size: 36px;
+    line-height: 1.2;
+    margin: 0 0 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 48px 0 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  h3 {
+    font-size: 17px;
+    margin: 28px 0 8px;
+    font-weight: 600;
+  }
+  p { margin: 0 0 16px; }
+  .lede {
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  ul, ol { padding-left: 22px; margin: 0 0 16px; }
+  li { margin-bottom: 6px; }
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+  }
+  a:hover { color: var(--accent-hover); text-decoration-thickness: 2px; }
+  code {
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.92em;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 16px 18px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-size: 14.5px;
+    line-height: 1.5;
+    margin: 0 0 20px;
+  }
+  pre code { background: none; padding: 0; }
+  .pillars {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 600px) {
+    .pillars { grid-template-columns: repeat(3, 1fr); }
+  }
+  .pillars li {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 0;
+    font-size: 15px;
+  }
+  .pillars strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .pillars span {
+    color: var(--muted);
+  }
+  nav.quicklinks {
+    margin: 32px 0 0;
+    padding: 18px 20px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    font-size: 15px;
+  }
+  nav.quicklinks strong {
+    display: block;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  nav.quicklinks ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+  nav.quicklinks li { margin: 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 15px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    border-bottom: 2px solid var(--rule);
+  }
+  td.tier-num { width: 60px; color: var(--muted); }
+  td.tier-count { width: 70px; text-align: right; color: var(--muted); }
+  .module-status {
+    margin: 0 0 24px;
+    padding: 0;
+    list-style: none;
+  }
+  .module-status li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+    margin: 0;
+  }
+  .module-status li:last-child { border-bottom: none; }
+  .module-status .name {
+    font-weight: 600;
+    margin-right: 8px;
+  }
+  .module-status .badge {
+    display: inline-block;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--code-bg);
+    color: var(--muted);
+    font-weight: 600;
+    vertical-align: 1px;
+  }
+  .module-status .badge-shipping { background: #ddebe1; color: #1a5837; }
+  .module-status .badge-scaffold { background: #e6e9f0; color: #2c3a73; }
+  .module-status .badge-spec { background: #f1ebd8; color: #6b4f0c; }
+  .module-status .desc {
+    display: block;
+    color: var(--muted);
+    font-size: 15px;
+    margin-top: 4px;
+  }
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  footer p { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="site">
+  <p class="eyebrow">CivicSuite</p>
+  <h1>An open-source municipal operations suite that runs on the city's own hardware.</h1>
+  <p class="lede">An open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Works on the city's own hardware — no cloud, no telemetry, no per-seat pricing.</p>
+
+  <ul class="pillars">
+    <li><strong>Clerk-first</strong><span>Records, meetings, and code adoption — where the work actually starts.</span></li>
+    <li><strong>Modular install</strong><span>Cities install one module at a time, on their own schedule.</span></li>
+    <li><strong>Air-gappable</strong><span>Local inference with Gemma 4 via Ollama. Zero outbound calls.</span></li>
+  </ul>
+
+  <nav class="quicklinks">
+    <strong>Quick links</strong>
+    <ul>
+      <li><a href="../CHARTER.md">Charter</a></li>
+      <li><a href="../specs/01_catalog.md">Module catalog</a></li>
+      <li><a href="../specs/02_CivicCore.md">CivicCore extraction spec</a></li>
+      <li><a href="../specs/03_civicclerk.md">CivicClerk spec</a></li>
+      <li><a href="../specs/04_civiczone.md">CivicZone spec</a></li>
+      <li><a href="../CONSISTENCY.md">Consistency reference</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section>
+  <h2>What's here today</h2>
+  <p>The suite is built one module at a time. Module 1 ships, Module 2 is the foundation refactor, and the next two modules exist as buildable specs — not vaporware. The catalog covers 26 modules across 7 tiers; only what's listed below has work in progress.</p>
+
+  <ul class="module-status">
+    <li>
+      <span class="name">civicrecords-ai</span>
+      <span class="badge badge-shipping">Shipping</span>
+      <span class="desc">FOIA / public records request management. The architectural template for everything that follows.</span>
+    </li>
+    <li>
+      <span class="name">civiccore</span>
+      <span class="badge badge-scaffold">Phase 0 scaffold</span>
+      <span class="desc">Shared platform package extracted from CivicRecords AI: auth, RBAC, audit, LLM abstraction, ingestion, search, notifications. Phase 1 is the critical path.</span>
+    </li>
+    <li>
+      <span class="name">civicclerk</span>
+      <span class="badge badge-spec">Spec drafted</span>
+      <span class="desc">Meetings, agendas, packets, minutes, voting, sunshine-law compliance. Build starts after CivicCore Phase 1 ships.</span>
+    </li>
+    <li>
+      <span class="name">civiczone</span>
+      <span class="badge badge-spec">Spec drafted</span>
+      <span class="desc">Zoning code, parcel-aware lookups, planner workflows. Tier 2 reference module — demonstrates how downstream modules inherit from the platform.</span>
+    </li>
+  </ul>
+</section>
+
+<section>
+  <h2>Architecture overview</h2>
+  <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime — just well-understood components glued together carefully.</p>
+  <p>The runtime is FastAPI on Uvicorn for the API layer, PostgreSQL 17 with the pgvector extension for both relational data and embeddings, Redis 7.2 (pinned below 8.0 to stay BSD-licensed) for cache and message queue, Celery with Celery Beat for background workers and scheduled jobs, and Ollama serving Gemma 4 for local LLM inference. The frontend is React behind nginx. Embeddings come from <code>nomic-embed-text</code>, also via Ollama.</p>
+  <p>Everything runs on the city's own server — single workstation for the smallest cities, a small on-prem box for most, and a fully air-gapped deployment for sensitive modules. The model layer is abstracted; Gemma 4 is the default but the registry pattern allows swapping in any model that fits the city's hardware budget.</p>
+  <p>CivicCore is the package that holds all of this shared plumbing. Modules import from CivicCore; CivicCore never imports from modules. One-way dependency, enforced by a CI lint rule.</p>
+</section>
+
+<section>
+  <h2>26 modules across 7 tiers</h2>
+  <p>The catalog is the long-form product strategy. The summary:</p>
+  <table>
+    <thead>
+      <tr><th class="tier-num">Tier</th><th>Name</th><th class="tier-count">Modules</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="tier-num">0</td><td>Foundation</td><td class="tier-count">1</td></tr>
+      <tr><td class="tier-num">1</td><td>Clerk Core</td><td class="tier-count">4</td></tr>
+      <tr><td class="tier-num">2</td><td>Land Use &amp; Development</td><td class="tier-count">4</td></tr>
+      <tr><td class="tier-num">3</td><td>Administrative Expansion</td><td class="tier-count">5</td></tr>
+      <tr><td class="tier-num">4</td><td>Operations &amp; Resident Services</td><td class="tier-count">3</td></tr>
+      <tr><td class="tier-num">5</td><td>Internal Business Functions</td><td class="tier-count">4</td></tr>
+      <tr><td class="tier-num">6</td><td>Specialized</td><td class="tier-count">5</td></tr>
+      <tr><td class="tier-num"></td><td><strong>Total</strong></td><td class="tier-count"><strong>26</strong></td></tr>
+    </tbody>
+  </table>
+  <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
+</section>
+
+<section>
+  <h2>What CivicSuite is not</h2>
+  <p>The suite deliberately declines several markets. It is not a first-wave ERP replacement, not utility billing, not a permitting system of record, not CAD/RMS or a courts system, and not a cloud service. Those are markets where established incumbents do the work well enough that an open-source challenger would burn years of effort with no clear win for cities. The catalog explains the boundary in detail in sections 16–20.</p>
+</section>
+
+<section>
+  <h2>Repos</h2>
+  <ul>
+    <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> — umbrella repo (this site, charter, specs, ADRs, governance)</li>
+    <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> — shared platform package (Phase 0 scaffold)</li>
+    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> — Module 1, shipping</li>
+  </ul>
+  <p>Future modules (<code>civicclerk</code>, <code>civiczone</code>, <code>civiccode</code>, …) will land as separate repos under the same org. Module independence is a deliberate design choice — see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+</section>
+
+<footer>
+  <p><strong>License.</strong> Code is Apache License 2.0. Documentation is CC BY 4.0. Optional prompt libraries (when published as separate repos) are CC BY-SA 4.0.</p>
+  <p>Built in the open. Run on the city's own hardware. No telemetry, no cloud lock-in, no per-seat pricing.</p>
+</footer>
+
+</div>
+</body>
+</html>

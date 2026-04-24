@@ -93,13 +93,13 @@ If a future doc says "Phase 0 inventory" or names the branch `civiccore-phase-0-
 
 | Asset | License | Source of phrasing |
 |---|---|---|
-| Code (every repo) | MIT License (plain ~170-word text, unmodified) | `02_CivicCore.md` Appendix D |
+| Code (every repo) | Apache License 2.0 | `02_CivicCore.md` Appendix D |
 | Documentation | CC BY 4.0 | `02_CivicCore.md` Appendix D |
 | Prompt libraries (if separated) | CC BY-SA 4.0 | `02_CivicCore.md` Appendix D |
 | Third-party deps | Permissive or weak-copyleft only; AGPL and GPL-3.0 blocked | `02_CivicCore.md` Appendix D |
 | Redis | Pin `<8.0` (BSD); never SSPL releases | `02_CivicCore.md` Appendix D |
 
-There is no "MIT 2.0." If any older text references it, correct it.
+Project standardized on Apache License 2.0 for code on 2026-04-23 (Scott confirmed in CivicSuite kickoff). Earlier drafts referenced MIT; those have been updated. The "MIT 2.0 does not exist" caveat is no longer load-bearing and was removed.
 
 ---
 
@@ -151,5 +151,6 @@ These specific drifts have been introduced and fixed in this workspace's history
 2. **"§17" vs "§18" for the bug-filing decision tree** — the decision tree is described in §18 (Risks table). Any reference to §17 has drifted.
 3. **"Phase 0 inventory" labeling** — Phase 0 in the spec is repo skeleton only. Inventory is preparation for Phase 1, not part of Phase 0.
 4. **`.docx` vs `.md` filename references** — markdown is canonical in this workspace. Any reference to `.docx` filenames as the primary read target has drifted.
+5. **MIT vs. Apache 2.0** — project standardized on Apache 2.0 on 2026-04-23. Any new text claiming MIT for code has drifted from the current decision. The umbrella's documentation license (CC BY 4.0) and the optional prompt-library license (CC BY-SA 4.0) are unchanged.
 
 If you find any of these in a future version of CHARTER, README, or any spec, fix it and re-run the audit.
