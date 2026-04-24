@@ -15,15 +15,14 @@ tree.
 The full license matrix is documented in
 [`../../CONSISTENCY.md`](../../CONSISTENCY.md) section 6. Summary:
 
-- Code: MIT License (every code repo)
+- Code: Apache License 2.0 (every code repo)
 - Documentation: CC BY 4.0
 - Prompt libraries (if separated): CC BY-SA 4.0
 - Third-party dependencies: permissive or weak-copyleft only; AGPL and
   GPL-3.0 are blocked at the dependency manager level.
 - Redis: pinned `<8.0` (BSD); never the SSPL releases.
 
-There is no "MIT 2.0." If any draft or third-party document references it,
-correct it.
+Project standardized on Apache License 2.0 for code on 2026-04-23. Earlier drafts referenced MIT; that drift has been corrected. Documentation license (CC BY 4.0) and the optional prompt-library license (CC BY-SA 4.0) are unchanged.
 
 ## Security disclosure
 

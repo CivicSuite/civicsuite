@@ -12,10 +12,10 @@ the most common contributor friction.
 - **Shared platform bug** (auth, RBAC, audit chain, LLM abstraction, document
   ingestion, hybrid search, connector framework, notifications, onboarding,
   city profile, exemption engine, sovereignty verification) -> file at
-  `scottconverse/civiccore` (or the org-hosted URL once the org is created).
+  `CivicSuite/civiccore`.
 - **Records-module bug** (request lifecycle, response letters, fee schedules,
   exemption dashboard, public request portal) -> file at
-  `scottconverse/civicrecords-ai`.
+  `CivicSuite/civicrecords-ai` (until the records repo is transferred to the CivicSuite org; for now the canonical home is `scottconverse/civicrecords-ai`).
 - **CivicClerk / CivicCode / CivicZone bug** -> file at the matching module
   repo. If the module repo doesn't exist yet, file in this umbrella with the
   `module:<name>` label.
