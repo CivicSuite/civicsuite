@@ -1,4 +1,3 @@
-<!-- supervisor-card: generated (safe to overwrite; delete this line if you hand-edit) -->
 # SUPERVISOR — CivicSuite Operating Card
 
 For Scott. One page. CivicSuite is the umbrella repo (github.com/CivicSuite org) — suite-wide docs, ADRs, roadmap, governance, and the CivicCore ↔ module compatibility matrix. **It holds no code.** Code lives in `civiccore` and `civicrecords-ai` (and future module repos). Treat this repo as the coordination layer.
