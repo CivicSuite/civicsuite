@@ -41,7 +41,7 @@ echo "==> Stale current-facing strings check (CHANGELOG, ADRs, SUPERVISOR.md exe
 PATTERN='Phase 0 scaffold|civiccore[^,]{0,30}0\.1\.0|github\.com/CivicSuite/civicrecords-ai'
 HITS=$(grep -rn -E "$PATTERN" README.md USER-MANUAL.md docs/ \
        --include='*.md' --include='*.html' 2>/dev/null \
-       | grep -vE 'CHANGELOG|docs/architecture/ADR-|docs/SUPERVISOR\.md|docs/compatibility/index\.md|docs/github-discussions-seed\.md' \
+       | grep -vE 'CHANGELOG|docs/architecture/ADR-|docs/SUPERVISOR\.md|docs/compatibility/index\.md|docs/github-discussions-seed\.md|docs/governance/civicrecords-ai-org-transfer-runbook\.md' \
        || true)
 if [ -n "$HITS" ]; then
   echo "  STALE STRINGS FOUND:"
