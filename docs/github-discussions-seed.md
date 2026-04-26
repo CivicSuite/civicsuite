@@ -1,0 +1,130 @@
+# GitHub Discussions — Seed Posts
+
+This file contains the seed content for enabling GitHub Discussions on the `civicsuite` umbrella repo. Each section corresponds to one discussion category. Posts should be created (manually or via `gh api`) by a maintainer with their own voice; the text below is a starting point.
+
+> **Note:** GitHub Discussions must be enabled at the repo level (Settings → General → Features → Discussions) before any of these posts can be created. The umbrella does NOT use a `.github/DISCUSSIONS_SEEDED` marker file.
+
+---
+
+## Categories to enable
+
+- **Announcements** (announcement type) — release notes, milestones, status updates
+- **Roadmap** (open-ended) — module sequencing, prioritization, suggestions
+- **Architecture** (open-ended) — civiccore design questions, dependency policy, ADR discussion
+- **Governance** (open-ended) — contribution policy, repo standards, transfer plans
+- **Compatibility** (open-ended) — matrix updates, paired-release coordination
+
+(Q&A and Show-and-Tell are reserved for module repos, where they fit better — most "I tried this and..." posts will be about a specific module, not the umbrella.)
+
+---
+
+## Announcements — Welcome and current suite status (PIN this)
+
+**Title:** CivicSuite — current status (April 2026)
+
+**Body:**
+
+Welcome to the CivicSuite community space. This post is a snapshot of where the suite stands right now. We'll update it (or pin a new one) when major status changes.
+
+**Shipping today:**
+
+- `civicrecords-ai` v1.4.0 — open-source FOIA / public records management. Repo: <https://github.com/scottconverse/civicrecords-ai>. The records repo will be transferred to the `CivicSuite` GitHub org at a future date; until then, that link is the canonical home.
+- `civiccore` v0.2.0 — the shared platform package every module is built on. Phase 2 (the LLM abstraction module) shipped this release. Repo: <https://github.com/CivicSuite/civiccore>.
+
+**Planned, not started:**
+
+- `civicclerk`, `civiczone`, and the rest of the catalog — specs only. We say so plainly because we don't want anyone evaluating the suite to think modules exist that don't.
+
+**What's this umbrella for?**
+
+This `civicsuite` repo is documentation-only. It holds the charter, the spec library, ADRs, the roadmap, governance, and the [civiccore↔module compatibility matrix](../docs/compatibility/index.md). No runtime code. Every module lives in its own repo.
+
+**Where to get help / ask questions:** see [SUPPORT.md](../SUPPORT.md).
+
+**How to contribute docs:** see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+We're glad you're here.
+
+---
+
+## Roadmap — What gets built next, and why
+
+**Title:** Module sequence — what gets built after civiccore Phase 2?
+
+**Body:**
+
+The catalog lists 26 modules across 7 tiers. We are not going to build them in order, and we are not going to build them all. The civiccore Phase 2 release just shipped, which unblocks a real choice for the next module.
+
+**Two leading candidates:**
+
+1. **civicclerk** (Tier 1) — meetings, agendas, packets, minutes, voting, sunshine-law compliance. The spec is drafted. This is the highest-leverage second module because most municipal staff time outside the records office is spent on the meeting cycle.
+2. **civiczone** (Tier 2) — zoning code and parcel-aware planner workflows. Spec drafted. The technical case for this module is that it's a clean test of the "downstream module inherits civiccore" pattern with a different shape than records-ai.
+
+**Question for the community:**
+
+Which of these would matter most to your city if it shipped in the next 6–12 months? Are there other Tier 1 modules from the catalog you'd rank above them?
+
+We'll use this thread to gather signal before locking the next-module decision.
+
+---
+
+## Architecture — How is civiccore designed, and why is it not a monorepo?
+
+**Title:** Why CivicSuite is a multi-repo, not a monorepo
+
+**Body:**
+
+This question comes up often enough that we want a single canonical thread for it.
+
+**Short version:** Cities install one module at a time. A monorepo would imply a single release artifact, which would break the "install only what you need" promise. Each module having its own repo lets module maintainers ship on their own cadence and lets cities pin a specific module version without dragging unrelated changes along.
+
+The full reasoning is in the [civiccore extraction spec](../specs/02_CivicCore.md) section 5.2.
+
+**The dependency rule:** Modules depend on civiccore. Civiccore never depends on a module. This is the core architectural constraint and is enforced in CI in the civiccore repo.
+
+If you're considering contributing a new module or are evaluating the architecture for your own civic-tech project, this is the design tradeoff to understand first. Comments and pushback welcome.
+
+---
+
+## Governance — Open-source posture and the records-ai org transfer
+
+**Title:** Plan to transfer civicrecords-ai to the CivicSuite GitHub org
+
+**Body:**
+
+A status note on a piece of governance some readers may have noticed:
+
+`civicrecords-ai` currently lives at `github.com/scottconverse/civicrecords-ai`. The intent is to transfer the repo to the `CivicSuite` org so all modules live under the same umbrella. This is intentionally not yet done — we want the suite-wide documentation, governance, and contribution standards to settle first so the transfer is a clean handoff rather than a scramble.
+
+Until the transfer happens, every link to records-ai in our docs uses `scottconverse/civicrecords-ai`. After the transfer, links will be updated and old links will redirect via GitHub's automatic forwarding.
+
+**No action needed from contributors.** Existing forks and PRs continue to work normally during and after the transfer. We'll announce the transfer with a heads-up post here when the date is set.
+
+---
+
+## Compatibility — How the matrix works and how to read it
+
+**Title:** Reading the civiccore↔module compatibility matrix
+
+**Body:**
+
+The compatibility matrix lives at [docs/compatibility/index.md](../docs/compatibility/index.md). It is the suite's release-pairing truth-source.
+
+**How to read a row:**
+
+```
+| civicrecords-ai | 1.4.0 | 2026-04-25 | ==0.2.0 | Phase 2 LLM ... |
+```
+
+Translation: civicrecords-ai version 1.4.0, released on 2026-04-25, requires exactly civiccore 0.2.0. If you install records-ai 1.4.0 with a different civiccore version, behavior is undefined.
+
+**When does the matrix get updated?**
+
+- Every time a module ships a new version that changes its civiccore pin.
+- Every time civiccore ships a new MINOR or MAJOR (PATCH releases of civiccore are pin-compatible by definition).
+
+**When does the matrix get audited?**
+
+Before every umbrella push. The verify-docs script checks that the matrix has no stale current-facing strings.
+
+If you spot a mismatch between the matrix and a module's actual `pyproject.toml` pin, that's a real bug — please file a documentation issue here.
