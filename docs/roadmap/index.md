@@ -22,7 +22,7 @@ The detailed execution plan is
 |---|---------------|----------------------------------------------|
 | 1 | CivicCore     | Shipping v0.2.0; shared migrations, db base, and LLM abstraction |
 | 2 | CivicRecords AI | Shipping v1.4.0; transferred to CivicSuite org |
-| 3 | CivicClerk    | Next module; scaffold + MVP planning begins now |
+| 3 | CivicClerk    | Repo scaffolded; runtime MVP begins next |
 | 4 | CivicCode     | Planned                                      |
 | 5 | CivicAccess   | Planned                                      |
 

@@ -263,8 +263,8 @@
     </li>
     <li>
       <span class="name">civicclerk</span>
-      <span class="badge badge-spec">Spec drafted</span>
-      <span class="desc">Meetings, agendas, packets, minutes, voting, sunshine-law compliance. Build starts after CivicCore Phase 1 ships.</span>
+      <span class="badge badge-spec">Repo scaffolded</span>
+      <span class="desc">Meetings, agendas, packets, minutes, voting, sunshine-law compliance. Runtime MVP starts next at <a href="https://github.com/CivicSuite/civicclerk">CivicSuite/civicclerk</a>.</span>
     </li>
     <li>
       <span class="name">civiczone</span>
@@ -277,7 +277,7 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0 in the CivicSuite org. Future modules civicclerk and civiczone are planned but not started." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0. CivicClerk is scaffolded; CivicZone is planned." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime — just well-understood components glued together carefully.</p>
@@ -320,7 +320,7 @@
     <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> — Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> — civiccore↔module version pairings</li>
   </ul>
-  <p>Future modules (<code>civicclerk</code>, <code>civiczone</code>, <code>civiccode</code>, …) will land as separate repos under the same org. Module independence is a deliberate design choice — see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code> is now scaffolded as a separate repo under the same org. Future modules (<code>civiczone</code>, <code>civiccode</code>, …) will follow the same pattern. Module independence is a deliberate design choice — see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 
 <footer>

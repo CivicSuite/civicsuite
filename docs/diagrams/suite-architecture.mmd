@@ -5,9 +5,9 @@ graph TB
     end
     subgraph PRODUCT["GitHub: CivicSuite organization"]
         Records["civicrecords-ai<br/>v1.4.0<br/>FOIA / public records app"]
+        Clerk["civicclerk<br/>v0.0.0 scaffold<br/>meeting management"]
     end
-    subgraph FUTURE["Future modules — planned, not started"]
-        Clerk["civicclerk<br/>meeting management"]
+    subgraph FUTURE["Future modules - planned, not started"]
         Zone["civiczone<br/>zoning / land use"]
     end
     SuiteRepo -.documents.-> Core
@@ -15,13 +15,14 @@ graph TB
     SuiteRepo -.governs.-> Clerk
     SuiteRepo -.governs.-> Zone
     Records -->|"depends on ==0.2.0"| Core
-    Clerk -. "future ==X.Y" .-> Core
+    Clerk -. "planned >=0.2,<0.3" .-> Core
     Zone -. "future ==X.Y" .-> Core
     classDef shipping fill:#d4f4dd,stroke:#3a7a4a,stroke-width:2px,color:#000
     classDef governance fill:#e1e1ff,stroke:#5a5aa0,stroke-width:2px,color:#000
     classDef future fill:#fff4e1,stroke:#a08040,stroke-width:1px,stroke-dasharray:5 5,color:#000
+    classDef scaffold fill:#e8f3ff,stroke:#3973a3,stroke-width:1px,color:#000
     class SuiteRepo governance
     class Core shipping
     class Records shipping
-    class Clerk future
+    class Clerk scaffold
     class Zone future
