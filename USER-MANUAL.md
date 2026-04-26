@@ -23,9 +23,12 @@ Today, only one module is shipping. The rest are either in early-platform stage 
 - **civicrecords-ai v1.4.0** — a working, shipping module for managing public records / FOIA requests. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
 - **civiccore v0.2.0** — the shared "platform" package that every module uses. It is what the records module is built on. As of v0.2.0 it includes a shared LLM (large-language-model) abstraction layer. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
 
+### What's scaffolded but not installable yet
+
+- **civicclerk** — meetings, agendas, packets, minutes, voting, and sunshine-law compliance. Repo scaffolded at <https://github.com/CivicSuite/civicclerk>; no runtime app or release yet.
+
 ### What's planned but not started
 
-- **civicclerk** — meetings, agendas, packets, minutes, voting, and sunshine-law compliance. Spec drafted, no code yet.
 - **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted, no code yet.
 - Twenty-plus additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
@@ -69,7 +72,8 @@ There is no runtime code in this repo. Each module lives in its own repo.
 |---|---|---|
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.0. Transferred to the `CivicSuite` GitHub org on 2026-04-25; this is now the canonical home. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.2.0. Phase 2 (LLM module) just landed. |
-| civicclerk, civiczone, etc. | not created yet | Specs only. |
+| civicclerk | <https://github.com/CivicSuite/civicclerk> | Scaffolded; documentation baseline only. |
+| civiczone, etc. | not created yet | Specs only. |
 
 ### Dependency direction
 
@@ -147,7 +151,7 @@ When a module ships a new version, the compatibility matrix on this umbrella mus
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
    | civicrecords-ai     |   |   civicclerk     |   |   civiczone      |
-   |   v1.4.0 SHIPPING   |   |  PLANNED         |   |  PLANNED         |
+   |   v1.4.0 SHIPPING   |   |  SCAFFOLDED      |   |  PLANNED         |
    |   FOIA / public     |   |  meetings,       |   |  zoning, parcel  |
    |   records mgmt      |   |  agendas, votes  |   |  workflows       |
    +---------------------+   +------------------+   +------------------+
