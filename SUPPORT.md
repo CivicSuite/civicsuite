@@ -7,9 +7,9 @@ The `civicsuite` umbrella repo is for **suite-wide** orientation, governance, ro
 | Audience | What you're asking about | Where to go |
 |---|---|---|
 | **Municipal evaluators** | "Is CivicSuite right for my city?" "What does it actually do today?" "How is it licensed?" | Start with the [README](README.md) and the [USER-MANUAL](USER-MANUAL.md). Open a Discussion under **Announcements** or **Roadmap** if you have follow-up questions. |
-| **Municipal evaluators** | "Can I see a working module?" | The shipping module today is `civicrecords-ai` (FOIA / public records management). Visit <https://github.com/scottconverse/civicrecords-ai>. |
+| **Municipal evaluators** | "Can I see a working module?" | The shipping module today is `civicrecords-ai` (FOIA / public records management). Visit <https://github.com/CivicSuite/civicrecords-ai>. |
 | **Module developers** | "How do I integrate civiccore?" "How do auth/RBAC/audit work?" | File at `CivicSuite/civiccore`. The civiccore repo's `README.md`, `USER-MANUAL.md`, and `docs/` are the canonical reference. |
-| **Module developers** | "Bug in records-ai" | File at `scottconverse/civicrecords-ai` (until transferred). |
+| **Module developers** | "Bug in records-ai" | File at `CivicSuite/civicrecords-ai` (now transferred). |
 | **Module developers** | "Cross-module question — how should two modules interact?" | Open a Discussion here under **Architecture**. |
 | **Contributors** | "How do I contribute documentation here?" | See [CONTRIBUTING.md](CONTRIBUTING.md). |
 | **Contributors** | "Is there a module-suggestion process?" | Open a Discussion under **Roadmap** with module name, problem it solves, and rough scope. |

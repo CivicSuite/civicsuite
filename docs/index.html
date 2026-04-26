@@ -276,6 +276,10 @@
 
 <section>
   <h2>Architecture overview</h2>
+  <figure style="margin: 2em 0;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0 in the CivicSuite org. Future modules civicclerk and civiczone are planned but not started." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
+  </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime — just well-understood components glued together carefully.</p>
   <p>The runtime is FastAPI on Uvicorn for the API layer, PostgreSQL 17 with the pgvector extension for both relational data and embeddings, Redis 7.2 (pinned below 8.0 to stay BSD-licensed) for cache and message queue, Celery with Celery Beat for background workers and scheduled jobs, and Ollama serving Gemma 4 for local LLM inference. The frontend is React behind nginx. Embeddings come from <code>nomic-embed-text</code>, also via Ollama.</p>
   <p>Everything runs on the city's own server — single workstation for the smallest cities, a small on-prem box for most, and a fully air-gapped deployment for sensitive modules. The model layer is abstracted; Gemma 4 is the default but the registry pattern allows swapping in any model that fits the city's hardware budget.</p>
@@ -313,7 +317,7 @@
   <ul>
     <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> — umbrella repo (this site, charter, specs, ADRs, governance)</li>
     <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> — shared platform package, shipping v0.2.0</li>
-    <li><a href="https://github.com/scottconverse/civicrecords-ai"><code>github.com/scottconverse/civicrecords-ai</code></a> — Module 1, shipping v1.4.0 (will transfer to <code>CivicSuite/civicrecords-ai</code> at a future date)</li>
+    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> — Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> — civiccore↔module version pairings</li>
   </ul>
   <p>Future modules (<code>civicclerk</code>, <code>civiczone</code>, <code>civiccode</code>, …) will land as separate repos under the same org. Module independence is a deliberate design choice — see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>

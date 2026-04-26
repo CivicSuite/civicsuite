@@ -15,7 +15,7 @@ the most common contributor friction.
   `CivicSuite/civiccore`.
 - **Records-module bug** (request lifecycle, response letters, fee schedules,
   exemption dashboard, public request portal) -> file at
-  `CivicSuite/civicrecords-ai` (until the records repo is transferred to the CivicSuite org; for now the canonical home is `scottconverse/civicrecords-ai`).
+  `CivicSuite/civicrecords-ai` (the records repo now lives in the CivicSuite org; the canonical home is `CivicSuite/civicrecords-ai`).
 - **CivicClerk / CivicCode / CivicZone bug** -> file at the matching module
   repo. If the module repo doesn't exist yet, file in this umbrella with the
   `module:<name>` label.

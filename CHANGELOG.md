@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Compatibility matrix updated to current truth** (`docs/compatibility/index.md`): civiccore now at `0.2.0`, civicrecords-ai now at `1.4.0` pinned to `==0.2.0`. Phase 1 entries (civiccore 0.1.0, records-ai v1.3.0 pending) replaced with the actual shipped versions and dates.
-- **Landing page (`docs/index.html`) refreshed**: civiccore status changed from "Phase 0 scaffold" to "Shipping v0.2.0 (Phase 2 LLM module)"; the records-ai repo link updated from the premature `CivicSuite/civicrecords-ai` to the actual canonical home `scottconverse/civicrecords-ai` (until org transfer happens).
+- **Landing page (`docs/index.html`) refreshed**: civiccore status changed from "Phase 0 scaffold" to "Shipping v0.2.0 (Phase 2 LLM module)"; the records-ai repo link now points at the transferred `CivicSuite/civicrecords-ai` home.
 - README rewritten to lead with current suite status (what's shipping, what's planned but not started) instead of the workspace-bootstrap framing.
 
 ## [Phase 1] - 2026-04-24
