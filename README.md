@@ -30,10 +30,11 @@ There is nothing to "install" from the umbrella. Pick a module and follow its re
 
 If you're orienting yourself for the first time, read in this order:
 
-1. [USER-MANUAL.md](USER-MANUAL.md) — three-part orientation manual (decision-makers, developers, architecture).
-2. [CHARTER.md](CHARTER.md) — founding document.
-3. [specs/01_catalog.md](specs/01_catalog.md) — the 26-module catalog.
-4. [docs/architecture/](docs/architecture/) — ADRs.
+1. [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md) — canonical suite specification and precedence rules.
+2. [USER-MANUAL.md](USER-MANUAL.md) — three-part orientation manual (decision-makers, developers, architecture).
+3. [CHARTER.md](CHARTER.md) — founding document.
+4. [specs/01_catalog.md](specs/01_catalog.md) — the source catalog draft folded into the unified spec.
+5. [docs/architecture/](docs/architecture/) — ADRs.
 
 ## What's in this repo
 
@@ -51,6 +52,7 @@ civicsuite/
 ├── specs/                          ← canonical specs (catalog, civiccore extraction, civicclerk, civiczone)
 ├── docs/
 │   ├── index.html                  ← GitHub Pages landing
+│   ├── CivicSuiteUnifiedSpec.md    ← canonical suite specification
 │   ├── architecture/               ← ADRs
 │   ├── catalog/                    ← module catalog
 │   ├── compatibility/index.md      ← civiccore↔module pin matrix
