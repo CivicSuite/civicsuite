@@ -4,13 +4,25 @@ The full four-phase rollout is documented in
 [`../../specs/01_catalog.md`](../../specs/01_catalog.md) section 14. A
 condensed table view follows.
 
+## Current next step
+
+**Next module to build: CivicClerk.** CivicRecords AI is shipping at
+v1.4.0, civiccore is shipping at v0.2.0, and CivicRecords AI has been
+transferred into the `CivicSuite` GitHub organization. The next work is
+to scaffold `CivicSuite/civicclerk` and run a UX-first MVP sprint around
+meeting setup, agenda item intake, packet assembly, statutory notice
+tracking, and minute drafting.
+
+The detailed execution plan is
+[`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
+
 ## Phase 1 — Establish the sovereign municipal platform (Clerk Core)
 
 | # | Module        | Status                                       |
 |---|---------------|----------------------------------------------|
-| 1 | CivicCore     | In extraction (Phases 0-5)                   |
-| 2 | CivicRecords AI | Shipping; continue v3.0 trajectory         |
-| 3 | CivicClerk    | Spec drafted; build begins after CivicCore P1 |
+| 1 | CivicCore     | Shipping v0.2.0; shared migrations, db base, and LLM abstraction |
+| 2 | CivicRecords AI | Shipping v1.4.0; transferred to CivicSuite org |
+| 3 | CivicClerk    | Next module; scaffold + MVP planning begins now |
 | 4 | CivicCode     | Planned                                      |
 | 5 | CivicAccess   | Planned                                      |
 
