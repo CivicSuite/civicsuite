@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 2 documentation closeout** (2026-04-25): full set of community files (`SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`), GitHub issue templates (bug, feature, documentation), pull request template, and GitHub Discussions seed posts (`docs/github-discussions-seed.md`).
+- Suite orientation manual `USER-MANUAL.md` (three parts: municipal decision-makers, developers/IT, architecture reference) plus `.txt`, `.pdf`, `.docx` companion formats.
+- Plain-text `README.txt` companion to `README.md`.
+- `scripts/verify-docs.sh` — required-artifact and stale-current-facing-string check. Run before every push.
+
+### Changed
+- **Compatibility matrix updated to current truth** (`docs/compatibility/index.md`): civiccore now at `0.2.0`, civicrecords-ai now at `1.4.0` pinned to `==0.2.0`. Phase 1 entries (civiccore 0.1.0, records-ai v1.3.0 pending) replaced with the actual shipped versions and dates.
+- **Landing page (`docs/index.html`) refreshed**: civiccore status changed from "Phase 0 scaffold" to "Shipping v0.2.0 (Phase 2 LLM module)"; the records-ai repo link updated from the premature `CivicSuite/civicrecords-ai` to the actual canonical home `scottconverse/civicrecords-ai` (until org transfer happens).
+- README rewritten to lead with current suite status (what's shipping, what's planned but not started) instead of the workspace-bootstrap framing.
+
+## [Phase 1] - 2026-04-24
+
+### Added
 - Initial scaffold of the civicsuite umbrella repository (Phase 0).
 - Charter, consistency reference, and four canonical specs (catalog, CivicCore extraction, CivicClerk, CivicZone) imported from the workspace draft.
 - Empty `docs/` skeleton with stub index files for catalog, principles, architecture, roadmap, governance, and compatibility.
