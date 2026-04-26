@@ -124,10 +124,20 @@ When a module ships a new version, the compatibility matrix on this umbrella mus
                                       v
                         +---------------------------+
                         |     civiccore (v0.2.0)    |
-                        |  shared platform package: |
-                        |  auth, RBAC, audit, LLM,  |
-                        |  ingestion, search,       |
-                        |  notifications            |
+                        |  SHIPPING TODAY:          |
+                        |  migrations, db.Base, llm |
+                        |  (providers, templates,   |
+                        |  registry, context,       |
+                        |  structured output)       |
+                        |                           |
+                        |  PLACEHOLDER ONLY (empty  |
+                        |  __init__.py, no code):   |
+                        |  auth, RBAC, audit,       |
+                        |  ingest, search,          |
+                        |  notifications,           |
+                        |  connectors, exemptions,  |
+                        |  onboarding, catalog,     |
+                        |  verification             |
                         +-------------+-------------+
                                       ^
                   depends on (pinned) |

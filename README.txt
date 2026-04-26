@@ -9,7 +9,7 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 **Shipping:**
 
 - **civicrecords-ai v1.4.0** — open-source FOIA / public records management. Repo: <https://github.com/scottconverse/civicrecords-ai>. (Will be transferred to the `CivicSuite` GitHub org at a future date.)
-- **civiccore v0.2.0** — shared platform package: auth, RBAC, audit chain, LLM abstraction, ingestion, search, notifications. Phase 2 (LLM module) just shipped. Repo: <https://github.com/CivicSuite/civiccore>.
+- **civiccore v0.2.0** — shared platform package. **Shipping today:** migration runner + 2 baseline migrations (`civiccore.migrations`), shared SQLAlchemy `Base` (`civiccore.db`), and the LLM abstraction (`civiccore.llm` — providers, templates, registry, context utilities, structured output). **Future / planned extraction (placeholder packages only — directories with a docstring `__init__.py` and no implementation):** auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 (LLM module) just shipped. Repo: <https://github.com/CivicSuite/civiccore>.
 
 **Planned, not started:**
 
