@@ -4,6 +4,17 @@ and paragraphs. Not a full-fidelity renderer; meant as a baseline so the
 artifacts exist."""
 from pathlib import Path
 
+from docx import Document  # type: ignore
+from reportlab.lib.pagesizes import LETTER  # type: ignore
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore
+from reportlab.lib.units import inch  # type: ignore
+from reportlab.platypus import (  # type: ignore
+    Paragraph,
+    Preformatted,
+    SimpleDocTemplate,
+    Spacer,
+)
+
 ROOT = Path(__file__).resolve().parent.parent
 MD = (ROOT / "USER-MANUAL.md").read_text(encoding="utf-8")
 
@@ -56,8 +67,6 @@ def parse(md):
 blocks = parse(MD)
 
 # DOCX
-from docx import Document  # type: ignore
-
 doc = Document()
 for kind, text in blocks:
     if kind == "h1":
@@ -75,11 +84,6 @@ for kind, text in blocks:
 doc.save(ROOT / "USER-MANUAL.docx")
 
 # PDF
-from reportlab.lib.pagesizes import LETTER  # type: ignore
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle  # type: ignore
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Preformatted  # type: ignore
-from reportlab.lib.units import inch  # type: ignore
-
 styles = getSampleStyleSheet()
 code_style = ParagraphStyle("code", parent=styles["Code"], fontSize=8, leading=10)
 pdf = SimpleDocTemplate(
