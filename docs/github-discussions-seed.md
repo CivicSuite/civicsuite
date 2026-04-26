@@ -28,7 +28,7 @@ Welcome to the CivicSuite community space. This post is a snapshot of where the 
 
 **Shipping today:**
 
-- `civicrecords-ai` v1.4.0 — open-source FOIA / public records management. Repo: <https://github.com/scottconverse/civicrecords-ai>. The records repo will be transferred to the `CivicSuite` GitHub org at a future date; until then, that link is the canonical home.
+- `civicrecords-ai` v1.4.0 — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. The records repo transferred to the `CivicSuite` GitHub org on 2026-04-25; that link is now the canonical home.
 - `civiccore` v0.2.0 — the shared platform package every module is built on. Phase 2 (the LLM abstraction module) shipped this release. Repo: <https://github.com/CivicSuite/civiccore>.
 
 **Planned, not started:**
@@ -94,9 +94,9 @@ If you're considering contributing a new module or are evaluating the architectu
 
 A status note on a piece of governance some readers may have noticed:
 
-`civicrecords-ai` currently lives at `github.com/scottconverse/civicrecords-ai`. The intent is to transfer the repo to the `CivicSuite` org so all modules live under the same umbrella. This is intentionally not yet done — we want the suite-wide documentation, governance, and contribution standards to settle first so the transfer is a clean handoff rather than a scramble.
+`civicrecords-ai` currently lives at `github.com/CivicSuite/civicrecords-ai`. The intent is to transfer the repo to the `CivicSuite` org so all modules live under the same umbrella. This is intentionally not yet done — we want the suite-wide documentation, governance, and contribution standards to settle first so the transfer is a clean handoff rather than a scramble.
 
-Until the transfer happens, every link to records-ai in our docs uses `scottconverse/civicrecords-ai`. After the transfer, links will be updated and old links will redirect via GitHub's automatic forwarding.
+Until the transfer happens, every link to records-ai in our docs uses `CivicSuite/civicrecords-ai`. After the transfer, links will be updated and old links will redirect via GitHub's automatic forwarding.
 
 **No action needed from contributors.** Existing forks and PRs continue to work normally during and after the transfer. We'll announce the transfer with a heads-up post here when the date is set.
 

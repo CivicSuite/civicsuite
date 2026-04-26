@@ -8,7 +8,7 @@ The `civicsuite` repository is the umbrella/orientation repo for the CivicSuite 
 
 If you found a vulnerability in a specific module's code, deployment, or runtime behavior, please report it on that module's repo:
 
-- **civicrecords-ai** (FOIA / public records management) — open a private GitHub Security Advisory at <https://github.com/scottconverse/civicrecords-ai/security/advisories/new>
+- **civicrecords-ai** (FOIA / public records management) — open a private GitHub Security Advisory at <https://github.com/CivicSuite/civicrecords-ai/security/advisories/new>
 - **civiccore** (shared platform package) — open a private GitHub Security Advisory at <https://github.com/CivicSuite/civiccore/security/advisories/new>
 
 ### Suite-wide vulnerabilities

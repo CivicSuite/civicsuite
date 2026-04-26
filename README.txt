@@ -8,7 +8,7 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 **Shipping:**
 
-- **civicrecords-ai v1.4.0** — open-source FOIA / public records management. Repo: <https://github.com/scottconverse/civicrecords-ai>. (Will be transferred to the `CivicSuite` GitHub org at a future date.)
+- **civicrecords-ai v1.4.0** — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. (Transferred to the `CivicSuite` GitHub org on 2026-04-25.)
 - **civiccore v0.2.0** — shared platform package. **Shipping today:** migration runner + 2 baseline migrations (`civiccore.migrations`), shared SQLAlchemy `Base` (`civiccore.db`), and the LLM abstraction (`civiccore.llm` — providers, templates, registry, context utilities, structured output). **Future / planned extraction (placeholder packages only — directories with a docstring `__init__.py` and no implementation):** auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 (LLM module) just shipped. Repo: <https://github.com/CivicSuite/civiccore>.
 
 **Planned, not started:**
@@ -23,7 +23,7 @@ See the [compatibility matrix](docs/compatibility/index.md) for the canonical ve
 
 There is nothing to "install" from the umbrella. Pick a module and follow its repo's setup guide:
 
-- For FOIA / public records management today, start with [civicrecords-ai](https://github.com/scottconverse/civicrecords-ai).
+- For FOIA / public records management today, start with [civicrecords-ai](https://github.com/CivicSuite/civicrecords-ai).
 - For platform / library use, start with [civiccore](https://github.com/CivicSuite/civiccore).
 
 If you're orienting yourself for the first time, read in this order:
@@ -65,7 +65,7 @@ civicsuite/
 
 | Module | Repo | Role |
 |---|---|---|
-| civicrecords-ai | <https://github.com/scottconverse/civicrecords-ai> | Module 1, shipping. Will transfer to CivicSuite org. |
+| civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Module 1, shipping. Transferred to CivicSuite org on 2026-04-25. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shared platform package. Pinned by every module. |
 
 Future module repos (`civicclerk`, `civiczone`, `civiccode`, …) will land under `CivicSuite/` as separate repos.

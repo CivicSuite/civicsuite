@@ -8,7 +8,7 @@ record.
 | Module          | Repo                              | Current version | Released   | Compatible CivicCore range | Last verified | Notes                                                                                          |
 |-----------------|-----------------------------------|-----------------|------------|----------------------------|---------------|------------------------------------------------------------------------------------------------|
 | civiccore       | CivicSuite/civiccore              | 0.2.0           | 2026-04-25 | n/a                        | 2026-04-25    | Phase 2 LLM-abstraction module shipped. Backward-compatible with 0.1.x consumers.              |
-| civicrecords-ai | scottconverse/civicrecords-ai     | 1.4.0           | 2026-04-25 | `==0.2.0`                  | 2026-04-25    | Phase 2 LLM integration; depends on the civiccore v0.2.0 release wheel. Will transfer to `CivicSuite/civicrecords-ai` at a future date. |
+| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.0           | 2026-04-25 | `==0.2.0`                  | 2026-04-25    | Phase 2 LLM integration; depends on the civiccore v0.2.0 release wheel. Transferred to the CivicSuite org on 2026-04-25. |
 | civicclerk      | (not created)                     | n/a             | n/a        | n/a                        | n/a           | Planned future module — spec drafted only, no code.                                            |
 
 ## Reading a row
