@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/verify-docs.sh` — required-artifact and stale-current-facing-string check. Run before every push.
 
 ### Changed
+- Registered the new `CivicSuite/civiccode` scaffold and Milestone 0 completion across README, user manual, landing page, roadmap, and unified spec while preserving the no-runtime-shipped boundary.
 - Updated the roadmap and canonical unified spec current-state sections after CivicClerk v0.1.0 and the `/staff` UI foundation shipped; CivicCode is now the next module lane.
 - **CivicClerk staff workflow UI foundation reflected in suite docs** (2026-04-27): README, user manual, landing page, and compatibility matrix now mention the `/staff` browser UI foundation shipped after the v0.1.0 release while preserving the full-workflow-UI planned boundary.
 - **Compatibility matrix updated for CivicClerk v0.1.0** (2026-04-27): `CivicSuite/civicclerk` now records the published runtime-foundation release paired to `civiccore==0.2.0`.

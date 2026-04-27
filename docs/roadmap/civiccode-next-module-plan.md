@@ -2,7 +2,7 @@
 
 Status: Active planning baseline  
 Date: 2026-04-27  
-Applies to: future `CivicSuite/civiccode` scaffold and Milestone 0 planning
+Applies to: `CivicSuite/civiccode` scaffold and post-Milestone-0 planning
 
 ## Why CivicCode Next
 
@@ -24,7 +24,8 @@ but they are never authoritative legal advice.
 
 ## Current Truth
 
-- `CivicSuite/civiccode` does not exist yet.
+- `CivicSuite/civiccode` exists as a scaffold-only repository.
+- CivicCode Milestone 0 planning is complete.
 - No CivicCode runtime code has shipped.
 - The authoritative requirements live in `docs/CivicSuiteUnifiedSpec.md`
   section 11 and `specs/01_catalog.md` under "CivicCode - Municipal Code &
@@ -104,13 +105,13 @@ reconciliation document and must be tested before runtime code lands.
 
 ## First Sprint Sequence
 
-1. Create `CivicSuite/civiccode` under the organization.
-2. Add professional repo docs, Apache 2.0 code license, CC BY 4.0 docs
+1. Keep `CivicSuite/civiccode` scaffold truth current until runtime lands.
+2. Maintain professional repo docs, Apache 2.0 code license, CC BY 4.0 docs
    license, issue templates, PR template, support/security/contributing docs,
    landing page, user manual, and seed discussion posts.
 3. Add `AGENTS.md` operating contract for CivicCode with the same test-first,
    docs-first, browser-QA gate used by CivicClerk.
-4. Run Milestone 0 reconciliation against `docs/CivicSuiteUnifiedSpec.md`,
+4. Preserve Milestone 0 reconciliation against `docs/CivicSuiteUnifiedSpec.md`,
    suite ADRs, and the catalog CivicCode spec.
 5. Queue ADRs for official-source precedence, codifier integration strategy,
    public disclaimer wording, and CivicClerk handoff contract.

@@ -13,9 +13,9 @@ suite-planning lane is CivicCode: the municipal code and ordinance-access
 module that CivicZone, CivicLegal, CivicAccess, CivicComms, and CivicClerk
 handoffs depend on.
 
-This is planning only. No `CivicSuite/civiccode` runtime repo exists yet.
-The next implementation action is a CivicCode Milestone 0 / scaffold
-prep run after the planning document is reviewed.
+This is planning only. `CivicSuite/civiccode` now exists as a scaffold with
+Milestone 0 planning complete; no runtime code has shipped. The next
+implementation action is CivicCode Milestone 1 runtime foundation.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -29,7 +29,7 @@ prior CivicClerk plan remains as historical context in
 | 1 | CivicCore     | Shipping v0.2.0; shared migrations, db base, and LLM abstraction |
 | 2 | CivicRecords AI | Shipping v1.4.0; transferred to CivicSuite org |
 | 3 | CivicClerk    | Shipping v0.1.0; `/staff` workflow UI foundation shipped |
-| 4 | CivicCode     | Next planning lane; no runtime repo yet      |
+| 4 | CivicCode     | Scaffold + Milestone 0 complete; runtime not shipped |
 | 5 | CivicAccess   | Planned                                      |
 
 ## Phase 2 — Land Use & Development
