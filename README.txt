@@ -19,6 +19,8 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 - **civicaccess v0.1.0** - accessibility, plain-language, multilingual, and ADA review support foundation. Ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and accessible public sample UI at /civicaccess. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped. Repo: <https://github.com/CivicSuite/civicaccess>.
 
+- **civicplan v0.1.0** - comprehensive-plan policy lookup and cited planning analysis foundation. Ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI at /civicplan. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are still not shipped. Repo: <https://github.com/CivicSuite/civicplan>.
+
 **Planned, not started:**
 
 - 20+ additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
@@ -41,7 +43,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicAccess v0.1.0 now ships. CivicPlan is the next planned Tier 2 land-use module lane, with additional administrative and resident-service modules following after the foundation modules stabilize.
+CivicPlan v0.1.0 now ships. CivicPermit is the next planned Tier 2 land-use module lane, with additional administrative and resident-service modules following after the foundation modules stabilize.
 
 ## What's in this repo
 
@@ -79,6 +81,9 @@ civicsuite/
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shared platform package. Pinned by every module. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released; staff workflow UI foundation available at `/staff`. |
 | civiccode | <https://github.com/CivicSuite/civiccode> | Module 3, v0.1.0 runtime foundation released; municipal-code lookup, citations, local imports, and records-ready exports. |
+| civiczone | <https://github.com/CivicSuite/civiczone> | Module 6, v0.1.0 runtime foundation released; parcel lookup, zoning rule lookups, cited sample Q&A, planner escalation, and public UI foundation. |
+| civicaccess | <https://github.com/CivicSuite/civicaccess> | Module 5, v0.1.0 runtime foundation released; accessibility review, plain-language rewrite, multilingual variants, records-ready exports, and public UI foundation. |
+| civicplan | <https://github.com/CivicSuite/civicplan> | Module 7, v0.1.0 runtime foundation released; cited plan-policy lookup, consistency support, staff-analysis outlines, records-ready exports, and public UI foundation. |
 
 Future module repos will land under `CivicSuite/` as separate repos.
 
