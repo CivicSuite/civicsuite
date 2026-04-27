@@ -959,16 +959,17 @@ As of 2026-04-27:
 - `civiccontracts` ships as v0.1.0 with runtime foundations for contract registry, clause topic lookup, expiration tracking, renewal visibility helper, public-records export checklist, and accessible public sample UI. Live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, and contract system-of-record integrations are not shipped.
 - `civicboards` ships as v0.1.0 with runtime foundations for board registry, term tracking, vacancy tracking, attendance review, notice/records export checklist, and accessible public sample UI. Live agenda systems, appointment decisions, legal advice, official notice publication, meeting system write-back, live LLM calls, and board system-of-record integrations are not shipped.
 - `civicnotice` ships as v0.1.0 with runtime foundations for notice registry, statutory deadline plans, publication-readiness checklists, channel planning, notice/records export checklist, and accessible public sample UI. Legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, and notice system-of-record integrations are not shipped.
+- `civic311` ships as v0.1.0 with runtime foundations for resident service request intake, deterministic triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and accessible public sample UI. Official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, and 311 system-of-record integrations are not shipped.
 - The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicNotice v0.1.0 completed the immediate build sequence needed for the first public-notice compliance foundation release:
+Civic311 v0.1.0 completed the immediate build sequence needed for the first resident service request foundation release:
 
-1. Keep the CivicNotice shipped baseline aligned with the CivicNotice catalog entry and the released CivicCore/CivicAccess/CivicClerk/CivicProcure/CivicBoards contracts it references.
-2. Preserve CivicNotice boundaries: notice support only, no legal sufficiency decisions, no legal advice, no live LLM calls, no official notice publication, no publication-system write-back, and no notice-system-of-record replacement.
-3. Update the compatibility matrix every time CivicNotice or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, and CivicNotice contracts.
+1. Keep the Civic311 shipped baseline aligned with the Civic311 catalog entry and the released CivicCore/CivicAccess/CivicCode/CivicNotice contracts it references.
+2. Preserve Civic311 boundaries: resident request support only, no official dispatch, no work-order creation, no emergency response, no legal advice, no live LLM calls, no 311 system write-back, and no 311 system-of-record replacement.
+3. Update the compatibility matrix every time Civic311 or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, and Civic311 contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -979,7 +980,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Whether Civic311 should be the next implementation lane after CivicNotice v0.1.0.
+- CivicComms implementation scope and its source-citation requirements now that Civic311 v0.1.0 is shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.

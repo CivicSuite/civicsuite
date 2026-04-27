@@ -30,9 +30,10 @@ Shipping:
 - civiccontracts v0.1.0 - contract repository and renewal visibility foundation. Ships deterministic sample contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklist, and accessible public sample UI at /civiccontracts. Live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, and contract system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civiccontracts>.
 - civicboards v0.1.0 - board and commission administration foundation. Ships deterministic sample board registry, term review plans, vacancy checklists, attendance summaries, notice/records export checklist, and accessible public sample UI at /civicboards. Live agenda systems, appointment decisions, legal advice, official notice publication, meeting system write-back, live LLM calls, and board system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civicboards>.
 - civicnotice v0.1.0 - public notice compliance foundation. Ships deterministic sample notice registry, statutory deadline plans, publication-readiness checklists, channel planning, notice/records export checklist, and accessible public sample UI at /civicnotice. Legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, and notice system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civicnotice>.
+- civic311 v0.1.0 - resident service request foundation. Ships deterministic sample request intake, triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and accessible public sample UI at /civic311. Official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, and 311 system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civic311>.
 
 Planned, not started:
-- 12 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 11 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -53,9 +54,9 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicNotice v0.1.0 now ships. Civic311 is the next planned Tier 3
-resident-service module lane, with additional communications, data-bridge, and
-internal-business modules following after the foundation modules stabilize.
+Civic311 v0.1.0 now ships. CivicComms is the next planned Tier 3
+communications module lane, with data-bridge and internal-business modules
+following after the foundation modules stabilize.
 
 ## What's in this repo
 
@@ -104,6 +105,7 @@ civicsuite/
 | civiccontracts | <https://github.com/CivicSuite/civiccontracts> | Module 12, v0.1.0 runtime foundation released; contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklists, and public UI foundation. |
 | civicboards | <https://github.com/CivicSuite/civicboards> | Module 13, v0.1.0 runtime foundation released; board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and public UI foundation. |
 | civicnotice | <https://github.com/CivicSuite/civicnotice> | Module 14, v0.1.0 runtime foundation released; notice registry, statutory deadlines, publication-readiness checks, channel planning, notice records exports, and public UI foundation. |
+| civic311 | <https://github.com/CivicSuite/civic311> | Module 15, v0.1.0 runtime foundation released; request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and public UI foundation. |
 
 Future module repos will land under CivicSuite/ as separate repos.
 
