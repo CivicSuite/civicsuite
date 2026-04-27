@@ -16,9 +16,10 @@ graph TB
         Procure["civicprocure<br/>v0.1.0<br/>procurement support"]
         Contracts["civiccontracts<br/>v0.1.0<br/>contract repository"]
         Boards["civicboards<br/>v0.1.0<br/>board administration"]
+        Notice["civicnotice<br/>v0.1.0<br/>public notices"]
     end
     subgraph FUTURE["Future modules - planned, not started"]
-        Notice["civicnotice<br/>next planned lane"]
+        Civic311["civic311<br/>next planned lane"]
     end
     SuiteRepo -.documents.-> Core
     SuiteRepo -.documents.-> Records
@@ -34,6 +35,7 @@ graph TB
     SuiteRepo -.governs.-> Contracts
     SuiteRepo -.governs.-> Boards
     SuiteRepo -.governs.-> Notice
+    SuiteRepo -.governs.-> Civic311
     Records -->|"depends on ==0.2.0"| Core
     Clerk -->|"depends on ==0.2.0"| Core
     Code -->|"depends on ==0.2.0"| Core
@@ -46,6 +48,7 @@ graph TB
     Procure -->|"depends on ==0.2.0"| Core
     Contracts -->|"depends on ==0.2.0"| Core
     Boards -->|"depends on ==0.2.0"| Core
+    Notice -->|"depends on ==0.2.0"| Core
     classDef shipping fill:#d4f4dd,stroke:#3a7a4a,stroke-width:2px,color:#000
     classDef governance fill:#e1e1ff,stroke:#5a5aa0,stroke-width:2px,color:#000
     classDef future fill:#fff4e1,stroke:#a08040,stroke-width:1px,stroke-dasharray:5 5,color:#000
@@ -64,4 +67,5 @@ graph TB
     class Procure shipping
     class Contracts shipping
     class Boards shipping
-    class Notice future
+    class Notice shipping
+    class Civic311 future

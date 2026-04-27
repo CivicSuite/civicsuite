@@ -71,6 +71,7 @@ Current canonical repositories:
 - `CivicSuite/civicprocure` - procurement drafting and award-packet support product.
 - `CivicSuite/civiccontracts` - contract repository and renewal visibility support product.
 - `CivicSuite/civicboards` - board and commission administration support product.
+- `CivicSuite/civicnotice` - public notice compliance support product.
 
 Future module repositories should be created under `CivicSuite/` from the start.
 
@@ -336,7 +337,7 @@ Purpose: non-Council boards and commissions: members, terms, vacancies, attendan
 
 Owner: City Clerk / Communications  
 Depends on: CivicCore, CivicAccess, CivicClerk, CivicProcure, CivicBoards  
-Status: planned  
+Status: shipping v0.1.0 foundation  
 Purpose: compliance workflow for public hearings, legal notices, bid notices, vacancies, and statutory publication deadlines.
 
 ### Tier 4 - Operations
@@ -957,16 +958,17 @@ As of 2026-04-27:
 - `civicprocure` ships as v0.1.0 with runtime foundations for RFP drafting, proposal comparison, exception extraction, scoring summary helper, award-packet checklist, and accessible public sample UI. Live vendor portals, official vendor evaluation decisions, legal advice, live LLM calls, e-procurement submission portals, and procurement system-of-record integrations are not shipped.
 - `civiccontracts` ships as v0.1.0 with runtime foundations for contract registry, clause topic lookup, expiration tracking, renewal visibility helper, public-records export checklist, and accessible public sample UI. Live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, and contract system-of-record integrations are not shipped.
 - `civicboards` ships as v0.1.0 with runtime foundations for board registry, term tracking, vacancy tracking, attendance review, notice/records export checklist, and accessible public sample UI. Live agenda systems, appointment decisions, legal advice, official notice publication, meeting system write-back, live LLM calls, and board system-of-record integrations are not shipped.
+- `civicnotice` ships as v0.1.0 with runtime foundations for notice registry, statutory deadline plans, publication-readiness checklists, channel planning, notice/records export checklist, and accessible public sample UI. Legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, and notice system-of-record integrations are not shipped.
 - The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicBoards v0.1.0 completed the immediate build sequence needed for the first board-administration foundation release:
+CivicNotice v0.1.0 completed the immediate build sequence needed for the first public-notice compliance foundation release:
 
-1. Keep the CivicBoards shipped baseline aligned with the CivicBoards catalog entry and the released CivicCore/CivicClerk contracts it references.
-2. Preserve CivicBoards boundaries: board administration support only, no appointment decisions, no member removal decisions, no official notice publication, no legal advice, no live agenda systems, no live LLM calls, and no board-system-of-record replacement.
-3. Update the compatibility matrix every time CivicBoards or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, and CivicBoards contracts.
+1. Keep the CivicNotice shipped baseline aligned with the CivicNotice catalog entry and the released CivicCore/CivicAccess/CivicClerk/CivicProcure/CivicBoards contracts it references.
+2. Preserve CivicNotice boundaries: notice support only, no legal sufficiency decisions, no legal advice, no live LLM calls, no official notice publication, no publication-system write-back, and no notice-system-of-record replacement.
+3. Update the compatibility matrix every time CivicNotice or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, and CivicNotice contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -977,7 +979,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Whether CivicNotice should be the next implementation lane after CivicBoards v0.1.0.
+- Whether Civic311 should be the next implementation lane after CivicNotice v0.1.0.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
