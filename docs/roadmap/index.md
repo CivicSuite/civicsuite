@@ -6,7 +6,7 @@ condensed table view follows.
 
 ## Current next step
 
-**Current module lane: CivicGrants shipped v0.1.0.** CivicRecords AI is shipping
+**Current module lane: CivicProcure shipped v0.1.0.** CivicRecords AI is shipping
 at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
 with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
 at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
@@ -23,11 +23,14 @@ UI foundation. CivicInspect is shipping at v0.1.0 with repeat-case lookup,
 report draft support, notice draft support, records-ready exports, and public
 UI foundation. CivicGrants is shipping at v0.1.0 with opportunity triage,
 eligibility-factor matching, application outlines, compliance calendars,
-audit-ready exports, and public UI foundation.
+audit-ready exports, and public UI foundation. CivicProcure is shipping at
+v0.1.0 with RFP drafting, proposal comparison, exception extraction, scoring
+summary helper, award-packet checklist, and accessible public UI foundation.
 
-CivicGrants is no longer planned-only. The next suite implementation lane can
-plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode, and
-CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, and CivicGrants release contracts.
+CivicProcure is no longer planned-only. The next suite implementation lane can
+plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode,
+CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants,
+and CivicProcure release contracts.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -58,8 +61,8 @@ prior CivicClerk plan remains as historical context in
 | #  | Module                | Status       |
 |----|-----------------------|--------------|
 | 10 | CivicGrants           | Shipping v0.1.0 |
-| 11 | CivicProcure Assist   | Planned next |
-| 12 | CivicContracts        | Planned      |
+| 11 | CivicProcure Assist   | Shipping v0.1.0 |
+| 12 | CivicContracts        | Planned next |
 | 13 | CivicBoards           | Planned      |
 | 14 | CivicNotice           | Planned      |
 | 15 | Civic311              | Planned      |

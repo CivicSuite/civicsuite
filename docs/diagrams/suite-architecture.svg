@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
   <title id="title">CivicSuite suite architecture</title>
-  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, and CivicGrants. Each module depends on CivicCore 0.2.0. Future modules begin with CivicProcure Assist.</desc>
+  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure. Each module depends on CivicCore 0.2.0. Future modules begin with CivicContracts.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #1f2328; }
     .label { font-size: 21px; font-weight: 700; }
@@ -65,10 +65,10 @@
   <text x="860" y="570" text-anchor="middle" class="small">v0.1.0 shipping</text>
   <text x="860" y="593" text-anchor="middle" class="tiny">plan policy support</text>
 
-  <rect x="440" y="660" width="320" height="85" class="box ship"/>
-  <text x="600" y="692" text-anchor="middle" class="label">civicpermit</text>
-  <text x="600" y="718" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="600" y="739" text-anchor="middle" class="tiny">permit intake support</text>
+  <rect x="330" y="655" width="240" height="85" class="box ship"/>
+  <text x="450" y="687" text-anchor="middle" class="label">civicpermit</text>
+  <text x="450" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="450" y="734" text-anchor="middle" class="tiny">permit intake support</text>
 
   <path d="M390 205 L450 205" class="line dash"/>
   <text x="420" y="193" text-anchor="middle" class="edge">documents</text>
@@ -82,19 +82,24 @@
   <path d="M210 655 C140 520 310 310 565 265" class="line"/>
   <text x="600" y="315" text-anchor="middle" class="edge">all shipping modules depend on civiccore==0.2.0</text>
 
-  <path d="M600 610 L600 660" class="line"/>
-  <text x="670" y="645" class="edge">depends on civiccore==0.2.0</text>
+  <path d="M600 610 L450 655" class="line"/>
+  <text x="520" y="645" class="edge">depends on civiccore==0.2.0</text>
 
-  <rect x="790" y="655" width="260" height="85" class="box ship"/>
-  <text x="920" y="687" text-anchor="middle" class="label">civicinspect</text>
-  <text x="920" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="920" y="734" text-anchor="middle" class="tiny">inspection support</text>
+  <rect x="600" y="655" width="240" height="85" class="box ship"/>
+  <text x="720" y="687" text-anchor="middle" class="label">civicinspect</text>
+  <text x="720" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="720" y="734" text-anchor="middle" class="tiny">inspection support</text>
 
-  <rect x="80" y="655" width="260" height="85" class="box ship"/>
-  <text x="210" y="687" text-anchor="middle" class="label">civicgrants</text>
-  <text x="210" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="210" y="734" text-anchor="middle" class="tiny">grant support</text>
+  <rect x="60" y="655" width="240" height="85" class="box ship"/>
+  <text x="180" y="687" text-anchor="middle" class="label">civicgrants</text>
+  <text x="180" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="180" y="734" text-anchor="middle" class="tiny">grant support</text>
 
-  <rect x="835" y="760" width="250" height="45" class="box future"/>
-  <text x="960" y="788" text-anchor="middle" class="small">CivicProcure next planned lane</text>
+  <rect x="870" y="655" width="240" height="85" class="box ship"/>
+  <text x="990" y="687" text-anchor="middle" class="label">civicprocure</text>
+  <text x="990" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="990" y="734" text-anchor="middle" class="tiny">procurement support</text>
+
+  <rect x="870" y="760" width="240" height="45" class="box future"/>
+  <text x="990" y="788" text-anchor="middle" class="small">CivicContracts next planned lane</text>
 </svg>
