@@ -11,9 +11,10 @@ graph TB
         Access["civicaccess<br/>v0.1.0<br/>accessibility / language"]
         Plan["civicplan<br/>v0.1.0<br/>plan policy support"]
         Permit["civicpermit<br/>v0.1.0<br/>permit intake support"]
+        Inspect["civicinspect<br/>v0.1.0<br/>inspection support"]
     end
     subgraph FUTURE["Future modules - planned, not started"]
-        Inspect["civicinspect<br/>next planned lane"]
+        Grants["civicgrants<br/>next planned lane"]
     end
     SuiteRepo -.documents.-> Core
     SuiteRepo -.documents.-> Records
@@ -24,6 +25,7 @@ graph TB
     SuiteRepo -.governs.-> Plan
     SuiteRepo -.governs.-> Permit
     SuiteRepo -.governs.-> Inspect
+    SuiteRepo -.governs.-> Grants
     SuiteRepo -.governs.-> Permit
     Records -->|"depends on ==0.2.0"| Core
     Clerk -->|"depends on ==0.2.0"| Core
@@ -32,6 +34,7 @@ graph TB
     Access -->|"depends on ==0.2.0"| Core
     Plan -->|"depends on ==0.2.0"| Core
     Permit -->|"depends on ==0.2.0"| Core
+    Inspect -->|"depends on ==0.2.0"| Core
     classDef shipping fill:#d4f4dd,stroke:#3a7a4a,stroke-width:2px,color:#000
     classDef governance fill:#e1e1ff,stroke:#5a5aa0,stroke-width:2px,color:#000
     classDef future fill:#fff4e1,stroke:#a08040,stroke-width:1px,stroke-dasharray:5 5,color:#000
@@ -45,4 +48,5 @@ graph TB
     class Access shipping
     class Plan shipping
     class Permit shipping
-    class Inspect future
+    class Inspect shipping
+    class Grants future

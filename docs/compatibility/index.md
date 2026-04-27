@@ -15,6 +15,7 @@ record.
 | civicaccess     | CivicSuite/civicaccess            | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, and accessible public UI foundation. |
 | civicplan       | CivicSuite/civicplan              | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: cited plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public UI foundation. |
 | civicpermit     | CivicSuite/civicpermit            | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and accessible public UI foundation. |
+| civicinspect    | CivicSuite/civicinspect           | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and accessible public UI foundation. |
 
 ## Reading a row
 
@@ -31,6 +32,7 @@ release produces undefined behavior.
 | 2026-04-27 | 0.2.0     | civicaccess 0.1.0      | green    | civicaccess v0.1.0 release at ee9a634; 10 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicplan 0.1.0        | green    | civicplan v0.1.0 release at 4e45a98; 10 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicpermit 0.1.0      | green    | civicpermit v0.1.0 release at 7fc8ec5; 10 tests passed; verify-release.sh PASSED; GitHub release assets published |
+| 2026-04-27 | 0.2.0     | civicinspect 0.1.0     | green    | civicinspect v0.1.0 release at 7760850; 10 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicclerk 0.1.0       | green    | civicclerk release workflow run 24975592931; CivicClerk v0.1.0 published with civiccore 0.2.0 wheel |
 | 2026-04-27 | 0.2.0     | civicclerk 0.1.0 + staff UI foundation | green | civicclerk PR #14 merged; 358 tests passed; browser QA verified `/staff` desktop/mobile states |
 | 2026-04-26 | 0.2.0     | civicrecords-ai 1.4.0  | green    | docs/architecture-graphics-pass merged across all 3 repos; ruff + verify-release.sh PASSED on records-ai |

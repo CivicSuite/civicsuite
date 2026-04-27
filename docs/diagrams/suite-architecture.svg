@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
   <title id="title">CivicSuite suite architecture</title>
-  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, and CivicPermit. Each module depends on CivicCore 0.2.0. Future modules begin with CivicInspect.</desc>
+  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, and CivicInspect. Each module depends on CivicCore 0.2.0. Future modules begin with CivicGrants.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #1f2328; }
     .label { font-size: 21px; font-weight: 700; }
@@ -84,7 +84,12 @@
   <path d="M600 610 L600 660" class="line"/>
   <text x="670" y="645" class="edge">depends on civiccore==0.2.0</text>
 
-  <rect x="820" y="665" width="260" height="75" class="box future"/>
-  <text x="950" y="697" text-anchor="middle" class="label">future modules</text>
-  <text x="950" y="723" text-anchor="middle" class="small">CivicInspect next planned lane</text>
+  <rect x="790" y="655" width="260" height="85" class="box ship"/>
+  <text x="920" y="687" text-anchor="middle" class="label">civicinspect</text>
+  <text x="920" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="920" y="734" text-anchor="middle" class="tiny">inspection support</text>
+
+  <rect x="80" y="675" width="260" height="70" class="box future"/>
+  <text x="210" y="703" text-anchor="middle" class="label">future modules</text>
+  <text x="210" y="728" text-anchor="middle" class="small">CivicGrants next planned lane</text>
 </svg>
