@@ -16,7 +16,7 @@ A glossary at the end defines every technical term used.
 
 CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
 
-Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
+Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, and CivicContracts have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
 
 ### What's available today (as of 2026-04-27)
 
@@ -31,10 +31,11 @@ Today, multiple modules are shipping at different maturity levels: CivicRecords 
 - **civicinspect v0.1.0** — a runtime-foundation release for inspection support. It ships deterministic sample repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and a public sample UI at `/civicinspect`. It still does not ship official findings, citations, fines, notices, inspection scheduling, legal advice, live photo analysis, live LLM calls, or system-of-record integrations. Repo: <https://github.com/CivicSuite/civicinspect>.
 - **civicgrants v0.1.0** — a runtime-foundation release for grant opportunity and compliance support. It ships deterministic sample opportunity triage, eligibility-factor matching, application outline helper, compliance calendar helper, audit-ready export checklist, and a public sample UI at `/civicgrants`. It still does not ship live funder feeds, official eligibility decisions, legal advice, live LLM calls, submission portals, or grant system-of-record integrations. Repo: <https://github.com/CivicSuite/civicgrants>.
 - **civicprocure v0.1.0** — a runtime-foundation release for procurement drafting and award-packet support. It ships deterministic sample RFP drafting, proposal comparison, exception extraction, scoring summary helper, award-packet checklist, and a public sample UI at `/civicprocure`. It still does not ship live vendor portals, official vendor evaluation decisions, legal advice, live LLM calls, e-procurement submission portals, or procurement system-of-record integrations. Repo: <https://github.com/CivicSuite/civicprocure>.
+- **civiccontracts v0.1.0** - a runtime-foundation release for contract repository and renewal visibility support. It ships deterministic sample contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklist, and a public sample UI at `/civiccontracts`. It still does not ship live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, or contract system-of-record integrations. Repo: <https://github.com/CivicSuite/civiccontracts>.
 
 ### What's planned but not started
 
-- Fifteen additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
+- Fourteen additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
 If you don't see a module on this list with a version number, **it does not exist as code yet**. Specs are not products.
 
@@ -85,6 +86,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civicinspect | <https://github.com/CivicSuite/civicinspect> | Shipping v0.1.0 runtime foundation for repeat-case lookup, report drafts, notice drafts, and public UI foundation. |
 | civicgrants | <https://github.com/CivicSuite/civicgrants> | Shipping v0.1.0 runtime foundation for opportunity triage, eligibility matching, compliance calendars, and public UI foundation. |
 | civicprocure | <https://github.com/CivicSuite/civicprocure> | Shipping v0.1.0 runtime foundation for RFP drafting, proposal comparison, exception extraction, scoring summaries, award-packet checklists, and public UI foundation. |
+| civiccontracts | <https://github.com/CivicSuite/civiccontracts> | Shipping v0.1.0 runtime foundation for contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, and public UI foundation. |
 | future modules | not created yet | Specs only. |
 
 ### Dependency direction
