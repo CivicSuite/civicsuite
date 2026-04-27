@@ -1,8 +1,8 @@
 # CivicCode Next Module Plan
 
-Status: Active planning baseline  
+Status: v0.1.0 shipped; historical planning baseline retained
 Date: 2026-04-27  
-Applies to: `CivicSuite/civiccode` scaffold and post-Milestone-0 planning
+Applies to: `CivicSuite/civiccode` v0.1.0 and follow-on planning
 
 ## Why CivicCode Next
 
@@ -24,19 +24,22 @@ but they are never authoritative legal advice.
 
 ## Current Truth
 
-- `CivicSuite/civiccode` exists as a scaffold-only repository.
-- CivicCode Milestone 0 planning is complete.
-- No CivicCode runtime code has shipped.
+- `CivicSuite/civiccode` ships v0.1.0 as a runtime-foundation release.
+- CivicCode v0.1.0 includes source registry, section/version lifecycle,
+  search/permalinks, deterministic citations, citation-grounded Q&A, staff
+  notes, plain-language summaries, CivicClerk handoff intake, resident public
+  lookup pages, local import connectors, and records-ready exports.
+- CivicCode still does not ship legal advice, live LLM calls, live codifier
+  sync, CivicAccess runtime integration, or automatic ordinance codification.
 - The authoritative requirements live in `docs/CivicSuiteUnifiedSpec.md`
   section 11 and `specs/01_catalog.md` under "CivicCode - Municipal Code &
   Ordinance Access."
-- CivicClerk v0.1.0 already defines ordinance/resolution handoff concepts,
-  but CivicCode must decide the actual receiving contract before runtime
-  implementation hardens.
+- CivicClerk v0.1.0 already defines ordinance/resolution handoff concepts, and
+  CivicCode v0.1.0 now has a receiving intake foundation for those events.
 
 ## MVP Scope
 
-The first CivicCode MVP should be narrow, useful, and legally cautious:
+The CivicCode v0.1.0 MVP is narrow, useful, and legally cautious:
 
 1. Municipal code import registry with source URL/file metadata.
 2. Code title/chapter/section/subsection model with version dates.
@@ -47,7 +50,8 @@ The first CivicCode MVP should be narrow, useful, and legally cautious:
 7. Staff-only interpretation notes.
 8. Ordinance/adoption-event intake contract from CivicClerk.
 9. Public code lookup page with source citations and staff-contact routing.
-10. Audit log entries for imports, section changes, summaries, and answers.
+10. Audit-log seams and visible audit events where the v0.1.0 in-memory
+    foundation already exposes them.
 
 ## Non-Goals For MVP
 
@@ -100,12 +104,12 @@ CivicCode should follow the same separate-module pattern as CivicClerk:
 - `civiccode.code_questions`
 - `civiccode.ordinance_events`
 
-The actual table list belongs in the future CivicCode Milestone 0
-reconciliation document and must be tested before runtime code lands.
+The implemented table list lives in the CivicCode repo's tested SQLAlchemy
+metadata and migration chain.
 
 ## First Sprint Sequence
 
-1. Keep `CivicSuite/civiccode` scaffold truth current until runtime lands.
+1. Keep `CivicSuite/civiccode` shipped truth current after v0.1.0.
 2. Maintain professional repo docs, Apache 2.0 code license, CC BY 4.0 docs
    license, issue templates, PR template, support/security/contributing docs,
    landing page, user manual, and seed discussion posts.
@@ -115,7 +119,8 @@ reconciliation document and must be tested before runtime code lands.
    suite ADRs, and the catalog CivicCode spec.
 5. Queue ADRs for official-source precedence, codifier integration strategy,
    public disclaimer wording, and CivicClerk handoff contract.
-6. Build runtime foundation only after Milestone 0 is reviewed.
+6. Build runtime foundation only after Milestone 0 is reviewed. (Complete as of
+   v0.1.0.)
 
 ## ADRs Needed Before Runtime
 

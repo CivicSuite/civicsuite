@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="CivicSuite is an open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Runs on the city's own hardware â€” no cloud, no telemetry, no per-seat pricing.">
-<title>CivicSuite â€” open-source municipal operations suite</title>
+<meta name="description" content="CivicSuite is an open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Runs on the city's own hardware &mdash; no cloud, no telemetry, no per-seat pricing.">
+<title>CivicSuite &mdash; open-source municipal operations suite</title>
 <style>
   :root {
     --text: #1f2328;
@@ -225,10 +225,10 @@
 <header class="site">
   <p class="eyebrow">CivicSuite</p>
   <h1>An open-source municipal operations suite that runs on the city's own hardware.</h1>
-  <p class="lede">An open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Works on the city's own hardware â€” no cloud, no telemetry, no per-seat pricing.</p>
+  <p class="lede">An open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Works on the city's own hardware &mdash; no cloud, no telemetry, no per-seat pricing.</p>
 
   <ul class="pillars">
-    <li><strong>Clerk-first</strong><span>Records, meetings, and code adoption â€” where the work actually starts.</span></li>
+    <li><strong>Clerk-first</strong><span>Records, meetings, and code adoption &mdash; where the work actually starts.</span></li>
     <li><strong>Modular install</strong><span>Cities install one module at a time, on their own schedule.</span></li>
     <li><strong>Air-gappable</strong><span>Local inference with Gemma 4 via Ollama. Zero outbound calls.</span></li>
   </ul>
@@ -248,7 +248,7 @@
 
 <section>
   <h2>What's here today</h2>
-  <p>The suite is built one module at a time. Module 1 ships, Module 2 is the foundation refactor, and the next two modules exist as buildable specs â€” not vaporware. The catalog covers 26 modules across 7 tiers; only what's listed below has work in progress.</p>
+  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, and CivicClerk plus CivicCode now have v0.1.0 runtime-foundation releases. The catalog covers 26 modules across 7 tiers; only what's listed below has shipped code or active planning context.</p>
 
   <ul class="module-status">
     <li>
@@ -259,7 +259,7 @@
     <li>
       <span class="name">civiccore</span>
       <span class="badge badge-shipping">Shipping v0.2.0</span>
-      <span class="desc">Shared platform package. <strong>Shipping today:</strong> migration runner + 2 baseline migrations (<code>civiccore.migrations</code>), shared SQLAlchemy <code>Base</code> (<code>civiccore.db</code>), and the LLM abstraction (<code>civiccore.llm</code> â€” providers, templates, registry, context utilities, structured output). <strong>Future / planned extraction (placeholder packages only â€” empty <code>__init__.py</code>, no implementation):</strong> auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 LLM module shipped 2026-04-25. Pinned by every consuming module â€” see the <a href="../docs/compatibility/index.md">compatibility matrix</a>.</span>
+      <span class="desc">Shared platform package. <strong>Shipping today:</strong> migration runner + 2 baseline migrations (<code>civiccore.migrations</code>), shared SQLAlchemy <code>Base</code> (<code>civiccore.db</code>), and the LLM abstraction (<code>civiccore.llm</code> &mdash; providers, templates, registry, context utilities, structured output). <strong>Future / planned extraction (placeholder packages only &mdash; empty <code>__init__.py</code>, no implementation):</strong> auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 LLM module shipped 2026-04-25. Pinned by every consuming module &mdash; see the <a href="../docs/compatibility/index.md">compatibility matrix</a>.</span>
     </li>
     <li>
       <span class="name">civicclerk</span>
@@ -268,13 +268,13 @@
     </li>
     <li>
       <span class="name">civiccode</span>
-      <span class="badge badge-spec">Next planning lane</span>
-      <span class="desc">Municipal code and ordinance access. The <a href="https://github.com/CivicSuite/civiccode">CivicSuite/civiccode</a> repo exists as a scaffold with Milestone 0 planning complete; no runtime code has shipped. Planning comes before CivicZone so zoning answers can cite authoritative code sections.</span>
+      <span class="badge badge-shipping">Shipping v0.1.0</span>
+      <span class="desc">Municipal code and ordinance access. The <a href="https://github.com/CivicSuite/civiccode">CivicSuite/civiccode</a> repo ships a v0.1.0 runtime foundation with source registry, section/version lifecycle, search, citations, Q&amp;A, staff notes, summaries, local imports, public lookup, and records-ready exports. Legal advice, live LLM calls, live codifier sync, and automatic ordinance codification are still not shipped.</span>
     </li>
     <li>
       <span class="name">civiczone</span>
       <span class="badge badge-spec">Spec drafted</span>
-      <span class="desc">Zoning code, parcel-aware lookups, planner workflows. Tier 2 reference module â€” demonstrates how downstream modules inherit from the platform.</span>
+      <span class="desc">Zoning code, parcel-aware lookups, planner workflows. Tier 2 reference module &mdash; demonstrates how downstream modules inherit from the platform.</span>
     </li>
   </ul>
 </section>
@@ -282,12 +282,12 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0 and civicclerk v0.1.0. CivicZone is planned." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, and civiccode v0.1.0. CivicZone is planned." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
-  <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime â€” just well-understood components glued together carefully.</p>
+  <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
   <p>The runtime is FastAPI on Uvicorn for the API layer, PostgreSQL 17 with the pgvector extension for both relational data and embeddings, Redis 7.2 (pinned below 8.0 to stay BSD-licensed) for cache and message queue, Celery with Celery Beat for background workers and scheduled jobs, and Ollama serving Gemma 4 for local LLM inference. The frontend is React behind nginx. Embeddings come from <code>nomic-embed-text</code>, also via Ollama.</p>
-  <p>Everything runs on the city's own server â€” single workstation for the smallest cities, a small on-prem box for most, and a fully air-gapped deployment for sensitive modules. The model layer is abstracted; Gemma 4 is the default but the registry pattern allows swapping in any model that fits the city's hardware budget.</p>
+  <p>Everything runs on the city's own server &mdash; single workstation for the smallest cities, a small on-prem box for most, and a fully air-gapped deployment for sensitive modules. The model layer is abstracted; Gemma 4 is the default but the registry pattern allows swapping in any model that fits the city's hardware budget.</p>
   <p>CivicCore is the package that holds all of this shared plumbing. Modules import from CivicCore; CivicCore never imports from modules. One-way dependency, enforced by a CI lint rule.</p>
 </section>
 
@@ -310,23 +310,24 @@
     </tbody>
   </table>
   <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
-  <p>The next planning lane is <code>civiccode</code>. Its repo now exists as a scaffold with Milestone 0 planning complete and no runtime code shipped. CivicZone remains the first major Tier 2 land-use module, but CivicCode is the Tier 1 municipal-code dependency that should be planned first. See the <a href="roadmap/civiccode-next-module-plan.md">CivicCode next-module plan</a>.</p>
+  <p><code>civiccode</code> now ships v0.1.0. CivicZone remains the first major Tier 2 land-use module, and it can now plan against a real CivicCode municipal-code contract instead of a scaffold-only placeholder. See the <a href="roadmap/civiccode-next-module-plan.md">CivicCode next-module plan</a>.</p>
 </section>
 
 <section>
   <h2>What CivicSuite is not</h2>
-  <p>The suite deliberately declines several markets. It is not a first-wave ERP replacement, not utility billing, not a permitting system of record, not CAD/RMS or a courts system, and not a cloud service. Those are markets where established incumbents do the work well enough that an open-source challenger would burn years of effort with no clear win for cities. The catalog explains the boundary in detail in sections 16â€“20.</p>
+  <p>The suite deliberately declines several markets. It is not a first-wave ERP replacement, not utility billing, not a permitting system of record, not CAD/RMS or a courts system, and not a cloud service. Those are markets where established incumbents do the work well enough that an open-source challenger would burn years of effort with no clear win for cities. The catalog explains the boundary in detail in sections 16&ndash;20.</p>
 </section>
 
 <section>
   <h2>Repos</h2>
   <ul>
-    <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> â€” umbrella repo (this site, charter, specs, ADRs, governance)</li>
-    <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> â€” shared platform package, shipping v0.2.0</li>
-    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> â€” Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
-    <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> â€” civiccoreâ†”module version pairings</li>
+    <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> &mdash; umbrella repo (this site, charter, specs, ADRs, governance)</li>
+    <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> &mdash; shared platform package, shipping v0.2.0</li>
+    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
+    <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.0</li>
+    <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
   </ul>
-  <p><code>civicclerk</code> now has a v0.1.0 runtime-foundation release under the same org, including the <code>/staff</code> workflow UI foundation. Future modules (<code>civiczone</code>, <code>civiccode</code>, ...) will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code> and <code>civiccode</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules (<code>civiczone</code>, ...) will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 
 <footer>

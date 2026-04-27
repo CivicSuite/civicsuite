@@ -6,16 +6,16 @@ condensed table view follows.
 
 ## Current next step
 
-**Next module lane: CivicCode planning.** CivicRecords AI is shipping at
-v1.4.0, civiccore is shipping at v0.2.0, and CivicClerk is shipping at
-v0.1.0 with a browser-visible `/staff` workflow foundation. The next
-suite-planning lane is CivicCode: the municipal code and ordinance-access
-module that CivicZone, CivicLegal, CivicAccess, CivicComms, and CivicClerk
-handoffs depend on.
+**Current module lane: CivicCode shipped v0.1.0.** CivicRecords AI is shipping
+at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
+with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
+at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
+CivicAccess, CivicComms, and CivicClerk handoffs depend on.
 
-This is planning only. `CivicSuite/civiccode` now exists as a scaffold with
-Milestone 0 planning complete; no runtime code has shipped. The next
-implementation action is CivicCode Milestone 1 runtime foundation.
+CivicCode is no longer scaffold-only. The next suite implementation lane can
+plan against CivicCode v0.1.0's source registry, section/version lifecycle,
+search/permalink, citation, Q&A, local import, public lookup, and export
+contracts.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -29,7 +29,7 @@ prior CivicClerk plan remains as historical context in
 | 1 | CivicCore     | Shipping v0.2.0; shared migrations, db base, and LLM abstraction |
 | 2 | CivicRecords AI | Shipping v1.4.0; transferred to CivicSuite org |
 | 3 | CivicClerk    | Shipping v0.1.0; `/staff` workflow UI foundation shipped |
-| 4 | CivicCode     | Scaffold + Milestone 0 complete; runtime not shipped |
+| 4 | CivicCode     | Shipping v0.1.0; municipal-code lookup, citations, local imports, and records-ready exports |
 | 5 | CivicAccess   | Planned                                      |
 
 ## Phase 2 — Land Use & Development
