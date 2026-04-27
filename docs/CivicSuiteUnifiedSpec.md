@@ -243,7 +243,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: scaffolded, runtime not implemented  
+Status: shipping v0.1.0 foundation  
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -259,7 +259,7 @@ Purpose: municipal code as a first-class product. Residents and staff ask what t
 
 Owner: Clerk / Communications / IT / ADA Coordinator  
 Depends on: CivicCore  
-Status: planned  
+Status: shipping v0.1.0 foundation
 Purpose: accessible forms, accessible publishing workflows, multilingual and plain-language rewrites, ADA Title II review, records-ready exports, and accessibility support reused by every module.
 
 ### Tier 2 - Land Use & Development
