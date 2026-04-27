@@ -17,6 +17,8 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 - **civiczone v0.1.0** - parcel-aware zoning and land-use Q&A foundation. Ships canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, and an accessible public sample UI at /civiczone. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are still not shipped. Repo: <https://github.com/CivicSuite/civiczone>.
 
+- **civicaccess v0.1.0** - accessibility, plain-language, multilingual, and ADA review support foundation. Ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and accessible public sample UI at /civicaccess. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped. Repo: <https://github.com/CivicSuite/civicaccess>.
+
 **Planned, not started:**
 
 - 20+ additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
@@ -39,7 +41,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicZone v0.1.0 now ships. CivicAccess is the next planned Clerk Core module lane, with CivicPlan and other Tier 2 land-use modules following after the foundation modules stabilize.
+CivicAccess v0.1.0 now ships. CivicPlan is the next planned Tier 2 land-use module lane, with additional administrative and resident-service modules following after the foundation modules stabilize.
 
 ## What's in this repo
 

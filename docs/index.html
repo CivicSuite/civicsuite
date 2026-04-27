@@ -32,6 +32,19 @@
     margin: 0 auto;
     padding: 56px 24px 80px;
   }
+  .skip-link {
+    position: absolute;
+    left: 16px;
+    top: -48px;
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 4px;
+    z-index: 10;
+  }
+  .skip-link:focus {
+    top: 16px;
+  }
   header.site {
     border-bottom: 1px solid var(--rule);
     padding-bottom: 32px;
@@ -220,6 +233,7 @@
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to main content</a>
 <div class="container">
 
 <header class="site">
@@ -246,6 +260,7 @@
   </nav>
 </header>
 
+<main id="main">
 <section>
   <h2>What's here today</h2>
   <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, and CivicClerk plus CivicCode now have v0.1.0 runtime-foundation releases. The catalog covers 26 modules across 7 tiers; only what's listed below has shipped code or active planning context.</p>
@@ -276,13 +291,18 @@
       <span class="badge badge-shipping">Shipping v0.1.0</span>
       <span class="desc">Parcel-aware zoning and land-use Q&amp;A. The <a href="https://github.com/CivicSuite/civiczone">CivicSuite/civiczone</a> repo ships a v0.1.0 foundation with canonical zoning schema, parcel and rule lookup samples, citation-grounded sample Q&amp;A, planner escalation, staff-context samples, and an accessible public sample UI at <code>/civiczone</code>. Live GIS, live LLM calls, planner review queues, official determinations, and legal advice are still not shipped.</span>
     </li>
+    <li>
+      <span class="name">civicaccess</span>
+      <span class="badge badge-shipping">Shipping v0.1.0</span>
+      <span class="desc">Accessibility, plain-language, multilingual, and ADA review support. CivicAccess v0.1.0 ships in the <a href="https://github.com/CivicSuite/civicaccess">CivicSuite/civicaccess</a> repo with sample accessibility review, plain-language rewrite, multilingual variants, records-ready export checklist, and an accessible public sample UI at <code>/civicaccess</code>. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped.</span>
+    </li>
   </ul>
 </section>
 
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, and civiczone v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, civiczone v0.1.0, and civicaccess v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -310,7 +330,7 @@
     </tbody>
   </table>
   <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
-  <p><code>civiczone</code> now ships v0.1.0. CivicAccess is the next planned Clerk Core module lane, with CivicPlan and other Tier 2 land-use modules following after the foundation modules stabilize.</p>
+  <p><code>civicaccess</code> now ships v0.1.0. CivicPlan is the next planned Tier 2 land-use module lane, with additional administrative and resident-service modules following after the foundation modules stabilize.</p>
 </section>
 
 <section>
@@ -326,10 +346,12 @@
     <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
     <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.0</li>
+    <li><a href="https://github.com/CivicSuite/civicaccess"><code>github.com/CivicSuite/civicaccess</code></a> &mdash; Module 5, shipping v0.1.0</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
   </ul>
-  <p><code>civicclerk</code>, <code>civiccode</code>, and <code>civiczone</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, and <code>civicaccess</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
+</main>
 
 <footer>
   <p><strong>License.</strong> Code is Apache License 2.0. Documentation is CC BY 4.0. Optional prompt libraries (when published as separate repos) are CC BY-SA 4.0.</p>
