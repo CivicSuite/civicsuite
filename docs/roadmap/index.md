@@ -6,7 +6,7 @@ condensed table view follows.
 
 ## Current next step
 
-**Current module lane: CivicPermit shipped v0.1.0.** CivicRecords AI is shipping
+**Current module lane: CivicInspect shipped v0.1.0.** CivicRecords AI is shipping
 at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
 with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
 at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
@@ -19,11 +19,13 @@ shipping at v0.1.0 with cited plan-policy lookup, policy-consistency support,
 staff-analysis outlines, records-ready exports, and public UI foundation.
 CivicPermit is shipping at v0.1.0 with permit requirement lookup,
 intake-readiness review, submittal outlines, records-ready exports, and public
+UI foundation. CivicInspect is shipping at v0.1.0 with repeat-case lookup,
+report draft support, notice draft support, records-ready exports, and public
 UI foundation.
 
-CivicPermit is no longer planned-only. The next suite implementation lane can
+CivicInspect is no longer planned-only. The next suite implementation lane can
 plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode, and
-CivicZone, CivicAccess, CivicPlan, and CivicPermit release contracts.
+CivicZone, CivicAccess, CivicPlan, CivicPermit, and CivicInspect release contracts.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -47,20 +49,20 @@ prior CivicClerk plan remains as historical context in
 | 6 | CivicZone            | Shipping v0.1.0 |
 | 7 | CivicPlan            | Shipping v0.1.0 |
 | 8 | CivicPermit Assist   | Shipping v0.1.0 |
-| 9 | CivicInspect         | Planned next    |
+| 9 | CivicInspect         | Shipping v0.1.0 |
 
 ## Phase 3 — Administrative & Resident Services
 
-| #  | Module                |
-|----|-----------------------|
-| 10 | CivicGrants           |
-| 11 | CivicProcure Assist   |
-| 12 | CivicContracts        |
-| 13 | CivicBoards           |
-| 14 | CivicNotice           |
-| 15 | Civic311              |
-| 16 | CivicComms            |
-| 17 | CivicData Bridge      |
+| #  | Module                | Status       |
+|----|-----------------------|--------------|
+| 10 | CivicGrants           | Planned next |
+| 11 | CivicProcure Assist   | Planned      |
+| 12 | CivicContracts        | Planned      |
+| 13 | CivicBoards           | Planned      |
+| 14 | CivicNotice           | Planned      |
+| 15 | Civic311              | Planned      |
+| 16 | CivicComms            | Planned      |
+| 17 | CivicData Bridge      | Planned      |
 
 ## Phase 4 — Internal Business & Specialized
 
