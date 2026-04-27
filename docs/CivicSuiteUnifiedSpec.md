@@ -275,7 +275,7 @@ Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a propert
 
 Owner: Planning & Development / City Manager's Office  
 Depends on: CivicCore, CivicZone, CivicClerk  
-Status: planned  
+Status: shipping v0.1.0 foundation  
 Purpose: comprehensive plans, small-area plans, transportation plans, parks plans, and sustainability plans become searchable, cited, and usable in staff analysis.
 
 #### CivicPermit
@@ -940,16 +940,17 @@ As of 2026-04-27:
 - `civiccode` ships as v0.1.0 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, and records-ready exports. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.0 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, and accessible public sample UI. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
 - `civicaccess` ships as v0.1.0 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, and accessible public sample UI. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.
+- `civicplan` ships as v0.1.0 with runtime foundations for cited plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are not shipped.
 - The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicAccess v0.1.0 completed the immediate build sequence needed for the first accessibility/plain-language foundation release:
+CivicPlan v0.1.0 completed the immediate build sequence needed for the first comprehensive-plan policy-support foundation release:
 
-1. Keep the CivicAccess shipped baseline aligned with section 12 of this spec and the catalog CivicAccess spec.
-2. Preserve CivicAccess's legal boundaries: support and checklists only, no certified ADA compliance, no legal advice, no publication-ready translation without human review.
-3. Update the compatibility matrix every time CivicAccess or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, and CivicAccess contracts.
+1. Keep the CivicPlan shipped baseline aligned with the CivicPlan catalog entry and the released CivicZone/CivicClerk contracts it references.
+2. Preserve CivicPlan's legal/planning boundaries: support and cited context only, no official planning determinations, no legal advice, no permitting-system replacement.
+3. Update the compatibility matrix every time CivicPlan or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, and CivicPlan contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -960,7 +961,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Whether CivicPlan should be the next implementation lane after CivicAccess v0.1.0.
+- Whether CivicPermit should be the next implementation lane after CivicPlan v0.1.0.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.

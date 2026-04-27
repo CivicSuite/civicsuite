@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
   <title id="title">CivicSuite suite architecture</title>
-  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, and CivicAccess. Each module depends on CivicCore 0.2.0. Future modules begin with CivicPlan.</desc>
+  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, and CivicPlan. Each module depends on CivicCore 0.2.0. Future modules begin with CivicPermit.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #1f2328; }
-    .label { font-size: 22px; font-weight: 700; }
-    .small { font-size: 16px; }
-    .tiny { font-size: 14px; fill: #57606a; }
+    .label { font-size: 21px; font-weight: 700; }
+    .small { font-size: 15px; }
+    .tiny { font-size: 13px; fill: #57606a; }
     .box { rx: 18; ry: 18; stroke-width: 3; }
     .gov { fill: #e8ecff; stroke: #5865a8; }
     .core { fill: #dff6e7; stroke: #2f7a4f; }
@@ -21,59 +21,65 @@
     </marker>
   </defs>
 
-  <rect x="35" y="35" width="1130" height="710" rx="28" fill="#fbfbfa" stroke="#d0d7de"/>
+  <rect x="35" y="35" width="1130" height="750" rx="28" fill="#fbfbfa" stroke="#d0d7de"/>
   <text x="600" y="82" text-anchor="middle" class="label">CivicSuite Organization Architecture</text>
   <text x="600" y="110" text-anchor="middle" class="tiny">Governance and documentation in the umbrella repo; runtime modules ship as separate repos pinned to CivicCore.</text>
 
-  <rect x="90" y="150" width="300" height="120" class="box gov"/>
-  <text x="240" y="190" text-anchor="middle" class="label">civicsuite</text>
-  <text x="240" y="220" text-anchor="middle" class="small">umbrella repo</text>
-  <text x="240" y="246" text-anchor="middle" class="tiny">specs, ADRs, compatibility matrix</text>
+  <rect x="90" y="145" width="300" height="120" class="box gov"/>
+  <text x="240" y="185" text-anchor="middle" class="label">civicsuite</text>
+  <text x="240" y="215" text-anchor="middle" class="small">umbrella repo</text>
+  <text x="240" y="241" text-anchor="middle" class="tiny">specs, ADRs, compatibility matrix</text>
 
-  <rect x="450" y="150" width="300" height="120" class="box core"/>
-  <text x="600" y="190" text-anchor="middle" class="label">civiccore</text>
-  <text x="600" y="220" text-anchor="middle" class="small">v0.2.0 shared library</text>
-  <text x="600" y="246" text-anchor="middle" class="tiny">migrations, db.Base, LLM abstraction</text>
+  <rect x="450" y="145" width="300" height="120" class="box core"/>
+  <text x="600" y="185" text-anchor="middle" class="label">civiccore</text>
+  <text x="600" y="215" text-anchor="middle" class="small">v0.2.0 shared library</text>
+  <text x="600" y="241" text-anchor="middle" class="tiny">migrations, db.Base, LLM abstraction</text>
 
-  <rect x="75" y="360" width="205" height="105" class="box ship"/>
-  <text x="177" y="395" text-anchor="middle" class="label">civicrecords-ai</text>
-  <text x="177" y="424" text-anchor="middle" class="small">v1.4.0 shipping</text>
-  <text x="177" y="448" text-anchor="middle" class="tiny">FOIA / public records</text>
+  <rect x="80" y="345" width="210" height="100" class="box ship"/>
+  <text x="185" y="378" text-anchor="middle" class="label">civicrecords-ai</text>
+  <text x="185" y="405" text-anchor="middle" class="small">v1.4.0 shipping</text>
+  <text x="185" y="428" text-anchor="middle" class="tiny">FOIA / public records</text>
 
-  <rect x="295" y="360" width="185" height="105" class="box ship"/>
-  <text x="388" y="395" text-anchor="middle" class="label">civicclerk</text>
-  <text x="388" y="424" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="388" y="448" text-anchor="middle" class="tiny">meetings / agendas</text>
+  <rect x="350" y="345" width="210" height="100" class="box ship"/>
+  <text x="455" y="378" text-anchor="middle" class="label">civicclerk</text>
+  <text x="455" y="405" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="455" y="428" text-anchor="middle" class="tiny">meetings / agendas</text>
 
-  <rect x="500" y="360" width="185" height="105" class="box ship"/>
-  <text x="592" y="395" text-anchor="middle" class="label">civiccode</text>
-  <text x="592" y="424" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="592" y="448" text-anchor="middle" class="tiny">municipal code</text>
+  <rect x="620" y="345" width="210" height="100" class="box ship"/>
+  <text x="725" y="378" text-anchor="middle" class="label">civiccode</text>
+  <text x="725" y="405" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="725" y="428" text-anchor="middle" class="tiny">municipal code</text>
 
-  <rect x="705" y="360" width="185" height="105" class="box ship"/>
-  <text x="798" y="395" text-anchor="middle" class="label">civiczone</text>
-  <text x="798" y="424" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="798" y="448" text-anchor="middle" class="tiny">zoning / land use</text>
+  <rect x="890" y="345" width="210" height="100" class="box ship"/>
+  <text x="995" y="378" text-anchor="middle" class="label">civiczone</text>
+  <text x="995" y="405" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="995" y="428" text-anchor="middle" class="tiny">zoning / land use</text>
 
-  <rect x="910" y="360" width="215" height="105" class="box ship"/>
-  <text x="1018" y="395" text-anchor="middle" class="label">civicaccess</text>
-  <text x="1018" y="424" text-anchor="middle" class="small">v0.1.0 shipping</text>
-  <text x="1018" y="448" text-anchor="middle" class="tiny">accessibility / language</text>
+  <rect x="215" y="510" width="250" height="100" class="box ship"/>
+  <text x="340" y="543" text-anchor="middle" class="label">civicaccess</text>
+  <text x="340" y="570" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="340" y="593" text-anchor="middle" class="tiny">accessibility / language</text>
 
-  <rect x="450" y="585" width="300" height="85" class="box future"/>
-  <text x="600" y="620" text-anchor="middle" class="label">future modules</text>
-  <text x="600" y="650" text-anchor="middle" class="small">CivicPlan next planned lane</text>
+  <rect x="735" y="510" width="250" height="100" class="box ship"/>
+  <text x="860" y="543" text-anchor="middle" class="label">civicplan</text>
+  <text x="860" y="570" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="860" y="593" text-anchor="middle" class="tiny">plan policy support</text>
 
-  <path d="M390 210 L450 210" class="line dash"/>
-  <text x="420" y="198" text-anchor="middle" class="edge">documents</text>
+  <rect x="450" y="680" width="300" height="70" class="box future"/>
+  <text x="600" y="708" text-anchor="middle" class="label">future modules</text>
+  <text x="600" y="733" text-anchor="middle" class="small">CivicPermit next planned lane</text>
 
-  <path d="M177 360 C235 305 500 300 565 270" class="line"/>
-  <path d="M388 360 C440 315 545 305 590 270" class="line"/>
-  <path d="M592 360 C590 315 595 305 600 270" class="line"/>
-  <path d="M798 360 C750 315 655 305 610 270" class="line"/>
-  <path d="M1018 360 C955 305 710 300 635 270" class="line"/>
-  <text x="600" y="327" text-anchor="middle" class="edge">all shipping modules depend on civiccore==0.2.0</text>
+  <path d="M390 205 L450 205" class="line dash"/>
+  <text x="420" y="193" text-anchor="middle" class="edge">documents</text>
 
-  <path d="M600 465 L600 585" class="line dash"/>
-  <text x="678" y="535" class="edge">next module lane</text>
+  <path d="M185 345 C260 290 510 285 565 265" class="line"/>
+  <path d="M455 345 C500 310 560 300 590 265" class="line"/>
+  <path d="M725 345 C700 310 640 300 610 265" class="line"/>
+  <path d="M995 345 C925 290 710 285 635 265" class="line"/>
+  <path d="M340 510 C415 430 545 330 585 265" class="line"/>
+  <path d="M860 510 C800 430 655 330 615 265" class="line"/>
+  <text x="600" y="315" text-anchor="middle" class="edge">all shipping modules depend on civiccore==0.2.0</text>
+
+  <path d="M600 610 L600 680" class="line dash"/>
+  <text x="670" y="650" class="edge">next module lane</text>
 </svg>
