@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
   <title id="title">CivicSuite suite architecture</title>
-  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, and CivicInspect. Each module depends on CivicCore 0.2.0. Future modules begin with CivicGrants.</desc>
+  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, and CivicGrants. Each module depends on CivicCore 0.2.0. Future modules begin with CivicProcure Assist.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #1f2328; }
     .label { font-size: 21px; font-weight: 700; }
@@ -79,6 +79,7 @@
   <path d="M995 345 C925 290 710 285 635 265" class="line"/>
   <path d="M340 510 C415 430 545 330 585 265" class="line"/>
   <path d="M860 510 C800 430 655 330 615 265" class="line"/>
+  <path d="M210 655 C140 520 310 310 565 265" class="line"/>
   <text x="600" y="315" text-anchor="middle" class="edge">all shipping modules depend on civiccore==0.2.0</text>
 
   <path d="M600 610 L600 660" class="line"/>
@@ -89,7 +90,11 @@
   <text x="920" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
   <text x="920" y="734" text-anchor="middle" class="tiny">inspection support</text>
 
-  <rect x="80" y="675" width="260" height="70" class="box future"/>
-  <text x="210" y="703" text-anchor="middle" class="label">future modules</text>
-  <text x="210" y="728" text-anchor="middle" class="small">CivicGrants next planned lane</text>
+  <rect x="80" y="655" width="260" height="85" class="box ship"/>
+  <text x="210" y="687" text-anchor="middle" class="label">civicgrants</text>
+  <text x="210" y="713" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="210" y="734" text-anchor="middle" class="tiny">grant support</text>
+
+  <rect x="835" y="760" width="250" height="45" class="box future"/>
+  <text x="960" y="788" text-anchor="middle" class="small">CivicProcure next planned lane</text>
 </svg>
