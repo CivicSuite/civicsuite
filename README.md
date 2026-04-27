@@ -36,10 +36,12 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Next module lane
 
-The next planning lane is **CivicCode**, not CivicZone. CivicZone remains the
-first major Tier 2 land-use product, but the canonical spec identifies
-CivicCode as the Tier 1 municipal-code layer that should be planned before
-CivicZone runtime work begins. See
+The next planning lane is **CivicCode**, not CivicZone. The
+`CivicSuite/civiccode` repo now exists as a scaffold with Milestone 0 planning
+complete; no runtime code has shipped. CivicZone remains the first major Tier 2
+land-use product, but the canonical spec identifies CivicCode as the Tier 1
+municipal-code layer that should be planned before CivicZone runtime work
+begins. See
 [docs/roadmap/civiccode-next-module-plan.md](docs/roadmap/civiccode-next-module-plan.md).
 
 ## What's in this repo
@@ -79,7 +81,7 @@ civicsuite/
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shared platform package. Pinned by every module. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released; staff workflow UI foundation available at `/staff`. |
 
-Future module repos (`civiczone`, `civiccode`, …) will land under `CivicSuite/` as separate repos.
+Future module repos (`civiczone`, …) will land under `CivicSuite/` as separate repos.
 
 ## Architecture
 
