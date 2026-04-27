@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `docs/roadmap/civiccode-next-module-plan.md` to make CivicCode the next planning lane before CivicZone runtime work begins.
 - Added `docs/CivicSuiteUnifiedSpec.md` as the canonical suite specification, consolidating the DOCX source set, current repo truth, Apache 2.0 licensing decision, 7-tier module catalog, CivicCore shipped/planned boundary, and CivicClerk/CivicZone module requirements.
 - **CivicClerk scaffold registration** (2026-04-26): `CivicSuite/civicclerk` created as the next module repo; roadmap, compatibility matrix, and README updated to distinguish scaffolded-but-not-installable from planned-only modules.
 - **Phase 2 documentation closeout** (2026-04-25): full set of community files (`SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`), GitHub issue templates (bug, feature, documentation), pull request template, and GitHub Discussions seed posts (`docs/github-discussions-seed.md`).
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/verify-docs.sh` — required-artifact and stale-current-facing-string check. Run before every push.
 
 ### Changed
+- Updated the roadmap and canonical unified spec current-state sections after CivicClerk v0.1.0 and the `/staff` UI foundation shipped; CivicCode is now the next module lane.
 - **CivicClerk staff workflow UI foundation reflected in suite docs** (2026-04-27): README, user manual, landing page, and compatibility matrix now mention the `/staff` browser UI foundation shipped after the v0.1.0 release while preserving the full-workflow-UI planned boundary.
 - **Compatibility matrix updated for CivicClerk v0.1.0** (2026-04-27): `CivicSuite/civicclerk` now records the published runtime-foundation release paired to `civiccore==0.2.0`.
 - **Compatibility matrix updated to current truth** (`docs/compatibility/index.md`): civiccore now at `0.2.0`, civicrecords-ai now at `1.4.0` pinned to `==0.2.0`. Phase 1 entries (civiccore 0.1.0, records-ai v1.3.0 pending) replaced with the actual shipped versions and dates.

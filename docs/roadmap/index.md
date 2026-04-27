@@ -6,14 +6,20 @@ condensed table view follows.
 
 ## Current next step
 
-**Next module to build: CivicClerk.** CivicRecords AI is shipping at
-v1.4.0, civiccore is shipping at v0.2.0, and CivicRecords AI has been
-transferred into the `CivicSuite` GitHub organization. The next work is
-to scaffold `CivicSuite/civicclerk` and run a UX-first MVP sprint around
-meeting setup, agenda item intake, packet assembly, statutory notice
-tracking, and minute drafting.
+**Next module lane: CivicCode planning.** CivicRecords AI is shipping at
+v1.4.0, civiccore is shipping at v0.2.0, and CivicClerk is shipping at
+v0.1.0 with a browser-visible `/staff` workflow foundation. The next
+suite-planning lane is CivicCode: the municipal code and ordinance-access
+module that CivicZone, CivicLegal, CivicAccess, CivicComms, and CivicClerk
+handoffs depend on.
+
+This is planning only. No `CivicSuite/civiccode` runtime repo exists yet.
+The next implementation action is a CivicCode Milestone 0 / scaffold
+prep run after the planning document is reviewed.
 
 The detailed execution plan is
+[`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
+prior CivicClerk plan remains as historical context in
 [`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
 
 ## Phase 1 — Establish the sovereign municipal platform (Clerk Core)
@@ -22,8 +28,8 @@ The detailed execution plan is
 |---|---------------|----------------------------------------------|
 | 1 | CivicCore     | Shipping v0.2.0; shared migrations, db base, and LLM abstraction |
 | 2 | CivicRecords AI | Shipping v1.4.0; transferred to CivicSuite org |
-| 3 | CivicClerk    | Repo scaffolded; runtime MVP begins next |
-| 4 | CivicCode     | Planned                                      |
+| 3 | CivicClerk    | Shipping v0.1.0; `/staff` workflow UI foundation shipped |
+| 4 | CivicCode     | Next planning lane; no runtime repo yet      |
 | 5 | CivicAccess   | Planned                                      |
 
 ## Phase 2 — Land Use & Development
