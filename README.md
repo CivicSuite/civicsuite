@@ -13,6 +13,8 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 - **civicclerk v0.1.0** — meeting/agenda/minutes runtime foundation. Ships schema, lifecycle enforcement, packet/notice checks, immutable motion/vote/action capture, citation-gated minutes drafts, public archive endpoints, prompt eval gates, connector imports, browser QA gates, and a browser-visible staff workflow foundation at `/staff`. Full database-backed workflow UI screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
 
+- **civiccode v0.1.0** - municipal code and ordinance access runtime foundation. Ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff interpretation notes, plain-language summaries, CivicClerk handoff intake, resident public lookup pages, local import connectors, and records-ready exports. Legal advice, live LLM calls, live codifier sync, and automatic ordinance codification are still not shipped. Repo: <https://github.com/CivicSuite/civiccode>.
+
 **Planned, not started:**
 - **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted only.
 - 20+ additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
@@ -34,14 +36,11 @@ If you're orienting yourself for the first time, read in this order:
 4. [specs/01_catalog.md](specs/01_catalog.md) — the source catalog draft folded into the unified spec.
 5. [docs/architecture/](docs/architecture/) — ADRs.
 
-## Next module lane
+## Current module lane
 
-The next planning lane is **CivicCode**, not CivicZone. The
-`CivicSuite/civiccode` repo now exists as a scaffold with Milestone 0 planning
-complete; no runtime code has shipped. CivicZone remains the first major Tier 2
-land-use product, but the canonical spec identifies CivicCode as the Tier 1
-municipal-code layer that should be planned before CivicZone runtime work
-begins. See
+CivicCode v0.1.0 now ships. CivicZone remains the first major Tier 2
+land-use product, and it can now plan against a real CivicCode v0.1.0
+municipal-code contract instead of a scaffold-only placeholder. See
 [docs/roadmap/civiccode-next-module-plan.md](docs/roadmap/civiccode-next-module-plan.md).
 
 ## What's in this repo
@@ -80,6 +79,7 @@ civicsuite/
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Module 1, shipping. Transferred to CivicSuite org on 2026-04-25. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shared platform package. Pinned by every module. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released; staff workflow UI foundation available at `/staff`. |
+| civiccode | <https://github.com/CivicSuite/civiccode> | Module 3, v0.1.0 runtime foundation released; municipal-code lookup, citations, local imports, and records-ready exports. |
 
 Future module repos (`civiczone`, …) will land under `CivicSuite/` as separate repos.
 

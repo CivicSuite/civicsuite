@@ -937,18 +937,17 @@ As of 2026-04-27:
 - `civiccore` ships as v0.2.0.
 - `civicsuite` is the umbrella documentation/governance repo.
 - `civicclerk` ships as v0.1.0 with runtime foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and a browser-visible `/staff` workflow UI foundation.
-- CivicCode exists as a scaffold-only repository with Milestone 0 planning complete; no runtime code has shipped.
+- `civiccode` ships as v0.1.0 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, and records-ready exports. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - CivicAccess, CivicZone, and the rest of the catalog are planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicClerk v0.1.0 completed the prior immediate build sequence. The next suite lane is planning CivicCode before CivicZone runtime work begins:
+CivicCode v0.1.0 completed the immediate build sequence needed before CivicZone runtime work begins:
 
-1. Keep the CivicCode planning baseline aligned with section 11 of this spec and the catalog CivicCode spec.
-2. Resolve the CivicCode ADR queue before runtime: official-source precedence, codifier import strategy, section versioning, CivicClerk ordinance/adoption-event handoff, legal disclaimer wording, and staff-only interpretation-note visibility.
-3. Begin CivicCode Milestone 1 runtime foundation only after the Milestone 0 scaffold is reviewed.
-4. Build the smallest useful CivicCode MVP: code source registry, section/version model, section permalink, search, cited Q&A, plain-language summaries, staff interpretation notes, and CivicClerk adoption-event intake.
-5. Start CivicZone runtime only after CivicCode has a real versioned source-of-code contract or a written ADR explicitly accepts a temporary substitute.
+1. Keep the CivicCode shipped baseline aligned with section 11 of this spec and the catalog CivicCode spec.
+2. Preserve CivicCode's legal boundaries: citation-grounded information only, no legal advice, no live codifier sync, and no automatic ordinance codification.
+3. Update the compatibility matrix every time CivicCode or CivicCore releases.
+4. Start CivicZone runtime only after reading CivicCode v0.1.0's actual API and release contract.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 

@@ -16,17 +16,17 @@ A glossary at the end defines every technical term used.
 
 CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
 
-Today, only one module is shipping. The rest are either in early-platform stage or planned. We say so plainly below — no roadmap inflation, no vaporware.
+Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk and CivicCode have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
 
 ### What's available today (as of 2026-04-27)
 
 - **civicrecords-ai v1.4.0** — a working, shipping module for managing public records / FOIA requests. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
 - **civiccore v0.2.0** — the shared "platform" package that every module uses. It is what the records module is built on. As of v0.2.0 it includes a shared LLM (large-language-model) abstraction layer. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
 - **civicclerk v0.1.0** — a runtime-foundation release for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and a browser-visible staff workflow foundation at `/staff`; full database-backed workflow screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
+- **civiccode v0.1.0** — a runtime-foundation release for municipal code and ordinance access. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
 
 ### What's planned but not started
 
-- **civiccode** — municipal code and ordinance access. The repo exists as a scaffold with Milestone 0 planning complete; no runtime code has shipped. This is the next planning lane because CivicZone needs an authoritative code-section contract before zoning runtime work begins.
 - **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted, no code yet.
 - Twenty-plus additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
@@ -71,7 +71,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.0. Transferred to the `CivicSuite` GitHub org on 2026-04-25; this is now the canonical home. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.2.0. Phase 2 (LLM module) just landed. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.0 runtime foundation with `/staff` workflow UI foundation. |
-| civiccode | <https://github.com/CivicSuite/civiccode> | Scaffold + Milestone 0 planning complete; no runtime code. |
+| civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.0 runtime foundation for municipal-code lookup, citations, local imports, and records-ready exports. |
 | civiczone, etc. | not created yet | Specs only. |
 
 ### Dependency direction
