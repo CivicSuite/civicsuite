@@ -28,9 +28,10 @@ Shipping:
 - civicgrants v0.1.0 - grant opportunity and compliance support foundation. Ships deterministic sample opportunity triage, eligibility-factor matching, application outline helper, compliance calendar helper, audit-ready export checklist, and accessible public sample UI at /civicgrants. Live funder feeds, official eligibility decisions, legal advice, live LLM calls, submission portals, and grant system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civicgrants>.
 - civicprocure v0.1.0 - procurement drafting and award-packet support foundation. Ships deterministic sample RFP drafting, proposal comparison, exception extraction, scoring summary helper, award-packet checklist, and accessible public sample UI at /civicprocure. Live vendor portals, official vendor evaluation decisions, legal advice, live LLM calls, e-procurement submission portals, and procurement system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civicprocure>.
 - civiccontracts v0.1.0 - contract repository and renewal visibility foundation. Ships deterministic sample contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklist, and accessible public sample UI at /civiccontracts. Live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, and contract system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civiccontracts>.
+- civicboards v0.1.0 - board and commission administration foundation. Ships deterministic sample board registry, term review plans, vacancy checklists, attendance summaries, notice/records export checklist, and accessible public sample UI at /civicboards. Live agenda systems, appointment decisions, legal advice, official notice publication, meeting system write-back, live LLM calls, and board system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civicboards>.
 
 Planned, not started:
-- 14 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 13 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -51,7 +52,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicContracts v0.1.0 now ships. CivicBoards is the next planned Tier 3
+CivicBoards v0.1.0 now ships. CivicNotice is the next planned Tier 3
 administrative module lane, with additional administrative and resident-service
 modules following after the foundation modules stabilize.
 
@@ -100,6 +101,7 @@ civicsuite/
 | civicgrants | <https://github.com/CivicSuite/civicgrants> | Module 10, v0.1.0 runtime foundation released; opportunity triage, eligibility matching, application outlines, compliance calendars, audit-ready exports, and public UI foundation. |
 | civicprocure | <https://github.com/CivicSuite/civicprocure> | Module 11, v0.1.0 runtime foundation released; RFP drafting, proposal comparison, exception extraction, scoring summaries, award-packet checklists, and public UI foundation. |
 | civiccontracts | <https://github.com/CivicSuite/civiccontracts> | Module 12, v0.1.0 runtime foundation released; contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklists, and public UI foundation. |
+| civicboards | <https://github.com/CivicSuite/civicboards> | Module 13, v0.1.0 runtime foundation released; board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and public UI foundation. |
 
 Future module repos will land under CivicSuite/ as separate repos.
 
