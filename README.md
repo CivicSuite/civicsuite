@@ -4,16 +4,14 @@
 
 This `civicsuite` repository is the **umbrella / orientation repo** for the CivicSuite product family. It holds suite-wide documentation, ADRs, the roadmap, governance, and the civiccore↔module compatibility matrix. It contains no runtime code — every module lives in its own repo.
 
-## Suite status (as of 2026-04-26)
+## Suite status (as of 2026-04-27)
 
 **Shipping:**
 
 - **civicrecords-ai v1.4.0** — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. (Transferred to the `CivicSuite` GitHub org on 2026-04-25.)
 - **civiccore v0.2.0** — shared platform package. **Shipping today:** migration runner + 2 baseline migrations (`civiccore.migrations`), shared SQLAlchemy `Base` (`civiccore.db`), and the LLM abstraction (`civiccore.llm` — providers, templates, registry, context utilities, structured output). **Future / planned extraction (placeholder packages only — directories with a docstring `__init__.py` and no implementation):** auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 (LLM module) just shipped. Repo: <https://github.com/CivicSuite/civiccore>.
 
-**Scaffolded, not installable yet:**
-
-- **civicclerk** — meetings, agendas, packets, minutes. Repo: <https://github.com/CivicSuite/civicclerk>. Documentation scaffold only; no runtime app or release yet.
+- **civicclerk v0.1.0** — meeting/agenda/minutes runtime foundation. Ships schema, lifecycle enforcement, packet/notice checks, immutable motion/vote/action capture, citation-gated minutes drafts, public archive endpoints, prompt eval gates, connector imports, and browser QA gates. Full workflow UI screens are not implemented yet. Repo: <https://github.com/CivicSuite/civicclerk>.
 
 **Planned, not started:**
 - **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted only.
@@ -71,7 +69,7 @@ civicsuite/
 |---|---|---|
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Module 1, shipping. Transferred to CivicSuite org on 2026-04-25. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shared platform package. Pinned by every module. |
-| civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, scaffolded. Runtime MVP starts next. |
+| civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released. |
 
 Future module repos (`civiczone`, `civiccode`, …) will land under `CivicSuite/` as separate repos.
 
