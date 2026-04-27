@@ -263,7 +263,7 @@
 <main id="main">
 <section>
   <h2>What's here today</h2>
-  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, and CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, and CivicInspect now have v0.1.0 runtime-foundation releases. The catalog covers 26 modules across 7 tiers; only what's listed below has shipped code or active planning context.</p>
+  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, and CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, and CivicGrants now have v0.1.0 runtime-foundation releases. The catalog covers 26 modules across 7 tiers; only what's listed below has shipped code or active planning context.</p>
 
   <ul class="module-status">
     <li>
@@ -311,13 +311,18 @@
       <span class="badge badge-shipping">Shipping v0.1.0</span>
       <span class="desc">Inspection support for code enforcement, building, and fire prevention staff. CivicInspect v0.1.0 ships in the <a href="https://github.com/CivicSuite/civicinspect">CivicSuite/civicinspect</a> repo with sample repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and an accessible public sample UI at <code>/civicinspect</code>. Official findings, citations, fines, notices, inspection scheduling, legal advice, live photo analysis, live LLM calls, and system-of-record integrations are still not shipped.</span>
     </li>
+    <li>
+      <span class="name">civicgrants</span>
+      <span class="badge badge-shipping">Shipping v0.1.0</span>
+      <span class="desc">Grant opportunity and compliance support. CivicGrants v0.1.0 ships in the <a href="https://github.com/CivicSuite/civicgrants">CivicSuite/civicgrants</a> repo with sample opportunity triage, eligibility-factor matching, application outline helper, compliance calendar helper, audit-ready export checklist, and an accessible public sample UI at <code>/civicgrants</code>. Live funder feeds, official eligibility decisions, legal advice, live LLM calls, submission portals, and grant system-of-record integrations are still not shipped.</span>
+    </li>
   </ul>
 </section>
 
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, civiczone v0.1.0, civicaccess v0.1.0, civicplan v0.1.0, civicpermit v0.1.0, and civicinspect v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, civiczone v0.1.0, civicaccess v0.1.0, civicplan v0.1.0, civicpermit v0.1.0, civicinspect v0.1.0, and civicgrants v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -345,7 +350,7 @@
     </tbody>
   </table>
   <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
-  <p><code>civicinspect</code> now ships v0.1.0. CivicGrants is the next planned Tier 3 administrative module lane, with additional administrative and resident-service modules following after the foundation modules stabilize.</p>
+  <p><code>civicgrants</code> now ships v0.1.0. CivicProcure Assist is the next planned Tier 3 administrative module lane, with additional administrative and resident-service modules following after the foundation modules stabilize.</p>
 </section>
 
 <section>
@@ -365,9 +370,10 @@
     <li><a href="https://github.com/CivicSuite/civicplan"><code>github.com/CivicSuite/civicplan</code></a> &mdash; Module 7, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicpermit"><code>github.com/CivicSuite/civicpermit</code></a> &mdash; Module 8, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicinspect"><code>github.com/CivicSuite/civicinspect</code></a> &mdash; Module 9, shipping v0.1.0</li>
+    <li><a href="https://github.com/CivicSuite/civicgrants"><code>github.com/CivicSuite/civicgrants</code></a> &mdash; Module 10, shipping v0.1.0</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
   </ul>
-  <p><code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, and <code>civicinspect</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, and <code>civicgrants</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 </main>
 

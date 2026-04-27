@@ -6,7 +6,7 @@ condensed table view follows.
 
 ## Current next step
 
-**Current module lane: CivicInspect shipped v0.1.0.** CivicRecords AI is shipping
+**Current module lane: CivicGrants shipped v0.1.0.** CivicRecords AI is shipping
 at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
 with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
 at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
@@ -21,11 +21,13 @@ CivicPermit is shipping at v0.1.0 with permit requirement lookup,
 intake-readiness review, submittal outlines, records-ready exports, and public
 UI foundation. CivicInspect is shipping at v0.1.0 with repeat-case lookup,
 report draft support, notice draft support, records-ready exports, and public
-UI foundation.
+UI foundation. CivicGrants is shipping at v0.1.0 with opportunity triage,
+eligibility-factor matching, application outlines, compliance calendars,
+audit-ready exports, and public UI foundation.
 
-CivicInspect is no longer planned-only. The next suite implementation lane can
+CivicGrants is no longer planned-only. The next suite implementation lane can
 plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode, and
-CivicZone, CivicAccess, CivicPlan, CivicPermit, and CivicInspect release contracts.
+CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, and CivicGrants release contracts.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -55,8 +57,8 @@ prior CivicClerk plan remains as historical context in
 
 | #  | Module                | Status       |
 |----|-----------------------|--------------|
-| 10 | CivicGrants           | Planned next |
-| 11 | CivicProcure Assist   | Planned      |
+| 10 | CivicGrants           | Shipping v0.1.0 |
+| 11 | CivicProcure Assist   | Planned next |
 | 12 | CivicContracts        | Planned      |
 | 13 | CivicBoards           | Planned      |
 | 14 | CivicNotice           | Planned      |

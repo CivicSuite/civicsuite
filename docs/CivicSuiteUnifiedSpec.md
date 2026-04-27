@@ -67,6 +67,7 @@ Current canonical repositories:
 - `CivicSuite/civicplan` - comprehensive-plan policy lookup and planning analysis support product.
 - `CivicSuite/civicpermit` - permit pre-application and intake-readiness support product.
 - `CivicSuite/civicinspect` - inspection support product.
+- `CivicSuite/civicgrants` - grant opportunity and compliance support product.
 
 Future module repositories should be created under `CivicSuite/` from the start.
 
@@ -304,7 +305,7 @@ Purpose: inspection assistant for photo/voice-to-report drafting, repeat-case lo
 
 Owner: City Manager / Finance / Administration / Economic Development  
 Depends on: CivicCore, CivicRecords  
-Status: planned  
+Status: shipping v0.1.0 foundation  
 Purpose: opportunity triage, eligibility matching, application drafting, compliance calendars, and audit-ready grant files.
 
 #### CivicProcure
@@ -949,16 +950,17 @@ As of 2026-04-27:
 - `civicplan` ships as v0.1.0 with runtime foundations for cited plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are not shipped.
 - `civicpermit` ships as v0.1.0 with runtime foundations for permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and accessible public sample UI. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are not shipped.
 - `civicinspect` ships as v0.1.0 with runtime foundations for repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and accessible public sample UI. Official findings, citations, fines, notices, inspection scheduling, legal advice, live photo analysis, live LLM calls, and system-of-record integrations are not shipped.
+- `civicgrants` ships as v0.1.0 with runtime foundations for opportunity triage, eligibility-factor matching, application outline helper, compliance calendar helper, audit-ready export checklist, and accessible public sample UI. Live funder feeds, official eligibility decisions, legal advice, live LLM calls, submission portals, and grant system-of-record integrations are not shipped.
 - The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicInspect v0.1.0 completed the immediate build sequence needed for the first inspection-support foundation release:
+CivicGrants v0.1.0 completed the immediate build sequence needed for the first grant-support foundation release:
 
-1. Keep the CivicInspect shipped baseline aligned with the CivicInspect catalog entry and the released CivicCode contract it references.
-2. Preserve CivicInspect's inspection boundaries: draft/support only, no official findings, no citations or fines, no notices issued, no inspection scheduling, no legal advice, no live photo analysis, and no system-of-record replacement.
-3. Update the compatibility matrix every time CivicInspect or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, and CivicInspect contracts.
+1. Keep the CivicGrants shipped baseline aligned with the CivicGrants catalog entry and the released CivicRecords contract it references.
+2. Preserve CivicGrants' grant boundaries: support and audit-file scaffolding only, no official eligibility decisions, no legal advice, no live funder feeds, no live LLM calls, no submissions, and no grant-system-of-record replacement.
+3. Update the compatibility matrix every time CivicGrants or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, and CivicGrants contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -969,7 +971,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Whether CivicGrants should be the next implementation lane after CivicInspect v0.1.0.
+- Whether CivicProcure Assist should be the next implementation lane after CivicGrants v0.1.0.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
