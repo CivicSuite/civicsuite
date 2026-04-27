@@ -273,8 +273,8 @@
     </li>
     <li>
       <span class="name">civiczone</span>
-      <span class="badge badge-spec">Spec drafted</span>
-      <span class="desc">Zoning code, parcel-aware lookups, planner workflows. Tier 2 reference module &mdash; demonstrates how downstream modules inherit from the platform.</span>
+      <span class="badge badge-shipping">Shipping v0.1.0</span>
+      <span class="desc">Parcel-aware zoning and land-use Q&amp;A. The <a href="https://github.com/CivicSuite/civiczone">CivicSuite/civiczone</a> repo ships a v0.1.0 foundation with canonical zoning schema, parcel and rule lookup samples, citation-grounded sample Q&amp;A, planner escalation, staff-context samples, and an accessible public sample UI at <code>/civiczone</code>. Live GIS, live LLM calls, planner review queues, official determinations, and legal advice are still not shipped.</span>
     </li>
   </ul>
 </section>
@@ -282,7 +282,7 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, and civiccode v0.1.0. CivicZone is planned." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, and civiczone v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -310,7 +310,7 @@
     </tbody>
   </table>
   <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
-  <p><code>civiccode</code> now ships v0.1.0. CivicZone remains the first major Tier 2 land-use module, and it can now plan against a real CivicCode municipal-code contract instead of a scaffold-only placeholder. See the <a href="roadmap/civiccode-next-module-plan.md">CivicCode next-module plan</a>.</p>
+  <p><code>civiczone</code> now ships v0.1.0. CivicAccess is the next planned Clerk Core module lane, with CivicPlan and other Tier 2 land-use modules following after the foundation modules stabilize.</p>
 </section>
 
 <section>
@@ -325,9 +325,10 @@
     <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> &mdash; shared platform package, shipping v0.2.0</li>
     <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
     <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.0</li>
+    <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.0</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
   </ul>
-  <p><code>civicclerk</code> and <code>civiccode</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules (<code>civiczone</code>, ...) will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code>, <code>civiccode</code>, and <code>civiczone</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 
 <footer>

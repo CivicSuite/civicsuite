@@ -24,10 +24,10 @@ Today, multiple modules are shipping at different maturity levels: CivicRecords 
 - **civiccore v0.2.0** — the shared "platform" package that every module uses. It is what the records module is built on. As of v0.2.0 it includes a shared LLM (large-language-model) abstraction layer. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
 - **civicclerk v0.1.0** — a runtime-foundation release for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and a browser-visible staff workflow foundation at `/staff`; full database-backed workflow screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
 - **civiccode v0.1.0** — a runtime-foundation release for municipal code and ordinance access. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
+- **civiczone v0.1.0** — a runtime-foundation release for parcel-aware zoning and land-use Q&A. It ships canonical zoning schema, Alembic migrations, sample parcel and rule lookups, citation-grounded sample Q&A, planner escalation, staff-context samples, and a public sample UI at `/civiczone`. It still does not ship live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, or legal advice. Repo: <https://github.com/CivicSuite/civiczone>.
 
 ### What's planned but not started
 
-- **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted, no code yet.
 - Twenty-plus additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
 If you don't see a module on this list with a version number, **it does not exist as code yet**. Specs are not products.
@@ -72,7 +72,8 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.2.0. Phase 2 (LLM module) just landed. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.0 runtime foundation with `/staff` workflow UI foundation. |
 | civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.0 runtime foundation for municipal-code lookup, citations, local imports, and records-ready exports. |
-| civiczone, etc. | not created yet | Specs only. |
+| civiczone | <https://github.com/CivicSuite/civiczone> | Shipping v0.1.0 runtime foundation for parcel-aware zoning samples and public UI foundation. |
+| future modules | not created yet | Specs only. |
 
 ### Dependency direction
 
@@ -150,7 +151,7 @@ When a module ships a new version, the compatibility matrix on this umbrella mus
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
    | civicrecords-ai     |   |   civicclerk     |   |   civiczone      |
-   |   v1.4.0 SHIPPING   |   | v0.1.0 SHIPPING  |   |  PLANNED         |
+   |   v1.4.0 SHIPPING   |   | v0.1.0 SHIPPING  |   | v0.1.0 SHIPPING |
    |   FOIA / public     |   |  meetings,       |   |  zoning, parcel  |
    |   records mgmt      |   |  agendas, votes  |   |  workflows       |
    +---------------------+   +------------------+   +------------------+
