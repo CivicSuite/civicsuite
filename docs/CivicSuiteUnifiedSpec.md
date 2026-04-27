@@ -268,7 +268,7 @@ Purpose: accessible forms, accessible publishing workflows, multilingual and pla
 
 Owner: Planning & Development / Community Development  
 Depends on: CivicCore, CivicCode  
-Status: spec drafted  
+Status: shipping v0.1.0 foundation  
 Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a property is in, what uses are allowed, what setbacks apply, and when planner review is required. CivicZone never makes a zoning determination.
 
 #### CivicPlan
@@ -763,7 +763,7 @@ Required test areas:
 
 ## 11. CivicCode Canonical Scope
 
-CivicCode is a critical Tier 1 gap and should be planned before CivicZone runtime work begins.
+CivicCode is a critical Tier 1 dependency for CivicZone and shipped before CivicZone runtime work began.
 
 Purpose:
 
@@ -938,16 +938,17 @@ As of 2026-04-27:
 - `civicsuite` is the umbrella documentation/governance repo.
 - `civicclerk` ships as v0.1.0 with runtime foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and a browser-visible `/staff` workflow UI foundation.
 - `civiccode` ships as v0.1.0 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, and records-ready exports. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
-- CivicAccess, CivicZone, and the rest of the catalog are planned, not implemented.
+- `civiczone` ships as v0.1.0 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, and accessible public sample UI. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
+- CivicAccess and the rest of the catalog are planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicCode v0.1.0 completed the immediate build sequence needed before CivicZone runtime work begins:
+CivicZone v0.1.0 completed the immediate build sequence needed for the first Tier 2 land-use foundation release:
 
-1. Keep the CivicCode shipped baseline aligned with section 11 of this spec and the catalog CivicCode spec.
-2. Preserve CivicCode's legal boundaries: citation-grounded information only, no legal advice, no live codifier sync, and no automatic ordinance codification.
-3. Update the compatibility matrix every time CivicCode or CivicCore releases.
-4. Start CivicZone runtime only after reading CivicCode v0.1.0's actual API and release contract.
+1. Keep the CivicZone shipped baseline aligned with section 10 of this spec and the catalog CivicZone spec.
+2. Preserve CivicZone's legal boundaries: informational zoning context only, no official zoning determinations, no legal advice, and no replacement for planner review.
+3. Update the compatibility matrix every time CivicZone or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicZone contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -958,7 +959,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Whether CivicCode must ship before CivicZone runtime begins.
+- Whether CivicAccess or CivicPlan should be the next implementation lane after CivicZone v0.1.0.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.

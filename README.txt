@@ -15,9 +15,10 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 - **civiccode v0.1.0** - municipal code and ordinance access runtime foundation. Ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, summaries, CivicClerk handoff intake, resident public lookup pages, local import connectors, and records-ready exports. Legal advice, live LLM calls, live codifier sync, and automatic ordinance codification are still not shipped. Repo: <https://github.com/CivicSuite/civiccode>.
 
+- **civiczone v0.1.0** - parcel-aware zoning and land-use Q&A foundation. Ships canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, and an accessible public sample UI at /civiczone. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are still not shipped. Repo: <https://github.com/CivicSuite/civiczone>.
+
 **Planned, not started:**
 
-- **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted only.
 - 20+ additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
@@ -38,7 +39,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicCode v0.1.0 now ships. CivicZone remains the first major Tier 2 land-use product, and it can now plan against a real CivicCode v0.1.0 municipal-code contract instead of a scaffold-only placeholder. See [docs/roadmap/civiccode-next-module-plan.md](docs/roadmap/civiccode-next-module-plan.md).
+CivicZone v0.1.0 now ships. CivicAccess is the next planned Clerk Core module lane, with CivicPlan and other Tier 2 land-use modules following after the foundation modules stabilize.
 
 ## What's in this repo
 
@@ -77,7 +78,7 @@ civicsuite/
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released; staff workflow UI foundation available at `/staff`. |
 | civiccode | <https://github.com/CivicSuite/civiccode> | Module 3, v0.1.0 runtime foundation released; municipal-code lookup, citations, local imports, and records-ready exports. |
 
-Future module repos (`civiczone`, …) will land under `CivicSuite/` as separate repos.
+Future module repos will land under `CivicSuite/` as separate repos.
 
 ## Architecture in one paragraph
 

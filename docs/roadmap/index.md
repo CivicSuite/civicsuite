@@ -6,16 +6,17 @@ condensed table view follows.
 
 ## Current next step
 
-**Current module lane: CivicCode shipped v0.1.0.** CivicRecords AI is shipping
+**Current module lane: CivicZone shipped v0.1.0.** CivicRecords AI is shipping
 at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
 with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
 at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
-CivicAccess, CivicComms, and CivicClerk handoffs depend on.
+CivicAccess, CivicComms, and CivicClerk handoffs depend on. CivicZone is
+shipping at v0.1.0 with parcel lookup, zoning rule lookup, cited sample Q&A,
+planner escalation, and public UI foundation.
 
-CivicCode is no longer scaffold-only. The next suite implementation lane can
-plan against CivicCode v0.1.0's source registry, section/version lifecycle,
-search/permalink, citation, Q&A, local import, public lookup, and export
-contracts.
+CivicZone is no longer scaffold-only. The next suite implementation lane can
+plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode, and
+CivicZone release contracts.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -34,12 +35,12 @@ prior CivicClerk plan remains as historical context in
 
 ## Phase 2 — Land Use & Development
 
-| # | Module               |
-|---|----------------------|
-| 6 | CivicZone            |
-| 7 | CivicPlan            |
-| 8 | CivicPermit Assist   |
-| 9 | CivicInspect         |
+| # | Module               | Status          |
+|---|----------------------|-----------------|
+| 6 | CivicZone            | Shipping v0.1.0 |
+| 7 | CivicPlan            | Planned         |
+| 8 | CivicPermit Assist   | Planned         |
+| 9 | CivicInspect         | Planned         |
 
 ## Phase 3 — Administrative & Resident Services
 
