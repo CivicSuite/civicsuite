@@ -252,7 +252,7 @@ Dependency note: older catalog text listed CivicRecords because shared document/
 
 Owner: City Clerk / Legal / Codification Department  
 Depends on: CivicCore, CivicClerk  
-Status: planned  
+Status: shipping v0.1.0 foundation
 Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
@@ -939,16 +939,17 @@ As of 2026-04-27:
 - `civicclerk` ships as v0.1.0 with runtime foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and a browser-visible `/staff` workflow UI foundation.
 - `civiccode` ships as v0.1.0 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, and records-ready exports. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.0 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, and accessible public sample UI. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
-- CivicAccess and the rest of the catalog are planned, not implemented.
+- `civicaccess` ships as v0.1.0 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, and accessible public sample UI. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.
+- The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicZone v0.1.0 completed the immediate build sequence needed for the first Tier 2 land-use foundation release:
+CivicAccess v0.1.0 completed the immediate build sequence needed for the first accessibility/plain-language foundation release:
 
-1. Keep the CivicZone shipped baseline aligned with section 10 of this spec and the catalog CivicZone spec.
-2. Preserve CivicZone's legal boundaries: informational zoning context only, no official zoning determinations, no legal advice, and no replacement for planner review.
-3. Update the compatibility matrix every time CivicZone or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicZone contracts.
+1. Keep the CivicAccess shipped baseline aligned with section 12 of this spec and the catalog CivicAccess spec.
+2. Preserve CivicAccess's legal boundaries: support and checklists only, no certified ADA compliance, no legal advice, no publication-ready translation without human review.
+3. Update the compatibility matrix every time CivicAccess or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, and CivicAccess contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -959,7 +960,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Whether CivicAccess or CivicPlan should be the next implementation lane after CivicZone v0.1.0.
+- Whether CivicPlan should be the next implementation lane after CivicAccess v0.1.0.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
