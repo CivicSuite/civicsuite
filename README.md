@@ -34,6 +34,14 @@ If you're orienting yourself for the first time, read in this order:
 4. [specs/01_catalog.md](specs/01_catalog.md) — the source catalog draft folded into the unified spec.
 5. [docs/architecture/](docs/architecture/) — ADRs.
 
+## Next module lane
+
+The next planning lane is **CivicCode**, not CivicZone. CivicZone remains the
+first major Tier 2 land-use product, but the canonical spec identifies
+CivicCode as the Tier 1 municipal-code layer that should be planned before
+CivicZone runtime work begins. See
+[docs/roadmap/civiccode-next-module-plan.md](docs/roadmap/civiccode-next-module-plan.md).
+
 ## What's in this repo
 
 ```

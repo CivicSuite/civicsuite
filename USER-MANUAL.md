@@ -26,6 +26,7 @@ Today, only one module is shipping. The rest are either in early-platform stage 
 
 ### What's planned but not started
 
+- **civiccode** — municipal code and ordinance access. This is the next planning lane because CivicZone needs an authoritative code-section contract before zoning runtime work begins.
 - **civiczone** — zoning code and parcel-aware planner workflows. Spec drafted, no code yet.
 - Twenty-plus additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
@@ -70,6 +71,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.0. Transferred to the `CivicSuite` GitHub org on 2026-04-25; this is now the canonical home. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.2.0. Phase 2 (LLM module) just landed. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.0 runtime foundation with `/staff` workflow UI foundation. |
+| civiccode | not created yet | Next planning lane; no runtime code. |
 | civiczone, etc. | not created yet | Specs only. |
 
 ### Dependency direction

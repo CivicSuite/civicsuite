@@ -931,30 +931,24 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 ## 18. Current Shipped State
 
-As of 2026-04-26:
+As of 2026-04-27:
 
 - `civicrecords-ai` ships as v1.4.0.
 - `civiccore` ships as v0.2.0.
 - `civicsuite` is the umbrella documentation/governance repo.
-- `civicclerk` is scaffolded only; no runtime app exists yet.
-- CivicZone, CivicCode, CivicAccess, and the rest of the catalog are planned, not implemented.
+- `civicclerk` ships as v0.1.0 with runtime foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and a browser-visible `/staff` workflow UI foundation.
+- CivicCode, CivicAccess, CivicZone, and the rest of the catalog are planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-The next runtime build should not start from the thin scaffold alone. It should start from this canonical sequence:
+CivicClerk v0.1.0 completed the prior immediate build sequence. The next suite lane is planning CivicCode before CivicZone runtime work begins:
 
-1. Reconcile CivicClerk docs and ADRs to this unified spec.
-2. Create CivicClerk runtime foundation.
-3. Implement CivicClerk canonical schema and migrations.
-4. Implement agenda and meeting lifecycle enforcement.
-5. Implement packet assembly and notice compliance.
-6. Implement motion/vote/action-item capture.
-7. Implement minutes drafting with citations.
-8. Implement public meeting calendar/detail/archive.
-9. Implement prompt YAML library and evaluation harness.
-10. Add import/connectors for incumbent meeting systems.
-11. Add accessibility and browser QA gates.
-12. Release CivicClerk only after docs, tests, browser evidence, and generated artifacts are complete.
+1. Create the CivicCode planning baseline from section 11 of this spec and the catalog CivicCode spec.
+2. Decide the CivicCode ADR queue before runtime: official-source precedence, codifier import strategy, section versioning, CivicClerk ordinance/adoption-event handoff, legal disclaimer wording, and staff-only interpretation-note visibility.
+3. Scaffold `CivicSuite/civiccode` only after the planning baseline is reviewed.
+4. Run CivicCode Milestone 0 reconciliation before any runtime code.
+5. Build the smallest useful CivicCode MVP: code source registry, section/version model, section permalink, search, cited Q&A, plain-language summaries, staff interpretation notes, and CivicClerk adoption-event intake.
+6. Start CivicZone runtime only after CivicCode has a real versioned source-of-code contract or a written ADR explicitly accepts a temporary substitute.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
