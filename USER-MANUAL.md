@@ -16,7 +16,7 @@ A glossary at the end defines every technical term used.
 
 CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
 
-Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, and CivicPlan have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
+Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, and CivicPermit have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
 
 ### What's available today (as of 2026-04-27)
 
@@ -27,10 +27,11 @@ Today, multiple modules are shipping at different maturity levels: CivicRecords 
 - **civiczone v0.1.0** — a runtime-foundation release for parcel-aware zoning and land-use Q&A. It ships canonical zoning schema, Alembic migrations, sample parcel and rule lookups, citation-grounded sample Q&A, planner escalation, staff-context samples, and a public sample UI at `/civiczone`. It still does not ship live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, or legal advice. Repo: <https://github.com/CivicSuite/civiczone>.
 - **civicaccess v0.1.0** — a runtime-foundation release for accessibility, plain-language, multilingual, and ADA review support. It ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and a public sample UI at `/civicaccess`. It still does not ship certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, or suite-wide integration APIs. Repo: <https://github.com/CivicSuite/civicaccess>.
 - **civicplan v0.1.0** — a runtime-foundation release for comprehensive-plan policy lookup and cited planning analysis support. It ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and a public sample UI at `/civicplan`. It still does not ship official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, or production staff-review queues. Repo: <https://github.com/CivicSuite/civicplan>.
+- **civicpermit v0.1.0** — a runtime-foundation release for permit pre-application and intake-readiness support. It ships deterministic sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and a public sample UI at `/civicpermit`. It still does not ship permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, or system-of-record behavior. Repo: <https://github.com/CivicSuite/civicpermit>.
 
 ### What's planned but not started
 
-- Twenty-plus additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
+- Eighteen additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
 If you don't see a module on this list with a version number, **it does not exist as code yet**. Specs are not products.
 
@@ -77,6 +78,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civiczone | <https://github.com/CivicSuite/civiczone> | Shipping v0.1.0 runtime foundation for parcel-aware zoning samples and public UI foundation. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Shipping v0.1.0 runtime foundation for accessibility review and public UI foundation. |
 | civicplan | <https://github.com/CivicSuite/civicplan> | Shipping v0.1.0 runtime foundation for cited plan-policy lookup and public UI foundation. |
+| civicpermit | <https://github.com/CivicSuite/civicpermit> | Shipping v0.1.0 runtime foundation for permit requirement lookup and public UI foundation. |
 | future modules | not created yet | Specs only. |
 
 ### Dependency direction

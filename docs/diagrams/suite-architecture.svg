@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
   <title id="title">CivicSuite suite architecture</title>
-  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, and CivicPlan. Each module depends on CivicCore 0.2.0. Future modules begin with CivicPermit.</desc>
+  <desc id="desc">CivicSuite umbrella documentation governs CivicCore and shipping product modules: CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, and CivicPermit. Each module depends on CivicCore 0.2.0. Future modules begin with CivicInspect.</desc>
   <style>
     text { font-family: Arial, sans-serif; fill: #1f2328; }
     .label { font-size: 21px; font-weight: 700; }
@@ -65,9 +65,10 @@
   <text x="860" y="570" text-anchor="middle" class="small">v0.1.0 shipping</text>
   <text x="860" y="593" text-anchor="middle" class="tiny">plan policy support</text>
 
-  <rect x="450" y="680" width="300" height="70" class="box future"/>
-  <text x="600" y="708" text-anchor="middle" class="label">future modules</text>
-  <text x="600" y="733" text-anchor="middle" class="small">CivicPermit next planned lane</text>
+  <rect x="440" y="660" width="320" height="85" class="box ship"/>
+  <text x="600" y="692" text-anchor="middle" class="label">civicpermit</text>
+  <text x="600" y="718" text-anchor="middle" class="small">v0.1.0 shipping</text>
+  <text x="600" y="739" text-anchor="middle" class="tiny">permit intake support</text>
 
   <path d="M390 205 L450 205" class="line dash"/>
   <text x="420" y="193" text-anchor="middle" class="edge">documents</text>
@@ -80,6 +81,10 @@
   <path d="M860 510 C800 430 655 330 615 265" class="line"/>
   <text x="600" y="315" text-anchor="middle" class="edge">all shipping modules depend on civiccore==0.2.0</text>
 
-  <path d="M600 610 L600 680" class="line dash"/>
-  <text x="670" y="650" class="edge">next module lane</text>
+  <path d="M600 610 L600 660" class="line"/>
+  <text x="670" y="645" class="edge">depends on civiccore==0.2.0</text>
+
+  <rect x="820" y="665" width="260" height="75" class="box future"/>
+  <text x="950" y="697" text-anchor="middle" class="label">future modules</text>
+  <text x="950" y="723" text-anchor="middle" class="small">CivicInspect next planned lane</text>
 </svg>

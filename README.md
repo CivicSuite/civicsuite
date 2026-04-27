@@ -21,8 +21,10 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 - **civicplan v0.1.0** - comprehensive-plan policy lookup and cited planning analysis foundation. Ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI at `/civicplan`. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are still not shipped. Repo: <https://github.com/CivicSuite/civicplan>.
 
+- **civicpermit v0.1.0** - permit pre-application and intake-readiness foundation. Ships deterministic sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and accessible public sample UI at `/civicpermit`. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped. Repo: <https://github.com/CivicSuite/civicpermit>.
+
 **Planned, not started:**
-- 20+ additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 18 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -43,7 +45,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicPlan v0.1.0 now ships. CivicPermit is the next planned Tier 2 land-use
+CivicPermit v0.1.0 now ships. CivicInspect is the next planned Tier 2 land-use
 module lane, with additional administrative and resident-service modules
 following after the foundation modules stabilize.
 
@@ -87,6 +89,7 @@ civicsuite/
 | civiczone | <https://github.com/CivicSuite/civiczone> | Module 6, v0.1.0 runtime foundation released; parcel lookup, zoning rule lookups, cited sample Q&A, planner escalation, and public UI foundation. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Module 5, v0.1.0 runtime foundation released; accessibility review, plain-language rewrite, multilingual variants, records-ready exports, and public UI foundation. |
 | civicplan | <https://github.com/CivicSuite/civicplan> | Module 7, v0.1.0 runtime foundation released; cited plan-policy lookup, consistency support, staff-analysis outlines, records-ready exports, and public UI foundation. |
+| civicpermit | <https://github.com/CivicSuite/civicpermit> | Module 8, v0.1.0 runtime foundation released; permit requirement lookup, intake-readiness review, submittal outlines, records-ready exports, and public UI foundation. |
 
 Future module repos will land under `CivicSuite/` as separate repos.
 
