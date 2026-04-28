@@ -14,3 +14,4 @@ the suite as a whole.
 - [ADR-0003: CivicCore Alembic baselines after the Phase-2 extensions migration](ADR-0003-civiccore-alembic-baseline-strategy.md)
 - [ADR-0004: Shared shell boundaries before frontend package extraction](ADR-0004-shared-shell-boundaries.md)
 - [ADR-0005: Connector import/export boundaries before vendor write-back](ADR-0005-connector-import-export-boundaries.md)
+- [ADR-0006: CivicCore v0.3.0 extraction scope favors audit, provenance, manifests, and city profile](ADR-0006-civiccore-v0-3-extraction-scope.md)

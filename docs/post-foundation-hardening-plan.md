@@ -167,6 +167,16 @@ Why:
 
 Auth/RBAC is important, but it hardens quickly into product policy. The first post-foundation lane benefits more from audit logging, source provenance, import/export manifests, and deployment configuration. Those are lower-risk shared primitives that every module needs.
 
+Initial status:
+
+`docs/architecture/ADR-0006-civiccore-v0-3-extraction-scope.md` and
+`docs/civiccore/v0.3-extraction-proposal.md` define the recommended v0.3.0
+scope: audit primitives, source/provenance contracts, connector/export manifest
+schema, city profile configuration, and export-bundle utilities. Auth/RBAC,
+full ingestion/search, live connector runtime, notifications, and shared shell
+package extraction stay out of scope for v0.3.0 unless a later ADR changes the
+boundary.
+
 ## Lane 6 - First Production-Depth Workflow
 
 Recommended first workflow:

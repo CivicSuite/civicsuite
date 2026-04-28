@@ -40,6 +40,9 @@ and [`../ux/shared-shell-inventory.md`](../ux/shared-shell-inventory.md).
 The first connector/import/export boundary is documented in
 [`../architecture/ADR-0005-connector-import-export-boundaries.md`](../architecture/ADR-0005-connector-import-export-boundaries.md)
 and [`../connectors/import-export-template.md`](../connectors/import-export-template.md).
+The CivicCore v0.3.0 extraction proposal is documented in
+[`../architecture/ADR-0006-civiccore-v0-3-extraction-scope.md`](../architecture/ADR-0006-civiccore-v0-3-extraction-scope.md)
+and [`../civiccore/v0.3-extraction-proposal.md`](../civiccore/v0.3-extraction-proposal.md).
 The prior CivicCode and CivicClerk module plans remain as historical context in
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md) and
 [`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
