@@ -35,7 +35,7 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 - **civicdata v0.1.0** - open-data and transparency publishing foundation. Ships dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and an accessible public sample UI at `/civicdata`. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicdata>.
 
 **Planned, not started:**
-- 8 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 7 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -56,9 +56,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicHR v0.1.0 now ships. CivicBudget is the next planned Tier 4
-internal-business module lane, with legal, elections, and safety modules
-following after the current foundation modules stabilize.
+CivicBudget v0.1.0 now ships. CivicLegal is the next planned module lane, with elections and safety modules following after the current foundation modules stabilize.
 
 ## What's in this repo
 
@@ -111,6 +109,7 @@ civicsuite/
 | civiccomms | <https://github.com/CivicSuite/civiccomms> | Module 16, v0.1.0 runtime foundation released; source-readiness review, meeting summaries, ordinance explainers, newsletters, FAQs, audience variants, and public UI foundation. |
 | civicdata | <https://github.com/CivicSuite/civicdata> | Module 17, v0.1.0 runtime foundation released; dataset normalization, data dictionaries, CKAN metadata drafts, redaction preflight, archive checklists, and publication planning. |
 | civichr | <https://github.com/CivicSuite/civichr> | Module 18, v0.1.0 runtime foundation released; HR policy lookup, handbook summaries, job descriptions, classification references, onboarding/training checklists, and intake templates. |
+| civicbudget | <https://github.com/CivicSuite/civicbudget> | Module 19, v0.1.0 runtime foundation released; line-item analysis, budget narratives, department memos, hearing packet checklists, resident summaries, and GFOA checklist support. |
 
 Future module repos will land under `CivicSuite/` as separate repos.
 
@@ -137,3 +136,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the bug-routing decision tree (most b
 ## Support
 
 See [SUPPORT.md](SUPPORT.md) for where to ask questions based on what kind of question you have. See [SECURITY.md](SECURITY.md) for vulnerability reporting.
+- **civicbudget v0.1.0** - budget narrative and transparency support foundation. Ships line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI at `/civicbudget`. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicbudget>.

@@ -376,7 +376,7 @@ Purpose: personnel policy Q&A, job description drafting, onboarding packet gener
 
 Owner: Finance / City Manager / Department budget leads  
 Depends on: CivicCore, CivicClerk, CivicData  
-Status: planned  
+Status: shipping v0.1.0 runtime foundation  
 Purpose: budget memo drafting, departmental budget narratives, line-item analysis, and hearing packet prep. Not a budgeting system.
 
 #### CivicLegal
@@ -963,7 +963,8 @@ As of 2026-04-27:
 - `civiccomms` ships as v0.1.0 with runtime foundations for source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience-variant drafts, and accessible public sample UI. Autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, and communications system-of-record integrations are not shipped.
 - `civicdata` ships as v0.1.0 with runtime foundations for dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public sample UI. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
 - `civichr` ships as v0.1.0 with runtime foundations for HR policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and accessible public sample UI. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
-- The rest of the catalog is planned, not implemented.
+- `civicbudget` ships as v0.1.0 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
+- The remaining catalog modules are planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
@@ -983,7 +984,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicBudget implementation scope and budget-narrative/transparency boundaries now that CivicHR v0.1.0 is shipped.
+- CivicLegal implementation scope and legal-risk boundaries now that CivicBudget v0.1.0 is shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
