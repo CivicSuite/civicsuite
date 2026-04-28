@@ -127,8 +127,8 @@ services:
       - -c
       - >
         pip install --no-cache-dir
-        https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl
-        https://github.com/CivicSuite/civiczone/releases/download/v0.1.0/civiczone-0.1.0-py3-none-any.whl
+        https://github.com/CivicSuite/civiccore/releases/download/v0.3.0/civiccore-0.3.0-py3-none-any.whl
+        https://github.com/CivicSuite/civiczone/releases/download/v0.1.1/civiczone-0.1.1-py3-none-any.whl
         && uvicorn civiczone.main:app --host 0.0.0.0 --port 8030
     environment:
       CIVICCORE_LLM_PROVIDER: ollama

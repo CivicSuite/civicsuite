@@ -38,7 +38,7 @@ EXPECTED_SERVICES = {
 MODULE_SERVICES = {
     "civicclerk": ("civicclerk.main", "app", "0.1.0", 8010, "0.2.0"),
     "civiccode": ("civiccode.main", "app", "0.1.1", 8020, "0.3.0"),
-    "civiczone": ("civiczone.main", "app", "0.1.0", 8030, "0.2.0"),
+    "civiczone": ("civiczone.main", "app", "0.1.1", 8030, "0.3.0"),
 }
 LOCAL_CIVICCORE_VERSION = "0.3.0"
 FORBIDDEN_PROVIDER_VALUES = {"openai", "anthropic"}
