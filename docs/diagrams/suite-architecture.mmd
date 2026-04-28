@@ -1,34 +1,34 @@
 graph TB
     subgraph SUITE["GitHub: CivicSuite organization"]
         SuiteRepo["civicsuite<br/>umbrella repo<br/>governance, compatibility matrix,<br/>spec docs, ADRs"]
-        Core["civiccore<br/>v0.2.0 shared library<br/>migrations + db.Base + llm"]
+        Core["civiccore<br/>v0.3.0 shared library<br/>migrations + db.Base + llm + shared primitives"]
     end
     subgraph PRODUCT["GitHub: CivicSuite organization"]
-        Records["civicrecords-ai<br/>v1.4.0<br/>FOIA / public records app"]
-        Clerk["civicclerk<br/>v0.1.0<br/>meeting management"]
-        Code["civiccode<br/>v0.1.0<br/>municipal code"]
-        Zone["civiczone<br/>v0.1.0<br/>zoning / land use"]
-        Access["civicaccess<br/>v0.1.0<br/>accessibility / language"]
-        Plan["civicplan<br/>v0.1.0<br/>plan policy support"]
-        Permit["civicpermit<br/>v0.1.0<br/>permit intake support"]
-        Inspect["civicinspect<br/>v0.1.0<br/>inspection support"]
-        Grants["civicgrants<br/>v0.1.0<br/>grant support"]
-        Procure["civicprocure<br/>v0.1.0<br/>procurement support"]
-        Contracts["civiccontracts<br/>v0.1.0<br/>contract repository"]
-        Boards["civicboards<br/>v0.1.0<br/>board administration"]
-        Notice["civicnotice<br/>v0.1.0<br/>public notices"]
-        Civic311["civic311<br/>v0.1.0<br/>resident service requests"]
-        Comms["civiccomms<br/>v0.1.0<br/>public communications"]
-        Data["civicdata<br/>v0.1.0<br/>open data bridge"]
-        HR["civichr<br/>v0.1.0<br/>HR policy support"]
-        Budget["civicbudget<br/>v0.1.0<br/>budget narratives"]
-        Legal["civiclegal<br/>v0.1.0<br/>legal records"]
-        Elections["civicelections<br/>v0.1.0<br/>election support"]
-        Utility["civicutility<br/>v0.1.0<br/>utility customer service"]
-        Court["civiccourt<br/>v0.1.0<br/>court clerk support"]
-        Safety["civicsafety<br/>v0.1.0<br/>non-CJIS safety admin"]
-        Library["civiclibrary<br/>v0.1.0<br/>library policy / reference"]
-        Parks["civicparks<br/>v0.1.0<br/>parks / recreation"]
+        Records["civicrecords-ai<br/>v1.4.1<br/>FOIA / public records app"]
+        Clerk["civicclerk<br/>v0.1.1<br/>meeting management"]
+        Code["civiccode<br/>v0.1.1<br/>municipal code"]
+        Zone["civiczone<br/>v0.1.1<br/>zoning / land use"]
+        Access["civicaccess<br/>v0.1.1<br/>accessibility / language"]
+        Plan["civicplan<br/>v0.1.1<br/>plan policy support"]
+        Permit["civicpermit<br/>v0.1.1<br/>permit intake support"]
+        Inspect["civicinspect<br/>v0.1.1<br/>inspection support"]
+        Grants["civicgrants<br/>v0.1.1<br/>grant support"]
+        Procure["civicprocure<br/>v0.1.1<br/>procurement support"]
+        Contracts["civiccontracts<br/>v0.1.1<br/>contract repository"]
+        Boards["civicboards<br/>v0.1.1<br/>board administration"]
+        Notice["civicnotice<br/>v0.1.1<br/>public notices"]
+        Civic311["civic311<br/>v0.1.1<br/>resident service requests"]
+        Comms["civiccomms<br/>v0.1.1<br/>public communications"]
+        Data["civicdata<br/>v0.1.1<br/>open data bridge"]
+        HR["civichr<br/>v0.1.1<br/>HR policy support"]
+        Budget["civicbudget<br/>v0.1.1<br/>budget narratives"]
+        Legal["civiclegal<br/>v0.1.1<br/>legal records"]
+        Elections["civicelections<br/>v0.1.1<br/>election support"]
+        Utility["civicutility<br/>v0.1.1<br/>utility customer service"]
+        Court["civiccourt<br/>v0.1.1<br/>court clerk support"]
+        Safety["civicsafety<br/>v0.1.1<br/>non-CJIS safety admin"]
+        Library["civiclibrary<br/>v0.1.1<br/>library policy / reference"]
+        Parks["civicparks<br/>v0.1.1<br/>parks / recreation"]
     end
     SuiteRepo -.documents.-> Core
     SuiteRepo -.documents.-> Records
@@ -56,31 +56,31 @@ graph TB
     SuiteRepo -.governs.-> Safety
     SuiteRepo -.governs.-> Library
     SuiteRepo -.governs.-> Parks
-    Records -->|"depends on ==0.2.0"| Core
-    Clerk -->|"depends on ==0.2.0"| Core
-    Code -->|"depends on ==0.2.0"| Core
-    Zone -->|"depends on ==0.2.0"| Core
-    Access -->|"depends on ==0.2.0"| Core
-    Plan -->|"depends on ==0.2.0"| Core
-    Permit -->|"depends on ==0.2.0"| Core
-    Inspect -->|"depends on ==0.2.0"| Core
-    Grants -->|"depends on ==0.2.0"| Core
-    Procure -->|"depends on ==0.2.0"| Core
-    Contracts -->|"depends on ==0.2.0"| Core
-    Boards -->|"depends on ==0.2.0"| Core
-    Notice -->|"depends on ==0.2.0"| Core
-    Civic311 -->|"depends on ==0.2.0"| Core
-    Comms -->|"depends on ==0.2.0"| Core
-    Data -->|"depends on ==0.2.0"| Core
-    HR -->|"depends on ==0.2.0"| Core
-    Budget -->|"depends on ==0.2.0"| Core
-    Legal -->|"depends on ==0.2.0"| Core
-    Elections -->|"depends on ==0.2.0"| Core
-    Utility -->|"depends on ==0.2.0"| Core
-    Court -->|"depends on ==0.2.0"| Core
-    Safety -->|"depends on ==0.2.0"| Core
-    Library -->|"depends on ==0.2.0"| Core
-    Parks -->|"depends on ==0.2.0"| Core
+    Records -->|"depends on ==0.3.0"| Core
+    Clerk -->|"depends on ==0.3.0"| Core
+    Code -->|"depends on ==0.3.0"| Core
+    Zone -->|"depends on ==0.3.0"| Core
+    Access -->|"depends on ==0.3.0"| Core
+    Plan -->|"depends on ==0.3.0"| Core
+    Permit -->|"depends on ==0.3.0"| Core
+    Inspect -->|"depends on ==0.3.0"| Core
+    Grants -->|"depends on ==0.3.0"| Core
+    Procure -->|"depends on ==0.3.0"| Core
+    Contracts -->|"depends on ==0.3.0"| Core
+    Boards -->|"depends on ==0.3.0"| Core
+    Notice -->|"depends on ==0.3.0"| Core
+    Civic311 -->|"depends on ==0.3.0"| Core
+    Comms -->|"depends on ==0.3.0"| Core
+    Data -->|"depends on ==0.3.0"| Core
+    HR -->|"depends on ==0.3.0"| Core
+    Budget -->|"depends on ==0.3.0"| Core
+    Legal -->|"depends on ==0.3.0"| Core
+    Elections -->|"depends on ==0.3.0"| Core
+    Utility -->|"depends on ==0.3.0"| Core
+    Court -->|"depends on ==0.3.0"| Core
+    Safety -->|"depends on ==0.3.0"| Core
+    Library -->|"depends on ==0.3.0"| Core
+    Parks -->|"depends on ==0.3.0"| Core
     classDef shipping fill:#d4f4dd,stroke:#3a7a4a,stroke-width:2px,color:#000
     classDef governance fill:#e1e1ff,stroke:#5a5aa0,stroke-width:2px,color:#000
     classDef future fill:#fff4e1,stroke:#a08040,stroke-width:1px,stroke-dasharray:5 5,color:#000

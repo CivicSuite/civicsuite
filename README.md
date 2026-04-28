@@ -8,7 +8,7 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 **Shipping:**
 
-- **civicrecords-ai v1.4.0** — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. (Transferred to the `CivicSuite` GitHub org on 2026-04-25.)
+- **civicrecords-ai v1.4.1** — open-source FOIA / public records management, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civicrecords-ai>. (Transferred to the `CivicSuite` GitHub org on 2026-04-25.)
 - **civiccore v0.3.0** — shared platform package. **Shipping today:** migration runner + shared baselines (`civiccore.migrations`), shared SQLAlchemy `Base` (`civiccore.db`), LLM abstraction (`civiccore.llm`), hash-chained audit primitives, source/provenance contracts, offline import/export manifest schemas, export-bundle helpers, and local city profile configuration. **Future / planned extraction:** auth/RBAC, document ingestion, hybrid search, notification delivery, web onboarding flows, 50-state exemption engine, sovereignty verification, live connector sync, credential storage, vendor write-back, and legal determinations. Repo: <https://github.com/CivicSuite/civiccore>.
 
 - **civicclerk v0.1.1** — meeting/agenda/minutes runtime foundation. Ships schema, lifecycle enforcement, packet/notice checks, immutable motion/vote/action capture, citation-gated minutes drafts, public archive endpoints, prompt eval gates, connector imports, browser QA gates, and live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening is still planned. Repo: <https://github.com/CivicSuite/civicclerk>.

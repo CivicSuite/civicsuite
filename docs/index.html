@@ -279,7 +279,7 @@
   <ul class="module-status">
     <li>
       <span class="name">civicrecords-ai</span>
-      <span class="badge badge-shipping">Shipping v1.4.0</span>
+      <span class="badge badge-shipping">Shipping v1.4.1</span>
       <span class="desc">FOIA / public records request management. Phase 2 LLM integration shipped 2026-04-25. The architectural template for everything that follows.</span>
     </li>
     <li>
@@ -413,7 +413,7 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules, including CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, and CivicContracts v0.1.1 alignment releases." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.1 and all 26 catalog modules, including CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, and CivicContracts v0.1.1 alignment releases." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -455,7 +455,7 @@
   <ul>
     <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> &mdash; umbrella repo (this site, charter, specs, ADRs, governance)</li>
     <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> &mdash; shared platform package, shipping v0.3.0</li>
-    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
+    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.1 (transferred to the CivicSuite org on 2026-04-25)</li>
     <li><a href="https://github.com/CivicSuite/civicclerk"><code>github.com/CivicSuite/civicclerk</code></a> &mdash; Module 2, shipping v0.1.1 with production-depth staff screens and civiccore==0.3.0 alignment</li>
     <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.1</li>
     <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.1</li>
