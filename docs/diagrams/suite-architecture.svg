@@ -1,79 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1100" viewBox="0 0 1500 1100">
-<rect width="1500" height="1100" fill="#fbfbfa"/>
-<text x="40" y="60" font-size="34" font-family="Arial" font-weight="700" fill="#1f2328">CivicSuite organization architecture after CivicData Bridge v0.1.0</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1120" viewBox="0 0 1500 1120">
+<rect width="1500" height="1120" fill="#fbfbfa"/>
+<text x="40" y="60" font-size="34" font-family="Arial" font-weight="700" fill="#1f2328">CivicSuite organization architecture after CivicHR v0.1.0</text>
 <rect x="80" y="110" width="350" height="100" rx="16" fill="#e1e1ff" stroke="#334" stroke-width="2"/>
-<text x="94" y="142" font-size="22" font-family="Arial" font-weight="700" fill="#111">civicsuite</text>
-<text x="94" y="170" font-size="16" font-family="Arial" fill="#333">umbrella docs / governance</text>
+<text x="94" y="142" font-size="22" font-family="Arial" font-weight="700">civicsuite</text>
+<text x="94" y="170" font-size="16" font-family="Arial">umbrella docs / governance</text>
 <rect x="575" y="110" width="350" height="100" rx="16" fill="#d4f4dd" stroke="#334" stroke-width="2"/>
-<text x="589" y="142" font-size="22" font-family="Arial" font-weight="700" fill="#111">civiccore</text>
-<text x="589" y="170" font-size="16" font-family="Arial" fill="#333">v0.2.0 shared library</text>
+<text x="589" y="142" font-size="22" font-family="Arial" font-weight="700">civiccore</text>
+<text x="589" y="170" font-size="16" font-family="Arial">v0.2.0 shared library</text>
 <line x1="430" y1="160" x2="575" y2="160" stroke="#5a5aa0" stroke-width="3"/>
-<line x1="185.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="80" y="285" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="92" y="315" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicrecords-ai</text>
-<text x="92" y="343" font-size="15" font-family="Arial" fill="#333">v1.4.0 FOIA</text>
-<line x1="421.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="316" y="285" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="328" y="315" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicclerk</text>
-<text x="328" y="343" font-size="15" font-family="Arial" fill="#333">v0.1.0 meetings</text>
-<line x1="657.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="552" y="285" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="564" y="315" font-size="21" font-family="Arial" font-weight="700" fill="#111">civiccode</text>
-<text x="564" y="343" font-size="15" font-family="Arial" fill="#333">v0.1.0 code</text>
-<line x1="893.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="788" y="285" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="800" y="315" font-size="21" font-family="Arial" font-weight="700" fill="#111">civiczone</text>
-<text x="800" y="343" font-size="15" font-family="Arial" fill="#333">v0.1.0 zoning</text>
-<line x1="1129.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="1024" y="285" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="1036" y="315" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicaccess</text>
-<text x="1036" y="343" font-size="15" font-family="Arial" fill="#333">v0.1.0 accessibility</text>
-<line x1="185.0" y1="397" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="80" y="397" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="92" y="427" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicplan</text>
-<text x="92" y="455" font-size="15" font-family="Arial" fill="#333">v0.1.0 planning</text>
-<line x1="421.0" y1="397" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="316" y="397" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="328" y="427" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicpermit</text>
-<text x="328" y="455" font-size="15" font-family="Arial" fill="#333">v0.1.0 permits</text>
-<line x1="657.0" y1="397" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="552" y="397" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="564" y="427" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicinspect</text>
-<text x="564" y="455" font-size="15" font-family="Arial" fill="#333">v0.1.0 inspections</text>
-<line x1="893.0" y1="397" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="788" y="397" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="800" y="427" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicgrants</text>
-<text x="800" y="455" font-size="15" font-family="Arial" fill="#333">v0.1.0 grants</text>
-<line x1="1129.0" y1="397" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="1024" y="397" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="1036" y="427" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicprocure</text>
-<text x="1036" y="455" font-size="15" font-family="Arial" fill="#333">v0.1.0 procurement</text>
-<line x1="185.0" y1="509" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="80" y="509" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="92" y="539" font-size="21" font-family="Arial" font-weight="700" fill="#111">civiccontracts</text>
-<text x="92" y="567" font-size="15" font-family="Arial" fill="#333">v0.1.0 contracts</text>
-<line x1="421.0" y1="509" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="316" y="509" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="328" y="539" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicboards</text>
-<text x="328" y="567" font-size="15" font-family="Arial" fill="#333">v0.1.0 boards</text>
-<line x1="657.0" y1="509" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="552" y="509" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="564" y="539" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicnotice</text>
-<text x="564" y="567" font-size="15" font-family="Arial" fill="#333">v0.1.0 notices</text>
-<line x1="893.0" y1="509" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="788" y="509" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="800" y="539" font-size="21" font-family="Arial" font-weight="700" fill="#111">civic311</text>
-<text x="800" y="567" font-size="15" font-family="Arial" fill="#333">v0.1.0 requests</text>
-<line x1="1129.0" y1="509" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="1024" y="509" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="1036" y="539" font-size="21" font-family="Arial" font-weight="700" fill="#111">civiccomms</text>
-<text x="1036" y="567" font-size="15" font-family="Arial" fill="#333">v0.1.0 communications</text>
-<line x1="185.0" y1="621" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="80" y="621" width="210" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
-<text x="92" y="651" font-size="21" font-family="Arial" font-weight="700" fill="#111">civicdata</text>
-<text x="92" y="679" font-size="15" font-family="Arial" fill="#333">v0.1.0 open data</text>
-<line x1="421.0" y1="621" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
-<rect x="316" y="621" width="210" height="86" rx="14" fill="#fff4e1" stroke="#a08040" stroke-width="2"/>
-<text x="328" y="651" font-size="21" font-family="Arial" font-weight="700" fill="#111">civichr</text>
-<text x="328" y="679" font-size="15" font-family="Arial" fill="#333">next planned lane</text>
+<line x1="180.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="70" y="285" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="82" y="315" font-size="21" font-family="Arial" font-weight="700">civicrecords-ai</text><text x="82" y="343" font-size="15" font-family="Arial">v1.4.0 FOIA</text>
+<line x1="422.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="312" y="285" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="324" y="315" font-size="21" font-family="Arial" font-weight="700">civicclerk</text><text x="324" y="343" font-size="15" font-family="Arial">v0.1.0 meetings</text>
+<line x1="664.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="554" y="285" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="566" y="315" font-size="21" font-family="Arial" font-weight="700">civiccode</text><text x="566" y="343" font-size="15" font-family="Arial">v0.1.0 code</text>
+<line x1="906.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="796" y="285" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="808" y="315" font-size="21" font-family="Arial" font-weight="700">civiczone</text><text x="808" y="343" font-size="15" font-family="Arial">v0.1.0 zoning</text>
+<line x1="1148.0" y1="285" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="1038" y="285" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="1050" y="315" font-size="21" font-family="Arial" font-weight="700">civicaccess</text><text x="1050" y="343" font-size="15" font-family="Arial">v0.1.0 accessibility</text>
+<line x1="180.0" y1="395" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="70" y="395" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="82" y="425" font-size="21" font-family="Arial" font-weight="700">civicplan</text><text x="82" y="453" font-size="15" font-family="Arial">v0.1.0 planning</text>
+<line x1="422.0" y1="395" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="312" y="395" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="324" y="425" font-size="21" font-family="Arial" font-weight="700">civicpermit</text><text x="324" y="453" font-size="15" font-family="Arial">v0.1.0 permits</text>
+<line x1="664.0" y1="395" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="554" y="395" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="566" y="425" font-size="21" font-family="Arial" font-weight="700">civicinspect</text><text x="566" y="453" font-size="15" font-family="Arial">v0.1.0 inspections</text>
+<line x1="906.0" y1="395" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="796" y="395" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="808" y="425" font-size="21" font-family="Arial" font-weight="700">civicgrants</text><text x="808" y="453" font-size="15" font-family="Arial">v0.1.0 grants</text>
+<line x1="1148.0" y1="395" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="1038" y="395" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="1050" y="425" font-size="21" font-family="Arial" font-weight="700">civicprocure</text><text x="1050" y="453" font-size="15" font-family="Arial">v0.1.0 procurement</text>
+<line x1="180.0" y1="505" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="70" y="505" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="82" y="535" font-size="21" font-family="Arial" font-weight="700">civiccontracts</text><text x="82" y="563" font-size="15" font-family="Arial">v0.1.0 contracts</text>
+<line x1="422.0" y1="505" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="312" y="505" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="324" y="535" font-size="21" font-family="Arial" font-weight="700">civicboards</text><text x="324" y="563" font-size="15" font-family="Arial">v0.1.0 boards</text>
+<line x1="664.0" y1="505" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="554" y="505" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="566" y="535" font-size="21" font-family="Arial" font-weight="700">civicnotice</text><text x="566" y="563" font-size="15" font-family="Arial">v0.1.0 notices</text>
+<line x1="906.0" y1="505" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="796" y="505" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="808" y="535" font-size="21" font-family="Arial" font-weight="700">civic311</text><text x="808" y="563" font-size="15" font-family="Arial">v0.1.0 requests</text>
+<line x1="1148.0" y1="505" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="1038" y="505" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="1050" y="535" font-size="21" font-family="Arial" font-weight="700">civiccomms</text><text x="1050" y="563" font-size="15" font-family="Arial">v0.1.0 communications</text>
+<line x1="180.0" y1="615" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="70" y="615" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="82" y="645" font-size="21" font-family="Arial" font-weight="700">civicdata</text><text x="82" y="673" font-size="15" font-family="Arial">v0.1.0 open data</text>
+<line x1="422.0" y1="615" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="312" y="615" width="220" height="86" rx="14" fill="#d4f4dd" stroke="#3a7a4a" stroke-width="2"/>
+<text x="324" y="645" font-size="21" font-family="Arial" font-weight="700">civichr</text><text x="324" y="673" font-size="15" font-family="Arial">v0.1.0 HR policy</text>
+<line x1="664.0" y1="615" x2="750" y2="210" stroke="#799b7d" stroke-width="1" opacity="0.45"/>
+<rect x="554" y="615" width="220" height="86" rx="14" fill="#fff4e1" stroke="#a08040" stroke-width="2"/>
+<text x="566" y="645" font-size="21" font-family="Arial" font-weight="700">civicbudget</text><text x="566" y="673" font-size="15" font-family="Arial">next planned lane</text>
 </svg>

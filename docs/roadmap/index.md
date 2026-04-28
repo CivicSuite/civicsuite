@@ -27,10 +27,10 @@ audit-ready exports, and public UI foundation. CivicProcure is shipping at
 v0.1.0 with RFP drafting, proposal comparison, exception extraction, scoring
 summary helper, award-packet checklist, and accessible public UI foundation. CivicContracts is shipping at v0.1.0 with contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, and accessible public UI foundation. CivicBoards is shipping at v0.1.0 with board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and accessible public UI foundation. CivicNotice is shipping at v0.1.0 with notice registry, statutory deadline plans, publication-readiness checks, channel planning, notice records exports, and accessible public UI foundation. Civic311 is shipping at v0.1.0 with request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and accessible public UI foundation. CivicComms is shipping at v0.1.0 with source-readiness review, meeting summaries, ordinance explainers, newsletter scaffolds, FAQ prompts, audience variants, and accessible public UI foundation. CivicData Bridge is shipping at v0.1.0 with dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public UI foundation.
 
-CivicData Bridge has shipped its v0.1.0 foundation. The next suite implementation lane can
+CivicHR has shipped its v0.1.0 foundation. The next suite implementation lane can
 plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode,
 CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants,
-CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, and CivicData release contracts. CivicHR is the next planned module lane.
+CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, and CivicData release contracts. CivicBudget is the next planned module lane.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -73,8 +73,8 @@ prior CivicClerk plan remains as historical context in
 
 | #  | Module                |
 |----|-----------------------|
-| 18 | CivicHR Assist        | Planned next |
-| 19 | CivicBudget Assist    |
+| 18 | CivicHR Assist        | Shipping v0.1.0 |
+| 19 | CivicBudget Assist    | Planned next |
 | 20 | CivicLegal Research   |
 | 21 | CivicElections Assist |
 | 22 | CivicUtility Assist   |

@@ -20,9 +20,10 @@ graph TB
         Civic311["civic311<br/>v0.1.0<br/>resident service requests"]
         Comms["civiccomms<br/>v0.1.0<br/>public communications"]
         Data["civicdata<br/>v0.1.0<br/>open data bridge"]
+        HR["civichr<br/>v0.1.0<br/>HR policy support"]
     end
     subgraph FUTURE["Future modules - planned, not started"]
-        HR["civichr<br/>next planned lane"]
+        Budget["civicbudget<br/>next planned lane"]
     end
     SuiteRepo -.documents.-> Core
     SuiteRepo -.documents.-> Records
@@ -42,6 +43,7 @@ graph TB
     SuiteRepo -.governs.-> Comms
     SuiteRepo -.governs.-> Data
     SuiteRepo -.governs.-> HR
+    SuiteRepo -.governs.-> Budget
     Records -->|"depends on ==0.2.0"| Core
     Clerk -->|"depends on ==0.2.0"| Core
     Code -->|"depends on ==0.2.0"| Core
@@ -58,6 +60,7 @@ graph TB
     Civic311 -->|"depends on ==0.2.0"| Core
     Comms -->|"depends on ==0.2.0"| Core
     Data -->|"depends on ==0.2.0"| Core
+    HR -->|"depends on ==0.2.0"| Core
     classDef shipping fill:#d4f4dd,stroke:#3a7a4a,stroke-width:2px,color:#000
     classDef governance fill:#e1e1ff,stroke:#5a5aa0,stroke-width:2px,color:#000
     classDef future fill:#fff4e1,stroke:#a08040,stroke-width:1px,stroke-dasharray:5 5,color:#000
@@ -80,4 +83,5 @@ graph TB
     class Civic311 shipping
     class Comms shipping
     class Data shipping
-    class HR future
+    class HR shipping
+    class Budget future
