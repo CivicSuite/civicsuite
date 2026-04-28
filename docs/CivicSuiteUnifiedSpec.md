@@ -966,16 +966,17 @@ As of 2026-04-27:
 - `civicbudget` ships as v0.1.0 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
 - `civiclegal` ships as v0.1.0 with runtime foundations for privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are not shipped.
 - `civicelections` ships as v0.1.0 with runtime foundations for cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are not shipped.
-- The remaining catalog modules are planned, not implemented.
+- All 26 catalog modules now have v0.1.0 runtime-foundation releases; remaining work is post-foundation depth, connectors, deployment hardening, and cross-module UX.
 
-## 19. Immediate Build Sequence
+## 19. Post-Foundation Build Sequence
 
-CivicData Bridge v0.1.0 completed the immediate build sequence needed for the first open-data preparation foundation release:
+The v0.1.0 foundation lane is complete across all 26 catalog modules. The next sequence is hardening the suite into deployable, integrated municipal workflows:
 
-1. Keep the CivicData shipped baseline aligned with the CivicData catalog entry and the released CivicCore/CivicClerk/CivicCode/CivicAccess/CivicComms contracts it references.
-2. Preserve CivicData boundaries: preparation and metadata drafting only, no live CKAN publication, no BI dashboard, no data warehouse, no autonomous redaction, and no external connector runtime.
-3. Update the compatibility matrix every time CivicData or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, and CivicData contracts.
+1. Stabilize the shared deployment profile across CivicCore, CivicRecords AI, and the module runtime foundations.
+2. Define the first cross-module resident/staff shell boundaries without turning the suite into a monorepo.
+3. Prioritize connector templates by risk: read-only import first, export bundles second, write-back only after audited read/import paths are stable.
+4. Choose the first production-depth workflow lane from real municipal operator value, not from catalog order alone.
+5. Update the compatibility matrix every time any module or CivicCore releases.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
