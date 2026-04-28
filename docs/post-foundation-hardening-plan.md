@@ -44,6 +44,10 @@ Recommended first task:
 
 Create `scripts/verify-suite-state.py` in the umbrella repo. It should read a declarative module inventory and verify local clone paths, default branches, tags, release versions, CivicCore pins, docs artifacts, and compatibility-matrix rows.
 
+Initial status:
+
+`scripts/verify-suite-state.py` now exists as the first Lane 1 artifact. The default run verifies local clone paths, version truth, docs artifacts, CivicCore pins, and compatibility-matrix rows. Passing `--remote` also verifies GitHub release tags and uploaded assets through `gh release view`.
+
 Why first:
 
 The suite now has many repos. Before adding production depth, we need one reliable way to prove the repo set is coherent.
