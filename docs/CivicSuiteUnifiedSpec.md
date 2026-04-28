@@ -383,7 +383,7 @@ Purpose: budget memo drafting, departmental budget narratives, line-item analysi
 
 Owner: City Attorney / Paralegal / Clerk  
 Depends on: CivicCore, CivicCode, CivicClerk, CivicContracts  
-Status: planned  
+Status: shipping v0.1.0 runtime foundation  
 Purpose: Q&A over the city's own legal corpus, including ordinances, resolutions, contracts, legal opinions, litigation history, statutes, and prior Council actions.
 
 #### CivicElections
@@ -964,6 +964,7 @@ As of 2026-04-27:
 - `civicdata` ships as v0.1.0 with runtime foundations for dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public sample UI. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
 - `civichr` ships as v0.1.0 with runtime foundations for HR policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and accessible public sample UI. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
 - `civicbudget` ships as v0.1.0 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
+- `civiclegal` ships as v0.1.0 with runtime foundations for privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are not shipped.
 - The remaining catalog modules are planned, not implemented.
 
 ## 19. Immediate Build Sequence
@@ -984,7 +985,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicLegal implementation scope and legal-risk boundaries now that CivicBudget v0.1.0 is shipped.
+- CivicElections implementation scope and election-risk boundaries now that CivicLegal v0.1.0 is shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
