@@ -35,7 +35,7 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 - **civicdata v0.1.0** - open-data and transparency publishing foundation. Ships dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and an accessible public sample UI at `/civicdata`. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicdata>.
 
 **Planned, not started:**
-- 9 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 8 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -56,8 +56,8 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicData Bridge v0.1.0 now ships. CivicHR is the next planned Tier 4
-internal-business module lane, with budget, legal, elections, and safety modules
+CivicHR v0.1.0 now ships. CivicBudget is the next planned Tier 4
+internal-business module lane, with legal, elections, and safety modules
 following after the current foundation modules stabilize.
 
 ## What's in this repo
@@ -110,6 +110,7 @@ civicsuite/
 | civic311 | <https://github.com/CivicSuite/civic311> | Module 15, v0.1.0 runtime foundation released; request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and public UI foundation. |
 | civiccomms | <https://github.com/CivicSuite/civiccomms> | Module 16, v0.1.0 runtime foundation released; source-readiness review, meeting summaries, ordinance explainers, newsletters, FAQs, audience variants, and public UI foundation. |
 | civicdata | <https://github.com/CivicSuite/civicdata> | Module 17, v0.1.0 runtime foundation released; dataset normalization, data dictionaries, CKAN metadata drafts, redaction preflight, archive checklists, and publication planning. |
+| civichr | <https://github.com/CivicSuite/civichr> | Module 18, v0.1.0 runtime foundation released; HR policy lookup, handbook summaries, job descriptions, classification references, onboarding/training checklists, and intake templates. |
 
 Future module repos will land under `CivicSuite/` as separate repos.
 

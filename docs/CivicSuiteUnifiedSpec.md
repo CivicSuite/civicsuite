@@ -369,8 +369,8 @@ Purpose: municipal system normalization, open-data-ready packages, searchable ar
 
 Owner: Human Resources  
 Depends on: CivicCore  
-Status: planned  
-Purpose: personnel policy Q&A, job description drafting, onboarding packet generation, and internal HR knowledge support. Not an HRIS.
+Status: shipping v0.1.0 foundation  
+Purpose: personnel policy Q&A, job description drafting, onboarding packet generation, and internal HR knowledge support. Not an HRIS. v0.1.0 ships policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and an accessible public sample UI. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
 
 #### CivicBudget
 
@@ -962,6 +962,7 @@ As of 2026-04-27:
 - `civic311` ships as v0.1.0 with runtime foundations for resident service request intake, deterministic triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and accessible public sample UI. Official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, and 311 system-of-record integrations are not shipped.
 - `civiccomms` ships as v0.1.0 with runtime foundations for source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience-variant drafts, and accessible public sample UI. Autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, and communications system-of-record integrations are not shipped.
 - `civicdata` ships as v0.1.0 with runtime foundations for dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public sample UI. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
+- `civichr` ships as v0.1.0 with runtime foundations for HR policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and accessible public sample UI. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
 - The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
@@ -982,7 +983,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicHR implementation scope and HR-policy/onboarding boundaries now that CivicData Bridge v0.1.0 is shipped.
+- CivicBudget implementation scope and budget-narrative/transparency boundaries now that CivicHR v0.1.0 is shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
