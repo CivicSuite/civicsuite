@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CivicProcure v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicProcure dependency-alignment release pinned to `civiccore==0.3.0`.
 - **CivicGrants v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicGrants dependency-alignment release pinned to `civiccore==0.3.0`.
 - **CivicInspect v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicInspect dependency-alignment release pinned to `civiccore==0.3.0`.
 - **CivicPermit v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicPermit dependency-alignment release pinned to `civiccore==0.3.0`.
