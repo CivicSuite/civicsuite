@@ -16,7 +16,7 @@ A glossary at the end defines every technical term used.
 
 CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
 
-Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, and CivicComms have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
+Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, and CivicData have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
 
 ### What's available today (as of 2026-04-27)
 
@@ -36,10 +36,11 @@ Today, multiple modules are shipping at different maturity levels: CivicRecords 
 - **civicnotice v0.1.0** - a runtime-foundation release for public notice compliance support. It ships deterministic sample notice registry, statutory deadline plans, publication-readiness checklists, channel planning, notice/records export checklist, and a public sample UI at /civicnotice. It still does not ship legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, or notice system-of-record integrations. Repo: <https://github.com/CivicSuite/civicnotice>.
 - **civic311 v0.1.0** - a runtime-foundation release for resident service request support. It ships deterministic sample request intake, triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and a public sample UI at /civic311. It still does not ship official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, or 311 system-of-record integrations. Repo: <https://github.com/CivicSuite/civic311>.
 - **civiccomms v0.1.0** - a runtime-foundation release for public communications support. It ships source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience-variant drafts, and a public sample UI at /civiccomms. It still does not ship autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, or communications system-of-record integrations. Repo: <https://github.com/CivicSuite/civiccomms>.
+- **civicdata v0.1.0** - a runtime-foundation release for open-data and transparency publishing support. It ships dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and a public sample UI at /civicdata. It still does not ship live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, or external connector runtime. Repo: <https://github.com/CivicSuite/civicdata>.
 
 ### What's planned but not started
 
-- Twelve additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
+- Nine additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
 If you don't see a module on this list with a version number, **it does not exist as code yet**. Specs are not products.
 
@@ -95,6 +96,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civicnotice | <https://github.com/CivicSuite/civicnotice> | Shipping v0.1.0 runtime foundation for notice registry, statutory deadlines, publication-readiness checks, channel planning, notice records exports, and public UI foundation. |
 | civic311 | <https://github.com/CivicSuite/civic311> | Shipping v0.1.0 runtime foundation for request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and public UI foundation. |
 | civiccomms | <https://github.com/CivicSuite/civiccomms> | Shipping v0.1.0 runtime foundation for source-readiness review, meeting summaries, ordinance explainers, newsletters, FAQs, audience variants, and public UI foundation. |
+| civicdata | <https://github.com/CivicSuite/civicdata> | Shipping v0.1.0 runtime foundation for dataset normalization, data dictionaries, CKAN metadata drafts, redaction preflight, archive checklists, publication planning, and public UI foundation. |
 | future modules | not created yet | Specs only. |
 
 ### Dependency direction
