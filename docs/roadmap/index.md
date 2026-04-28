@@ -34,6 +34,9 @@ CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, Ci
 
 The active post-foundation plan is
 [`post-foundation-hardening-plan.md`](post-foundation-hardening-plan.md).
+The first shared shell boundary and UX inventory are documented in
+[`../architecture/ADR-0004-shared-shell-boundaries.md`](../architecture/ADR-0004-shared-shell-boundaries.md)
+and [`../ux/shared-shell-inventory.md`](../ux/shared-shell-inventory.md).
 The prior CivicCode and CivicClerk module plans remain as historical context in
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md) and
 [`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).

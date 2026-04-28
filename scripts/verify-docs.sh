@@ -21,6 +21,8 @@ REQUIRED=(
   docs/index.html
   docs/compatibility/index.md
   docs/deployment/local-demo-profile.md
+  docs/ux/shared-shell-inventory.md
+  docs/architecture/ADR-0004-shared-shell-boundaries.md
   docs/github-discussions-seed.md
   scripts/verify-deployment-profile.py
   scripts/verify-suite-state.py

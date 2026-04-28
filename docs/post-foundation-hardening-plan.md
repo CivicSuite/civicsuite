@@ -113,6 +113,10 @@ Why:
 
 The modules are independently installable. A premature shared frontend package would create coupling before the UX vocabulary is stable.
 
+Initial status:
+
+`docs/architecture/ADR-0004-shared-shell-boundaries.md` and `docs/ux/shared-shell-inventory.md` define the first shared shell boundary and UX inventory without extracting a shared frontend package.
+
 ## Lane 4 - Connector And Import Templates
 
 Goal: create practical data paths for small municipalities before attempting vendor write-back.
