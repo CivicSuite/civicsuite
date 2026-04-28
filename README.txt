@@ -4,12 +4,12 @@ An open-source, sovereignly-deployable, local-LLM municipal operations suite. Mo
 
 This civicsuite repository is the umbrella / orientation repo for the CivicSuite product family. It holds suite-wide documentation, ADRs, the roadmap, governance, and the civiccore↔module compatibility matrix. It contains no runtime code — every module lives in its own repo.
 
-## Suite status (as of 2026-04-27)
+## Suite status (as of 2026-04-28)
 
 Shipping:
 
 - civicrecords-ai v1.4.0 — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. (Transferred to the CivicSuite GitHub org on 2026-04-25.)
-- civiccore v0.2.0 — shared platform package. Shipping today: migration runner + 2 baseline migrations (civiccore.migrations), shared SQLAlchemy Base (civiccore.db), and the LLM abstraction (civiccore.llm — providers, templates, registry, context utilities, structured output). Future / planned extraction (placeholder packages only — directories with a docstring __init__.py and no implementation): auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 (LLM module) just shipped. Repo: <https://github.com/CivicSuite/civiccore>.
+- civiccore v0.3.0 — shared platform package. Shipping today: migration runner + shared baselines (civiccore.migrations), shared SQLAlchemy Base (civiccore.db), LLM abstraction (civiccore.llm), hash-chained audit primitives, source/provenance contracts, offline import/export manifest schemas, export-bundle helpers, and local city profile configuration. Future / planned extraction: auth/RBAC, document ingestion, hybrid search, notification delivery, web onboarding flows, 50-state exemption engine, sovereignty verification, live connector sync, credential storage, vendor write-back, and legal determinations. Repo: <https://github.com/CivicSuite/civiccore>.
 
 - civicclerk v0.1.0 — meeting/agenda/minutes runtime foundation. Ships schema, lifecycle enforcement, packet/notice checks, immutable motion/vote/action capture, citation-gated minutes drafts, public archive endpoints, prompt eval gates, connector imports, browser QA gates, and a browser-visible staff workflow foundation at /staff. Full database-backed workflow UI screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
 

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CivicCore v0.3.0 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the published v0.3.0 shared-primitives release while existing module pins remain `==0.2.0` until consumer updates.
 - Added `docs/roadmap/civiccode-next-module-plan.md` as the historical CivicCode planning artifact that unblocked CivicZone runtime work.
 - **CivicZone v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicZone runtime release pinned to `civiccore==0.2.0`.
 - **CivicAccess v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicAccess runtime release pinned to `civiccore==0.2.0`.
@@ -52,8 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CivicClerk staff workflow UI foundation reflected in suite docs** (2026-04-27): README, user manual, landing page, and compatibility matrix now mention the `/staff` browser UI foundation shipped after the v0.1.0 release while preserving the full-workflow-UI planned boundary.
 - **CivicCode v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicCode runtime release pinned to `civiccore==0.2.0`.
 - **Compatibility matrix updated for CivicClerk v0.1.0** (2026-04-27): `CivicSuite/civicclerk` now records the published runtime-foundation release paired to `civiccore==0.2.0`.
-- **Compatibility matrix updated to current truth** (`docs/compatibility/index.md`): civiccore now at `0.2.0`, civicrecords-ai now at `1.4.0` pinned to `==0.2.0`. Phase 1 entries (civiccore 0.1.0, records-ai v1.3.0 pending) replaced with the actual shipped versions and dates.
-- **Landing page (`docs/index.html`) refreshed**: civiccore status changed from "Phase 0 scaffold" to "Shipping v0.2.0 (Phase 2 LLM module)"; the records-ai repo link now points at the transferred `CivicSuite/civicrecords-ai` home.
+- **Compatibility matrix updated to current truth** (`docs/compatibility/index.md`): civiccore now at `0.3.0`, civicrecords-ai remains at `1.4.0` pinned to `==0.2.0`, and the matrix distinguishes latest platform release from exact module pins.
+- **Landing page (`docs/index.html`) refreshed**: civiccore status now shows "Shipping v0.3.0" with the v0.3 shared-primitives surface; the records-ai repo link points at the transferred `CivicSuite/civicrecords-ai` home.
 - README rewritten to lead with current suite status (what's shipping, what's planned but not started) instead of the workspace-bootstrap framing.
 
 ## [Phase 1] - 2026-04-24

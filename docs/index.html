@@ -273,8 +273,8 @@
     </li>
     <li>
       <span class="name">civiccore</span>
-      <span class="badge badge-shipping">Shipping v0.2.0</span>
-      <span class="desc">Shared platform package. <strong>Shipping today:</strong> migration runner + 2 baseline migrations (<code>civiccore.migrations</code>), shared SQLAlchemy <code>Base</code> (<code>civiccore.db</code>), and the LLM abstraction (<code>civiccore.llm</code> &mdash; providers, templates, registry, context utilities, structured output). <strong>Future / planned extraction (placeholder packages only &mdash; empty <code>__init__.py</code>, no implementation):</strong> auth, RBAC, audit, ingestion, search, notifications, connectors, exemptions, onboarding, catalog, verification. Phase 2 LLM module shipped 2026-04-25. Pinned by every consuming module &mdash; see the <a href="../docs/compatibility/index.md">compatibility matrix</a>.</span>
+      <span class="badge badge-shipping">Shipping v0.3.0</span>
+      <span class="desc">Shared platform package. <strong>Shipping today:</strong> migration runner + shared baselines (<code>civiccore.migrations</code>), shared SQLAlchemy <code>Base</code> (<code>civiccore.db</code>), LLM abstraction (<code>civiccore.llm</code>), hash-chained audit primitives, source/provenance contracts, offline import/export manifest schemas, export-bundle helpers, and local city profile configuration. <strong>Future / planned extraction:</strong> auth/RBAC, document ingestion, hybrid search, notification delivery, web onboarding flows, 50-state exemption engine, sovereignty verification, live connector sync, credential storage, vendor write-back, and legal determinations. Pinned by every consuming module &mdash; see the <a href="../docs/compatibility/index.md">compatibility matrix</a>.</span>
     </li>
     <li>
       <span class="name">civicclerk</span>
@@ -402,7 +402,7 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules with v0.1.0 runtime foundations." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules with v0.1.0 runtime foundations." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -443,7 +443,7 @@
   <h2>Repos</h2>
   <ul>
     <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> &mdash; umbrella repo (this site, charter, specs, ADRs, governance)</li>
-    <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> &mdash; shared platform package, shipping v0.2.0</li>
+    <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> &mdash; shared platform package, shipping v0.3.0</li>
     <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.0 (transferred to the CivicSuite org on 2026-04-25)</li>
     <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.0</li>
