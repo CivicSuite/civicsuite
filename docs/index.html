@@ -408,6 +408,7 @@
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
   <p>The runtime is FastAPI on Uvicorn for the API layer, PostgreSQL 17 with the pgvector extension for both relational data and embeddings, Redis 7.2 (pinned below 8.0 to stay BSD-licensed) for cache and message queue, Celery with Celery Beat for background workers and scheduled jobs, and Ollama serving Gemma 4 for local LLM inference. The frontend is React behind nginx. Embeddings come from <code>nomic-embed-text</code>, also via Ollama.</p>
   <p>Everything runs on the city's own server &mdash; single workstation for the smallest cities, a small on-prem box for most, and a fully air-gapped deployment for sensitive modules. The model layer is abstracted; Gemma 4 is the default but the registry pattern allows swapping in any model that fits the city's hardware budget.</p>
+  <p>The first post-foundation local demo profile is documented in <a href="deployment/local-demo-profile.md">docs/deployment/local-demo-profile.md</a>. It covers CivicRecords AI, CivicClerk, CivicCode, and CivicZone with local PostgreSQL, Redis, and optional Ollama, and it is explicitly an evaluation profile rather than production pilot packaging.</p>
   <p>CivicCore is the package that holds all of this shared plumbing. Modules import from CivicCore; CivicCore never imports from modules. One-way dependency, enforced by a CI lint rule.</p>
 </section>
 
@@ -468,6 +469,7 @@
     <li><a href="https://github.com/CivicSuite/civiclibrary"><code>github.com/CivicSuite/civiclibrary</code></a> &mdash; Module 25, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicparks"><code>github.com/CivicSuite/civicparks</code></a> &mdash; Module 26, shipping v0.1.0</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
+    <li><a href="deployment/local-demo-profile.md">Local demo deployment profile</a> &mdash; first post-foundation stack for Records, Clerk, Code, and Zone</li>
   </ul>
   <p><code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, <code>civiccourt</code>, <code>civicsafety</code>, <code>civiclibrary</code>, and <code>civicparks</code> now have v0.1.0 runtime-foundation releases under the same org. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>

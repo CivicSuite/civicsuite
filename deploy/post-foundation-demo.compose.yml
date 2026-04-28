@@ -1,0 +1,149 @@
+name: civicsuite-post-foundation-demo
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: civicrecords
+      POSTGRES_PASSWORD: civicrecords
+      POSTGRES_DB: civicrecords
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civicrecords"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - civicrecords-pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.2-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - civicrecords-redisdata:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["llm"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ollama-data:/root/.ollama
+
+  civicrecords-api:
+    build:
+      context: ../../civicrecords-ai
+      dockerfile: Dockerfile.backend
+    env_file:
+      - ../../civicrecords-ai/.env
+    environment:
+      CIVICCORE_LLM_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  civicrecords-frontend:
+    build:
+      context: ../../civicrecords-ai
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      civicrecords-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  civicclerk:
+    image: python:3.12-slim
+    command:
+      - sh
+      - -c
+      - >
+        pip install --no-cache-dir
+        https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl
+        https://github.com/CivicSuite/civicclerk/releases/download/v0.1.0/civicclerk-0.1.0-py3-none-any.whl
+        && uvicorn civicclerk.main:app --host 0.0.0.0 --port 8010
+    environment:
+      CIVICCORE_LLM_PROVIDER: ollama
+      CIVICSUITE_NETWORK_PROFILE: local-demo
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8010/health', timeout=3).read()"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  civiccode:
+    image: python:3.12-slim
+    command:
+      - sh
+      - -c
+      - >
+        pip install --no-cache-dir
+        https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl
+        https://github.com/CivicSuite/civiccode/releases/download/v0.1.0/civiccode-0.1.0-py3-none-any.whl
+        && uvicorn civiccode.main:app --host 0.0.0.0 --port 8020
+    environment:
+      CIVICCORE_LLM_PROVIDER: ollama
+      CIVICSUITE_NETWORK_PROFILE: local-demo
+    ports:
+      - "8020:8020"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8020/health', timeout=3).read()"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  civiczone:
+    image: python:3.12-slim
+    command:
+      - sh
+      - -c
+      - >
+        pip install --no-cache-dir
+        https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl
+        https://github.com/CivicSuite/civiczone/releases/download/v0.1.0/civiczone-0.1.0-py3-none-any.whl
+        && uvicorn civiczone.main:app --host 0.0.0.0 --port 8030
+    environment:
+      CIVICCORE_LLM_PROVIDER: ollama
+      CIVICSUITE_NETWORK_PROFILE: local-demo
+    ports:
+      - "8030:8030"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "import urllib.request; urllib.request.urlopen('http://localhost:8030/health', timeout=3).read()"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  civicrecords-pgdata:
+  civicrecords-redisdata:
+  ollama-data:
