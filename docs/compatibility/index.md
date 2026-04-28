@@ -25,6 +25,7 @@ record.
 | civiccomms      | CivicSuite/civiccomms             | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience variants, and accessible public UI foundation. |
 | civicdata       | CivicSuite/civicdata              | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: dataset normalization, data-dictionary drafts, CKAN metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public UI foundation. |
 | civichr         | CivicSuite/civichr                | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: HR policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and accessible public UI foundation. |
+| civicbudget     | CivicSuite/civicbudget            | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public UI foundation. |
 
 ## Reading a row
 
@@ -51,6 +52,7 @@ release produces undefined behavior.
 | 2026-04-27 | 0.2.0     | civiccomms 0.1.0       | green    | civiccomms v0.1.0 release at a9ad1d4; 11 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicdata 0.1.0        | green    | civicdata v0.1.0 release at f30ac3f; 14 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civichr 0.1.0          | green    | civichr v0.1.0 release at 8d674e1; 16 tests passed; verify-release.sh PASSED; GitHub release assets published |
+| 2026-04-27 | 0.2.0     | civicbudget 0.1.0      | green    | civicbudget v0.1.0 release at 106f414; 11 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicclerk 0.1.0       | green    | civicclerk release workflow run 24975592931; CivicClerk v0.1.0 published with civiccore 0.2.0 wheel |
 | 2026-04-27 | 0.2.0     | civicclerk 0.1.0 + staff UI foundation | green | civicclerk PR #14 merged; 358 tests passed; browser QA verified `/staff` desktop/mobile states |
 | 2026-04-26 | 0.2.0     | civicrecords-ai 1.4.0  | green    | docs/architecture-graphics-pass merged across all 3 repos; ruff + verify-release.sh PASSED on records-ai |
