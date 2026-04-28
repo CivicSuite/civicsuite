@@ -43,6 +43,9 @@ and [`../connectors/import-export-template.md`](../connectors/import-export-temp
 The CivicCore v0.3.0 extraction proposal is documented in
 [`../architecture/ADR-0006-civiccore-v0-3-extraction-scope.md`](../architecture/ADR-0006-civiccore-v0-3-extraction-scope.md)
 and [`../civiccore/v0.3-extraction-proposal.md`](../civiccore/v0.3-extraction-proposal.md).
+The first production-depth workflow sprint is documented in
+[`../architecture/ADR-0007-first-production-depth-workflow.md`](../architecture/ADR-0007-first-production-depth-workflow.md)
+and [`civicclerk-production-depth-workflow.md`](civicclerk-production-depth-workflow.md).
 The prior CivicCode and CivicClerk module plans remain as historical context in
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md) and
 [`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
