@@ -68,7 +68,7 @@ REPOS: tuple[RepoSpec, ...] = (
     RepoSpec("civicinspect", "CivicSuite/civicinspect", "civicinspect", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicgrants", "CivicSuite/civicgrants", "civicgrants", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.0"),
+    RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.0"),
     RepoSpec("civicnotice", "CivicSuite/civicnotice", "civicnotice", "0.1.0"),
     RepoSpec("civic311", "CivicSuite/civic311", "civic311", "0.1.0"),
