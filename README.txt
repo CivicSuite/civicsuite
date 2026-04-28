@@ -21,7 +21,7 @@ Shipping:
 
 - civicplan v0.1.1 - comprehensive-plan policy lookup and cited planning analysis foundation, now aligned to civiccore==0.3.0. Ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI at /civicplan. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are still not shipped. Repo: <https://github.com/CivicSuite/civicplan>.
 
-- civicpermit v0.1.0 - permit pre-application and intake-readiness foundation. Ships deterministic sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and accessible public sample UI at /civicpermit. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped. Repo: <https://github.com/CivicSuite/civicpermit>.
+- civicpermit v0.1.1 - permit pre-application and intake-readiness foundation, now aligned to civiccore==0.3.0. Ships deterministic sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and accessible public sample UI at /civicpermit. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped. Repo: <https://github.com/CivicSuite/civicpermit>.
 
 - civicinspect v0.1.0 - inspection support foundation. Ships deterministic sample repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and accessible public sample UI at /civicinspect. Official findings, citations, fines, notices, inspection scheduling, legal advice, live photo analysis, live LLM calls, and system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civicinspect>.
 
@@ -66,7 +66,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-All 26 catalog modules have runtime-foundation releases; CivicCode, CivicZone, CivicAccess, and CivicPlan have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
+All 26 catalog modules have runtime-foundation releases; CivicCode, CivicZone, CivicAccess, CivicPlan, and CivicPermit have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
 
 ## What's in this repo
 

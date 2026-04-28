@@ -274,7 +274,7 @@
 <main id="main">
 <section>
   <h2>What's here today</h2>
-  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, all 26 catalog modules have runtime-foundation releases, and CivicCode, CivicZone, CivicAccess, and CivicPlan have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is production workflow depth, connector design, deployment packaging, and cross-module UX polish.</p>
+  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, all 26 catalog modules have runtime-foundation releases, and CivicCode, CivicZone, CivicAccess, CivicPlan, and CivicPermit have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is production workflow depth, connector design, deployment packaging, and cross-module UX polish.</p>
 
   <ul class="module-status">
     <li>
@@ -314,8 +314,8 @@
     </li>
     <li>
       <span class="name">civicpermit</span>
-      <span class="badge badge-shipping">Shipping v0.1.0</span>
-      <span class="desc">Permit pre-application and intake-readiness support. CivicPermit v0.1.0 ships in the <a href="https://github.com/CivicSuite/civicpermit">CivicSuite/civicpermit</a> repo with sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and an accessible public sample UI at <code>/civicpermit</code>. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped.</span>
+      <span class="badge badge-shipping">Shipping v0.1.1</span>
+      <span class="desc">Permit pre-application and intake-readiness support. CivicPermit v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicpermit">CivicSuite/civicpermit</a> repo aligned to <code>civiccore==0.3.0</code>, with sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and an accessible public sample UI at <code>/civicpermit</code>. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped.</span>
     </li>
     <li>
       <span class="name">civicinspect</span>
@@ -413,7 +413,7 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules, including CivicCode, CivicZone, CivicAccess, and CivicPlan v0.1.1 alignment releases." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules, including CivicCode, CivicZone, CivicAccess, CivicPlan, and CivicPermit v0.1.1 alignment releases." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -461,7 +461,7 @@
     <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.1</li>
     <li><a href="https://github.com/CivicSuite/civicaccess"><code>github.com/CivicSuite/civicaccess</code></a> &mdash; Module 5, shipping v0.1.1</li>
     <li><a href="https://github.com/CivicSuite/civicplan"><code>github.com/CivicSuite/civicplan</code></a> &mdash; Module 7, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicpermit"><code>github.com/CivicSuite/civicpermit</code></a> &mdash; Module 8, shipping v0.1.0</li>
+    <li><a href="https://github.com/CivicSuite/civicpermit"><code>github.com/CivicSuite/civicpermit</code></a> &mdash; Module 8, shipping v0.1.1</li>
     <li><a href="https://github.com/CivicSuite/civicinspect"><code>github.com/CivicSuite/civicinspect</code></a> &mdash; Module 9, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicgrants"><code>github.com/CivicSuite/civicgrants</code></a> &mdash; Module 10, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicprocure"><code>github.com/CivicSuite/civicprocure</code></a> &mdash; Module 11, shipping v0.1.0</li>
@@ -487,7 +487,7 @@
     <li><a href="civiccore/v0.3-extraction-proposal.md">CivicCore v0.3 extraction proposal</a> &mdash; audit, provenance, manifest, city-profile, and export-bundle primitives</li>
     <li><a href="roadmap/civicclerk-production-depth-workflow.md">CivicClerk production-depth workflow</a> &mdash; agenda packet, notice, source provenance, export, and staff UX sprint plan</li>
   </ul>
-  <p><code>civicclerk</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, <code>civiccourt</code>, <code>civicsafety</code>, <code>civiclibrary</code>, and <code>civicparks</code> have v0.1.0 runtime-foundation releases under the same org; <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, and <code>civicplan</code> have advanced to v0.1.1 for CivicCore v0.3.0 alignment. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, <code>civiccourt</code>, <code>civicsafety</code>, <code>civiclibrary</code>, and <code>civicparks</code> have v0.1.0 runtime-foundation releases under the same org; <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, and <code>civicpermit</code> have advanced to v0.1.1 for CivicCore v0.3.0 alignment. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 </main>
 
