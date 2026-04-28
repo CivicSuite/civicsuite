@@ -32,9 +32,10 @@ plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode,
 CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants,
 CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, CivicElections, CivicUtility, CivicCourt, CivicSafety, CivicLibrary, and CivicParks release contracts. The next lane is post-foundation hardening and production workflow depth.
 
-The detailed execution plan is
-[`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
-prior CivicClerk plan remains as historical context in
+The active post-foundation plan is
+[`post-foundation-hardening-plan.md`](post-foundation-hardening-plan.md).
+The prior CivicCode and CivicClerk module plans remain as historical context in
+[`civiccode-next-module-plan.md`](civiccode-next-module-plan.md) and
 [`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
 
 ## Phase 1 — Establish the sovereign municipal platform (Clerk Core)
