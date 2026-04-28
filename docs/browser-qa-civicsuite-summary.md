@@ -1,19 +1,19 @@
-# CivicSuite Browser QA
+# CivicSuite Browser QA Summary
 
-Generated: 2026-04-28T01:45:15.999Z
+Updated after CivicUtility v0.1.0 compatibility pass.
 
 ## desktop
+- URL: file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html
+- Viewport: 1366x900
 - Screenshot: docs/browser-qa-civicsuite-desktop.png
 - Console errors: 0
-- Horizontal overflow: false
-- CivicElections visible: true
-- CivicUtility next-lane visible: true
-- CivicElections repo visible: true
+- CivicUtility shipping visible: true
+- CivicCourt next-lane visible: true
 
 ## mobile
+- URL: file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html
+- Viewport: 390x844
 - Screenshot: docs/browser-qa-civicsuite-mobile.png
 - Console errors: 0
-- Horizontal overflow: false
-- CivicElections visible: true
-- CivicUtility next-lane visible: true
-- CivicElections repo visible: true
+- CivicUtility shipping visible: true
+- CivicCourt next-lane visible: true
