@@ -7,8 +7,8 @@ record.
 
 | Module          | Repo                              | Current version | Released   | Compatible CivicCore range | Last verified | Notes                                                                                          |
 |-----------------|-----------------------------------|-----------------|------------|----------------------------|---------------|------------------------------------------------------------------------------------------------|
-| civiccore       | CivicSuite/civiccore              | 0.2.0           | 2026-04-25 | n/a                        | 2026-04-26    | Phase 2 LLM-abstraction module shipped. Backward-compatible with 0.1.x consumers.              |
-| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.0           | 2026-04-25 | `==0.2.0`                  | 2026-04-26    | Phase 2 LLM integration; depends on the civiccore v0.2.0 release wheel. Transferred to the CivicSuite org on 2026-04-25. |
+| civiccore       | CivicSuite/civiccore              | 0.3.0           | 2026-04-28 | n/a                        | 2026-04-28    | Shared primitives release: audit, provenance, manifests, exports, and city profile configuration. Backward-compatible with current 0.2.x consumers. |
+| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.0           | 2026-04-25 | `==0.2.0`                  | 2026-04-26    | Phase 2 LLM integration; depends on the exact `==0.2.0` civiccore wheel. Transferred to the CivicSuite org on 2026-04-25. |
 | civicclerk      | CivicSuite/civicclerk             | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | Runtime foundation release: schema, lifecycle enforcement, packet/notice, motion/vote/action capture, minutes citations, public archive, prompt evals, connector imports, browser QA gates, and `/staff` workflow UI foundation. |
 | civiccode       | CivicSuite/civiccode              | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, summaries, CivicClerk handoff intake, public lookup, local imports, and records-ready exports. |
 | civiczone       | CivicSuite/civiczone              | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: canonical zoning schema, parcel/zone lookup, use and dimensional rule APIs, citation-grounded sample Q&A, planner escalation/staff context samples, and accessible public UI foundation. |
@@ -38,12 +38,15 @@ record.
 
 `civicrecords-ai 1.4.0 ... ==0.2.0` means: records-ai version 1.4.0 requires
 exactly civiccore 0.2.0. Mixing other civiccore versions with that records-ai
-release produces undefined behavior.
+release produces undefined behavior. The `civiccore` row records the latest
+platform release; module rows record the exact pins those module releases
+actually ship with.
 
 ## Tested pairs (history)
 
 | Date       | civiccore | Module / version       | Result   | Evidence                                                               |
 |------------|-----------|------------------------|----------|------------------------------------------------------------------------|
+| 2026-04-28 | 0.3.0     | civiccore 0.3.0        | green    | civiccore release workflow run 25037429110; PR #14; 122 tests passed; release assets published |
 | 2026-04-27 | 0.2.0     | civiccode 0.1.0        | green    | civiccode v0.1.0 release at e0f4c06; 106 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civiczone 0.1.0        | green    | civiczone v0.1.0 release at 30dc671; 34 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicaccess 0.1.0      | green    | civicaccess v0.1.0 release at ee9a634; 10 tests passed; verify-release.sh PASSED; GitHub release assets published |

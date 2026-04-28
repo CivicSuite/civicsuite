@@ -40,6 +40,7 @@ MODULE_SERVICES = {
     "civiccode": ("civiccode.main", "app", "0.1.0", 8020),
     "civiczone": ("civiczone.main", "app", "0.1.0", 8030),
 }
+LOCAL_CIVICCORE_VERSION = "0.3.0"
 FORBIDDEN_PROVIDER_VALUES = {"openai", "anthropic"}
 
 
@@ -162,9 +163,12 @@ def check_module_health_without_network() -> list[str]:
                     fail(f"{module_name} /health version {payload.get('version')!r} != {expected_version!r}")
                 )
             civiccore_version = payload.get("civiccore_version") or payload.get("civiccore")
-            if civiccore_version != "0.2.0":
+            if civiccore_version != LOCAL_CIVICCORE_VERSION:
                 errors.append(
-                    fail(f"{module_name} /health civiccore version {civiccore_version!r} != '0.2.0'")
+                    fail(
+                        f"{module_name} /health civiccore version {civiccore_version!r} "
+                        f"!= {LOCAL_CIVICCORE_VERSION!r}"
+                    )
                 )
     return errors
 

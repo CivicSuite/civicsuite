@@ -18,10 +18,10 @@ CivicSuite is an open-source product family for municipal records and civic oper
 
 Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, and CivicElections have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
 
-### What's available today (as of 2026-04-27)
+### What's available today (as of 2026-04-28)
 
 - civicrecords-ai v1.4.0 — a working, shipping module for managing public records / FOIA requests. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
-- civiccore v0.2.0 — the shared "platform" package that every module uses. It is what the records module is built on. As of v0.2.0 it includes a shared LLM (large-language-model) abstraction layer. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
+- civiccore v0.3.0 — the shared "platform" package that every module uses. It now ships migrations, the shared SQLAlchemy Base, the LLM abstraction, hash-chained audit primitives, source/provenance contracts, offline import/export manifests, export-bundle helpers, and local city profile configuration. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
 - civicclerk v0.1.0 — a runtime-foundation release for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and a browser-visible staff workflow foundation at /staff; full database-backed workflow screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
 - civiccode v0.1.0 — a runtime-foundation release for municipal code and ordinance access. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
 - civiczone v0.1.0 — a runtime-foundation release for parcel-aware zoning and land-use Q&A. It ships canonical zoning schema, Alembic migrations, sample parcel and rule lookups, citation-grounded sample Q&A, planner escalation, staff-context samples, and a public sample UI at /civiczone. It still does not ship live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, or legal advice. Repo: <https://github.com/CivicSuite/civiczone>.
@@ -80,7 +80,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | Module | Repo | Status |
 |---|---|---|
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.0. Transferred to the CivicSuite GitHub org on 2026-04-25; this is now the canonical home. |
-| civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.2.0. Phase 2 (LLM module) just landed. |
+| civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.3.0 shared primitives: migrations, db.Base, LLM, audit, provenance, manifests, exports, and city profiles. |
 | civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.0 runtime foundation with /staff workflow UI foundation. |
 | civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.0 runtime foundation for municipal-code lookup, citations, local imports, and records-ready exports. |
 | civiczone | <https://github.com/CivicSuite/civiczone> | Shipping v0.1.0 runtime foundation for parcel-aware zoning samples and public UI foundation. |
@@ -119,7 +119,7 @@ dependencies = [
 ]
 
 
-When a city installs records-ai, civiccore is pulled in as a wheel. There is no monorepo, no submodule, no vendored copy. Civiccore is published to PyPI (or, until publication, distributed as a release wheel from its GitHub repo).
+When a city installs a module, civiccore is pulled in as a wheel. There is no monorepo, no submodule, no vendored copy. The example above reflects currently shipped module pins that still require civiccore==0.2.0; CivicCore v0.3.0 is now published for new shared-primitives work and future consumer updates. Civiccore is published to PyPI (or, until publication, distributed as a release wheel from its GitHub repo).
 
 ### Evaluating a module
 
@@ -156,21 +156,19 @@ When a module ships a new version, the compatibility matrix on this umbrella mus
               describes & coordinates |
                                       v
                         +---------------------------+
-                        |     civiccore (v0.2.0)    |
+                        |     civiccore (v0.3.0)    |
                         |  SHIPPING TODAY:          |
                         |  migrations, db.Base, llm |
-                        |  (providers, templates,   |
-                        |  registry, context,       |
-                        |  structured output)       |
+                        |  audit, provenance,       |
+                        |  manifests, exports,      |
+                        |  city profiles            |
                         |                           |
-                        |  PLACEHOLDER ONLY (empty  |
-                        |  __init__.py, no code):   |
-                        |  auth, RBAC, audit,       |
-                        |  ingest, search,          |
-                        |  notifications,           |
-                        |  connectors, exemptions,  |
-                        |  onboarding, catalog,     |
-                        |  verification             |
+                        |  PLANNED / NOT SHIPPED:   |
+                        |  auth/RBAC, ingestion,    |
+                        |  search, notifications,   |
+                        |  onboarding, exemptions,  |
+                        |  verification, live       |
+                        |  connector sync           |
                         +-------------+-------------+
                                       ^
                   depends on (pinned) |
@@ -209,7 +207,7 @@ When civiccore ships a breaking version (MAJOR):
 ### Glossary (Part 3)
 
 - ADR — Architecture Decision Record; a short, dated document recording a significant architectural decision and its rationale.
-- Pinned version — a specific exact version a module requires of civiccore (e.g. ==0.2.0), as opposed to a range.
+- Pinned version — a specific exact version a module requires of civiccore (for example ==0.2.0 for current foundation modules, or ==0.3.0 after a consumer explicitly upgrades), as opposed to a range.
 - Wheel — the standard Python package distribution format. civiccore is published as a wheel.
 - CI — continuous integration; the automated test pipeline that runs on every commit and pull request.
 - Monorepo — a single repository containing multiple projects. CivicSuite is deliberately *not* a monorepo; each module has its own repo so cities can install modules independently.
