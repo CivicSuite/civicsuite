@@ -5,6 +5,8 @@ Date: 2026-04-28
 
 The CivicSuite organization is still in private, pre-announcement development. During this phase, default-branch protection is intentionally lighter so the implementation agent can move through setup, rehearsal, documentation, and release-alignment work without an unnecessary human-review bottleneck on every internal PR.
 
+Operational update on 2026-04-28: the CivicSuite GitHub organization was set to this development-mode posture across current repos. Required status checks remain in place, admin enforcement remains enabled, and force pushes / branch deletion remain disabled. The only intentionally relaxed setting is the required approving-review gate.
+
 ## Current Development Setting
 
 - Keep required status checks enabled.
@@ -14,7 +16,7 @@ The CivicSuite organization is still in private, pre-announcement development. D
 
 ## Restore Before Public Announcement
 
-Before CivicSuite is treated as a final product or publicly announced, restore professional-grade branch protection across public-facing repos:
+Before CivicSuite is treated as a final product or publicly announced, restore professional-grade branch protection across public-facing repos. Treat this as a release-readiness checklist item, not an optional cleanup:
 
 - Require at least one approving review from a maintainer with write access.
 - Dismiss stale reviews when new commits are pushed.
