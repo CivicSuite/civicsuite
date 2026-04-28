@@ -46,9 +46,9 @@ for f in "${REQUIRED[@]}"; do
   fi
 done
 
-echo "==> Stale current-facing strings check (CHANGELOG, ADRs, SUPERVISOR.md exempt as history)"
+echo "==> Stale current-facing strings check (CHANGELOG, ADRs, SUPERVISOR.md, compatibility history exempt)"
 # Flag stale current-facing strings after the records-ai transfer.
-PATTERN='Phase 0 scaffold|civiccore[^,]{0,30}0\.1\.0|github\.com/scottconverse/civicrecords-ai|scottconverse/civicrecords-ai|will transfer|transfer has not happened|transfer hasn'\''t happened'
+PATTERN='Phase 0 scaffold|civiccore[^,]{0,30}0\.1\.0|github\.com/scottconverse/civicrecords-ai|scottconverse/civicrecords-ai|will transfer|transfer has not happened|transfer hasn'\''t happened|0\.1\.0\.dev0|0\.1\.1\.dev0|~=0\.2|==0\.2\.0 for current foundation|future modules not created yet|Five additional modules|v0\.1\.0 foundation lane|Status: shipping v0\.1\.0 foundation|Status: shipping v0\.1\.0 runtime foundation|Shipping v0\.1\.0</span>'
 HITS=$(grep -rn -E "$PATTERN" README.md USER-MANUAL.md docs/ \
        --include='*.md' --include='*.html' 2>/dev/null \
        | grep -vE 'CHANGELOG|docs/architecture/ADR-|docs/SUPERVISOR\.md|docs/compatibility/index\.md|docs/github-discussions-seed\.md|docs/governance/civicrecords-ai-org-transfer-runbook\.md' \

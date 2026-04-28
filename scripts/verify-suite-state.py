@@ -193,13 +193,14 @@ def check_release(spec: RepoSpec) -> list[str]:
     return errors
 
 
-def check_repo(spec: RepoSpec, matrix: str, remote: bool) -> list[str]:
+def check_repo(spec: RepoSpec, matrix: str, remote: bool, remote_only: bool) -> list[str]:
     repo_path = WORKSPACE / spec.local_dir
     errors = []
-    if not repo_path.is_dir():
-        return [fail(f"local repo path missing: {repo_path}")]
-    errors.extend(check_required_artifacts(repo_path))
-    errors.extend(check_pyproject(spec, repo_path))
+    if not remote_only:
+        if not repo_path.is_dir():
+            return [fail(f"local repo path missing: {repo_path}")]
+        errors.extend(check_required_artifacts(repo_path))
+        errors.extend(check_pyproject(spec, repo_path))
     errors.extend(check_compatibility_matrix(spec, matrix))
     if remote:
         errors.extend(check_release(spec))
@@ -213,7 +214,14 @@ def main() -> int:
         action="store_true",
         help="also verify GitHub release tags and uploaded assets via gh",
     )
+    parser.add_argument(
+        "--remote-only",
+        action="store_true",
+        help="skip sibling-clone checks so this can run in umbrella-only CI",
+    )
     args = parser.parse_args()
+    if args.remote_only:
+        args.remote = True
 
     matrix = compatibility_text()
     any_failures = False
@@ -221,9 +229,10 @@ def main() -> int:
     print(f"workspace: {WORKSPACE}")
     print(f"repos: {len(REPOS)}")
     print(f"remote release checks: {'enabled' if args.remote else 'disabled'}")
+    print(f"local sibling clone checks: {'disabled' if args.remote_only else 'enabled'}")
 
     for spec in REPOS:
-        errors = check_repo(spec, matrix, remote=args.remote)
+        errors = check_repo(spec, matrix, remote=args.remote, remote_only=args.remote_only)
         if errors:
             any_failures = True
             print(f"[{spec.name}] FAIL")

@@ -44,7 +44,7 @@ Shipping:
 - civicparks v0.1.1 - parks and recreation support foundation. Ships cited parks policy Q&A, program and facility Q&A, registration-link assistance, maintenance request triage, and accessible public sample UI at /civicparks. Payments, registrations, participant records, reservation writes, crew dispatch, live LLM calls, and connector runtime are still not shipped, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civicparks>.
 
 Planned, not started:
-- 0 additional modules across the catalog. The v0.1.0 foundation lane has shipped for every catalog module; later work is feature depth, integration hardening, and production workflow expansion.
+- 0 additional modules across the catalog. The v0.1.1 alignment lane has shipped for every catalog module except CivicClerk; later work is feature depth, integration hardening, and production workflow expansion.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 See the [local demo deployment profile](docs/deployment/local-demo-profile.md) for the first bounded post-foundation stack: CivicRecords AI + CivicClerk + CivicCode + CivicZone.
@@ -66,7 +66,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-All 26 catalog modules have runtime-foundation releases; CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, and Civic311 have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
+All 26 catalog modules have runtime-foundation releases; all catalog modules except CivicClerk have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
 
 ## What's in this repo
 
@@ -108,9 +108,9 @@ civicsuite/
 | civiczone | <https://github.com/CivicSuite/civiczone> | Module 6, v0.1.1 released; parcel lookup, zoning rule lookups, cited sample Q&A, planner escalation, public UI foundation, and civiccore==0.3.0 alignment. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Module 5, v0.1.1 released; accessibility review, plain-language rewrite, multilingual variants, records-ready exports, public UI foundation, and civiccore==0.3.0 alignment. |
 | civicplan | <https://github.com/CivicSuite/civicplan> | Module 7, v0.1.1 released; cited plan-policy lookup, consistency support, staff-analysis outlines, records-ready exports, public UI foundation, and civiccore==0.3.0 alignment. |
-| civicpermit | <https://github.com/CivicSuite/civicpermit> | Module 8, v0.1.0 runtime foundation released; permit requirement lookup, intake-readiness review, submittal outlines, records-ready exports, and public UI foundation. |
-| civicinspect | <https://github.com/CivicSuite/civicinspect> | Module 9, v0.1.0 runtime foundation released; repeat-case lookup, report drafts, notice drafts, records-ready exports, and public UI foundation. |
-| civicgrants | <https://github.com/CivicSuite/civicgrants> | Module 10, v0.1.0 runtime foundation released; opportunity triage, eligibility matching, application outlines, compliance calendars, audit-ready exports, and public UI foundation. |
+| civicpermit | <https://github.com/CivicSuite/civicpermit> | Module 8, v0.1.1 released; permit requirement lookup, intake-readiness review, submittal outlines, records-ready exports, and public UI foundation. |
+| civicinspect | <https://github.com/CivicSuite/civicinspect> | Module 9, v0.1.1 released; repeat-case lookup, report drafts, notice drafts, records-ready exports, and public UI foundation. |
+| civicgrants | <https://github.com/CivicSuite/civicgrants> | Module 10, v0.1.1 released; opportunity triage, eligibility matching, application outlines, compliance calendars, audit-ready exports, and public UI foundation. |
 | civicprocure | <https://github.com/CivicSuite/civicprocure> | Module 11, v0.1.1 released; RFP drafting, proposal comparison, exception extraction, scoring summaries, award-packet checklists, public UI foundation, and civiccore==0.3.0 alignment. |
 | civiccontracts | <https://github.com/CivicSuite/civiccontracts> | Module 12, v0.1.1 released; contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklists, public UI foundation, and civiccore==0.3.0 alignment. |
 | civicboards | <https://github.com/CivicSuite/civicboards> | Module 13, v0.1.1 released; board registry, term tracking, vacancy tracking, attendance review, notice/records exports, public UI foundation, and civiccore==0.3.0 alignment. |

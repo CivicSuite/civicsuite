@@ -1,0 +1,29 @@
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify documentation
+        run: bash scripts/verify-docs.sh
+
+      - name: Verify suite state against GitHub releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/verify-suite-state.py --remote-only
