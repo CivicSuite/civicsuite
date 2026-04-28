@@ -33,9 +33,10 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 - **civic311 v0.1.0** - resident service request foundation. Ships deterministic sample request intake, triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and accessible public sample UI at `/civic311`. Official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, and 311 system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civic311>.
 - **civiccomms v0.1.0** - public communications foundation. Ships source-readiness review, meeting summary draft outlines, ordinance explainer drafts, newsletter scaffolds, FAQ prompts, audience-variant drafts, and accessible public sample UI at `/civiccomms`. Autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, and communications system-of-record integrations are still not shipped. Repo: <https://github.com/CivicSuite/civiccomms>.
 - **civicdata v0.1.0** - open-data and transparency publishing foundation. Ships dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and an accessible public sample UI at `/civicdata`. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicdata>.
+- **civicutility v0.1.0** - utility customer-service support foundation. Ships cited utility-policy Q&A, CSR-safe read-only account context, payment-arrangement drafts, service-request intake, and accessible public sample UI at `/civicutility`. Utility billing, payment processing, rate-engine behavior, shutoff/reconnect decisions, account writes, live LLM calls, live billing connectors, and Civic311 write-back are still not shipped. Repo: <https://github.com/CivicSuite/civicutility>.
 
 **Planned, not started:**
-- 5 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 4 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -56,7 +57,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicElections v0.1.0 now ships. CivicUtility is the next planned specialized module lane, with courts, libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
+CivicUtility v0.1.0 now ships. CivicCourt is the next planned specialized module lane, with libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
 
 ## What's in this repo
 
@@ -112,6 +113,7 @@ civicsuite/
 | civicbudget | <https://github.com/CivicSuite/civicbudget> | Module 19, v0.1.0 runtime foundation released; line-item analysis, budget narratives, department memos, hearing packet checklists, resident summaries, and GFOA checklist support. |
 | civiclegal | <https://github.com/CivicSuite/civiclegal> | Module 20, v0.1.0 runtime foundation released; privilege-aware legal-record search, prior-action lookup, memo scaffolds, ordinance comparison, litigation-hold flags, and citation tracking. |
 | civicelections | <https://github.com/CivicSuite/civicelections> | Module 21, v0.1.0 runtime foundation released; voter guidance, filing checklists, worker training, ballot summaries, campaign-finance summaries, canvass checklists, and accessibility review. |
+| civicutility | <https://github.com/CivicSuite/civicutility> | Module 22, v0.1.0 runtime foundation released; utility-policy Q&A, CSR-safe account context, payment-arrangement drafts, service-request intake, and public UI foundation. |
 
 Future module repos will land under `CivicSuite/` as separate repos.
 

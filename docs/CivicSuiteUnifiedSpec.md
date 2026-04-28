@@ -986,7 +986,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicUtility implementation scope and utility-billing boundaries now that CivicElections v0.1.0 is shipped.
+- CivicCourt implementation scope after CivicUtility v0.1.0 shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.

@@ -37,9 +37,10 @@ Shipping:
 - civicbudget v0.1.0 - budget narrative and transparency support foundation. Ships line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI at /civicbudget. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicbudget>.
 - civiclegal v0.1.0 - internal legal-record research support foundation. Ships privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI at /civiclegal. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civiclegal>.
 - civicelections v0.1.0 - election administration support foundation. Ships cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI at /civicelections. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicelections>.
+- civicutility v0.1.0 - utility customer-service support foundation. Ships cited utility-policy Q&A, CSR-safe read-only account context, payment-arrangement drafts, service-request intake, and accessible public sample UI at /civicutility. Utility billing, payment processing, rate-engine behavior, shutoff/reconnect decisions, account writes, live LLM calls, live billing connectors, and Civic311 write-back are still not shipped. Repo: <https://github.com/CivicSuite/civicutility>.
 
 Planned, not started:
-- 5 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 4 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -60,7 +61,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicElections v0.1.0 now ships. CivicUtility is the next planned specialized module lane, with courts, libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
+CivicUtility v0.1.0 now ships. CivicCourt is the next planned specialized module lane, with libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
 
 ## What's in this repo
 
