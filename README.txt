@@ -39,9 +39,10 @@ Shipping:
 - civicelections v0.1.0 - election administration support foundation. Ships cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI at /civicelections. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicelections>.
 - civicutility v0.1.0 - utility customer-service support foundation. Ships cited utility-policy Q&A, CSR-safe read-only account context, payment-arrangement drafts, service-request intake, and accessible public sample UI at /civicutility. Utility billing, payment processing, rate-engine behavior, shutoff/reconnect decisions, account writes, live LLM calls, live billing connectors, and Civic311 write-back are still not shipped. Repo: <https://github.com/CivicSuite/civicutility>.
 - civiccourt v0.1.0 - municipal court clerk support foundation. Ships cited procedure Q&A, court form drafts, restricted-record-aware search, hearing preparation checklists, and accessible public sample UI at /civiccourt. Court case management, e-filing, warrant issuance, judicial decisions, legal advice, live LLM calls, and court CMS connectors are still not shipped. Repo: <https://github.com/CivicSuite/civiccourt>.
+- civicsafety v0.1.0 - non-CJIS public-safety administrative support foundation. Ships cited policy/SOP Q&A, training checklists, PIO draft support, aggregate public-statistics summaries, and accessible public sample UI at /civicsafety. CJI ingestion, CAD/RMS integration, dispatch, enforcement, investigations, evidence workflows, legal advice, live LLM calls, and connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicsafety>.
 
 Planned, not started:
-- 3 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 2 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -62,7 +63,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicCourt v0.1.0 now ships. CivicSafety is the next planned specialized module lane, with library and parks modules following after the current foundation modules stabilize.
+CivicSafety v0.1.0 now ships. CivicLibrary is the next planned specialized module lane, with CivicParks following after the current foundation modules stabilize.
 
 ## What's in this repo
 
@@ -120,6 +121,7 @@ civicsuite/
 | civicelections | <https://github.com/CivicSuite/civicelections> | Module 21, v0.1.0 runtime foundation released; voter guidance, filing checklists, worker training, ballot summaries, campaign-finance summaries, canvass checklists, and accessibility review. |
 | civicutility | <https://github.com/CivicSuite/civicutility> | Module 22, v0.1.0 runtime foundation released; utility-policy Q&A, CSR-safe account context, payment-arrangement drafts, service-request intake, and public UI foundation. |
 | civiccourt | <https://github.com/CivicSuite/civiccourt> | Module 23, v0.1.0 runtime foundation released; procedure Q&A, court form drafts, restricted-record-aware search, hearing prep checklists, and public UI foundation. |
+| civicsafety | <https://github.com/CivicSuite/civicsafety> | Module 24, v0.1.0 runtime foundation released; non-CJIS policy/SOP Q&A, training checklists, PIO draft support, aggregate public-statistics summaries, and public UI foundation. |
 
 Future module repos will land under CivicSuite/ as separate repos.
 

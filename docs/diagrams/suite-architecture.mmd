@@ -26,9 +26,10 @@ graph TB
         Elections["civicelections<br/>v0.1.0<br/>election support"]
         Utility["civicutility<br/>v0.1.0<br/>utility customer service"]
         Court["civiccourt<br/>v0.1.0<br/>court clerk support"]
+        Safety["civicsafety<br/>v0.1.0<br/>non-CJIS safety admin"]
     end
     subgraph FUTURE["Future modules - planned, not started"]
-        Safety["civicsafety<br/>next planned lane"]
+        Library["civiclibrary<br/>next planned lane"]
     end
     SuiteRepo -.documents.-> Core
     SuiteRepo -.documents.-> Records
@@ -54,6 +55,7 @@ graph TB
     SuiteRepo -.governs.-> Utility
     SuiteRepo -.governs.-> Court
     SuiteRepo -.governs.-> Safety
+    SuiteRepo -.governs.-> Library
     Records -->|"depends on ==0.2.0"| Core
     Clerk -->|"depends on ==0.2.0"| Core
     Code -->|"depends on ==0.2.0"| Core
@@ -76,6 +78,7 @@ graph TB
     Elections -->|"depends on ==0.2.0"| Core
     Utility -->|"depends on ==0.2.0"| Core
     Court -->|"depends on ==0.2.0"| Core
+    Safety -->|"depends on ==0.2.0"| Core
     classDef shipping fill:#d4f4dd,stroke:#3a7a4a,stroke-width:2px,color:#000
     classDef governance fill:#e1e1ff,stroke:#5a5aa0,stroke-width:2px,color:#000
     classDef future fill:#fff4e1,stroke:#a08040,stroke-width:1px,stroke-dasharray:5 5,color:#000
@@ -104,4 +107,5 @@ graph TB
     class Elections shipping
     class Utility shipping
     class Court shipping
-    class Safety future
+    class Safety shipping
+    class Library future

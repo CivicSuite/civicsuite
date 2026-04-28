@@ -30,6 +30,7 @@ record.
 | civicelections  | CivicSuite/civicelections         | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public UI foundation. |
 | civicutility    | CivicSuite/civicutility           | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: utility-policy Q&A, CSR-safe account context, payment-arrangement drafts, service-request intake, and accessible public UI foundation. |
 | civiccourt      | CivicSuite/civiccourt             | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: procedure Q&A, court form drafts, restricted-record-aware search, hearing prep checklists, and accessible public UI foundation. |
+| civicsafety     | CivicSuite/civicsafety            | 0.1.0           | 2026-04-27 | `==0.2.0`                  | 2026-04-27    | First runtime release: non-CJIS policy/SOP Q&A, training checklists, PIO draft support, aggregate public-statistics summaries, and accessible public UI foundation. |
 
 ## Reading a row
 
@@ -61,6 +62,7 @@ release produces undefined behavior.
 | 2026-04-27 | 0.2.0     | civicelections 0.1.0   | green    | civicelections v0.1.0 release at 5d3ae37; 12 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicutility 0.1.0     | green    | civicutility v0.1.0 release at f5ac5a3; 9 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civiccourt 0.1.0       | green    | civiccourt v0.1.0 release at 6771294; 9 tests passed; verify-release.sh PASSED; GitHub release assets published |
+| 2026-04-27 | 0.2.0     | civicsafety 0.1.0      | green    | civicsafety v0.1.0 release at 7fa309b; 9 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-27 | 0.2.0     | civicclerk 0.1.0       | green    | civicclerk release workflow run 24975592931; CivicClerk v0.1.0 published with civiccore 0.2.0 wheel |
 | 2026-04-27 | 0.2.0     | civicclerk 0.1.0 + staff UI foundation | green | civicclerk PR #14 merged; 358 tests passed; browser QA verified `/staff` desktop/mobile states |
 | 2026-04-26 | 0.2.0     | civicrecords-ai 1.4.0  | green    | docs/architecture-graphics-pass merged across all 3 repos; ruff + verify-release.sh PASSED on records-ai |

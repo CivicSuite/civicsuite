@@ -413,7 +413,7 @@ Purpose: document preparation and search support for municipal court clerks. Sen
 
 Owner: Public Safety administration  
 Depends on: CivicCore in isolated CJIS-aware profile  
-Status: planned last  
+Status: shipping v0.1.0 runtime foundation  
 Purpose: policy/procedure Q&A, non-CJIS administrative workflows, and public-information-officer support. Explicitly excludes operational dispatch and CJIS-bound data unless a future CJIS compliance program exists.
 
 #### CivicLibrary
@@ -986,7 +986,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicSafety implementation scope after CivicCourt v0.1.0 shipped.
+- CivicLibrary implementation scope after CivicSafety v0.1.0 shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
