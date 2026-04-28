@@ -16,7 +16,7 @@ A glossary at the end defines every technical term used.
 
 CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
 
-Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, and CivicBudget have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
+Today, multiple modules are shipping at different maturity levels: CivicRecords AI is production-usable, while CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, and CivicLegal have runtime-foundation releases. The rest are planned. We say so plainly below — no roadmap inflation, no vaporware.
 
 ### What's available today (as of 2026-04-27)
 
@@ -39,10 +39,11 @@ Today, multiple modules are shipping at different maturity levels: CivicRecords 
 - **civicdata v0.1.0** - a runtime-foundation release for open-data and transparency publishing support. It ships dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and a public sample UI at /civicdata. It still does not ship live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, or external connector runtime. Repo: <https://github.com/CivicSuite/civicdata>.
 - **civichr v0.1.0** - a runtime-foundation release for HR policy support. It ships policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, and sensitive-topic preflight. It still does not ship HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, or external HR/payroll connectors. Repo: <https://github.com/CivicSuite/civichr>.
 - **civicbudget v0.1.0** - budget narrative and transparency support foundation. Ships line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI at `/civicbudget`. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicbudget>.
+- **civiclegal v0.1.0** - internal legal-record research support foundation. Ships privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI at `/civiclegal`. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civiclegal>.
 
 ### What's planned but not started
 
-- Seven additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
+- Six additional modules across seven tiers — see the [module catalog](specs/01_catalog.md).
 
 If you don't see a module on this list with a version number, **it does not exist as code yet**. Specs are not products.
 
@@ -101,6 +102,7 @@ There is no runtime code in this repo. Each module lives in its own repo.
 | civicdata | <https://github.com/CivicSuite/civicdata> | Shipping v0.1.0 runtime foundation for dataset normalization, data dictionaries, CKAN metadata drafts, redaction preflight, archive checklists, publication planning, and public UI foundation. |
 | civichr | <https://github.com/CivicSuite/civichr> | Shipping v0.1.0 runtime foundation for HR policy lookup, handbook summaries, job descriptions, classification references, onboarding/training checklists, and intake templates. |
 | civicbudget | <https://github.com/CivicSuite/civicbudget> | Shipping v0.1.0 runtime foundation for line-item analysis, budget narratives, department memos, hearing packet checklists, resident summaries, and GFOA checklist support. |
+| civiclegal | <https://github.com/CivicSuite/civiclegal> | Shipping v0.1.0 runtime foundation for privilege-aware legal-record search, prior-action lookup, memo scaffolds, ordinance comparison, litigation-hold flags, and citation tracking. |
 | future modules | not created yet | Specs only. |
 
 ### Dependency direction
