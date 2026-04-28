@@ -263,7 +263,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: published v0.1.0; current main has post-release production-depth screens and civiccore==0.3.0 alignment pending the next release  
+Status: shipping v0.1.1 foundation aligned to `civiccore==0.3.0`  
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -493,7 +493,7 @@ Canonical lifecycle:
 
 ## 9. CivicClerk Canonical Scope
 
-CivicClerk is Module 2 and ships a v0.1.0 runtime foundation; current main has post-release production-depth screens and civiccore==0.3.0 alignment pending the next release.
+CivicClerk is Module 2 and ships a v0.1.1 runtime foundation with production-depth staff screens and civiccore==0.3.0 alignment.
 
 ### 9.1 Product Promise
 
@@ -956,7 +956,7 @@ As of 2026-04-28:
 - `civicrecords-ai` ships as v1.4.0.
 - `civiccore` ships as v0.3.0.
 - `civicsuite` is the umbrella documentation/governance repo.
-- `civicclerk` ships as v0.1.0, and current main carries civiccore==0.3.0 plus post-release production-depth foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and post-release main now has live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening remains planned.
+- `civicclerk` ships as v0.1.1 with civiccore==0.3.0 plus production-depth foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and post-release main now has live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening remains planned.
 - `civiccode` ships as v0.1.1 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, and `civiccore==0.3.0` alignment. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.1 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, accessible public sample UI, and `civiccore==0.3.0` alignment. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
 - `civicaccess` ships as v0.1.1 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, accessible public sample UI, and `civiccore==0.3.0` alignment. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.
@@ -975,11 +975,11 @@ As of 2026-04-28:
 - `civicbudget` ships as v0.1.1 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
 - `civiclegal` ships as v0.1.1 with runtime foundations for privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are not shipped.
 - `civicelections` ships as v0.1.1 with runtime foundations for cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are not shipped.
-- All 26 catalog modules have runtime-foundation releases; all catalog modules except CivicClerk have advanced to v0.1.1 for CivicCore v0.3.0 alignment. CivicClerk main already uses civiccore==0.3.0 and remains published as v0.1.0 until its next release. Remaining work is post-foundation depth, connectors, deployment hardening, and cross-module UX.
+- All 26 catalog modules have runtime-foundation releases; all catalog modules have advanced to v0.1.1 for CivicCore v0.3.0 alignment. CivicClerk now publishes v0.1.1 with civiccore==0.3.0 alignment. Remaining work is post-foundation depth, connectors, deployment hardening, and cross-module UX.
 
 ## 19. Post-Foundation Build Sequence
 
-The v0.1.1 alignment lane is complete across all catalog modules except CivicClerk, whose main branch already uses civiccore==0.3.0 and awaits its next release. The next sequence is hardening the suite into deployable, integrated municipal workflows:
+The v0.1.1 alignment lane is complete across all catalog modules. The next sequence is hardening the suite into deployable, integrated municipal workflows:
 
 1. Stabilize the shared deployment profile across CivicCore, CivicRecords AI, and the module runtime foundations.
 2. Define the first cross-module resident/staff shell boundaries without turning the suite into a monorepo.
