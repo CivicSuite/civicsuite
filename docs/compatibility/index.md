@@ -8,7 +8,7 @@ record.
 | Module          | Repo                              | Current version | Released   | Compatible CivicCore range | Last verified | Notes                                                                                          |
 |-----------------|-----------------------------------|-----------------|------------|----------------------------|---------------|------------------------------------------------------------------------------------------------|
 | civiccore       | CivicSuite/civiccore              | 0.3.0           | 2026-04-28 | n/a                        | 2026-04-28    | Shared primitives release: audit, provenance, manifests, exports, and city profile configuration. Backward-compatible with current 0.2.x consumers. |
-| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.0           | 2026-04-25 | `==0.2.0`                  | 2026-04-26    | Phase 2 LLM integration; depends on the exact `==0.2.0` civiccore wheel. Transferred to the CivicSuite org on 2026-04-25. |
+| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Patch release aligning the records-ai backend dependency to the exact `==0.3.0` civiccore wheel. Transferred to the CivicSuite org on 2026-04-25. |
 | civicclerk      | CivicSuite/civicclerk             | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | CivicClerk v0.1.1 release publishes the production-depth `/staff` workflow screens, packet export, connector import, and civiccore 0.3.0 alignment. |
 | civiccode       | CivicSuite/civiccode              | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: first runtime surface preserved while moving to civiccore 0.3.0 shared primitives. |
 | civiczone       | CivicSuite/civiczone              | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: parcel-aware zoning runtime foundation preserved while moving to civiccore 0.3.0 shared primitives. |
@@ -36,8 +36,8 @@ record.
 
 ## Reading a row
 
-`civicrecords-ai 1.4.0 ... ==0.2.0` means: records-ai version 1.4.0 requires
-exactly civiccore 0.2.0. Mixing other civiccore versions with that records-ai
+`civicrecords-ai 1.4.1 ... ==0.3.0` means: records-ai version 1.4.1 requires
+exactly civiccore 0.3.0. Mixing other civiccore versions with that records-ai
 release produces undefined behavior. The `civiccore` row records the latest
 platform release; module rows record the exact pins those module releases
 actually ship with.
@@ -46,6 +46,7 @@ actually ship with.
 
 | Date       | civiccore | Module / version       | Result   | Evidence                                                               |
 |------------|-----------|------------------------|----------|------------------------------------------------------------------------|
+| 2026-04-28 | 0.3.0     | civicrecords-ai 1.4.1  | green    | civicrecords-ai PR #48 merged at ac71f61; release workflow run 25071324131; v1.4.1 installer assets published; verify-release.sh PASSED |
 | 2026-04-28 | 0.3.0     | civicclerk 0.1.1       | green    | civicclerk PR #29 merged at 7d54d30; 382 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-28 | 0.3.0     | civiccode 0.1.1        | green    | civiccode PR #20 merged at d03eaba; 106 tests passed; verify-release.sh PASSED; GitHub release assets published |
 | 2026-04-28 | 0.3.0     | civiczone 0.1.1        | green    | civiczone PR #10 merged at acf9c6e; 34 tests passed; verify-release.sh PASSED; GitHub release assets published |
