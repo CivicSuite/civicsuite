@@ -80,6 +80,10 @@ Why:
 
 Those modules form the most obvious clerk/planning records workflow: records intake and search, meeting/agenda workflows, municipal code lookup, and zoning/parcel explanations.
 
+Initial status:
+
+`deploy/post-foundation-demo.compose.yml`, `docs/deployment/local-demo-profile.md`, and `scripts/verify-deployment-profile.py` define the first bounded local demo profile for CivicRecords AI, CivicClerk, CivicCode, and CivicZone. The verifier checks compose shape, local-first LLM defaults, version-pinned module wheels, deployment docs, and no-network in-process health smoke checks for CivicClerk, CivicCode, and CivicZone.
+
 ## Lane 3 - Shared Staff And Resident Shell Boundaries
 
 Goal: define the first reusable UX shell without collapsing modules into a monorepo.

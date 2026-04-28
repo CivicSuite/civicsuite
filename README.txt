@@ -47,6 +47,7 @@ Planned, not started:
 - 0 additional modules across the catalog. The v0.1.0 foundation lane has shipped for every catalog module; later work is feature depth, integration hardening, and production workflow expansion.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
+See the [local demo deployment profile](docs/deployment/local-demo-profile.md) for the first bounded post-foundation stack: CivicRecords AI + CivicClerk + CivicCode + CivicZone.
 
 ## Quick start
 

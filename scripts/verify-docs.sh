@@ -20,7 +20,10 @@ REQUIRED=(
   .gitignore
   docs/index.html
   docs/compatibility/index.md
+  docs/deployment/local-demo-profile.md
   docs/github-discussions-seed.md
+  scripts/verify-deployment-profile.py
+  scripts/verify-suite-state.py
   .github/PULL_REQUEST_TEMPLATE.md
   .github/ISSUE_TEMPLATE/bug_report.md
   .github/ISSUE_TEMPLATE/feature_request.md
