@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Civic311 v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the Civic311 dependency-alignment release pinned to `civiccore==0.3.0`.
 - **CivicNotice v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicNotice dependency-alignment release pinned to `civiccore==0.3.0`.
 - **CivicBoards v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicBoards dependency-alignment release pinned to `civiccore==0.3.0`.
 - **CivicContracts v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicContracts dependency-alignment release pinned to `civiccore==0.3.0`.
