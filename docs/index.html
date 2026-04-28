@@ -263,7 +263,7 @@
 <main id="main">
 <section>
   <h2>What's here today</h2>
-  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, and CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, CivicElections, and CivicUtility now have v0.1.0 runtime-foundation releases. The catalog covers 26 modules across 7 tiers; only what's listed below has shipped code or active planning context.</p>
+  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, and CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, CivicElections, CivicUtility, and CivicCourt now have v0.1.0 runtime-foundation releases. The catalog covers 26 modules across 7 tiers; only what's listed below has shipped code or active planning context.</p>
 
   <ul class="module-status">
     <li>
@@ -376,13 +376,18 @@
       <span class="badge badge-shipping">shipping v0.1.0</span>
       <span class="desc">Utility customer-service support. CivicUtility v0.1.0 ships in the <a href="https://github.com/CivicSuite/civicutility">CivicSuite/civicutility</a> repo with utility-policy Q&A, CSR-safe account context, payment-arrangement drafts, service-request intake, and an accessible public sample UI at <code>/civicutility</code>. Utility billing, payment processing, rate-engine behavior, shutoff/reconnect decisions, account writes, live LLM calls, live billing connectors, and Civic311 write-back are still not shipped.</span>
     </li>
+  <li>
+      <span class="name">civiccourt</span>
+      <span class="badge badge-shipping">shipping v0.1.0</span>
+      <span class="desc">Municipal court clerk support. CivicCourt v0.1.0 ships in the <a href="https://github.com/CivicSuite/civiccourt">CivicSuite/civiccourt</a> repo with cited procedure Q&A, court form drafts, restricted-record-aware search, hearing preparation checklists, and an accessible public sample UI at <code>/civiccourt</code>. Court case management, e-filing, warrant issuance, judicial decisions, legal advice, live LLM calls, and court CMS connectors are still not shipped.</span>
+    </li>
   </ul>
 </section>
 
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, civiczone v0.1.0, civicaccess v0.1.0, civicplan v0.1.0, civicpermit v0.1.0, civicinspect v0.1.0, civicgrants v0.1.0, civicprocure v0.1.0, civiccontracts v0.1.0, civicboards v0.1.0, civicnotice v0.1.0, civic311 v0.1.0, civiccomms v0.1.0, civicdata v0.1.0, civichr v0.1.0, civicbudget v0.1.0, civiclegal v0.1.0, civicelections v0.1.0, and civicutility v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.2.0 shared library, which is consumed by civicrecords-ai v1.4.0, civicclerk v0.1.0, civiccode v0.1.0, civiczone v0.1.0, civicaccess v0.1.0, civicplan v0.1.0, civicpermit v0.1.0, civicinspect v0.1.0, civicgrants v0.1.0, civicprocure v0.1.0, civiccontracts v0.1.0, civicboards v0.1.0, civicnotice v0.1.0, civic311 v0.1.0, civiccomms v0.1.0, civicdata v0.1.0, civichr v0.1.0, civicbudget v0.1.0, civiclegal v0.1.0, civicelections v0.1.0, civicutility v0.1.0, and civiccourt v0.1.0." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -410,7 +415,7 @@
     </tbody>
   </table>
   <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
-  <p><code>civicutility</code> now ships v0.1.0. CivicCourt is the next planned specialized module lane, with libraries, safety, and emergency-management modules following after the current foundation modules stabilize.</p>
+  <p><code>civiccourt</code> now ships v0.1.0. CivicSafety is the next planned specialized module lane, with library and parks modules following after the current foundation modules stabilize.</p>
 </section>
 
 <section>
@@ -443,9 +448,10 @@
     <li><a href="https://github.com/CivicSuite/civiclegal"><code>github.com/CivicSuite/civiclegal</code></a> &mdash; Module 20, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicelections"><code>github.com/CivicSuite/civicelections</code></a> &mdash; Module 21, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicutility"><code>github.com/CivicSuite/civicutility</code></a> &mdash; Module 22, shipping v0.1.0</li>
+    <li><a href="https://github.com/CivicSuite/civiccourt"><code>github.com/CivicSuite/civiccourt</code></a> &mdash; Module 23, shipping v0.1.0</li>
     <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
   </ul>
-  <p><code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, and <code>civicutility</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, and <code>civiccourt</code> now have v0.1.0 runtime-foundation releases under the same org. Future modules will follow the same separate-repo pattern. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 </main>
 

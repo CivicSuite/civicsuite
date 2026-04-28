@@ -399,14 +399,14 @@ Purpose: support for cities running their own elections: candidate filing guidan
 
 Owner: Utilities / Customer Service  
 Depends on: CivicCore, Civic311  
-Status: planned  
+Status: shipping v0.1.0 runtime foundation  
 Purpose: utility customer-service copilot for account lookup, billing Q&A, payment arrangement drafting, and service request intake. Not a billing system.
 
 #### CivicCourt
 
 Owner: Court Clerk / Municipal Court  
 Depends on: CivicCore in isolated profile  
-Status: planned late  
+Status: shipping v0.1.0 runtime foundation  
 Purpose: document preparation and search support for municipal court clerks. Sensitive deployment; tight scoping required.
 
 #### CivicSafety
@@ -986,7 +986,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicCourt implementation scope after CivicUtility v0.1.0 shipped.
+- CivicSafety implementation scope after CivicCourt v0.1.0 shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
