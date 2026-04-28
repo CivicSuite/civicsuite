@@ -19,7 +19,7 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 
 - **civicaccess v0.1.1** - accessibility, plain-language, multilingual, and ADA review support foundation, now aligned to `civiccore==0.3.0`. Ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and accessible public sample UI at `/civicaccess`. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped. Repo: <https://github.com/CivicSuite/civicaccess>.
 
-- **civicplan v0.1.0** - comprehensive-plan policy lookup and cited planning analysis foundation. Ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI at `/civicplan`. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are still not shipped. Repo: <https://github.com/CivicSuite/civicplan>.
+- **civicplan v0.1.1** - comprehensive-plan policy lookup and cited planning analysis foundation, now aligned to `civiccore==0.3.0`. Ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and accessible public sample UI at `/civicplan`. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are still not shipped. Repo: <https://github.com/CivicSuite/civicplan>.
 
 - **civicpermit v0.1.0** - permit pre-application and intake-readiness foundation. Ships deterministic sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and accessible public sample UI at `/civicpermit`. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped. Repo: <https://github.com/CivicSuite/civicpermit>.
 
@@ -62,7 +62,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-All 26 catalog modules have runtime-foundation releases; CivicCode, CivicZone, and CivicAccess have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
+All 26 catalog modules have runtime-foundation releases; CivicCode, CivicZone, CivicAccess, and CivicPlan have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
 
 ## What's in this repo
 
@@ -103,7 +103,7 @@ civicsuite/
 | civiccode | <https://github.com/CivicSuite/civiccode> | Module 3, v0.1.1 released; municipal-code lookup, citations, local imports, records-ready exports, and `civiccore==0.3.0` alignment. |
 | civiczone | <https://github.com/CivicSuite/civiczone> | Module 6, v0.1.1 released; parcel lookup, zoning rule lookups, cited sample Q&A, planner escalation, public UI foundation, and `civiccore==0.3.0` alignment. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Module 5, v0.1.1 released; accessibility review, plain-language rewrite, multilingual variants, records-ready exports, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicplan | <https://github.com/CivicSuite/civicplan> | Module 7, v0.1.0 runtime foundation released; cited plan-policy lookup, consistency support, staff-analysis outlines, records-ready exports, and public UI foundation. |
+| civicplan | <https://github.com/CivicSuite/civicplan> | Module 7, v0.1.1 released; cited plan-policy lookup, consistency support, staff-analysis outlines, records-ready exports, public UI foundation, and `civiccore==0.3.0` alignment. |
 | civicpermit | <https://github.com/CivicSuite/civicpermit> | Module 8, v0.1.0 runtime foundation released; permit requirement lookup, intake-readiness review, submittal outlines, records-ready exports, and public UI foundation. |
 | civicinspect | <https://github.com/CivicSuite/civicinspect> | Module 9, v0.1.0 runtime foundation released; repeat-case lookup, report drafts, notice drafts, records-ready exports, and public UI foundation. |
 | civicgrants | <https://github.com/CivicSuite/civicgrants> | Module 10, v0.1.0 runtime foundation released; opportunity triage, eligibility matching, application outlines, compliance calendars, audit-ready exports, and public UI foundation. |
