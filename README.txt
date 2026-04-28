@@ -36,9 +36,10 @@ Shipping:
 - civichr v0.1.0 - HR policy support foundation. Ships personnel-policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, HR source review, sensitive-topic preflight, and accessible public sample UI at /civichr. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civichr>.
 - civicbudget v0.1.0 - budget narrative and transparency support foundation. Ships line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI at /civicbudget. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicbudget>.
 - civiclegal v0.1.0 - internal legal-record research support foundation. Ships privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI at /civiclegal. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civiclegal>.
+- civicelections v0.1.0 - election administration support foundation. Ships cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI at /civicelections. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicelections>.
 
 Planned, not started:
-- 6 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 5 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -59,7 +60,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicLegal v0.1.0 now ships. CivicElections is the next planned module lane, with courts, libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
+CivicElections v0.1.0 now ships. CivicUtility is the next planned specialized module lane, with courts, libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
 
 ## What's in this repo
 
@@ -114,6 +115,7 @@ civicsuite/
 | civichr | <https://github.com/CivicSuite/civichr> | Module 18, v0.1.0 runtime foundation released; HR policy lookup, handbook summaries, job descriptions, classification references, onboarding/training checklists, and intake templates. |
 | civicbudget | <https://github.com/CivicSuite/civicbudget> | Module 19, v0.1.0 runtime foundation released; line-item analysis, budget narratives, department memos, hearing packet checklists, resident summaries, and GFOA checklist support. |
 | civiclegal | <https://github.com/CivicSuite/civiclegal> | Module 20, v0.1.0 runtime foundation released; privilege-aware legal-record search, prior-action lookup, memo scaffolds, ordinance comparison, litigation-hold flags, and citation tracking. |
+| civicelections | <https://github.com/CivicSuite/civicelections> | Module 21, v0.1.0 runtime foundation released; voter guidance, filing checklists, worker training, ballot summaries, campaign-finance summaries, canvass checklists, and accessibility review. |
 
 Future module repos will land under CivicSuite/ as separate repos.
 

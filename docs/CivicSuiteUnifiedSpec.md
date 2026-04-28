@@ -390,7 +390,7 @@ Purpose: Q&A over the city's own legal corpus, including ordinances, resolutions
 
 Owner: City Clerk / Election Official  
 Depends on: CivicCore, CivicCode, CivicAccess  
-Status: planned  
+Status: shipping v0.1.0 runtime foundation  
 Purpose: support for cities running their own elections: candidate filing guidance, voter information Q&A, ballot question drafting support, election worker training, and accessible materials.
 
 ### Tier 6 - Specialized
@@ -965,6 +965,7 @@ As of 2026-04-27:
 - `civichr` ships as v0.1.0 with runtime foundations for HR policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and accessible public sample UI. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
 - `civicbudget` ships as v0.1.0 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
 - `civiclegal` ships as v0.1.0 with runtime foundations for privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are not shipped.
+- `civicelections` ships as v0.1.0 with runtime foundations for cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are not shipped.
 - The remaining catalog modules are planned, not implemented.
 
 ## 19. Immediate Build Sequence
@@ -985,7 +986,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicElections implementation scope and election-risk boundaries now that CivicLegal v0.1.0 is shipped.
+- CivicUtility implementation scope and utility-billing boundaries now that CivicElections v0.1.0 is shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
