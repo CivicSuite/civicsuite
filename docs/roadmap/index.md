@@ -25,12 +25,12 @@ UI foundation. CivicGrants is shipping at v0.1.0 with opportunity triage,
 eligibility-factor matching, application outlines, compliance calendars,
 audit-ready exports, and public UI foundation. CivicProcure is shipping at
 v0.1.0 with RFP drafting, proposal comparison, exception extraction, scoring
-summary helper, award-packet checklist, and accessible public UI foundation. CivicContracts is shipping at v0.1.0 with contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, and accessible public UI foundation. CivicBoards is shipping at v0.1.0 with board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and accessible public UI foundation. CivicNotice is shipping at v0.1.0 with notice registry, statutory deadline plans, publication-readiness checks, channel planning, notice records exports, and accessible public UI foundation. Civic311 is shipping at v0.1.0 with request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and accessible public UI foundation.
+summary helper, award-packet checklist, and accessible public UI foundation. CivicContracts is shipping at v0.1.0 with contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, and accessible public UI foundation. CivicBoards is shipping at v0.1.0 with board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and accessible public UI foundation. CivicNotice is shipping at v0.1.0 with notice registry, statutory deadline plans, publication-readiness checks, channel planning, notice records exports, and accessible public UI foundation. Civic311 is shipping at v0.1.0 with request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and accessible public UI foundation. CivicComms is shipping at v0.1.0 with source-readiness review, meeting summaries, ordinance explainers, newsletter scaffolds, FAQ prompts, audience variants, and accessible public UI foundation.
 
-Civic311 has shipped its v0.1.0 foundation. The next suite implementation lane can
+CivicComms has shipped its v0.1.0 foundation. The next suite implementation lane can
 plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode,
 CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants,
-and CivicProcure, CivicContracts, CivicBoards, CivicNotice, and Civic311 release contracts.
+and CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, and CivicComms release contracts.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -66,8 +66,8 @@ prior CivicClerk plan remains as historical context in
 | 13 | CivicBoards           | Shipping v0.1.0 |
 | 14 | CivicNotice           | Shipping v0.1.0 |
 | 15 | Civic311              | Shipping v0.1.0 |
-| 16 | CivicComms            | Planned next |
-| 17 | CivicData Bridge      | Planned      |
+| 16 | CivicComms            | Shipping v0.1.0 |
+| 17 | CivicData Bridge      | Planned next |
 
 ## Phase 4 — Internal Business & Specialized
 
