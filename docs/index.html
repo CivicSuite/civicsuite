@@ -28,6 +28,7 @@
     -webkit-font-smoothing: antialiased;
   }
   .container {
+    width: 100%;
     max-width: 800px;
     margin: 0 auto;
     padding: 56px 24px 80px;
@@ -90,6 +91,7 @@
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
+    overflow-wrap: anywhere;
   }
   a:hover { color: var(--accent-hover); text-decoration-thickness: 2px; }
   code {
@@ -98,6 +100,7 @@
     border-radius: 3px;
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
     font-size: 0.92em;
+    overflow-wrap: anywhere;
   }
   pre {
     background: var(--code-bg);
@@ -163,6 +166,7 @@
     gap: 8px 18px;
   }
   nav.quicklinks li { margin: 0; }
+  nav.quicklinks a { overflow-wrap: anywhere; }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -230,6 +234,13 @@
     line-height: 1.6;
   }
   footer p { margin: 0 0 6px; }
+  @media (max-width: 600px) {
+    .container {
+      margin: 0;
+      max-width: 390px;
+      padding: 48px 24px 72px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -263,7 +274,7 @@
 <main id="main">
 <section>
   <h2>What's here today</h2>
-  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, all 26 catalog modules have runtime-foundation releases, and CivicCode plus CivicZone have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is production workflow depth, connector design, deployment packaging, and cross-module UX polish.</p>
+  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, all 26 catalog modules have runtime-foundation releases, and CivicCode, CivicZone, and CivicAccess have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is production workflow depth, connector design, deployment packaging, and cross-module UX polish.</p>
 
   <ul class="module-status">
     <li>
@@ -293,8 +304,8 @@
     </li>
     <li>
       <span class="name">civicaccess</span>
-      <span class="badge badge-shipping">Shipping v0.1.0</span>
-      <span class="desc">Accessibility, plain-language, multilingual, and ADA review support. CivicAccess v0.1.0 ships in the <a href="https://github.com/CivicSuite/civicaccess">CivicSuite/civicaccess</a> repo with sample accessibility review, plain-language rewrite, multilingual variants, records-ready export checklist, and an accessible public sample UI at <code>/civicaccess</code>. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped.</span>
+      <span class="badge badge-shipping">Shipping v0.1.1</span>
+      <span class="desc">Accessibility, plain-language, multilingual, and ADA review support. CivicAccess v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicaccess">CivicSuite/civicaccess</a> repo aligned to <code>civiccore==0.3.0</code>, with sample accessibility review, plain-language rewrite, multilingual variants, records-ready export checklist, and an accessible public sample UI at <code>/civicaccess</code>. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped.</span>
     </li>
     <li>
       <span class="name">civicplan</span>
@@ -402,7 +413,7 @@
 <section>
   <h2>Architecture overview</h2>
   <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules with v0.1.0 runtime foundations." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.0 and all 26 catalog modules, including CivicCode, CivicZone, and CivicAccess v0.1.1 alignment releases." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
   </figure>
   <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
@@ -448,7 +459,7 @@
     <li><a href="https://github.com/CivicSuite/civicclerk"><code>github.com/CivicSuite/civicclerk</code></a> &mdash; Module 2, shipping v0.1.0 with post-release production-depth staff screens on main</li>
     <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.1</li>
     <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicaccess"><code>github.com/CivicSuite/civicaccess</code></a> &mdash; Module 5, shipping v0.1.0</li>
+    <li><a href="https://github.com/CivicSuite/civicaccess"><code>github.com/CivicSuite/civicaccess</code></a> &mdash; Module 5, shipping v0.1.1</li>
     <li><a href="https://github.com/CivicSuite/civicplan"><code>github.com/CivicSuite/civicplan</code></a> &mdash; Module 7, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicpermit"><code>github.com/CivicSuite/civicpermit</code></a> &mdash; Module 8, shipping v0.1.0</li>
     <li><a href="https://github.com/CivicSuite/civicinspect"><code>github.com/CivicSuite/civicinspect</code></a> &mdash; Module 9, shipping v0.1.0</li>
@@ -476,7 +487,7 @@
     <li><a href="civiccore/v0.3-extraction-proposal.md">CivicCore v0.3 extraction proposal</a> &mdash; audit, provenance, manifest, city-profile, and export-bundle primitives</li>
     <li><a href="roadmap/civicclerk-production-depth-workflow.md">CivicClerk production-depth workflow</a> &mdash; agenda packet, notice, source provenance, export, and staff UX sprint plan</li>
   </ul>
-  <p><code>civicclerk</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, <code>civiccourt</code>, <code>civicsafety</code>, <code>civiclibrary</code>, and <code>civicparks</code> have v0.1.0 runtime-foundation releases under the same org; <code>civiccode</code> and <code>civiczone</code> have advanced to v0.1.1 for CivicCore v0.3.0 alignment. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
+  <p><code>civicclerk</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, <code>civic311</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, <code>civiccourt</code>, <code>civicsafety</code>, <code>civiclibrary</code>, and <code>civicparks</code> have v0.1.0 runtime-foundation releases under the same org; <code>civiccode</code>, <code>civiczone</code>, and <code>civicaccess</code> have advanced to v0.1.1 for CivicCore v0.3.0 alignment. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
 </section>
 </main>
 
