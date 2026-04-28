@@ -37,9 +37,10 @@ This `civicsuite` repository is the **umbrella / orientation repo** for the Civi
 - **civiccourt v0.1.0** - municipal court clerk support foundation. Ships cited procedure Q&A, court form drafts, restricted-record-aware search, hearing preparation checklists, and accessible public sample UI at `/civiccourt`. Court case management, e-filing, warrant issuance, judicial decisions, legal advice, live LLM calls, and court CMS connectors are still not shipped. Repo: <https://github.com/CivicSuite/civiccourt>.
 - **civicsafety v0.1.0** - non-CJIS public-safety administrative support foundation. Ships cited policy/SOP Q&A, training checklists, PIO draft support, aggregate public-statistics summaries, and accessible public sample UI at `/civicsafety`. CJI ingestion, CAD/RMS integration, dispatch, enforcement, investigations, evidence workflows, legal advice, live LLM calls, and connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicsafety>.
 - **civiclibrary v0.1.0** - municipal library policy and reference support foundation. Ships cited library policy Q&A, program and event Q&A, collection-metadata reference search, collection-development guidance, and accessible public sample UI at `/civiclibrary`. Patron records, ILS integration, circulation actions, professional-reference replacement, legal advice, live LLM calls, and connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civiclibrary>.
+- **civicparks v0.1.0** - parks and recreation support foundation. Ships cited parks policy Q&A, program and facility Q&A, registration-link assistance, maintenance request triage, and accessible public sample UI at `/civicparks`. Payments, registrations, participant records, reservation writes, crew dispatch, live LLM calls, and connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicparks>.
 
 **Planned, not started:**
-- 1 additional module across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 0 additional modules across the catalog. The v0.1.0 foundation lane has shipped for every catalog module; later work is feature depth, integration hardening, and production workflow expansion.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -60,7 +61,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicLibrary v0.1.0 now ships. CivicParks is the next planned specialized module lane after the current foundation modules stabilize.
+All 26 catalog modules now have v0.1.0 runtime-foundation releases. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
 
 ## What's in this repo
 
@@ -120,6 +121,7 @@ civicsuite/
 | civiccourt | <https://github.com/CivicSuite/civiccourt> | Module 23, v0.1.0 runtime foundation released; procedure Q&A, court form drafts, restricted-record-aware search, hearing prep checklists, and public UI foundation. |
 | civicsafety | <https://github.com/CivicSuite/civicsafety> | Module 24, v0.1.0 runtime foundation released; non-CJIS policy/SOP Q&A, training checklists, PIO draft support, aggregate public-statistics summaries, and public UI foundation. |
 | civiclibrary | <https://github.com/CivicSuite/civiclibrary> | Module 25, v0.1.0 runtime foundation released; library policy Q&A, program/event answers, collection-metadata reference search, collection-development guidance, and public UI foundation. |
+| civicparks | <https://github.com/CivicSuite/civicparks> | Module 26, v0.1.0 runtime foundation released; parks policy Q&A, program/facility answers, registration-link assistance, maintenance triage, and public UI foundation. |
 
 Future module repos will land under `CivicSuite/` as separate repos.
 

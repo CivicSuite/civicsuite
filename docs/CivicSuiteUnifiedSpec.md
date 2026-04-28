@@ -427,8 +427,8 @@ Purpose: library policy Q&A, program and event Q&A, collection-metadata referenc
 
 Owner: Parks & Recreation Director  
 Depends on: CivicCore, Civic311  
-Status: optional planned  
-Purpose: parks/facility/program Q&A, registration assistance, policy lookup, maintenance coordination, and resident-facing parks information.
+Status: shipping v0.1.0 runtime foundation
+Purpose: parks/facility/program Q&A, registration-link assistance, policy lookup, maintenance request triage, and resident-facing parks information. Explicitly excludes payment processing, registration writes, participant records, reservation writes, crew dispatch, live LLM calls, and connector runtime.
 
 ## 8. CivicRecords Canonical Scope
 
@@ -986,7 +986,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicParks implementation scope after CivicLibrary v0.1.0 shipped.
+- Post-foundation module depth and integration sequencing after all 26 v0.1.0 foundations shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
