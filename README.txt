@@ -38,9 +38,10 @@ Shipping:
 - civiclegal v0.1.0 - internal legal-record research support foundation. Ships privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI at /civiclegal. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civiclegal>.
 - civicelections v0.1.0 - election administration support foundation. Ships cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI at /civicelections. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are still not shipped. Repo: <https://github.com/CivicSuite/civicelections>.
 - civicutility v0.1.0 - utility customer-service support foundation. Ships cited utility-policy Q&A, CSR-safe read-only account context, payment-arrangement drafts, service-request intake, and accessible public sample UI at /civicutility. Utility billing, payment processing, rate-engine behavior, shutoff/reconnect decisions, account writes, live LLM calls, live billing connectors, and Civic311 write-back are still not shipped. Repo: <https://github.com/CivicSuite/civicutility>.
+- civiccourt v0.1.0 - municipal court clerk support foundation. Ships cited procedure Q&A, court form drafts, restricted-record-aware search, hearing preparation checklists, and accessible public sample UI at /civiccourt. Court case management, e-filing, warrant issuance, judicial decisions, legal advice, live LLM calls, and court CMS connectors are still not shipped. Repo: <https://github.com/CivicSuite/civiccourt>.
 
 Planned, not started:
-- 4 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
+- 3 additional modules across the catalog. Specs are not products. If a module is not listed above with a version, it does not exist as code yet.
 
 See the [compatibility matrix](docs/compatibility/index.md) for the canonical version pairings.
 
@@ -61,7 +62,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-CivicUtility v0.1.0 now ships. CivicCourt is the next planned specialized module lane, with libraries, safety, and emergency-management modules following after the current foundation modules stabilize.
+CivicCourt v0.1.0 now ships. CivicSafety is the next planned specialized module lane, with library and parks modules following after the current foundation modules stabilize.
 
 ## What's in this repo
 
@@ -117,6 +118,8 @@ civicsuite/
 | civicbudget | <https://github.com/CivicSuite/civicbudget> | Module 19, v0.1.0 runtime foundation released; line-item analysis, budget narratives, department memos, hearing packet checklists, resident summaries, and GFOA checklist support. |
 | civiclegal | <https://github.com/CivicSuite/civiclegal> | Module 20, v0.1.0 runtime foundation released; privilege-aware legal-record search, prior-action lookup, memo scaffolds, ordinance comparison, litigation-hold flags, and citation tracking. |
 | civicelections | <https://github.com/CivicSuite/civicelections> | Module 21, v0.1.0 runtime foundation released; voter guidance, filing checklists, worker training, ballot summaries, campaign-finance summaries, canvass checklists, and accessibility review. |
+| civicutility | <https://github.com/CivicSuite/civicutility> | Module 22, v0.1.0 runtime foundation released; utility-policy Q&A, CSR-safe account context, payment-arrangement drafts, service-request intake, and public UI foundation. |
+| civiccourt | <https://github.com/CivicSuite/civiccourt> | Module 23, v0.1.0 runtime foundation released; procedure Q&A, court form drafts, restricted-record-aware search, hearing prep checklists, and public UI foundation. |
 
 Future module repos will land under CivicSuite/ as separate repos.
 

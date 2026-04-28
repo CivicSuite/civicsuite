@@ -6,7 +6,7 @@ condensed table view follows.
 
 ## Current next step
 
-**Current module lane: CivicUtility shipped v0.1.0.** CivicRecords AI is shipping
+**Current module lane: CivicCourt shipped v0.1.0.** CivicRecords AI is shipping
 at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
 with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
 at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
@@ -27,10 +27,10 @@ audit-ready exports, and public UI foundation. CivicProcure is shipping at
 v0.1.0 with RFP drafting, proposal comparison, exception extraction, scoring
 summary helper, award-packet checklist, and accessible public UI foundation. CivicContracts is shipping at v0.1.0 with contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, and accessible public UI foundation. CivicBoards is shipping at v0.1.0 with board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and accessible public UI foundation. CivicNotice is shipping at v0.1.0 with notice registry, statutory deadline plans, publication-readiness checks, channel planning, notice records exports, and accessible public UI foundation. Civic311 is shipping at v0.1.0 with request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and accessible public UI foundation. CivicComms is shipping at v0.1.0 with source-readiness review, meeting summaries, ordinance explainers, newsletter scaffolds, FAQ prompts, audience variants, and accessible public UI foundation. CivicData Bridge is shipping at v0.1.0 with dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public UI foundation.
 
-CivicHR, CivicBudget, CivicLegal, CivicElections, and CivicUtility have shipped their v0.1.0 foundations. The next suite implementation lane can
+CivicHR, CivicBudget, CivicLegal, CivicElections, CivicUtility, and CivicCourt have shipped their v0.1.0 foundations. The next suite implementation lane can
 plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode,
 CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants,
-CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, CivicElections, and CivicUtility release contracts. CivicCourt is the next planned module lane.
+CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, CivicElections, CivicUtility, and CivicCourt release contracts. CivicSafety is the next planned module lane.
 
 The detailed execution plan is
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md). The
@@ -78,7 +78,7 @@ prior CivicClerk plan remains as historical context in
 | 20 | CivicLegal Research   |
 | 21 | CivicElections Assist |
 | 22 | CivicUtility Assist   |
-| 23 | CivicCourt Assist     |
-| 24 | CivicSafety Assist    |
+| 23 | CivicCourt Assist     | Shipping v0.1.0 |
+| 24 | CivicSafety Assist    | Planned next |
 | 25 | CivicLibrary          |
 | 26 | CivicParks            |
