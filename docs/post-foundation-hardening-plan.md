@@ -1,12 +1,12 @@
 # Post-Foundation Hardening Plan
 
 Status: active planning document  
-Applies after: all 26 catalog modules have v0.1.0 runtime-foundation releases  
+Applies after: all 26 catalog modules have runtime-foundation releases and the v0.1.1 CivicCore alignment lane is complete  
 License: Apache-2.0
 
 ## Purpose
 
-The v0.1.0 foundation lane proved that every CivicSuite catalog module can live in the CivicSuite organization, depend on released CivicCore, ship documentation and browser-visible UI, and pass an auditable release gate.
+The foundation and v0.1.1 alignment lanes proved that every CivicSuite catalog module can live in the CivicSuite organization, depend on released CivicCore, ship documentation and browser-visible UI, and pass an auditable release gate.
 
 The next phase is not "build another module." The next phase is making the suite easier to deploy, operate, integrate, and deepen into real municipal workflows without weakening the boundaries that made the foundation lane safe.
 
@@ -35,7 +35,7 @@ Deliverables:
    - Current version surfaces.
    - Branch protection.
    - Release assets and checksums.
-   - `civiccore==0.2.0` compatibility where applicable.
+   - Current CivicCore compatibility where applicable, with `civiccore==0.3.0` as the active foundation pin except for historical releases recorded in the compatibility matrix.
 2. A suite-wide verification script in the umbrella repo that calls each module's docs/release gate without hiding failures.
 3. A stale-state scanner that catches planned-vs-shipped drift across README files, landing pages, manuals, compatibility matrix rows, and the unified spec.
 4. A single post-foundation status report that replaces per-module sprint fragments as the operator-facing summary.

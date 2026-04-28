@@ -263,7 +263,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: shipping v0.1.1 foundation  
+Status: published v0.1.0; current main has post-release production-depth screens and civiccore==0.3.0 alignment pending the next release  
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -272,7 +272,7 @@ Dependency note: older catalog text listed CivicRecords because shared document/
 
 Owner: City Clerk / Legal / Codification Department  
 Depends on: CivicCore, CivicClerk  
-Status: shipping v0.1.0 foundation
+Status: shipping v0.1.1 foundation
 Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
@@ -288,7 +288,7 @@ Purpose: accessible forms, accessible publishing workflows, multilingual and pla
 
 Owner: Planning & Development / Community Development  
 Depends on: CivicCore, CivicCode  
-Status: shipping v0.1.0 foundation  
+Status: shipping v0.1.1 foundation  
 Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a property is in, what uses are allowed, what setbacks apply, and when planner review is required. CivicZone never makes a zoning determination.
 
 #### CivicPlan
@@ -318,7 +318,7 @@ Purpose: inspection assistant for photo/voice-to-report drafting, repeat-case lo
 
 Owner: City Manager / Finance / Administration / Economic Development  
 Depends on: CivicCore, CivicRecords  
-Status: shipping v0.1.0 foundation  
+Status: shipping v0.1.1 foundation  
 Purpose: opportunity triage, eligibility matching, application drafting, compliance calendars, and audit-ready grant files.
 
 #### CivicProcure
@@ -339,14 +339,14 @@ Purpose: central contract repository with clause Q&A, expiration tracking, renew
 
 Owner: City Clerk / Board liaisons  
 Depends on: CivicCore, CivicClerk  
-Status: shipping v0.1.0 foundation  
+Status: shipping v0.1.1 foundation  
 Purpose: non-Council boards and commissions: members, terms, vacancies, attendance, agendas, packets, minutes, and public notices.
 
 #### CivicNotice
 
 Owner: City Clerk / Communications  
 Depends on: CivicCore, CivicAccess, CivicClerk, CivicProcure, CivicBoards  
-Status: shipping v0.1.0 foundation  
+Status: shipping v0.1.1 foundation  
 Purpose: compliance workflow for public hearings, legal notices, bid notices, vacancies, and statutory publication deadlines.
 
 ### Tier 4 - Operations
@@ -355,22 +355,22 @@ Purpose: compliance workflow for public hearings, legal notices, bid notices, va
 
 Owner: Public Works / Utilities / Neighborhood Services / Code Enforcement  
 Depends on: CivicCore, CivicAccess, CivicCode  
-Status: planned  
+Status: shipping v0.1.1 foundation aligned to `civiccore==0.3.0`  
 Purpose: resident service request intake with AI triage, deduplication, routing, and Open311-compatible export.
 
 #### CivicComms
 
 Owner: Clerk / Communications / Administration / Mayor & Manager's Office  
 Depends on: CivicCore, CivicClerk, CivicCode, CivicAccess  
-Status: planned  
+Status: shipping v0.1.1 foundation aligned to `civiccore==0.3.0`  
 Purpose: source-backed public explainers, meeting summaries, ordinance summaries, newsletters, FAQ generation, and multilingual public notices.
 
 #### CivicData
 
 Owner: IT / Clerk / Administration / Analysts  
 Depends on: CivicCore  
-Status: shipping v0.1.0 foundation  
-Purpose: municipal system normalization, open-data-ready packages, searchable archive bundles, CKAN integration, and records retention exports. v0.1.0 ships dataset normalization, data-dictionary drafts, CKAN metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and an accessible public sample UI. Live CKAN publishing, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
+Status: shipping v0.1.1 foundation  
+Purpose: municipal system normalization, open-data-ready packages, searchable archive bundles, CKAN integration, and records retention exports. v0.1.1 ships dataset normalization, data-dictionary drafts, CKAN metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, an accessible public sample UI, and civiccore==0.3.0 alignment. Live CKAN publishing, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
 
 ### Tier 5 - Internal Business
 
@@ -378,28 +378,28 @@ Purpose: municipal system normalization, open-data-ready packages, searchable ar
 
 Owner: Human Resources  
 Depends on: CivicCore  
-Status: shipping v0.1.0 foundation  
-Purpose: personnel policy Q&A, job description drafting, onboarding packet generation, and internal HR knowledge support. Not an HRIS. v0.1.0 ships policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, and an accessible public sample UI. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
+Status: shipping v0.1.1 foundation  
+Purpose: personnel policy Q&A, job description drafting, onboarding packet generation, and internal HR knowledge support. Not an HRIS. v0.1.1 ships policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, sensitive-topic preflight, an accessible public sample UI, and civiccore==0.3.0 alignment. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are not shipped.
 
 #### CivicBudget
 
 Owner: Finance / City Manager / Department budget leads  
 Depends on: CivicCore, CivicClerk, CivicData  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: budget memo drafting, departmental budget narratives, line-item analysis, and hearing packet prep. Not a budgeting system.
 
 #### CivicLegal
 
 Owner: City Attorney / Paralegal / Clerk  
 Depends on: CivicCore, CivicCode, CivicClerk, CivicContracts  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: Q&A over the city's own legal corpus, including ordinances, resolutions, contracts, legal opinions, litigation history, statutes, and prior Council actions.
 
 #### CivicElections
 
 Owner: City Clerk / Election Official  
 Depends on: CivicCore, CivicCode, CivicAccess  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: support for cities running their own elections: candidate filing guidance, voter information Q&A, ballot question drafting support, election worker training, and accessible materials.
 
 ### Tier 6 - Specialized
@@ -408,35 +408,35 @@ Purpose: support for cities running their own elections: candidate filing guidan
 
 Owner: Utilities / Customer Service  
 Depends on: CivicCore, Civic311  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: utility customer-service copilot for account lookup, billing Q&A, payment arrangement drafting, and service request intake. Not a billing system.
 
 #### CivicCourt
 
 Owner: Court Clerk / Municipal Court  
 Depends on: CivicCore in isolated profile  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: document preparation and search support for municipal court clerks. Sensitive deployment; tight scoping required.
 
 #### CivicSafety
 
 Owner: Public Safety administration  
 Depends on: CivicCore in isolated CJIS-aware profile  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: policy/procedure Q&A, non-CJIS administrative workflows, and public-information-officer support. Explicitly excludes operational dispatch and CJIS-bound data unless a future CJIS compliance program exists.
 
 #### CivicLibrary
 
 Owner: Library Director / Reference Librarians  
 Depends on: CivicCore  
-Status: shipping v0.1.0 runtime foundation  
+Status: shipping v0.1.1 runtime foundation  
 Purpose: library policy Q&A, program and event Q&A, collection-metadata reference assistance, collection-development guidance, and accessibility support. Explicitly excludes patron records, ILS integration, circulation actions, professional-reference replacement, legal advice, live LLM calls, and connector runtime.
 
 #### CivicParks
 
 Owner: Parks & Recreation Director  
 Depends on: CivicCore, Civic311  
-Status: shipping v0.1.0 runtime foundation
+Status: shipping v0.1.1 runtime foundation
 Purpose: parks/facility/program Q&A, registration-link assistance, policy lookup, maintenance request triage, and resident-facing parks information. Explicitly excludes payment processing, registration writes, participant records, reservation writes, crew dispatch, live LLM calls, and connector runtime.
 
 ## 8. CivicRecords Canonical Scope
@@ -493,7 +493,7 @@ Canonical lifecycle:
 
 ## 9. CivicClerk Canonical Scope
 
-CivicClerk is Module 2 and ships a v0.1.0 runtime foundation.
+CivicClerk is Module 2 and ships a v0.1.0 runtime foundation; current main has post-release production-depth screens and civiccore==0.3.0 alignment pending the next release.
 
 ### 9.1 Product Promise
 
@@ -956,7 +956,7 @@ As of 2026-04-28:
 - `civicrecords-ai` ships as v1.4.0.
 - `civiccore` ships as v0.3.0.
 - `civicsuite` is the umbrella documentation/governance repo.
-- `civicclerk` ships as v0.1.0 with runtime foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and post-release main now has live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening remains planned.
+- `civicclerk` ships as v0.1.0, and current main carries civiccore==0.3.0 plus post-release production-depth foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and post-release main now has live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening remains planned.
 - `civiccode` ships as v0.1.1 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, and `civiccore==0.3.0` alignment. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.1 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, accessible public sample UI, and `civiccore==0.3.0` alignment. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
 - `civicaccess` ships as v0.1.1 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, accessible public sample UI, and `civiccore==0.3.0` alignment. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.
@@ -975,11 +975,11 @@ As of 2026-04-28:
 - `civicbudget` ships as v0.1.1 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
 - `civiclegal` ships as v0.1.1 with runtime foundations for privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are not shipped.
 - `civicelections` ships as v0.1.1 with runtime foundations for cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are not shipped.
-- All 26 catalog modules have runtime-foundation releases; CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, and Civic311 have advanced to v0.1.1 for CivicCore v0.3.0 alignment, while the remaining module releases stay pinned as recorded in the compatibility matrix. Remaining work is post-foundation depth, connectors, deployment hardening, and cross-module UX.
+- All 26 catalog modules have runtime-foundation releases; all catalog modules except CivicClerk have advanced to v0.1.1 for CivicCore v0.3.0 alignment. CivicClerk main already uses civiccore==0.3.0 and remains published as v0.1.0 until its next release. Remaining work is post-foundation depth, connectors, deployment hardening, and cross-module UX.
 
 ## 19. Post-Foundation Build Sequence
 
-The v0.1.0 foundation lane is complete across all 26 catalog modules. The next sequence is hardening the suite into deployable, integrated municipal workflows:
+The v0.1.1 alignment lane is complete across all catalog modules except CivicClerk, whose main branch already uses civiccore==0.3.0 and awaits its next release. The next sequence is hardening the suite into deployable, integrated municipal workflows:
 
 1. Stabilize the shared deployment profile across CivicCore, CivicRecords AI, and the module runtime foundations.
 2. Define the first cross-module resident/staff shell boundaries without turning the suite into a monorepo.
@@ -996,7 +996,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- Post-foundation module depth and integration sequencing after all 26 v0.1.0 foundations shipped.
+- Post-foundation module depth and integration sequencing after the v0.1.1 civiccore alignment lane.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
