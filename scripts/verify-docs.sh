@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-docs.sh — civicsuite umbrella docs sanity check
+# verify-docs.sh â€” civicsuite umbrella docs sanity check
 # 1) Required artifacts exist
 # 2) No stale current-facing strings (CHANGELOG history exempt)
 # Exits 1 on first failure; prints PASS at the end.
