@@ -195,6 +195,15 @@ Out of scope for the first depth pass:
 - Vendor write-back.
 - Cloud LLM requirement.
 
+Initial status:
+
+`docs/architecture/ADR-0007-first-production-depth-workflow.md` and
+`docs/roadmap/civicclerk-production-depth-workflow.md` define the first
+production-depth sprint: CivicClerk agenda packet and notice workflow,
+integrated through read-only source/provenance paths with CivicRecords AI,
+CivicCode, and CivicZone, and dependent on CivicCore v0.3.0 primitives if those
+primitives are used.
+
 ## Execution Order
 
 1. Suite integrity script and report.
