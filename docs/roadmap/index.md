@@ -37,6 +37,9 @@ The active post-foundation plan is
 The first shared shell boundary and UX inventory are documented in
 [`../architecture/ADR-0004-shared-shell-boundaries.md`](../architecture/ADR-0004-shared-shell-boundaries.md)
 and [`../ux/shared-shell-inventory.md`](../ux/shared-shell-inventory.md).
+The first connector/import/export boundary is documented in
+[`../architecture/ADR-0005-connector-import-export-boundaries.md`](../architecture/ADR-0005-connector-import-export-boundaries.md)
+and [`../connectors/import-export-template.md`](../connectors/import-export-template.md).
 The prior CivicCode and CivicClerk module plans remain as historical context in
 [`civiccode-next-module-plan.md`](civiccode-next-module-plan.md) and
 [`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
