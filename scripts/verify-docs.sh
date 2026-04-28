@@ -25,6 +25,8 @@ REQUIRED=(
   docs/architecture/ADR-0004-shared-shell-boundaries.md
   docs/connectors/import-export-template.md
   docs/architecture/ADR-0005-connector-import-export-boundaries.md
+  docs/civiccore/v0.3-extraction-proposal.md
+  docs/architecture/ADR-0006-civiccore-v0-3-extraction-scope.md
   docs/github-discussions-seed.md
   scripts/verify-deployment-profile.py
   scripts/verify-suite-state.py
