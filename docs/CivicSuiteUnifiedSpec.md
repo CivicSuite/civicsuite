@@ -360,8 +360,8 @@ Purpose: source-backed public explainers, meeting summaries, ordinance summaries
 
 Owner: IT / Clerk / Administration / Analysts  
 Depends on: CivicCore  
-Status: planned  
-Purpose: municipal system normalization, open-data-ready packages, searchable archive bundles, CKAN integration, and records retention exports.
+Status: shipping v0.1.0 foundation  
+Purpose: municipal system normalization, open-data-ready packages, searchable archive bundles, CKAN integration, and records retention exports. v0.1.0 ships dataset normalization, data-dictionary drafts, CKAN metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and an accessible public sample UI. Live CKAN publishing, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
 
 ### Tier 5 - Internal Business
 
@@ -961,16 +961,17 @@ As of 2026-04-27:
 - `civicnotice` ships as v0.1.0 with runtime foundations for notice registry, statutory deadline plans, publication-readiness checklists, channel planning, notice/records export checklist, and accessible public sample UI. Legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, and notice system-of-record integrations are not shipped.
 - `civic311` ships as v0.1.0 with runtime foundations for resident service request intake, deterministic triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and accessible public sample UI. Official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, and 311 system-of-record integrations are not shipped.
 - `civiccomms` ships as v0.1.0 with runtime foundations for source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience-variant drafts, and accessible public sample UI. Autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, and communications system-of-record integrations are not shipped.
+- `civicdata` ships as v0.1.0 with runtime foundations for dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public sample UI. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
 - The rest of the catalog is planned, not implemented.
 
 ## 19. Immediate Build Sequence
 
-CivicComms v0.1.0 completed the immediate build sequence needed for the first public communications foundation release:
+CivicData Bridge v0.1.0 completed the immediate build sequence needed for the first open-data preparation foundation release:
 
-1. Keep the CivicComms shipped baseline aligned with the CivicComms catalog entry and the released CivicCore/CivicClerk/CivicCode/CivicAccess contracts it references.
-2. Preserve CivicComms boundaries: source-backed draft support only, no autonomous publication, no campaign or advocacy content, no legal advice, no certified translation, no live LLM calls, no social media posting, and no communications system-of-record replacement.
-3. Update the compatibility matrix every time CivicComms or CivicCore releases.
-4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, and CivicComms contracts.
+1. Keep the CivicData shipped baseline aligned with the CivicData catalog entry and the released CivicCore/CivicClerk/CivicCode/CivicAccess/CivicComms contracts it references.
+2. Preserve CivicData boundaries: preparation and metadata drafting only, no live CKAN publication, no BI dashboard, no data warehouse, no autonomous redaction, and no external connector runtime.
+3. Update the compatibility matrix every time CivicData or CivicCore releases.
+4. Plan the next module against the released CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, and CivicData contracts.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 
@@ -981,7 +982,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicData Bridge implementation scope and CKAN/open-data package boundaries now that CivicComms v0.1.0 is shipped.
+- CivicHR implementation scope and HR-policy/onboarding boundaries now that CivicData Bridge v0.1.0 is shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
