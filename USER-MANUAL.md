@@ -22,8 +22,8 @@ Today, multiple modules are shipping at different maturity levels: CivicRecords 
 
 - **civicrecords-ai v1.4.0** — a working, shipping module for managing public records / FOIA requests. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
 - **civiccore v0.3.0** — the shared "platform" package that every module uses. It now ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction, hash-chained audit primitives, source/provenance contracts, offline import/export manifests, export-bundle helpers, and local city profile configuration. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
-- **civicclerk v0.1.0** — a runtime-foundation release for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and a browser-visible staff workflow foundation at `/staff`; full database-backed workflow screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
-- **civiccode v0.1.0** — a runtime-foundation release for municipal code and ordinance access. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
+- **civicclerk v0.1.0 + post-release production-depth main** — a runtime-foundation release for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import; full database persistence/authentication hardening is still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
+- **civiccode v0.1.1** — a runtime-foundation release for municipal code and ordinance access, now aligned to `civiccore==0.3.0`. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
 - **civiczone v0.1.0** — a runtime-foundation release for parcel-aware zoning and land-use Q&A. It ships canonical zoning schema, Alembic migrations, sample parcel and rule lookups, citation-grounded sample Q&A, planner escalation, staff-context samples, and a public sample UI at `/civiczone`. It still does not ship live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, or legal advice. Repo: <https://github.com/CivicSuite/civiczone>.
 - **civicaccess v0.1.0** — a runtime-foundation release for accessibility, plain-language, multilingual, and ADA review support. It ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and a public sample UI at `/civicaccess`. It still does not ship certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, or suite-wide integration APIs. Repo: <https://github.com/CivicSuite/civicaccess>.
 - **civicplan v0.1.0** — a runtime-foundation release for comprehensive-plan policy lookup and cited planning analysis support. It ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and a public sample UI at `/civicplan`. It still does not ship official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, or production staff-review queues. Repo: <https://github.com/CivicSuite/civicplan>.
@@ -86,8 +86,8 @@ There is no runtime code in this repo. Each module lives in its own repo.
 |---|---|---|
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.0. Transferred to the `CivicSuite` GitHub org on 2026-04-25; this is now the canonical home. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.3.0 shared primitives: migrations, db.Base, LLM, audit, provenance, manifests, exports, and city profiles. |
-| civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.0 runtime foundation with `/staff` workflow UI foundation. |
-| civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.0 runtime foundation for municipal-code lookup, citations, local imports, and records-ready exports. |
+| civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.0 runtime foundation; post-release main has live `/staff` workflow screens for intake, packet export, notice, outcomes, minutes, archive, and connector import. |
+| civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.1 for municipal-code lookup, citations, local imports, records-ready exports, and `civiccore==0.3.0` alignment. |
 | civiczone | <https://github.com/CivicSuite/civiczone> | Shipping v0.1.0 runtime foundation for parcel-aware zoning samples and public UI foundation. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Shipping v0.1.0 runtime foundation for accessibility review and public UI foundation. |
 | civicplan | <https://github.com/CivicSuite/civicplan> | Shipping v0.1.0 runtime foundation for cited plan-policy lookup and public UI foundation. |
@@ -119,12 +119,12 @@ A module like `civicrecords-ai` declares civiccore as a dependency in its `pypro
 
 ```toml
 dependencies = [
-  "civiccore==0.2.0",
+  "civiccore==0.3.0",
   ...
 ]
 ```
 
-When a city installs a module, civiccore is pulled in as a wheel. There is no monorepo, no submodule, no vendored copy. The example above reflects currently shipped module pins that still require `civiccore==0.2.0`; CivicCore v0.3.0 is now published for new shared-primitives work and future consumer updates. Civiccore is published to PyPI (or, until publication, distributed as a release wheel from its GitHub repo).
+When a city installs a module, civiccore is pulled in as a wheel. There is no monorepo, no submodule, no vendored copy. The example above reflects the first post-v0.3 consumer updates: CivicClerk main and CivicCode v0.1.1 now require `civiccore==0.3.0`, while earlier published module releases remain pinned to the exact civiccore version recorded in the compatibility matrix. Civiccore is published to PyPI (or, until publication, distributed as a release wheel from its GitHub repo).
 
 ### Evaluating a module
 

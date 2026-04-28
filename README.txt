@@ -11,9 +11,9 @@ Shipping:
 - civicrecords-ai v1.4.0 — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. (Transferred to the CivicSuite GitHub org on 2026-04-25.)
 - civiccore v0.3.0 — shared platform package. Shipping today: migration runner + shared baselines (civiccore.migrations), shared SQLAlchemy Base (civiccore.db), LLM abstraction (civiccore.llm), hash-chained audit primitives, source/provenance contracts, offline import/export manifest schemas, export-bundle helpers, and local city profile configuration. Future / planned extraction: auth/RBAC, document ingestion, hybrid search, notification delivery, web onboarding flows, 50-state exemption engine, sovereignty verification, live connector sync, credential storage, vendor write-back, and legal determinations. Repo: <https://github.com/CivicSuite/civiccore>.
 
-- civicclerk v0.1.0 — meeting/agenda/minutes runtime foundation. Ships schema, lifecycle enforcement, packet/notice checks, immutable motion/vote/action capture, citation-gated minutes drafts, public archive endpoints, prompt eval gates, connector imports, browser QA gates, and a browser-visible staff workflow foundation at /staff. Full database-backed workflow UI screens are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
+- civicclerk v0.1.0 + post-release production-depth main — meeting/agenda/minutes runtime foundation. Ships schema, lifecycle enforcement, packet/notice checks, immutable motion/vote/action capture, citation-gated minutes drafts, public archive endpoints, prompt eval gates, connector imports, browser QA gates, and live /staff workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening is still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
 
-- civiccode v0.1.0 - municipal code and ordinance access runtime foundation. Ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff interpretation notes, plain-language summaries, CivicClerk handoff intake, resident public lookup pages, local import connectors, and records-ready exports. Legal advice, live LLM calls, live codifier sync, and automatic ordinance codification are still not shipped. Repo: <https://github.com/CivicSuite/civiccode>.
+- civiccode v0.1.1 - municipal code and ordinance access runtime foundation, now aligned to civiccore==0.3.0. Ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff interpretation notes, plain-language summaries, CivicClerk handoff intake, resident public lookup pages, local import connectors, and records-ready exports. Legal advice, live LLM calls, live codifier sync, and automatic ordinance codification are still not shipped. Repo: <https://github.com/CivicSuite/civiccode>.
 
 - civiczone v0.1.0 - parcel-aware zoning and land-use Q&A foundation. Ships canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, and an accessible public sample UI at /civiczone. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are still not shipped. Repo: <https://github.com/CivicSuite/civiczone>.
 
@@ -66,7 +66,7 @@ If you're orienting yourself for the first time, read in this order:
 
 ## Current module lane
 
-All 26 catalog modules now have v0.1.0 runtime-foundation releases. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
+All 26 catalog modules have runtime-foundation releases; CivicCode has advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is post-foundation hardening: production workflow depth, connector design, deployment packaging, and cross-module UX polish.
 
 ## What's in this repo
 
@@ -103,8 +103,8 @@ civicsuite/
 |---|---|---|
 | civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Module 1, shipping. Transferred to CivicSuite org on 2026-04-25. |
 | civiccore | <https://github.com/CivicSuite/civiccore> | Shared platform package. Pinned by every module. |
-| civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released; staff workflow UI foundation available at /staff. |
-| civiccode | <https://github.com/CivicSuite/civiccode> | Module 3, v0.1.0 runtime foundation released; municipal-code lookup, citations, local imports, and records-ready exports. |
+| civicclerk | <https://github.com/CivicSuite/civicclerk> | Module 2, v0.1.0 runtime foundation released; post-release main has live /staff workflow screens for intake, packet export, notice, outcomes, minutes, archive, and connector import. |
+| civiccode | <https://github.com/CivicSuite/civiccode> | Module 3, v0.1.1 released; municipal-code lookup, citations, local imports, records-ready exports, and civiccore==0.3.0 alignment. |
 | civiczone | <https://github.com/CivicSuite/civiczone> | Module 6, v0.1.0 runtime foundation released; parcel lookup, zoning rule lookups, cited sample Q&A, planner escalation, and public UI foundation. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Module 5, v0.1.0 runtime foundation released; accessibility review, plain-language rewrite, multilingual variants, records-ready exports, and public UI foundation. |
 | civicplan | <https://github.com/CivicSuite/civicplan> | Module 7, v0.1.0 runtime foundation released; cited plan-policy lookup, consistency support, staff-analysis outlines, records-ready exports, and public UI foundation. |

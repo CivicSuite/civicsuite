@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
 EXPECTED_CIVICCORE = "0.2.0"
+CURRENT_CIVICCORE = "0.3.0"
 
 REQUIRED_ARTIFACTS = (
     "README.md",
@@ -58,8 +59,8 @@ class RepoSpec:
 REPOS: tuple[RepoSpec, ...] = (
     RepoSpec("civiccore", "CivicSuite/civiccore", "civiccore", "0.3.0", civiccore_required=None),
     RepoSpec("civicrecords-ai", "CivicSuite/civicrecords-ai", "civicrecords-ai", "1.4.0", "backend/pyproject.toml"),
-    RepoSpec("civicclerk", "CivicSuite/civicclerk", "civicclerk", "0.1.0"),
-    RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.0"),
+    RepoSpec("civicclerk", "CivicSuite/civicclerk", "civicclerk", "0.1.0", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.1.0"),
     RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.0"),
     RepoSpec("civicplan", "CivicSuite/civicplan", "civicplan", "0.1.0"),

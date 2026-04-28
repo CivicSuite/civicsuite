@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **CivicCore v0.3.0 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the published v0.3.0 shared-primitives release while existing module pins remain `==0.2.0` until consumer updates.
+- **CivicCode v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, deployment profile verifier, and suite-state verifier now reflect the CivicCode dependency-alignment release pinned to `civiccore==0.3.0`.
+- **CivicClerk production-depth staff screens update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, deployment profile verifier, and suite-state verifier now reflect post-release live `/staff` screens for connector import and packet export alongside the existing intake, notice, outcomes, minutes, and archive screens.
+- **CivicCore v0.3.0 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the published v0.3.0 shared-primitives release while most existing module pins remain `==0.2.0` until consumer updates.
 - Added `docs/roadmap/civiccode-next-module-plan.md` as the historical CivicCode planning artifact that unblocked CivicZone runtime work.
 - **CivicZone v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicZone runtime release pinned to `civiccore==0.2.0`.
 - **CivicAccess v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicAccess runtime release pinned to `civiccore==0.2.0`.

@@ -36,9 +36,9 @@ EXPECTED_SERVICES = {
     "civiczone",
 }
 MODULE_SERVICES = {
-    "civicclerk": ("civicclerk.main", "app", "0.1.0", 8010),
-    "civiccode": ("civiccode.main", "app", "0.1.0", 8020),
-    "civiczone": ("civiczone.main", "app", "0.1.0", 8030),
+    "civicclerk": ("civicclerk.main", "app", "0.1.0", 8010, "0.2.0"),
+    "civiccode": ("civiccode.main", "app", "0.1.1", 8020, "0.3.0"),
+    "civiczone": ("civiczone.main", "app", "0.1.0", 8030, "0.2.0"),
 }
 LOCAL_CIVICCORE_VERSION = "0.3.0"
 FORBIDDEN_PROVIDER_VALUES = {"openai", "anthropic"}
@@ -85,10 +85,13 @@ def check_compose(compose: dict[str, Any]) -> list[str]:
             errors.append(fail(f"{service_name} service is not a mapping"))
             continue
         command = json.dumps(service.get("command", ""))
-        if "civiccore-0.2.0" not in command:
-            errors.append(fail(f"{service_name} command does not install civiccore 0.2.0 wheel"))
-        if f"{service_name}-0.1.0" not in command:
-            errors.append(fail(f"{service_name} command does not install {service_name} 0.1.0 wheel"))
+        expected_module = MODULE_SERVICES[service_name]
+        expected_release_core = expected_module[4]
+        expected_service_version = expected_module[2]
+        if f"civiccore-{expected_release_core}" not in command:
+            errors.append(fail(f"{service_name} command does not install civiccore {expected_release_core} wheel"))
+        if f"{service_name}-{expected_service_version}" not in command:
+            errors.append(fail(f"{service_name} command does not install {service_name} {expected_service_version} wheel"))
         env = service.get("environment", {})
         if not isinstance(env, dict):
             errors.append(fail(f"{service_name} environment is not a mapping"))
@@ -149,7 +152,7 @@ def check_module_health_without_network() -> list[str]:
     for module_name in MODULE_SERVICES:
         sys.path.insert(0, str(WORKSPACE / module_name))
     with block_outbound_sockets():
-        for module_name, (import_path, app_name, expected_version, _port) in MODULE_SERVICES.items():
+        for module_name, (import_path, app_name, expected_version, _port, _release_core_version) in MODULE_SERVICES.items():
             module = __import__(import_path, fromlist=[app_name])
             app = getattr(module, app_name)
             client = TestClient(app)
