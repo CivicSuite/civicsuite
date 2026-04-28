@@ -420,8 +420,8 @@ Purpose: policy/procedure Q&A, non-CJIS administrative workflows, and public-inf
 
 Owner: Library Director / Reference Librarians  
 Depends on: CivicCore  
-Status: optional planned  
-Purpose: library policy Q&A, reference support, patron-facing program information, and local collection knowledge.
+Status: shipping v0.1.0 runtime foundation  
+Purpose: library policy Q&A, program and event Q&A, collection-metadata reference assistance, collection-development guidance, and accessibility support. Explicitly excludes patron records, ILS integration, circulation actions, professional-reference replacement, legal advice, live LLM calls, and connector runtime.
 
 #### CivicParks
 
@@ -986,7 +986,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Exact CivicClerk MVP table list if reduced from the canonical table set.
 - Whether CivicClerk v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
-- CivicLibrary implementation scope after CivicSafety v0.1.0 shipped.
+- CivicParks implementation scope after CivicLibrary v0.1.0 shipped.
 - Shared resident portal shell boundaries.
 - CivicCore auth/RBAC extraction order.
 - CivicCore document/search extraction order.
