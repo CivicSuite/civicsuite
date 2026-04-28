@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: civicrecords
       POSTGRES_PASSWORD: civicrecords
-      POSTGRES_DB: civicrecords
+      POSTGRES_DB: civicrecords_test
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U civicrecords"]
       interval: 5s
@@ -58,6 +58,10 @@ services:
       timeout: 10s
       retries: 10
       start_period: 30s
+    networks:
+      default:
+        aliases:
+          - api
 
   civicrecords-frontend:
     build:
@@ -81,8 +85,8 @@ services:
       - -c
       - >
         pip install --no-cache-dir
-        https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl
-        https://github.com/CivicSuite/civicclerk/releases/download/v0.1.0/civicclerk-0.1.0-py3-none-any.whl
+        https://github.com/CivicSuite/civiccore/releases/download/v0.3.0/civiccore-0.3.0-py3-none-any.whl
+        https://github.com/CivicSuite/civicclerk/releases/download/v0.1.1/civicclerk-0.1.1-py3-none-any.whl
         && uvicorn civicclerk.main:app --host 0.0.0.0 --port 8010
     environment:
       CIVICCORE_LLM_PROVIDER: ollama

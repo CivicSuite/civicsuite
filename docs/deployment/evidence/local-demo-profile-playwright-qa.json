@@ -1,0 +1,74 @@
+[
+  {
+    "name": "records-ai-home",
+    "viewport": "desktop",
+    "url": "http://localhost:8080",
+    "status": 200,
+    "title": "CivicRecords AI — Admin",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\records-ai-home-desktop.png"
+  },
+  {
+    "name": "records-ai-home",
+    "viewport": "mobile",
+    "url": "http://localhost:8080",
+    "status": 200,
+    "title": "CivicRecords AI — Admin",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\records-ai-home-mobile.png"
+  },
+  {
+    "name": "civicclerk-staff",
+    "viewport": "desktop",
+    "url": "http://localhost:8010/staff",
+    "status": 200,
+    "title": "CivicClerk Staff Workflow Screens",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civicclerk-staff-desktop.png"
+  },
+  {
+    "name": "civicclerk-staff",
+    "viewport": "mobile",
+    "url": "http://localhost:8010/staff",
+    "status": 200,
+    "title": "CivicClerk Staff Workflow Screens",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civicclerk-staff-mobile.png"
+  },
+  {
+    "name": "civiccode",
+    "viewport": "desktop",
+    "url": "http://localhost:8020/civiccode",
+    "status": 200,
+    "title": "Read the municipal code - CivicCode",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiccode-desktop.png"
+  },
+  {
+    "name": "civiccode",
+    "viewport": "mobile",
+    "url": "http://localhost:8020/civiccode",
+    "status": 200,
+    "title": "Read the municipal code - CivicCode",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiccode-mobile.png"
+  },
+  {
+    "name": "civiczone",
+    "viewport": "desktop",
+    "url": "http://localhost:8030/civiczone",
+    "status": 200,
+    "title": "CivicZone Public Lookup",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiczone-desktop.png"
+  },
+  {
+    "name": "civiczone",
+    "viewport": "mobile",
+    "url": "http://localhost:8030/civiczone",
+    "status": 200,
+    "title": "CivicZone Public Lookup",
+    "errors": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiczone-mobile.png"
+  }
+]
