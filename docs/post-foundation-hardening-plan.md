@@ -140,6 +140,13 @@ Why:
 
 Small cities can use those immediately. They are inspectable, air-gap friendly, and safer than direct vendor-system writes.
 
+Initial status:
+
+`docs/architecture/ADR-0005-connector-import-export-boundaries.md` and
+`docs/connectors/import-export-template.md` define the first suite-wide
+connector boundary. The accepted sequence is read/import first, export bundles
+second, and vendor write-back only after a later ADR approves it.
+
 ## Lane 5 - CivicCore v0.3.0 Extraction Candidate
 
 Goal: extract only shared capabilities that active hardening work actually needs.
