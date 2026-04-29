@@ -27,7 +27,7 @@ Status snapshot: 2026-04-29
 
 `civiccore` is not a catalog module; it is the shared platform package used by
 every module. The latest published shared-platform release is `civiccore
-v0.4.0`.
+v0.9.0`.
 
 The most important distinction in this repo is simple: "all repos have
 releases" is not the same thing as "a city can run on this suite." The roadmap
@@ -38,14 +38,15 @@ What ships today
 
 - `civicrecords-ai v1.4.1` is the flagship shipping product for FOIA/public
   records management. Repo: https://github.com/CivicSuite/civicrecords-ai
-- `civiccore v0.4.0` is the shipping shared platform package. It currently
+- `civiccore v0.9.0` is the shipping shared platform package. It currently
   ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer,
-  audit/provenance primitives, export/manifest helpers, city profiles, and the
-  first shared auth helper. Repo: https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.1` is the clear second-product candidate. It already ships
+  audit/provenance primitives, export/manifest helpers, city profiles, shared
+  auth/RBAC primitives, and shared notice-compliance helpers. Repo:
+  https://github.com/CivicSuite/civiccore
+- `civicclerk v0.1.3` is the clear second-product candidate. It already ships
   meetings/agendas/minutes workflow depth, public-archive safeguards,
-  connector imports, browser QA gates, and live `/staff` screens, but it is
-  still in the productizing tier. Repo:
+  connector imports, browser QA gates, live `/staff` screens, and shared
+  notice-compliance reuse, but it is still in the productizing tier. Repo:
   https://github.com/CivicSuite/civicclerk
 
 The rest of the catalog is real foundation work, not vapor. Those modules ship
@@ -59,7 +60,8 @@ Current priorities
 The canonical roadmap lives at `docs/roadmap/index.md`. The immediate sequence
 is:
 
-1. Finish the shared auth/RBAC extraction proof and rollout playbook.
+1. Use the shared extraction consumer rollout playbook for the next
+   `civiccore` fan-out work.
 2. Extract the next `civiccore` capabilities that unblock `civicclerk`,
    including security-related extractions.
 3. Drive `civicclerk` to second-product status with a real deployment story,
@@ -68,6 +70,9 @@ is:
    shared-platform fan-out.
 5. Formalize cross-module integration ownership for the first deployable
    starter set.
+
+The current shared rollout pattern is documented in
+`docs/roadmap/shared-extraction-consumer-rollout.md`.
 
 Continuity
 ----------
@@ -135,6 +140,7 @@ Documentation
 
 - Landing page: `docs/index.html`
 - Roadmap: `docs/roadmap/index.md`
+- Shared rollout playbook: `docs/roadmap/shared-extraction-consumer-rollout.md`
 - Governance: `docs/governance/index.md`
 - Compatibility matrix: `docs/compatibility/index.md`
 - Unified spec: `docs/CivicSuiteUnifiedSpec.md`

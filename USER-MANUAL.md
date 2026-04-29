@@ -1,230 +1,234 @@
-# CivicSuite — User Manual
+# CivicSuite - User Manual
 
-This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts so different audiences can read only what's relevant to them:
+This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts so different audiences can read only what is relevant to them:
 
-1. **For municipal decision-makers** — non-technical overview of what CivicSuite is, what's available today, and what the licensing and sovereignty posture means for your city.
-2. **For developers and IT staff** — how the umbrella works, where each module lives, and how to evaluate or contribute.
-3. **Architecture reference** — diagrams and dependency rules.
+1. **For municipal decision-makers** - a non-technical overview of what CivicSuite is, what is available today, and what the sovereignty posture means for your city.
+2. **For developers and IT staff** - how the umbrella repo works, where each module lives, and how to evaluate or contribute.
+3. **Architecture reference** - the dependency rules, upgrade model, and suite topology.
 
-A glossary at the end defines every technical term used.
+A glossary at the end defines the technical terms used here.
 
 ---
 
-## Part 1 — For municipal decision-makers
+## Part 1 - For municipal decision-makers
 
 ### What is CivicSuite?
 
-CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
+CivicSuite is an **open-source municipal product family**. It is not one giant program. It is a planned collection of modules that a city can install one at a time, on its own hardware, on its own schedule. Cities do not need to send operational data to a vendor cloud, do not pay per seat, and can inspect or modify the source code at any time.
 
-Today, modules are shipping at different maturity levels: `civicrecords-ai` is production-usable, `civicclerk` is the active second-product candidate, and the rest of the catalog is in the foundation tier. `civiccore` is the shared platform package under all of them, now shipping at `v0.4.0`. We say shipped and planned boundaries plainly below — no roadmap inflation, no vaporware.
+The suite is intentionally honest about maturity:
 
-### What's available today (as of 2026-04-29)
+- `civicrecords-ai` is the current production-usable shipping product.
+- `civicclerk` is the active second-product candidate.
+- The rest of the catalog is in the foundation tier: real runtime work, not yet end-to-end products.
+- `civiccore` is the shared platform package under all of them.
 
-- **civicrecords-ai v1.4.1** — the shipping product for managing public records / FOIA requests. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
-- **civiccore v0.4.0** — the shared "platform" package that every module uses. It now ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction, hash-chained audit primitives, source/provenance contracts, offline import/export manifests, export-bundle helpers, local city profile configuration, and the first shared auth helper. It is not a product on its own; you only install it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
-- **civicclerk v0.1.1** — the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import; full authentication hardening, installer work, and deployment depth are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
-- **civiccode v0.1.1** — a runtime-foundation release for municipal code and ordinance access, now aligned to `civiccore==0.3.0`. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
-- **civiczone v0.1.1** — a runtime-foundation release for parcel-aware zoning and land-use Q&A, now aligned to `civiccore==0.3.0`. It ships canonical zoning schema, Alembic migrations, sample parcel and rule lookups, citation-grounded sample Q&A, planner escalation, staff-context samples, and a public sample UI at `/civiczone`. It still does not ship live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, or legal advice. Repo: <https://github.com/CivicSuite/civiczone>.
-- **civicaccess v0.1.1** — a runtime-foundation release for accessibility, plain-language, multilingual, and ADA review support, now aligned to `civiccore==0.3.0`. It ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and a public sample UI at `/civicaccess`. It still does not ship certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, or suite-wide integration APIs. Repo: <https://github.com/CivicSuite/civicaccess>.
-- **civicplan v0.1.1** — a runtime-foundation release for comprehensive-plan policy lookup and cited planning analysis support, now aligned to `civiccore==0.3.0`. It ships deterministic sample plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, and a public sample UI at `/civicplan`. It still does not ship official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, or production staff-review queues. Repo: <https://github.com/CivicSuite/civicplan>.
-- **civicpermit v0.1.1** - a runtime-foundation release for permit pre-application and intake-readiness support, now aligned to `civiccore==0.3.0`. It ships deterministic sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and a public sample UI at `/civicpermit`. It still does not ship permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, or system-of-record behavior. Repo: <https://github.com/CivicSuite/civicpermit>.
-- **civicinspect v0.1.1** - a runtime-foundation release for inspection support, now aligned to `civiccore==0.3.0`. It ships deterministic sample repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and a public sample UI at `/civicinspect`. It still does not ship official findings, citations, fines, notices, inspection scheduling, legal advice, live photo analysis, live LLM calls, or system-of-record integrations. Repo: <https://github.com/CivicSuite/civicinspect>.
-- **civicgrants v0.1.1** - a runtime-foundation release for grant opportunity and compliance support, now aligned to `civiccore==0.3.0`. It ships deterministic sample opportunity triage, eligibility-factor matching, application outline helper, compliance calendar helper, audit-ready export checklist, and a public sample UI at `/civicgrants`. It still does not ship live funder feeds, official eligibility decisions, legal advice, live LLM calls, submission portals, or grant system-of-record integrations. Repo: <https://github.com/CivicSuite/civicgrants>.
-- **civicprocure v0.1.1** — a runtime-foundation release for procurement drafting and award-packet support, now aligned to `civiccore==0.3.0`. It ships deterministic sample RFP drafting, proposal comparison, exception extraction, scoring summary helper, award-packet checklist, and a public sample UI at `/civicprocure`. It still does not ship live vendor portals, official vendor evaluation decisions, legal advice, live LLM calls, e-procurement submission portals, or procurement system-of-record integrations. Repo: <https://github.com/CivicSuite/civicprocure>.
-- **civiccontracts v0.1.1** - a runtime-foundation release for contract repository and renewal visibility support, now aligned to `civiccore==0.3.0`. It ships deterministic sample contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklist, and a public sample UI at `/civiccontracts`. It still does not ship live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, or contract system-of-record integrations. Repo: <https://github.com/CivicSuite/civiccontracts>.
-- **civicboards v0.1.1** - a runtime-foundation release for board and commission administration, now aligned to `civiccore==0.3.0`. It ships deterministic sample board registry, term review plans, vacancy checklists, attendance summaries, notice/records export checklist, and a public sample UI at `/civicboards`. It still does not ship live agenda systems, appointment decisions, legal advice, official notice publication, meeting system write-back, live LLM calls, or board system-of-record integrations. Repo: <https://github.com/CivicSuite/civicboards>.
-- **civicnotice v0.1.1** - a runtime-foundation release for public notice compliance support, now aligned to `civiccore==0.3.0`. It ships deterministic sample notice registry, statutory deadline plans, publication-readiness checklists, channel planning, notice/records export checklist, and a public sample UI at /civicnotice. It still does not ship legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, or notice system-of-record integrations. Repo: <https://github.com/CivicSuite/civicnotice>.
-- **civic311 v0.1.1** - a runtime-foundation release for resident service request support, now aligned to `civiccore==0.3.0`. It ships deterministic sample request intake, triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, and a public sample UI at /civic311. It still does not ship official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, or 311 system-of-record integrations. Repo: <https://github.com/CivicSuite/civic311>.
-- **civiccomms v0.1.1** - a runtime-foundation release for public communications support. It ships source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience-variant drafts, and a public sample UI at /civiccomms. It still does not ship autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, or communications system-of-record integrations, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civiccomms>.
-- **civicdata v0.1.1** - a runtime-foundation release for open-data and transparency publishing support. It ships dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and a public sample UI at /civicdata. It still does not ship live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, or external connector runtime, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civicdata>.
-- **civichr v0.1.1** - a runtime-foundation release for HR policy support. It ships policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding/training checklists, intake templates, source review, and sensitive-topic preflight. It still does not ship HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, or external HR/payroll connectors, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civichr>.
-- **civicbudget v0.1.1** - budget narrative and transparency support foundation. Ships line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI at `/civicbudget`. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are still not shipped, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civicbudget>.
-- **civiclegal v0.1.1** - internal legal-record research support foundation. Ships privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI at `/civiclegal`. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are still not shipped, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civiclegal>.
-- **civicelections v0.1.1** - election administration support foundation. Ships cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI at `/civicelections`. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are still not shipped, now aligned to `civiccore==0.3.0`. Repo: <https://github.com/CivicSuite/civicelections>.
+### What is available today? (as of 2026-04-29)
 
-### What's planned but not started
+- **`civicrecords-ai v1.4.1`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
+- **`civiccore v0.9.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, shared auth/RBAC primitives, and shared notice-compliance helpers. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civicclerk v0.1.3`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It already ships meaningful workflow depth, live `/staff` screens, browser QA gates, connector import surfaces, and shared notice-compliance reuse. Repo: <https://github.com/CivicSuite/civicclerk>
 
-- 0 additional modules remain uncreated; all 26 catalog repos now exist. See the [module catalog](specs/01_catalog.md) for scope and planned depth.
+Selected foundation modules have also advanced beyond the original `civiccore==0.3.0` baseline. The authoritative truth for each module-to-platform pairing lives in the umbrella compatibility matrix, not in static prose snapshots:
 
-Every catalog module now has a repo and a version number. Specs still distinguish shipped foundations from planned production-depth behavior.
+- Compatibility matrix: [docs/compatibility/index.md](docs/compatibility/index.md)
 
 ### What this means for your city
 
-- **No vendor lock-in.** You install on your own hardware. If a maintainer disappears, the code is yours. The code license (Apache 2.0) and documentation license (CC BY 4.0) both allow you to fork, modify, and continue using the software indefinitely.
-- **No cloud dependency.** Modules are designed to run with no outbound network calls. The default LLM (Gemma 4, served locally via [Ollama](https://ollama.com/)) runs on the city's own machine.
-- **No per-seat billing.** You add as many users as you need at no marginal cost.
-- **You evaluate one module at a time.** Don't install the suite — install records-ai, see if it solves a real problem in your clerk's office, and decide whether to install another module later.
-- **You are responsible for hosting and operations.** This is not a SaaS product. Your IT staff (or a contractor) operates the server. The user manual for each module documents what's required.
+- **No vendor lock-in.** You run the software on your own hardware. If a maintainer disappears, your city still has the code and the right to keep using it.
+- **No mandatory cloud dependency.** CivicSuite is designed around local-first and sovereign deployment.
+- **No per-seat billing.** The licensing model does not meter users.
+- **Evaluate one module at a time.** A city does not need to adopt the whole suite at once.
+- **You still own operations.** This is not a managed SaaS product. Your IT team, or a contractor you choose, is responsible for installation, upgrades, and recovery.
+
+### The current suite tiers
+
+| Tier | Count | Meaning today |
+|---|---:|---|
+| Shipping | 1 of 26 | `civicrecords-ai` is the current production-usable module. |
+| Productizing | 1 of 26 | `civicclerk` has real product depth but still needs deployment and identity hardening. |
+| Foundation | 24 of 26 | The rest of the catalog has real runtime foundations and release gates, but not yet full product depth. |
+
+### Foundation-tier module catalog
+
+The rest of the catalog exists as real repositories with released runtime foundations. Their exact current versions and `civiccore` pairings should always be checked in:
+
+- [docs/compatibility/index.md](docs/compatibility/index.md)
+- [specs/01_catalog.md](specs/01_catalog.md)
+
+Each foundation-tier module is explicit about what is shipped and what is still planned. The right mental model is "real foundations, not yet full products."
 
 ### Glossary (Part 1)
 
-- **FOIA** — Freedom of Information Act; the federal and state laws that govern public records requests.
-- **LLM** — Large language model; the AI technology used for things like classifying requests, suggesting redactions, and drafting responses.
-- **Open source** — software whose code is published publicly under a license that allows anyone to read, modify, or redistribute it.
-- **Sovereign deployment** — software that runs entirely on hardware the city controls, with no required outbound calls to a vendor.
+- **FOIA** - Freedom of Information Act and related public-records laws.
+- **LLM** - Large language model.
+- **Open source** - software whose code is publicly available under a license that allows use, modification, and redistribution.
+- **Sovereign deployment** - software that runs on infrastructure the city controls.
 
 ---
 
-## Part 2 — For developers and IT staff
+## Part 2 - For developers and IT staff
 
-### How the umbrella works
+### What lives in the umbrella repo?
 
-The `civicsuite` repo (this one) is **documentation-only**. It contains:
+The `civicsuite` repo is **documentation-first and coordination-first**. It contains:
 
-- The [Charter](CHARTER.md) — the project's founding document.
-- The [Consistency reference](CONSISTENCY.md) — the audit table of every cross-reference and count, treated as the truth-source.
-- Specs for the catalog, civiccore extraction, civicclerk, and civiczone in `specs/`.
-- ADRs (Architecture Decision Records) under `docs/architecture/`.
-- The [compatibility matrix](docs/compatibility/index.md) — which civicrecords-ai version pins to which civiccore version.
-- The [GitHub Pages landing site](docs/index.html).
+- the [Charter](CHARTER.md)
+- the [Continuity plan](SUCCESSION.md)
+- the [Compatibility matrix](docs/compatibility/index.md)
+- the [Roadmap](docs/roadmap/index.md)
+- the [Shared extraction consumer rollout playbook](docs/roadmap/shared-extraction-consumer-rollout.md)
+- the unified suite specification and module catalog under `docs/` and `specs/`
+- suite-level governance and ADRs
 
-There is no runtime code in this repo. Each module lives in its own repo.
+It does **not** contain the runtime code for the individual products.
 
 ### Module repos
 
-| Module | Repo | Status |
-|---|---|---|
-| civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.1. This is still the one catalog product positioned as production-usable today. |
-| civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.4.0 shared platform primitives: migrations, db.Base, LLM, audit, provenance, manifests, exports, city profiles, and the first shared auth helper. |
-| civicclerk | <https://github.com/CivicSuite/civicclerk> | Productizing v0.1.1 with live `/staff` workflow screens for intake, packet export, notice, outcomes, minutes, archive, and connector import. |
-| civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.1 for municipal-code lookup, citations, local imports, records-ready exports, and `civiccore==0.3.0` alignment. |
-| civiczone | <https://github.com/CivicSuite/civiczone> | Shipping v0.1.1 for parcel-aware zoning samples, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicaccess | <https://github.com/CivicSuite/civicaccess> | Shipping v0.1.1 for accessibility review, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicplan | <https://github.com/CivicSuite/civicplan> | Shipping v0.1.1 for cited plan-policy lookup, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicpermit | <https://github.com/CivicSuite/civicpermit> | Shipping v0.1.1 for permit requirement lookup, intake-readiness review, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicinspect | <https://github.com/CivicSuite/civicinspect> | Shipping v0.1.1 for repeat-case lookup, report drafts, notice drafts, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicgrants | <https://github.com/CivicSuite/civicgrants> | Shipping v0.1.1 for opportunity triage, eligibility matching, compliance calendars, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicprocure | <https://github.com/CivicSuite/civicprocure> | Shipping v0.1.1 for RFP drafting, proposal comparison, exception extraction, scoring summaries, award-packet checklists, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civiccontracts | <https://github.com/CivicSuite/civiccontracts> | Shipping v0.1.1 for contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicboards | <https://github.com/CivicSuite/civicboards> | Shipping v0.1.1 runtime foundation for board registry, term tracking, vacancy tracking, attendance review, notice/records exports, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civicnotice | <https://github.com/CivicSuite/civicnotice> | Shipping v0.1.1 runtime foundation for notice registry, statutory deadlines, publication-readiness checks, channel planning, notice records exports, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civic311 | <https://github.com/CivicSuite/civic311> | Shipping v0.1.1 runtime foundation for request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, public UI foundation, and `civiccore==0.3.0` alignment. |
-| civiccomms | <https://github.com/CivicSuite/civiccomms> | Shipping v0.1.1 runtime foundation for source-readiness review, meeting summaries, ordinance explainers, newsletters, FAQs, audience variants, and public UI foundation. |
-| civicdata | <https://github.com/CivicSuite/civicdata> | Shipping v0.1.1 runtime foundation for dataset normalization, data dictionaries, CKAN metadata drafts, redaction preflight, archive checklists, publication planning, and public UI foundation. |
-| civichr | <https://github.com/CivicSuite/civichr> | Shipping v0.1.1 runtime foundation for HR policy lookup, handbook summaries, job descriptions, classification references, onboarding/training checklists, and intake templates. |
-| civicbudget | <https://github.com/CivicSuite/civicbudget> | Shipping v0.1.1 runtime foundation for line-item analysis, budget narratives, department memos, hearing packet checklists, resident summaries, and GFOA checklist support. |
-| civiclegal | <https://github.com/CivicSuite/civiclegal> | Shipping v0.1.1 runtime foundation for privilege-aware legal-record search, prior-action lookup, memo scaffolds, ordinance comparison, litigation-hold flags, and citation tracking. |
-| civicelections | <https://github.com/CivicSuite/civicelections> | Shipping v0.1.1 runtime foundation for voter guidance, filing checklists, worker training, ballot summaries, campaign-finance summaries, canvass checklists, and accessibility review. |
-| future module depth | planned per module | Production integrations, connectors, persistence hardening, auth/RBAC, and cross-module workflow depth land through module-specific releases. |
+| Repo | Status |
+|---|---|
+| `civicrecords-ai` | Shipping `v1.4.1` flagship product |
+| `civiccore` | Shipping `v0.9.0` shared platform package |
+| `civicclerk` | Productizing `v0.1.3` second-product candidate |
+| Remaining catalog repos | Foundation-tier runtime releases with bounded shipped surfaces |
 
-### Dependency direction
+Canonical GitHub locations:
 
-- Modules depend on civiccore. **Civiccore never depends on a module.**
-- This is enforced in CI in the civiccore repo and is documented in the [extraction spec](specs/02_CivicCore.md) section 5.2.
-- Modules are pinned to a civiccore version in their package manifest. The compatibility matrix is the truth-source for which pin is required for which module version.
+- CivicSuite org: <https://github.com/CivicSuite>
+- `civicrecords-ai`: <https://github.com/CivicSuite/civicrecords-ai>
+- `civiccore`: <https://github.com/CivicSuite/civiccore>
+- `civicclerk`: <https://github.com/CivicSuite/civicclerk>
 
-### How civiccore is consumed
+### Dependency rule
 
-A module like `civicrecords-ai` declares civiccore as a dependency in its `pyproject.toml`:
+The most important architectural rule in the suite is:
 
-```toml
-dependencies = [
-  "civiccore==0.3.0",
-  ...
-]
-```
+**Modules depend on `civiccore`. `civiccore` never depends on modules.**
 
-When a city installs a module, civiccore is pulled in as a wheel. There is no monorepo, no submodule, no vendored copy. The example above reflects the current post-v0.3 consumer state: all catalog module releases now publish v0.1.1 with `civiccore==0.3.0`. Civiccore is published to PyPI (or, until publication, distributed as a release wheel from its GitHub repo).
+That rule prevents hidden coupling between modules and preserves the promise that cities can deploy products independently.
 
-### Evaluating a module
+### How `civiccore` is consumed
 
-1. Read the module's `README.md` (start with the front-door pitch).
-2. Read its `USER-MANUAL.md` for a non-technical operations walkthrough.
-3. Check `CHANGELOG.md` to see release cadence and recent breaking changes.
-4. Spin up a local install following the module's `CONTRIBUTING.md` setup steps. The umbrella does not host setup instructions for individual modules — those live with the module.
-5. If the module's tests pass on a clean clone, the project meets the umbrella's minimum bar.
+Modules consume `civiccore` as a released dependency. The exact form depends on the release state:
 
-### Contributing
+- a published package version when available
+- a GitHub release wheel when that is the suite's current distribution path
 
-- **Suite-wide questions, ADRs, governance, roadmap, compatibility matrix** → contribute here. See [CONTRIBUTING.md](CONTRIBUTING.md).
-- **Module bugs, module features, module docs** → contribute on the module's repo. The bug-routing decision tree in CONTRIBUTING.md tells you where each kind of bug goes.
+The exact module-to-platform pairing is tracked in:
 
-### Release coordination
+- [docs/compatibility/index.md](docs/compatibility/index.md)
 
-When a module ships a new version, the compatibility matrix on this umbrella must be updated. Cross-cutting changes (e.g. civiccore breaks an API that records-ai uses) require a paired release: civiccore ships first, then records-ai ships pinned to the new civiccore. The release pairing is documented in the matrix.
+Do not rely on static prose in old documents for version truth when the compatibility matrix is available.
+
+### How to evaluate a module
+
+1. Read the module's `README.md`.
+2. Read the module's `USER-MANUAL.md`.
+3. Read the module's `CHANGELOG.md`.
+4. Follow the module's `CONTRIBUTING.md` install steps on a clean machine.
+5. Run the module's verification and test gates.
+
+### How releases are coordinated
+
+When shared-platform behavior changes:
+
+1. `civiccore` ships first.
+2. Consumer modules adopt the new capability through a bounded rollout.
+3. The compatibility matrix is updated.
+4. Current-facing docs are updated in both the consumer repo and the umbrella repo when suite-level status changes.
+
+The current standardized consumer adoption process lives here:
+
+- [docs/roadmap/shared-extraction-consumer-rollout.md](docs/roadmap/shared-extraction-consumer-rollout.md)
+
+### How to contribute
+
+- Suite-wide roadmap, governance, compatibility, or umbrella documentation work belongs in this repo.
+- Product/module bugs and features belong in the relevant module repo.
+
+Start with:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [docs/governance/index.md](docs/governance/index.md)
 
 ---
 
-## Part 3 — Architecture reference
+## Part 3 - Architecture reference
 
 ![CivicSuite umbrella architecture](docs/diagrams/suite-architecture.svg)
 
-### Suite topology (textual diagram)
+### Suite topology
 
-```
+```text
                         +---------------------------+
                         |   civicsuite (umbrella)   |
-                        |   docs, ADRs, governance, |
-                        |   compatibility matrix    |
+                        |   docs, governance, ADRs, |
+                        |   compatibility, roadmap  |
                         +-------------+-------------+
                                       |
               describes & coordinates |
                                       v
                         +---------------------------+
-                        |     civiccore (v0.4.0)    |
-                        |  SHIPPING TODAY:          |
+                        |     civiccore (v0.9.0)    |
+                        |  shipping today:          |
                         |  migrations, db.Base, llm |
                         |  audit, provenance,       |
                         |  manifests, exports,      |
-                        |  city profiles            |
-                        |                           |
-                        |  PLANNED / NOT SHIPPED:   |
-                        |  auth/RBAC, ingestion,    |
-                        |  search, notifications,   |
-                        |  onboarding, exemptions,  |
-                        |  verification, live       |
-                        |  connector sync           |
+                        |  city profiles, auth,     |
+                        |  notice compliance        |
                         +-------------+-------------+
                                       ^
                   depends on (pinned) |
               +-----------------------+-----------------------+
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
-   | civicrecords-ai     |   |   civicclerk       | | foundation tier  |
-   |   v1.4.1 SHIPPING   |   | v0.1.1 PRODUCTIZING| | civiccode..parks |
-   |   FOIA / public     |   |  meetings, staff   | | bounded runtime  |
-   |   records mgmt      |   |  workflow depth    | | foundations      |
+   | civicrecords-ai     |   | civicclerk       |   | foundation tier  |
+   | v1.4.1 shipping     |   | v0.1.3           |   | civicaccess ...  |
+   | FOIA / records      |   | productizing     |   | civiczone        |
    +---------------------+   +------------------+   +------------------+
-              |
-              | remaining catalog modules: civiccode through civicparks
-              | (see specs/01_catalog.md — 26 modules across 7 tiers)
 ```
 
-### Dependency rule
+### Upgrade and migration order
 
-**Modules import from civiccore. Civiccore never imports from modules.** This is the core architectural constraint of the suite. It is enforced by a lint rule in CI in the civiccore repo. Violating it would silently couple modules to each other through civiccore and destroy the modular install promise.
+When `civiccore` ships a backward-compatible change:
 
-### Migration / upgrade order
+1. `civiccore` releases the new version.
+2. The compatibility matrix is updated.
+3. Consumer modules adopt the new version using the standard rollout playbook.
 
-When civiccore ships a backward-compatible version (PATCH or MINOR):
+When `civiccore` ships a breaking change:
 
-1. civiccore releases the new version.
-2. The umbrella's compatibility matrix is updated.
-3. Module maintainers update their pin opportunistically (no forced upgrade).
+1. The change is documented in advance.
+2. `civiccore` releases first.
+3. Consumers ship paired changes.
+4. The compatibility matrix records the new pairing.
 
-When civiccore ships a breaking version (MAJOR):
+### Continuity and governance
 
-1. The breaking change is announced in advance via an ADR.
-2. civiccore releases the new MAJOR version.
-3. Each module that consumes civiccore ships a paired MAJOR release pinned to the new civiccore version.
-4. The compatibility matrix is updated to show both the old (still supported) and new pairing during a transition window.
+Continuity is now a gate, not a future aspiration. The current continuity baseline is documented in:
+
+- [SUCCESSION.md](SUCCESSION.md)
+
+The roadmap that governs the rest of the program lives here:
+
+- [docs/roadmap/index.md](docs/roadmap/index.md)
 
 ### Glossary (Part 3)
 
-- **ADR** — Architecture Decision Record; a short, dated document recording a significant architectural decision and its rationale.
-- **Pinned version** — a specific exact version a module requires of civiccore (for example `==0.3.0` for current foundation modules, or an older exact pin preserved for historical releases), as opposed to a range.
-- **Wheel** — the standard Python package distribution format. civiccore is published as a wheel.
-- **CI** — continuous integration; the automated test pipeline that runs on every commit and pull request.
-- **Monorepo** — a single repository containing multiple projects. CivicSuite is deliberately *not* a monorepo; each module has its own repo so cities can install modules independently.
+- **ADR** - Architecture Decision Record.
+- **CI** - continuous integration.
+- **Pinned version** - a specific exact dependency pairing rather than a range.
+- **Wheel** - the Python package distribution format used for released artifacts.
+- **Monorepo** - a single repository containing multiple projects. CivicSuite is deliberately not a monorepo.
 
 ---
 
-## What to do when something goes wrong
+## When something goes wrong
 
 | Symptom | Where to look |
 |---|---|
-| Module won't install | The module's `README.md` and `CONTRIBUTING.md` setup steps. Most install errors are resolved by matching the documented Python/PostgreSQL/Redis versions. |
-| civiccore pin mismatch | The compatibility matrix at [docs/compatibility/index.md](docs/compatibility/index.md). |
-| You found a bug, don't know where to file | The bug-routing decision tree in [CONTRIBUTING.md](CONTRIBUTING.md). |
-| Security issue | [SECURITY.md](SECURITY.md). |
-| You have a general question | [SUPPORT.md](SUPPORT.md). |
+| Module will not install | The module repo's `README.md` and `CONTRIBUTING.md` |
+| `civiccore` version mismatch | [docs/compatibility/index.md](docs/compatibility/index.md) |
+| Unsure where to file a bug | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Security issue | [SECURITY.md](SECURITY.md) |
+| General support question | [SUPPORT.md](SUPPORT.md) |

@@ -14,15 +14,15 @@ Status snapshot: **2026-04-29**
 | Productizing | 1 of 26 catalog modules | `civicclerk` has real workflow depth and live staff surfaces, but still needs full auth, installer, and deployment hardening. |
 | Foundation | 24 of 26 catalog modules | The rest of the catalog has real runtime foundations, release gates, and honest shipped/not-shipped boundaries, but they are not yet end-to-end products. |
 
-`civiccore` is not a catalog module; it is the shared platform package used by every module. The latest published shared-platform release is **`civiccore v0.4.0`**.
+`civiccore` is not a catalog module; it is the shared platform package used by every module. The latest published shared-platform release is **`civiccore v0.9.0`**.
 
-The most important distinction in this repo is simple: **“all repos have releases” is not the same thing as “a city can run on this suite.”** The roadmap in [docs/roadmap/index.md](docs/roadmap/index.md) is the plan to close that gap.
+The most important distinction in this repo is simple: **"all repos have releases" is not the same thing as "a city can run on this suite."** The roadmap in [docs/roadmap/index.md](docs/roadmap/index.md) is the plan to close that gap.
 
 ## What Ships Today
 
 - **`civicrecords-ai v1.4.1`** is the flagship shipping product for FOIA/public-records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore v0.4.0`** is the shipping shared platform package. It currently ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, and the first shared auth helper. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk v0.1.1`** is the clear second-product candidate. It already ships meetings/agendas/minutes workflow depth, public-archive safeguards, connector imports, browser QA gates, and live `/staff` screens, but it is still in the productizing tier. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civiccore v0.9.0`** is the shipping shared platform package. It currently ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, shared auth/RBAC primitives, and shared notice-compliance helpers. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civicclerk v0.1.3`** is the clear second-product candidate. It already ships meetings/agendas/minutes workflow depth, public-archive safeguards, connector imports, browser QA gates, live `/staff` screens, and shared notice-compliance reuse, but it is still in the productizing tier. Repo: <https://github.com/CivicSuite/civicclerk>
 
 The rest of the catalog is real foundation work, not vapor. Those modules ship schemas, sample workflow slices, accessible sample UI, tests, and release gates. They do **not** yet all ship the workflow, security, identity, connector, and operational depth required to call them full products.
 
@@ -30,15 +30,17 @@ The rest of the catalog is real foundation work, not vapor. Those modules ship s
 
 The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The immediate sequence is:
 
-1. Finish the shared auth/RBAC extraction proof and rollout playbook.
+1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
 2. Extract the next `civiccore` capabilities that unblock `civicclerk`, including security-related extractions.
 3. Drive `civicclerk` to second-product status with a real deployment story, including `SSO/IdP`.
 4. Define the shared upgrade-path pattern before broadening more shared-platform fan-out.
 5. Formalize cross-module integration ownership for the first deployable starter set.
 
+The current shared rollout pattern is documented in [docs/roadmap/shared-extraction-consumer-rollout.md](docs/roadmap/shared-extraction-consumer-rollout.md).
+
 ## Continuity
 
-Continuity is now an explicit gate, not a “later” governance item.
+Continuity is now an explicit gate, not a "later" governance item.
 
 - Continuity plan: [SUCCESSION.md](SUCCESSION.md)
 - Governance index: [docs/governance/index.md](docs/governance/index.md)
@@ -80,12 +82,13 @@ See [docs/compatibility/index.md](docs/compatibility/index.md) for the canonical
 
 Every module inherits the same deliberately boring stack: FastAPI, PostgreSQL 17 with `pgvector`, Redis 7.2, Celery, Ollama, and React behind nginx. The dependency rule is one-way: modules depend on `civiccore`; `civiccore` never depends on modules. Cities run the stack on their own hardware. No cloud, no telemetry, no per-seat pricing.
 
-The suite is aiming for a first deployable “city starter set,” not for all 26 modules to become equally deep at the same time. That distinction is intentional and load-bearing.
+The suite is aiming for a first deployable "city starter set," not for all 26 modules to become equally deep at the same time. That distinction is intentional and load-bearing.
 
 ## Documentation
 
 - Landing page: [docs/index.html](docs/index.html)
 - Roadmap: [docs/roadmap/index.md](docs/roadmap/index.md)
+- Shared rollout playbook: [docs/roadmap/shared-extraction-consumer-rollout.md](docs/roadmap/shared-extraction-consumer-rollout.md)
 - Governance: [docs/governance/index.md](docs/governance/index.md)
 - Compatibility matrix: [docs/compatibility/index.md](docs/compatibility/index.md)
 - Unified spec: [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)

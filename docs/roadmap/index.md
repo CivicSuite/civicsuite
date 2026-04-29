@@ -1,15 +1,15 @@
 # CivicSuite Roadmap
 
-This roadmap starts from a hard truth: **“all repos have releases” is not the same thing as “a city can run on this suite.”** The destination is a deployable, operable, supportable municipal product suite with shared security, identity, upgrade, governance, and integration patterns. The path has to be staged, with hard exit criteria and explicit ownership of the seams where suite projects usually fail.
+This roadmap starts from a hard truth: **"all repos have releases" is not the same thing as "a city can run on this suite."** The destination is a deployable, operable, supportable municipal product suite with shared security, identity, upgrade, governance, and integration patterns. The path has to be staged, with hard exit criteria and explicit ownership of the seams where suite projects usually fail.
 
 ## Current Status
 
 - Shipping: `civicrecords-ai`
 - Productizing: `civicclerk`
 - Foundation: 24 additional catalog modules
-- Shared platform: `civiccore v0.4.0`
+- Shared platform: `civiccore v0.9.0`
 
-Current phase: **`Phase 0: Continuity` is complete.** The second-org-owner action has landed, and the documented release-custody baseline is now on file.
+Current phase: **`Phase 1: Platform And Security Extraction` is underway.** `Phase 0: Continuity` is complete, the auth extraction pattern has already been proven across multiple consumers, and the shared notice-compliance helper is now proven in both `civicnotice` and `civicclerk`.
 
 ## Phase 0: Continuity
 
@@ -28,7 +28,7 @@ Exit criteria:
 - second org owner is in place
 - `SUCCESSION.md` exists and is reviewed
 - release and credential custody are documented well enough that a second maintainer can continue operations
-- continuity is no longer dependent on one person’s implicit knowledge
+- continuity is no longer dependent on one person's implicit knowledge
 - `Phase 1` cannot begin until `Phase 0` exit criteria are met
 
 ## Phase 1: Platform And Security Extraction
@@ -282,16 +282,18 @@ Exit criteria:
 
 ## Immediate Sequence
 
-1. Finish the auth/RBAC extraction proof with a hard stop-condition and rollout playbook.
+1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
 2. Start the next `civiccore` extractions that unblock `civicclerk`, including security-related extractions.
 3. Drive `civicclerk` to second-product status with `SSO/IdP` included in the real deployment story.
 4. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
 5. Stand up the explicit cross-module integration ownership model for the starter set.
 6. Continue keeping umbrella status, taxonomy, and continuity docs current as the roadmap advances.
 
-## What “Done” Means
+The current consumer rollout pattern is documented in [shared-extraction-consumer-rollout.md](shared-extraction-consumer-rollout.md).
 
-The suite is not “done” when all modules have releases. It is “done enough to claim city use” when:
+## What "Done" Means
+
+The suite is not "done" when all modules have releases. It is "done enough to claim city use" when:
 
 - continuity no longer depends on one person
 - the platform carries shared auth, security, verification, search, onboarding, and upgrade patterns

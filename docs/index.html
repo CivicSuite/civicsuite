@@ -180,7 +180,7 @@
 
   <ul class="pillars">
     <li><strong>Local first</strong><span>No cloud requirement, no telemetry, no per-seat pricing.</span></li>
-    <li><strong>Product depth over repo count</strong><span>The roadmap treats “all repos have releases” and “a city can run on this” as different milestones.</span></li>
+    <li><strong>Product depth over repo count</strong><span>The roadmap treats "all repos have releases" and "a city can run on this" as different milestones.</span></li>
     <li><strong>Continuity is gated</strong><span>Platform expansion does not continue until continuity and succession work is in place.</span></li>
   </ul>
 
@@ -190,6 +190,7 @@
       <li><a href="../README.md">README</a></li>
       <li><a href="../SUCCESSION.md">Continuity plan</a></li>
       <li><a href="roadmap/index.md">Roadmap</a></li>
+      <li><a href="roadmap/shared-extraction-consumer-rollout.md">Rollout playbook</a></li>
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
       <li><a href="../CHARTER.md">Charter</a></li>
       <li><a href="../USER-MANUAL.md">User manual</a></li>
@@ -207,19 +208,19 @@
       </thead>
       <tbody>
         <tr><td>Shipping</td><td>1 of 26</td><td><code>civicrecords-ai v1.4.1</code> is the one catalog product currently positioned as production-usable.</td></tr>
-        <tr><td>Productizing</td><td>1 of 26</td><td><code>civicclerk v0.1.1</code> has meaningful workflow depth and live staff surfaces, but still needs full auth, installer, and deployment hardening.</td></tr>
+        <tr><td>Productizing</td><td>1 of 26</td><td><code>civicclerk v0.1.3</code> has meaningful workflow depth, live staff surfaces, and shared notice-compliance reuse, but still needs full auth, installer, and deployment hardening.</td></tr>
         <tr><td>Foundation</td><td>24 of 26</td><td>The rest of the catalog has real runtime foundations, release gates, and bounded shipped surfaces, but not yet full product depth.</td></tr>
       </tbody>
     </table>
-    <p><code>civiccore v0.4.0</code> is the current shared-platform release. It is not a catalog module; it is the substrate every module depends on.</p>
+    <p><code>civiccore v0.9.0</code> is the current shared-platform release. It is not a catalog module; it is the substrate every module depends on.</p>
   </section>
 
   <section>
     <h2>What happens next</h2>
     <div class="card">
-    <p><strong>Phase 0 is complete.</strong> Continuity is now an explicit gate with a real baseline. As of 2026-04-29, the <code>CivicSuite</code> GitHub org has two active owners (<code>scottconverse</code> and <code>APirateMonk</code>), and the current release-custody path is documented on-repo.</p>
+      <p><strong>Phase 0 is complete and Phase 1 is underway.</strong> Continuity is now an explicit gate with a real baseline. As of 2026-04-29, the <code>CivicSuite</code> GitHub org has two active owners (<code>scottconverse</code> and <code>APirateMonk</code>), the current release-custody path is documented on-repo, and the next extraction wave uses a shared consumer rollout playbook.</p>
       <ul>
-        <li>Finish the shared auth/RBAC extraction proof and rollout playbook.</li>
+        <li>Use the shared extraction consumer rollout playbook for the next <code>civiccore</code> fan-out work.</li>
         <li>Extract the next <code>civiccore</code> capabilities that unblock <code>civicclerk</code>.</li>
         <li>Drive <code>civicclerk</code> to true second-product status with a real identity and deployment story.</li>
       </ul>
@@ -235,13 +236,14 @@
   <section>
     <h2>Architecture</h2>
     <p>Every module inherits the same deliberately boring stack: FastAPI, PostgreSQL 17 with <code>pgvector</code>, Redis 7.2, Celery, Ollama, and React behind nginx. Modules depend on <code>civiccore</code>; <code>civiccore</code> never depends on modules. Cities run the stack on their own hardware.</p>
-    <p>The first deployable target is not “all 26 modules at once.” It is a coherent starter set with shared identity, audit, retention, export, and upgrade behavior.</p>
+    <p>The first deployable target is not "all 26 modules at once." It is a coherent starter set with shared identity, audit, retention, export, and upgrade behavior.</p>
   </section>
 
   <section>
     <h2>Where to go next</h2>
     <ul>
       <li><a href="roadmap/index.md">Canonical roadmap</a></li>
+      <li><a href="roadmap/shared-extraction-consumer-rollout.md">Shared extraction consumer rollout playbook</a></li>
       <li><a href="../SUCCESSION.md">Continuity and succession plan</a></li>
       <li><a href="governance/index.md">Governance overview</a></li>
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
