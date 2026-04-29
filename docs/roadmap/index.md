@@ -1,97 +1,303 @@
-# Roadmap
+# CivicSuite Roadmap
 
-The full four-phase rollout is documented in
-[`../../specs/01_catalog.md`](../../specs/01_catalog.md) section 14. A
-condensed table view follows.
+This roadmap starts from a hard truth: **“all repos have releases” is not the same thing as “a city can run on this suite.”** The destination is a deployable, operable, supportable municipal product suite with shared security, identity, upgrade, governance, and integration patterns. The path has to be staged, with hard exit criteria and explicit ownership of the seams where suite projects usually fail.
 
-## Current next step
+## Current Status
 
-**Current module lane: all 26 catalog modules have v0.1.0 foundations.** CivicRecords AI is shipping
-at v1.4.0, civiccore is shipping at v0.2.0, CivicClerk is shipping at v0.1.0
-with a browser-visible `/staff` workflow foundation, and CivicCode is shipping
-at v0.1.0 with the municipal-code contract that CivicZone, CivicLegal,
-CivicAccess, CivicComms, and CivicClerk handoffs depend on. CivicZone is
-shipping at v0.1.0 with parcel lookup, zoning rule lookup, cited sample Q&A,
-planner escalation, and public UI foundation. CivicAccess is shipping at
-v0.1.0 with accessibility review, plain-language rewrite, multilingual sample
-variants, records-ready export checklist, and public UI foundation. CivicPlan is
-shipping at v0.1.0 with cited plan-policy lookup, policy-consistency support,
-staff-analysis outlines, records-ready exports, and public UI foundation.
-CivicPermit is shipping at v0.1.0 with permit requirement lookup,
-intake-readiness review, submittal outlines, records-ready exports, and public
-UI foundation. CivicInspect is shipping at v0.1.0 with repeat-case lookup,
-report draft support, notice draft support, records-ready exports, and public
-UI foundation. CivicGrants is shipping at v0.1.0 with opportunity triage,
-eligibility-factor matching, application outlines, compliance calendars,
-audit-ready exports, and public UI foundation. CivicProcure is shipping at
-v0.1.0 with RFP drafting, proposal comparison, exception extraction, scoring
-summary helper, award-packet checklist, and accessible public UI foundation. CivicContracts is shipping at v0.1.0 with contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records exports, and accessible public UI foundation. CivicBoards is shipping at v0.1.0 with board registry, term tracking, vacancy tracking, attendance review, notice/records exports, and accessible public UI foundation. CivicNotice is shipping at v0.1.0 with notice registry, statutory deadline plans, publication-readiness checks, channel planning, notice records exports, and accessible public UI foundation. Civic311 is shipping at v0.1.0 with request intake, triage suggestions, duplicate-candidate review, department routing, Open311-compatible exports, and accessible public UI foundation. CivicComms is shipping at v0.1.0 with source-readiness review, meeting summaries, ordinance explainers, newsletter scaffolds, FAQ prompts, audience variants, and accessible public UI foundation. CivicData Bridge is shipping at v0.1.0 with dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and accessible public UI foundation.
+- Shipping: `civicrecords-ai`
+- Productizing: `civicclerk`
+- Foundation: 24 additional catalog modules
+- Shared platform: `civiccore v0.4.0`
 
-CivicHR, CivicBudget, CivicLegal, CivicElections, CivicUtility, CivicCourt, CivicSafety, CivicLibrary, and CivicParks have shipped their v0.1.0 foundations. The next suite implementation lane can
-plan against the CivicCore, CivicRecords AI, CivicClerk, CivicCode,
-CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants,
-CivicProcure, CivicContracts, CivicBoards, CivicNotice, Civic311, CivicComms, CivicData, CivicHR, CivicBudget, CivicLegal, CivicElections, CivicUtility, CivicCourt, CivicSafety, CivicLibrary, and CivicParks release contracts. The next lane is post-foundation hardening and production workflow depth.
+Current phase: **`Phase 0: Continuity` is active and not yet complete.** The roadmap is adopted; the second-org-owner action is still outstanding.
 
-The active post-foundation plan is
-[`post-foundation-hardening-plan.md`](post-foundation-hardening-plan.md).
-The first shared shell boundary and UX inventory are documented in
-[`../architecture/ADR-0004-shared-shell-boundaries.md`](../architecture/ADR-0004-shared-shell-boundaries.md)
-and [`../ux/shared-shell-inventory.md`](../ux/shared-shell-inventory.md).
-The first connector/import/export boundary is documented in
-[`../architecture/ADR-0005-connector-import-export-boundaries.md`](../architecture/ADR-0005-connector-import-export-boundaries.md)
-and [`../connectors/import-export-template.md`](../connectors/import-export-template.md).
-The CivicCore v0.3.0 extraction proposal is documented in
-[`../architecture/ADR-0006-civiccore-v0-3-extraction-scope.md`](../architecture/ADR-0006-civiccore-v0-3-extraction-scope.md)
-and [`../civiccore/v0.3-extraction-proposal.md`](../civiccore/v0.3-extraction-proposal.md).
-The first production-depth workflow sprint is documented in
-[`../architecture/ADR-0007-first-production-depth-workflow.md`](../architecture/ADR-0007-first-production-depth-workflow.md)
-and [`civicclerk-production-depth-workflow.md`](civicclerk-production-depth-workflow.md).
-The prior CivicCode and CivicClerk module plans remain as historical context in
-[`civiccode-next-module-plan.md`](civiccode-next-module-plan.md) and
-[`civicclerk-next-module-plan.md`](civicclerk-next-module-plan.md).
+## Phase 0: Continuity
 
-## Phase 1 — Establish the sovereign municipal platform (Clerk Core)
+Goal: make the project survivable before deeper platform and product expansion.
 
-| # | Module        | Status                                       |
-|---|---------------|----------------------------------------------|
-| 1 | CivicCore     | Shipping v0.2.0; shared migrations, db base, and LLM abstraction |
-| 2 | CivicRecords AI | Shipping v1.4.0; transferred to CivicSuite org |
-| 3 | CivicClerk    | Shipping v0.1.0; `/staff` workflow UI foundation shipped |
-| 4 | CivicCode     | Shipping v0.1.0; municipal-code lookup, citations, local imports, and records-ready exports |
-| 5 | CivicAccess   | Shipping v0.1.0                             |
+Deliverables:
 
-## Phase 2 — Land Use & Development
+- add a second GitHub org owner by a committed date
+- add `SUCCESSION.md` or equivalent charter section by a committed date
+- document release-signing custody, credential custody, and emergency access procedures
+- document maintainer recovery and handoff procedures for all release-critical repos
+- assign named owners for continuity artifacts, not just intent
 
-| # | Module               | Status          |
-|---|----------------------|-----------------|
-| 6 | CivicZone            | Shipping v0.1.0 |
-| 7 | CivicPlan            | Shipping v0.1.0 |
-| 8 | CivicPermit Assist   | Shipping v0.1.0 |
-| 9 | CivicInspect         | Shipping v0.1.0 |
+Exit criteria:
 
-## Phase 3 — Administrative & Resident Services
+- second org owner is in place
+- `SUCCESSION.md` exists and is reviewed
+- release and credential custody are documented well enough that a second maintainer can continue operations
+- continuity is no longer dependent on one person’s implicit knowledge
+- `Phase 1` cannot begin until `Phase 0` exit criteria are met
 
-| #  | Module                | Status       |
-|----|-----------------------|--------------|
-| 10 | CivicGrants           | Shipping v0.1.0 |
-| 11 | CivicProcure Assist   | Shipping v0.1.0 |
-| 12 | CivicContracts        | Shipping v0.1.0 |
-| 13 | CivicBoards           | Shipping v0.1.0 |
-| 14 | CivicNotice           | Shipping v0.1.0 |
-| 15 | Civic311              | Shipping v0.1.0 |
-| 16 | CivicComms            | Shipping v0.1.0 |
-| 17 | CivicData Bridge      | Shipping v0.1.0 |
+## Phase 1: Platform And Security Extraction
 
-## Phase 4 — Internal Business & Specialized
+Goal: turn `civiccore` into the real shared substrate for the suite, including the security posture required for municipal review.
 
-| #  | Module                |
-|----|-----------------------|
-| 18 | CivicHR Assist        | Shipping v0.1.0 |
-| 19 | CivicBudget Assist    | Shipping v0.1.0 |
-| 20 | CivicLegal Research   | Shipping v0.1.0 |
-| 21 | CivicElections Assist | Shipping v0.1.0 |
-| 22 | CivicUtility Assist   | Shipping v0.1.0 |
-| 23 | CivicCourt Assist     | Shipping v0.1.0 |
-| 24 | CivicSafety Assist    | Shipping v0.1.0 |
-| 25 | CivicLibrary          | Shipping v0.1.0 |
-| 26 | CivicParks            | Shipping v0.1.0 |
+Sequencing rule:
+
+- `auth` lands first as the proven extraction pattern, then the remaining extractions follow the same rollout playbook
+
+Shared platform work:
+
+- complete `auth` into a stable RBAC contract
+- ship minimal `search`
+- ship `verification`
+- ship `notifications`
+- ship `onboarding`
+- ship `ingest`
+- extract the highest-value reusable `civicrecords-ai` platform capabilities, including exemptions and secure connector primitives
+
+Shared security work:
+
+- extract SSRF defense patterns into reusable platform utilities
+- extract encrypted configuration and credential-handling patterns
+- define shared secret-handling and key-rotation expectations
+- create a suite-level security baseline that modules inherit by default
+- draft a documented suite threat model suitable for city security review
+
+Proof model:
+
+- each extracted capability must land in `civiccore`
+- each must be proven in `2-3` consumer modules
+- each must have a documented rollout playbook
+- rollout is not considered complete until another module can adopt the pattern without bespoke work
+
+Exit criteria:
+
+- extracted subsystems are shipped and versioned in `civiccore`
+- `2-3` consumer modules pass release gates with each major shared pattern
+- rollout playbooks exist for the remaining modules
+- the threat model and platform security baseline are documented
+- platform growth is reducing per-module invention rather than increasing it
+
+## Phase 2: Two Deployable Products
+
+Goal: prove the suite can produce more than one credible municipal product.
+
+Products:
+
+- keep `civicrecords-ai` hardening as the flagship
+- drive `civicclerk` to the second true product
+
+Required work for `civicclerk`:
+
+- full auth/RBAC on real workflows
+- real operator UX, not just workflow scaffolding
+- public/staff separation
+- installer and deployment docs
+- backup/restore and upgrade path
+- seeded demo environment
+- admin and operator docs
+- fresh-machine install rehearsal
+- browser-verified UX and release evidence
+
+Identity and security requirements:
+
+- move `SSO/IdP` support into this phase, not later
+- support a real municipal identity integration story
+- ensure both products satisfy the shared security baseline from Phase 1
+
+Integration ownership during this phase:
+
+- assign an interim owner for cross-module integration decisions during joint product deployment
+- `Phase 4` will formalize whether that ownership lives in `civiccore`, an umbrella deployment repo, or a formal suite integration contract
+
+Exit criteria:
+
+- two products can be installed by a municipal IT team
+- two products can be installed together without conflicts in identity, ports, audit, or upgrade order
+- both have documented backup, restore, upgrade, rollback, and admin flows
+- both can pass a realistic internal deployment rehearsal
+
+## Phase 3: Shared Productization Pattern
+
+Goal: make module productization repeatable, upgradeable, and contributable.
+
+Shared module pattern:
+
+- auth/RBAC pattern
+- persistence pattern
+- public/staff UI pattern
+- search/retrieval pattern
+- audit/provenance/export pattern
+- install/seed/smoke-test pattern
+- browser QA and docs verification pattern
+
+Upgrade-path pattern:
+
+- define how `civiccore` upgrades flow into module upgrades
+- formalize the two-layer migration story: shared platform migration expectations plus per-module Alembic expectations
+- document a mechanical adoption sequence for future `civiccore` minor releases
+- require that a foundation module can absorb a new `civiccore` release in a known number of repeatable steps
+
+Contributor path:
+
+- treat the shared module pattern as the outside-contributor pattern too
+- define how a second maintainer or city partner contributes a connector, adapter, or module improvement without inventing process
+- update suite contribution docs to reflect the real platform/module workflow
+- prove the contributor path by landing at least one real or deliberately scoped synthetic external-style contribution through it
+
+Initial consumers for this pattern:
+
+- `civicbudget`
+- `civiccourt`
+- `civicdata`
+- `civiclegal`
+- `civicelections`
+- `civichr`
+- `civiclibrary`
+- `civicparks`
+- `civicutility`
+
+Exit criteria:
+
+- the productization pattern is documented and reused
+- the upgrade path is documented and repeatable
+- a new `civiccore` minor-version bump can be absorbed by a foundation module without bespoke redesign
+- outside contributors have a documented and proven contribution path that maps to the same pattern
+
+## Phase 4: City Starter Set
+
+Goal: define and prove the first deployable municipal bundle.
+
+Starter set:
+
+- `civicrecords-ai`
+- `civicclerk`
+- `civicbudget`
+- `civiclegal`
+- `civicnotice`
+- `civicdata`
+- `civichr`
+
+This phase is about composition, not just product count. The suite needs an explicit owner for the cross-module integration surface. That ownership can live in `civiccore`, an umbrella deployment/integration repo, or a formal suite integration contract, but it must be named and maintained.
+
+Cross-module integration scope:
+
+- shared identity and role semantics
+- shared audit and provenance expectations
+- shared retention and export semantics
+- shared deployment assumptions
+- shared admin/operator conventions
+- defined upgrade order and compatibility rules across modules
+
+Exit criteria:
+
+- the starter set deploys as one coherent bundle
+- modules compose without identity or upgrade collisions
+- shared retention, audit, and export behavior are aligned
+- the install and operations docs describe one suite deployment, not seven adjacent products
+
+## Phase 5: Operational Integrations
+
+Goal: connect the suite safely to the systems cities already use.
+
+Integration order:
+
+- file drop and CSV import
+- safe API connectors
+- selective system-of-record sync
+- GIS where module value depends on it
+- mail/SMS/print integrations
+- backup targets, observability, and operational hooks
+
+This phase assumes `SSO/IdP` was already pulled into Phase 2 because it is a deployment prerequisite, not a late integration luxury.
+
+Exit criteria:
+
+- integrations are bounded, documented, and supportable
+- connector failures are visible and recoverable
+- sovereignty guarantees remain consistent with product claims
+- cities can connect the starter set to existing operational systems without custom archaeology
+
+## Phase 6: Operational Readiness
+
+Goal: make the suite something a municipal IT department can own over time.
+
+Operational maturity work:
+
+- signed installers or a documented signing program
+- monitoring and alerting
+- patch and upgrade workflows
+- backup and restore drills
+- disaster recovery procedures
+- support and troubleshooting playbooks
+- admin onboarding
+- threat model refresh and security review artifacts
+- key rotation and secret management maturity
+- procurement-readiness evidence set:
+  - signed threat model
+  - SBOM
+  - documented incident response process
+  - evidence of patch cadence
+
+Exit criteria:
+
+- a city IT team can install, operate, recover, patch, and upgrade the suite without maintainer improvisation
+- the suite can survive procurement, IT, and security review with documented evidence
+- supportability is demonstrated, not assumed
+
+## Phase 7: Governance Maturity
+
+Goal: make the project sustainable as a public product suite, not just survivable.
+
+Governance maturity work:
+
+- maintainer onboarding beyond the continuity minimum
+- external contributor triage and review workflow
+- upstream path for city-contributed adapters and connectors
+- public roadmap/status hygiene
+- discussion/community channels that map to actual contribution paths
+- clearer suite-level editorial ownership for README, compatibility, and release claims
+
+Exit criteria:
+
+- project governance supports more than one active maintainer
+- outside contribution is realistic and documented
+- suite-level communication is honest, current, and maintainable
+
+## Phase 8: City-Scale Proof
+
+Goal: prove the suite in a realistic municipal scenario before claiming it can run a city.
+
+Proof environment:
+
+- a seeded demo-city harness, not a real municipal pilot
+- cross-module workflows across the starter set and beyond
+- staff/admin/public flows
+- install from scratch
+- upgrade from prior release
+- failure injection and recovery
+- documentation walk-throughs
+- time-to-value measurement for a new deployment
+
+Exit criteria:
+
+- one coherent demo city runs across the suite bundle
+- cross-module workflows can be demonstrated live
+- every major README-level claim can be shown in a real environment
+- the suite is credible as a municipal operating platform, not just as a code portfolio
+
+## Immediate Sequence
+
+1. Land `Phase 0: Continuity` with dated deliverables.
+2. Finish the auth/RBAC extraction proof with a hard stop-condition and rollout playbook.
+3. Start the next `civiccore` extractions that unblock `civicclerk`, including security-related extractions.
+4. Drive `civicclerk` to second-product status with `SSO/IdP` included in the real deployment story.
+5. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
+6. Stand up the explicit cross-module integration ownership model for the starter set.
+7. Update the umbrella README to match the true taxonomy and counts as this work lands.
+
+## What “Done” Means
+
+The suite is not “done” when all modules have releases. It is “done enough to claim city use” when:
+
+- continuity no longer depends on one person
+- the platform carries shared auth, security, verification, search, onboarding, and upgrade patterns
+- at least two products are truly deployable
+- the starter set works as one system
+- municipal IT can install, operate, secure, and recover it
+- governance maturity supports honest public communication and real upstream participation
+- the public claims can be demonstrated live

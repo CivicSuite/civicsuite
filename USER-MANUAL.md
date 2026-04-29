@@ -16,13 +16,13 @@ A glossary at the end defines every technical term used.
 
 CivicSuite is an **open-source product family** for municipal records and civic operations. It's not one program — it's a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities never have to send data to a vendor's cloud, never pay per user, and can read or modify the source code anytime.
 
-Today, modules are shipping at different maturity levels: CivicRecords AI is production-usable, CivicCore is the shared platform package, and all 26 catalog modules have runtime-foundation releases. all catalog modules have advanced to v0.1.1 for CivicCore v0.3.0 alignment. We say shipped and planned boundaries plainly below — no roadmap inflation, no vaporware.
+Today, modules are shipping at different maturity levels: `civicrecords-ai` is production-usable, `civicclerk` is the active second-product candidate, and the rest of the catalog is in the foundation tier. `civiccore` is the shared platform package under all of them, now shipping at `v0.4.0`. We say shipped and planned boundaries plainly below — no roadmap inflation, no vaporware.
 
-### What's available today (as of 2026-04-28)
+### What's available today (as of 2026-04-29)
 
-- **civicrecords-ai v1.4.1** — a working, shipping module for managing public records / FOIA requests, now aligned to `civiccore==0.3.0`. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
-- **civiccore v0.3.0** — the shared "platform" package that every module uses. It now ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction, hash-chained audit primitives, source/provenance contracts, offline import/export manifests, export-bundle helpers, and local city profile configuration. It is not a product on its own; you only "install" it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
-- **civicclerk v0.1.1** — a runtime-foundation release for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import; full database persistence/authentication hardening is still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
+- **civicrecords-ai v1.4.1** — the shipping product for managing public records / FOIA requests. Cities can install this today. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
+- **civiccore v0.4.0** — the shared "platform" package that every module uses. It now ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction, hash-chained audit primitives, source/provenance contracts, offline import/export manifests, export-bundle helpers, local city profile configuration, and the first shared auth helper. It is not a product on its own; you only install it as a dependency of a module. Repo: <https://github.com/CivicSuite/civiccore>.
+- **civicclerk v0.1.1** — the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It ships the API/schema foundation, compliance guardrails, and live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import; full authentication hardening, installer work, and deployment depth are still planned. Repo: <https://github.com/CivicSuite/civicclerk>.
 - **civiccode v0.1.1** — a runtime-foundation release for municipal code and ordinance access, now aligned to `civiccore==0.3.0`. It ships source registry, section/version lifecycle, search and permalinks, deterministic citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, resident lookup pages, local import connectors, and records-ready exports. It still does not ship legal advice, live LLM calls, live codifier sync, or automatic ordinance codification. Repo: <https://github.com/CivicSuite/civiccode>.
 - **civiczone v0.1.1** — a runtime-foundation release for parcel-aware zoning and land-use Q&A, now aligned to `civiccore==0.3.0`. It ships canonical zoning schema, Alembic migrations, sample parcel and rule lookups, citation-grounded sample Q&A, planner escalation, staff-context samples, and a public sample UI at `/civiczone`. It still does not ship live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, or legal advice. Repo: <https://github.com/CivicSuite/civiczone>.
 - **civicaccess v0.1.1** — a runtime-foundation release for accessibility, plain-language, multilingual, and ADA review support, now aligned to `civiccore==0.3.0`. It ships deterministic sample accessibility review, plain-language rewrite, multilingual variant, records-ready export checklist, and a public sample UI at `/civicaccess`. It still does not ship certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, or suite-wide integration APIs. Repo: <https://github.com/CivicSuite/civicaccess>.
@@ -84,9 +84,9 @@ There is no runtime code in this repo. Each module lives in its own repo.
 
 | Module | Repo | Status |
 |---|---|---|
-| civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.1, aligned to `civiccore==0.3.0`. Transferred to the `CivicSuite` GitHub org on 2026-04-25; this is now the canonical home. |
-| civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.3.0 shared primitives: migrations, db.Base, LLM, audit, provenance, manifests, exports, and city profiles. |
-| civicclerk | <https://github.com/CivicSuite/civicclerk> | Shipping v0.1.1 runtime foundation with live `/staff` workflow screens for intake, packet export, notice, outcomes, minutes, archive, and connector import. |
+| civicrecords-ai | <https://github.com/CivicSuite/civicrecords-ai> | Shipping v1.4.1. This is still the one catalog product positioned as production-usable today. |
+| civiccore | <https://github.com/CivicSuite/civiccore> | Shipping v0.4.0 shared platform primitives: migrations, db.Base, LLM, audit, provenance, manifests, exports, city profiles, and the first shared auth helper. |
+| civicclerk | <https://github.com/CivicSuite/civicclerk> | Productizing v0.1.1 with live `/staff` workflow screens for intake, packet export, notice, outcomes, minutes, archive, and connector import. |
 | civiccode | <https://github.com/CivicSuite/civiccode> | Shipping v0.1.1 for municipal-code lookup, citations, local imports, records-ready exports, and `civiccore==0.3.0` alignment. |
 | civiczone | <https://github.com/CivicSuite/civiczone> | Shipping v0.1.1 for parcel-aware zoning samples, public UI foundation, and `civiccore==0.3.0` alignment. |
 | civicaccess | <https://github.com/CivicSuite/civicaccess> | Shipping v0.1.1 for accessibility review, public UI foundation, and `civiccore==0.3.0` alignment. |
@@ -161,7 +161,7 @@ When a module ships a new version, the compatibility matrix on this umbrella mus
               describes & coordinates |
                                       v
                         +---------------------------+
-                        |     civiccore (v0.3.0)    |
+                        |     civiccore (v0.4.0)    |
                         |  SHIPPING TODAY:          |
                         |  migrations, db.Base, llm |
                         |  audit, provenance,       |
@@ -180,13 +180,13 @@ When a module ships a new version, the compatibility matrix on this umbrella mus
               +-----------------------+-----------------------+
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
-   | civicrecords-ai     |   |   civicclerk     |   |   civiczone      |
-   |   v1.4.0 SHIPPING   |   | v0.1.0 SHIPPING  |   | v0.1.1 SHIPPING |
-   |   FOIA / public     |   |  meetings,       |   |  zoning, parcel  |
-   |   records mgmt      |   |  agendas, votes  |   |  workflows       |
+   | civicrecords-ai     |   |   civicclerk       | | foundation tier  |
+   |   v1.4.1 SHIPPING   |   | v0.1.1 PRODUCTIZING| | civiccode..parks |
+   |   FOIA / public     |   |  meetings, staff   | | bounded runtime  |
+   |   records mgmt      |   |  workflow depth    | | foundations      |
    +---------------------+   +------------------+   +------------------+
               |
-              | future modules: civiccode, civiccirculate, ...
+              | remaining catalog modules: civiccode through civicparks
               | (see specs/01_catalog.md — 26 modules across 7 tiers)
 ```
 
