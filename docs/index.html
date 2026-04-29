@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="CivicSuite is an open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Runs on the city's own hardware &mdash; no cloud, no telemetry, no per-seat pricing.">
-<title>CivicSuite &mdash; open-source municipal operations suite</title>
+<meta name="description" content="CivicSuite is an open-source municipal product suite that runs on the city's own hardware.">
+<title>CivicSuite | municipal product suite roadmap</title>
 <style>
   :root {
     --text: #1f2328;
@@ -29,7 +29,7 @@
   }
   .container {
     width: 100%;
-    max-width: 800px;
+    max-width: 860px;
     margin: 0 auto;
     padding: 56px 24px 80px;
   }
@@ -43,9 +43,7 @@
     border-radius: 4px;
     z-index: 10;
   }
-  .skip-link:focus {
-    top: 16px;
-  }
+  .skip-link:focus { top: 16px; }
   header.site {
     border-bottom: 1px solid var(--rule);
     padding-bottom: 32px;
@@ -67,24 +65,18 @@
     letter-spacing: -0.01em;
   }
   h2 {
-    font-size: 22px;
+    font-size: 24px;
     line-height: 1.3;
     margin: 48px 0 16px;
     font-weight: 600;
     letter-spacing: -0.005em;
   }
-  h3 {
-    font-size: 17px;
-    margin: 28px 0 8px;
-    font-weight: 600;
-  }
   p { margin: 0 0 16px; }
   .lede {
     font-size: 19px;
     line-height: 1.6;
-    color: var(--text);
   }
-  ul, ol { padding-left: 22px; margin: 0 0 16px; }
+  ul { padding-left: 22px; margin: 0 0 16px; }
   li { margin-bottom: 6px; }
   a {
     color: var(--accent);
@@ -102,17 +94,26 @@
     font-size: 0.92em;
     overflow-wrap: anywhere;
   }
-  pre {
-    background: var(--code-bg);
-    padding: 16px 18px;
-    border-radius: 4px;
-    overflow-x: auto;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
-    font-size: 14.5px;
-    line-height: 1.5;
-    margin: 0 0 20px;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 15px;
   }
-  pre code { background: none; padding: 0; }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+    border-bottom: 2px solid var(--rule);
+  }
   .pillars {
     display: grid;
     grid-template-columns: 1fr;
@@ -121,25 +122,19 @@
     padding: 0;
     list-style: none;
   }
-  @media (min-width: 600px) {
+  @media (min-width: 640px) {
     .pillars { grid-template-columns: repeat(3, 1fr); }
   }
-  .pillars li {
+  .pillars li,
+  .card {
     background: var(--card);
     border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 14px 16px;
-    margin: 0;
-    font-size: 15px;
   }
-  .pillars strong {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--text);
-  }
-  .pillars span {
-    color: var(--muted);
-  }
+  .pillars strong { display: block; margin-bottom: 4px; }
+  .pillars span,
+  .muted { color: var(--muted); }
   nav.quicklinks {
     margin: 32px 0 0;
     padding: 18px 20px;
@@ -166,336 +161,101 @@
     gap: 8px 18px;
   }
   nav.quicklinks li { margin: 0; }
-  nav.quicklinks a { overflow-wrap: anywhere; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 12px 0 24px;
-    font-size: 15px;
-  }
-  th, td {
-    text-align: left;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--rule);
-    vertical-align: top;
-  }
-  th {
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 12px;
-    border-bottom: 2px solid var(--rule);
-  }
-  td.tier-num { width: 60px; color: var(--muted); }
-  td.tier-count { width: 70px; text-align: right; color: var(--muted); }
-  .module-status {
-    margin: 0 0 24px;
-    padding: 0;
-    list-style: none;
-  }
-  .module-status li {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--rule);
-    margin: 0;
-  }
-  .module-status li:last-child { border-bottom: none; }
-  .module-status .name {
-    font-weight: 600;
-    margin-right: 8px;
-  }
-  .module-status .badge {
-    display: inline-block;
-    font-size: 11.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 2px 8px;
-    border-radius: 3px;
-    background: var(--code-bg);
-    color: var(--muted);
-    font-weight: 600;
-    vertical-align: 1px;
-  }
-  .module-status .badge-shipping { background: #ddebe1; color: #1a5837; }
-  .module-status .badge-scaffold { background: #e6e9f0; color: #2c3a73; }
-  .module-status .badge-spec { background: #f1ebd8; color: #6b4f0c; }
-  .module-status .desc {
-    display: block;
-    color: var(--muted);
-    font-size: 15px;
-    margin-top: 4px;
-  }
   footer {
     margin-top: 64px;
     padding-top: 24px;
     border-top: 1px solid var(--rule);
     font-size: 14px;
     color: var(--muted);
-    line-height: 1.6;
-  }
-  footer p { margin: 0 0 6px; }
-  @media (max-width: 600px) {
-    .container {
-      margin: 0;
-      max-width: 390px;
-      padding: 48px 24px 72px;
-    }
   }
 </style>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 <div class="container">
-
 <header class="site">
   <p class="eyebrow">CivicSuite</p>
-  <h1>An open-source municipal operations suite that runs on the city's own hardware.</h1>
-  <p class="lede">An open-source, sovereignly-deployable, local-LLM municipal operations suite. Modular. Apache 2.0 / CC BY 4.0. Works on the city's own hardware &mdash; no cloud, no telemetry, no per-seat pricing.</p>
+  <h1>An open-source municipal product suite that runs on the city's own hardware.</h1>
+  <p class="lede">CivicSuite is a sovereignly deployable, local-first product program for municipal operations. The suite already has one shipping product, one productizing second-product candidate, a shared platform package, and a broad set of real foundations that are not yet end-to-end products.</p>
 
   <ul class="pillars">
-    <li><strong>Clerk-first</strong><span>Records, meetings, and code adoption &mdash; where the work actually starts.</span></li>
-    <li><strong>Modular install</strong><span>Cities install one module at a time, on their own schedule.</span></li>
-    <li><strong>Air-gappable</strong><span>Local inference with Gemma 4 via Ollama. Zero outbound calls.</span></li>
+    <li><strong>Local first</strong><span>No cloud requirement, no telemetry, no per-seat pricing.</span></li>
+    <li><strong>Product depth over repo count</strong><span>The roadmap treats “all repos have releases” and “a city can run on this” as different milestones.</span></li>
+    <li><strong>Continuity is gated</strong><span>Platform expansion does not continue until continuity and succession work is in place.</span></li>
   </ul>
 
   <nav class="quicklinks">
     <strong>Quick links</strong>
     <ul>
+      <li><a href="../README.md">README</a></li>
+      <li><a href="../SUCCESSION.md">Continuity plan</a></li>
+      <li><a href="roadmap/index.md">Roadmap</a></li>
+      <li><a href="compatibility/index.md">Compatibility matrix</a></li>
       <li><a href="../CHARTER.md">Charter</a></li>
-      <li><a href="../specs/01_catalog.md">Module catalog</a></li>
-      <li><a href="../specs/02_CivicCore.md">CivicCore extraction spec</a></li>
-      <li><a href="../specs/03_civicclerk.md">CivicClerk spec</a></li>
-      <li><a href="../specs/04_civiczone.md">CivicZone spec</a></li>
-      <li><a href="../CONSISTENCY.md">Consistency reference</a></li>
+      <li><a href="../USER-MANUAL.md">User manual</a></li>
     </ul>
   </nav>
 </header>
 
 <main id="main">
-<section>
-  <h2>What's here today</h2>
-  <p>The suite is built one module at a time. CivicRecords AI is production-usable, CivicCore is the shared platform package, all 26 catalog modules have runtime-foundation releases, and all catalog modules have advanced to v0.1.1 for CivicCore v0.3.0 alignment. The next suite lane is production workflow depth, connector design, deployment packaging, and cross-module UX polish.</p>
+  <section>
+    <h2>Status today</h2>
+    <p>Status snapshot: <strong>2026-04-29</strong>.</p>
+    <table>
+      <thead>
+        <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Shipping</td><td>1 of 26</td><td><code>civicrecords-ai v1.4.1</code> is the one catalog product currently positioned as production-usable.</td></tr>
+        <tr><td>Productizing</td><td>1 of 26</td><td><code>civicclerk v0.1.1</code> has meaningful workflow depth and live staff surfaces, but still needs full auth, installer, and deployment hardening.</td></tr>
+        <tr><td>Foundation</td><td>24 of 26</td><td>The rest of the catalog has real runtime foundations, release gates, and bounded shipped surfaces, but not yet full product depth.</td></tr>
+      </tbody>
+    </table>
+    <p><code>civiccore v0.4.0</code> is the current shared-platform release. It is not a catalog module; it is the substrate every module depends on.</p>
+  </section>
 
-  <ul class="module-status">
-    <li>
-      <span class="name">civicrecords-ai</span>
-      <span class="badge badge-shipping">Shipping v1.4.1</span>
-      <span class="desc">FOIA / public records request management. Phase 2 LLM integration shipped 2026-04-25. The architectural template for everything that follows.</span>
-    </li>
-    <li>
-      <span class="name">civiccore</span>
-      <span class="badge badge-shipping">Shipping v0.3.0</span>
-      <span class="desc">Shared platform package. <strong>Shipping today:</strong> migration runner + shared baselines (<code>civiccore.migrations</code>), shared SQLAlchemy <code>Base</code> (<code>civiccore.db</code>), LLM abstraction (<code>civiccore.llm</code>), hash-chained audit primitives, source/provenance contracts, offline import/export manifest schemas, export-bundle helpers, and local city profile configuration. <strong>Future / planned extraction:</strong> auth/RBAC, document ingestion, hybrid search, notification delivery, web onboarding flows, 50-state exemption engine, sovereignty verification, live connector sync, credential storage, vendor write-back, and legal determinations. Pinned by every consuming module &mdash; see the <a href="../docs/compatibility/index.md">compatibility matrix</a>.</span>
-    </li>
-    <li>
-      <span class="name">civicclerk</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Meetings, agendas, packets, minutes, voting, and sunshine-law compliance. Runtime foundation released 2026-04-27 at <a href="https://github.com/CivicSuite/civicclerk">CivicSuite/civicclerk</a>; post-release main now has live <code>/staff</code> workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening is still planned.</span>
-    </li>
-    <li>
-      <span class="name">civiccode</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Municipal code and ordinance access. The <a href="https://github.com/CivicSuite/civiccode">CivicSuite/civiccode</a> repo ships a v0.1.1 runtime foundation aligned to <code>civiccore==0.3.0</code>, with source registry, section/version lifecycle, search, citations, Q&amp;A, staff notes, summaries, local imports, public lookup, and records-ready exports. Legal advice, live LLM calls, live codifier sync, and automatic ordinance codification are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civiczone</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Parcel-aware zoning and land-use Q&amp;A. The <a href="https://github.com/CivicSuite/civiczone">CivicSuite/civiczone</a> repo ships a v0.1.1 foundation aligned to <code>civiccore==0.3.0</code>, with canonical zoning schema, parcel and rule lookup samples, citation-grounded sample Q&amp;A, planner escalation, staff-context samples, and an accessible public sample UI at <code>/civiczone</code>. Live GIS, live LLM calls, planner review queues, official determinations, and legal advice are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicaccess</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Accessibility, plain-language, multilingual, and ADA review support. CivicAccess v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicaccess">CivicSuite/civicaccess</a> repo aligned to <code>civiccore==0.3.0</code>, with sample accessibility review, plain-language rewrite, multilingual variants, records-ready export checklist, and an accessible public sample UI at <code>/civicaccess</code>. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicplan</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Comprehensive-plan policy lookup and cited planning analysis support. CivicPlan v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicplan">CivicSuite/civicplan</a> repo aligned to <code>civiccore==0.3.0</code>, with sample plan-policy lookup, policy-consistency support, staff-analysis outlines, records-ready export checklist, and an accessible public sample UI at <code>/civicplan</code>. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicpermit</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Permit pre-application and intake-readiness support. CivicPermit v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicpermit">CivicSuite/civicpermit</a> repo aligned to <code>civiccore==0.3.0</code>, with sample permit requirement lookup, intake-readiness review, submittal outline helper, records-ready export checklist, and an accessible public sample UI at <code>/civicpermit</code>. Permit approvals, legal advice, live GIS, live LLM calls, plan ingestion, production permitting-system integrations, and system-of-record behavior are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicinspect</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Inspection support for code enforcement, building, and fire prevention staff. CivicInspect v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicinspect">CivicSuite/civicinspect</a> repo aligned to <code>civiccore==0.3.0</code>, with sample repeat-case lookup, inspector-owned report draft helper, notice draft helper, records-ready export checklist, and an accessible public sample UI at <code>/civicinspect</code>. Official findings, citations, fines, notices, inspection scheduling, legal advice, live photo analysis, live LLM calls, and system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicgrants</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Grant opportunity and compliance support. CivicGrants v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicgrants">CivicSuite/civicgrants</a> repo aligned to <code>civiccore==0.3.0</code>, with sample opportunity triage, eligibility-factor matching, application outline helper, compliance calendar helper, audit-ready export checklist, and an accessible public sample UI at <code>/civicgrants</code>. Live funder feeds, official eligibility decisions, legal advice, live LLM calls, submission portals, and grant system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicprocure</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Procurement drafting and award-packet support. CivicProcure v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicprocure">CivicSuite/civicprocure</a> repo with sample RFP drafting, proposal comparison, exception extraction, scoring summary helper, award-packet checklist, an accessible public sample UI at <code>/civicprocure</code>, and <code>civiccore==0.3.0</code> alignment. Live vendor portals, official vendor evaluation decisions, legal advice, live LLM calls, e-procurement submission portals, and procurement system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civiccontracts</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Contract repository and renewal visibility support. CivicContracts v0.1.1 ships in the <a href="https://github.com/CivicSuite/civiccontracts">CivicSuite/civiccontracts</a> repo with sample contract registry, clause topic lookup, expiration tracking, renewal visibility, public-records export checklist, an accessible public sample UI at <code>/civiccontracts</code>, and <code>civiccore==0.3.0</code> alignment. Live contract management platforms, official legal interpretation, legal advice, renewal approvals, contract execution workflows, live LLM calls, and contract system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicboards</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Board and commission administration support. CivicBoards v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicboards">CivicSuite/civicboards</a> repo with sample board registry, term tracking, vacancy tracking, attendance review, notice/records export checklist, an accessible public sample UI at <code>/civicboards</code>, and <code>civiccore==0.3.0</code> alignment. Live agenda systems, appointment decisions, legal advice, official notice publication, meeting system write-back, live LLM calls, and board system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicnotice</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Public notice compliance support. CivicNotice v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicnotice">CivicSuite/civicnotice</a> repo with sample notice registry, statutory deadline plans, publication-readiness checks, channel planning, notice/records export checklist, an accessible public sample UI at <code>/civicnotice</code>, and <code>civiccore==0.3.0</code> alignment. Legal sufficiency decisions, legal advice, live LLM calls, official notice publication, publication-system write-back, and notice system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civic311</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Resident service request support. Civic311 v0.1.1 ships in the <a href="https://github.com/CivicSuite/civic311">CivicSuite/civic311</a> repo with sample request intake, deterministic triage suggestions, duplicate-candidate review, department routing checklists, Open311-compatible export helper, an accessible public sample UI at <code>/civic311</code>, and <code>civiccore==0.3.0</code> alignment. Official dispatch, work-order creation, emergency response, legal advice, live LLM calls, 311 system write-back, and 311 system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civiccomms</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Public communications support. CivicComms v0.1.1 ships in the <a href="https://github.com/CivicSuite/civiccomms">CivicSuite/civiccomms</a> repo with source-readiness review, meeting summary drafts, ordinance explainers, newsletter scaffolds, FAQ prompts, audience variants, and an accessible public sample UI at <code>/civiccomms</code>. Autonomous publication, campaign or advocacy content, legal advice, certified translation, live LLM calls, social media posting, and communications system-of-record integrations are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civicdata</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Open-data and transparency publishing support. CivicData Bridge v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicdata">CivicSuite/civicdata</a> repo with dataset normalization, data-dictionary drafts, CKAN package metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, and an accessible public sample UI at <code>/civicdata</code>. Live CKAN publication, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are still not shipped.</span>
-    </li>
-    <li>
-      <span class="name">civichr</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">HR policy support. CivicHR v0.1.1 ships in the <a href="https://github.com/CivicSuite/civichr">CivicSuite/civichr</a> repo with policy lookup outlines, handbook summaries, job-description drafts, classification references, onboarding and training checklists, intake templates, source review, sensitive-topic preflight, and an accessible public sample UI at <code>/civichr</code>. HRIS, payroll, benefits administration, personnel records management, employment-law advice, personnel-file ingestion, live LLM calls, and external HR/payroll connector runtime are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civicbudget</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Budget narrative and transparency support. CivicBudget v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicbudget">CivicSuite/civicbudget</a> repo with line-item variance analysis, budget narrative drafts, department memos, hearing packet checklists, resident summaries, optional GFOA checklist support, and an accessible public sample UI at <code>/civicbudget</code>. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and finance-system connector runtime are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civiclegal</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Internal legal-record research support. CivicLegal v0.1.1 ships in the <a href="https://github.com/CivicSuite/civiclegal">CivicSuite/civiclegal</a> repo with privilege-aware corpus filtering, citation-first search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison, litigation-hold candidate flags, authority citation tracking, and an accessible public sample UI at <code>/civiclegal</code>. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery, live LLM calls, and legal-system connector runtime are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civicelections</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Election administration support. CivicElections v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicelections">CivicSuite/civicelections</a> repo with voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and an accessible public sample UI at <code>/civicelections</code>. Voter registration, ballot marking, tabulation, election conduct automation, official certification, live LLM calls, and election-system connector runtime are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civicutility</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Utility customer-service support. CivicUtility v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicutility">CivicSuite/civicutility</a> repo with utility-policy Q&A, CSR-safe account context, payment-arrangement drafts, service-request intake, and an accessible public sample UI at <code>/civicutility</code>. Utility billing, payment processing, rate-engine behavior, shutoff/reconnect decisions, account writes, live LLM calls, live billing connectors, and Civic311 write-back are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civiccourt</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Municipal court clerk support. CivicCourt v0.1.1 ships in the <a href="https://github.com/CivicSuite/civiccourt">CivicSuite/civiccourt</a> repo with cited procedure Q&A, court form drafts, restricted-record-aware search, hearing preparation checklists, and an accessible public sample UI at <code>/civiccourt</code>. Court case management, e-filing, warrant issuance, judicial decisions, legal advice, live LLM calls, and court CMS connectors are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civicsafety</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Non-CJIS public-safety administrative support. CivicSafety v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicsafety">CivicSuite/civicsafety</a> repo with cited policy/SOP Q&A, training checklists, PIO draft support, aggregate public-statistics summaries, and an accessible public sample UI at <code>/civicsafety</code>. CJI ingestion, CAD/RMS integration, dispatch, enforcement, investigations, evidence workflows, legal advice, live LLM calls, and connector runtime are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civiclibrary</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Library policy and reference support. CivicLibrary v0.1.1 ships in the <a href="https://github.com/CivicSuite/civiclibrary">CivicSuite/civiclibrary</a> repo with cited library policy Q&amp;A, program and event answers, collection-metadata reference search, collection-development guidance, and an accessible public sample UI at <code>/civiclibrary</code>. Patron records, ILS integration, circulation actions, professional-reference replacement, legal advice, live LLM calls, and connector runtime are still not shipped.</span>
-    </li>
-  <li>
-      <span class="name">civicparks</span>
-      <span class="badge badge-shipping">Shipping v0.1.1</span>
-      <span class="desc">Parks and recreation support. CivicParks v0.1.1 ships in the <a href="https://github.com/CivicSuite/civicparks">CivicSuite/civicparks</a> repo with cited parks policy Q&amp;A, program and facility answers, registration-link assistance, maintenance request triage, and an accessible public sample UI at <code>/civicparks</code>. Payments, registrations, participant records, reservation writes, crew dispatch, live LLM calls, and connector runtime are still not shipped.</span>
-    </li>
-  </ul>
-</section>
+  <section>
+    <h2>What happens next</h2>
+    <div class="card">
+      <p><strong>Phase 0 is active.</strong> Continuity is now an explicit gate. As of 2026-04-29, the <code>CivicSuite</code> GitHub org still has a single visible member/owner (<code>scottconverse</code>), so the roadmap does not treat platform expansion as complete or unblocked yet.</p>
+      <ul>
+        <li>Land the second-org-owner and succession deliverables.</li>
+        <li>Finish the shared auth/RBAC extraction proof and rollout playbook.</li>
+        <li>Extract the next <code>civiccore</code> capabilities that unblock <code>civicclerk</code>.</li>
+        <li>Drive <code>civicclerk</code> to true second-product status with a real identity and deployment story.</li>
+      </ul>
+    </div>
+  </section>
 
-<section>
-  <h2>Architecture overview</h2>
-  <figure style="margin: 2em 0;">
-    <img src="diagrams/suite-architecture.svg" alt="CivicSuite umbrella architecture: civicsuite governs civiccore v0.3.0 shared library, which is consumed by civicrecords-ai v1.4.1 and all 26 catalog modules, including CivicCode, CivicZone, CivicAccess, CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, and CivicContracts v0.1.1 alignment releases." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
-    <figcaption style="text-align: center; color: #666; font-size: 0.9em; margin-top: 0.5em;">Suite architecture: CivicSuite umbrella &rarr; civiccore shared library &rarr; product modules. Solid arrows are runtime dependencies; dotted arrows are governance/documentation.</figcaption>
-  </figure>
-  <p>Every module inherits the same boring, proven stack from CivicRecords AI. There is no clever framework, no novel database, no homegrown LLM runtime &mdash; just well-understood components glued together carefully.</p>
-  <p>The runtime is FastAPI on Uvicorn for the API layer, PostgreSQL 17 with the pgvector extension for both relational data and embeddings, Redis 7.2 (pinned below 8.0 to stay BSD-licensed) for cache and message queue, Celery with Celery Beat for background workers and scheduled jobs, and Ollama serving Gemma 4 for local LLM inference. The frontend is React behind nginx. Embeddings come from <code>nomic-embed-text</code>, also via Ollama.</p>
-  <p>Everything runs on the city's own server &mdash; single workstation for the smallest cities, a small on-prem box for most, and a fully air-gapped deployment for sensitive modules. The model layer is abstracted; Gemma 4 is the default but the registry pattern allows swapping in any model that fits the city's hardware budget.</p>
-  <p>The first post-foundation local demo profile is documented in <a href="deployment/local-demo-profile.md">docs/deployment/local-demo-profile.md</a>. It covers CivicRecords AI, CivicClerk, CivicCode, and CivicZone with local PostgreSQL, Redis, and optional Ollama, and it is explicitly an evaluation profile rather than production pilot packaging.</p>
-  <p>CivicCore is the package that holds all of this shared plumbing. Modules import from CivicCore; CivicCore never imports from modules. One-way dependency, enforced by a CI lint rule.</p>
-</section>
+  <section>
+    <h2>Why this framing changed</h2>
+    <p>The suite now documents three different truths separately: what is already shipping, what is in active productization, and what is still foundation work. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count.</p>
+    <p>The roadmap is designed to move the suite from a broad portfolio of promising repos into a deployable municipal starter set, then into a city-scale product platform.</p>
+  </section>
 
-<section>
-  <h2>26 modules across 7 tiers</h2>
-  <p>The catalog is the long-form product strategy. The summary:</p>
-  <table>
-    <thead>
-      <tr><th class="tier-num">Tier</th><th>Name</th><th class="tier-count">Modules</th></tr>
-    </thead>
-    <tbody>
-      <tr><td class="tier-num">0</td><td>Foundation</td><td class="tier-count">1</td></tr>
-      <tr><td class="tier-num">1</td><td>Clerk Core</td><td class="tier-count">4</td></tr>
-      <tr><td class="tier-num">2</td><td>Land Use &amp; Development</td><td class="tier-count">4</td></tr>
-      <tr><td class="tier-num">3</td><td>Administrative Expansion</td><td class="tier-count">5</td></tr>
-      <tr><td class="tier-num">4</td><td>Operations &amp; Resident Services</td><td class="tier-count">3</td></tr>
-      <tr><td class="tier-num">5</td><td>Internal Business Functions</td><td class="tier-count">4</td></tr>
-      <tr><td class="tier-num">6</td><td>Specialized</td><td class="tier-count">5</td></tr>
-      <tr><td class="tier-num"></td><td><strong>Total</strong></td><td class="tier-count"><strong>26</strong></td></tr>
-    </tbody>
-  </table>
-  <p>Cities install what they need, in any order, at any pace. Most will never install all 26. That's intentional.</p>
-  <p><code>civicparks</code> now ships v0.1.1. All 26 catalog modules now have runtime-foundation releases; next work is production depth and cross-module hardening.</p>
-</section>
+  <section>
+    <h2>Architecture</h2>
+    <p>Every module inherits the same deliberately boring stack: FastAPI, PostgreSQL 17 with <code>pgvector</code>, Redis 7.2, Celery, Ollama, and React behind nginx. Modules depend on <code>civiccore</code>; <code>civiccore</code> never depends on modules. Cities run the stack on their own hardware.</p>
+    <p>The first deployable target is not “all 26 modules at once.” It is a coherent starter set with shared identity, audit, retention, export, and upgrade behavior.</p>
+  </section>
 
-<section>
-  <h2>What CivicSuite is not</h2>
-  <p>The suite deliberately declines several markets. It is not a first-wave ERP replacement, not utility billing, not a permitting system of record, not CAD/RMS or a courts system, and not a cloud service. Those are markets where established incumbents do the work well enough that an open-source challenger would burn years of effort with no clear win for cities. The catalog explains the boundary in detail in sections 16&ndash;20.</p>
-</section>
-
-<section>
-  <h2>Repos</h2>
-  <ul>
-    <li><a href="https://github.com/CivicSuite/civicsuite"><code>github.com/CivicSuite/civicsuite</code></a> &mdash; umbrella repo (this site, charter, specs, ADRs, governance)</li>
-    <li><a href="https://github.com/CivicSuite/civiccore"><code>github.com/CivicSuite/civiccore</code></a> &mdash; shared platform package, shipping v0.3.0</li>
-    <li><a href="https://github.com/CivicSuite/civicrecords-ai"><code>github.com/CivicSuite/civicrecords-ai</code></a> &mdash; Module 1, shipping v1.4.1 (transferred to the CivicSuite org on 2026-04-25)</li>
-    <li><a href="https://github.com/CivicSuite/civicclerk"><code>github.com/CivicSuite/civicclerk</code></a> &mdash; Module 2, shipping v0.1.1 with production-depth staff screens and civiccore==0.3.0 alignment</li>
-    <li><a href="https://github.com/CivicSuite/civiccode"><code>github.com/CivicSuite/civiccode</code></a> &mdash; Module 3, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civiczone"><code>github.com/CivicSuite/civiczone</code></a> &mdash; Module 6, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicaccess"><code>github.com/CivicSuite/civicaccess</code></a> &mdash; Module 5, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicplan"><code>github.com/CivicSuite/civicplan</code></a> &mdash; Module 7, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicpermit"><code>github.com/CivicSuite/civicpermit</code></a> &mdash; Module 8, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicinspect"><code>github.com/CivicSuite/civicinspect</code></a> &mdash; Module 9, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicgrants"><code>github.com/CivicSuite/civicgrants</code></a> &mdash; Module 10, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicprocure"><code>github.com/CivicSuite/civicprocure</code></a> &mdash; Module 11, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civiccontracts"><code>github.com/CivicSuite/civiccontracts</code></a> &mdash; Module 12, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicboards"><code>github.com/CivicSuite/civicboards</code></a> &mdash; Module 13, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicnotice"><code>github.com/CivicSuite/civicnotice</code></a> &mdash; Module 14, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civic311"><code>github.com/CivicSuite/civic311</code></a> &mdash; Module 15, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civiccomms"><code>github.com/CivicSuite/civiccomms</code></a> &mdash; Module 16, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicdata"><code>github.com/CivicSuite/civicdata</code></a> &mdash; Module 17, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civichr"><code>github.com/CivicSuite/civichr</code></a> &mdash; Module 18, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicbudget"><code>github.com/CivicSuite/civicbudget</code></a> &mdash; Module 19, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civiclegal"><code>github.com/CivicSuite/civiclegal</code></a> &mdash; Module 20, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicelections"><code>github.com/CivicSuite/civicelections</code></a> &mdash; Module 21, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicutility"><code>github.com/CivicSuite/civicutility</code></a> &mdash; Module 22, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civiccourt"><code>github.com/CivicSuite/civiccourt</code></a> &mdash; Module 23, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicsafety"><code>github.com/CivicSuite/civicsafety</code></a> &mdash; Module 24, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civiclibrary"><code>github.com/CivicSuite/civiclibrary</code></a> &mdash; Module 25, shipping v0.1.1</li>
-    <li><a href="https://github.com/CivicSuite/civicparks"><code>github.com/CivicSuite/civicparks</code></a> &mdash; Module 26, shipping v0.1.1</li>
-    <li><a href="../docs/compatibility/index.md">Compatibility matrix</a> &mdash; civiccore&harr;module version pairings</li>
-    <li><a href="deployment/local-demo-profile.md">Local demo deployment profile</a> &mdash; first post-foundation stack for Records, Clerk, Code, and Zone</li>
-    <li><a href="ux/shared-shell-inventory.md">Shared shell UX inventory</a> &mdash; navigation, status, empty/error, citation, export, and browser-QA conventions</li>
-    <li><a href="connectors/import-export-template.md">Connector import/export template</a> &mdash; file drop, CSV, manifest, checksum, and no-write-back conventions</li>
-    <li><a href="civiccore/v0.3-extraction-proposal.md">CivicCore v0.3 extraction proposal</a> &mdash; audit, provenance, manifest, city-profile, and export-bundle primitives</li>
-    <li><a href="roadmap/civicclerk-production-depth-workflow.md">CivicClerk production-depth workflow</a> &mdash; agenda packet, notice, source provenance, export, and staff UX sprint plan</li>
-  </ul>
-  <p><code>civicclerk</code>, <code>civiccomms</code>, <code>civicdata</code>, <code>civichr</code>, <code>civicbudget</code>, <code>civiclegal</code>, <code>civicelections</code>, <code>civicutility</code>, <code>civiccourt</code>, <code>civicsafety</code>, <code>civiclibrary</code>, and <code>civicparks</code> have v0.1.1 runtime-foundation releases under the same org; <code>civiccode</code>, <code>civiczone</code>, <code>civicaccess</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, <code>civicprocure</code>, <code>civiccontracts</code>, <code>civicboards</code>, <code>civicnotice</code>, and <code>civic311</code> have advanced to v0.1.1 for CivicCore v0.3.0 alignment. Module independence is a deliberate design choice - see the CivicCore extraction spec section 5.2 for why this is not a monorepo.</p>
-</section>
+  <section>
+    <h2>Where to go next</h2>
+    <ul>
+      <li><a href="roadmap/index.md">Canonical roadmap</a></li>
+      <li><a href="../SUCCESSION.md">Continuity and succession plan</a></li>
+      <li><a href="governance/index.md">Governance overview</a></li>
+      <li><a href="compatibility/index.md">Compatibility matrix</a></li>
+      <li><a href="../specs/01_catalog.md">Module catalog</a></li>
+      <li><a href="../docs/CivicSuiteUnifiedSpec.md">Unified suite specification</a></li>
+    </ul>
+  </section>
 </main>
 
 <footer>
-  <p><strong>License.</strong> Code is Apache License 2.0. Documentation is CC BY 4.0. Optional prompt libraries (when published as separate repos) are CC BY-SA 4.0.</p>
+  <p><strong>Licensing.</strong> Code is Apache License 2.0. Documentation is CC BY 4.0.</p>
   <p>Built in the open. Run on the city's own hardware. No telemetry, no cloud lock-in, no per-seat pricing.</p>
 </footer>
-
 </div>
 </body>
 </html>
