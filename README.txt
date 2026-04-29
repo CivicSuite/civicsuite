@@ -27,7 +27,7 @@ Status snapshot: 2026-04-29
 
 `civiccore` is not a catalog module; it is the shared platform package used by
 every module. The latest published shared-platform release is `civiccore
-v0.9.0`.
+v0.11.0`.
 
 The most important distinction in this repo is simple: "all repos have
 releases" is not the same thing as "a city can run on this suite." The roadmap
@@ -38,15 +38,17 @@ What ships today
 
 - `civicrecords-ai v1.4.1` is the flagship shipping product for FOIA/public
   records management. Repo: https://github.com/CivicSuite/civicrecords-ai
-- `civiccore v0.9.0` is the shipping shared platform package. It currently
+- `civiccore v0.11.0` is the shipping shared platform package. It currently
   ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer,
   audit/provenance primitives, export/manifest helpers, city profiles, shared
-  auth/RBAC primitives, and shared notice-compliance helpers. Repo:
+  auth/RBAC primitives, shared notice-compliance helpers, onboarding profile
+  helpers, and permission-aware search/access helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.3` is the clear second-product candidate. It already ships
+- `civicclerk v0.1.4` is the clear second-product candidate. It already ships
   meetings/agendas/minutes workflow depth, public-archive safeguards,
   connector imports, browser QA gates, live `/staff` screens, and shared
-  notice-compliance reuse, but it is still in the productizing tier. Repo:
+  `civiccore` notice/search/access reuse, but it is still in the productizing
+  tier. Repo:
   https://github.com/CivicSuite/civicclerk
 
 The rest of the catalog is real foundation work, not vapor. Those modules ship

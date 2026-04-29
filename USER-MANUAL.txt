@@ -18,8 +18,8 @@ on its own hardware, on its own schedule.
 Current maturity snapshot as of 2026-04-29:
 
 - `civicrecords-ai v1.4.1`: shipping flagship product
-- `civiccore v0.9.0`: shared platform package
-- `civicclerk v0.1.3`: productizing second-product candidate
+- `civiccore v0.11.0`: shared platform package
+- `civicclerk v0.1.4`: productizing second-product candidate
 - Remaining catalog modules: foundation tier
 
 The authoritative module-to-platform version truth lives in:
