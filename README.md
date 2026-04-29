@@ -30,12 +30,11 @@ The rest of the catalog is real foundation work, not vapor. Those modules ship s
 
 The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The immediate sequence is:
 
-1. Land `Phase 0: Continuity` with a second org owner, `SUCCESSION.md`, and documented custody/handoff procedures.
-2. Finish the shared auth/RBAC extraction proof and rollout playbook.
-3. Extract the next `civiccore` capabilities that unblock `civicclerk`, including security-related extractions.
-4. Drive `civicclerk` to second-product status with a real deployment story, including `SSO/IdP`.
-5. Define the shared upgrade-path pattern before broadening more shared-platform fan-out.
-6. Formalize cross-module integration ownership for the first deployable starter set.
+1. Finish the shared auth/RBAC extraction proof and rollout playbook.
+2. Extract the next `civiccore` capabilities that unblock `civicclerk`, including security-related extractions.
+3. Drive `civicclerk` to second-product status with a real deployment story, including `SSO/IdP`.
+4. Define the shared upgrade-path pattern before broadening more shared-platform fan-out.
+5. Formalize cross-module integration ownership for the first deployable starter set.
 
 ## Continuity
 
@@ -45,7 +44,7 @@ Continuity is now an explicit gate, not a “later” governance item.
 - Governance index: [docs/governance/index.md](docs/governance/index.md)
 - Charter: [CHARTER.md](CHARTER.md)
 
-Current state as of 2026-04-29: the `CivicSuite` GitHub org still has a single visible member/owner (`scottconverse`). `Phase 1` does not begin until `Phase 0` continuity exit criteria are met.
+Current state as of 2026-04-29: the `CivicSuite` GitHub org now has two active owners (`scottconverse` and `APirateMonk`), and the continuity baseline is documented in [SUCCESSION.md](SUCCESSION.md).
 
 ## Quick Start
 

@@ -9,7 +9,7 @@ This roadmap starts from a hard truth: **“all repos have releases” is not th
 - Foundation: 24 additional catalog modules
 - Shared platform: `civiccore v0.4.0`
 
-Current phase: **`Phase 0: Continuity` is active and not yet complete.** The roadmap is adopted; the second-org-owner action is still outstanding.
+Current phase: **`Phase 0: Continuity` is complete.** The second-org-owner action has landed, and the documented release-custody baseline is now on file.
 
 ## Phase 0: Continuity
 
@@ -282,13 +282,12 @@ Exit criteria:
 
 ## Immediate Sequence
 
-1. Land `Phase 0: Continuity` with dated deliverables.
-2. Finish the auth/RBAC extraction proof with a hard stop-condition and rollout playbook.
-3. Start the next `civiccore` extractions that unblock `civicclerk`, including security-related extractions.
-4. Drive `civicclerk` to second-product status with `SSO/IdP` included in the real deployment story.
-5. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
-6. Stand up the explicit cross-module integration ownership model for the starter set.
-7. Update the umbrella README to match the true taxonomy and counts as this work lands.
+1. Finish the auth/RBAC extraction proof with a hard stop-condition and rollout playbook.
+2. Start the next `civiccore` extractions that unblock `civicclerk`, including security-related extractions.
+3. Drive `civicclerk` to second-product status with `SSO/IdP` included in the real deployment story.
+4. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
+5. Stand up the explicit cross-module integration ownership model for the starter set.
+6. Continue keeping umbrella status, taxonomy, and continuity docs current as the roadmap advances.
 
 ## What “Done” Means
 

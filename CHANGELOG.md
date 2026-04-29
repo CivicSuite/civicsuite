@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Continuity gate and canonical roadmap reset** (2026-04-29): added `SUCCESSION.md`, rewrote the roadmap index around the phased product-program plan, updated the governance index, and reset the umbrella README/README.txt/landing page to the explicit `Shipping / Productizing / Foundation` taxonomy so suite-level docs no longer imply that “all repos have releases” means “city-ready suite.”
+- **Phase 0 continuity closeout** (2026-04-29): documented the active second org owner (`APirateMonk`), recorded the current tag-driven GitHub release custody model for `civiccore` and `civicrecords-ai`, and advanced the umbrella continuity status from “blocked on single owner” to “continuity baseline complete.”
 
 - **CivicRecords AI v1.4.1 compatibility update** (2026-04-28): compatibility matrix, suite-state verifier, README, README.txt, and landing page now reflect the CivicRecords AI patch release pinned to `civiccore==0.3.0`.
 - **Civic311 v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the Civic311 dependency-alignment release pinned to `civiccore==0.3.0`.
