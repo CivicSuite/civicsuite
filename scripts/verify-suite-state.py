@@ -50,10 +50,21 @@ class RepoSpec:
     pyproject: str = "pyproject.toml"
     civiccore_required: str | None = EXPECTED_CIVICCORE
     release_tag: str | None = None
+    published_version: str | None = None
+    published_civiccore_required: str | None = None
 
-    @property
-    def tag(self) -> str:
-        return self.release_tag or f"v{self.version}"
+    def matrix_version(self, remote_only: bool) -> str:
+        return self.published_version if remote_only and self.published_version else self.version
+
+    def matrix_civiccore_required(self, remote_only: bool) -> str | None:
+        if remote_only and self.published_civiccore_required is not None:
+            return self.published_civiccore_required
+        return self.civiccore_required
+
+    def tag(self, remote_only: bool) -> str:
+        if self.release_tag:
+            return self.release_tag
+        return f"v{self.matrix_version(remote_only)}"
 
 
 REPOS: tuple[RepoSpec, ...] = (
@@ -65,8 +76,18 @@ REPOS: tuple[RepoSpec, ...] = (
         "1.4.3",
         "backend/pyproject.toml",
         civiccore_required="0.13.0",
+        published_version="1.4.1",
+        published_civiccore_required="0.10.0",
     ),
-    RepoSpec("civicclerk", "CivicSuite/civicclerk", "civicclerk", "0.1.11", civiccore_required="0.16.0"),
+    RepoSpec(
+        "civicclerk",
+        "CivicSuite/civicclerk",
+        "civicclerk",
+        "0.1.11",
+        civiccore_required="0.16.0",
+        published_version="0.1.9",
+        published_civiccore_required="0.15.0",
+    ),
     RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
@@ -77,7 +98,15 @@ REPOS: tuple[RepoSpec, ...] = (
     RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicnotice", "CivicSuite/civicnotice", "civicnotice", "0.1.2", civiccore_required="0.9.0"),
+    RepoSpec(
+        "civicnotice",
+        "CivicSuite/civicnotice",
+        "civicnotice",
+        "0.1.2",
+        civiccore_required="0.9.0",
+        published_version="0.1.1",
+        published_civiccore_required="0.3.0",
+    ),
     RepoSpec("civic311", "CivicSuite/civic311", "civic311", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiccomms", "CivicSuite/civiccomms", "civiccomms", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicdata", "CivicSuite/civicdata", "civicdata", "0.1.2", civiccore_required="0.4.0"),
@@ -156,29 +185,32 @@ def check_pyproject(spec: RepoSpec, repo_path: Path) -> list[str]:
     return errors
 
 
-def check_compatibility_matrix(spec: RepoSpec, matrix: str) -> list[str]:
+def check_compatibility_matrix(spec: RepoSpec, matrix: str, remote_only: bool) -> list[str]:
     errors = []
     row_pattern = re.compile(rf"^\|\s*{re.escape(spec.name)}\s*\|(?P<row>.+)$", re.MULTILINE)
     match = row_pattern.search(matrix)
     if not match:
         return [fail("missing compatibility matrix row")]
     row = match.group("row")
-    if spec.version not in row:
-        errors.append(fail(f"compatibility row missing version {spec.version}"))
+    version = spec.matrix_version(remote_only)
+    civiccore_required = spec.matrix_civiccore_required(remote_only)
+    if version not in row:
+        errors.append(fail(f"compatibility row missing version {version}"))
     if spec.repo not in row:
         errors.append(fail(f"compatibility row missing repo {spec.repo}"))
-    if spec.civiccore_required and f"`=={spec.civiccore_required}`" not in row:
-        errors.append(fail(f"compatibility row missing civiccore pin =={spec.civiccore_required}"))
+    if civiccore_required and f"`=={civiccore_required}`" not in row:
+        errors.append(fail(f"compatibility row missing civiccore pin =={civiccore_required}"))
     return errors
 
 
-def check_release(spec: RepoSpec) -> list[str]:
+def check_release(spec: RepoSpec, remote_only: bool) -> list[str]:
+    tag = spec.tag(remote_only)
     code, data, message = run_json(
         [
             "gh",
             "release",
             "view",
-            spec.tag,
+            tag,
             "--repo",
             spec.repo,
             "--json",
@@ -186,17 +218,17 @@ def check_release(spec: RepoSpec) -> list[str]:
         ]
     )
     if code != 0 or data is None:
-        return [fail(f"release {spec.tag} unavailable for {spec.repo}: {message}")]
+        return [fail(f"release {tag} unavailable for {spec.repo}: {message}")]
     errors = []
-    if data.get("tagName") != spec.tag:
-        errors.append(fail(f"release tagName {data.get('tagName')!r} != {spec.tag!r}"))
+    if data.get("tagName") != tag:
+        errors.append(fail(f"release tagName {data.get('tagName')!r} != {tag!r}"))
     if data.get("isDraft"):
-        errors.append(fail(f"release {spec.tag} is still draft"))
+        errors.append(fail(f"release {tag} is still draft"))
     if data.get("isPrerelease"):
-        errors.append(fail(f"release {spec.tag} is marked prerelease"))
+        errors.append(fail(f"release {tag} is marked prerelease"))
     assets = data.get("assets", [])
     if not isinstance(assets, list) or not assets:
-        errors.append(fail(f"release {spec.tag} has no assets"))
+        errors.append(fail(f"release {tag} has no assets"))
     return errors
 
 
@@ -208,9 +240,9 @@ def check_repo(spec: RepoSpec, matrix: str, remote: bool, remote_only: bool) -> 
             return [fail(f"local repo path missing: {repo_path}")]
         errors.extend(check_required_artifacts(repo_path))
         errors.extend(check_pyproject(spec, repo_path))
-    errors.extend(check_compatibility_matrix(spec, matrix))
+    errors.extend(check_compatibility_matrix(spec, matrix, remote_only=remote_only))
     if remote:
-        errors.extend(check_release(spec))
+        errors.extend(check_release(spec, remote_only=remote_only))
     return errors
 
 
