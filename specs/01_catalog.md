@@ -56,8 +56,11 @@ genuinely novel: clerk workflows, records, ordinances, zoning, planning,
 grants, procurement authoring, contracts, boards, HR policy, and
 accessibility.
 
-This document defines the full module catalog (26 modules across 7
-tiers), assesses where the current v3.0 spec is thin, establishes the
+This document defines the full module catalog. The original April 23 catalog
+established CivicCore plus 25 product modules across 7 tiers. The 2026-04-30
+addendum adds CivicRegWatch and CivicAPI as planned product modules, bringing
+the current suite to 28 product modules plus the CivicCore shared platform. It
+assesses where the current v3.0 spec is thin, establishes the
 shared design principles and architecture pattern, and proposes a
 four-phase rollout sequence. It is intended as a working strategic
 reference --- an actionable artifact, not a pitch deck.
@@ -329,7 +332,7 @@ product.
 
 Part III. Module Catalog
 
-26 modules across 7 tiers (Tier 0 Foundation through Tier 6 Specialized). Each card uses a consistent shape: purpose,
+Current catalog: 28 product modules plus CivicCore across 7 tiers (Tier 0 Foundation through Tier 6 Specialized). Each card uses a consistent shape: purpose,
 owner, capabilities, source materials, AI workflows, compliance
 considerations, and scope boundaries (what this is NOT). Tier 0 is the
 foundation; every other module can be installed independently, subject
@@ -1666,6 +1669,30 @@ CivicData Bridge --- Open Data & Transparency Publishing
 -   Not a data warehouse --- streams and exports, not long-term storage
     beyond archives
 
+CivicRegWatch --- Federal Regulatory Intelligence
+
+  ----------------------- --------------------------------------------------------------------------------------------------------------------------------
+  **Module**              CivicRegWatch
+  **Primary owner**       City Manager / Legal / Clerk
+  **Purpose**             Monitor public federal regulatory activity and surface human-reviewable alerts for rules, proposed rules, guidance, deadlines, and funding changes that may affect city operations.
+  **Tier**                Tier 4 --- Operations
+  **Depends on**          CivicCore; optional CivicLegal and CivicClerk escalation contracts
+  **Status**              Planned. Detailed implementation contract: `specs/05_civicregwatch.md`.
+  **Boundary**            Intelligence layer only. It does not make compliance determinations, replace legal review, scrape websites, or auto-act on behalf of the city.
+  ----------------------- --------------------------------------------------------------------------------------------------------------------------------
+
+CivicAPI --- Public Read-Only Data Gateway
+
+  ----------------------- --------------------------------------------------------------------------------------------------------------------------------
+  **Module**              CivicAPI
+  **Primary owner**       IT / Clerk
+  **Purpose**             Provide a public read-only API over structured, human-approved, published CivicSuite records with citations, schema metadata, rate limits, and retraction support.
+  **Tier**                Tier 4 --- Operations
+  **Depends on**          CivicCore and publication contracts from originating modules; optional CivicData relationship for bulk datasets.
+  **Status**              Planned. Detailed implementation contract: `specs/06_civicapi.md`.
+  **Boundary**            Publication gateway only. It does not scrape, write back into modules, expose unapproved records, or produce LLM-generated API responses.
+  ----------------------- --------------------------------------------------------------------------------------------------------------------------------
+
 12\. Tier 5 --- Internal Business Functions
 
 CivicHR Assist --- HR Policy Q&A & Drafting
@@ -2320,28 +2347,38 @@ Phase 3 --- Administrative and resident services
 17. CivicData Bridge --- open data and transparency publishing with
     CKAN.
 
+18. CivicRegWatch --- federal regulatory intelligence alerts for rules,
+    guidance, deadlines, and funding changes that may affect city
+    operations.
+
+19. CivicAPI --- public read-only API over human-approved published
+    CivicSuite records.
+
 Outcome: a coherent \'administrative suite\' alongside the clerk core.
 Grants-funded small cities can justify the full stack on the strength of
 CivicGrants alone.
 
 Phase 4 --- Internal business and specialized
 
-18. CivicHR Assist --- policy Q&A, job descriptions, onboarding.
+20. CivicHR Assist --- policy Q&A, job descriptions, onboarding.
 
-19. CivicBudget Assist --- budget narratives and transparency.
+21. CivicBudget Assist --- budget narratives and transparency.
 
-20. CivicLegal Research --- internal legal corpus Q&A with privilege
+22. CivicLegal Research --- internal legal corpus Q&A with privilege
     tiers.
 
-21. CivicElections Assist --- for cities that run their own elections.
+23. CivicElections Assist --- for cities that run their own elections.
 
-22. CivicUtility Assist --- utility customer service copilot.
+24. CivicUtility Assist --- utility customer service copilot.
 
-23. CivicCourt Assist --- court clerk copilot, isolated deployment.
+25. CivicCourt Assist --- court clerk copilot, isolated deployment.
 
-24. CivicSafety Assist --- non-CJIS administrative functions only.
+26. CivicSafety Assist --- non-CJIS administrative functions only.
 
-25. CivicLibrary and CivicParks --- optional, city-dependent.
+27. CivicLibrary --- library support, optional and city-dependent.
+
+28. CivicParks --- parks and recreation support, optional and
+    city-dependent.
 
 15\. Suite Tiers (Packaging)
 
@@ -2349,7 +2386,7 @@ Phase 4 --- Internal business and specialized
   **Tier**               **Modules**                                                                                                      **Target city**
   Clerk Core             CivicCore + CivicRecords + CivicClerk + CivicCode + CivicAccess                                                  Any city. The strongest initial \'city operating stack.\'
   Land Use Add-on        \+ CivicZone + CivicPlan + CivicPermit Assist + CivicInspect                                                     Cities with meaningful development activity.
-  Administrative Suite   \+ CivicGrants + CivicProcure + CivicContracts + CivicBoards + CivicNotice + Civic311 + CivicComms + CivicData   Cities growing beyond the clerk core.
+  Administrative Suite   \+ CivicGrants + CivicProcure + CivicContracts + CivicBoards + CivicNotice + Civic311 + CivicComms + CivicData + CivicRegWatch + CivicAPI   Cities growing beyond the clerk core.
   Internal Business      \+ CivicHR + CivicBudget + CivicLegal + CivicElections                                                           Cities with internal staff capacity for these tools.
   Specialized            \+ CivicUtility + CivicCourt + CivicSafety + CivicLibrary + CivicParks                                           City-dependent. Some modules require isolated deployment.
   ---------------------- ---------------------------------------------------------------------------------------------------------------- -----------------------------------------------------------

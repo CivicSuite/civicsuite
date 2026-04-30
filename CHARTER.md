@@ -56,7 +56,7 @@ CivicRecords AI is a shipping open-source FOIA / public-records request manageme
 
 The suite strategy is captured in four spec documents in this folder's `specs/` subdirectory. Read them in this order before writing any code:
 
-1. **specs/01_catalog.md** — the module catalog (26 modules across 7 tiers, Tier 0 Foundation through Tier 6 Specialized), strategic framing, design principles, what-not-to-build boundaries. Product strategy at suite scope.
+1. **specs/01_catalog.md** — the module catalog (28 product modules plus CivicCore across 7 tiers, Tier 0 Foundation through Tier 6 Specialized), strategic framing, design principles, what-not-to-build boundaries. Product strategy at suite scope. The 2026-04-30 addendum incorporates CivicRegWatch and CivicAPI; their detailed contracts live in specs/05 and specs/06.
 
 2. **specs/02_CivicCore.md** — the non-breaking refactor plan that turns CivicRecords AI's shared plumbing into a standalone CivicCore package. Defines the new CivicSuite umbrella repo. Includes the six-phase rollout (Phase 0 through Phase 5), import-shim pattern, database migration strategy, and risk table.
 

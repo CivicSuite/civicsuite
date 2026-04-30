@@ -97,6 +97,7 @@
   table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     margin: 12px 0 24px;
     font-size: 15px;
   }
@@ -105,6 +106,7 @@
     padding: 10px 12px;
     border-bottom: 1px solid var(--rule);
     vertical-align: top;
+    overflow-wrap: anywhere;
   }
   th {
     font-weight: 600;
@@ -168,6 +170,13 @@
     font-size: 14px;
     color: var(--muted);
   }
+  @media (max-width: 520px) {
+    .container { padding: 40px 24px 64px; }
+    h1 { font-size: 34px; }
+    .lede { font-size: 18px; }
+    table { font-size: 14px; }
+    th, td { padding: 9px 8px; }
+  }
 </style>
 </head>
 <body>
@@ -176,7 +185,7 @@
 <header class="site">
   <p class="eyebrow">CivicSuite</p>
   <h1>An open-source municipal product suite that runs on the city's own hardware.</h1>
-  <p class="lede">CivicSuite is a sovereignly deployable, local-first product program for municipal operations. The suite already has one shipping product, one productizing second-product candidate, a shared platform package, and a broad set of real foundations that are not yet end-to-end products.</p>
+  <p class="lede">CivicSuite is a sovereignly deployable, local-first product program for municipal operations. The suite already has one shipping product, one productizing second-product candidate, a shared platform package, a broad set of real foundations, and two newly specified future modules: CivicRegWatch and CivicAPI.</p>
 
   <ul class="pillars">
     <li><strong>Local first</strong><span>No cloud requirement, no telemetry, no per-seat pricing.</span></li>
@@ -201,18 +210,18 @@
 <main id="main">
   <section>
     <h2>Status today</h2>
-    <p>Status snapshot: <strong>2026-04-29</strong>.</p>
+    <p>Status snapshot: <strong>2026-04-30</strong>.</p>
     <table>
       <thead>
         <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td>Shipping</td><td>1 of 26</td><td><code>civicrecords-ai v1.4.1</code> is the one catalog product currently positioned as production-usable.</td></tr>
-        <tr><td>Productizing</td><td>1 of 26</td><td><code>civicclerk v0.1.4</code> has meaningful workflow depth, live staff surfaces, and shared notice/search/access reuse, but still needs full auth, installer, and deployment hardening.</td></tr>
-        <tr><td>Foundation</td><td>24 of 26</td><td>The rest of the catalog has real runtime foundations, release gates, and bounded shipped surfaces, but not yet full product depth.</td></tr>
+        <tr><td>Shipping</td><td>1 of 28</td><td><code>civicrecords-ai v1.4.3</code> is the one product currently positioned as production-usable.</td></tr>
+        <tr><td>Productizing</td><td>1 of 28</td><td><code>civicclerk v0.1.11</code> has meaningful workflow depth, live staff and public surfaces, install rehearsal, release handoff, and deployment preflight, but still needs a full app, finished portal, installer, OIDC, backup/restore, and live sync.</td></tr>
+        <tr><td>Foundation / planned</td><td>26 of 28</td><td>The rest of the catalog has real runtime foundations or implementation specs. <code>CivicRegWatch</code> and <code>CivicAPI</code> are newly added planned modules with specs but no runtime repos yet.</td></tr>
       </tbody>
     </table>
-    <p><code>civiccore v0.11.0</code> is the current shared-platform release. It is not a catalog module; it is the substrate every module depends on.</p>
+    <p><code>civiccore v0.16.0</code> is the current local shared-platform release. It is not a product module; it is the substrate every module depends on.</p>
   </section>
 
   <section>
@@ -223,20 +232,21 @@
         <li>Use the shared extraction consumer rollout playbook for the next <code>civiccore</code> fan-out work.</li>
         <li>Extract the next <code>civiccore</code> capabilities that unblock <code>civicclerk</code>.</li>
         <li>Drive <code>civicclerk</code> to true second-product status with a real identity and deployment story.</li>
+        <li>Use <code>specs/05_civicregwatch.md</code> and <code>specs/06_civicapi.md</code> as the setup contracts before scaffolding those future repos.</li>
       </ul>
     </div>
   </section>
 
   <section>
     <h2>Why this framing changed</h2>
-    <p>The suite now documents three different truths separately: what is already shipping, what is in active productization, and what is still foundation work. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count.</p>
+    <p>The suite now documents four different truths separately: what is already shipping, what is in active productization, what is foundation work, and what is newly specified but not scaffolded. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count.</p>
     <p>The roadmap is designed to move the suite from a broad portfolio of promising repos into a deployable municipal starter set, then into a city-scale product platform.</p>
   </section>
 
   <section>
     <h2>Architecture</h2>
     <p>Every module inherits the same deliberately boring stack: FastAPI, PostgreSQL 17 with <code>pgvector</code>, Redis 7.2, Celery, Ollama, and React behind nginx. Modules depend on <code>civiccore</code>; <code>civiccore</code> never depends on modules. Cities run the stack on their own hardware.</p>
-    <p>The first deployable target is not "all 26 modules at once." It is a coherent starter set with shared identity, audit, retention, export, and upgrade behavior.</p>
+    <p>The first deployable target is not "all 28 product modules at once." It is a coherent starter set with shared identity, audit, retention, export, and upgrade behavior.</p>
   </section>
 
   <section>

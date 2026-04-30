@@ -6,10 +6,15 @@ This roadmap starts from a hard truth: **"all repos have releases" is not the sa
 
 - Shipping: `civicrecords-ai`
 - Productizing: `civicclerk`
-- Foundation: 24 additional catalog modules
-- Shared platform: `civiccore v0.9.0`
+- Foundation / planned: 26 additional product modules, including newly specified `CivicRegWatch` and `CivicAPI`
+- Shared platform: `civiccore v0.16.0`
 
 Current phase: **`Phase 1: Platform And Security Extraction` is underway.** `Phase 0: Continuity` is complete, the auth extraction pattern has already been proven across multiple consumers, and the shared notice-compliance helper is now proven in both `civicnotice` and `civicclerk`.
+
+New module scope added on 2026-04-30:
+
+- `CivicRegWatch`: planned federal regulatory intelligence module. Detailed implementation contract: [`../../specs/05_civicregwatch.md`](../../specs/05_civicregwatch.md).
+- `CivicAPI`: planned public read-only data gateway over human-approved CivicSuite publication records. Detailed implementation contract: [`../../specs/06_civicapi.md`](../../specs/06_civicapi.md).
 
 ## Phase 0: Continuity
 
@@ -144,6 +149,8 @@ Initial consumers for this pattern:
 - `civicbudget`
 - `civiccourt`
 - `civicdata`
+- `civicapi`
+- `civicregwatch`
 - `civiclegal`
 - `civicelections`
 - `civichr`
@@ -179,6 +186,8 @@ Cross-module integration scope:
 - shared identity and role semantics
 - shared audit and provenance expectations
 - shared retention and export semantics
+- CivicAPI publication-gate contracts for public read-only records
+- CivicRegWatch escalation contracts into CivicLegal and CivicClerk
 - shared deployment assumptions
 - shared admin/operator conventions
 - defined upgrade order and compatibility rules across modules
@@ -287,7 +296,8 @@ Exit criteria:
 3. Drive `civicclerk` to second-product status with `SSO/IdP` included in the real deployment story.
 4. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
 5. Stand up the explicit cross-module integration ownership model for the starter set.
-6. Continue keeping umbrella status, taxonomy, and continuity docs current as the roadmap advances.
+6. Resolve the CivicAPI and CivicRegWatch ADRs before scaffolding runtime repos.
+7. Continue keeping umbrella status, taxonomy, and continuity docs current as the roadmap advances.
 
 The current consumer rollout pattern is documented in [shared-extraction-consumer-rollout.md](shared-extraction-consumer-rollout.md).
 

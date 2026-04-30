@@ -7,9 +7,11 @@ record.
 
 | Module          | Repo                           | Current version | Released   | Compatible CivicCore range | Last verified | Notes |
 |-----------------|--------------------------------|-----------------|------------|----------------------------|---------------|-------|
-| civiccore       | CivicSuite/civiccore           | 0.11.0          | 2026-04-29 | n/a                        | 2026-04-29    | Shared platform release adding onboarding profile helpers plus permission-aware search/access helpers on top of the earlier auth, notice, connector, export, and provenance surface. |
-| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.1           | 2026-04-28 | `==0.10.0`                 | 2026-04-29    | Mainline records-ai backend currently pins the published `civiccore v0.10.0` wheel for the onboarding helper rollout. |
-| civicclerk      | CivicSuite/civicclerk          | 0.1.4           | 2026-04-29 | `==0.11.0`                 | 2026-04-29    | Productizing clerk release line now consumes `civiccore v0.11.0` for shared notice plus permission-aware search/access helpers. |
+| civiccore       | CivicSuite/civiccore           | 0.16.0          | 2026-04-30 | n/a                        | 2026-04-30    | Shared platform release line now includes connector import helpers, browser-evidence verification helpers, shared search/access helpers, trusted-header config loading, and proxy-source enforcement helpers. |
+| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.3 local / 1.4.1 published | 2026-04-28 | `==0.13.0` local / `==0.10.0` published | 2026-04-30    | Current local records-ai backend pins the published `civiccore v0.13.0` wheel; latest GitHub release remains `v1.4.1` on `==0.10.0`. |
+| civicclerk      | CivicSuite/civicclerk          | 0.1.11 local / 0.1.9 published | 2026-04-30 | `==0.16.0` local / `==0.15.0` published | 2026-04-30    | Productizing clerk local line consumes `civiccore v0.16.0`; latest GitHub release remains `v0.1.9` on `==0.15.0`. |
+| civicregwatch   | CivicSuite/civicregwatch       | planned         | not released | TBD                      | 2026-04-30    | New planned federal regulatory intelligence module. Implementation spec exists in `specs/05_civicregwatch.md`; repo and civiccore pin are not scaffolded yet. |
+| civicapi        | CivicSuite/civicapi            | planned         | not released | TBD                      | 2026-04-30    | New planned public read-only data gateway module. Implementation spec exists in `specs/06_civicapi.md`; repo and civiccore pin are not scaffolded yet. |
 | civiccode       | CivicSuite/civiccode           | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: first runtime surface preserved while moving to civiccore 0.3.0 shared primitives. |
 | civiczone       | CivicSuite/civiczone           | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: parcel-aware zoning runtime foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicaccess     | CivicSuite/civicaccess         | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: accessibility foundation preserved while moving to civiccore 0.3.0 shared primitives. |
@@ -20,7 +22,7 @@ record.
 | civicprocure    | CivicSuite/civicprocure        | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: procurement support foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civiccontracts  | CivicSuite/civiccontracts      | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: contract repository foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicboards     | CivicSuite/civicboards         | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: board administration foundation preserved while moving to civiccore 0.3.0 shared primitives. |
-| civicnotice     | CivicSuite/civicnotice         | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: public notice compliance foundation preserved while moving to civiccore 0.3.0 shared primitives. |
+| civicnotice     | CivicSuite/civicnotice         | 0.1.2 local / 0.1.1 published | 2026-04-28 | `==0.9.0` local / `==0.3.0` published | 2026-04-30    | Current local notice line consumes `civiccore v0.9.0`; latest GitHub release remains `v0.1.1` on `==0.3.0`. |
 | civic311        | CivicSuite/civic311            | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: resident service request foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civiccomms      | CivicSuite/civiccomms          | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: public communications foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicdata       | CivicSuite/civicdata           | 0.1.2           | 2026-04-29 | `==0.4.0`                  | 2026-04-29    | Auth-protected persisted retrieval rollout consumes the published `civiccore v0.4.0` release. |
@@ -36,11 +38,12 @@ record.
 
 ## Reading a row
 
-`civicrecords-ai 1.4.1 ... ==0.10.0` means: records-ai version 1.4.1 requires
-exactly civiccore 0.10.0. Mixing other civiccore versions with that
-records-ai release produces undefined behavior. The `civiccore` row records
-the latest platform release; module rows record the exact pins those module
-release lines actually ship with.
+`civicrecords-ai 1.4.3 local / 1.4.1 published` means: the local sibling clone
+currently reports version 1.4.3, while the latest published GitHub release is
+1.4.1. The same local/published split applies to CivicCore pins. Mixing other
+civiccore versions with a module release produces undefined behavior. The
+`civiccore` row records the latest platform release; module rows record exact
+local and published pins when they differ.
 
 ## Tested pairs (history)
 

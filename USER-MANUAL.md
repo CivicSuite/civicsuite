@@ -20,14 +20,15 @@ The suite is intentionally honest about maturity:
 
 - `civicrecords-ai` is the current production-usable shipping product.
 - `civicclerk` is the active second-product candidate.
-- The rest of the catalog is in the foundation tier: real runtime work, not yet end-to-end products.
+- The rest of the catalog is in the foundation/planned tier: real runtime work or implementation specs, not yet end-to-end products.
 - `civiccore` is the shared platform package under all of them.
 
-### What is available today? (as of 2026-04-29)
+### What is available today? (as of 2026-04-30)
 
-- **`civicrecords-ai v1.4.1`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore v0.11.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, shared auth/RBAC primitives, shared notice-compliance helpers, onboarding profile helpers, and permission-aware search/access helpers. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk v0.1.4`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It already ships meaningful workflow depth, live `/staff` screens, browser QA gates, connector import surfaces, and shared `civiccore` notice/search/access reuse. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civicrecords-ai v1.4.3`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
+- **`civiccore v0.16.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, release-evidence helpers, and trusted-header config/proxy enforcement helpers. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civicclerk v0.1.11`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It already ships meaningful workflow depth, live `/staff` screens, the first `/public` shell, browser QA gates, connector import surfaces, auth readiness, install rehearsal helpers, release handoff helpers, deployment preflight, and shared `civiccore v0.16.0` reuse. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`CivicRegWatch` and `CivicAPI`** - newly added planned modules. CivicRegWatch is the federal regulatory intelligence module. CivicAPI is the public read-only data gateway over human-approved CivicSuite publication records. Their implementation specs live in [specs/05_civicregwatch.md](specs/05_civicregwatch.md) and [specs/06_civicapi.md](specs/06_civicapi.md).
 
 Selected foundation modules have also advanced beyond the original `civiccore==0.3.0` baseline. The authoritative truth for each module-to-platform pairing lives in the umbrella compatibility matrix, not in static prose snapshots:
 
@@ -45,9 +46,9 @@ Selected foundation modules have also advanced beyond the original `civiccore==0
 
 | Tier | Count | Meaning today |
 |---|---:|---|
-| Shipping | 1 of 26 | `civicrecords-ai` is the current production-usable module. |
-| Productizing | 1 of 26 | `civicclerk` has real product depth but still needs deployment and identity hardening. |
-| Foundation | 24 of 26 | The rest of the catalog has real runtime foundations and release gates, but not yet full product depth. |
+| Shipping | 1 of 28 product modules | `civicrecords-ai` is the current production-usable module. |
+| Productizing | 1 of 28 product modules | `civicclerk` has real product depth but still needs full app, portal, installer, identity, backup/restore, and live-sync hardening. |
+| Foundation / planned | 26 of 28 product modules | The rest of the catalog has real runtime foundations or new implementation specs, but not yet full product depth. |
 
 ### Foundation-tier module catalog
 
@@ -87,9 +88,11 @@ It does **not** contain the runtime code for the individual products.
 
 | Repo | Status |
 |---|---|
-| `civicrecords-ai` | Shipping `v1.4.1` flagship product |
-| `civiccore` | Shipping `v0.11.0` shared platform package |
-| `civicclerk` | Productizing `v0.1.4` second-product candidate |
+| `civicrecords-ai` | Shipping `v1.4.3` flagship product |
+| `civiccore` | Shipping `v0.16.0` shared platform package |
+| `civicclerk` | Productizing `v0.1.11` second-product candidate |
+| `civicregwatch` | Planned module; spec exists, repo not scaffolded yet |
+| `civicapi` | Planned module; spec exists, repo not scaffolded yet |
 | Remaining catalog repos | Foundation-tier runtime releases with bounded shipped surfaces |
 
 Canonical GitHub locations:
@@ -169,7 +172,7 @@ Start with:
               describes & coordinates |
                                       v
                         +---------------------------+
-                        |     civiccore (v0.11.0)   |
+                        |     civiccore (v0.16.0)   |
                         |  shipping today:          |
                         |  migrations, db.Base, llm |
                         |  audit, provenance,       |
@@ -183,7 +186,7 @@ Start with:
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
    | civicrecords-ai     |   | civicclerk       |   | foundation tier  |
-   | v1.4.1 shipping     |   | v0.1.4           |   | civicaccess ...  |
+   | v1.4.3 shipping     |   | v0.1.11          |   | civicaccess ...  |
    | FOIA / records      |   | productizing     |   | civiczone        |
    +---------------------+   +------------------+   +------------------+
 ```
