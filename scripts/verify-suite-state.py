@@ -1,6 +1,6 @@
 """Verify CivicSuite repo/version/docs/release state across the org.
 
-This is the post-foundation pulse check for the 26-module foundation lane. It
+This is the post-foundation pulse check for the current runtime repo lane. It
 does not replace each repo's release gate; it verifies that the umbrella truth
 source, local clones, package versions, docs artifacts, and GitHub releases
 still agree.
@@ -57,16 +57,16 @@ class RepoSpec:
 
 
 REPOS: tuple[RepoSpec, ...] = (
-    RepoSpec("civiccore", "CivicSuite/civiccore", "civiccore", "0.11.0", civiccore_required=None),
+    RepoSpec("civiccore", "CivicSuite/civiccore", "civiccore", "0.16.0", civiccore_required=None),
     RepoSpec(
         "civicrecords-ai",
         "CivicSuite/civicrecords-ai",
         "civicrecords-ai",
-        "1.4.1",
+        "1.4.3",
         "backend/pyproject.toml",
-        civiccore_required="0.10.0",
+        civiccore_required="0.13.0",
     ),
-    RepoSpec("civicclerk", "CivicSuite/civicclerk", "civicclerk", "0.1.4", civiccore_required="0.11.0"),
+    RepoSpec("civicclerk", "CivicSuite/civicclerk", "civicclerk", "0.1.11", civiccore_required="0.16.0"),
     RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
@@ -77,7 +77,7 @@ REPOS: tuple[RepoSpec, ...] = (
     RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicnotice", "CivicSuite/civicnotice", "civicnotice", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civicnotice", "CivicSuite/civicnotice", "civicnotice", "0.1.2", civiccore_required="0.9.0"),
     RepoSpec("civic311", "CivicSuite/civic311", "civic311", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiccomms", "CivicSuite/civiccomms", "civiccomms", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civicdata", "CivicSuite/civicdata", "civicdata", "0.1.2", civiccore_required="0.4.0"),

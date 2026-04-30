@@ -12,22 +12,23 @@ module lives in its own repo.
 Suite status
 ------------
 
-Status snapshot: 2026-04-29
+Status snapshot: 2026-04-30
 
-- Shipping: 1 of 26 catalog modules.
+- Shipping: 1 of 28 product modules.
   `civicrecords-ai` is the one product currently positioned as
   production-usable today.
-- Productizing: 1 of 26 catalog modules.
-  `civicclerk` has real workflow depth and live staff surfaces, but still
-  needs full auth, installer, and deployment hardening.
-- Foundation: 24 of 26 catalog modules.
-  The rest of the catalog has real runtime foundations, release gates, and
-  honest shipped/not-shipped boundaries, but they are not yet end-to-end
-  products.
+- Productizing: 1 of 28 product modules.
+  `civicclerk` has real workflow depth, live staff/public surfaces, install
+  rehearsal, release handoff, and deployment preflight, but still needs a full
+  React app, finished public portal, real installer, full OIDC, backup/restore,
+  and live sync.
+- Foundation / planned: 26 of 28 product modules.
+  The rest of the catalog has real runtime foundations or new implementation
+  specs. CivicRegWatch and CivicAPI are newly added planned modules with
+  detailed specs but no runtime repos yet.
 
-`civiccore` is not a catalog module; it is the shared platform package used by
-every module. The latest published shared-platform release is `civiccore
-v0.11.0`.
+`civiccore` is not a product module; it is the shared platform package used by
+every module. The latest local shared-platform release is `civiccore v0.16.0`.
 
 The most important distinction in this repo is simple: "all repos have
 releases" is not the same thing as "a city can run on this suite." The roadmap
@@ -36,20 +37,27 @@ in `docs/roadmap/index.md` is the plan to close that gap.
 What ships today
 ----------------
 
-- `civicrecords-ai v1.4.1` is the flagship shipping product for FOIA/public
+- `civicrecords-ai v1.4.3` is the flagship shipping product for FOIA/public
   records management. Repo: https://github.com/CivicSuite/civicrecords-ai
-- `civiccore v0.11.0` is the shipping shared platform package. It currently
+- `civiccore v0.16.0` is the shipping shared platform package. It currently
   ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer,
   audit/provenance primitives, export/manifest helpers, city profiles, shared
-  auth/RBAC primitives, shared notice-compliance helpers, onboarding profile
-  helpers, and permission-aware search/access helpers. Repo:
+  auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers,
+  search/access helpers, connector/import helpers, release-evidence helpers,
+  and trusted-header config/proxy enforcement helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.4` is the clear second-product candidate. It already ships
+- `civicclerk v0.1.11` is the clear second-product candidate. It already ships
   meetings/agendas/minutes workflow depth, public-archive safeguards,
-  connector imports, browser QA gates, live `/staff` screens, and shared
-  `civiccore` notice/search/access reuse, but it is still in the productizing
-  tier. Repo:
+  connector imports, browser QA gates, live `/staff` screens, the first
+  `/public` shell, auth readiness, fresh-install rehearsal helpers, release
+  handoff helpers, deployment preflight, and shared `civiccore` v0.16.0 reuse,
+  but it is still in the productizing tier. Repo:
   https://github.com/CivicSuite/civicclerk
+- CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
+  federal regulatory intelligence for municipal operators; CivicAPI is the
+  public read-only data gateway over human-approved CivicSuite publication
+  records. Detailed specs live in `specs/05_civicregwatch.md` and
+  `specs/06_civicapi.md`.
 
 The rest of the catalog is real foundation work, not vapor. Those modules ship
 schemas, sample workflow slices, accessible sample UI, tests, and release
@@ -70,7 +78,9 @@ is:
    including `SSO/IdP`.
 4. Define the shared upgrade-path pattern before broadening more
    shared-platform fan-out.
-5. Formalize cross-module integration ownership for the first deployable
+5. Scaffold CivicRegWatch and CivicAPI only after their publication, polling,
+   auth, and inter-module ADRs are settled.
+6. Formalize cross-module integration ownership for the first deployable
    starter set.
 
 The current shared rollout pattern is documented in
@@ -85,7 +95,7 @@ Continuity is now an explicit gate, not a "later" governance item.
 - Governance index: `docs/governance/index.md`
 - Charter: `CHARTER.md`
 
-Current state as of 2026-04-29: the `CivicSuite` GitHub org now has two active
+Current state as of 2026-04-30: the `CivicSuite` GitHub org has two active
 owners (`scottconverse` and `APirateMonk`), and the continuity baseline is
 documented in `SUCCESSION.md`.
 
@@ -120,6 +130,10 @@ Repo map
 - `civicclerk`: productizing second-product candidate
 - `civiccode` through `civicparks`: foundation-tier module repos with bounded
   shipped surfaces
+- `civicregwatch`: planned federal regulatory intelligence module; spec exists,
+  repo not scaffolded yet
+- `civicapi`: planned public read-only data gateway module; spec exists, repo
+  not scaffolded yet
 
 See `docs/compatibility/index.md` for the canonical module-to-platform version
 pairings.
@@ -133,8 +147,8 @@ dependency rule is one-way: modules depend on `civiccore`; `civiccore` never
 depends on modules. Cities run the stack on their own hardware. No cloud, no
 telemetry, no per-seat pricing.
 
-The suite is aiming for a first deployable "city starter set," not for all 26
-modules to become equally deep at the same time. That distinction is
+The suite is aiming for a first deployable "city starter set," not for all 28
+product modules to become equally deep at the same time. That distinction is
 intentional and load-bearing.
 
 Documentation

@@ -15,11 +15,12 @@ CivicSuite is an open-source municipal product family. It is not one giant
 program. It is a collection of modules that a city can install one at a time,
 on its own hardware, on its own schedule.
 
-Current maturity snapshot as of 2026-04-29:
+Current maturity snapshot as of 2026-04-30:
 
-- `civicrecords-ai v1.4.1`: shipping flagship product
-- `civiccore v0.11.0`: shared platform package
-- `civicclerk v0.1.4`: productizing second-product candidate
+- `civicrecords-ai v1.4.3`: shipping flagship product
+- `civiccore v0.16.0`: shared platform package
+- `civicclerk v0.1.11`: productizing second-product candidate
+- CivicRegWatch and CivicAPI: planned modules with implementation specs
 - Remaining catalog modules: foundation tier
 
 The authoritative module-to-platform version truth lives in:
@@ -74,6 +75,8 @@ Top-level topology:
 - `civiccore`: shared platform package
 - `civicrecords-ai`: shipping flagship product
 - `civicclerk`: productizing second-product candidate
+- `civicregwatch`: planned federal regulatory intelligence module
+- `civicapi`: planned public read-only data gateway module
 - remaining catalog repos: foundation tier
 
 Continuity baseline:

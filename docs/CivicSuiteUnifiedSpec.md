@@ -1,10 +1,10 @@
 # CivicSuite Unified Specification
 
-**Canonical suite specification for CivicSuite, CivicCore, CivicRecords AI, CivicClerk, CivicZone, and future modules**
+**Canonical suite specification for CivicSuite, CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicRegWatch, CivicAPI, and future modules**
 
 Version: 1.0  
 Status: Canonical planning specification  
-Date: 2026-04-26  
+Date: 2026-04-30
 License: Apache License 2.0 for code; CC BY 4.0 for documentation unless a repository-specific LICENSE says otherwise.  
 Supersedes: `CivicSuiteAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
 Preserves: Feature, workflow, schema, prompt, testing, and product requirements from the source documents unless explicitly marked superseded, deferred, or corrected here.
@@ -22,6 +22,7 @@ It consolidates the useful content from:
 - `CivicZone_Module_Spec_v0_1`
 - `Open Source AI for Municipalities`
 - Current repository truth in `CivicSuite/civicsuite`, `CivicSuite/civiccore`, `CivicSuite/civicrecords-ai`, and `CivicSuite/civicclerk`
+- CivicRegWatch and CivicAPI product requirements from `C:/Users/scott/Downloads/CivicAPI and CivicRegWatch modules.docx`
 
 The goal is not to reduce the suite to a pitch. The goal is to preserve the full product surface while removing drift, stale licensing language, stale module counts, ambiguous dependency claims, and inconsistent shipped/planned labels.
 
@@ -39,7 +40,7 @@ Older drafts referenced MIT. That language is superseded. Apache 2.0 is the civi
 
 ### 2.2 Module Count And Tiers
 
-The suite catalog contains **26 named modules across 7 tiers**:
+The suite catalog now contains **28 product modules plus CivicCore as the Tier 0 shared platform across 7 tiers**:
 
 - Tier 0: Foundation
 - Tier 1: Clerk Core
@@ -49,7 +50,7 @@ The suite catalog contains **26 named modules across 7 tiers**:
 - Tier 5: Internal Business
 - Tier 6: Specialized
 
-Older drafts said "26 modules across 6 tiers." That was an arithmetic/category drift. This document standardizes on 7 tiers, counting Tier 0 through Tier 6.
+Older drafts said "26 modules across 6 tiers." That was an arithmetic/category drift. This document standardizes on 7 tiers, counting Tier 0 through Tier 6, and adds CivicRegWatch plus CivicAPI as planned product modules in the operations/transparency lane.
 
 ### 2.3 Repository Placement
 
@@ -79,7 +80,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v0.3.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
+Current shipped CivicCore v0.16.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -203,7 +204,7 @@ CivicCore is the shared platform, not a user-facing product.
 
 ### 6.1 Shipped
 
-Current shipped CivicCore v0.3.0 includes:
+Current shipped CivicCore v0.16.0 includes:
 
 - Migration runner and baseline migration strategy
 - Shared SQLAlchemy `Base`
@@ -247,7 +248,7 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: shipping v0.3.0, with many planned extractions
+Status: shipping v0.16.0, with many planned extractions
 Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, and future auth/search/live-connector primitives.
 
 ### Tier 1 - Clerk Core
@@ -256,14 +257,14 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
-Status: shipping v1.4.0  
+Status: shipping v1.4.3
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
 #### CivicClerk
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: shipping v0.1.1 foundation aligned to `civiccore==0.3.0`  
+Status: productizing v0.1.11 runtime foundation aligned to published `civiccore v0.16.0`
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -371,6 +372,20 @@ Owner: IT / Clerk / Administration / Analysts
 Depends on: CivicCore  
 Status: shipping v0.1.1 foundation  
 Purpose: municipal system normalization, open-data-ready packages, searchable archive bundles, CKAN integration, and records retention exports. v0.1.1 ships dataset normalization, data-dictionary drafts, CKAN metadata drafts, PII/exemption preflight, archive-bundle checklists, publication planning, an accessible public sample UI, and civiccore==0.3.0 alignment. Live CKAN publishing, BI dashboards, data warehouse storage, autonomous redaction, and external connector runtime are not shipped.
+
+#### CivicRegWatch
+
+Owner: City Manager / City Attorney / Department heads
+Depends on: CivicCore. Optional escalation targets: CivicLegal and CivicClerk.
+Status: planned foundation module; detailed implementation spec in `specs/05_civicregwatch.md`
+Purpose: federal regulatory intelligence for municipal operators. CivicRegWatch monitors documented public federal APIs, narrows new regulatory activity to city-relevant domains, and creates human-reviewable alerts with deadlines, domains, source hashes, and escalation paths. It is not a compliance system and never emits legal opinions or automatic actions.
+
+#### CivicAPI
+
+Owner: IT / Clerk / Open data administrator
+Depends on: CivicCore and module-owned publication contracts; optional CivicData relationship for dataset packages.
+Status: planned foundation module; detailed implementation spec in `specs/06_civicapi.md`
+Purpose: the city's public read-only data gateway over structured, human-approved, published CivicSuite records. CivicAPI exposes versioned, rate-limited, provenance-stamped API responses for records explicitly published by originating modules. It is not a write API, scraper, vendor aggregator, or replacement for CivicData bulk publication.
 
 ### Tier 5 - Internal Business
 
@@ -951,12 +966,12 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 ## 18. Current Shipped State
 
-As of 2026-04-28:
+As of 2026-04-30:
 
-- `civicrecords-ai` ships as v1.4.0.
-- `civiccore` ships as v0.3.0.
+- `civicrecords-ai` ships as v1.4.3.
+- `civiccore` ships as v0.16.0.
 - `civicsuite` is the umbrella documentation/governance repo.
-- `civicclerk` ships as v0.1.1 with civiccore==0.3.0 plus production-depth foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints, prompt evals, connector imports, browser QA gates, and post-release main now has live `/staff` workflow screens for intake, packet assembly/export, notice checklist, meeting outcomes, minutes draft, public archive, and connector import. Full database persistence/authentication hardening remains planned.
+- `civicclerk` ships as v0.1.11 with the published `civiccore v0.16.0` release wheel plus production-depth foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints and `/public` shell, prompt evals, connector imports, browser QA gates, live `/staff` workflow screens, auth-readiness, fresh-install rehearsal helpers, release handoff helpers, and deployment-readiness preflight. A full React clerk console, finished public portal, real installer, full OIDC, live sync, backup/restore, and full deployment story remain planned.
 - `civiccode` ships as v0.1.1 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, and `civiccore==0.3.0` alignment. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.1 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, accessible public sample UI, and `civiccore==0.3.0` alignment. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
 - `civicaccess` ships as v0.1.1 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, accessible public sample UI, and `civiccore==0.3.0` alignment. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.
@@ -975,7 +990,7 @@ As of 2026-04-28:
 - `civicbudget` ships as v0.1.1 with runtime foundations for line-item variance analysis, budget narrative drafts, department memo drafts, hearing packet checklists, resident summaries, optional GFOA checklist support, and accessible public sample UI. ERP, budgeting system, accounting, payroll, fund accounting, budget adoption, official approvals, live LLM calls, and live finance-system connector runtime are not shipped.
 - `civiclegal` ships as v0.1.1 with runtime foundations for privilege-aware corpus filtering, citation-first city-record search, prior-action lookup, attorney-reviewed memo scaffolds, ordinance comparison checklists, litigation-hold candidate flags, authority citation tracking, and accessible public sample UI. Legal advice, Westlaw/Lexis replacement, autonomous legal conclusions, court filing, e-discovery management, live LLM calls, live privileged corpus ingestion, and external legal-system connector runtime are not shipped.
 - `civicelections` ships as v0.1.1 with runtime foundations for cited voter guidance, candidate filing checklists, worker training Q&A, ballot-summary drafts, campaign-finance summaries, canvass checklists, accessibility review, and accessible public sample UI. Voter registration, ballot marking, tabulation, election conduct automation, campaign finance system of record, official certification, live LLM calls, and election-system connector runtime are not shipped.
-- All 26 catalog modules have runtime-foundation releases; all catalog modules have advanced to v0.1.1 for CivicCore v0.3.0 alignment. CivicClerk now publishes v0.1.1 with civiccore==0.3.0 alignment. Remaining work is post-foundation depth, connectors, deployment hardening, and cross-module UX.
+- The established catalog modules have runtime-foundation releases; CivicRegWatch and CivicAPI are newly added planned modules with detailed implementation specs but no runtime repos yet. Remaining work is post-foundation depth, connectors, deployment hardening, cross-module UX, and new-module scaffolding for CivicRegWatch and CivicAPI.
 
 ## 19. Post-Foundation Build Sequence
 
@@ -1002,8 +1017,65 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - CivicCore document/search extraction order.
 - Prompt-library repository strategy.
 - Data-release strategy for state statutory rules.
+- CivicRegWatch polling-source terms, rate-limit floors, and source disablement policy.
+- CivicRegWatch escalation contract into CivicLegal and CivicClerk.
+- CivicAPI inter-module read contract protocol: shared database, internal HTTP API, or event queue.
+- CivicAPI public payload storage strategy: originating module snapshot vs live fetch.
+- CivicAPI request-log visibility and default rate-limit tier policy.
 
-## 21. Precedence Rules
+## 21. CivicRegWatch Canonical Scope
+
+CivicRegWatch is the planned federal regulatory intelligence module. It monitors public federal regulatory sources and creates staff-reviewable alerts for activity that may affect municipal operations, finances, grants, labor, land use, housing, courts, elections, accessibility, public safety, procurement, utilities, or environmental programs.
+
+Detailed implementation specification: `specs/05_civicregwatch.md`.
+
+### 21.1 Product Promise
+
+City staff should be able to open CivicRegWatch and quickly understand whether federal regulatory activity from the last 24 to 72 hours deserves attention. Every alert must say what changed, which municipal domains may be touched, whether a deadline exists, and what follow-up is appropriate.
+
+### 21.2 Non-Negotiables
+
+- CivicRegWatch is not a compliance system.
+- CivicRegWatch does not issue legal opinions or applicability determinations.
+- CivicRegWatch does not take automatic action in any other module.
+- All source access must use documented public APIs only; scraping and unofficial endpoints are prohibited.
+- Source calls are logged with timestamp, endpoint, and response hash.
+- Any status transition, dismissal, escalation, or archival action requires a human actor.
+- v0.1.x must work without live LLM calls.
+
+### 21.3 Planned v0.1.x Foundation
+
+Planned v0.1.x scope is schema, migrations, deterministic domain classification, Federal Register polling, alert list/detail/review APIs, poll-run logging, circuit breaker behavior, accessible module overview, documentation gates, and CivicCore alignment.
+
+Not shipped in v0.1.x: LLM-assisted classification, LLM summaries, Regulations.gov/Congress.gov/USASPENDING polling, comment reminders, CivicLegal/CivicClerk escalation writes, notification delivery, webhooks, and state regulatory monitoring.
+
+## 22. CivicAPI Canonical Scope
+
+CivicAPI is the planned public read-only data gateway over structured, human-approved, published CivicSuite records. It exposes city-controlled, versioned, rate-limited API responses with provenance and citation metadata.
+
+Detailed implementation specification: `specs/06_civicapi.md`.
+
+### 22.1 Product Promise
+
+Developers, journalists, researchers, oversight agencies, neighboring municipalities, and residents should be able to access a city's published operational records through a single documented REST API. No record appears in CivicAPI unless a human explicitly approved its publication in the originating module.
+
+### 22.2 Non-Negotiables
+
+- CivicAPI is read-only without exception.
+- CivicAPI only serves public-safe projections approved by originating modules.
+- CivicAPI never exposes staff-only, closed-session, privileged, exempt, or PII-containing data.
+- CivicAPI does not scrape or aggregate third-party government APIs.
+- Every response includes a consistent envelope and citation/provenance block.
+- Originating modules define publication gates; modules without a gate cannot contribute records.
+- API keys are hashed at rest, rate-limited, and audit-logged.
+
+### 22.3 Planned v0.1.x Foundation
+
+Planned v0.1.x scope is schema, migrations, publication index, schema registry, module registry, API key model, Redis-backed rate-limit infrastructure, catalog endpoint, health endpoint, response envelope, citation block, documentation gates, accessible overview, and documented empty states for unwired publication contracts.
+
+Not shipped in v0.1.x: live module publication contracts, key issuance UI, city-branded developer portal, webhooks, CSV exports, or full public internet deployment management.
+
+## 23. Precedence Rules
 
 When documents conflict:
 
@@ -1013,7 +1085,7 @@ When documents conflict:
 4. Older DOCX drafts are historical inputs.
 5. Marketing/landing pages must follow shipped truth and may not promote planned behavior as shipped.
 
-## 22. Working Rule
+## 24. Working Rule
 
 No future CivicSuite implementation sprint should begin from memory or from an isolated module scaffold. It should begin by reading this document, the relevant module-specific spec, current repo state, and the current compatibility matrix.
 
