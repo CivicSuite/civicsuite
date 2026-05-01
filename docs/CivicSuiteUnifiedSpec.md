@@ -4,7 +4,7 @@
 
 Version: 1.0  
 Status: Canonical planning specification  
-Date: 2026-04-30
+Date: 2026-05-01
 License: Apache License 2.0 for code; CC BY 4.0 for documentation unless a repository-specific LICENSE says otherwise.  
 Supersedes: `CivicSuiteAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
 Preserves: Feature, workflow, schema, prompt, testing, and product requirements from the source documents unless explicitly marked superseded, deferred, or corrected here.
@@ -264,7 +264,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: productizing v0.1.11 runtime foundation aligned to published `civiccore v0.16.0`
+Status: productizing v0.1.12 runtime foundation aligned to published `civiccore v0.16.0`
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -966,12 +966,12 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 ## 18. Current Shipped State
 
-As of 2026-04-30:
+As of 2026-05-01:
 
 - `civicrecords-ai` ships as v1.4.3.
 - `civiccore` ships as v0.16.0.
 - `civicsuite` is the umbrella documentation/governance repo.
-- `civicclerk` ships as v0.1.11 with the published `civiccore v0.16.0` release wheel plus production-depth foundations for schema, lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, public archive endpoints and `/public` shell, prompt evals, connector imports, browser QA gates, live `/staff` workflow screens, auth-readiness, fresh-install rehearsal helpers, backup/restore rehearsal, release handoff helpers, and deployment-readiness preflight. A full React clerk console, Docker Compose deployment stack, finished public portal, real installer, full OIDC, live sync, and full deployment story remain planned.
+- `civicclerk` ships as v0.1.12 with the published `civiccore v0.16.0` release wheel plus all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, schema/lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, prompt evals, connector imports, browser QA gates, fresh-install rehearsal helpers, Docker/PostgreSQL backup/restore rehearsal, scheduled local connector import sync, release handoff helpers, installer source packaging, enterprise signing readiness, and deployment-readiness preflight. Signed installer publication, vendor-network live sync, and deployment hardening remain planned before production city use.
 - `civiccode` ships as v0.1.1 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, and `civiccore==0.3.0` alignment. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.1 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, accessible public sample UI, and `civiccore==0.3.0` alignment. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
 - `civicaccess` ships as v0.1.1 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, accessible public sample UI, and `civiccore==0.3.0` alignment. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.

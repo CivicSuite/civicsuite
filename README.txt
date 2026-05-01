@@ -12,16 +12,18 @@ module lives in its own repo.
 Suite status
 ------------
 
-Status snapshot: 2026-04-30
+Status snapshot: 2026-05-01
 
 - Shipping: 1 of 28 product modules.
   `civicrecords-ai` is the one product currently positioned as
   production-usable today.
 - Productizing: 1 of 28 product modules.
-  `civicclerk` has real workflow depth, live staff/public surfaces, install
-  rehearsal, backup/restore rehearsal, release handoff, and deployment
-  preflight, but still needs a full React app, Docker Compose deployment stack,
-  finished public portal, real installer, full OIDC, and live sync.
+  `civicclerk` now has all four MVP workflow surfaces in React, a Docker
+  Compose product rehearsal with seeded demo data, OIDC browser-session
+  foundations, backup/restore rehearsal, scheduled local connector import sync,
+  installer source packaging, and enterprise signing readiness. It still needs
+  signed enterprise installer publication, vendor-network live sync, and
+  deployment hardening before city production use.
 - Foundation / planned: 26 of 28 product modules.
   The rest of the catalog has real runtime foundations or new implementation
   specs. CivicRegWatch and CivicAPI are newly added planned modules with
@@ -46,7 +48,7 @@ What ships today
   search/access helpers, connector/import helpers, release-evidence helpers,
   and trusted-header config/proxy enforcement helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.11` is the clear second-product candidate. It already ships
+- `civicclerk v0.1.12` is the clear second-product candidate. It already ships
   meetings/agendas/minutes workflow depth, public-archive safeguards,
   connector imports, browser QA gates, live `/staff` screens, the first
   `/public` shell, auth readiness, fresh-install rehearsal helpers, release
