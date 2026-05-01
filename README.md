@@ -11,7 +11,7 @@ Status snapshot: **2026-04-30**
 | Tier | Count | What it means today |
 |---|---:|---|
 | Shipping | 1 of 28 product modules | `civicrecords-ai` is the one product currently positioned as production-usable today. |
-| Productizing | 1 of 28 product modules | `civicclerk` has real workflow depth, live staff/public surfaces, install rehearsal, release handoff, and deployment preflight, but still needs a full React app, finished public portal, real installer, full OIDC, backup/restore, and live sync. |
+| Productizing | 1 of 28 product modules | `civicclerk` has real workflow depth, live staff/public surfaces, install rehearsal, backup/restore rehearsal, release handoff, and deployment preflight, but still needs a full React app, Docker Compose deployment stack, finished public portal, real installer, full OIDC, and live sync. |
 | Foundation / planned | 26 of 28 product modules | The rest of the catalog has real runtime foundations or new implementation specs. `CivicRegWatch` and `CivicAPI` are newly added planned modules with detailed specs but no runtime repos yet. |
 
 `civiccore` is not a product module; it is the shared platform package used by every module. The latest local shared-platform release is **`civiccore v0.16.0`**.

@@ -19,9 +19,9 @@ Status snapshot: 2026-04-30
   production-usable today.
 - Productizing: 1 of 28 product modules.
   `civicclerk` has real workflow depth, live staff/public surfaces, install
-  rehearsal, release handoff, and deployment preflight, but still needs a full
-  React app, finished public portal, real installer, full OIDC, backup/restore,
-  and live sync.
+  rehearsal, backup/restore rehearsal, release handoff, and deployment
+  preflight, but still needs a full React app, Docker Compose deployment stack,
+  finished public portal, real installer, full OIDC, and live sync.
 - Foundation / planned: 26 of 28 product modules.
   The rest of the catalog has real runtime foundations or new implementation
   specs. CivicRegWatch and CivicAPI are newly added planned modules with
