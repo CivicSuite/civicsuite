@@ -47,7 +47,7 @@ Selected foundation modules have also advanced beyond the original `civiccore==0
 | Tier | Count | Meaning today |
 |---|---:|---|
 | Shipping | 1 of 28 product modules | `civicrecords-ai` is the current production-usable module. |
-| Productizing | 1 of 28 product modules | `civicclerk` has real product depth but still needs full app, portal, installer, identity, backup/restore, and live-sync hardening. |
+| Productizing | 1 of 28 product modules | `civicclerk` has real product depth, install rehearsal, backup/restore rehearsal, release handoff, and deployment preflight, but still needs the full React app, Docker Compose deployment stack, finished portal, installer, identity, and live-sync hardening. |
 | Foundation / planned | 26 of 28 product modules | The rest of the catalog has real runtime foundations or new implementation specs, but not yet full product depth. |
 
 ### Foundation-tier module catalog
