@@ -83,7 +83,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicclerk",
         "CivicSuite/civicclerk",
         "civicclerk",
-        "0.1.11",
+        "0.1.12",
         civiccore_required="0.16.0",
     ),
     RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
@@ -276,7 +276,7 @@ def main() -> int:
             for error in errors:
                 print(f"  {error}")
         else:
-            print(f"[{spec.name}] PASS {spec.version} ({spec.repo})")
+            print(f"[{spec.name}] PASS {spec.matrix_version(args.remote_only)} ({spec.repo})")
 
     if any_failures:
         print("VERIFY-SUITE-STATE: FAILED")

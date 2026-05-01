@@ -14,5 +14,5 @@ Target: `file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.ht
 - CivicRegWatch is visible on the landing page.
 - CivicAPI is visible on the landing page.
 - Status counts show `1 of 28`, `1 of 28`, and `26 of 28`.
-- Current versions shown: `civiccore v0.16.0`, `civicrecords-ai v1.4.3`, and `civicclerk v0.1.11`.
+- Current versions shown: `civiccore v0.16.0`, `civicrecords-ai v1.4.3`, and `civicclerk v0.1.12`.
 - Desktop and mobile-width screenshots rendered successfully through Chrome headless.
