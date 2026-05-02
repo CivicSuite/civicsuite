@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CivicCode v0.1.5 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, landing page, and unified spec now record the staff code lifecycle workspace release while keeping CivicCode on the published `civiccore v0.19.0` dependency line.
 - **CivicCode v0.1.4 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, landing page, diagrams, and unified spec now record CivicCode as the active municipal-code productization lane with the staff source registry workspace, staff-header-protected source operations, and published `civiccore v0.19.0` dependency.
 - **CivicCode v0.1.2 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, landing page, and unified spec now record CivicCode consuming the published `civiccore v0.19.0` release wheel while shipping the source-registry persistence foundation.
 - **CivicCore v0.19.0 / CivicRecords AI v1.4.6 / CivicClerk v0.1.17 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, user manual, landing page, roadmap, and unified spec now record the reusable vendor-delta and mock-city contract extraction in `civiccore`, plus CivicRecords AI and CivicClerk consuming the published `civiccore v0.19.0` release line.
