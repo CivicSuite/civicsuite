@@ -80,7 +80,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v0.16.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
+Current shipped CivicCore v0.17.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -204,7 +204,7 @@ CivicCore is the shared platform, not a user-facing product.
 
 ### 6.1 Shipped
 
-Current shipped CivicCore v0.16.0 includes:
+Current shipped CivicCore v0.17.0 includes:
 
 - Migration runner and baseline migration strategy
 - Shared SQLAlchemy `Base`
@@ -248,7 +248,7 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: shipping v0.16.0, with many planned extractions
+Status: shipping v0.17.0, with many planned extractions
 Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, and future auth/search/live-connector primitives.
 
 ### Tier 1 - Clerk Core
@@ -257,7 +257,7 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
-Status: shipping v1.4.3
+Status: shipping v1.4.4
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
 #### CivicClerk
@@ -968,8 +968,8 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 As of 2026-05-01:
 
-- `civicrecords-ai` ships as v1.4.3.
-- `civiccore` ships as v0.16.0.
+- `civicrecords-ai` ships as v1.4.4.
+- `civiccore` ships as v0.17.0.
 - `civicsuite` is the umbrella documentation/governance repo.
 - `civicclerk` ships as v0.1.12 with the published `civiccore v0.16.0` release wheel plus all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, schema/lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, prompt evals, connector imports, browser QA gates, fresh-install rehearsal helpers, Docker/PostgreSQL backup/restore rehearsal, scheduled local connector import sync, release handoff helpers, installer source packaging, enterprise signing readiness, and deployment-readiness preflight. Signed installer publication, vendor-network live sync, and deployment hardening remain planned before production city use.
 - `civiccode` ships as v0.1.1 with runtime foundations for source registry, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, and `civiccore==0.3.0` alignment. Legal advice, live LLM calls, live codifier sync, CivicAccess runtime integration, and automatic ordinance codification are not shipped.

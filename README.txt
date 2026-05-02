@@ -30,7 +30,7 @@ Status snapshot: 2026-05-01
   detailed specs but no runtime repos yet.
 
 `civiccore` is not a product module; it is the shared platform package used by
-every module. The latest local shared-platform release is `civiccore v0.16.0`.
+every module. The latest shared-platform release is `civiccore v0.17.0`.
 
 The most important distinction in this repo is simple: "all repos have
 releases" is not the same thing as "a city can run on this suite." The roadmap
@@ -39,11 +39,12 @@ in `docs/roadmap/index.md` is the plan to close that gap.
 What ships today
 ----------------
 
-- `civicrecords-ai v1.4.3` is the flagship shipping product for FOIA/public
+- `civicrecords-ai v1.4.4` is the flagship shipping product for FOIA/public
   records management. Repo: https://github.com/CivicSuite/civicrecords-ai
-- `civiccore v0.16.0` is the shipping shared platform package. It currently
+- `civiccore v0.17.0` is the shipping shared platform package. It currently
   ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer,
-  audit/provenance primitives, export/manifest helpers, city profiles, shared
+  audit/provenance primitives, persisted audit-log hash/verification helpers,
+  export/manifest helpers, city profiles, shared
   auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers,
   search/access helpers, connector/import helpers, release-evidence helpers,
   and trusted-header config/proxy enforcement helpers. Repo:
