@@ -32,7 +32,7 @@ Status snapshot: 2026-05-02
   detailed specs but no runtime repos yet.
 
 `civiccore` is not a product module; it is the shared platform package used by
-every module. The latest shared-platform release is `civiccore v0.19.0`.
+every module. The latest shared-platform release is `civiccore v0.20.0`.
 
 The most important distinction in this repo is simple: "all repos have
 releases" is not the same thing as "a city can run on this suite." The roadmap
@@ -41,9 +41,9 @@ in `docs/roadmap/index.md` is the plan to close that gap.
 What ships today
 ----------------
 
-- `civicrecords-ai v1.4.6` is the flagship shipping product for FOIA/public
+- `civicrecords-ai v1.4.7` is the flagship shipping product for FOIA/public
   records management. Repo: https://github.com/CivicSuite/civicrecords-ai
-- `civiccore v0.19.0` is the shipping shared platform package. It currently
+- `civiccore v0.20.0` is the shipping shared platform package. It currently
   ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer,
   audit/provenance primitives, persisted audit-log hash/verification helpers,
   export/manifest helpers, city profiles, shared
@@ -53,14 +53,15 @@ What ships today
   backup-retention contracts, release-evidence helpers,
   and trusted-header config/proxy enforcement helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.17` is the clear second-product candidate. It ships the React
+- `civicclerk v0.1.18` is the clear second-product candidate. It ships the React
   staff workspace and public portal, all four MVP meeting-workflow surfaces,
   Docker Compose product rehearsal, seeded Brookfield demo data, OIDC
   browser-session foundations, backup/restore rehearsal, vendor-network live
   sync with shared CivicCore retry/circuit primitives, reusable mock municipal
   IdP and backup-retention contract suites, scheduled local connector import
   sync, installer source packaging, enterprise signing readiness, and
-  shared `civiccore` v0.19.0 reuse, but it is still in the productizing tier.
+  shared `civiccore` v0.20.0 startup config validation reuse, but it is still
+  in the productizing tier because production deployment proof is site-specific.
   Repo:
   https://github.com/CivicSuite/civicclerk
 - `civiccode v0.1.5` is the active municipal-code productization lane. It
