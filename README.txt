@@ -63,6 +63,10 @@ What ships today
   shared `civiccore` v0.19.0 reuse, but it is still in the productizing tier.
   Repo:
   https://github.com/CivicSuite/civicclerk
+- `civiccode v0.1.2` is the next foundation lane being lifted after CivicClerk.
+  It now publishes source-registry persistence while consuming the shared
+  `civiccore v0.19.0` release wheel. Repo:
+  https://github.com/CivicSuite/civiccode
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
   federal regulatory intelligence for municipal operators; CivicAPI is the
   public read-only data gateway over human-approved CivicSuite publication
@@ -87,8 +91,8 @@ is:
 3. Drive `civicclerk` to second-product status with municipal IdP
    configuration proof, deployment hardening, and explicit unsigned-installer
    operator guidance.
-4. Define the shared upgrade-path pattern before broadening more
-   shared-platform fan-out.
+4. Start the CivicCode productization lane using the same product-first
+   code/docs/QA release loop.
 5. Scaffold CivicRegWatch and CivicAPI only after their publication, polling,
    auth, and inter-module ADRs are settled.
 6. Formalize cross-module integration ownership for the first deployable
