@@ -49,11 +49,11 @@ What ships today
   search/access helpers, connector/import helpers, release-evidence helpers,
   and trusted-header config/proxy enforcement helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.12` is the clear second-product candidate. It already ships
+- `civicclerk v0.1.13` is the clear second-product candidate. It already ships
   meetings/agendas/minutes workflow depth, public-archive safeguards,
   connector imports, browser QA gates, live `/staff` screens, the first
   `/public` shell, auth readiness, fresh-install rehearsal helpers, release
-  handoff helpers, deployment preflight, and shared `civiccore` v0.16.0 reuse,
+  handoff helpers, deployment preflight, and shared `civiccore` v0.17.0 reuse,
   but it is still in the productizing tier. Repo:
   https://github.com/CivicSuite/civicclerk
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
