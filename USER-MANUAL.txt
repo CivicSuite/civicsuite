@@ -19,7 +19,7 @@ Current maturity snapshot as of 2026-05-02:
 
 - `civicrecords-ai v1.4.5`: shipping flagship product
 - `civiccore v0.18.1`: shared platform package
-- `civicclerk v0.1.15`: productizing second-product candidate
+- `civicclerk v0.1.16`: productizing second-product candidate
 - CivicRegWatch and CivicAPI: planned modules with implementation specs
 - Remaining catalog modules: foundation tier
 

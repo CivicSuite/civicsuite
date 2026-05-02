@@ -81,7 +81,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicclerk",
         "CivicSuite/civicclerk",
         "civicclerk",
-        "0.1.15",
+        "0.1.16",
         civiccore_required="0.18.1",
     ),
     RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.1", civiccore_required=CURRENT_CIVICCORE),

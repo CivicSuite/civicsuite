@@ -36,7 +36,7 @@ EXPECTED_SERVICES = {
     "civiczone",
 }
 MODULE_SERVICES = {
-    "civicclerk": ("civicclerk.main", "app", "0.1.15", 8010, "0.18.1"),
+    "civicclerk": ("civicclerk.main", "app", "0.1.16", 8010, "0.18.1"),
     "civiccode": ("civiccode.main", "app", "0.1.1", 8020, "0.3.0"),
     "civiczone": ("civiczone.main", "app", "0.1.1", 8030, "0.3.0"),
 }
