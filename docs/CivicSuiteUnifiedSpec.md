@@ -278,7 +278,7 @@ Dependency note: older catalog text listed CivicRecords because shared document/
 
 Owner: City Clerk / Legal / Codification Department  
 Depends on: CivicCore, CivicClerk  
-Status: shipping v0.1.1 foundation
+Status: shipping v0.1.2 foundation aligned to published `civiccore v0.19.0`
 Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
