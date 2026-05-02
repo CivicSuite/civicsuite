@@ -100,8 +100,8 @@ Required work for `civicclerk`:
 
 Identity and security requirements:
 
-- move `SSO/IdP` support into this phase, not later
-- support a real municipal identity integration story
+- treat the shipped CivicClerk OIDC browser-session foundation as the baseline, not as unbuilt work
+- prove a real municipal IdP configuration story before production pilot use
 - ensure both products satisfy the shared security baseline from Phase 1
 
 Integration ownership during this phase:
@@ -212,7 +212,7 @@ Integration order:
 - mail/SMS/print integrations
 - backup targets, observability, and operational hooks
 
-This phase assumes `SSO/IdP` was already pulled into Phase 2 because it is a deployment prerequisite, not a late integration luxury.
+This phase assumes CivicClerk's OIDC browser-session foundation is already present and that production work now means municipal IdP configuration proof, operator docs, and deployment hardening.
 
 Exit criteria:
 
@@ -227,7 +227,7 @@ Goal: make the suite something a municipal IT department can own over time.
 
 Operational maturity work:
 
-- signed installers or a documented signing program
+- unsigned-installer warning docs during the developer cycle, plus a documented signing program for the future certificate-backed release path
 - monitoring and alerting
 - patch and upgrade workflows
 - backup and restore drills
@@ -292,8 +292,8 @@ Exit criteria:
 ## Immediate Sequence
 
 1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
-2. Start the next `civiccore` extractions that unblock `civicclerk`, including security-related extractions.
-3. Drive `civicclerk` to second-product status with `SSO/IdP` included in the real deployment story.
+2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities into `civiccore` when they will serve more than one module.
+3. Drive `civicclerk` to second-product status with municipal IdP configuration proof, deployment hardening, and explicit unsigned-installer operator guidance.
 4. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
 5. Stand up the explicit cross-module integration ownership model for the starter set.
 6. Resolve the CivicAPI and CivicRegWatch ADRs before scaffolding runtime repos.

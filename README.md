@@ -32,8 +32,8 @@ The rest of the catalog is real foundation work, not vapor. Those modules ship s
 The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The immediate sequence is:
 
 1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
-2. Extract the next `civiccore` capabilities that unblock `civicclerk`, including security-related extractions.
-3. Drive `civicclerk` to second-product status with a real deployment story, including `SSO/IdP`.
+2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities into `civiccore` when they will serve more than one module.
+3. Drive `civicclerk` to second-product status with municipal IdP configuration proof, deployment hardening, and explicit unsigned-installer operator guidance.
 4. Define the shared upgrade-path pattern before broadening more shared-platform fan-out.
 5. Scaffold CivicRegWatch and CivicAPI only after their publication, polling, auth, and inter-module ADRs are settled.
 6. Formalize cross-module integration ownership for the first deployable starter set.
