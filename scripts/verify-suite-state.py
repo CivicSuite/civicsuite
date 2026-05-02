@@ -68,21 +68,21 @@ class RepoSpec:
 
 
 REPOS: tuple[RepoSpec, ...] = (
-    RepoSpec("civiccore", "CivicSuite/civiccore", "civiccore", "0.17.0", civiccore_required=None),
+    RepoSpec("civiccore", "CivicSuite/civiccore", "civiccore", "0.18.1", civiccore_required=None),
     RepoSpec(
         "civicrecords-ai",
         "CivicSuite/civicrecords-ai",
         "civicrecords-ai",
-        "1.4.4",
+        "1.4.5",
         "backend/pyproject.toml",
-        civiccore_required="0.17.0",
+        civiccore_required="0.18.1",
     ),
     RepoSpec(
         "civicclerk",
         "CivicSuite/civicclerk",
         "civicclerk",
-        "0.1.13",
-        civiccore_required="0.17.0",
+        "0.1.15",
+        civiccore_required="0.18.1",
     ),
     RepoSpec("civiccode", "CivicSuite/civiccode", "civiccode", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
     RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
