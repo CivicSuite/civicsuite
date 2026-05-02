@@ -85,8 +85,8 @@ services:
       - -c
       - >
         pip install --no-cache-dir
-        https://github.com/CivicSuite/civiccore/releases/download/v0.19.0/civiccore-0.19.0-py3-none-any.whl
-        https://github.com/CivicSuite/civicclerk/releases/download/v0.1.17/civicclerk-0.1.17-py3-none-any.whl
+        https://github.com/CivicSuite/civiccore/releases/download/v0.20.0/civiccore-0.20.0-py3-none-any.whl
+        https://github.com/CivicSuite/civicclerk/releases/download/v0.1.18/civicclerk-0.1.18-py3-none-any.whl
         && uvicorn civicclerk.main:app --host 0.0.0.0 --port 8010
     environment:
       CIVICCORE_LLM_PROVIDER: ollama
