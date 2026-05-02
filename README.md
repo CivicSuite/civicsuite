@@ -14,14 +14,14 @@ Status snapshot: **2026-05-01**
 | Productizing | 1 of 28 product modules | `civicclerk` now has all four MVP workflow surfaces in React, a Docker Compose product rehearsal with seeded demo data, OIDC browser-session foundations, backup/restore rehearsal, scheduled local connector import sync, installer source packaging, and enterprise signing readiness. It still needs signed enterprise installer publication, vendor-network live sync, and deployment hardening before city production use. |
 | Foundation / planned | 26 of 28 product modules | The rest of the catalog has real runtime foundations or new implementation specs. `CivicRegWatch` and `CivicAPI` are newly added planned modules with detailed specs but no runtime repos yet. |
 
-`civiccore` is not a product module; it is the shared platform package used by every module. The latest local shared-platform release is **`civiccore v0.16.0`**.
+`civiccore` is not a product module; it is the shared platform package used by every module. The latest shared-platform release is **`civiccore v0.17.0`**.
 
 The most important distinction in this repo is simple: **"all repos have releases" is not the same thing as "a city can run on this suite."** The roadmap in [docs/roadmap/index.md](docs/roadmap/index.md) is the plan to close that gap.
 
 ## What Ships Today
 
-- **`civicrecords-ai v1.4.3`** is the flagship shipping product for FOIA/public-records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore v0.16.0`** is the shipping shared platform package. It currently ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, shared auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, release-evidence helpers, and trusted-header config/proxy enforcement helpers. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civicrecords-ai v1.4.4`** is the flagship shipping product for FOIA/public-records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>
+- **`civiccore v0.17.0`** is the shipping shared platform package. It currently ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer, audit/provenance primitives, persisted audit-log hash/verification helpers, export/manifest helpers, city profiles, shared auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, release-evidence helpers, and trusted-header config/proxy enforcement helpers. Repo: <https://github.com/CivicSuite/civiccore>
 - **`civicclerk v0.1.12`** is the clear second-product candidate. It ships the React staff workspace and public portal, all four MVP meeting-workflow surfaces, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, backup/restore rehearsal, scheduled local connector import sync, installer source packaging, enterprise signing readiness, and shared `civiccore` v0.16.0 reuse. It remains in the productizing tier until signed installer publication, vendor-network live sync, and deployment hardening are complete. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`CivicRegWatch`** and **`CivicAPI`** are newly added planned modules. CivicRegWatch is federal regulatory intelligence for municipal operators; CivicAPI is the public read-only data gateway over human-approved CivicSuite publication records. Detailed specs live in `specs/05_civicregwatch.md` and `specs/06_civicapi.md`.
 
