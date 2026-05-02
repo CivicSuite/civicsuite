@@ -27,7 +27,7 @@ The suite is intentionally honest about maturity:
 
 - **`civicrecords-ai v1.4.5`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
 - **`civiccore v0.18.1`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, release-evidence helpers, and trusted-header config/proxy enforcement helpers. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk v0.1.15`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It now ships all four MVP workflow surfaces in React, the resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync with shared CivicCore retry/circuit primitives, scheduled local connector import sync, installer source packaging, enterprise signing readiness, and shared `civiccore v0.18.1` reuse. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civicclerk v0.1.16`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It now ships all four MVP workflow surfaces in React, the resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync with shared CivicCore retry/circuit primitives, reusable mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, installer source packaging, enterprise signing readiness, and shared `civiccore v0.18.1` reuse. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`CivicRegWatch` and `CivicAPI`** - newly added planned modules. CivicRegWatch is the federal regulatory intelligence module. CivicAPI is the public read-only data gateway over human-approved CivicSuite publication records. Their implementation specs live in [specs/05_civicregwatch.md](specs/05_civicregwatch.md) and [specs/06_civicapi.md](specs/06_civicapi.md).
 
 Selected foundation modules have also advanced beyond the original `civiccore==0.3.0` baseline. The authoritative truth for each module-to-platform pairing lives in the umbrella compatibility matrix, not in static prose snapshots:
@@ -92,7 +92,7 @@ It does **not** contain the runtime code for the individual products.
 |---|---|
 | `civicrecords-ai` | Shipping `v1.4.5` flagship product |
 | `civiccore` | Shipping `v0.18.1` shared platform package |
-| `civicclerk` | Productizing `v0.1.15` second-product candidate |
+| `civicclerk` | Productizing `v0.1.16` second-product candidate |
 | `civicregwatch` | Planned module; spec exists, repo not scaffolded yet |
 | `civicapi` | Planned module; spec exists, repo not scaffolded yet |
 | Remaining catalog repos | Foundation-tier runtime releases with bounded shipped surfaces |
@@ -188,7 +188,7 @@ Start with:
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
    | civicrecords-ai     |   | civicclerk       |   | foundation tier  |
-   | v1.4.5 shipping     |   | v0.1.15          |   | civicaccess ...  |
+   | v1.4.5 shipping     |   | v0.1.16          |   | civicaccess ...  |
    | FOIA / records      |   | productizing     |   | civiczone        |
    +---------------------+   +------------------+   +------------------+
 ```

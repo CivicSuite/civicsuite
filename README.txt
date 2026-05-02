@@ -52,12 +52,13 @@ What ships today
   primitives, release-evidence helpers,
   and trusted-header config/proxy enforcement helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.15` is the clear second-product candidate. It ships the React
+- `civicclerk v0.1.16` is the clear second-product candidate. It ships the React
   staff workspace and public portal, all four MVP meeting-workflow surfaces,
   Docker Compose product rehearsal, seeded Brookfield demo data, OIDC
   browser-session foundations, backup/restore rehearsal, vendor-network live
-  sync with shared CivicCore retry/circuit primitives, scheduled local connector
-  import sync, installer source packaging, enterprise signing readiness, and
+  sync with shared CivicCore retry/circuit primitives, reusable mock municipal
+  IdP and backup-retention contract suites, scheduled local connector import
+  sync, installer source packaging, enterprise signing readiness, and
   shared `civiccore` v0.18.1 reuse, but it is still in the productizing tier.
   Repo:
   https://github.com/CivicSuite/civicclerk
