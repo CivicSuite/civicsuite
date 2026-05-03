@@ -16,6 +16,7 @@ __pycache__/
 
 # Node (for any future docs site)
 node_modules/
+.tmp-chrome-cdp-*/
 
 # Env
 .env
