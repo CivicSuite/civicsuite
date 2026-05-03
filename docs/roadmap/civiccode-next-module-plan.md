@@ -1,8 +1,8 @@
 # CivicCode Next Module Plan
 
-Status: v0.1.0 shipped; historical planning baseline retained
-Date: 2026-04-27  
-Applies to: `CivicSuite/civiccode` v0.1.0 and follow-on planning
+Status: v0.1.7 shipped; historical planning baseline retained
+Date: 2026-05-03  
+Applies to: `CivicSuite/civiccode` v0.1.7 and follow-on planning
 
 ## Why CivicCode Next
 
@@ -24,18 +24,19 @@ but they are never authoritative legal advice.
 
 ## Current Truth
 
-- `CivicSuite/civiccode` ships v0.1.0 as a runtime-foundation release.
-- CivicCode v0.1.0 includes source registry, section/version lifecycle,
+- `CivicSuite/civiccode` ships v0.1.7 as an active municipal-code productization release.
+- CivicCode v0.1.7 includes source registry persistence, section/version lifecycle,
   search/permalinks, deterministic citations, citation-grounded Q&A, staff
   notes, plain-language summaries, CivicClerk handoff intake, resident public
-  lookup pages, local import connectors, and records-ready exports.
-- CivicCode still does not ship legal advice, live LLM calls, live codifier
-  sync, CivicAccess runtime integration, or automatic ordinance codification.
+  lookup pages, local import connectors, records-ready exports, reusable
+  mock-city codifier contracts, and staff-controlled codifier live-sync readiness.
+- CivicCode still does not ship legal advice, live LLM calls, bundled vendor
+  credentials, CivicAccess runtime integration, or automatic ordinance codification.
 - The authoritative requirements live in `docs/CivicSuiteUnifiedSpec.md`
   section 11 and `specs/01_catalog.md` under "CivicCode - Municipal Code &
   Ordinance Access."
 - CivicClerk v0.1.0 already defines ordinance/resolution handoff concepts, and
-  CivicCode v0.1.0 now has a receiving intake foundation for those events.
+  CivicCode v0.1.7 has a receiving intake foundation for those events.
 
 ## MVP Scope
 
