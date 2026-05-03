@@ -6,7 +6,7 @@ This `civicsuite` repository is the umbrella repo for the CivicSuite product fam
 
 ## Suite Status
 
-Status snapshot: **2026-05-02**
+Status snapshot: **2026-05-03**
 
 | Tier | Count | What it means today |
 |---|---:|---|

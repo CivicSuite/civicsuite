@@ -12,7 +12,7 @@ module lives in its own repo.
 Suite status
 ------------
 
-Status snapshot: 2026-05-02
+Status snapshot: 2026-05-03
 
 - Shipping: 1 of 28 product modules.
   `civicrecords-ai` is the one product currently positioned as

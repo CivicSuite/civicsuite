@@ -23,7 +23,7 @@ The suite is intentionally honest about maturity:
 - The rest of the catalog is in the foundation/planned tier: real runtime work or implementation specs, not yet end-to-end products.
 - `civiccore` is the shared platform package under all of them.
 
-### What is available today? (as of 2026-05-02)
+### What is available today? (as of 2026-05-03)
 
 - **`civicrecords-ai v1.4.8`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
 - **`civiccore v0.21.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, reusable vendor-delta planning, reusable mock-city vendor/IdP/backup-retention contracts, release-evidence helpers, trusted-header config/proxy enforcement helpers, shared startup configuration validation helpers, and shared cron/schedule validation helpers. Repo: <https://github.com/CivicSuite/civiccore>
