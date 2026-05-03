@@ -18,6 +18,7 @@ Target: file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.htm
 - civiccore 0.21.0 visible: yes
 - civicrecords-ai 1.4.8 visible: yes
 - civicclerk 0.1.19 visible: yes
+- status snapshot 2026-05-03 visible: yes
 
 ## Result
 

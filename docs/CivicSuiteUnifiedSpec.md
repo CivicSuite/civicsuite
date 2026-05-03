@@ -971,7 +971,7 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 ## 18. Current Shipped State
 
-As of 2026-05-02:
+As of 2026-05-03:
 
 - `civicrecords-ai` ships as v1.4.8.
 - `civiccore` ships as v0.21.0.
