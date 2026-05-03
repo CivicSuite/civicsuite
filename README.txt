@@ -64,12 +64,12 @@ What ships today
   in the productizing tier because production deployment proof is site-specific.
   Repo:
   https://github.com/CivicSuite/civicclerk
-- `civiccode v0.1.6` is the active municipal-code productization lane. It
+- `civiccode v0.1.7` is the active municipal-code productization lane. It
   ships source-registry persistence, the staff-only source registry workspace,
   the staff code lifecycle workspace, staff-header-protected source registry
-  operations, public lookup/search foundations, and the shared
-  reusable mock-city codifier contracts, and the shared `civiccore v0.21.0`
-  release wheel. Repo:
+  operations, public lookup/search foundations, reusable mock-city codifier
+  contracts, staff-controlled codifier live-sync readiness, delta request
+  planning, and the shared `civiccore v0.21.0` release wheel. Repo:
   https://github.com/CivicSuite/civiccode
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
   federal regulatory intelligence for municipal operators; CivicAPI is the

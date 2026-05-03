@@ -93,7 +93,7 @@ It does **not** contain the runtime code for the individual products.
 | `civicrecords-ai` | Shipping `v1.4.8` flagship product |
 | `civiccore` | Shipping `v0.21.0` shared platform package |
 | `civicclerk` | Productizing `v0.1.19` second-product candidate |
-| `civiccode` | Active productization `v0.1.6` municipal-code lane |
+| `civiccode` | Active productization `v0.1.7` municipal-code lane |
 | `civicregwatch` | Planned module; spec exists, repo not scaffolded yet |
 | `civicapi` | Planned module; spec exists, repo not scaffolded yet |
 | Remaining catalog repos | Foundation-tier runtime releases with bounded shipped surfaces |
