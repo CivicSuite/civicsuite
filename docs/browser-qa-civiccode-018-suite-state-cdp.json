@@ -1,0 +1,36 @@
+{
+  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html",
+  "results": [
+    {
+      "name": "desktop",
+      "viewport": "1440x1100",
+      "innerWidth": 1440,
+      "clientWidth": 1425,
+      "scrollWidth": 1425,
+      "bodyScrollWidth": 1425,
+      "horizontalOverflow": false,
+      "hasCivicCode018": true,
+      "hasCore022": true,
+      "hasSourceProjection": true,
+      "consoleWarningsErrors": [],
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-018-suite-state-desktop.png",
+      "bytes": 276168
+    },
+    {
+      "name": "mobile",
+      "viewport": "390x1200",
+      "innerWidth": 390,
+      "clientWidth": 390,
+      "scrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "hasCivicCode018": true,
+      "hasCore022": true,
+      "hasSourceProjection": true,
+      "consoleWarningsErrors": [],
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-018-suite-state-mobile.png",
+      "bytes": 259908
+    }
+  ],
+  "allPass": true
+}
