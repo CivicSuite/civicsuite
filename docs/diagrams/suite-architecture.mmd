@@ -1,11 +1,11 @@
 graph TB
     subgraph SUITE["GitHub: CivicSuite organization"]
         SuiteRepo["civicsuite<br/>umbrella repo<br/>governance, compatibility matrix,<br/>spec docs, ADRs"]
-        Core["civiccore<br/>v0.20.0 shared library<br/>migrations + db.Base + llm + shared primitives"]
+        Core["civiccore<br/>v0.21.0 shared library<br/>migrations + db.Base + llm + shared primitives"]
     end
     subgraph PRODUCT["GitHub: CivicSuite organization"]
-        Records["civicrecords-ai<br/>v1.4.7<br/>FOIA / public records app"]
-        Clerk["civicclerk<br/>v0.1.18<br/>meeting management"]
+        Records["civicrecords-ai<br/>v1.4.8<br/>FOIA / public records app"]
+        Clerk["civicclerk<br/>v0.1.19<br/>meeting management"]
         Code["civiccode<br/>v0.1.5<br/>municipal code"]
         Zone["civiczone<br/>v0.1.1<br/>zoning / land use"]
         Access["civicaccess<br/>v0.1.1<br/>accessibility / language"]
@@ -56,8 +56,8 @@ graph TB
     SuiteRepo -.governs.-> Safety
     SuiteRepo -.governs.-> Library
     SuiteRepo -.governs.-> Parks
-    Records -->|"depends on ==0.20.0"| Core
-    Clerk -->|"depends on ==0.20.0"| Core
+    Records -->|"depends on ==0.21.0"| Core
+    Clerk -->|"depends on ==0.21.0"| Core
     Code -->|"depends on ==0.19.0"| Core
     Zone -->|"depends on ==0.3.0"| Core
     Access -->|"depends on ==0.3.0"| Core
