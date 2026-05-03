@@ -1,0 +1,26 @@
+[
+  {
+    "title": "CivicSuite | municipal product suite roadmap",
+    "has019": true,
+    "hasPgvector": true,
+    "hasSeed": true,
+    "horizontalOverflow": false,
+    "focusables": 15,
+    "name": "suite-docs-desktop",
+    "viewport": "1440x1000",
+    "screenshot": "browser-qa-civiccode-019-suite-state-desktop.png",
+    "consoleEvents": 0
+  },
+  {
+    "title": "CivicSuite | municipal product suite roadmap",
+    "has019": true,
+    "hasPgvector": true,
+    "hasSeed": true,
+    "horizontalOverflow": false,
+    "focusables": 15,
+    "name": "suite-docs-mobile",
+    "viewport": "390x1000",
+    "screenshot": "browser-qa-civiccode-019-suite-state-mobile.png",
+    "consoleEvents": 0
+  }
+]
