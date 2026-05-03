@@ -1,0 +1,42 @@
+[
+  {
+    "viewport": {
+      "name": "desktop",
+      "width": 1366,
+      "height": 900
+    },
+    "screenshotPath": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-010-suite-state-desktop.png",
+    "checks": {
+      "title": "CivicSuite | municipal product suite roadmap",
+      "innerWidth": 1366,
+      "scrollWidth": 1351,
+      "bodyScrollWidth": 1351,
+      "horizontalOverflow": false,
+      "activeElement": "skip-link",
+      "hasCivicCode010": true,
+      "hasBackupRestore": true,
+      "hasCivicCore022": true
+    },
+    "consoleEvents": []
+  },
+  {
+    "viewport": {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    "screenshotPath": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-010-suite-state-mobile.png",
+    "checks": {
+      "title": "CivicSuite | municipal product suite roadmap",
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "bodyScrollWidth": 390,
+      "horizontalOverflow": false,
+      "activeElement": "skip-link",
+      "hasCivicCode010": true,
+      "hasBackupRestore": true,
+      "hasCivicCore022": true
+    },
+    "consoleEvents": []
+  }
+]

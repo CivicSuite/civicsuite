@@ -66,14 +66,15 @@ What ships today
   projection reuse, but it is still in the productizing tier because
   production deployment proof is site-specific. Repo:
   https://github.com/CivicSuite/civicclerk
-- `civiccode v0.1.9` is the active municipal-code productization lane. It
+- `civiccode v0.1.10` is the active municipal-code productization lane. It
   ships source-registry persistence, the staff-only source registry workspace,
   the staff code lifecycle workspace, staff-header-protected source registry
   operations, public lookup/search foundations, reusable mock-city codifier
   contracts, staff-controlled codifier live-sync readiness, delta request
   planning, shared CivicCore sync source-list health projection reuse, a Docker
   Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed
-  data, and the shared `civiccore v0.22.0` release wheel. Repo:
+  data, Docker/PostgreSQL backup-restore rehearsal with pg_dump/pg_restore
+  proof, and the shared `civiccore v0.22.0` release wheel. Repo:
   https://github.com/CivicSuite/civiccode
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
   federal regulatory intelligence for municipal operators; CivicAPI is the
@@ -96,9 +97,9 @@ is:
    `civiccore` fan-out work.
 2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities
    into `civiccore` when they will serve more than one module.
-3. Drive `civicclerk` to second-product status with municipal IdP
-   configuration proof, deployment hardening, and explicit unsigned-installer
-   operator guidance.
+3. Use `civicclerk v0.1.20` as the second-product reference for mock-city
+   contracts, unsigned-installer operator guidance, and site-specific
+   deployment proof slots.
 4. Continue the CivicCode productization lane using the same product-first
    code/docs/QA release loop.
 5. Scaffold CivicRegWatch and CivicAPI only after their publication, polling,
