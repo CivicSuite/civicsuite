@@ -6,7 +6,7 @@ graph TB
     subgraph PRODUCT["GitHub: CivicSuite organization"]
         Records["civicrecords-ai<br/>v1.4.8<br/>FOIA / public records app"]
         Clerk["civicclerk<br/>v0.1.19<br/>meeting management"]
-        Code["civiccode<br/>v0.1.5<br/>municipal code"]
+        Code["civiccode<br/>v0.1.6<br/>municipal code"]
         Zone["civiczone<br/>v0.1.1<br/>zoning / land use"]
         Access["civicaccess<br/>v0.1.1<br/>accessibility / language"]
         Plan["civicplan<br/>v0.1.1<br/>plan policy support"]
@@ -58,7 +58,7 @@ graph TB
     SuiteRepo -.governs.-> Parks
     Records -->|"depends on ==0.21.0"| Core
     Clerk -->|"depends on ==0.21.0"| Core
-    Code -->|"depends on ==0.19.0"| Core
+    Code -->|"depends on ==0.21.0"| Core
     Zone -->|"depends on ==0.3.0"| Core
     Access -->|"depends on ==0.3.0"| Core
     Plan -->|"depends on ==0.3.0"| Core

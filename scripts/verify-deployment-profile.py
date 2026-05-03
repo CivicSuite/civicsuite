@@ -37,7 +37,7 @@ EXPECTED_SERVICES = {
 }
 MODULE_SERVICES = {
     "civicclerk": ("civicclerk.main", "app", "0.1.19", 8010, "0.21.0"),
-    "civiccode": ("civiccode.main", "app", "0.1.5", 8020, "0.19.0"),
+    "civiccode": ("civiccode.main", "app", "0.1.6", 8020, "0.21.0"),
     "civiczone": ("civiczone.main", "app", "0.1.1", 8030, "0.3.0"),
 }
 LOCAL_CIVICCORE_VERSION = "0.21.0"
