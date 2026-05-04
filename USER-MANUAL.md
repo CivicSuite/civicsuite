@@ -23,7 +23,7 @@ The suite is intentionally honest about maturity:
 - The rest of the catalog is in the foundation/planned tier: real runtime work or implementation specs, not yet end-to-end products.
 - `civiccore` is the shared platform package under all of them.
 
-### What is available today? (as of 2026-05-03)
+### What is available today? (as of 2026-05-04)
 
 - **`civicrecords-ai v1.4.10`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
 - **`civiccore v0.22.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, reusable sync source-list status projection, reusable vendor-delta planning, reusable mock-city vendor/IdP/backup-retention contracts, release-evidence helpers, trusted-header config/proxy enforcement helpers, shared startup configuration validation helpers, and shared cron/schedule validation helpers. Repo: <https://github.com/CivicSuite/civiccore>
@@ -93,7 +93,7 @@ It does **not** contain the runtime code for the individual products.
 | `civicrecords-ai` | Shipping `v1.4.10` flagship product |
 | `civiccore` | Shipping `v0.22.0` shared platform package |
 | `civicclerk` | Productizing `v0.1.20` second-product candidate |
-| `civiccode` | Active productization `v0.1.11` municipal-code lane with popular-question and related-material discovery aids |
+| `civiccode` | Active productization `v0.1.12` municipal-code lane with durable popular-question and related-material discovery aids |
 | `civicregwatch` | Planned module; spec exists, repo not scaffolded yet |
 | `civicapi` | Planned module; spec exists, repo not scaffolded yet |
 | Remaining catalog repos | Foundation-tier runtime releases with bounded shipped surfaces |

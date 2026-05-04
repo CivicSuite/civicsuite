@@ -12,7 +12,7 @@ module lives in its own repo.
 Suite status
 ------------
 
-Status snapshot: 2026-05-03
+Status snapshot: 2026-05-04
 
 - Shipping: 1 of 28 product modules.
   `civicrecords-ai` is the one product currently positioned as
@@ -66,10 +66,11 @@ What ships today
   projection reuse, but it is still in the productizing tier because
   production deployment proof is site-specific. Repo:
   https://github.com/CivicSuite/civicclerk
-- `civiccode v0.1.11` is the active municipal-code productization lane. It
+- `civiccode v0.1.12` is the active municipal-code productization lane. It
   ships source-registry persistence, the staff-only source registry workspace,
   the staff code lifecycle workspace, staff-header-protected source registry
-  operations, public lookup/search foundations, reusable mock-city codifier
+  operations, public lookup/search foundations, durable popular-question storage
+  through the Docker/PostgreSQL database path, reusable mock-city codifier
   contracts, staff-controlled codifier live-sync readiness, delta request
   planning, shared CivicCore sync source-list health projection reuse, a Docker
   Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed
