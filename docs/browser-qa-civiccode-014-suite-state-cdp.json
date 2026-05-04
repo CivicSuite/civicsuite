@@ -1,0 +1,33 @@
+{
+  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html",
+  "desktop": {
+    "viewport": "1440x1200",
+    "metrics": {
+      "title": "CivicSuite | municipal product suite roadmap",
+      "bodyOverflow": false,
+      "scrollWidth": 1425,
+      "clientWidth": 1425,
+      "activeText": "Skip to main content",
+      "code014Visible": true,
+      "durableStaffVisible": true,
+      "activeLaneVisible": true
+    },
+    "logEventCount": 0,
+    "logEvents": []
+  },
+  "mobile": {
+    "viewport": "390x1000",
+    "metrics": {
+      "title": "CivicSuite | municipal product suite roadmap",
+      "bodyOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "activeText": "Skip to main content",
+      "code014Visible": true,
+      "durableStaffVisible": true,
+      "activeLaneVisible": true
+    },
+    "logEventCount": 0,
+    "logEvents": []
+  }
+}

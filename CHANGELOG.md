@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CivicCode v0.1.14 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable staff interpretation-note and plain-language summary persistence release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
 - **CivicCode v0.1.13 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable section/version lifecycle release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
 - **CivicCode v0.1.12 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable popular-question discovery release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
 - **CivicCode v0.1.7 compatibility publication** (2026-05-03): compatibility matrix, suite-state verifier, deployment-profile verifier, post-foundation demo compose profile, README, README.txt, user manual, landing page, diagrams, roadmap, and unified spec now record the codifier live-sync foundation release while aligning CivicCode to the published `civiccore v0.21.0` dependency line.
