@@ -1,0 +1,42 @@
+{
+  "target": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\index.html",
+  "console_event_count": 0,
+  "console_events": [],
+  "desktop": {
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "hasHorizontalOverflow": false,
+    "title": "CivicSuite | municipal product suite roadmap",
+    "h1": "An open-source municipal product suite that runs on the city's own hardware.",
+    "focusedText": "Skip to main content",
+    "containsVersion": true,
+    "containsImportLedger": true,
+    "containsCivicCore": true
+  },
+  "mobile": {
+    "viewport": {
+      "width": 390,
+      "height": 900
+    },
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "hasHorizontalOverflow": false,
+    "title": "CivicSuite | municipal product suite roadmap",
+    "h1": "An open-source municipal product suite that runs on the city's own hardware.",
+    "focusedText": "Skip to main content",
+    "containsVersion": true,
+    "containsImportLedger": true,
+    "containsCivicCore": true
+  },
+  "checks": {
+    "desktop_no_horizontal_overflow": true,
+    "mobile_no_horizontal_overflow": true,
+    "copy_mentions_civiccode_016": true,
+    "copy_mentions_import_job_ledger": true,
+    "copy_mentions_civiccore": true
+  }
+}
