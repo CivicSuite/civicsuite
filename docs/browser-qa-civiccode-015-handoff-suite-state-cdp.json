@@ -1,0 +1,56 @@
+{
+  "qa_id": "browser-qa-civiccode-015-handoff-suite-state",
+  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html",
+  "checks": [
+    {
+      "viewport": "desktop",
+      "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html",
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-015-handoff-suite-state-desktop.png",
+      "focused_text_after_tab": "Skip to main content",
+      "metrics": {
+        "title": "CivicSuite | municipal product suite roadmap",
+        "h1": "An open-source municipal product suite that runs on the city's own hardware.",
+        "activeText": "Skip to main content",
+        "scrollWidth": 1440,
+        "clientWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "bodyClientWidth": 1440,
+        "hasCivicCode015": true,
+        "hasHandoffPersistence": true,
+        "hasCivicCore022": true,
+        "sectionCount": 5
+      },
+      "horizontal_overflow": false
+    },
+    {
+      "viewport": "mobile",
+      "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html",
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-015-handoff-suite-state-mobile.png",
+      "focused_text_after_tab": "Skip to main content",
+      "metrics": {
+        "title": "CivicSuite | municipal product suite roadmap",
+        "h1": "An open-source municipal product suite that runs on the city's own hardware.",
+        "activeText": "Skip to main content",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "bodyScrollWidth": 390,
+        "bodyClientWidth": 390,
+        "hasCivicCode015": true,
+        "hasHandoffPersistence": true,
+        "hasCivicCore022": true,
+        "sectionCount": 5
+      },
+      "horizontal_overflow": false
+    }
+  ],
+  "console_events": [],
+  "summary": {
+    "console_event_count": 0,
+    "desktop_overflow": false,
+    "mobile_overflow": false,
+    "skip_link_focus_ok": true,
+    "civiccode015_visible": true,
+    "handoff_persistence_visible": true,
+    "civiccore022_visible": true
+  }
+}
