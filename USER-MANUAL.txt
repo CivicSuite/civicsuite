@@ -15,12 +15,12 @@ CivicSuite is an open-source municipal product family. It is not one giant
 program. It is a collection of modules that a city can install one at a time,
 on its own hardware, on its own schedule.
 
-Current maturity snapshot as of 2026-05-03:
+Current maturity snapshot as of 2026-05-04:
 
 - `civicrecords-ai v1.4.10`: shipping flagship product
 - `civiccore v0.22.0`: shared platform package
 - `civicclerk v0.1.20`: productizing second-product candidate
-- `civiccode v0.1.11`: active municipal-code productization lane with
+- `civiccode v0.1.12`: active municipal-code productization lane with durable
   popular-question and related-material discovery aids
 - CivicRegWatch and CivicAPI: planned modules with implementation specs
 - Remaining catalog modules: foundation tier

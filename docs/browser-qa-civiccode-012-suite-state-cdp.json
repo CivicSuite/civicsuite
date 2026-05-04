@@ -1,0 +1,48 @@
+{
+  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html",
+  "capturedAt": "2026-05-04T13:37:44.327250+00:00",
+  "results": [
+    {
+      "target": "desktop",
+      "viewport": {
+        "width": 1366,
+        "height": 1000
+      },
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-012-suite-state-desktop.png",
+      "htmlPath": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-012-suite-state-desktop-dom.html",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "metrics": {
+        "title": "CivicSuite | municipal product suite roadmap",
+        "hasDate": true,
+        "hasCivicCode012": true,
+        "hasDurable": true,
+        "hasCivicCore022": true,
+        "horizontalOverflow": false,
+        "focusedText": "Skip to main content",
+        "firstStatusRowDisplay": "table-row"
+      }
+    },
+    {
+      "target": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-012-suite-state-mobile.png",
+      "htmlPath": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-012-suite-state-mobile-dom.html",
+      "consoleMessages": [],
+      "pageErrors": [],
+      "metrics": {
+        "title": "CivicSuite | municipal product suite roadmap",
+        "hasDate": true,
+        "hasCivicCode012": true,
+        "hasDurable": true,
+        "hasCivicCore022": true,
+        "horizontalOverflow": false,
+        "focusedText": "Skip to main content",
+        "firstStatusRowDisplay": "block"
+      }
+    }
+  ]
+}
