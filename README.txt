@@ -66,11 +66,12 @@ What ships today
   projection reuse, but it is still in the productizing tier because
   production deployment proof is site-specific. Repo:
   https://github.com/CivicSuite/civicclerk
-- `civiccode v0.1.12` is the active municipal-code productization lane. It
+- `civiccode v0.1.13` is the active municipal-code productization lane. It
   ships source-registry persistence, the staff-only source registry workspace,
   the staff code lifecycle workspace, staff-header-protected source registry
-  operations, public lookup/search foundations, durable popular-question storage
-  through the Docker/PostgreSQL database path, reusable mock-city codifier
+  operations, public lookup/search foundations, durable title/chapter/section/
+  version lifecycle storage and popular-question storage through the
+  Docker/PostgreSQL database path, reusable mock-city codifier
   contracts, staff-controlled codifier live-sync readiness, delta request
   planning, shared CivicCore sync source-list health projection reuse, a Docker
   Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed
