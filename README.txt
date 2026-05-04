@@ -66,20 +66,22 @@ What ships today
   projection reuse, but it is still in the productizing tier because
   production deployment proof is site-specific. Repo:
   https://github.com/CivicSuite/civicclerk
-- `civiccode v0.1.16` is the active municipal-code productization lane. It
+- `civiccode v0.1.17` is the active municipal-code productization lane. It
   ships source-registry persistence, the staff-only source registry workspace,
   the staff code lifecycle workspace, staff-header-protected source registry
   operations, public lookup/search foundations, durable title/chapter/section/
   version lifecycle storage, popular-question storage, staff-note storage,
   plain-language summary storage, CivicClerk handoff storage, handoff
-  audit-event storage, and local import-job ledger storage through the Docker/PostgreSQL database path,
-  reusable mock-city codifier
-  contracts, staff-controlled codifier live-sync readiness, delta request
-  planning, shared CivicCore sync source-list health projection reuse, a Docker
-  Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed
-  data, Docker/PostgreSQL backup-restore rehearsal with pg_dump/pg_restore
-  proof, staff-approved popular-question discovery aids, related-material
-  navigation, and the shared `civiccore v0.22.0` release wheel. Repo:
+  audit-event storage, local import-job ledger storage, and codifier sync
+  source-state storage through the Docker/PostgreSQL database path, reusable
+  mock-city codifier contracts, staff-controlled codifier live-sync readiness,
+  durable host-validation and delta-plan history, delta request planning, shared
+  CivicCore sync source-list health projection reuse, a Docker Compose
+  PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data,
+  Docker/PostgreSQL backup-restore rehearsal with pg_dump/pg_restore proof,
+  staff-approved popular-question discovery aids, related-material navigation,
+  release-provenance gate documentation, and the shared `civiccore v0.22.0`
+  release wheel. Repo:
   https://github.com/CivicSuite/civiccode
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
   federal regulatory intelligence for municipal operators; CivicAPI is the
