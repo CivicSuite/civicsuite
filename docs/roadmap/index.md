@@ -7,7 +7,7 @@ This roadmap starts from a hard truth: **"all repos have releases" is not the sa
 - Shipping: `civicrecords-ai`
 - Productizing: `civicclerk`
 - Foundation / planned: 26 additional product modules, including newly specified `CivicRegWatch` and `CivicAPI`
-- Shared platform: `civiccore v0.21.0`
+- Shared platform: `civiccore v0.22.0`
 
 Current phase: **`Phase 1: Platform And Security Extraction` is underway.** `Phase 0: Continuity` is complete, the auth extraction pattern has already been proven across multiple consumers, and the shared notice-compliance helper is now proven in both `civicnotice` and `civicclerk`.
 
@@ -293,7 +293,7 @@ Exit criteria:
 
 1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
 2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities into `civiccore` when they will serve more than one module.
-3. Use `civicclerk v0.1.19` as the second-product reference for mock-city contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.
+3. Use `civicclerk v0.1.20` as the second-product reference for mock-city contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.
 4. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
 5. Stand up the explicit cross-module integration ownership model for the starter set.
 6. Resolve the CivicAPI and CivicRegWatch ADRs before scaffolding runtime repos.

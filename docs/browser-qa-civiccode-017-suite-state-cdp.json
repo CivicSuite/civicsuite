@@ -1,0 +1,38 @@
+{
+  "target": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\index.html",
+  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html",
+  "console_event_count": 0,
+  "console_events": [],
+  "results": {
+    "desktop": {
+      "width": 1440,
+      "height": 1100,
+      "title": "CivicSuite | municipal product suite roadmap",
+      "horizontal_overflow": false,
+      "focusable_count": 15,
+      "focused_text": "Skip to main content",
+      "shows_civiccode_017": true,
+      "shows_sync_source_state": true,
+      "shows_host_validation": true,
+      "shows_delta_plan_history": true,
+      "shows_civiccore_022": true,
+      "shows_civicclerk_020": true,
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-017-suite-state-desktop.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 1200,
+      "title": "CivicSuite | municipal product suite roadmap",
+      "horizontal_overflow": false,
+      "focusable_count": 15,
+      "focused_text": "Skip to main content",
+      "shows_civiccode_017": true,
+      "shows_sync_source_state": true,
+      "shows_host_validation": true,
+      "shows_delta_plan_history": true,
+      "shows_civiccore_022": true,
+      "shows_civicclerk_020": true,
+      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-017-suite-state-mobile.png"
+    }
+  }
+}
