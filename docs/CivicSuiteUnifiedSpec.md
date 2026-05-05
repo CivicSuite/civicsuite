@@ -80,7 +80,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v0.22.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
+Current shipped CivicCore v0.22.1 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -90,6 +90,14 @@ Current shipped CivicCore v0.22.0 is narrower than the long-term platform vision
 - Offline import/export manifest schemas
 - Export-bundle helpers and checksum manifest utilities
 - Local city profile configuration
+- Storage-neutral onboarding profile interview helpers
+- Bearer-role and trusted-header auth helpers for downstream FastAPI services
+- Connector import normalization, delta planning, retry/circuit-breaker primitives, and source-list status projection
+- Shared ingest discovery/fetch contracts and cited-source validation
+- Search normalization, deterministic matching, permission-aware access helpers, and reciprocal-rank fusion
+- Notice deadline and compliance helpers
+- Cron schedule validation and next-run helpers
+- Connector host validation, startup config validation, encrypted JSON envelope helpers, and release-provenance verification
 - Live-sync retry/circuit primitives
 - Reusable vendor-delta planning
 - Reusable mock-city vendor, municipal IdP, and backup-retention contracts
@@ -207,7 +215,7 @@ CivicCore is the shared platform, not a user-facing product.
 
 ### 6.1 Shipped
 
-Current shipped CivicCore v0.22.0 includes:
+Current shipped CivicCore v0.22.1 includes:
 
 - Migration runner and baseline migration strategy
 - Shared SQLAlchemy `Base`
@@ -223,6 +231,14 @@ Current shipped CivicCore v0.22.0 includes:
 - Offline import/export manifest schemas
 - Export-bundle helpers and checksum manifest utilities
 - Local city profile configuration
+- Storage-neutral onboarding profile interview helpers
+- Bearer-role and trusted-header auth helpers for downstream FastAPI services
+- Connector import normalization, delta planning, retry/circuit-breaker primitives, and source-list status projection
+- Shared ingest discovery/fetch contracts and cited-source validation
+- Search normalization, deterministic matching, permission-aware access helpers, and reciprocal-rank fusion
+- Notice deadline and compliance helpers
+- Cron schedule validation and next-run helpers
+- Connector host validation, startup config validation, encrypted JSON envelope helpers, and release-provenance verification
 - Live-sync retry/circuit primitives shared by CivicRecords AI and CivicClerk
 - Reusable vendor-delta planning and mock-city vendor, municipal IdP, and backup-retention contracts shared by CivicRecords AI, CivicClerk, and future modules
 
@@ -230,15 +246,14 @@ Current shipped CivicCore v0.22.0 includes:
 
 Future CivicCore phases must extract shared capabilities from module implementations in disciplined increments:
 
-- Auth and RBAC
-- User, department, and service-account administration
+- Full auth/RBAC, user administration, department administration, and service-account administration
 - Web onboarding wizard
 - Document ingestion and document/chunk storage
-- Hybrid lexical/vector search
-- Live connector sync, credential storage, vendor write-back, and connector runtime
+- Full search engine, index storage, and database-backed retrieval orchestration
+- Credential storage, vendor write-back, and connector runtime
 - Notification templates and delivery logs
 - Exemption/public-records rules
-- Verification, provenance, and human-in-the-loop enforcement
+- Sovereignty verification and human-in-the-loop enforcement
 - Shared resident portal shell conventions
 - Shared staff app-shell conventions
 - Module registry / installed-module catalog
@@ -253,8 +268,8 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: shipping v0.22.0, with many planned extractions
-Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, and future auth/search/live-connector primitives.
+Status: shipping v0.22.1 attested baseline, with many planned extractions
+Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, auth helpers, search/access helpers, connector primitives, ingest contracts, scheduling helpers, verification helpers, and future full document/search/catalog/exemption/scaffold primitives.
 
 ### Tier 1 - Clerk Core
 
@@ -971,10 +986,10 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 ## 18. Current Shipped State
 
-As of 2026-05-04:
+As of 2026-05-05:
 
 - `civicrecords-ai` ships as v1.4.10.
-- `civiccore` ships as v0.22.0.
+- `civiccore` ships as v0.22.1, the first attested baseline release with Sigstore release-provenance verification, SHA256SUMS assets, the CO-6 cleanroom harness, and the expanded shared helper surface listed in section 6.
 - `civicsuite` is the umbrella documentation/governance repo.
 - `civicclerk` ships as v0.1.20 with the published `civiccore v0.22.0` release wheel plus all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, schema/lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, prompt evals, connector imports, vendor-network live sync, reusable CivicCore-backed vendor-delta and mock-city contract suites, browser QA gates, fresh-install rehearsal helpers, Docker/PostgreSQL backup/restore rehearsal, scheduled local connector import sync, release handoff helpers, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, shared startup placeholder/config validation reuse, shared sync source-list health projection reuse, and deployment-readiness preflight. City production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof.
 - `civiccode` ships as v0.1.17 with runtime foundations for source registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, staff-approved popular-question discovery aids, related-material navigation, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, staff-header-protected source registry operations, the staff source registry workspace, the staff code lifecycle workspace, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, delta request planning, CivicCore circuit-breaker health, shared sync source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with `pg_dump`/`pg_restore` proof, release-provenance gate documentation, and `civiccore==0.22.0` alignment. Legal advice, live LLM calls, bundled vendor credentials, CivicAccess runtime integration, and automatic ordinance codification are not shipped.

@@ -23,10 +23,10 @@ The suite is intentionally honest about maturity:
 - The rest of the catalog is in the foundation/planned tier: real runtime work or implementation specs, not yet end-to-end products.
 - `civiccore` is the shared platform package under all of them.
 
-### What is available today? (as of 2026-05-04)
+### What is available today? (as of 2026-05-05)
 
 - **`civicrecords-ai v1.4.10`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore v0.22.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, reusable sync source-list status projection, reusable vendor-delta planning, reusable mock-city vendor/IdP/backup-retention contracts, release-evidence helpers, trusted-header config/proxy enforcement helpers, shared startup configuration validation helpers, and shared cron/schedule validation helpers. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civiccore v0.22.1`** - the shared platform package and first attested baseline release. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, reusable sync source-list status projection, reusable vendor-delta planning, reusable mock-city vendor/IdP/backup-retention contracts, release-evidence helpers, trusted-header config/proxy enforcement helpers, release-provenance verification, shared startup configuration validation helpers, and shared cron/schedule validation helpers. Repo: <https://github.com/CivicSuite/civiccore>
 - **`civicclerk v0.1.20`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It now ships all four MVP workflow surfaces in React, the resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync, reusable CivicCore-backed mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, installer source packaging, enterprise signing readiness, explicit unsigned-installer warnings, and shared `civiccore v0.22.0` startup config validation plus sync source-list health projection reuse. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`CivicRegWatch` and `CivicAPI`** - newly added planned modules. CivicRegWatch is the federal regulatory intelligence module. CivicAPI is the public read-only data gateway over human-approved CivicSuite publication records. Their implementation specs live in [specs/05_civicregwatch.md](specs/05_civicregwatch.md) and [specs/06_civicapi.md](specs/06_civicapi.md).
 
@@ -91,7 +91,7 @@ It does **not** contain the runtime code for the individual products.
 | Repo | Status |
 |---|---|
 | `civicrecords-ai` | Shipping `v1.4.10` flagship product |
-| `civiccore` | Shipping `v0.22.0` shared platform package |
+| `civiccore` | Shipping `v0.22.1` shared platform package |
 | `civicclerk` | Productizing `v0.1.20` second-product candidate |
 | `civiccode` | Active productization `v0.1.17` municipal-code lane with durable section lifecycle, popular-question, staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, import-job ledger, codifier sync source-state, durable host-validation, delta-plan history, and related-material discovery aids |
 | `civicregwatch` | Planned module; spec exists, repo not scaffolded yet |
@@ -175,7 +175,7 @@ Start with:
               describes & coordinates |
                                       v
                         +---------------------------+
-                        |     civiccore (v0.22.0)   |
+                        |     civiccore (v0.22.1)   |
                         |  shipping today:          |
                         |  migrations, db.Base, llm |
                         |  audit, provenance,       |
