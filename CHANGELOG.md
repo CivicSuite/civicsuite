@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CO-7 CivicCore freeze lockstep** (2026-05-05): compatibility matrix,
+  suite-state verifier, and unified spec now record CivicCore `v0.22.1` as the
+  attested baseline and document the placeholder-namespace audit before the
+  freeze-line tag.
 - **CivicCode v0.1.17 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, roadmap, and unified spec now record the durable codifier sync source-state release, release-provenance gate documentation, and continued `civiccore v0.22.0` dependency line.
 - **CivicCode v0.1.16 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable local import-job ledger release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
 - **CivicCode v0.1.15 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable CivicClerk ordinance handoff and handoff audit-event persistence release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.

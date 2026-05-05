@@ -7,7 +7,7 @@ record.
 
 | Module          | Repo                           | Current version | Released   | Compatible CivicCore range | Last verified | Notes |
 |-----------------|--------------------------------|-----------------|------------|----------------------------|---------------|-------|
-| civiccore       | CivicSuite/civiccore           | 0.22.0          | 2026-05-03 | n/a                        | 2026-05-03    | Shared platform release line now includes reusable vendor sync source-list health projection in addition to vendor-delta planning, mock-city vendor/municipal IdP/backup-retention contracts, startup configuration validation helpers, live-sync retry/circuit primitives, persisted audit-log hash/verification helpers, connector import helpers, browser-evidence verification helpers, shared search/access helpers, trusted-header config loading, proxy-source enforcement helpers, and shared cron/schedule validation helpers. |
+| civiccore       | CivicSuite/civiccore           | 0.22.1          | 2026-05-05 | n/a                        | 2026-05-05    | First attested baseline release. Shared platform line includes release-provenance verification, CO-6 cleanroom harness evidence, reusable vendor sync source-list health projection, vendor-delta planning, mock-city vendor/municipal IdP/backup-retention contracts, startup configuration validation helpers, live-sync retry/circuit primitives, persisted audit-log hash/verification helpers, connector import helpers, browser-evidence verification helpers, shared search/access helpers, trusted-header config loading, proxy-source enforcement helpers, notice helpers, onboarding helpers, and shared cron/schedule validation helpers. |
 | civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.10          | 2026-05-03 | `==0.22.0`                 | 2026-05-03    | Published records-ai release consumes the published `civiccore v0.22.0` wheel for shared sync source-list health projection plus schedule validation, startup configuration validation, vendor-delta and mock-city contracts, live-sync retry/circuit primitives, persisted audit-log hashing and verification, shared search, onboarding, connector-security, and ingest contracts. |
 | civicclerk      | CivicSuite/civicclerk          | 0.1.20          | 2026-05-03 | `==0.22.0`                 | 2026-05-03    | Productizing clerk release consumes the published `civiccore v0.22.0` wheel for shared vendor sync source-list health projection plus startup placeholder/config validation while retaining CivicClerk-specific OIDC browser flow behavior. It includes the React staff/public product rehearsal, Docker Compose seeded demo, OIDC browser-session foundation, Docker/PostgreSQL backup/restore rehearsal, vendor-network live sync, reusable mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, installer source packaging, explicit unsigned-installer warnings, and enterprise signing readiness. |
 | civicregwatch   | CivicSuite/civicregwatch       | planned         | not released | TBD                      | 2026-04-30    | New planned federal regulatory intelligence module. Implementation spec exists in `specs/05_civicregwatch.md`; repo and civiccore pin are not scaffolded yet. |
@@ -36,6 +36,24 @@ record.
 | civiclibrary    | CivicSuite/civiclibrary        | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: library support foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicparks      | CivicSuite/civicparks          | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: parks and recreation support foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 
+## CO-7 placeholder audit
+
+Audited on 2026-05-05 before the CivicCore freeze-line tag. The audit searched
+all module repos in this matrix for production reliance on
+`civiccore.catalog`, `civiccore.exemptions`, and `civiccore.scaffold`.
+
+Command shape:
+
+```powershell
+git -C <module> grep -n -E 'civiccore\.(catalog|exemptions|scaffold)|from civiccore import (catalog|exemptions|scaffold)|import civiccore\.(catalog|exemptions|scaffold)' -- .
+```
+
+Result: no production-code reliance found. CivicClerk and CivicCode contain
+test-only mentions of `civiccore.catalog` and `civiccore.exemptions` in schema
+guard tests that assert module tables do not foreign-key into unreleased
+CivicCore placeholder targets. Those tests are compatibility safeguards, not
+runtime dependencies.
+
 ## Reading a row
 
 `civicnotice 0.1.2 local / 0.1.1 published` means: the local sibling clone
@@ -49,6 +67,7 @@ local and published pins when they differ.
 
 | Date       | civiccore | Module / version       | Result | Evidence |
 |------------|-----------|------------------------|--------|----------|
+| 2026-05-05 | 0.22.1    | civiccore 0.22.1       | green  | civiccore v0.22.1 is the first attested baseline release; CO-6 cleanroom harness PR #47 merged at fed0639 with GitHub `civiccore CI` and `civiccore cleanroom` green, local two-run cleanroom stable manifest hash `aed4295021277702eec4c4cffd53a8bd0cb4208e0075f46098f77f7d436af647`, and release-provenance/SHA256SUMS/Sigstore paths green against the published v0.22.1 assets. |
 | 2026-05-04 | 0.22.0    | civiccode 0.1.17       | green  | civiccode PR #40 merged at f3e54e8 for durable codifier sync source state; PR #41 merged at a1f414a for release-signing documentation and the release-provenance gate; `bash scripts/verify-release.sh` passed post-merge with 154 tests, docs gate, placeholder import gate, Ruff, build artifact checks, and SHA256SUMS; browser QA evidence captured desktop/mobile durable codifier sync-state docs states with zero console events and no horizontal overflow; GitHub release `v0.1.17` published wheel, sdist, and SHA256SUMS assets after release provenance verification passed against annotated tag object 31d9d18 and GitHub-verified target commit a1f414a |
 | 2026-05-04 | 0.22.0    | civiccode 0.1.16       | green  | civiccode main at 1e66a87 after PR #39 CI passed; `bash scripts/verify-release.sh` passed post-merge with 153 tests, docs gate, placeholder import gate, Ruff, build artifact checks, and SHA256SUMS; browser QA evidence captured desktop/mobile durable import-job ledger docs states with zero console events and no horizontal overflow; GitHub release `v0.1.16` published wheel, sdist, and SHA256SUMS assets |
 | 2026-05-04 | 0.22.0    | civiccode 0.1.15       | green  | civiccode PR #38 merged at dbbdb0a; `bash scripts/verify-release.sh` passed post-merge with 151 tests, docs gate, placeholder import gate, Ruff, build artifact checks, and SHA256SUMS; browser QA evidence captured desktop/mobile durable CivicClerk handoff persistence docs states with zero console events and no horizontal overflow; GitHub release `v0.1.15` published wheel, sdist, and SHA256SUMS assets |
