@@ -15,8 +15,11 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 from contextlib import contextmanager
+from io import BytesIO
 from pathlib import Path
 from typing import Any
+from urllib.request import urlopen
+from zipfile import ZipFile
 
 import yaml
 
@@ -37,7 +40,7 @@ EXPECTED_SERVICES = {
 }
 MODULE_SERVICES = {
     "civicclerk": ("civicclerk.main", "app", "1.0.0", 8010, "1.0"),
-    "civiccode": ("civiccode.main", "app", "0.1.18", 8020, "0.22.1"),
+    "civiccode": ("civiccode.main", "app", "0.1.18", 8020, "0.22.0"),
     "civiczone": ("civiczone.main", "app", "0.1.1", 8030, "0.3.0"),
 }
 LOCAL_CIVICCORE_VERSION = "1.0.0"
@@ -110,6 +113,55 @@ def check_compose(compose: dict[str, Any]) -> list[str]:
     else:
         errors.append(fail("civicrecords-api environment is not a mapping"))
 
+    return errors
+
+
+def civiccore_wheel_version(release_version: str) -> str:
+    if release_version == "1.0":
+        return "1.0.0"
+    return release_version
+
+
+def module_wheel_url(service_name: str, service_version: str) -> str:
+    return (
+        f"https://github.com/CivicSuite/{service_name}/releases/download/"
+        f"v{service_version}/{service_name}-{service_version}-py3-none-any.whl"
+    )
+
+
+def check_module_wheel_metadata() -> list[str]:
+    errors = []
+    for service_name, (_import_path, _app_name, service_version, _port, core_release_version) in MODULE_SERVICES.items():
+        expected_core_version = civiccore_wheel_version(core_release_version)
+        expected_fragments = (
+            f"/v{core_release_version}/civiccore-{expected_core_version}-py3-none-any.whl",
+            f"civiccore-{expected_core_version}",
+        )
+        try:
+            with urlopen(module_wheel_url(service_name, service_version), timeout=30) as response:
+                wheel_bytes = response.read()
+            with ZipFile(BytesIO(wheel_bytes)) as wheel:
+                metadata_name = next(name for name in wheel.namelist() if name.endswith("METADATA"))
+                metadata = wheel.read(metadata_name).decode("utf-8")
+        except Exception as exc:  # pragma: no cover - exercised by release-network failures
+            errors.append(fail(f"could not inspect {service_name} {service_version} wheel metadata: {exc}"))
+            continue
+        civiccore_requires = [
+            line for line in metadata.splitlines() if line.startswith("Requires-Dist: civiccore")
+        ]
+        if not civiccore_requires:
+            errors.append(fail(f"{service_name} {service_version} wheel metadata has no civiccore dependency"))
+            continue
+        requirement = civiccore_requires[0]
+        direct_wheel_match = all(fragment in requirement for fragment in expected_fragments)
+        exact_version_match = f"civiccore=={expected_core_version}" in requirement
+        if not direct_wheel_match and not exact_version_match:
+            errors.append(
+                fail(
+                    f"{service_name} {service_version} wheel metadata requires {requirement!r}, "
+                    f"expected civiccore {expected_core_version} from v{core_release_version}"
+                )
+            )
     return errors
 
 
@@ -198,6 +250,7 @@ def main() -> int:
     else:
         compose = load_compose()
         errors.extend(check_compose(compose))
+        errors.extend(check_module_wheel_metadata())
         if not args.static_only:
             errors.extend(run_compose_config())
     errors.extend(check_docs())

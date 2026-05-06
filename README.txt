@@ -81,8 +81,8 @@ What ships today
   PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data,
   Docker/PostgreSQL backup-restore rehearsal with pg_dump/pg_restore proof,
   staff-approved popular-question discovery aids, related-material navigation,
-  release-provenance gate documentation, and the shared `civiccore v0.22.1`
-  release wheel. Repo:
+  release-provenance gate documentation, and the published `civiccore v0.22.0`
+  wheel required by the `civiccode v0.1.18` release artifact. Repo:
   https://github.com/CivicSuite/civiccode
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
   federal regulatory intelligence for municipal operators; CivicAPI is the

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Deployment profile wheel-contract fix** (2026-05-06): the post-foundation
+  Docker demo now pins CivicCode `v0.1.18` to the published `civiccore v0.22.0`
+  wheel required by that release artifact, and the deployment-profile verifier
+  now inspects module wheel metadata so CI catches compose/package dependency
+  mismatches before runtime boot.
 - **CivicSuite truth-source refresh after audit-full** (2026-05-06): compatibility
   matrix, suite-state verifier, deployment-profile verifier, demo compose pins,
   README, README.txt, user manual, roadmap, and landing page now record
