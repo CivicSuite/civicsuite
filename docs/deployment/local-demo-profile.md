@@ -79,6 +79,7 @@ This checks that:
 - The compose file exists and parses through Docker Compose in full local mode.
 - The expected services are present.
 - Published module wheel URLs are pinned to the compatibility matrix versions.
+- Published module wheel metadata requires the same CivicCore wheel pinned in the compose file.
 - Local in-process smoke checks use the current sibling-clone `civiccore` checkout and therefore verify local import compatibility, not only the compose wheel pins.
 - Module services set `CIVICCORE_LLM_PROVIDER=ollama`.
 - No cloud LLM provider is configured by default.
