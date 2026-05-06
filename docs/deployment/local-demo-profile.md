@@ -68,15 +68,23 @@ Static/profile verification:
 python scripts/verify-deployment-profile.py
 ```
 
+CI/static-only verification:
+
+```bash
+python scripts/verify-deployment-profile.py --static-only
+```
+
 This checks that:
 
-- The compose file exists and parses through Docker Compose when available.
+- The compose file exists and parses through Docker Compose in full local mode.
 - The expected services are present.
 - Published module wheel URLs are pinned to the compatibility matrix versions.
 - Local in-process smoke checks use the current sibling-clone `civiccore` checkout and therefore verify local import compatibility, not only the compose wheel pins.
 - Module services set `CIVICCORE_LLM_PROVIDER=ollama`.
 - No cloud LLM provider is configured by default.
 - Local no-network smoke checks can import CivicClerk, CivicCode, and CivicZone and call their `/health` endpoints in process.
+
+The `--static-only` mode is for CI and skips the Docker Compose config execution plus the local sibling-clone `/health` imports. It still verifies compose shape, wheel pins, local-first LLM defaults, and this guide.
 
 ## No-Network Meaning
 

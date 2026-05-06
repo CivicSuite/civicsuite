@@ -13,12 +13,12 @@ import os
 import socket
 import subprocess
 import sys
+from argparse import ArgumentParser
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
 import yaml
-from fastapi.testclient import TestClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -146,6 +146,8 @@ def block_outbound_sockets():
 
 
 def check_module_health_without_network() -> list[str]:
+    from fastapi.testclient import TestClient
+
     errors = []
     os.environ.setdefault("CIVICCORE_LLM_PROVIDER", "ollama")
     sys.path.insert(0, str(WORKSPACE / "civiccore"))
@@ -178,15 +180,29 @@ def check_module_health_without_network() -> list[str]:
 
 def main() -> int:
     print("==> Deployment profile verification")
+    parser = ArgumentParser(description="Verify the post-foundation local demo deployment profile.")
+    parser.add_argument(
+        "--static-only",
+        action="store_true",
+        help="Check compose/docs/pins without Docker Compose execution or sibling-clone health imports.",
+    )
+    args = parser.parse_args()
+    if args.static_only:
+        print("mode=static-only")
+    else:
+        print("mode=full")
+
     errors = []
     if not COMPOSE_FILE.is_file():
         errors.append(fail(f"missing compose file {COMPOSE_FILE.relative_to(ROOT)}"))
     else:
         compose = load_compose()
         errors.extend(check_compose(compose))
-        errors.extend(run_compose_config())
+        if not args.static_only:
+            errors.extend(run_compose_config())
     errors.extend(check_docs())
-    errors.extend(check_module_health_without_network())
+    if not args.static_only:
+        errors.extend(check_module_health_without_network())
 
     if errors:
         for error in errors:
