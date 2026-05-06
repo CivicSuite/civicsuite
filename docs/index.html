@@ -243,19 +243,19 @@
 <main id="main">
   <section>
     <h2>Status today</h2>
-    <p>Status snapshot: <strong>2026-05-05</strong>.</p>
+    <p>Status snapshot: <strong>2026-05-06</strong>.</p>
     <table>
       <thead>
         <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
       </thead>
       <tbody>
         <tr><td>Shipping</td><td>1 of 28</td><td><code>civicrecords-ai v1.4.10</code> is the one product currently positioned as production-usable.</td></tr>
-        <tr><td>Productizing</td><td>1 of 28</td><td><code>civicclerk v0.1.20</code> has all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync, reusable CivicCore-backed mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, and shared CivicCore source-list health projection. It is developer-finished for the current CivicClerk scope; city production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof.</td></tr>
+        <tr><td>Productizing</td><td>1 of 28</td><td><code>civicclerk v1.0.0</code> has all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync, reusable CivicCore-backed mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, integration-depth contracts, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, and shared CivicCore source-list health projection. It is developer-finished for the current CivicClerk scope; city production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof.</td></tr>
         <tr><td>Foundation / planned</td><td>25 of 28</td><td>The rest of the catalog has real runtime foundations or implementation specs. <code>CivicRegWatch</code> and <code>CivicAPI</code> are newly added planned modules with specs but no runtime repos yet.</td></tr>
-        <tr><td>Active productization lane</td><td>1 of 28</td><td><code>civiccode v0.1.17</code> now ships source-registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, staff-header-protected source operations, the staff source registry workspace, the staff code lifecycle workspace, staff-approved popular-question discovery aids, related-material navigation, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, shared CivicCore source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with <code>pg_dump</code>/<code>pg_restore</code> proof, and release-provenance gate documentation while consuming <code>civiccore v0.22.0</code>.</td></tr>
+        <tr><td>Active productization lane</td><td>1 of 28</td><td><code>civiccode v0.1.18</code> now ships source-registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, staff-header-protected source operations, the staff source registry workspace, the staff code lifecycle workspace, staff-approved popular-question discovery aids, related-material navigation, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, shared CivicCore source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with <code>pg_dump</code>/<code>pg_restore</code> proof, and release-provenance gate documentation while consuming <code>civiccore v0.22.1</code>.</td></tr>
       </tbody>
     </table>
-    <p><code>civiccore v0.22.1</code> is the current shared-platform release and first attested baseline. It is not a product module; it is the substrate every module depends on.</p>
+    <p><code>civiccore v1.0.0</code> is the current shared-platform release. It is not a product module; it is the substrate every module depends on.</p>
   </section>
 
   <section>
@@ -264,7 +264,7 @@
       <p><strong>Phase 0 is complete and Phase 1 is underway.</strong> Continuity is now an explicit gate with a real baseline. As of 2026-04-29, the <code>CivicSuite</code> GitHub org has two active owners (<code>scottconverse</code> and <code>APirateMonk</code>), the current release-custody path is documented on-repo, and the next extraction wave uses a shared consumer rollout playbook.</p>
       <ul>
         <li>Use the shared extraction consumer rollout playbook for the next <code>civiccore</code> fan-out work.</li>
-        <li>Use <code>civicclerk v0.1.20</code> as the second-product reference for mock-city contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.</li>
+        <li>Use <code>civicclerk v1.0.0</code> as the second-product reference for mock-city contracts, integration-depth contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.</li>
         <li>Continue extracting shared <code>civiccore</code> capabilities from proven product modules when the same behavior will serve multiple modules.</li>
         <li>Continue lifting <code>civiccode</code> from codifier live-sync readiness toward product-grade municipal code workflow.</li>
         <li>Use <code>specs/05_civicregwatch.md</code> and <code>specs/06_civicapi.md</code> as the setup contracts before scaffolding those future repos.</li>

@@ -12,7 +12,7 @@ module lives in its own repo.
 Suite status
 ------------
 
-Status snapshot: 2026-05-05
+Status snapshot: 2026-05-06
 
 - Shipping: 1 of 28 product modules.
   `civicrecords-ai` is the one product currently positioned as
@@ -32,7 +32,7 @@ Status snapshot: 2026-05-05
   detailed specs but no runtime repos yet.
 
 `civiccore` is not a product module; it is the shared platform package used by
-every module. The latest shared-platform release is `civiccore v0.22.1`.
+every module. The latest shared-platform release is `civiccore v1.0.0`.
 
 The most important distinction in this repo is simple: "all repos have
 releases" is not the same thing as "a city can run on this suite." The roadmap
@@ -43,7 +43,7 @@ What ships today
 
 - `civicrecords-ai v1.4.10` is the flagship shipping product for FOIA/public
   records management. Repo: https://github.com/CivicSuite/civicrecords-ai
-- `civiccore v0.22.1` is the shipping shared platform package and first
+- `civiccore v1.0.0` is the shipping shared platform package and first
   attested baseline release. It currently ships migrations, shared SQLAlchemy
   baselines, the LLM abstraction layer,
   audit/provenance primitives, persisted audit-log hash/verification helpers,
@@ -56,18 +56,18 @@ What ships today
   helpers, release-provenance verification, shared startup configuration
   validation helpers, and shared cron/schedule validation helpers. Repo:
   https://github.com/CivicSuite/civiccore
-- `civicclerk v0.1.20` is the clear second-product candidate. It ships the React
+- `civicclerk v1.0.0` is the clear second-product candidate. It ships the React
   staff workspace and public portal, all four MVP meeting-workflow surfaces,
   Docker Compose product rehearsal, seeded Brookfield demo data, OIDC
   browser-session foundations, backup/restore rehearsal, vendor-network live
   sync with shared CivicCore retry/circuit primitives, reusable mock municipal
   IdP and backup-retention contract suites, scheduled local connector import
   sync, installer source packaging, enterprise signing readiness, and shared
-  `civiccore` v0.22.0 startup config validation and sync source-list health
+  `civiccore` v1.0.0 startup config validation and sync source-list health
   projection reuse, but it is still in the productizing tier because
   production deployment proof is site-specific. Repo:
   https://github.com/CivicSuite/civicclerk
-- `civiccode v0.1.17` is the active municipal-code productization lane. It
+- `civiccode v0.1.18` is the active municipal-code productization lane. It
   ships source-registry persistence, the staff-only source registry workspace,
   the staff code lifecycle workspace, staff-header-protected source registry
   operations, public lookup/search foundations, durable title/chapter/section/
@@ -81,7 +81,7 @@ What ships today
   PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data,
   Docker/PostgreSQL backup-restore rehearsal with pg_dump/pg_restore proof,
   staff-approved popular-question discovery aids, related-material navigation,
-  release-provenance gate documentation, and the shared `civiccore v0.22.0`
+  release-provenance gate documentation, and the shared `civiccore v0.22.1`
   release wheel. Repo:
   https://github.com/CivicSuite/civiccode
 - CivicRegWatch and CivicAPI are newly added planned modules. CivicRegWatch is
@@ -105,9 +105,9 @@ is:
    `civiccore` fan-out work.
 2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities
    into `civiccore` when they will serve more than one module.
-3. Use `civicclerk v0.1.20` as the second-product reference for mock-city
-   contracts, unsigned-installer operator guidance, and site-specific
-   deployment proof slots.
+3. Use `civicclerk v1.0.0` as the second-product reference for mock-city
+   contracts, integration-depth contracts, unsigned-installer operator guidance,
+   and site-specific deployment proof slots.
 4. Continue the CivicCode productization lane using the same product-first
    code/docs/QA release loop.
 5. Scaffold CivicRegWatch and CivicAPI only after their publication, polling,

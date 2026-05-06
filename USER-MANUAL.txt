@@ -18,9 +18,9 @@ on its own hardware, on its own schedule.
 Current maturity snapshot as of 2026-05-05:
 
 - `civicrecords-ai v1.4.10`: shipping flagship product
-- `civiccore v0.22.1`: shared platform package and first attested baseline release
-- `civicclerk v0.1.20`: productizing second-product candidate
-- `civiccode v0.1.17`: active municipal-code productization lane with durable
+- `civiccore v1.0.0`: shared platform package
+- `civicclerk v1.0.0`: productizing second-product candidate
+- `civiccode v0.1.18`: active municipal-code productization lane with durable
   section lifecycle, popular-question, staff-note, plain-language summary,
   CivicClerk handoff, handoff audit-event, import-job ledger, codifier sync
   source-state, durable host-validation, delta-plan history, and

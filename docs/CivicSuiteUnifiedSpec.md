@@ -80,7 +80,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v0.22.1 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
+Current shipped CivicCore v1.0.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -215,7 +215,7 @@ CivicCore is the shared platform, not a user-facing product.
 
 ### 6.1 Shipped
 
-Current shipped CivicCore v0.22.1 includes:
+Current shipped CivicCore v1.0.0 includes:
 
 - Migration runner and baseline migration strategy
 - Shared SQLAlchemy `Base`
@@ -268,7 +268,7 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: shipping v0.22.1 attested baseline, with many planned extractions
+Status: shipping v1.0.0 current shared-platform release, with many planned extractions
 Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, auth helpers, search/access helpers, connector primitives, ingest contracts, scheduling helpers, verification helpers, and future full document/search/catalog/exemption/scaffold primitives.
 
 ### Tier 1 - Clerk Core
@@ -284,7 +284,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: productizing v0.1.20 runtime foundation aligned to published `civiccore v0.22.0`
+Status: productizing v1.0.0 runtime foundation aligned to published `civiccore v1.0.0`
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -293,7 +293,7 @@ Dependency note: older catalog text listed CivicRecords because shared document/
 
 Owner: City Clerk / Legal / Codification Department  
 Depends on: CivicCore, CivicClerk  
-Status: shipping v0.1.15 active productization lane aligned to published `civiccore v0.22.0`
+Status: shipping v0.1.18 active productization lane aligned to published `civiccore v0.22.1`
 Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
@@ -986,13 +986,13 @@ For a shipping product, these docs must be honest about what ships today and wha
 
 ## 18. Current Shipped State
 
-As of 2026-05-05:
+As of 2026-05-06:
 
 - `civicrecords-ai` ships as v1.4.10.
-- `civiccore` ships as v0.22.1, the first attested baseline release with Sigstore release-provenance verification, SHA256SUMS assets, the CO-6 cleanroom harness, and the expanded shared helper surface listed in section 6.
+- `civiccore` ships as v1.0.0 with Sigstore release-provenance verification, SHA256SUMS assets, the CO-6 cleanroom harness lineage, and the expanded shared helper surface listed in section 6.
 - `civicsuite` is the umbrella documentation/governance repo.
-- `civicclerk` ships as v0.1.20 with the published `civiccore v0.22.0` release wheel plus all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, schema/lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, prompt evals, connector imports, vendor-network live sync, reusable CivicCore-backed vendor-delta and mock-city contract suites, browser QA gates, fresh-install rehearsal helpers, Docker/PostgreSQL backup/restore rehearsal, scheduled local connector import sync, release handoff helpers, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, shared startup placeholder/config validation reuse, shared sync source-list health projection reuse, and deployment-readiness preflight. City production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof.
-- `civiccode` ships as v0.1.17 with runtime foundations for source registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, staff-approved popular-question discovery aids, related-material navigation, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, staff-header-protected source registry operations, the staff source registry workspace, the staff code lifecycle workspace, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, delta request planning, CivicCore circuit-breaker health, shared sync source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with `pg_dump`/`pg_restore` proof, release-provenance gate documentation, and `civiccore==0.22.0` alignment. Legal advice, live LLM calls, bundled vendor credentials, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
+- `civicclerk` ships as v1.0.0 with the published `civiccore v1.0.0` release wheel plus all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, schema/lifecycle enforcement, packet/notice compliance, motion/vote/action capture, minutes citations, prompt evals, connector imports, vendor-network live sync, reusable CivicCore-backed vendor-delta and mock-city contract suites, no-network integration-depth contracts, browser QA gates, fresh-install rehearsal helpers, Docker/PostgreSQL backup/restore rehearsal, scheduled local connector import sync, release handoff helpers, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, shared startup placeholder/config validation reuse, shared sync source-list health projection reuse, and deployment-readiness preflight. City production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof.
+- `civiccode` ships as v0.1.18 with runtime foundations for source registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, section/version lifecycle, search/permalinks, citations, citation-grounded Q&A, staff notes, plain-language summaries, staff-approved popular-question discovery aids, related-material navigation, CivicClerk handoff intake, public lookup pages, local imports, records-ready exports, staff-header-protected source registry operations, the staff source registry workspace, the staff code lifecycle workspace, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, delta request planning, CivicCore circuit-breaker health, shared sync source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with `pg_dump`/`pg_restore` proof, release-provenance gate documentation, and `civiccore==0.22.1` alignment. Legal advice, live LLM calls, bundled vendor credentials, CivicAccess runtime integration, and automatic ordinance codification are not shipped.
 - `civiczone` ships as v0.1.1 with runtime foundations for canonical zoning schema, Alembic migrations, sample parcel/zone lookup, sample use and dimensional rule APIs, citation-grounded sample resident Q&A, planner escalation/staff context samples, accessible public sample UI, and `civiccore==0.3.0` alignment. Live GIS ingestion, live LLM calls, authentication/RBAC, planner review queues, official zoning determinations, and legal advice are not shipped.
 - `civicaccess` ships as v0.1.1 with runtime foundations for accessibility review, plain-language rewrite, multilingual sample variants, records-ready export checklist, accessible public sample UI, and `civiccore==0.3.0` alignment. Certified ADA compliance, legal advice, live LLM calls, production translation workflows, document ingestion, and suite-wide integration APIs are not shipped.
 - `civicplan` ships as v0.1.1 with runtime foundations for cited plan-policy lookup, policy-consistency support, staff-analysis outline helper, records-ready export checklist, accessible public sample UI, and `civiccore==0.3.0` alignment. Official planning determinations, legal advice, live GIS, live LLM calls, plan document ingestion, permitting-system integrations, and production staff-review queues are not shipped.
