@@ -1,12 +1,12 @@
 graph TB
     subgraph SUITE["GitHub: CivicSuite organization"]
         SuiteRepo["civicsuite<br/>umbrella repo<br/>governance, compatibility matrix,<br/>spec docs, ADRs"]
-        Core["civiccore<br/>v0.21.0 shared library<br/>migrations + db.Base + llm + shared primitives"]
+        Core["civiccore<br/>v1.0.0 shared library<br/>migrations + db.Base + llm + shared primitives"]
     end
     subgraph PRODUCT["GitHub: CivicSuite organization"]
-        Records["civicrecords-ai<br/>v1.4.8<br/>FOIA / public records app"]
-        Clerk["civicclerk<br/>v0.1.19<br/>meeting management"]
-        Code["civiccode<br/>v0.1.7<br/>municipal code"]
+        Records["civicrecords-ai<br/>v1.4.10<br/>FOIA / public records app"]
+        Clerk["civicclerk<br/>v1.0.0<br/>meeting management"]
+        Code["civiccode<br/>v0.1.18<br/>municipal code"]
         Zone["civiczone<br/>v0.1.1<br/>zoning / land use"]
         Access["civicaccess<br/>v0.1.1<br/>accessibility / language"]
         Plan["civicplan<br/>v0.1.1<br/>plan policy support"]
@@ -19,13 +19,13 @@ graph TB
         Notice["civicnotice<br/>v0.1.1<br/>public notices"]
         Civic311["civic311<br/>v0.1.1<br/>resident service requests"]
         Comms["civiccomms<br/>v0.1.1<br/>public communications"]
-        Data["civicdata<br/>v0.1.1<br/>open data bridge"]
+        Data["civicdata<br/>v0.1.2<br/>open data bridge"]
         HR["civichr<br/>v0.1.1<br/>HR policy support"]
-        Budget["civicbudget<br/>v0.1.1<br/>budget narratives"]
-        Legal["civiclegal<br/>v0.1.1<br/>legal records"]
+        Budget["civicbudget<br/>v0.1.2<br/>budget narratives"]
+        Legal["civiclegal<br/>v0.1.2<br/>legal records"]
         Elections["civicelections<br/>v0.1.1<br/>election support"]
         Utility["civicutility<br/>v0.1.1<br/>utility customer service"]
-        Court["civiccourt<br/>v0.1.1<br/>court clerk support"]
+        Court["civiccourt<br/>v0.1.2<br/>court clerk support"]
         Safety["civicsafety<br/>v0.1.1<br/>non-CJIS safety admin"]
         Library["civiclibrary<br/>v0.1.1<br/>library policy / reference"]
         Parks["civicparks<br/>v0.1.1<br/>parks / recreation"]
@@ -56,9 +56,9 @@ graph TB
     SuiteRepo -.governs.-> Safety
     SuiteRepo -.governs.-> Library
     SuiteRepo -.governs.-> Parks
-    Records -->|"depends on ==0.21.0"| Core
-    Clerk -->|"depends on ==0.21.0"| Core
-    Code -->|"depends on ==0.21.0"| Core
+    Records -->|"depends on ==0.22.1"| Core
+    Clerk -->|"depends on ==1.0.0"| Core
+    Code -->|"depends on ==0.22.1"| Core
     Zone -->|"depends on ==0.3.0"| Core
     Access -->|"depends on ==0.3.0"| Core
     Plan -->|"depends on ==0.3.0"| Core

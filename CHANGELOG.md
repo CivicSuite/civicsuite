@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **CivicSuite truth-source refresh after audit-full** (2026-05-06): compatibility
+  matrix, suite-state verifier, deployment-profile verifier, demo compose pins,
+  README, README.txt, user manual, roadmap, and landing page now record
+  CivicCore `v1.0.0`, CivicClerk `v1.0.0`, CivicCode `v0.1.18`, and the
+  current local CivicNotice `v0.1.2` split instead of stale pre-1.0 values.
 - **CO-7 CivicCore freeze lockstep** (2026-05-05): compatibility matrix,
   suite-state verifier, and unified spec now record CivicCore `v0.22.1` as the
   attested baseline and document the placeholder-namespace audit before the
