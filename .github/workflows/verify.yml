@@ -23,6 +23,18 @@ jobs:
       - name: Verify documentation
         run: bash scripts/verify-docs.sh
 
+      - name: Verify no committed secret patterns
+        run: python scripts/verify-secret-scan.py
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install browser for docs landing page check
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify docs landing page in browser
+        run: npm run verify:browser
+
       - name: Install deployment verifier dependency
         run: python -m pip install pyyaml
 

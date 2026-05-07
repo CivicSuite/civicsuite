@@ -218,7 +218,7 @@
 <header class="site">
   <p class="eyebrow">CivicSuite</p>
   <h1>An open-source municipal product suite that runs on the city's own hardware.</h1>
-  <p class="lede">CivicSuite is a sovereignly deployable, local-first product program for municipal operations. The suite already has one shipping product, one productizing second-product candidate, a shared platform package, a broad set of real foundations, and two newly specified future modules: CivicRegWatch and CivicAPI.</p>
+  <p class="lede">CivicSuite is a sovereignly deployable, local-first product program for municipal operations. Public shipping, product-ready, and v1.0 maturity claims are frozen while the suite re-earns release status through stronger recovery gates.</p>
 
   <ul class="pillars">
     <li><strong>Local first</strong><span>No cloud requirement, no telemetry, no per-seat pricing.</span></li>
@@ -243,19 +243,17 @@
 <main id="main">
   <section>
     <h2>Status today</h2>
-    <p>Status snapshot: <strong>2026-05-06</strong>.</p>
+    <p>Status snapshot: <strong>2026-05-07</strong>.</p>
     <table>
       <thead>
         <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td>Shipping</td><td>1 of 28</td><td><code>civicrecords-ai v1.4.10</code> is the one product currently positioned as production-usable.</td></tr>
-        <tr><td>Productizing</td><td>1 of 28</td><td><code>civicclerk v1.0.0</code> has all four MVP workflow surfaces in React, a resident public portal, Docker Compose product rehearsal, seeded demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync, reusable CivicCore-backed mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, integration-depth contracts, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, and shared CivicCore source-list health projection. It is developer-finished for the current CivicClerk scope; city production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof.</td></tr>
-        <tr><td>Foundation / planned</td><td>25 of 28</td><td>The rest of the catalog has real runtime foundations or implementation specs. <code>CivicRegWatch</code> and <code>CivicAPI</code> are newly added planned modules with specs but no runtime repos yet.</td></tr>
-        <tr><td>Active productization lane</td><td>1 of 28</td><td><code>civiccode v0.1.18</code> now ships source-registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, staff-header-protected source operations, the staff source registry workspace, the staff code lifecycle workspace, staff-approved popular-question discovery aids, related-material navigation, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, shared CivicCore source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with <code>pg_dump</code>/<code>pg_restore</code> proof, and release-provenance gate documentation while consuming the published <code>civiccore v0.22.0</code> wheel required by the release artifact.</td></tr>
+        <tr><td>Provisional / recovery audit</td><td>7 repos</td><td><code>civicrecords-ai</code>, <code>civiccore</code>, <code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicplan</code>, and <code>civicpermit</code> have public release tags or substantial work, but those labels are provisional until real user-flow QA, install proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labeling pass.</td></tr>
+        <tr><td>Foundation / planned</td><td>21 of 28</td><td>The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. <code>CivicRegWatch</code> and <code>CivicAPI</code> are planned modules with specs but no runtime repos yet.</td></tr>
       </tbody>
     </table>
-    <p><code>civiccore v1.0.0</code> is the current shared-platform release. It is not a product module; it is the substrate every module depends on.</p>
+    <p><code>civiccore</code> is the shared-platform package. Its public v1 tag is provisional until the recovery audit confirms the platform contract.</p>
   </section>
 
   <section>
@@ -263,18 +261,18 @@
     <div class="card">
       <p><strong>Phase 0 is complete and Phase 1 is underway.</strong> Continuity is now an explicit gate with a real baseline. As of 2026-04-29, the <code>CivicSuite</code> GitHub org has two active owners (<code>scottconverse</code> and <code>APirateMonk</code>), the current release-custody path is documented on-repo, and the next extraction wave uses a shared consumer rollout playbook.</p>
       <ul>
-        <li>Use the shared extraction consumer rollout playbook for the next <code>civiccore</code> fan-out work.</li>
-        <li>Use <code>civicclerk v1.0.0</code> as the second-product reference for mock-city contracts, integration-depth contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.</li>
-        <li>Continue extracting shared <code>civiccore</code> capabilities from proven product modules when the same behavior will serve multiple modules.</li>
-        <li>Continue lifting <code>civiccode</code> from codifier live-sync readiness toward product-grade municipal code workflow.</li>
-        <li>Use <code>specs/05_civicregwatch.md</code> and <code>specs/06_civicapi.md</code> as the setup contracts before scaffolding those future repos.</li>
+        <li>Freeze public product-ready claims until the recovery gates pass.</li>
+        <li>Replace docs-render smoke checks with real user-flow Playwright evidence where a frontend exists.</li>
+        <li>Add install proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labels.</li>
+        <li>Re-audit and remediate repos one at a time.</li>
+        <li>Re-earn release status only after the repo-specific recovery gate passes.</li>
       </ul>
     </div>
   </section>
 
   <section>
     <h2>Why this framing changed</h2>
-    <p>The suite now documents four different truths separately: what is already shipping, what is in active productization, what is foundation work, and what is newly specified but not scaffolded. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count.</p>
+    <p>The suite now documents release labels as provisional until they are re-earned. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count or tag count.</p>
     <p>The roadmap is designed to move the suite from a broad portfolio of promising repos into a deployable municipal starter set, then into a city-scale product platform.</p>
   </section>
 

@@ -6,38 +6,42 @@ This `civicsuite` repository is the umbrella repo for the CivicSuite product fam
 
 ## Suite Status
 
-Status snapshot: **2026-05-06**
+Status snapshot: **2026-05-07**
+
+**Recovery status:** public "shipping", "product-ready", and "v1.0.0 proves
+city-ready" claims are frozen while the suite is re-audited. Existing public
+tags remain historical artifacts unless and until each repo re-earns release
+status through the recovery gates in
+[docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 | Tier | Count | What it means today |
 |---|---:|---|
-| Shipping | 1 of 28 product modules | `civicrecords-ai` is the one product currently positioned as production-usable today. |
-| Productizing | 1 of 28 product modules | `civicclerk` is now published as v1.0.0 with all MVP workflow surfaces in React, a Docker Compose product rehearsal with seeded demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync with shared CivicCore retry/circuit primitives, scheduled local connector import sync, reusable mock-city vendor/IdP/backup-retention contract suites, integration-depth contracts, installer source packaging, explicit unsigned-installer warnings, enterprise signing readiness, and a local release handoff bundle. It is developer-finished for the current CivicClerk scope; city production use still needs site-specific municipal IdP, vendor API, backup-retention, and deployment proof. |
-| Foundation / planned | 26 of 28 product modules | The rest of the catalog has real runtime foundations or new implementation specs. `CivicRegWatch` and `CivicAPI` are newly added planned modules with detailed specs but no runtime repos yet. |
+| Provisional / under recovery audit | 7 repos | `civicrecords-ai`, `civiccore`, `civicclerk`, `civiccode`, `civiczone`, `civicplan`, and `civicpermit` have public release tags or substantial work, but those labels are provisional until real user-flow QA, install proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labeling pass. |
+| Foundation / planned | 21 of 28 product modules | The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. |
 
-`civiccore` is not a product module; it is the shared platform package used by every module. The latest shared-platform release is **`civiccore v1.0.0`**.
+`civiccore` is not a product module; it is the shared platform package used by every module. The public **`civiccore v1.0`** tag is also provisional until the recovery audit confirms the platform contract.
 
 The most important distinction in this repo is simple: **"all repos have releases" is not the same thing as "a city can run on this suite."** The roadmap in [docs/roadmap/index.md](docs/roadmap/index.md) is the plan to close that gap.
 
-## What Ships Today
+## What Is Available Today
 
-- **`civicrecords-ai v1.4.10`** is the flagship shipping product for FOIA/public-records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore v1.0.0`** is the shipping shared platform package. It currently ships migrations, shared SQLAlchemy baselines, the LLM abstraction layer, audit/provenance primitives, persisted audit-log hash/verification helpers, export/manifest helpers, city profiles, shared auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, reusable sync source-list status projection, reusable vendor-delta planning, reusable mock-city vendor/IdP/backup-retention contracts, release-evidence helpers, trusted-header config/proxy enforcement helpers, release-provenance verification, shared startup configuration validation helpers, and shared cron/schedule validation helpers. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk v1.0.0`** is the clear second-product candidate. It ships the React staff workspace and public portal, all four MVP meeting-workflow surfaces, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync, reusable CivicCore-backed mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, integration-depth contracts for CivicRecords-AI/CivicCode/CMS/codification seams, installer source packaging, enterprise signing readiness, explicit unsigned-installer guidance, and shared `civiccore v1.0.0` startup config validation plus sync source-list health projection reuse. It remains in the productizing tier only because production deployment proof is site-specific. Repo: <https://github.com/CivicSuite/civicclerk>
-- **`civiccode v0.1.18`** is the active municipal-code productization lane. It ships source-registry persistence, durable title/chapter/section/version lifecycle storage, durable popular-question storage, durable staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, local import-job ledger, and codifier sync source-state storage through the Docker/PostgreSQL database path, the staff-only source registry workspace, the staff code lifecycle workspace, staff-header-protected source registry operations, public lookup/search foundations, staff-approved popular-question discovery aids, related-material navigation, reusable mock-city codifier contracts, staff-controlled codifier live-sync readiness, durable host-validation and delta-plan history, shared CivicCore sync source-list health projection reuse, a Docker Compose PostgreSQL 17 + pgvector demo runtime with City of Brookfield seed data, Docker/PostgreSQL backup-restore rehearsal with `pg_dump`/`pg_restore` proof, release-provenance gate documentation, and the published `civiccore v0.22.0` wheel required by the `civiccode v0.1.18` release artifact. Repo: <https://github.com/CivicSuite/civiccode>
+- **`civicrecords-ai`** has the most mature product shape in the org, but its latest public tag is under recovery review and must not be promoted as production-ready until the recovery gates pass. Repo: <https://github.com/CivicSuite/civicrecords-ai>
+- **`civiccore`** contains real shared-platform subsystems, but the public v1 line is provisional until version, release, and downstream compatibility truth are re-verified. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civicclerk`** contains substantial meeting-workflow code and mock-city test fixtures, but the public v1.0.0 label is provisional. It must not be described as a city-ready product until the frontend, user-flow QA, accessibility, install, security, and mock-vs-production gaps are closed. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civiccode`, `civiczone`, `civicplan`, and `civicpermit`** have recent release work, but their v1 labels are provisional until repo-specific recovery audits and stronger runtime/user-flow gates pass.
 - **`CivicRegWatch`** and **`CivicAPI`** are newly added planned modules. CivicRegWatch is federal regulatory intelligence for municipal operators; CivicAPI is the public read-only data gateway over human-approved CivicSuite publication records. Detailed specs live in `specs/05_civicregwatch.md` and `specs/06_civicapi.md`.
 
-The rest of the catalog is real foundation work, not vapor. Those modules ship schemas, sample workflow slices, accessible sample UI, tests, and release gates. They do **not** yet all ship the workflow, security, identity, connector, and operational depth required to call them full products.
+The rest of the catalog is foundation work, not vapor and not full product. Those modules may include schemas, sample workflow slices, tests, and release gates. They do **not** yet ship the workflow, security, identity, connector, and operational depth required to call them full products.
 
 ## Current Priorities
 
 The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The immediate sequence is:
 
-1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
-2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities into `civiccore` when they will serve more than one module.
-3. Use `civicclerk v1.0.0` as the second-product reference for mock-city contracts, integration-depth contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.
-4. Continue the CivicCode productization lane using the same product-first code/docs/QA release loop.
-5. Scaffold CivicRegWatch and CivicAPI only after their publication, polling, auth, and inter-module ADRs are settled.
-6. Formalize cross-module integration ownership for the first deployable starter set.
+1. Freeze public product-ready claims until the recovery gates pass.
+2. Replace docs-render smoke checks with real user-flow Playwright evidence where a frontend exists.
+3. Add install/runtime proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labels.
+4. Re-audit and remediate repos one at a time.
+5. Re-earn release status only after the repo-specific recovery gate passes.
 
 The current shared rollout pattern is documented in [docs/roadmap/shared-extraction-consumer-rollout.md](docs/roadmap/shared-extraction-consumer-rollout.md).
 
@@ -73,9 +77,9 @@ If you are orienting yourself for the first time, read in this order:
 |---|---|
 | `civicsuite` | Umbrella repo: roadmap, governance, specs, ADRs, compatibility truth source |
 | `civiccore` | Shared platform package consumed by every module |
-| `civicrecords-ai` | Shipping flagship product |
-| `civicclerk` | Productizing second-product candidate |
-| `civiccode` | Active municipal-code productization lane |
+| `civicrecords-ai` | Most mature product-shaped repo; release status under recovery review |
+| `civicclerk` | Meeting-workflow repo with public v1.0.0 tag under recovery review |
+| `civiccode` | Municipal-code repo with recent release work under recovery review |
 | `civiczone` through `civicparks` | Foundation-tier module repos with bounded shipped surfaces |
 | `civicregwatch` | Planned federal regulatory intelligence module; spec exists, repo not scaffolded yet |
 | `civicapi` | Planned public read-only data gateway module; spec exists, repo not scaffolded yet |

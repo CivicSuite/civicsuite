@@ -15,16 +15,18 @@ CivicSuite is an open-source municipal product family. It is not one giant
 program. It is a collection of modules that a city can install one at a time,
 on its own hardware, on its own schedule.
 
-Current maturity snapshot as of 2026-05-05:
+Current maturity snapshot as of 2026-05-07:
 
-- `civicrecords-ai v1.4.10`: shipping flagship product
-- `civiccore v1.0.0`: shared platform package
-- `civicclerk v1.0.0`: productizing second-product candidate
-- `civiccode v0.1.18`: active municipal-code productization lane with durable
-  section lifecycle, popular-question, staff-note, plain-language summary,
-  CivicClerk handoff, handoff audit-event, import-job ledger, codifier sync
-  source-state, durable host-validation, delta-plan history, and
-  related-material discovery aids
+Public shipping, product-ready, and v1 maturity claims are frozen while the
+suite is re-audited. Existing public tags are historical artifacts unless and
+until each repo re-earns release status through the recovery gates in
+docs/release-recovery-status.md.
+
+- `civicrecords-ai`: most mature product-shaped repo; public release label
+  under recovery review
+- `civiccore`: shared platform package; public v1 line under recovery review
+- `civicclerk`: meeting-workflow repo; public v1.0.0 label under recovery review
+- `civiccode`: municipal-code repo with recent release work under recovery review
 - CivicRegWatch and CivicAPI: planned modules with implementation specs
 - Remaining catalog modules: foundation tier
 
@@ -81,8 +83,8 @@ Top-level topology:
 
 - `civicsuite`: umbrella docs, roadmap, governance, compatibility
 - `civiccore`: shared platform package
-- `civicrecords-ai`: shipping flagship product
-- `civicclerk`: productizing second-product candidate
+- `civicrecords-ai`: most mature product-shaped repo under recovery review
+- `civicclerk`: meeting-workflow repo under recovery review
 - `civicregwatch`: planned federal regulatory intelligence module
 - `civicapi`: planned public read-only data gateway module
 - remaining catalog repos: foundation tier

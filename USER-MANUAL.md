@@ -16,18 +16,21 @@ A glossary at the end defines the technical terms used here.
 
 CivicSuite is an **open-source municipal product family**. It is not one giant program. It is a planned collection of modules that a city can install one at a time, on its own hardware, on its own schedule. Cities do not need to send operational data to a vendor cloud, do not pay per seat, and can inspect or modify the source code at any time.
 
-The suite is intentionally honest about maturity:
+The suite is under release-recovery review. Public "shipping",
+"product-ready", and "v1.0.0 proves release maturity" claims are frozen until
+each repo re-earns that status through the gates in
+[docs/release-recovery-status.md](docs/release-recovery-status.md).
 
-- `civicrecords-ai` is the current production-usable shipping product.
-- `civicclerk` is the active second-product candidate.
+- `civicrecords-ai` is the most mature product-shaped repo, but its current public label is provisional.
+- `civicclerk` has substantial meeting-workflow work, but its current public v1.0.0 label is provisional.
 - The rest of the catalog is in the foundation/planned tier: real runtime work or implementation specs, not yet end-to-end products.
 - `civiccore` is the shared platform package under all of them.
 
-### What is available today? (as of 2026-05-06)
+### What is available today? (as of 2026-05-07)
 
-- **`civicrecords-ai v1.4.10`** - the shipping product for public-records and FOIA workflow. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore v1.0.0`** - the shared platform package. It currently ships migrations, the shared SQLAlchemy `Base`, the LLM abstraction layer, audit/provenance primitives, export/manifest helpers, city profiles, auth/RBAC helpers, notice-compliance helpers, onboarding profile helpers, search/access helpers, connector/import helpers, live-sync retry/circuit primitives, reusable sync source-list status projection, reusable vendor-delta planning, reusable mock-city vendor/IdP/backup-retention contracts, release-evidence helpers, trusted-header config/proxy enforcement helpers, release-provenance verification, shared startup configuration validation helpers, and shared cron/schedule validation helpers. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk v1.0.0`** - the productizing second-product candidate for meetings, agendas, packets, minutes, voting, and sunshine-law compliance. It now ships all four MVP workflow surfaces in React, the resident public portal, Docker Compose product rehearsal, seeded Brookfield demo data, OIDC browser-session foundations, backup/restore rehearsal, vendor-network live sync, reusable CivicCore-backed mock municipal IdP and backup-retention contract suites, scheduled local connector import sync, integration-depth contracts, installer source packaging, enterprise signing readiness, explicit unsigned-installer warnings, and shared `civiccore v1.0.0` startup config validation plus sync source-list health projection reuse. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civicrecords-ai`** - the most mature product-shaped repo for public-records and FOIA workflow. Its current public release label is provisional until recovery gates pass. Repo: <https://github.com/CivicSuite/civicrecords-ai>
+- **`civiccore`** - the shared platform package. Its public v1 line is provisional until release, version, downstream compatibility, security, and install evidence are re-verified. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civicclerk`** - the meeting-workflow repo. Its public v1.0.0 label is provisional until frontend architecture, user-flow QA, accessibility, install, security, and mock-vs-production gaps are closed. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`CivicRegWatch` and `CivicAPI`** - newly added planned modules. CivicRegWatch is the federal regulatory intelligence module. CivicAPI is the public read-only data gateway over human-approved CivicSuite publication records. Their implementation specs live in [specs/05_civicregwatch.md](specs/05_civicregwatch.md) and [specs/06_civicapi.md](specs/06_civicapi.md).
 
 Selected foundation modules have also advanced beyond the original `civiccore==0.3.0` baseline. The authoritative truth for each module-to-platform pairing lives in the umbrella compatibility matrix, not in static prose snapshots:
@@ -46,9 +49,8 @@ Selected foundation modules have also advanced beyond the original `civiccore==0
 
 | Tier | Count | Meaning today |
 |---|---:|---|
-| Shipping | 1 of 28 product modules | `civicrecords-ai` is the current production-usable module. |
-| Productizing | 1 of 28 product modules | `civicclerk` has real React product depth, Docker Compose product rehearsal, install rehearsal, backup/restore rehearsal, release handoff, OIDC browser-session foundations, vendor-network live sync, installer source packaging, and enterprise signing readiness. It still needs production deployment hardening before production city use. |
-| Foundation / planned | 26 of 28 product modules | The rest of the catalog has real runtime foundations or new implementation specs, but not yet full product depth. |
+| Provisional / under recovery audit | 7 repos | `civicrecords-ai`, `civiccore`, `civicclerk`, `civiccode`, `civiczone`, `civicplan`, and `civicpermit` have public release tags or substantial work, but those labels are provisional until recovery gates pass. |
+| Foundation / planned | 21 of 28 product modules | The rest of the catalog has bounded runtime foundations or implementation specs, but not yet full product depth. |
 
 During the developer process, Windows installers should be treated as unsigned unless a module explicitly says otherwise. A first install can show a Windows SmartScreen or untrusted-publisher warning because code-signing certificates are not available for the whole developer cycle.
 
@@ -90,10 +92,10 @@ It does **not** contain the runtime code for the individual products.
 
 | Repo | Status |
 |---|---|
-| `civicrecords-ai` | Shipping `v1.4.10` flagship product |
-| `civiccore` | Shipping `v1.0.0` shared platform package |
-| `civicclerk` | Productizing `v1.0.0` second-product candidate |
-| `civiccode` | Active productization `v0.1.18` municipal-code lane with durable section lifecycle, popular-question, staff-note, plain-language summary, CivicClerk handoff, handoff audit-event, import-job ledger, codifier sync source-state, durable host-validation, delta-plan history, and related-material discovery aids |
+| `civicrecords-ai` | Most mature product-shaped repo; public release label under recovery review |
+| `civiccore` | Shared platform package; public v1 line under recovery review |
+| `civicclerk` | Meeting-workflow repo; public v1.0.0 label under recovery review |
+| `civiccode` | Municipal-code repo with recent release work under recovery review |
 | `civicregwatch` | Planned module; spec exists, repo not scaffolded yet |
 | `civicapi` | Planned module; spec exists, repo not scaffolded yet |
 | Remaining catalog repos | Foundation-tier runtime releases with bounded shipped surfaces |
@@ -175,8 +177,8 @@ Start with:
               describes & coordinates |
                                       v
                         +---------------------------+
-                        |     civiccore (v1.0.0)    |
-                        |  shipping today:          |
+                        |     civiccore (v1 tag)    |
+                        |  provisional status:      |
                         |  migrations, db.Base, llm |
                         |  audit, provenance,       |
                         |  manifests, exports,      |
@@ -189,8 +191,8 @@ Start with:
               |                       |                       |
    +----------+----------+   +--------+---------+   +---------+--------+
    | civicrecords-ai     |   | civicclerk       |   | foundation tier  |
-   | v1.4.10 shipping    |   | v1.0.0           |   | civicaccess ...  |
-   | FOIA / records      |   | productizing     |   | civiczone        |
+   | provisional label   |   | provisional tag  |   | civicaccess ...  |
+   | FOIA / records      |   | meetings         |   | civiczone        |
    +---------------------+   +------------------+   +------------------+
 ```
 
