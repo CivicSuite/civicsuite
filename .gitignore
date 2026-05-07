@@ -26,6 +26,10 @@ node_modules/
 _site/
 .jekyll-cache/
 
+# Generated manuals should be release artifacts, not hand-reviewed source.
+USER-MANUAL.docx
+USER-MANUAL.pdf
+
 # Workspace stub files (created during initial setup; safe to delete from File Explorer)
 .placeholder
 specs/02_test.md

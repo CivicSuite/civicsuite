@@ -21,8 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
-EXPECTED_CIVICCORE = "0.3.0"
-CURRENT_CIVICCORE = "0.3.0"
+CURRENT_PLATFORM_CIVICCORE = "1.0.0"
+LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 
 REQUIRED_ARTIFACTS = (
     "README.md",
@@ -48,7 +48,7 @@ class RepoSpec:
     local_dir: str
     version: str
     pyproject: str = "pyproject.toml"
-    civiccore_required: str | None = EXPECTED_CIVICCORE
+    civiccore_required: str | None = LEGACY_FOUNDATION_CIVICCORE
     release_tag: str | None = None
     published_version: str | None = None
     published_civiccore_required: str | None = None
@@ -95,19 +95,18 @@ REPOS: tuple[RepoSpec, ...] = (
         "civiccode",
         "CivicSuite/civiccode",
         "civiccode",
-        "0.1.18",
-        civiccore_required="0.22.1",
-        published_civiccore_required="0.22.0",
+        "1.0.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
-    RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicplan", "CivicSuite/civicplan", "civicplan", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicpermit", "CivicSuite/civicpermit", "civicpermit", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicinspect", "CivicSuite/civicinspect", "civicinspect", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicgrants", "CivicSuite/civicgrants", "civicgrants", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civicplan", "CivicSuite/civicplan", "civicplan", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicpermit", "CivicSuite/civicpermit", "civicpermit", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicinspect", "CivicSuite/civicinspect", "civicinspect", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civicgrants", "CivicSuite/civicgrants", "civicgrants", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
     RepoSpec(
         "civicnotice",
         "CivicSuite/civicnotice",
@@ -117,18 +116,18 @@ REPOS: tuple[RepoSpec, ...] = (
         published_version="0.1.1",
         published_civiccore_required="0.3.0",
     ),
-    RepoSpec("civic311", "CivicSuite/civic311", "civic311", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civiccomms", "CivicSuite/civiccomms", "civiccomms", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civic311", "CivicSuite/civic311", "civic311", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civiccomms", "CivicSuite/civiccomms", "civiccomms", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
     RepoSpec("civicdata", "CivicSuite/civicdata", "civicdata", "0.1.2", civiccore_required="0.4.0"),
-    RepoSpec("civichr", "CivicSuite/civichr", "civichr", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civichr", "CivicSuite/civichr", "civichr", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
     RepoSpec("civicbudget", "CivicSuite/civicbudget", "civicbudget", "0.1.2", civiccore_required="0.4.0"),
     RepoSpec("civiclegal", "CivicSuite/civiclegal", "civiclegal", "0.1.2", civiccore_required="0.11.0"),
-    RepoSpec("civicelections", "CivicSuite/civicelections", "civicelections", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicutility", "CivicSuite/civicutility", "civicutility", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civicelections", "CivicSuite/civicelections", "civicelections", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civicutility", "CivicSuite/civicutility", "civicutility", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
     RepoSpec("civiccourt", "CivicSuite/civiccourt", "civiccourt", "0.1.2", civiccore_required="0.4.0"),
-    RepoSpec("civicsafety", "CivicSuite/civicsafety", "civicsafety", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civiclibrary", "CivicSuite/civiclibrary", "civiclibrary", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
-    RepoSpec("civicparks", "CivicSuite/civicparks", "civicparks", "0.1.1", civiccore_required=CURRENT_CIVICCORE),
+    RepoSpec("civicsafety", "CivicSuite/civicsafety", "civicsafety", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civiclibrary", "CivicSuite/civiclibrary", "civiclibrary", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec("civicparks", "CivicSuite/civicparks", "civicparks", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
 )
 
 

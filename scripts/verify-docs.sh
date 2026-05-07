@@ -19,6 +19,7 @@ REQUIRED=(
   SUPPORT.md
   .gitignore
   docs/index.html
+  docs/release-recovery-status.md
   docs/compatibility/index.md
   docs/deployment/local-demo-profile.md
   docs/ux/shared-shell-inventory.md
@@ -56,6 +57,18 @@ HITS=$(grep -rn -E "$PATTERN" README.md USER-MANUAL.md docs/ \
 if [ -n "$HITS" ]; then
   echo "  STALE STRINGS FOUND:"
   echo "$HITS" | sed 's/^/    /'
+  fail=1
+fi
+
+echo "==> Release-recovery overclaim check"
+OVERCLAIM_PATTERN='positioned as production-usable|flagship shipping product|developer-finished|clear second-product candidate|productizing second-product candidate|Browser QA passed|browser QA passed|React staff workspace and public portal'
+OVERCLAIM_HITS=$(grep -rn -E "$OVERCLAIM_PATTERN" README.md USER-MANUAL.md docs/ \
+       --include='*.md' --include='*.html' 2>/dev/null \
+       | grep -vE 'CHANGELOG|docs/architecture/ADR-|docs/compatibility/index\.md|docs/release-recovery-status\.md|docs/governance/civicrecords-ai-org-transfer-runbook\.md' \
+       || true)
+if [ -n "$OVERCLAIM_HITS" ]; then
+  echo "  OVERCLAIM STRINGS FOUND:"
+  echo "$OVERCLAIM_HITS" | sed 's/^/    /'
   fail=1
 fi
 
