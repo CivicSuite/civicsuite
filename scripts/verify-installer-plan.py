@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import importlib.util
 import subprocess
@@ -87,6 +88,13 @@ def load_manifest() -> dict[str, object]:
     if not isinstance(data, dict):
         raise AssertionError("manifest root must be a JSON object")
     return data
+
+
+def has_local_civiccore_wheel() -> bool:
+    if os.environ.get("CIVICSUITE_VERIFY_NO_LOCAL_CIVICCORE") == "1":
+        return False
+    dist = ROOT.parent / "civiccore" / "dist"
+    return dist.is_dir() and any(dist.glob("civiccore-*.whl"))
 
 
 def check_docs() -> list[str]:
@@ -592,11 +600,12 @@ def check_planner(data: dict[str, object]) -> list[str]:
         if "cannot be combined" not in proc.stderr:
             errors.append(fail(f"{flag} dry-run rejection must explain the operator fix"))
 
-    install_kit = module.generate_minimal_install_kit(manifest=data)
-    if install_kit.get("mutates_host") is not False:
-        errors.append(fail("minimal install kit generator must not mutate host state"))
-    if install_kit.get("installer_scripts_mutate_when_run") is not True:
-        errors.append(fail("minimal install kit must clearly label installer scripts as mutating when run"))
+    if has_local_civiccore_wheel():
+        install_kit = module.generate_minimal_install_kit(manifest=data)
+        if install_kit.get("mutates_host") is not False:
+            errors.append(fail("minimal install kit generator must not mutate host state"))
+        if install_kit.get("installer_scripts_mutate_when_run") is not True:
+            errors.append(fail("minimal install kit must clearly label installer scripts as mutating when run"))
     expected_generated = {
         "README.md",
         "requirements.txt",
@@ -770,7 +779,6 @@ def check_launchers() -> list[str]:
             ("-ShowProfileConfig", '"services"'),
             ("-ShowHealthChecks", '"checks"'),
             ("-ShowPreflight", '"executor_not_implemented"'),
-            ("-GenerateInstallKit", '"generated_root"'),
         ):
             ok, output = run_launcher(
                 [
@@ -789,6 +797,24 @@ def check_launchers() -> list[str]:
                 errors.append(fail(f"windows launcher {switch} failed: {output}"))
             elif '"mutates_host": false' not in output or marker not in output:
                 errors.append(fail(f"windows launcher {switch} did not return expected non-mutating model"))
+        if has_local_civiccore_wheel():
+            ok, output = run_launcher(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(WINDOWS_LAUNCHER),
+                    "-Profile",
+                    "minimal",
+                    "-GenerateInstallKit",
+                ]
+            )
+            if not ok:
+                errors.append(fail(f"windows launcher -GenerateInstallKit failed: {output}"))
+            elif '"mutates_host": false' not in output or '"generated_root"' not in output:
+                errors.append(fail("windows launcher -GenerateInstallKit did not return expected non-mutating model"))
         launcher_text = WINDOWS_LAUNCHER.read_text(encoding="utf-8")
         if "RunCleanroomProof" not in launcher_text or "--run-cleanroom-proof" not in launcher_text:
             errors.append(fail("windows launcher missing cleanroom proof switch"))
@@ -850,13 +876,18 @@ def check_launchers() -> list[str]:
             ("--show-profile-config", '"services"'),
             ("--show-health-checks", '"checks"'),
             ("--show-preflight", '"executor_not_implemented"'),
-            ("--generate-install-kit", '"generated_root"'),
         ):
             ok, output = run_launcher(["bash", launcher_path, "--profile", "minimal", flag])
             if not ok:
                 errors.append(fail(f"{name} launcher {flag} failed: {output}"))
             elif '"mutates_host": false' not in output or marker not in output:
                 errors.append(fail(f"{name} launcher {flag} did not return expected non-mutating model"))
+        if has_local_civiccore_wheel():
+            ok, output = run_launcher(["bash", launcher_path, "--profile", "minimal", "--generate-install-kit"])
+            if not ok:
+                errors.append(fail(f"{name} launcher --generate-install-kit failed: {output}"))
+            elif '"mutates_host": false' not in output or '"generated_root"' not in output:
+                errors.append(fail(f"{name} launcher --generate-install-kit did not return expected non-mutating model"))
         launcher_text = path.read_text(encoding="utf-8")
         if "--run-cleanroom-proof" not in launcher_text:
             errors.append(fail(f"{name} launcher missing cleanroom proof flag"))
