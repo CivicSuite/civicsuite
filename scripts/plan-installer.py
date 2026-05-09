@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import gzip
 import hashlib
 import json
 import platform
@@ -27,6 +28,12 @@ PACKAGE_ROOT = GENERATED_ROOT / "packages"
 NATIVE_ROOT = GENERATED_ROOT / "native"
 DIST_ROOT = ROOT / "installer" / "dist"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
+SIGNING_STATUS = {
+    "signed": False,
+    "status": "unsigned_oss_beta",
+    "reason": "CivicSuite is an open-source beta project and signing certificates are not available yet.",
+    "trust_path": "Verify the release SHA256 checksum before running the installer package.",
+}
 
 
 class PlannerError(RuntimeError):
@@ -1303,6 +1310,11 @@ $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\\..\\..\\..\\..")
 $Planner = Join-Path $RepoRoot "scripts\\plan-installer.py"
 
+Write-Host "CivicSuite OSS beta installer package"
+Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
+Write-Host "Trust path: verify the SHA256 checksum from installer\\dist before running lifecycle commands."
+Write-Host "Project status: open-source beta; code signing certificates are not available yet."
+
 if ($Gate) {{
     python $Planner --profile {profile_id} --menu-style {menu_style} --run-cleanroom-gate
     exit $LASTEXITCODE
@@ -1342,6 +1354,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 REPO_ROOT="$(cd "${{SCRIPT_DIR}}/../../../../.." && pwd)"
 PLANNER="${{REPO_ROOT}}/scripts/plan-installer.py"
+
+echo "CivicSuite OSS beta installer package"
+echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
+echo "Trust path: verify the SHA256 checksum from installer/dist before running lifecycle commands."
+echo "Project status: open-source beta; code signing certificates are not available yet."
 
 MODE="${{1:-readiness}}"
 case "${{MODE}}" in
@@ -1390,6 +1407,26 @@ def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, 
 Profile: `{profile_id}`
 Menu style: `{menu_style}`
 
+## Unsigned OSS Beta Notice
+
+This package is unsigned. CivicSuite is an open-source beta project and signing
+certificates are not available yet. Windows may show SmartScreen or Unknown
+Publisher warnings. macOS may show unidentified developer warnings. Linux
+package tools may show an unsigned/local package warning.
+
+This is expected for this beta distribution. Verify the SHA256 checksum from
+`installer/dist` before running the package. If the checksum does not match,
+stop and download the artifact again from the project release source.
+
+## Platform Warning Guidance
+
+- Windows: choose More info, confirm the app name/path, then choose Run anyway
+  only after the checksum matches.
+- macOS: use System Settings > Privacy & Security to allow the package only
+  after the checksum matches.
+- Linux: install from the local archive/package only after verifying the
+  checksum file.
+
 This package is the operator-facing installer entrypoint for the selected
 platform. It does not install privileged baseline software by itself. It checks
 readiness, renders the selected install plan, and can run the current cleanroom
@@ -1434,7 +1471,7 @@ gate for profiles that have a gate.
 - Readiness and plan modes are non-mutating.
 - Gate mode is mutating: it may build/start/teardown Docker resources and write
   installer evidence under `installer/reports`.
-- Native host installers are not packaged in this slice.
+- Native host installer wrappers are generated but unsigned in this OSS beta.
 """
 
 
@@ -1509,7 +1546,7 @@ def _native_manifest_files(*, profile_id: str, platform_id: str, version: str, p
     if platform_id == "windows":
         return {
             "CivicSuiteInstaller.iss": f"""; CivicSuite Windows installer wrapper manifest.
-; Build with Inno Setup after reviewing the generated package payload.
+; Unsigned OSS beta: build with Inno Setup after reviewing the generated package payload.
 
 #define AppName "CivicSuite"
 #define AppVersion "{version}"
@@ -1541,6 +1578,11 @@ Payload source: `{package_rel}`
 Use `CivicSuiteInstaller.iss` with Inno Setup to build a Windows installer that
 wraps the generated operator package. The wrapper opens the readiness flow by
 default and keeps privileged dependency installation outside silent mutation.
+
+This beta wrapper is unsigned until project signing certificates are available.
+Windows SmartScreen or Unknown Publisher warnings are expected. Verify the
+release SHA256 checksum before running the installer, then use More info > Run
+anyway only if the checksum matches.
 """,
         }
     if platform_id == "macos":
@@ -1567,7 +1609,10 @@ productbuild --distribution distribution.xml --package-path . CivicSuite-{profil
 Payload source: `{package_rel}`
 
 Use `pkgbuild` and `productbuild` with the included distribution file to create
-a signed macOS package after code-signing policy is settled.
+a macOS package. This beta wrapper is unsigned until project signing
+certificates are available. macOS unidentified developer warnings are expected.
+Verify the release SHA256 checksum before allowing the package in Privacy &
+Security.
 """,
         }
     return {
@@ -1594,6 +1639,8 @@ Payload source: `{package_rel}`
 
 Use the `debian/` metadata as the first `.deb` wrapper for the generated Linux
 operator package. Dependency installation remains explicit and operator-led.
+This beta wrapper is unsigned until project signing keys are available. Verify
+the release SHA256 checksum before installing the local package.
 """,
     }
 
@@ -1621,10 +1668,27 @@ def _archive_directory(source: Path, target: Path, *, platform_id: str) -> None:
         with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for path in sorted(source.rglob("*")):
                 if path.is_file():
-                    archive.write(path, path.relative_to(source.parent))
+                    info = zipfile.ZipInfo(str(path.relative_to(source.parent)).replace("\\", "/"))
+                    info.date_time = (2026, 1, 1, 0, 0, 0)
+                    info.external_attr = (0o755 if path.suffix == ".sh" else 0o644) << 16
+                    archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED)
         return
-    with tarfile.open(target, "w:gz") as archive:
-        archive.add(source, arcname=source.name)
+    with target.open("wb") as raw:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
+            with tarfile.open(fileobj=gz, mode="w") as archive:
+                for path in sorted(source.rglob("*")):
+                    arcname = source.name / path.relative_to(source) if isinstance(source.name, Path) else f"{source.name}/{path.relative_to(source).as_posix()}"
+                    info = archive.gettarinfo(str(path), arcname=arcname)
+                    info.mtime = 0
+                    info.uid = 0
+                    info.gid = 0
+                    info.uname = ""
+                    info.gname = ""
+                    if path.is_file():
+                        with path.open("rb") as handle:
+                            archive.addfile(info, handle)
+                    else:
+                        archive.addfile(info)
 
 
 def _sha256(path: Path) -> str:
@@ -1689,6 +1753,8 @@ def generate_release_artifacts(
     release_manifest = {
         "schema_version": 1,
         "installer_version": version,
+        "distribution_status": "unsigned_oss_beta",
+        "signing": SIGNING_STATUS,
         "profile": profile_id,
         "menu_style": menu_style,
         "platforms": platforms,
@@ -1697,7 +1763,7 @@ def generate_release_artifacts(
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "native_wrapper_status": "manifests_generated",
         "native_installers_built": False,
-        "next_action": "Build/sign native wrappers from installer/generated/native or publish the verified archives.",
+        "next_action": "Publish verified unsigned beta archives now, or build/sign native wrappers when certificates are available.",
     }
     manifest_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-release-manifest.json"
     manifest_path.write_text(json.dumps(release_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1713,7 +1779,8 @@ def generate_release_artifacts(
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "release_manifest": str(manifest_path.relative_to(ROOT)),
         "native_installers_built": False,
-        "next_action": "Publish archives now, or build/sign native wrappers from generated manifests.",
+        "signing": SIGNING_STATUS,
+        "next_action": "Publish verified unsigned beta archives now, or build/sign native wrappers when certificates are available.",
     }
 
 

@@ -13,6 +13,11 @@ $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\..\..\..\..")
 $Planner = Join-Path $RepoRoot "scripts\plan-installer.py"
 
+Write-Host "CivicSuite OSS beta installer package"
+Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
+Write-Host "Trust path: verify the SHA256 checksum from installer\dist before running lifecycle commands."
+Write-Host "Project status: open-source beta; code signing certificates are not available yet."
+
 if ($Gate) {
     python $Planner --profile clerk-core --menu-style guided --run-cleanroom-gate
     exit $LASTEXITCODE

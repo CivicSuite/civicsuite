@@ -50,6 +50,9 @@ Completed surfaces:
 - `scripts/plan-installer.py --profile clerk-core --generate-release-artifacts`
   writes platform archives, SHA256 checksums, a release manifest, and native
   wrapper manifests for Windows, macOS, and Linux.
+- Generated packages and release manifests now identify the artifacts as
+  unsigned OSS beta builds, explain expected Windows/macOS/Linux trust warnings,
+  and direct operators to verify SHA256 checksums before continuing.
 - The planner rejects `--dry-run` when it is combined with a cleanroom proof or
   gate because those modes build/start/teardown Docker resources and write
   evidence.

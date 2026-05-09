@@ -256,6 +256,31 @@ The generator does not build or sign native OS installers by itself. It produces
 verified payloads and wrapper manifests that can be built by the platform
 packaging tools in release infrastructure.
 
+## unsigned OSS beta Distribution
+
+Current CivicSuite installer artifacts are distributable but unsigned.
+CivicSuite is an open-source beta project, and signing certificates are not
+available yet. This means operating systems may show trust warnings even when
+the artifact is legitimate.
+
+Expected warnings:
+
+- Windows: SmartScreen or Unknown Publisher.
+- macOS: unidentified developer or package cannot be checked.
+- Linux: local package/archive is unsigned or not from a configured repository.
+
+Current trust path:
+
+1. Download the installer artifact from the project release source.
+2. Verify the SHA256 checksum against `installer/dist/*SHA256SUMS.txt`.
+3. Confirm the checksum matches before running anything.
+4. Proceed through the OS warning only after the checksum matches.
+
+Windows users should choose **More info** and then **Run anyway** only after the
+checksum matches the published SHA256 value. This is expected for the unsigned
+OSS beta period and should go away once project signing certificates are
+available.
+
 ## Artifact, Profile, And Health Planning
 
 Before host mutation exists, the installer can render the next executor inputs

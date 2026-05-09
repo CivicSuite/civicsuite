@@ -3,20 +3,21 @@
     {
       "path": "installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip",
       "platform": "windows",
-      "sha256": "210de2cf6a245b0eaeec04e1a13420b1dd6fe4206ae8ff35ebc30012357b7883"
+      "sha256": "f7e18ca5822ffb551d24050010d259348160b345ad13a16fed67c414cef59773"
     },
     {
       "path": "installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz",
       "platform": "macos",
-      "sha256": "575033d3d58246e9f787c89324fbc8718df56913fb6675c1d32d5a24f4615745"
+      "sha256": "aeea80668669955b94fd0869a04763d40de715a2d3aaa2c2ff5b3b7af2ebb608"
     },
     {
       "path": "installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz",
       "platform": "linux",
-      "sha256": "e24342a8d84e1d092b0d9bca7a5bdf7ddf3718781e2a4b11a3d35121e282105d"
+      "sha256": "ab72a44730a3d7c02c1017eb8b53b5f0408b94b944570545eaf031f35b4deefa"
     }
   ],
   "checksum_file": "installer/dist/CivicSuite-clerk-core-0.1.0-SHA256SUMS.txt",
+  "distribution_status": "unsigned_oss_beta",
   "installer_version": "0.1.0",
   "menu_style": "guided",
   "modules": [
@@ -26,12 +27,18 @@
   ],
   "native_installers_built": false,
   "native_wrapper_status": "manifests_generated",
-  "next_action": "Build/sign native wrappers from installer/generated/native or publish the verified archives.",
+  "next_action": "Publish verified unsigned beta archives now, or build/sign native wrappers when certificates are available.",
   "platforms": [
     "windows",
     "macos",
     "linux"
   ],
   "profile": "clerk-core",
-  "schema_version": 1
+  "schema_version": 1,
+  "signing": {
+    "reason": "CivicSuite is an open-source beta project and signing certificates are not available yet.",
+    "signed": false,
+    "status": "unsigned_oss_beta",
+    "trust_path": "Verify the release SHA256 checksum before running the installer package."
+  }
 }

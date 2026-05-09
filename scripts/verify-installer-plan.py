@@ -74,6 +74,7 @@ REQUIRED_DOC_PHRASES = (
     "install kit",
     "profile package",
     "release artifacts",
+    "unsigned OSS beta",
     "cleanroom",
     "cleanroom gate",
     "Playwright",
@@ -630,6 +631,18 @@ def check_planner(data: dict[str, object]) -> list[str]:
             for name in ("README.md", "install-plan.json", launcher):
                 if not (package_dir / name).is_file():
                     errors.append(fail(f"profile package missing {platform_id}/{name}"))
+            readme_path = package_dir / "README.md"
+            if readme_path.is_file():
+                readme = readme_path.read_text(encoding="utf-8")
+                for phrase in ("unsigned", "open-source beta", "SHA256", "Windows"):
+                    if phrase not in readme:
+                        errors.append(fail(f"profile package {platform_id} README missing unsigned beta phrase: {phrase}"))
+            launcher_path = package_dir / launcher
+            if launcher_path.is_file():
+                launcher_text = launcher_path.read_text(encoding="utf-8")
+                for phrase in ("unsigned", "SHA256", "open-source beta"):
+                    if phrase not in launcher_text:
+                        errors.append(fail(f"profile package {platform_id} launcher missing unsigned beta phrase: {phrase}"))
             plan_path = package_dir / "install-plan.json"
             if plan_path.is_file():
                 plan_data = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -688,6 +701,13 @@ def check_planner(data: dict[str, object]) -> list[str]:
             errors.append(fail("release artifacts must write SHA256SUMS"))
         if not manifest_path.is_file():
             errors.append(fail("release artifacts must write release manifest"))
+        else:
+            release_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            signing = release_manifest.get("signing", {})
+            if release_manifest.get("distribution_status") != "unsigned_oss_beta":
+                errors.append(fail("release manifest must mark unsigned OSS beta distribution"))
+            if signing.get("signed") is not False or "SHA256" not in signing.get("trust_path", ""):
+                errors.append(fail("release manifest must document unsigned signing status and SHA256 trust path"))
         for platform_id, required in (
             ("windows", "CivicSuiteInstaller.iss"),
             ("macos", "distribution.xml"),
@@ -695,6 +715,11 @@ def check_planner(data: dict[str, object]) -> list[str]:
         ):
             if not (GENERATED_NATIVE / "clerk-core" / platform_id / required).is_file():
                 errors.append(fail(f"native wrapper missing {platform_id}/{required}"))
+            native_readme = GENERATED_NATIVE / "clerk-core" / platform_id / "README.md"
+            if native_readme.is_file():
+                text = native_readme.read_text(encoding="utf-8")
+                if "unsigned" not in text or "SHA256" not in text:
+                    errors.append(fail(f"native wrapper {platform_id} README must explain unsigned checksum trust path"))
 
     if has_local_civiccore_wheel():
         install_kit = module.generate_minimal_install_kit(manifest=data)
