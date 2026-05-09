@@ -25,8 +25,10 @@ stop and download the artifact again from the project release source.
 
 This package is the operator-facing installer entrypoint for the selected
 platform. It does not install privileged baseline software by itself. It checks
-readiness, renders the selected install plan, and can run the current cleanroom
-gate for profiles that have a gate.
+readiness, renders the selected install plan, installs the clerk-core runtime
+from the bundled module sources, verifies live service health, repairs by
+rebuilding/restarting the stack, and uninstalls Docker resources for the
+profile.
 
 ## First Run
 
@@ -42,15 +44,15 @@ gate for profiles that have a gate.
    bash ./start-civicsuite-installer.sh plan
    ```
 
-3. Run the lifecycle command you need:
+3. Install the selected profile:
 
    ```text
-   bash ./start-civicsuite-installer.sh plan
+   bash ./start-civicsuite-installer.sh install
    ```
 
    Available lifecycle modes: readiness, plan, install, verify, repair,
-   uninstall, and gate. Install, repair, and uninstall are still guarded by the
-   planner until the mutating executor is implemented.
+   uninstall, and gate. Install, repair, uninstall, and gate are mutating: they
+   create or remove Docker resources and write installer reports.
 
 4. Run the cleanroom gate when Docker mutation is approved:
 
@@ -67,6 +69,10 @@ gate for profiles that have a gate.
 ## Boundary
 
 - Readiness and plan modes are non-mutating.
+- Install/repair mode is mutating: it builds and starts CivicRecords AI and
+  CivicClerk from the bundled source tree.
+- Verify mode checks live service endpoints.
+- Uninstall mode removes the clerk-core Docker containers and volumes.
 - Gate mode is mutating: it may build/start/teardown Docker resources and write
   installer evidence under `installer/reports`.
 - Native host installer wrappers are generated but unsigned in this OSS beta.

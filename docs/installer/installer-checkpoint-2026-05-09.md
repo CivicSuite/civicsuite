@@ -1,12 +1,14 @@
 # CivicSuite Installer Checkpoint - 2026-05-09
 
-Status: CivicCore package proof and CivicRecords service/UI cleanroom proof verified.
+Status: CivicCore package proof, CivicRecords service/UI cleanroom proof, and
+clerk-core distributable package lifecycle verified.
 
 ## Scope Completed
 
 This checkpoint records the first safe installer slice for CivicSuite. The work
-created an umbrella-level installer contract and dry-run planner, not a native
-installer binary and not a module runtime change.
+created an umbrella-level installer contract, dry-run planner, and a first real
+`clerk-core` beta lifecycle. It does not change module runtime code and does
+not claim signed native installer binaries.
 
 Completed surfaces:
 
@@ -53,6 +55,23 @@ Completed surfaces:
 - Generated packages and release manifests now identify the artifacts as
   unsigned OSS beta builds, explain expected Windows/macOS/Linux trust warnings,
   and direct operators to verify SHA256 checksums before continuing.
+- Release archives are now self-contained bundles with the selected platform
+  package, planner, lifecycle runner, manifest, and bundled CivicRecords AI plus
+  CivicClerk source trees.
+- `scripts/run-clerk-core-installer.py` provides the real `clerk-core`
+  lifecycle: readiness, install, verify, repair, and uninstall.
+- Package install builds and starts CivicRecords AI plus CivicClerk from the
+  bundled source trees on high ports.
+- Package verify checks CivicRecords API, CivicRecords web, CivicClerk API, and
+  CivicClerk web.
+- Package repair preserves generated `.env` files, rebuilds/restarts services,
+  and verifies health.
+- Package uninstall removes the profile Docker containers and volumes.
+- `scripts/run-installer-package-cleanroom.py` extracts the Linux release
+  archive and runs readiness, plan, install, repair, verify, and uninstall from
+  the extracted bundle.
+- `installer/reports/installer-package-cleanroom-20260509T184534Z-72a08df7/installer-package-cleanroom.json`
+  records a passing package lifecycle proof.
 - The planner rejects `--dry-run` when it is combined with a cleanroom proof or
   gate because those modes build/start/teardown Docker resources and write
   evidence.
@@ -69,7 +88,9 @@ Completed surfaces:
 
 ## Current Safety Boundary
 
-The installer work is intentionally non-mutating.
+The dry-run planner surfaces remain non-mutating. The generated package
+lifecycle is intentionally mutating when install, repair, uninstall, or gate is
+selected.
 
 Allowed now:
 
@@ -89,6 +110,7 @@ Allowed now:
 - generate a minimal CivicCore install kit inside the repo
 - generate cross-platform profile packages inside the repo
 - generate distributable release archives and native wrapper manifests
+- run the `clerk-core` package lifecycle from a self-contained archive
 - run the generated minimal Windows kit after explicit approval
 - run a disposable Linux cleanroom proof for the generated minimal kit
 - run a disposable CivicRecords service/UI cleanroom proof with Playwright
@@ -97,10 +119,7 @@ Allowed now:
 Not allowed yet:
 
 - install dependencies
-- start services or containers
-- mutate host state
-- install CivicCore or any module
-- repair or uninstall services
+- silently install privileged dependencies
 - package native installers
 - change module product code
 - run additional generated install scripts without explicit operator approval
@@ -135,6 +154,7 @@ python scripts\run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-
 python scripts\run-civicrecords-cleanroom.py --run-id manual-civicrecords-service-cleanroom-4
 python scripts\plan-installer.py --profile clerk-core --run-cleanroom-proof --run-id manual-clerk-core-integrated-proof
 python scripts\plan-installer.py --profile clerk-core --run-cleanroom-gate --run-id verify-clerk-core-gate
+python scripts\run-installer-package-cleanroom.py
 ```
 
 Platform launcher examples:
@@ -199,6 +219,24 @@ python scripts\verify-deployment-profile.py --static-only
 python scripts\verify-suite-state.py
 ```
 
+Package cleanroom lifecycle passed:
+
+```powershell
+python scripts\run-installer-package-cleanroom.py
+```
+
+Evidence:
+
+- Run id: `installer-package-cleanroom-20260509T184534Z-72a08df7`
+- Archive:
+  `installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz`
+- Lifecycle: readiness, plan, install, repair, verify, uninstall
+- Live endpoints verified:
+  `http://127.0.0.1:18000/health`,
+  `http://127.0.0.1:18080/`,
+  `http://127.0.0.1:18776/health`,
+  `http://127.0.0.1:18081/`
+
 Control-plane eval stack passed:
 
 ```powershell
@@ -207,13 +245,13 @@ python .agent-workflows\evals\run_all.py
 
 ## Next Recommended Slice
 
-Recommended next slice: promote the integrated `clerk-core` proof from manual
-evidence to a named installer verification gate with concise pass/fail output
-for operators.
+Recommended next slice: add hosted CI or scheduled cleanroom execution for the
+package lifecycle so every release artifact proves extraction, install, repair,
+verify, and uninstall before publication.
 
-Why: the suite installer now owns the proof command. The next useful step is
-making the result operator-friendly so a failed gate says exactly which layer
-failed: build, startup, API health, frontend health, Playwright, or teardown.
+Why: the package lifecycle is now real and has caught real failures. Running it
+automatically prevents a future release from shipping a broken archive or a
+repair path that only works once.
 
 Stop before:
 
