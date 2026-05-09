@@ -1,7 +1,9 @@
 # CivicSuite Installer Checkpoint - 2026-05-09
 
 Status: CivicCore package proof, CivicRecords service/UI cleanroom proof, and
-clerk-core distributable package lifecycle verified.
+clerk-core distributable package lifecycle verified for Windows and Linux
+archives. macOS archive extraction/readiness/plan proof exists; full macOS
+runtime proof still requires a macOS host or VM.
 
 ## Scope Completed
 
@@ -70,8 +72,22 @@ Completed surfaces:
 - `scripts/run-installer-package-cleanroom.py` extracts the Linux release
   archive and runs readiness, plan, install, repair, verify, and uninstall from
   the extracted bundle.
+- `scripts/run-installer-package-cleanroom.py` now also supports Windows,
+  macOS, and Linux release archives through the platform-specific package
+  launchers.
+- Windows zip packaging now preserves the Dockerfile-required
+  `backend/tests` path inside the bundled CivicRecords AI source by writing a
+  `.bundle-placeholder` file before archive creation.
 - `installer/reports/installer-package-cleanroom-20260509T184534Z-72a08df7/installer-package-cleanroom.json`
   records a passing package lifecycle proof.
+- `installer/reports/installer-package-cleanroom-20260509T193309Z-b90bb614/installer-package-cleanroom.json`
+  records a passing Windows extracted-package lifecycle proof.
+- `installer/reports/installer-package-cleanroom-20260509T193433Z-4582af7c/installer-package-cleanroom.json`
+  records a passing Linux extracted-package lifecycle proof after the Windows
+  zip preservation fix.
+- `installer/reports/installer-package-cleanroom-20260509T193159Z-9945e706/installer-package-cleanroom.json`
+  records macOS archive extraction plus readiness/plan proof. It was executed
+  from this Windows/WSL host, so it is not a full macOS runtime proof.
 - The planner rejects `--dry-run` when it is combined with a cleanroom proof or
   gate because those modes build/start/teardown Docker resources and write
   evidence.
@@ -223,19 +239,26 @@ Package cleanroom lifecycle passed:
 
 ```powershell
 python scripts\run-installer-package-cleanroom.py
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-linux-0.1.0.tar.gz
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-macos-0.1.0.tar.gz --skip-install
 ```
 
 Evidence:
 
-- Run id: `installer-package-cleanroom-20260509T184534Z-72a08df7`
-- Archive:
-  `installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz`
-- Lifecycle: readiness, plan, install, repair, verify, uninstall
+- Windows run id: `installer-package-cleanroom-20260509T193309Z-b90bb614`
+- Linux run id: `installer-package-cleanroom-20260509T193433Z-4582af7c`
+- macOS archive/readiness/plan run id:
+  `installer-package-cleanroom-20260509T193159Z-9945e706`
+- Windows and Linux lifecycle: readiness, plan, install, repair, verify,
+  uninstall
 - Live endpoints verified:
   `http://127.0.0.1:18000/health`,
   `http://127.0.0.1:18080/`,
   `http://127.0.0.1:18776/health`,
   `http://127.0.0.1:18081/`
+- Remaining caveat: full macOS install/repair/verify/uninstall still requires
+  a macOS host or VM. This Windows host does not provide a macOS runtime.
 
 Control-plane eval stack passed:
 

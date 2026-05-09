@@ -1495,12 +1495,6 @@ def generate_profile_package(
     platform_id: str = "all",
     output_root: Path = PACKAGE_ROOT,
 ) -> dict[str, Any]:
-    plan = build_install_plan(
-        manifest=manifest,
-        profile_id=profile_id,
-        selected_modules=selected_modules,
-        menu_style=menu_style,
-    )
     platforms = ["windows", "macos", "linux"] if platform_id == "all" else [platform_id]
     allowed_platforms = {"windows", "macos", "linux"}
     unknown_platforms = sorted(set(platforms) - allowed_platforms)
@@ -1508,6 +1502,13 @@ def generate_profile_package(
         raise PlannerError(f"Unknown installer package platform: {', '.join(unknown_platforms)}")
     written: list[str] = []
     for target_platform in platforms:
+        plan = build_install_plan(
+            manifest=manifest,
+            profile_id=profile_id,
+            selected_modules=selected_modules,
+            menu_style=menu_style,
+            host=_package_host(target_platform),
+        )
         package_dir = output_root / profile_id / target_platform
         if not _is_within(package_dir, output_root):
             raise PlannerError(f"Generated package path is outside installer package root: {package_dir}")
@@ -1544,12 +1545,28 @@ def generate_profile_package(
         "menu_style": menu_style,
         "package_root": str((output_root / profile_id).relative_to(ROOT)),
         "platforms": platforms,
-        "modules": plan["modules"],
+        "modules": build_install_plan(
+            manifest=manifest,
+            profile_id=profile_id,
+            selected_modules=selected_modules,
+            menu_style=menu_style,
+            host=_package_host(platforms[0]),
+        )["modules"],
         "files_written": written,
         "operator_entrypoints_mutate_only_in_gate_mode": True,
         "native_installers_packaged": False,
         "next_action": "Review generated platform packages, then run readiness from the target platform package.",
     }
+
+
+def _package_host(platform_id: str) -> dict[str, str]:
+    if platform_id == "windows":
+        return {"system": "Windows", "release": "10/11", "machine": "x86_64"}
+    if platform_id == "macos":
+        return {"system": "Darwin", "release": "13+", "machine": "x86_64/arm64"}
+    if platform_id == "linux":
+        return {"system": "Linux", "release": "Ubuntu LTS", "machine": "x86_64/arm64"}
+    raise PlannerError(f"Unknown installer package platform: {platform_id}")
 
 
 def _native_manifest_files(*, profile_id: str, platform_id: str, version: str, package_dir: Path) -> dict[str, str]:
@@ -1751,7 +1768,13 @@ contains the sibling `{module_name}` checkout and must pass
     )
     shutil.copytree(source, target, ignore=ignore)
     if module_name == "civicrecords-ai":
-        (target / "backend" / "tests").mkdir(parents=True, exist_ok=True)
+        tests_dir = target / "backend" / "tests"
+        tests_dir.mkdir(parents=True, exist_ok=True)
+        (tests_dir / ".bundle-placeholder").write_text(
+            "Preserves the Dockerfile-required tests directory in zip archives.\n",
+            encoding="utf-8",
+            newline="\n",
+        )
         ledger = source / "docs" / "ops" / "tier1-retrofit-ledger.json"
         if ledger.is_file():
             ledger_target = target / "docs" / "ops" / "tier1-retrofit-ledger.json"

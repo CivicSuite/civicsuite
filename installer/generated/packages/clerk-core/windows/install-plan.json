@@ -73,8 +73,8 @@
   ],
   "dry_run": true,
   "host": {
-    "machine": "AMD64",
-    "release": "11",
+    "machine": "x86_64",
+    "release": "10/11",
     "system": "Windows"
   },
   "menu_style": {

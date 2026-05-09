@@ -142,10 +142,14 @@ build/start/teardown Docker resources and write proof evidence.
 
 The package-level cleanroom proof is:
 `python scripts/run-installer-package-cleanroom.py`.
-It extracts the Linux release archive into `installer/reports/{run_id}`, runs
-readiness, plan, install, repair, verify, and uninstall from the extracted
-bundle, and records pass/fail evidence. This is the current zero-baseline machine
-proof for the distributable Linux archive.
+It extracts a release archive into `installer/reports/{run_id}`, runs readiness,
+plan, install, repair, verify, and uninstall from the extracted bundle, and
+records pass/fail evidence. The runner supports Windows, macOS, and Linux
+archives through the platform launchers. Windows and Linux full lifecycle proof
+has passed from regenerated release archives and remains the current
+zero-baseline machine proof for those distributable archives; macOS
+archive/readiness/plan proof has passed from this Windows/WSL host, with full
+macOS runtime proof still requiring a macOS host or VM.
 
 ## Supported Profiles
 
