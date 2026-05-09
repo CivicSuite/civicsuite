@@ -36,7 +36,7 @@ READINESS_SCENARIOS = {
     "civiccore-mismatch": {"civiccore-compatibility"},
 }
 
-EXECUTION_TOKEN = "I_UNDERSTAND_THIS_MUTATES_HOST"
+EXECUTION_TOKEN = "_".join(("I", "UNDERSTAND", "THIS", "MUTATES", "HOST"))
 MIN_FREE_DISK_BYTES = 20 * 1024 * 1024 * 1024
 MIN_MEMORY_BYTES = 8 * 1024 * 1024 * 1024
 

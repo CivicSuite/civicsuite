@@ -19,6 +19,9 @@ EXCLUDED_DIRS = {
     ".ruff_cache",
     "__pycache__",
     "audit-browser-qa",
+    ".venv",
+    "reports",
+    "test-results",
 }
 
 EXCLUDED_SUFFIXES = {
