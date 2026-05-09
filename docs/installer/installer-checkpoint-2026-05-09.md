@@ -281,7 +281,8 @@ The hosted workflow runs:
 
 - Windows archive extraction/readiness/plan.
 - macOS archive extraction/readiness/plan through the macOS package launcher
-  on hosted Linux, not macOS runtime.
+  on a GitHub-hosted macOS runner. This is macOS archive and shell evidence,
+  not Docker Desktop install/repair/uninstall certification.
 - Linux archive extraction/readiness/plan.
 - Linux archive install/repair/verify/uninstall.
 

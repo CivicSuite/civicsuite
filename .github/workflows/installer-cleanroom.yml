@@ -41,7 +41,7 @@ jobs:
             os: windows-latest
             archive: installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip
           - platform: macos
-            os: ubuntu-latest
+            os: macos-13
             archive: installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz
           - platform: linux
             os: ubuntu-latest
