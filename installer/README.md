@@ -158,6 +158,43 @@ executor exists.
 Future install execution may only be added in a separate reviewed slice after
 the dry-run plan, readiness state, and approval boundary are verified.
 
+## Executor State Machine
+
+The future executor is currently a design-only state machine:
+
+```powershell
+python scripts\plan-installer.py --profile minimal --show-executor-design --dry-run
+```
+
+Required phases:
+
+- `preflight`: validate plan, readiness, and evidence paths.
+- `approval`: require explicit operator approval before mutation.
+- `execute`: future mutating install phase for CivicCore and selected modules.
+- `verify`: health, restart, and failure-copy verification.
+- `repair`: future mutating repair phase.
+- `rollback`: future mutating rollback or uninstall phase.
+
+Only `execute`, `repair`, and `rollback` may ever mutate host state, and they
+remain design-only until a separate reviewed implementation slice exists.
+
+## Evidence Schema
+
+The future executor evidence schema is also dry-run only:
+
+```powershell
+python scripts\plan-installer.py --profile minimal --show-evidence-schema --dry-run
+```
+
+The schema defines the report files future installer phases must produce under
+`installer/reports/{run_id}`. It covers dry-run plans, readiness reports,
+approval records, install logs, artifact versions, service config, health
+checks, restart checks, failure-copy checks, repair logs, post-repair checks,
+rollback logs, and remaining-state reports.
+
+This slice does not write report files. It defines the fields, path templates,
+redaction rules, and validation rules that future report writers must satisfy.
+
 ## Proof Requirements
 
 Each operating system must eventually have evidence for:
@@ -174,6 +211,8 @@ Each operating system must eventually have evidence for:
 - readiness fix steps before real installation
 - execution gate proof before host mutation
 - dependency detection evidence without host mutation
+- executor state machine evidence before implementation
+- evidence schema before report writers
 
 ## Implementation Boundary
 

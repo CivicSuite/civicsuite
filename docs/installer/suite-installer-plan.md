@@ -56,6 +56,15 @@ Install execution must be protected by an explicit execution gate. The current
 gate is dry-run only: it may acknowledge a request to execute, but it must return
 `mutates_host: false` and `execution_status: not_implemented`.
 
+The executor state machine must be designed and verified before implementation.
+The dry-run design surface must include preflight, approval, execute, verify,
+repair, and rollback/uninstall phases, with evidence requirements and blockers
+for each phase.
+
+The installer must also define an evidence schema before report writers exist.
+The dry-run schema must identify report paths, required fields, redaction rules,
+and validation rules for each executor phase without writing files.
+
 ## Supported Profiles
 
 The initial profile set is defined in `installer/modules.json`:
@@ -130,16 +139,22 @@ The first platform launchers exist as dry-run wrappers only:
 - `installer/windows/plan-installer.ps1 -ShowReadiness -ReadinessScenario missing-docker`
 - `installer/windows/plan-installer.ps1 -ShowReadiness -DetectHost`
 - `installer/windows/plan-installer.ps1 -Execute`
+- `installer/windows/plan-installer.ps1 -ShowExecutorDesign`
+- `installer/windows/plan-installer.ps1 -ShowEvidenceSchema`
 - `bash installer/macos/plan-installer.sh --profile clerk-core`
 - `bash installer/macos/plan-installer.sh --show-menu --menu-style guided`
 - `bash installer/macos/plan-installer.sh --show-readiness --readiness-scenario missing-docker`
 - `bash installer/macos/plan-installer.sh --show-readiness --detect-host`
 - `bash installer/macos/plan-installer.sh --execute`
+- `bash installer/macos/plan-installer.sh --show-executor-design`
+- `bash installer/macos/plan-installer.sh --show-evidence-schema`
 - `bash installer/linux/plan-installer.sh --profile clerk-core`
 - `bash installer/linux/plan-installer.sh --show-menu --menu-style guided`
 - `bash installer/linux/plan-installer.sh --show-readiness --readiness-scenario missing-docker`
 - `bash installer/linux/plan-installer.sh --show-readiness --detect-host`
 - `bash installer/linux/plan-installer.sh --execute`
+- `bash installer/linux/plan-installer.sh --show-executor-design`
+- `bash installer/linux/plan-installer.sh --show-evidence-schema`
 
 Only after these dry-run launchers remain verified should the workflow add real
 install, repair, or packaging behavior.

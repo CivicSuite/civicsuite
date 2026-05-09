@@ -56,6 +56,8 @@ REQUIRED_DOC_PHRASES = (
     "fix steps",
     "execution gate",
     "dependency detection",
+    "executor state machine",
+    "evidence schema",
     "Windows",
     "macOS",
     "Linux",
@@ -334,6 +336,64 @@ def check_planner(data: dict[str, object]) -> list[str]:
     if approved_gate.get("execution_status") != "not_implemented":
         errors.append(fail("approved execution gate must not imply execution exists"))
 
+    executor_design = module.build_executor_design(
+        manifest=data,
+        profile_id="minimal",
+        menu_style="guided",
+    )
+    if executor_design.get("mutates_host") is not False:
+        errors.append(fail("executor design must be non-mutating"))
+    if executor_design.get("executor_status") != "design_only":
+        errors.append(fail("executor design must be design_only"))
+    phases = executor_design.get("state_machine", {}).get("phases", [])
+    phase_ids = {phase.get("id") for phase in phases if isinstance(phase, dict)}
+    required_phases = {"preflight", "approval", "execute", "verify", "repair", "rollback"}
+    if phase_ids != required_phases:
+        errors.append(fail(f"executor design phases {sorted(phase_ids)} != {sorted(required_phases)}"))
+    mutating_phases = [
+        phase for phase in phases if isinstance(phase, dict) and phase.get("mutates_host") is True
+    ]
+    if {phase.get("id") for phase in mutating_phases} != {"execute", "repair", "rollback"}:
+        errors.append(fail("executor design must mark only execute/repair/rollback as future mutating phases"))
+    for phase in phases:
+        if not isinstance(phase, dict):
+            continue
+        if not phase.get("required_evidence"):
+            errors.append(fail(f"executor phase {phase.get('id')} missing required_evidence"))
+        if not phase.get("blocks_on"):
+            errors.append(fail(f"executor phase {phase.get('id')} missing blocks_on"))
+
+    evidence_schema = module.build_evidence_schema(
+        manifest=data,
+        profile_id="minimal",
+        menu_style="guided",
+    )
+    if evidence_schema.get("mutates_host") is not False:
+        errors.append(fail("evidence schema must be non-mutating"))
+    if evidence_schema.get("schema_version") != 1:
+        errors.append(fail("evidence schema version must be 1"))
+    if evidence_schema.get("missing_phase_reports"):
+        errors.append(fail(f"evidence schema missing phase reports: {evidence_schema.get('missing_phase_reports')}"))
+    reports = evidence_schema.get("reports", [])
+    report_ids = set()
+    for report in reports:
+        if not isinstance(report, dict):
+            errors.append(fail("evidence report entries must be objects"))
+            continue
+        report_id = report.get("id")
+        if not report_id:
+            errors.append(fail("evidence report missing id"))
+        if report_id in report_ids:
+            errors.append(fail(f"duplicate evidence report id {report_id}"))
+        report_ids.add(report_id)
+        required_fields = report.get("required_fields")
+        if not isinstance(required_fields, list) or "run_id" not in required_fields:
+            errors.append(fail(f"evidence report {report_id} must require run_id"))
+        if "installer/reports/{run_id}/" not in str(report.get("path_template")):
+            errors.append(fail(f"evidence report {report_id} must live under installer/reports/{{run_id}}"))
+        if not report.get("redaction"):
+            errors.append(fail(f"evidence report {report_id} missing redaction rule"))
+
     try:
         module.build_install_plan(manifest=data, profile_id="custom", selected_modules=[])
     except Exception as exc:
@@ -418,6 +478,42 @@ def check_launchers() -> list[str]:
         elif '"mutates_host": false' not in output or '"gate_status": "blocked"' not in output:
             errors.append(fail("windows execution gate did not stay blocked and non-mutating"))
 
+        ok, output = run_launcher(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(WINDOWS_LAUNCHER),
+                "-Profile",
+                "minimal",
+                "-ShowExecutorDesign",
+            ]
+        )
+        if not ok:
+            errors.append(fail(f"windows executor design failed: {output}"))
+        elif '"mutates_host": false' not in output or '"executor_status": "design_only"' not in output:
+            errors.append(fail("windows executor design did not stay design-only and non-mutating"))
+
+        ok, output = run_launcher(
+            [
+                "powershell",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(WINDOWS_LAUNCHER),
+                "-Profile",
+                "minimal",
+                "-ShowEvidenceSchema",
+            ]
+        )
+        if not ok:
+            errors.append(fail(f"windows evidence schema failed: {output}"))
+        elif '"mutates_host": false' not in output or '"schema_version": 1' not in output:
+            errors.append(fail("windows evidence schema did not stay non-mutating"))
+
     for name, path in (("macos", MACOS_LAUNCHER), ("linux", LINUX_LAUNCHER)):
         if not path.is_file():
             continue
@@ -443,6 +539,16 @@ def check_launchers() -> list[str]:
             errors.append(fail(f"{name} execution gate failed: {output}"))
         elif '"mutates_host": false' not in output or '"gate_status": "blocked"' not in output:
             errors.append(fail(f"{name} execution gate did not stay blocked and non-mutating"))
+        ok, output = run_launcher(["bash", launcher_path, "--profile", "minimal", "--show-executor-design"])
+        if not ok:
+            errors.append(fail(f"{name} executor design failed: {output}"))
+        elif '"mutates_host": false' not in output or '"executor_status": "design_only"' not in output:
+            errors.append(fail(f"{name} executor design did not stay design-only and non-mutating"))
+        ok, output = run_launcher(["bash", launcher_path, "--profile", "minimal", "--show-evidence-schema"])
+        if not ok:
+            errors.append(fail(f"{name} evidence schema failed: {output}"))
+        elif '"mutates_host": false' not in output or '"schema_version": 1' not in output:
+            errors.append(fail(f"{name} evidence schema did not stay non-mutating"))
 
     return errors
 

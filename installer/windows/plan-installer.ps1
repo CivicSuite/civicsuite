@@ -6,6 +6,8 @@ param(
     [switch]$DetectHost,
     [string]$ReadinessScenario = "nominal",
     [switch]$Execute,
+    [switch]$ShowExecutorDesign,
+    [switch]$ShowEvidenceSchema,
     [string]$ApprovalToken = "",
     [string[]]$Module = @()
 )
@@ -31,6 +33,12 @@ if ($Execute) {
         $ArgsList += @("--approval-token", $ApprovalToken)
     }
 }
+if ($ShowExecutorDesign) {
+    $ArgsList += "--show-executor-design"
+}
+if ($ShowEvidenceSchema) {
+    $ArgsList += "--show-evidence-schema"
+}
 foreach ($ModuleId in $Module) {
     $ArgsList += @("--module", $ModuleId)
 }
@@ -46,5 +54,11 @@ if ($ShowReadiness) {
 }
 if ($Execute) {
     Write-Host "Execution gate requested: blocked by default"
+}
+if ($ShowExecutorDesign) {
+    Write-Host "Executor design requested: dry-run only"
+}
+if ($ShowEvidenceSchema) {
+    Write-Host "Evidence schema requested: dry-run only"
 }
 python @ArgsList

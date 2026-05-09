@@ -30,6 +30,8 @@ Allowed now:
 - show readiness/error states with fix steps
 - inspect dependencies in read-only dry-run mode
 - request execution and receive a blocked/non-mutating gate response
+- render the future executor state machine in dry-run mode
+- render the future evidence/report schema in dry-run mode
 
 Not allowed yet:
 
@@ -52,6 +54,8 @@ python scripts\plan-installer.py --profile clerk-core --menu-style guided --show
 python scripts\plan-installer.py --profile clerk-core --show-readiness --readiness-scenario missing-docker --dry-run
 python scripts\plan-installer.py --profile clerk-core --show-readiness --detect-host --dry-run
 python scripts\plan-installer.py --profile minimal --execute --dry-run
+python scripts\plan-installer.py --profile minimal --show-executor-design --dry-run
+python scripts\plan-installer.py --profile minimal --show-evidence-schema --dry-run
 ```
 
 Platform launcher examples:
@@ -62,6 +66,8 @@ installer\windows\plan-installer.ps1 -ShowMenu -MenuStyle guided
 installer\windows\plan-installer.ps1 -ShowReadiness -ReadinessScenario missing-docker
 installer\windows\plan-installer.ps1 -ShowReadiness -DetectHost
 installer\windows\plan-installer.ps1 -Execute
+installer\windows\plan-installer.ps1 -ShowExecutorDesign
+installer\windows\plan-installer.ps1 -ShowEvidenceSchema
 ```
 
 ```bash
@@ -70,11 +76,15 @@ bash installer/macos/plan-installer.sh --show-menu --menu-style guided
 bash installer/macos/plan-installer.sh --show-readiness --readiness-scenario missing-docker
 bash installer/macos/plan-installer.sh --show-readiness --detect-host
 bash installer/macos/plan-installer.sh --execute
+bash installer/macos/plan-installer.sh --show-executor-design
+bash installer/macos/plan-installer.sh --show-evidence-schema
 bash installer/linux/plan-installer.sh --profile clerk-core
 bash installer/linux/plan-installer.sh --show-menu --menu-style guided
 bash installer/linux/plan-installer.sh --show-readiness --readiness-scenario missing-docker
 bash installer/linux/plan-installer.sh --show-readiness --detect-host
 bash installer/linux/plan-installer.sh --execute
+bash installer/linux/plan-installer.sh --show-executor-design
+bash installer/linux/plan-installer.sh --show-evidence-schema
 ```
 
 Verification stack passed:
@@ -94,14 +104,12 @@ python .agent-workflows\evals\run_all.py
 
 ## Next Recommended Slice
 
-Recommended next slice: readiness-driven install executor design, still dry-run
-only.
+Recommended next slice: commit the batched dry-run executor design work.
 
-Why: read-only dependency detection now feeds the readiness model. The next
-slice should design the future executor state machine without implementing host
-mutation: preflight, approval, execute, verify, repair, rollback/uninstall, and
-evidence capture. It must still avoid package installs, service starts,
-container starts, commits, pushes, and module code edits.
+Why: read-only dependency detection feeds readiness, the future executor state
+machine is defined, and the evidence schema now defines the report files each
+phase would write. This is a coherent non-mutating design checkpoint worth
+preserving before any report writer or executor implementation is attempted.
 
 Stop before:
 

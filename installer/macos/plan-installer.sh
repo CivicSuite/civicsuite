@@ -11,6 +11,8 @@ SHOW_READINESS=()
 DETECT_HOST=()
 READINESS_SCENARIO="nominal"
 EXECUTE=()
+SHOW_EXECUTOR_DESIGN=()
+SHOW_EVIDENCE_SCHEMA=()
 APPROVAL_ARGS=()
 MODULE_ARGS=()
 
@@ -48,6 +50,14 @@ while [[ $# -gt 0 ]]; do
       EXECUTE=("--execute")
       shift
       ;;
+    --show-executor-design)
+      SHOW_EXECUTOR_DESIGN=("--show-executor-design")
+      shift
+      ;;
+    --show-evidence-schema)
+      SHOW_EVIDENCE_SCHEMA=("--show-evidence-schema")
+      shift
+      ;;
     --approval-token)
       APPROVAL_ARGS=("--approval-token" "$2")
       shift 2
@@ -71,4 +81,10 @@ fi
 if [[ ${#EXECUTE[@]} -gt 0 ]]; then
   echo "Execution gate requested: blocked by default"
 fi
-python3 "${REPO_ROOT}/scripts/plan-installer.py" --profile "${PROFILE}" --menu-style "${MENU_STYLE}" --dry-run "${SHOW_MENU[@]}" "${SHOW_READINESS[@]}" "${DETECT_HOST[@]}" "${EXECUTE[@]}" --readiness-scenario "${READINESS_SCENARIO}" "${APPROVAL_ARGS[@]}" "${MODULE_ARGS[@]}"
+if [[ ${#SHOW_EXECUTOR_DESIGN[@]} -gt 0 ]]; then
+  echo "Executor design requested: dry-run only"
+fi
+if [[ ${#SHOW_EVIDENCE_SCHEMA[@]} -gt 0 ]]; then
+  echo "Evidence schema requested: dry-run only"
+fi
+python3 "${REPO_ROOT}/scripts/plan-installer.py" --profile "${PROFILE}" --menu-style "${MENU_STYLE}" --dry-run "${SHOW_MENU[@]}" "${SHOW_READINESS[@]}" "${DETECT_HOST[@]}" "${EXECUTE[@]}" "${SHOW_EXECUTOR_DESIGN[@]}" "${SHOW_EVIDENCE_SCHEMA[@]}" --readiness-scenario "${READINESS_SCENARIO}" "${APPROVAL_ARGS[@]}" "${MODULE_ARGS[@]}"

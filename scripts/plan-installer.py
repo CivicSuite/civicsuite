@@ -34,6 +34,158 @@ EXECUTION_TOKEN = "I_UNDERSTAND_THIS_MUTATES_HOST"
 MIN_FREE_DISK_BYTES = 20 * 1024 * 1024 * 1024
 MIN_MEMORY_BYTES = 8 * 1024 * 1024 * 1024
 
+EXECUTOR_PHASES = [
+    {
+        "id": "preflight",
+        "label": "Preflight",
+        "purpose": "Confirm manifest, profile, dependency order, host readiness, and required evidence paths.",
+        "mutates_host": False,
+        "required_inputs": ["manifest", "profile", "readiness"],
+        "required_evidence": ["dry_run_plan", "readiness_report"],
+        "blocks_on": ["blocked_readiness", "unknown_module", "dependency_cycle"],
+    },
+    {
+        "id": "approval",
+        "label": "Approval Gate",
+        "purpose": "Require explicit operator approval before any future host mutation.",
+        "mutates_host": False,
+        "required_inputs": ["execution_token", "resolved_plan"],
+        "required_evidence": ["approval_record", "planned_actions"],
+        "blocks_on": ["missing_execution_token", "readiness_blocker"],
+    },
+    {
+        "id": "execute",
+        "label": "Execute Install",
+        "purpose": "Future mutating phase that installs CivicCore first and then selected modules.",
+        "mutates_host": True,
+        "required_inputs": ["approved_plan", "module_artifacts"],
+        "required_evidence": ["install_log", "artifact_versions", "service_config"],
+        "blocks_on": ["executor_not_implemented", "artifact_missing", "version_mismatch"],
+    },
+    {
+        "id": "verify",
+        "label": "Verify Install",
+        "purpose": "Verify selected services, health checks, restart behavior, and actionable failure output.",
+        "mutates_host": False,
+        "required_inputs": ["installed_profile"],
+        "required_evidence": ["health_checks", "restart_check", "failure_copy_check"],
+        "blocks_on": ["service_unhealthy", "restart_failed", "missing_evidence"],
+    },
+    {
+        "id": "repair",
+        "label": "Repair",
+        "purpose": "Future mutating phase that repairs a failed or drifted local profile.",
+        "mutates_host": True,
+        "required_inputs": ["diagnostics", "approved_repair_plan"],
+        "required_evidence": ["repair_log", "post_repair_health_checks"],
+        "blocks_on": ["repair_not_approved", "unsafe_drift"],
+    },
+    {
+        "id": "rollback",
+        "label": "Rollback Or Uninstall",
+        "purpose": "Future mutating phase that rolls back or removes selected services with evidence.",
+        "mutates_host": True,
+        "required_inputs": ["approved_rollback_plan", "installed_profile"],
+        "required_evidence": ["rollback_log", "remaining_state_report"],
+        "blocks_on": ["rollback_not_approved", "data_loss_risk_unacknowledged"],
+    },
+]
+
+EVIDENCE_SCHEMA_VERSION = 1
+EVIDENCE_REPORTS = [
+    {
+        "id": "dry_run_plan",
+        "phase": "preflight",
+        "path_template": "installer/reports/{run_id}/dry-run-plan.json",
+        "required_fields": ["run_id", "profile", "modules", "actions", "mutates_host"],
+        "redaction": "no secrets expected; reject environment dumps",
+    },
+    {
+        "id": "readiness_report",
+        "phase": "preflight",
+        "path_template": "installer/reports/{run_id}/readiness.json",
+        "required_fields": ["run_id", "status", "checks", "next_action", "detection_source"],
+        "redaction": "allow executable paths and resource totals; reject tokens and env vars",
+    },
+    {
+        "id": "approval_record",
+        "phase": "approval",
+        "path_template": "installer/reports/{run_id}/approval.json",
+        "required_fields": ["run_id", "approval_required", "approval_received", "operator_action"],
+        "redaction": "record token presence only, never persist raw approval token",
+    },
+    {
+        "id": "install_log",
+        "phase": "execute",
+        "path_template": "installer/reports/{run_id}/install-log.jsonl",
+        "required_fields": ["run_id", "timestamp", "module", "step", "status"],
+        "redaction": "scrub secrets, local usernames in URLs, and auth headers",
+    },
+    {
+        "id": "artifact_versions",
+        "phase": "execute",
+        "path_template": "installer/reports/{run_id}/artifact-versions.json",
+        "required_fields": ["run_id", "module", "repo", "version", "civiccore_requirement"],
+        "redaction": "public version metadata only",
+    },
+    {
+        "id": "service_config",
+        "phase": "execute",
+        "path_template": "installer/reports/{run_id}/service-config.json",
+        "required_fields": ["run_id", "module", "service_name", "ports", "data_paths"],
+        "redaction": "record paths and ports; reject secret values",
+    },
+    {
+        "id": "health_checks",
+        "phase": "verify",
+        "path_template": "installer/reports/{run_id}/health-checks.json",
+        "required_fields": ["run_id", "module", "endpoint", "status", "actionable_failure"],
+        "redaction": "response summaries only, no full records or sensitive payloads",
+    },
+    {
+        "id": "restart_check",
+        "phase": "verify",
+        "path_template": "installer/reports/{run_id}/restart-check.json",
+        "required_fields": ["run_id", "module", "restart_attempted", "status", "duration_seconds"],
+        "redaction": "timing and status only",
+    },
+    {
+        "id": "failure_copy_check",
+        "phase": "verify",
+        "path_template": "installer/reports/{run_id}/failure-copy-check.json",
+        "required_fields": ["run_id", "scenario", "message", "fix_steps"],
+        "redaction": "operator-facing copy only",
+    },
+    {
+        "id": "repair_log",
+        "phase": "repair",
+        "path_template": "installer/reports/{run_id}/repair-log.jsonl",
+        "required_fields": ["run_id", "timestamp", "module", "diagnostic", "repair_step", "status"],
+        "redaction": "scrub secrets and local account identifiers",
+    },
+    {
+        "id": "post_repair_health_checks",
+        "phase": "repair",
+        "path_template": "installer/reports/{run_id}/post-repair-health-checks.json",
+        "required_fields": ["run_id", "module", "status", "remaining_failures"],
+        "redaction": "summaries only",
+    },
+    {
+        "id": "rollback_log",
+        "phase": "rollback",
+        "path_template": "installer/reports/{run_id}/rollback-log.jsonl",
+        "required_fields": ["run_id", "timestamp", "module", "rollback_step", "status"],
+        "redaction": "scrub secrets and local account identifiers",
+    },
+    {
+        "id": "remaining_state_report",
+        "phase": "rollback",
+        "path_template": "installer/reports/{run_id}/remaining-state.json",
+        "required_fields": ["run_id", "remaining_services", "remaining_data_paths", "operator_next_action"],
+        "redaction": "paths allowed; no credentials or data payloads",
+    },
+]
+
 
 def load_manifest(path: Path = MANIFEST) -> dict[str, Any]:
     with path.open(encoding="utf-8") as handle:
@@ -449,6 +601,87 @@ def build_execution_gate(
     }
 
 
+def build_executor_design(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+) -> dict[str, Any]:
+    plan = build_install_plan(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+    )
+    return {
+        "dry_run": True,
+        "mutates_host": False,
+        "executor_status": "design_only",
+        "profile": profile_id,
+        "menu_style": plan["menu_style"],
+        "planned_modules": plan["modules"],
+        "state_machine": {
+            "entry_phase": "preflight",
+            "terminal_phases": ["verify", "rollback"],
+            "phases": EXECUTOR_PHASES,
+            "transition_order": ["preflight", "approval", "execute", "verify", "repair", "rollback"],
+        },
+        "implementation_boundary": {
+            "allowed_now": [
+                "render executor design",
+                "validate required phases",
+                "verify mutating phases are marked future-only",
+            ],
+            "forbidden_now": [
+                "install dependencies",
+                "start services",
+                "start containers",
+                "write host configuration",
+                "run module installers",
+            ],
+        },
+        "next_action": "Review executor design before any mutating executor implementation is created.",
+    }
+
+
+def build_evidence_schema(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+) -> dict[str, Any]:
+    executor = build_executor_design(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+    )
+    phase_ids = {phase["id"] for phase in EXECUTOR_PHASES}
+    report_phase_ids = {report["phase"] for report in EVIDENCE_REPORTS}
+    missing_phase_reports = sorted(phase_ids - report_phase_ids)
+    return {
+        "dry_run": True,
+        "mutates_host": False,
+        "schema_version": EVIDENCE_SCHEMA_VERSION,
+        "profile": profile_id,
+        "planned_modules": executor["planned_modules"],
+        "report_root": "installer/reports/{run_id}",
+        "run_id_format": "UTC timestamp plus short random suffix",
+        "reports": EVIDENCE_REPORTS,
+        "validation_rules": [
+            "Every executor phase must have at least one evidence report.",
+            "Every evidence report must include run_id and required_fields.",
+            "Mutating phases must write append-only logs before and after each mutating step.",
+            "Reports must record operator-facing next actions for failures.",
+            "Reports must not persist secrets, raw environment dumps, auth headers, or data payloads.",
+        ],
+        "missing_phase_reports": missing_phase_reports,
+        "next_action": "Review evidence schema before implementing report writers or mutating executor phases.",
+    }
+
+
 def build_install_plan(
     *,
     manifest: dict[str, Any],
@@ -552,6 +785,16 @@ def main() -> int:
         help="Request install execution. This slice always returns a non-mutating gate result.",
     )
     parser.add_argument(
+        "--show-executor-design",
+        action="store_true",
+        help="Print the future executor state machine without implementing host mutation.",
+    )
+    parser.add_argument(
+        "--show-evidence-schema",
+        action="store_true",
+        help="Print the future installer evidence/report schema without writing reports.",
+    )
+    parser.add_argument(
         "--approval-token",
         default=None,
         help="Explicit approval token for future mutating execution gates.",
@@ -590,6 +833,20 @@ def main() -> int:
                 selected_modules=[str(module) for module in args.module],
                 menu_style=args.menu_style,
                 approval_token=args.approval_token,
+            )
+        elif args.show_executor_design:
+            plan = build_executor_design(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+            )
+        elif args.show_evidence_schema:
+            plan = build_evidence_schema(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
             )
         else:
             plan = build_install_plan(
