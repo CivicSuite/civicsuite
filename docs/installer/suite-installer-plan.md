@@ -80,6 +80,16 @@ writes a CivicCore-only kit under `installer/generated/minimal`. The generator
 itself does not mutate host state. The generated scripts are real install
 artifacts, but they mutate only when an operator explicitly runs them.
 
+The first profile package generator is:
+`python scripts/plan-installer.py --profile clerk-core --generate-profile-package`.
+It writes Windows, macOS, and Linux package directories under
+`installer/generated/packages/{profile}` with a platform README, resolved
+`install-plan.json`, and a `start-civicsuite-installer` entrypoint. Readiness
+and plan modes are non-mutating. Gate mode is intentionally mutating and runs
+the current cleanroom gate. These profile packages are the operator UX package
+that future native installers should wrap; they are not native OS installers
+yet.
+
 The first cleanroom proof uses
 `python scripts/run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2`
 to run the generated kit inside a disposable Linux container. That proof is not
@@ -186,6 +196,7 @@ The first platform launchers exist as dry-run wrappers only:
 - `installer/windows/plan-installer.ps1 -ShowHealthChecks`
 - `installer/windows/plan-installer.ps1 -ShowPreflight`
 - `installer/windows/plan-installer.ps1 -Profile minimal -GenerateInstallKit`
+- `installer/windows/plan-installer.ps1 -Profile clerk-core -GenerateProfilePackage`
 - `bash installer/macos/plan-installer.sh --profile clerk-core`
 - `bash installer/macos/plan-installer.sh --show-menu --menu-style guided`
 - `bash installer/macos/plan-installer.sh --show-readiness --readiness-scenario missing-docker`
@@ -198,6 +209,7 @@ The first platform launchers exist as dry-run wrappers only:
 - `bash installer/macos/plan-installer.sh --show-health-checks`
 - `bash installer/macos/plan-installer.sh --show-preflight`
 - `bash installer/macos/plan-installer.sh --profile minimal --generate-install-kit`
+- `bash installer/macos/plan-installer.sh --profile clerk-core --generate-profile-package`
 - `bash installer/linux/plan-installer.sh --profile clerk-core`
 - `bash installer/linux/plan-installer.sh --show-menu --menu-style guided`
 - `bash installer/linux/plan-installer.sh --show-readiness --readiness-scenario missing-docker`
@@ -210,6 +222,7 @@ The first platform launchers exist as dry-run wrappers only:
 - `bash installer/linux/plan-installer.sh --show-health-checks`
 - `bash installer/linux/plan-installer.sh --show-preflight`
 - `bash installer/linux/plan-installer.sh --profile minimal --generate-install-kit`
+- `bash installer/linux/plan-installer.sh --profile clerk-core --generate-profile-package`
 - `python scripts/run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2`
 - `python scripts/run-civicrecords-cleanroom.py --run-id manual-civicrecords-service-cleanroom-4`
 - `python scripts/plan-installer.py --profile clerk-core --run-cleanroom-proof --run-id manual-clerk-core-integrated-proof`

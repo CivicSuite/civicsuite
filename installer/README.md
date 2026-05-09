@@ -210,6 +210,29 @@ secret-shaped or environment-dump-shaped fields. It does not write install logs,
 repair logs, rollback logs, remaining-state reports, or any host-mutating
 executor evidence.
 
+## Profile Packages
+
+The installer can now generate the first operator-facing profile package:
+
+```powershell
+python scripts\plan-installer.py --profile clerk-core --generate-profile-package
+```
+
+This writes Windows, macOS, and Linux package directories under
+`installer/generated/packages/{profile}`. Each package contains:
+
+- `README.md`: first-run operator instructions for readiness, plan review, and
+  the cleanroom gate.
+- `install-plan.json`: the resolved profile plan from `modules.json`.
+- `start-civicsuite-installer.ps1` or `start-civicsuite-installer.sh`: the
+  platform entrypoint.
+
+Readiness and plan modes remain non-mutating. Gate mode is explicitly mutating:
+it may build/start/teardown Docker resources and write evidence under
+`installer/reports`. These profile packages are not native `.exe`, `.pkg`,
+`.deb`, or `.rpm` installers yet; they are the reviewed operator UX package that
+native packaging should wrap next.
+
 ## Artifact, Profile, And Health Planning
 
 Before host mutation exists, the installer can render the next executor inputs

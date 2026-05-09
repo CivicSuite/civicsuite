@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "installer" / "modules.json"
 REPORT_ROOT = ROOT / "installer" / "reports"
 GENERATED_ROOT = ROOT / "installer" / "generated"
+PACKAGE_ROOT = GENERATED_ROOT / "packages"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 
 
@@ -1261,6 +1262,197 @@ def generate_minimal_install_kit(
     }
 
 
+def _package_platforms(host: dict[str, str] | None = None) -> list[str]:
+    if not host:
+        return ["windows", "macos", "linux"]
+    system = str(host.get("system", "")).lower()
+    if "windows" in system:
+        return ["windows"]
+    if "darwin" in system or "mac" in system:
+        return ["macos"]
+    if "linux" in system:
+        return ["linux"]
+    return ["windows", "macos", "linux"]
+
+
+def _package_launcher_name(platform_id: str) -> str:
+    if platform_id == "windows":
+        return "start-civicsuite-installer.ps1"
+    return "start-civicsuite-installer.sh"
+
+
+def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str) -> str:
+    if platform_id == "windows":
+        return f"""param(
+    [switch]$Readiness,
+    [switch]$Plan,
+    [switch]$Gate
+)
+
+$ErrorActionPreference = "Stop"
+$PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = Resolve-Path (Join-Path $PackageDir "..\\..\\..\\..\\..")
+$Planner = Join-Path $RepoRoot "scripts\\plan-installer.py"
+
+if ($Gate) {{
+    python $Planner --profile {profile_id} --menu-style {menu_style} --run-cleanroom-gate
+    exit $LASTEXITCODE
+}}
+
+if ($Plan) {{
+    python $Planner --profile {profile_id} --menu-style {menu_style} --dry-run
+    exit $LASTEXITCODE
+}}
+
+python $Planner --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
+exit $LASTEXITCODE
+"""
+    return f"""#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+REPO_ROOT="$(cd "${{SCRIPT_DIR}}/../../../../.." && pwd)"
+PLANNER="${{REPO_ROOT}}/scripts/plan-installer.py"
+
+MODE="${{1:-readiness}}"
+case "${{MODE}}" in
+  gate)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --run-cleanroom-gate
+    ;;
+  plan)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --dry-run
+    ;;
+  readiness)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
+    ;;
+  *)
+    echo "Usage: $0 [readiness|plan|gate]" >&2
+    exit 2
+    ;;
+esac
+"""
+
+
+def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, plan: dict[str, Any]) -> str:
+    launcher = _package_launcher_name(platform_id)
+    module_lines = "\n".join(f"- {module_id}" for module_id in plan["modules"])
+    if platform_id == "windows":
+        readiness = f".\\{launcher} -Readiness"
+        plan_command = f".\\{launcher} -Plan"
+        gate_command = f".\\{launcher} -Gate"
+    else:
+        readiness = f"bash ./{launcher} readiness"
+        plan_command = f"bash ./{launcher} plan"
+        gate_command = f"bash ./{launcher} gate"
+    return f"""# CivicSuite Installer Package - {platform_id}
+
+Profile: `{profile_id}`
+Menu style: `{menu_style}`
+
+This package is the operator-facing installer entrypoint for the selected
+platform. It does not install privileged baseline software by itself. It checks
+readiness, renders the selected install plan, and can run the current cleanroom
+gate for profiles that have a gate.
+
+## First Run
+
+1. Run readiness:
+
+   ```text
+   {readiness}
+   ```
+
+2. Review the dry-run plan:
+
+   ```text
+   {plan_command}
+   ```
+
+3. Run the cleanroom gate when Docker mutation is approved:
+
+   ```text
+   {gate_command}
+   ```
+
+## Selected Modules
+
+{module_lines}
+
+## Boundary
+
+- Readiness and plan modes are non-mutating.
+- Gate mode is mutating: it may build/start/teardown Docker resources and write
+  installer evidence under `installer/reports`.
+- Native host installers are not packaged in this slice.
+"""
+
+
+def generate_profile_package(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+    platform_id: str = "all",
+    output_root: Path = PACKAGE_ROOT,
+) -> dict[str, Any]:
+    plan = build_install_plan(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+    )
+    platforms = ["windows", "macos", "linux"] if platform_id == "all" else [platform_id]
+    allowed_platforms = {"windows", "macos", "linux"}
+    unknown_platforms = sorted(set(platforms) - allowed_platforms)
+    if unknown_platforms:
+        raise PlannerError(f"Unknown installer package platform: {', '.join(unknown_platforms)}")
+    written: list[str] = []
+    for target_platform in platforms:
+        package_dir = output_root / profile_id / target_platform
+        if not _is_within(package_dir, output_root):
+            raise PlannerError(f"Generated package path is outside installer package root: {package_dir}")
+        package_dir.mkdir(parents=True, exist_ok=True)
+        files = {
+            "README.md": _package_readme_text(
+                profile_id=profile_id,
+                menu_style=menu_style,
+                platform_id=target_platform,
+                plan=plan,
+            ),
+            "install-plan.json": json.dumps(plan, indent=2, sort_keys=True) + "\n",
+            _package_launcher_name(target_platform): _package_launcher_text(
+                platform_id=target_platform,
+                profile_id=profile_id,
+                menu_style=menu_style,
+            ),
+        }
+        for relative_path, content in files.items():
+            path = package_dir / relative_path
+            if not _is_within(path, package_dir):
+                raise PlannerError(f"Generated package file path escaped package root: {path}")
+            path.write_text(content, encoding="utf-8", newline="\n")
+            written.append(str(path.relative_to(ROOT)))
+        launcher = package_dir / _package_launcher_name(target_platform)
+        try:
+            launcher.chmod(0o755)
+        except OSError:
+            pass
+    return {
+        "dry_run": False,
+        "mutates_host": False,
+        "profile": profile_id,
+        "menu_style": menu_style,
+        "package_root": str((output_root / profile_id).relative_to(ROOT)),
+        "platforms": platforms,
+        "modules": plan["modules"],
+        "files_written": written,
+        "operator_entrypoints_mutate_only_in_gate_mode": True,
+        "native_installers_packaged": False,
+        "next_action": "Review generated platform packages, then run readiness from the target platform package.",
+    }
+
+
 def run_clerk_core_cleanroom_proof(*, run_id: str | None = None) -> dict[str, Any]:
     proof_run_id = run_id or f"clerk-core-cleanroom-{make_run_id()}"
     if not SERVICE_CLEANROOM_RUNNER.is_file():
@@ -1642,6 +1834,17 @@ def main() -> int:
         help="Write the minimal CivicCore install kit under installer/generated/minimal.",
     )
     parser.add_argument(
+        "--generate-profile-package",
+        action="store_true",
+        help="Write cross-platform operator package files under installer/generated/packages.",
+    )
+    parser.add_argument(
+        "--package-platform",
+        default="all",
+        choices=("all", "windows", "macos", "linux"),
+        help="Platform to generate for --generate-profile-package.",
+    )
+    parser.add_argument(
         "--run-cleanroom-proof",
         action="store_true",
         help="Run the mutating cleanroom proof for the selected profile.",
@@ -1683,7 +1886,12 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    if not args.dry_run and not args.generate_install_kit and not mutating_cleanroom_requested:
+    if (
+        not args.dry_run
+        and not args.generate_install_kit
+        and not args.generate_profile_package
+        and not mutating_cleanroom_requested
+    ):
         print("ERROR: --dry-run is required. This planner is non-mutating.", file=sys.stderr)
         return 2
 
@@ -1767,6 +1975,15 @@ def main() -> int:
                 raise PlannerError("--generate-install-kit currently supports only --profile minimal.")
             plan = generate_minimal_install_kit(manifest=manifest)
             report_mode = "generate_install_kit"
+        elif args.generate_profile_package:
+            plan = generate_profile_package(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+                platform_id=args.package_platform,
+            )
+            report_mode = "profile_package"
         elif args.run_cleanroom_proof:
             if args.profile != "clerk-core":
                 raise PlannerError("--run-cleanroom-proof currently supports only --profile clerk-core.")
