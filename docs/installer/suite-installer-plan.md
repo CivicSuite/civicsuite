@@ -151,6 +151,17 @@ zero-baseline machine proof for those distributable archives; macOS
 archive/readiness/plan proof has passed from this Windows/WSL host, with full
 macOS runtime proof still requiring a macOS host or VM.
 
+The hosted package cleanroom workflow is:
+`.github/workflows/installer-cleanroom.yml`.
+It runs on demand, on a daily schedule, and when installer paths change. The
+workflow proves extracted archive readiness/plan for Windows and Linux on their
+matching hosted runners, proves macOS package archive/readiness/plan through the
+macOS launcher on hosted Linux, then runs the full Linux package
+install/repair/verify/uninstall lifecycle and uploads the installer report
+directory as CI evidence. Windows and macOS full lifecycle certification still
+requires real operator-like VMs because hosted CI does not provide the same
+Docker Desktop baseline.
+
 ## Supported Profiles
 
 The initial profile set is defined in `installer/modules.json`:

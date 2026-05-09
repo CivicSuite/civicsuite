@@ -14,6 +14,11 @@ not claim signed native installer binaries.
 
 Completed surfaces:
 
+- `.github/workflows/installer-cleanroom.yml` now runs the package cleanroom
+  checks on demand, on a daily schedule, and when installer paths change. It
+  proves extracted archive readiness/plan on Windows, macOS, and Linux runners,
+  and proves the full Linux archive install, repair, verify, and uninstall
+  lifecycle on Ubuntu with uploaded evidence.
 - `installer/modules.json` covers all 26 tracked CivicSuite repos.
 - `scripts/plan-installer.py` resolves profiles, dependencies, menu styles,
   readiness states, artifact/version inputs, service/profile config,
@@ -266,15 +271,33 @@ Control-plane eval stack passed:
 python .agent-workflows\evals\run_all.py
 ```
 
+Hosted cleanroom workflow:
+
+```text
+.github/workflows/installer-cleanroom.yml
+```
+
+The hosted workflow runs:
+
+- Windows archive extraction/readiness/plan.
+- macOS archive extraction/readiness/plan through the macOS package launcher
+  on hosted Linux, not macOS runtime.
+- Linux archive extraction/readiness/plan.
+- Linux archive install/repair/verify/uninstall.
+
+It does not replace real Windows and macOS VM lifecycle certification because
+the GitHub-hosted Windows and macOS runners do not provide the same local Docker
+Desktop baseline as an operator machine.
+
 ## Next Recommended Slice
 
-Recommended next slice: add hosted CI or scheduled cleanroom execution for the
-package lifecycle so every release artifact proves extraction, install, repair,
-verify, and uninstall before publication.
+Recommended next slice: add real Windows and macOS VM lifecycle certification
+for the distributable package archives, then record those evidence paths beside
+the existing Linux hosted lifecycle evidence.
 
-Why: the package lifecycle is now real and has caught real failures. Running it
-automatically prevents a future release from shipping a broken archive or a
-repair path that only works once.
+Why: hosted Linux lifecycle automation is now covered by CI, but Windows and
+macOS still need operator-like VM proof before the installer target can move
+from YELLOW to GREEN.
 
 Stop before:
 

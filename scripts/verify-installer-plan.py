@@ -21,6 +21,7 @@ SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 WINDOWS_LAUNCHER = ROOT / "installer" / "windows" / "plan-installer.ps1"
 MACOS_LAUNCHER = ROOT / "installer" / "macos" / "plan-installer.sh"
 LINUX_LAUNCHER = ROOT / "installer" / "linux" / "plan-installer.sh"
+INSTALLER_CLEANROOM_WORKFLOW = ROOT / ".github" / "workflows" / "installer-cleanroom.yml"
 GENERATED_MINIMAL = ROOT / "installer" / "generated" / "minimal"
 GENERATED_PACKAGES = ROOT / "installer" / "generated" / "packages"
 GENERATED_NATIVE = ROOT / "installer" / "generated" / "native"
@@ -114,6 +115,33 @@ def check_docs() -> list[str]:
         for phrase in REQUIRED_DOC_PHRASES:
             if phrase not in text:
                 errors.append(fail(f"{path.relative_to(ROOT)} missing phrase: {phrase}"))
+    return errors
+
+
+def check_cleanroom_workflow() -> list[str]:
+    errors: list[str] = []
+    if not INSTALLER_CLEANROOM_WORKFLOW.is_file():
+        return [fail(f"missing {INSTALLER_CLEANROOM_WORKFLOW.relative_to(ROOT)}")]
+    text = INSTALLER_CLEANROOM_WORKFLOW.read_text(encoding="utf-8")
+    required_phrases = (
+        "workflow_dispatch",
+        "schedule:",
+        "pull_request:",
+        "run-installer-package-cleanroom.py",
+        "--skip-install",
+        "ci-linux-package-lifecycle",
+        "actions/upload-artifact@v4",
+        "repository: CivicSuite/civicrecords-ai",
+        "path: modules/civicrecords-ai",
+        "repository: CivicSuite/civicclerk",
+        "path: modules/civicclerk",
+    )
+    for phrase in required_phrases:
+        if phrase not in text:
+            errors.append(fail(f"installer cleanroom workflow missing phrase: {phrase}"))
+    for platform in ("windows", "macos", "linux"):
+        if f"platform: {platform}" not in text:
+            errors.append(fail(f"installer cleanroom workflow missing {platform} readiness/plan job"))
     return errors
 
 
@@ -1083,6 +1111,7 @@ def main() -> int:
         except Exception as exc:
             errors.append(fail(f"could not parse manifest: {exc}"))
     errors.extend(check_docs())
+    errors.extend(check_cleanroom_workflow())
 
     if errors:
         for error in errors:

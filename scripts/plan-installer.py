@@ -1766,7 +1766,8 @@ contains the sibling `{module_name}` checkout and must pass
         ".venv",
         "backend/.venv",
     )
-    shutil.copytree(source, target, ignore=ignore)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source, target, ignore=ignore, dirs_exist_ok=True)
     if module_name == "civicrecords-ai":
         tests_dir = target / "backend" / "tests"
         tests_dir.mkdir(parents=True, exist_ok=True)
