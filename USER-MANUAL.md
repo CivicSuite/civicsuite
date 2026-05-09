@@ -54,6 +54,19 @@ Selected foundation modules have also advanced beyond the original `civiccore==0
 
 During the developer process, Windows installers should be treated as unsigned unless a module explicitly says otherwise. A first install can show a Windows SmartScreen or untrusted-publisher warning because code-signing certificates are not available for the whole developer cycle.
 
+### Suite installer status
+
+CivicSuite does not yet ship a suite-level installer binary. The umbrella repo
+now tracks the installer contract in [installer/README.md](installer/README.md)
+and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md).
+
+The required installer must start from a zero-baseline Windows, macOS, or Linux
+machine, check baseline dependencies, install CivicCore first, let the operator
+choose modules, install the selected profile, and record proof that the local
+suite starts and passes health checks.
+
+Module-specific installers do not satisfy that requirement.
+
 ### Foundation-tier module catalog
 
 The rest of the catalog exists as real repositories with released runtime foundations. Their exact current versions and `civiccore` pairings should always be checked in:
@@ -87,6 +100,10 @@ The `civicsuite` repo is **documentation-first and coordination-first**. It cont
 - suite-level governance and ADRs
 
 It does **not** contain the runtime code for the individual products.
+
+It now also contains the design contract for the future suite-level installer.
+The installer contract is umbrella-level because it must coordinate CivicCore,
+module selection, compatibility checks, and cross-platform proof.
 
 ### Module repos
 

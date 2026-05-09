@@ -57,7 +57,10 @@ Current state as of 2026-04-30: the `CivicSuite` GitHub org has two active owner
 
 ## Quick Start
 
-There is nothing to install from the umbrella repo itself. Start with the module that matches your need:
+There is no suite-level installer binary yet. The required installer contract is
+now tracked in [installer/README.md](installer/README.md) and
+[docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md).
+Until that work ships, start with the module that matches your need:
 
 - FOIA / public records management: [civicrecords-ai](https://github.com/CivicSuite/civicrecords-ai)
 - Shared platform/library work: [civiccore](https://github.com/CivicSuite/civiccore)
@@ -85,6 +88,25 @@ If you are orienting yourself for the first time, read in this order:
 | `civicapi` | Planned public read-only data gateway module; spec exists, repo not scaffolded yet |
 
 See [docs/compatibility/index.md](docs/compatibility/index.md) for the canonical module-to-platform version pairings.
+
+## Suite Installer Direction
+
+CivicSuite needs a suite-level installer that starts from a zero-baseline
+Windows, macOS, or Linux machine, checks baseline dependencies, installs
+CivicCore first, presents a menu-style module selector, installs selected
+modules, and records proof that the selected local profile works.
+
+Current installer planning artifacts:
+
+- Contract: [installer/README.md](installer/README.md)
+- Module/profile manifest: [installer/modules.json](installer/modules.json)
+- Plan: [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md)
+- Dry-run planner: `python scripts/plan-installer.py --profile clerk-core --dry-run`
+- Verification: `python scripts/verify-installer-plan.py`
+
+The existing CivicRecords AI Windows installer and the umbrella demo compose
+profile are useful inputs, but they do not satisfy the suite installer
+requirement.
 
 ## Architecture
 
