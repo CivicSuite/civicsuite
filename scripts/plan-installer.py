@@ -14,6 +14,7 @@ import sys
 import tarfile
 import tomllib
 import zipfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -26,8 +27,10 @@ REPORT_ROOT = ROOT / "installer" / "reports"
 GENERATED_ROOT = ROOT / "installer" / "generated"
 PACKAGE_ROOT = GENERATED_ROOT / "packages"
 NATIVE_ROOT = GENERATED_ROOT / "native"
+BUNDLE_ROOT = GENERATED_ROOT / "bundles"
 DIST_ROOT = ROOT / "installer" / "dist"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
+INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 SIGNING_STATUS = {
     "signed": False,
     "status": "unsigned_oss_beta",
@@ -1309,6 +1312,7 @@ $ErrorActionPreference = "Stop"
 $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\\..\\..\\..\\..")
 $Planner = Join-Path $RepoRoot "scripts\\plan-installer.py"
+$Lifecycle = Join-Path $RepoRoot "scripts\\run-clerk-core-installer.py"
 
 Write-Host "CivicSuite OSS beta installer package"
 Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
@@ -1326,22 +1330,22 @@ if ($Plan) {{
 }}
 
 if ($Install) {{
-    python $Planner --profile {profile_id} --menu-style {menu_style} --execute --dry-run
+    python $Lifecycle install
     exit $LASTEXITCODE
 }}
 
 if ($Verify) {{
-    python $Planner --profile {profile_id} --menu-style {menu_style} --show-health-checks --dry-run
+    python $Lifecycle verify
     exit $LASTEXITCODE
 }}
 
 if ($Repair) {{
-    python $Planner --profile {profile_id} --menu-style {menu_style} --show-preflight --dry-run
+    python $Lifecycle repair
     exit $LASTEXITCODE
 }}
 
 if ($Uninstall) {{
-    python $Planner --profile {profile_id} --menu-style {menu_style} --show-executor-design --dry-run
+    python $Lifecycle uninstall
     exit $LASTEXITCODE
 }}
 
@@ -1354,6 +1358,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 REPO_ROOT="$(cd "${{SCRIPT_DIR}}/../../../../.." && pwd)"
 PLANNER="${{REPO_ROOT}}/scripts/plan-installer.py"
+LIFECYCLE="${{REPO_ROOT}}/scripts/run-clerk-core-installer.py"
 
 echo "CivicSuite OSS beta installer package"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
@@ -1369,16 +1374,16 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --dry-run
     ;;
   install)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --execute --dry-run
+    python3 "${{LIFECYCLE}}" install
     ;;
   verify)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-health-checks --dry-run
+    python3 "${{LIFECYCLE}}" verify
     ;;
   repair)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-preflight --dry-run
+    python3 "${{LIFECYCLE}}" repair
     ;;
   uninstall)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-executor-design --dry-run
+    python3 "${{LIFECYCLE}}" uninstall
     ;;
   readiness)
     python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
@@ -1429,8 +1434,10 @@ stop and download the artifact again from the project release source.
 
 This package is the operator-facing installer entrypoint for the selected
 platform. It does not install privileged baseline software by itself. It checks
-readiness, renders the selected install plan, and can run the current cleanroom
-gate for profiles that have a gate.
+readiness, renders the selected install plan, installs the clerk-core runtime
+from the bundled module sources, verifies live service health, repairs by
+rebuilding/restarting the stack, and uninstalls Docker resources for the
+profile.
 
 ## First Run
 
@@ -1446,15 +1453,15 @@ gate for profiles that have a gate.
    {plan_command}
    ```
 
-3. Run the lifecycle command you need:
+3. Install the selected profile:
 
    ```text
-   {plan_command}
+   {"." + "\\" + launcher + " -Install" if platform_id == "windows" else "bash ./" + launcher + " install"}
    ```
 
    Available lifecycle modes: readiness, plan, install, verify, repair,
-   uninstall, and gate. Install, repair, and uninstall are still guarded by the
-   planner until the mutating executor is implemented.
+   uninstall, and gate. Install, repair, uninstall, and gate are mutating: they
+   create or remove Docker resources and write installer reports.
 
 4. Run the cleanroom gate when Docker mutation is approved:
 
@@ -1469,6 +1476,10 @@ gate for profiles that have a gate.
 ## Boundary
 
 - Readiness and plan modes are non-mutating.
+- Install/repair mode is mutating: it builds and starts CivicRecords AI and
+  CivicClerk from the bundled source tree.
+- Verify mode checks live service endpoints.
+- Uninstall mode removes the clerk-core Docker containers and volumes.
 - Gate mode is mutating: it may build/start/teardown Docker resources and write
   installer evidence under `installer/reports`.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
@@ -1691,6 +1702,110 @@ def _archive_directory(source: Path, target: Path, *, platform_id: str) -> None:
                         archive.addfile(info)
 
 
+def _copy_bundle_source(module_name: str, target: Path) -> None:
+    source = ROOT / "modules" / module_name
+    if not source.is_dir():
+        source = ROOT.parent / module_name
+    if not source.is_dir():
+        target.mkdir(parents=True, exist_ok=True)
+        (target / "SOURCE_NOT_BUNDLED.txt").write_text(
+            f"""# {module_name} source not bundled
+
+The local module checkout was not available when this bundle was generated.
+This fallback is used by umbrella-repo CI, which verifies the generator without
+checking out sibling module repositories.
+
+Release archives intended for operators must be generated from a workspace that
+contains the sibling `{module_name}` checkout and must pass
+`scripts/run-installer-package-cleanroom.py`.
+""",
+            encoding="utf-8",
+            newline="\n",
+        )
+        return
+    ignore = shutil.ignore_patterns(
+        ".git",
+        ".env",
+        ".claude",
+        ".agents",
+        ".agent-workflows",
+        ".ruff_cache",
+        ".pytest_cache",
+        ".tmp-*",
+        "__pycache__",
+        "docs",
+        "node_modules",
+        "frontend/node_modules",
+        "frontend/playwright-report",
+        "frontend/test-results",
+        "docs/playwright-report",
+        "docs/superpowers",
+        "superpowers",
+        "backend/tests",
+        "tests",
+        "run-civicclerk-cleanroom.sh",
+        "dist",
+        "build",
+        ".venv",
+        "backend/.venv",
+    )
+    shutil.copytree(source, target, ignore=ignore)
+    if module_name == "civicrecords-ai":
+        (target / "backend" / "tests").mkdir(parents=True, exist_ok=True)
+        ledger = source / "docs" / "ops" / "tier1-retrofit-ledger.json"
+        if ledger.is_file():
+            ledger_target = target / "docs" / "ops" / "tier1-retrofit-ledger.json"
+            ledger_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ledger, ledger_target)
+
+
+def _stage_release_bundle(*, profile_id: str, platform_id: str, package_dir: Path) -> Path:
+    bundle_dir = BUNDLE_ROOT / profile_id / platform_id / f"CivicSuite-{profile_id}-{platform_id}"
+    if not _is_within(bundle_dir, BUNDLE_ROOT):
+        raise PlannerError(f"Bundle path is outside generated bundle root: {bundle_dir}")
+    if bundle_dir.exists():
+        for attempt in range(3):
+            try:
+                shutil.rmtree(bundle_dir)
+                break
+            except OSError:
+                if attempt == 2:
+                    raise
+                time.sleep(1)
+    staged_package = bundle_dir / "installer" / "generated" / "packages" / profile_id / platform_id
+    staged_package.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(package_dir, staged_package)
+    (bundle_dir / "scripts").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / "scripts" / "plan-installer.py", bundle_dir / "scripts" / "plan-installer.py")
+    shutil.copy2(INSTALLER_LIFECYCLE_RUNNER, bundle_dir / "scripts" / "run-clerk-core-installer.py")
+    (bundle_dir / "installer").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(MANIFEST, bundle_dir / "installer" / "modules.json")
+    modules_root = bundle_dir / "modules"
+    modules_root.mkdir(parents=True, exist_ok=True)
+    _copy_bundle_source("civicrecords-ai", modules_root / "civicrecords-ai")
+    _copy_bundle_source("civicclerk", modules_root / "civicclerk")
+    (bundle_dir / "README.md").write_text(
+        f"""# CivicSuite {profile_id} Installer Bundle
+
+This unsigned OSS beta bundle is self-contained for the clerk-core profile. It
+includes the installer lifecycle runner, the selected platform package, and the
+module source trees needed to build/start CivicRecords AI and CivicClerk with
+Docker.
+
+Start here:
+
+```text
+installer/generated/packages/{profile_id}/{platform_id}/{_package_launcher_name(platform_id)}
+```
+
+Verify the release SHA256 checksum before running install.
+""",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return bundle_dir
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -1735,12 +1850,14 @@ def generate_release_artifacts(
         suffix = ".zip" if target_platform == "windows" else ".tar.gz"
         archive_name = f"CivicSuite-{profile_id}-{target_platform}-{version}{suffix}"
         archive_path = DIST_ROOT / archive_name
-        _archive_directory(package_dir, archive_path, platform_id=target_platform)
+        bundle_dir = _stage_release_bundle(profile_id=profile_id, platform_id=target_platform, package_dir=package_dir)
+        _archive_directory(bundle_dir, archive_path, platform_id=target_platform)
         archives.append(
             {
                 "platform": target_platform,
                 "path": str(archive_path.relative_to(ROOT)),
                 "sha256": _sha256(archive_path),
+                "bundle_root": str(bundle_dir.relative_to(ROOT)),
             }
         )
     checksum_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-SHA256SUMS.txt"

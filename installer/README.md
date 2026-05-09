@@ -1,11 +1,16 @@
 # CivicSuite Installer Contract
 
-Status: design contract, not implementation.
+Status: design contract plus first working clerk-core beta lifecycle.
 
 This directory defines the suite-level installer target for CivicSuite. It does
 not replace module-specific install paths, and it does not certify any module as
 city-ready. The goal is to define the delivery surface that can take a
 zero-baseline machine to a working local CivicSuite profile.
+
+The original installer work began as a design contract, not implementation. The
+current beta now includes a working `clerk-core` lifecycle runner that can be
+packaged, extracted, installed, verified, repaired, and uninstalled from a clean
+bundle using Docker.
 
 ## Required Outcome
 
@@ -217,6 +222,32 @@ The installer can now generate the first operator-facing profile package:
 ```powershell
 python scripts\plan-installer.py --profile clerk-core --generate-profile-package
 ```
+
+The generated `clerk-core` package entrypoints support:
+
+- `readiness`: detect Docker, host resources, optional Ollama, and compatibility
+  without mutating host state.
+- `plan`: print the selected profile and module order without mutating host
+  state.
+- `install`: build and start CivicRecords AI and CivicClerk from bundled module
+  sources.
+- `verify`: check CivicRecords API, CivicRecords web, CivicClerk API, and
+  CivicClerk web endpoints.
+- `repair`: preserve generated `.env` secrets, rebuild/restart the services,
+  and verify health again.
+- `uninstall`: remove the profile's Docker containers and volumes.
+- `gate`: run the existing isolated cleanroom service/UI gate.
+
+The package cleanroom runner proves the distributable archive from an extracted
+copy:
+
+```powershell
+python scripts\run-installer-package-cleanroom.py
+```
+
+That command extracts `installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz`,
+runs readiness, plan, install, repair, verify, and uninstall from the extracted
+bundle, and writes evidence under `installer/reports/{run_id}`.
 
 This writes Windows, macOS, and Linux package directories under
 `installer/generated/packages/{profile}`. Each package contains:

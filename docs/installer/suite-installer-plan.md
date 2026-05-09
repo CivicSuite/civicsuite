@@ -1,11 +1,12 @@
 # CivicSuite Suite Installer Plan
 
-Status: design contract, not implementation.
+Status: design contract plus first working clerk-core beta lifecycle.
 
 This document defines the first suite-level installer target. The current
-umbrella repo has deployment documentation and a bounded demo compose profile,
-but it does not yet provide a cross-platform installer that starts from a
-zero-baseline machine.
+umbrella repo has deployment documentation and a bounded demo compose profile.
+The installer work began as a design contract, not implementation; the current
+beta now adds a real `clerk-core` package lifecycle for the first distributable
+profile.
 
 ## Why This Exists
 
@@ -90,10 +91,20 @@ the current cleanroom gate. These profile packages are the operator UX package
 that future native installers should wrap; they are not native OS installers
 yet.
 
+The generated package lifecycle now includes a real `clerk-core` installer
+runner:
+`python scripts/run-clerk-core-installer.py install|verify|repair|uninstall`.
+The platform package launchers call that runner for lifecycle modes. Install
+builds and starts CivicRecords AI plus CivicClerk from bundled source trees,
+verify checks four live endpoints, repair preserves generated `.env` secrets
+and rebuilds/restarts services, and uninstall tears down the profile containers
+and volumes.
+
 The release artifacts generator is:
 `python scripts/plan-installer.py --profile clerk-core --generate-release-artifacts --installer-version 0.1.0`.
-It writes platform archives under `installer/dist`, native wrapper manifests
-under `installer/generated/native`, `SHA256SUMS.txt`, and a release manifest.
+It writes self-contained platform archives under `installer/dist`, native
+wrapper manifests under `installer/generated/native`, `SHA256SUMS.txt`, and a
+release manifest.
 The generated native manifests cover Windows Inno Setup, macOS pkgbuild /
 productbuild, and Linux Debian metadata. Building and signing native installers
 remains a release-infrastructure step, not a hidden host mutation.
@@ -128,6 +139,13 @@ It runs the same Docker proof and prints concise pass/fail output for API
 health, frontend health, and Playwright desktop/mobile UI verification. The
 planner rejects `--dry-run` with either cleanroom command because those paths
 build/start/teardown Docker resources and write proof evidence.
+
+The package-level cleanroom proof is:
+`python scripts/run-installer-package-cleanroom.py`.
+It extracts the Linux release archive into `installer/reports/{run_id}`, runs
+readiness, plan, install, repair, verify, and uninstall from the extracted
+bundle, and records pass/fail evidence. This is the current zero-baseline machine
+proof for the distributable Linux archive.
 
 ## Supported Profiles
 

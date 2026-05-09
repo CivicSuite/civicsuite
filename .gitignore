@@ -28,6 +28,7 @@ _site/
 
 # Installer runtime evidence and generated local environments
 installer/reports/
+installer/generated/bundles/
 installer/generated/**/.venv/
 test-results/
 

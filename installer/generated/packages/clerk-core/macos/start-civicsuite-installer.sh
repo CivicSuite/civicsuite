@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 PLANNER="${REPO_ROOT}/scripts/plan-installer.py"
+LIFECYCLE="${REPO_ROOT}/scripts/run-clerk-core-installer.py"
 
 echo "CivicSuite OSS beta installer package"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
@@ -19,16 +20,16 @@ case "${MODE}" in
     python3 "${PLANNER}" --profile clerk-core --menu-style guided --dry-run
     ;;
   install)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --execute --dry-run
+    python3 "${LIFECYCLE}" install
     ;;
   verify)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-health-checks --dry-run
+    python3 "${LIFECYCLE}" verify
     ;;
   repair)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-preflight --dry-run
+    python3 "${LIFECYCLE}" repair
     ;;
   uninstall)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-executor-design --dry-run
+    python3 "${LIFECYCLE}" uninstall
     ;;
   readiness)
     python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-readiness --detect-host --dry-run

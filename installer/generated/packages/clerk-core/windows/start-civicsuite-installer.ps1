@@ -12,6 +12,7 @@ $ErrorActionPreference = "Stop"
 $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\..\..\..\..")
 $Planner = Join-Path $RepoRoot "scripts\plan-installer.py"
+$Lifecycle = Join-Path $RepoRoot "scripts\run-clerk-core-installer.py"
 
 Write-Host "CivicSuite OSS beta installer package"
 Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
@@ -29,22 +30,22 @@ if ($Plan) {
 }
 
 if ($Install) {
-    python $Planner --profile clerk-core --menu-style guided --execute --dry-run
+    python $Lifecycle install
     exit $LASTEXITCODE
 }
 
 if ($Verify) {
-    python $Planner --profile clerk-core --menu-style guided --show-health-checks --dry-run
+    python $Lifecycle verify
     exit $LASTEXITCODE
 }
 
 if ($Repair) {
-    python $Planner --profile clerk-core --menu-style guided --show-preflight --dry-run
+    python $Lifecycle repair
     exit $LASTEXITCODE
 }
 
 if ($Uninstall) {
-    python $Planner --profile clerk-core --menu-style guided --show-executor-design --dry-run
+    python $Lifecycle uninstall
     exit $LASTEXITCODE
 }
 
