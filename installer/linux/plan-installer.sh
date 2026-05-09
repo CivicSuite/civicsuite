@@ -19,7 +19,9 @@ SHOW_HEALTH_CHECKS=()
 SHOW_PREFLIGHT=()
 GENERATE_INSTALL_KIT=()
 GENERATE_PROFILE_PACKAGE=()
+GENERATE_RELEASE_ARTIFACTS=()
 PACKAGE_PLATFORM_ARGS=()
+INSTALLER_VERSION_ARGS=()
 RUN_CLEANROOM_PROOF=()
 RUN_CLEANROOM_GATE=()
 WRITE_REPORT=()
@@ -93,6 +95,14 @@ while [[ $# -gt 0 ]]; do
       GENERATE_PROFILE_PACKAGE=("--generate-profile-package")
       shift
       ;;
+    --generate-release-artifacts)
+      GENERATE_RELEASE_ARTIFACTS=("--generate-release-artifacts")
+      shift
+      ;;
+    --installer-version)
+      INSTALLER_VERSION_ARGS=("--installer-version" "$2")
+      shift 2
+      ;;
     --package-platform)
       PACKAGE_PLATFORM_ARGS=("--package-platform" "$2")
       shift 2
@@ -164,6 +174,9 @@ fi
 if [[ ${#GENERATE_PROFILE_PACKAGE[@]} -gt 0 ]]; then
   echo "Profile package generation requested: writes installer/generated/packages only"
 fi
+if [[ ${#GENERATE_RELEASE_ARTIFACTS[@]} -gt 0 ]]; then
+  echo "Release artifact generation requested: writes installer/generated/native and installer/dist"
+fi
 if [[ ${#RUN_CLEANROOM_PROOF[@]} -gt 0 ]]; then
   echo "Cleanroom proof requested: Docker cleanroom runner will build/start/verify/teardown"
 fi
@@ -174,7 +187,7 @@ if [[ ${#WRITE_REPORT[@]} -gt 0 ]]; then
   echo "Evidence report requested: installer/reports dry-run evidence only"
 fi
 DRY_RUN_ARG=("--dry-run")
-if [[ ${#RUN_CLEANROOM_PROOF[@]} -gt 0 || ${#RUN_CLEANROOM_GATE[@]} -gt 0 || ${#GENERATE_PROFILE_PACKAGE[@]} -gt 0 ]]; then
+if [[ ${#RUN_CLEANROOM_PROOF[@]} -gt 0 || ${#RUN_CLEANROOM_GATE[@]} -gt 0 || ${#GENERATE_PROFILE_PACKAGE[@]} -gt 0 || ${#GENERATE_RELEASE_ARTIFACTS[@]} -gt 0 ]]; then
   DRY_RUN_ARG=()
 fi
-python3 "${REPO_ROOT}/scripts/plan-installer.py" --profile "${PROFILE}" --menu-style "${MENU_STYLE}" "${DRY_RUN_ARG[@]}" "${SHOW_MENU[@]}" "${SHOW_READINESS[@]}" "${DETECT_HOST[@]}" "${EXECUTE[@]}" "${SHOW_EXECUTOR_DESIGN[@]}" "${SHOW_EVIDENCE_SCHEMA[@]}" "${SHOW_ARTIFACTS[@]}" "${SHOW_PROFILE_CONFIG[@]}" "${SHOW_HEALTH_CHECKS[@]}" "${SHOW_PREFLIGHT[@]}" "${GENERATE_INSTALL_KIT[@]}" "${GENERATE_PROFILE_PACKAGE[@]}" "${PACKAGE_PLATFORM_ARGS[@]}" "${RUN_CLEANROOM_PROOF[@]}" "${RUN_CLEANROOM_GATE[@]}" "${WRITE_REPORT[@]}" "${RUN_ID_ARGS[@]}" --readiness-scenario "${READINESS_SCENARIO}" "${APPROVAL_ARGS[@]}" "${MODULE_ARGS[@]}"
+python3 "${REPO_ROOT}/scripts/plan-installer.py" --profile "${PROFILE}" --menu-style "${MENU_STYLE}" "${DRY_RUN_ARG[@]}" "${SHOW_MENU[@]}" "${SHOW_READINESS[@]}" "${DETECT_HOST[@]}" "${EXECUTE[@]}" "${SHOW_EXECUTOR_DESIGN[@]}" "${SHOW_EVIDENCE_SCHEMA[@]}" "${SHOW_ARTIFACTS[@]}" "${SHOW_PROFILE_CONFIG[@]}" "${SHOW_HEALTH_CHECKS[@]}" "${SHOW_PREFLIGHT[@]}" "${GENERATE_INSTALL_KIT[@]}" "${GENERATE_PROFILE_PACKAGE[@]}" "${GENERATE_RELEASE_ARTIFACTS[@]}" "${PACKAGE_PLATFORM_ARGS[@]}" "${INSTALLER_VERSION_ARGS[@]}" "${RUN_CLEANROOM_PROOF[@]}" "${RUN_CLEANROOM_GATE[@]}" "${WRITE_REPORT[@]}" "${RUN_ID_ARGS[@]}" --readiness-scenario "${READINESS_SCENARIO}" "${APPROVAL_ARGS[@]}" "${MODULE_ARGS[@]}"

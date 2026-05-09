@@ -47,6 +47,9 @@ Completed surfaces:
 - `scripts/plan-installer.py --profile clerk-core --generate-profile-package`
   writes the first cross-platform operator package under
   `installer/generated/packages/clerk-core`.
+- `scripts/plan-installer.py --profile clerk-core --generate-release-artifacts`
+  writes platform archives, SHA256 checksums, a release manifest, and native
+  wrapper manifests for Windows, macOS, and Linux.
 - The planner rejects `--dry-run` when it is combined with a cleanroom proof or
   gate because those modes build/start/teardown Docker resources and write
   evidence.
@@ -82,6 +85,7 @@ Allowed now:
   gate, artifact/version, service-config, and health-check output
 - generate a minimal CivicCore install kit inside the repo
 - generate cross-platform profile packages inside the repo
+- generate distributable release archives and native wrapper manifests
 - run the generated minimal Windows kit after explicit approval
 - run a disposable Linux cleanroom proof for the generated minimal kit
 - run a disposable CivicRecords service/UI cleanroom proof with Playwright
@@ -120,6 +124,7 @@ python scripts\plan-installer.py --profile clerk-core --show-health-checks --dry
 python scripts\plan-installer.py --profile clerk-core --show-preflight --dry-run
 python scripts\plan-installer.py --profile minimal --generate-install-kit
 python scripts\plan-installer.py --profile clerk-core --generate-profile-package
+python scripts\plan-installer.py --profile clerk-core --generate-release-artifacts --installer-version 0.1.0
 powershell -NoProfile -ExecutionPolicy Bypass -File installer\generated\minimal\install-civiccore.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File installer\generated\minimal\verify-civiccore.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File installer\generated\minimal\reset-civiccore.ps1
@@ -146,6 +151,7 @@ installer\windows\plan-installer.ps1 -Profile clerk-core -ShowHealthChecks -Writ
 installer\windows\plan-installer.ps1 -Profile clerk-core -ShowPreflight
 installer\windows\plan-installer.ps1 -Profile minimal -GenerateInstallKit
 installer\windows\plan-installer.ps1 -Profile clerk-core -GenerateProfilePackage
+installer\windows\plan-installer.ps1 -Profile clerk-core -GenerateReleaseArtifacts
 ```
 
 ```bash
@@ -163,6 +169,7 @@ bash installer/macos/plan-installer.sh --profile clerk-core --show-health-checks
 bash installer/macos/plan-installer.sh --profile clerk-core --show-preflight
 bash installer/macos/plan-installer.sh --profile minimal --generate-install-kit
 bash installer/macos/plan-installer.sh --profile clerk-core --generate-profile-package
+bash installer/macos/plan-installer.sh --profile clerk-core --generate-release-artifacts
 bash installer/linux/plan-installer.sh --profile clerk-core
 bash installer/linux/plan-installer.sh --show-menu --menu-style guided
 bash installer/linux/plan-installer.sh --show-readiness --readiness-scenario missing-docker
@@ -177,6 +184,7 @@ bash installer/linux/plan-installer.sh --profile clerk-core --show-health-checks
 bash installer/linux/plan-installer.sh --profile clerk-core --show-preflight
 bash installer/linux/plan-installer.sh --profile minimal --generate-install-kit
 bash installer/linux/plan-installer.sh --profile clerk-core --generate-profile-package
+bash installer/linux/plan-installer.sh --profile clerk-core --generate-release-artifacts
 ```
 
 Verification stack passed:

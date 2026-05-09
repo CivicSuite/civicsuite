@@ -14,6 +14,8 @@ param(
     [switch]$ShowPreflight,
     [switch]$GenerateInstallKit,
     [switch]$GenerateProfilePackage,
+    [switch]$GenerateReleaseArtifacts,
+    [string]$InstallerVersion = "0.1.0",
     [ValidateSet("all", "windows", "macos", "linux")]
     [string]$PackagePlatform = "all",
     [switch]$RunCleanroomProof,
@@ -30,7 +32,7 @@ $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $Planner = Join-Path $RepoRoot "scripts\plan-installer.py"
 
 $ArgsList = @($Planner, "--profile", $Profile, "--menu-style", $MenuStyle)
-if (-not $RunCleanroomProof -and -not $RunCleanroomGate -and -not $GenerateProfilePackage) {
+if (-not $RunCleanroomProof -and -not $RunCleanroomGate -and -not $GenerateProfilePackage -and -not $GenerateReleaseArtifacts) {
     $ArgsList += "--dry-run"
 }
 if ($ShowMenu) {
@@ -71,6 +73,9 @@ if ($GenerateInstallKit) {
 }
 if ($GenerateProfilePackage) {
     $ArgsList += @("--generate-profile-package", "--package-platform", $PackagePlatform)
+}
+if ($GenerateReleaseArtifacts) {
+    $ArgsList += @("--generate-release-artifacts", "--package-platform", $PackagePlatform, "--installer-version", $InstallerVersion)
 }
 if ($RunCleanroomProof) {
     $ArgsList += "--run-cleanroom-proof"
@@ -133,6 +138,9 @@ if ($GenerateInstallKit) {
 }
 if ($GenerateProfilePackage) {
     Write-Host "Profile package generation requested: writes installer/generated/packages only"
+}
+if ($GenerateReleaseArtifacts) {
+    Write-Host "Release artifact generation requested: writes installer/generated/native and installer/dist"
 }
 if ($RunCleanroomProof) {
     Write-Host "Cleanroom proof requested: Docker cleanroom runner will build/start/verify/teardown"
