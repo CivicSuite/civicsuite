@@ -98,6 +98,12 @@ The generated native manifests cover Windows Inno Setup, macOS pkgbuild /
 productbuild, and Linux Debian metadata. Building and signing native installers
 remains a release-infrastructure step, not a hidden host mutation.
 
+Installer artifacts are distributable as unsigned OSS beta builds. Every
+generated package and release manifest must state that CivicSuite is an
+open-source beta project without signing certificates yet, that Windows/macOS/
+Linux trust warnings are expected, and that SHA256 verification is the current
+trust path before proceeding through any OS warning.
+
 The first cleanroom proof uses
 `python scripts/run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2`
 to run the generated kit inside a disposable Linux container. That proof is not

@@ -5,6 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 PLANNER="${REPO_ROOT}/scripts/plan-installer.py"
 
+echo "CivicSuite OSS beta installer package"
+echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
+echo "Trust path: verify the SHA256 checksum from installer/dist before running lifecycle commands."
+echo "Project status: open-source beta; code signing certificates are not available yet."
+
 MODE="${1:-readiness}"
 case "${MODE}" in
   gate)
