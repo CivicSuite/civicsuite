@@ -7,12 +7,6 @@
       "type": "check"
     },
     {
-      "description": "WSL 2 and Virtual Machine Platform are enabled when Docker Desktop requires them.",
-      "id": "wsl2",
-      "mode": "detect_or_guide",
-      "type": "check"
-    },
-    {
       "description": "Host has enough RAM and disk for the selected profile.",
       "id": "disk-memory",
       "mode": "detect",
@@ -73,9 +67,9 @@
   ],
   "dry_run": true,
   "host": {
-    "machine": "AMD64",
-    "release": "11",
-    "system": "Windows"
+    "machine": "x86_64/arm64",
+    "release": "13+",
+    "system": "Darwin"
   },
   "menu_style": {
     "description": "Step-by-step setup for operators who want recommendations.",

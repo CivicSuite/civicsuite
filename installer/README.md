@@ -243,11 +243,16 @@ copy:
 
 ```powershell
 python scripts\run-installer-package-cleanroom.py
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-macos-0.1.0.tar.gz --skip-install
 ```
 
-That command extracts `installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz`,
-runs readiness, plan, install, repair, verify, and uninstall from the extracted
-bundle, and writes evidence under `installer/reports/{run_id}`.
+Those commands extract the release archive, run the platform launcher from the
+extracted bundle, and write evidence under `installer/reports/{run_id}`. Full
+install/repair/verify/uninstall proof is valid only when the archive is run on a
+matching host or VM. On the current validation host, Windows and Linux lifecycle
+proof passed; macOS is limited to archive/readiness/plan proof until a macOS
+runtime is available.
 
 This writes Windows, macOS, and Linux package directories under
 `installer/generated/packages/{profile}`. Each package contains:
