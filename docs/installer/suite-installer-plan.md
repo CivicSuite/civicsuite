@@ -22,6 +22,7 @@ The suite installer is therefore its own delivery surface.
 - No dependency installation is performed by this slice.
 - No service, container, or browser is started by this slice.
 - No module release status is promoted by this slice.
+- No generated install script is executed by this slice.
 
 ## Required User Experience
 
@@ -61,9 +62,48 @@ The dry-run design surface must include preflight, approval, execute, verify,
 repair, and rollback/uninstall phases, with evidence requirements and blockers
 for each phase.
 
-The installer must also define an evidence schema before report writers exist.
-The dry-run schema must identify report paths, required fields, redaction rules,
-and validation rules for each executor phase without writing files.
+The installer must also define an evidence schema and a report writer before
+host mutation exists. The dry-run schema must identify report paths, required
+fields, redaction rules, and validation rules for each executor phase. The
+initial report writer may write only non-mutating dry-run plan, readiness,
+approval-gate, artifact/version, service-config, and health-check reports.
+
+Before a mutating executor exists, the installer must also expose the executor's
+planned inputs as dry-run surfaces: artifact/version resolver output, profile config,
+service configuration, health-check planning, and executor preflight.
+These surfaces are inputs to future install work, not permission to install,
+start, repair, or configure anything.
+
+The first generated install kit is intentionally narrower than the full suite:
+`python scripts/plan-installer.py --profile minimal --generate-install-kit`
+writes a CivicCore-only kit under `installer/generated/minimal`. The generator
+itself does not mutate host state. The generated scripts are real install
+artifacts, but they mutate only when an operator explicitly runs them.
+
+The first cleanroom proof uses
+`python scripts/run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2`
+to run the generated kit inside a disposable Linux container. That proof is not
+a replacement for full Windows/macOS/Linux VM certification, but it is the
+fastest repeatable clean baseline for the CivicCore-only package layer.
+
+The first service cleanroom proof uses
+`python scripts/run-civicrecords-cleanroom.py --run-id manual-civicrecords-service-cleanroom-4`
+to copy CivicRecords AI into an evidence workspace, start an isolated Docker
+Compose project on high ports, verify API and frontend health, run live
+Playwright desktop/mobile smoke checks, save screenshots, and tear the stack
+down with volumes removed.
+
+The suite installer owns that same proof through
+`python scripts/plan-installer.py --profile clerk-core --run-cleanroom-proof`.
+That command is intentionally mutating because it starts Docker services inside
+an isolated Compose project and writes evidence.
+
+The operator-facing command is the named cleanroom gate:
+`python scripts/plan-installer.py --profile clerk-core --run-cleanroom-gate`.
+It runs the same Docker proof and prints concise pass/fail output for API
+health, frontend health, and Playwright desktop/mobile UI verification. The
+planner rejects `--dry-run` with either cleanroom command because those paths
+build/start/teardown Docker resources and write proof evidence.
 
 ## Supported Profiles
 
@@ -141,6 +181,11 @@ The first platform launchers exist as dry-run wrappers only:
 - `installer/windows/plan-installer.ps1 -Execute`
 - `installer/windows/plan-installer.ps1 -ShowExecutorDesign`
 - `installer/windows/plan-installer.ps1 -ShowEvidenceSchema`
+- `installer/windows/plan-installer.ps1 -ShowArtifacts`
+- `installer/windows/plan-installer.ps1 -ShowProfileConfig`
+- `installer/windows/plan-installer.ps1 -ShowHealthChecks`
+- `installer/windows/plan-installer.ps1 -ShowPreflight`
+- `installer/windows/plan-installer.ps1 -Profile minimal -GenerateInstallKit`
 - `bash installer/macos/plan-installer.sh --profile clerk-core`
 - `bash installer/macos/plan-installer.sh --show-menu --menu-style guided`
 - `bash installer/macos/plan-installer.sh --show-readiness --readiness-scenario missing-docker`
@@ -148,6 +193,11 @@ The first platform launchers exist as dry-run wrappers only:
 - `bash installer/macos/plan-installer.sh --execute`
 - `bash installer/macos/plan-installer.sh --show-executor-design`
 - `bash installer/macos/plan-installer.sh --show-evidence-schema`
+- `bash installer/macos/plan-installer.sh --show-artifacts`
+- `bash installer/macos/plan-installer.sh --show-profile-config`
+- `bash installer/macos/plan-installer.sh --show-health-checks`
+- `bash installer/macos/plan-installer.sh --show-preflight`
+- `bash installer/macos/plan-installer.sh --profile minimal --generate-install-kit`
 - `bash installer/linux/plan-installer.sh --profile clerk-core`
 - `bash installer/linux/plan-installer.sh --show-menu --menu-style guided`
 - `bash installer/linux/plan-installer.sh --show-readiness --readiness-scenario missing-docker`
@@ -155,9 +205,43 @@ The first platform launchers exist as dry-run wrappers only:
 - `bash installer/linux/plan-installer.sh --execute`
 - `bash installer/linux/plan-installer.sh --show-executor-design`
 - `bash installer/linux/plan-installer.sh --show-evidence-schema`
+- `bash installer/linux/plan-installer.sh --show-artifacts`
+- `bash installer/linux/plan-installer.sh --show-profile-config`
+- `bash installer/linux/plan-installer.sh --show-health-checks`
+- `bash installer/linux/plan-installer.sh --show-preflight`
+- `bash installer/linux/plan-installer.sh --profile minimal --generate-install-kit`
+- `python scripts/run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2`
+- `python scripts/run-civicrecords-cleanroom.py --run-id manual-civicrecords-service-cleanroom-4`
+- `python scripts/plan-installer.py --profile clerk-core --run-cleanroom-proof --run-id manual-clerk-core-integrated-proof`
+- `python scripts/plan-installer.py --profile clerk-core --run-cleanroom-gate --run-id verify-clerk-core-gate`
 
 Only after these dry-run launchers remain verified should the workflow add real
 install, repair, or packaging behavior.
+
+The current launcher/report writer surface also supports:
+
+- `python scripts\plan-installer.py --profile clerk-core --dry-run --write-report`
+- `python scripts\plan-installer.py --profile clerk-core --show-readiness --readiness-scenario missing-docker --dry-run --write-report`
+- `python scripts\plan-installer.py --profile minimal --execute --dry-run --write-report`
+- `python scripts\plan-installer.py --profile clerk-core --show-artifacts --dry-run --write-report`
+- `python scripts\plan-installer.py --profile clerk-core --show-profile-config --dry-run --write-report`
+- `python scripts\plan-installer.py --profile clerk-core --show-health-checks --dry-run --write-report`
+- `installer/windows/plan-installer.ps1 -Profile minimal -WriteReport`
+- `installer/windows/plan-installer.ps1 -Profile clerk-core -ShowArtifacts -WriteReport`
+- `installer/windows/plan-installer.ps1 -Profile clerk-core -ShowProfileConfig -WriteReport`
+- `installer/windows/plan-installer.ps1 -Profile clerk-core -ShowHealthChecks -WriteReport`
+- `bash installer/macos/plan-installer.sh --profile minimal --write-report`
+- `bash installer/macos/plan-installer.sh --profile clerk-core --show-artifacts --write-report`
+- `bash installer/macos/plan-installer.sh --profile clerk-core --show-profile-config --write-report`
+- `bash installer/macos/plan-installer.sh --profile clerk-core --show-health-checks --write-report`
+- `bash installer/linux/plan-installer.sh --profile minimal --write-report`
+- `bash installer/linux/plan-installer.sh --profile clerk-core --show-artifacts --write-report`
+- `bash installer/linux/plan-installer.sh --profile clerk-core --show-profile-config --write-report`
+- `bash installer/linux/plan-installer.sh --profile clerk-core --show-health-checks --write-report`
+
+Reports are written under `installer/reports/{run_id}` and validated before
+write. The report writer rejects secret-shaped or environment-dump-shaped fields
+and records `mutates_host: false`.
 
 The first dry-run planner command is:
 

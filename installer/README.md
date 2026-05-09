@@ -178,9 +178,9 @@ Required phases:
 Only `execute`, `repair`, and `rollback` may ever mutate host state, and they
 remain design-only until a separate reviewed implementation slice exists.
 
-## Evidence Schema
+## Evidence Reports
 
-The future executor evidence schema is also dry-run only:
+The executor evidence schema is dry-run only:
 
 ```powershell
 python scripts\plan-installer.py --profile minimal --show-evidence-schema --dry-run
@@ -192,8 +192,139 @@ approval records, install logs, artifact versions, service config, health
 checks, restart checks, failure-copy checks, repair logs, post-repair checks,
 rollback logs, and remaining-state reports.
 
-This slice does not write report files. It defines the fields, path templates,
-redaction rules, and validation rules that future report writers must satisfy.
+The current non-mutating report writer can write dry-run plan, readiness,
+approval-gate, artifact/version, service-config, and health-check evidence:
+
+```powershell
+python scripts\plan-installer.py --profile clerk-core --dry-run --write-report
+python scripts\plan-installer.py --profile clerk-core --show-readiness --readiness-scenario missing-docker --dry-run --write-report
+python scripts\plan-installer.py --profile minimal --execute --dry-run --write-report
+python scripts\plan-installer.py --profile clerk-core --show-artifacts --dry-run --write-report
+python scripts\plan-installer.py --profile clerk-core --show-profile-config --dry-run --write-report
+python scripts\plan-installer.py --profile clerk-core --show-health-checks --dry-run --write-report
+```
+
+The report writer validates required fields, writes under
+`installer/reports/{run_id}`, records `mutates_host: false`, and rejects
+secret-shaped or environment-dump-shaped fields. It does not write install logs,
+repair logs, rollback logs, remaining-state reports, or any host-mutating
+executor evidence.
+
+## Artifact, Profile, And Health Planning
+
+Before host mutation exists, the installer can render the next executor inputs
+as dry-run JSON:
+
+```powershell
+python scripts\plan-installer.py --profile clerk-core --show-artifacts --dry-run
+python scripts\plan-installer.py --profile clerk-core --show-profile-config --dry-run
+python scripts\plan-installer.py --profile clerk-core --show-health-checks --dry-run
+python scripts\plan-installer.py --profile clerk-core --show-preflight --dry-run
+```
+
+These commands expose the artifact/version resolver, planned local artifact
+metadata, compose/profile service configuration, health-check obligations, and
+executor preflight blockers without installing dependencies, starting
+containers, or changing host state.
+
+The current preflight surface is intentionally blocked with
+`executor_not_implemented`. It exists to show what must be true before a future
+mutating executor can be trusted.
+
+## Minimal CivicCore Install Kit
+
+The first real generated installer artifact is the minimal CivicCore install
+kit:
+
+```powershell
+python scripts\plan-installer.py --profile minimal --generate-install-kit
+```
+
+This command writes files under `installer/generated/minimal`. The generator
+does not mutate host state, install dependencies, start services, or start
+containers. The generated platform scripts are reviewed artifacts that will
+mutate only when an operator explicitly runs them.
+
+The generated install kit includes:
+
+- `README.md`
+- `requirements.txt`
+- `civiccore-install-plan.json`
+- `install-civiccore.ps1`
+- `install-civiccore.sh`
+- `verify-civiccore.ps1`
+- `verify-civiccore.sh`
+- `reset-civiccore.ps1`
+- `reset-civiccore.sh`
+
+The generated install scripts install CivicCore from the local wheel artifact
+into a `.venv` inside the generated kit. They do not install Docker, WSL,
+Python, or any baseline system dependency.
+
+The generated reset scripts remove only the kit-local `.venv` so the minimal
+install can be repeated without deleting source code, reports, or generated
+plan files.
+
+## Minimal Cleanroom Proof
+
+The minimal CivicCore kit can be exercised in a disposable Linux cleanroom
+container:
+
+```powershell
+python scripts\run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2
+```
+
+The runner copies the generated kit and CivicCore wheel into
+`installer/reports/{run_id}/cleanroom`, rewrites the Linux artifact path for the
+container mount, runs reset/install/verify inside `python:3.12-slim`, and writes
+`cleanroom-proof.json`.
+
+This cleanroom proof mutates the disposable container and the evidence directory
+only. It does not install host dependencies, start host services, or change
+module source code.
+
+## CivicRecords Service Cleanroom Proof
+
+The first service-profile cleanroom runner exercises CivicRecords AI from a
+copied source tree:
+
+```powershell
+python scripts\run-civicrecords-cleanroom.py --run-id manual-civicrecords-service-cleanroom-4
+```
+
+The runner copies `civicrecords-ai` into
+`installer/reports/{run_id}/source`, writes a clean `.env`, adds isolated host
+ports, builds the API and frontend images, starts Postgres, Redis, Ollama, API,
+and frontend with a unique Compose project name, checks API/frontend health,
+runs a live Playwright desktop/mobile smoke, saves screenshots, and tears the
+stack down with volumes removed.
+
+Passing evidence for the current run lives at:
+
+- `installer/reports/manual-civicrecords-service-cleanroom-4/service-ui-proof.json`
+- `installer/reports/manual-civicrecords-service-cleanroom-4/cleanroom-ui-desktop.png`
+- `installer/reports/manual-civicrecords-service-cleanroom-4/cleanroom-ui-mobile.png`
+
+The suite installer exposes this proof as the `clerk-core` cleanroom proof:
+
+```powershell
+python scripts\plan-installer.py --profile clerk-core --run-cleanroom-proof --run-id manual-clerk-core-integrated-proof
+```
+
+For operator use, prefer the named cleanroom gate:
+
+```powershell
+python scripts\plan-installer.py --profile clerk-core --run-cleanroom-gate --run-id verify-clerk-core-gate
+```
+
+The gate runs the same proof but returns concise pass/fail output for API
+health, frontend health, and Playwright desktop/mobile UI verification. This
+mode is intentionally mutating. It creates Docker images, containers, networks,
+and volumes for the cleanroom run, writes evidence under
+`installer/reports/{run_id}`, and tears the Compose stack down with volumes
+removed before returning. The planner rejects `--dry-run` when combined with
+`--run-cleanroom-proof` or `--run-cleanroom-gate` so the operator cannot mistake
+the Docker proof for a read-only plan.
 
 ## Proof Requirements
 
@@ -213,6 +344,12 @@ Each operating system must eventually have evidence for:
 - dependency detection evidence without host mutation
 - executor state machine evidence before implementation
 - evidence schema before report writers
+- report writer evidence before host mutation
+- artifact/version evidence before host mutation
+- service/profile config evidence before host mutation
+- health-check plan evidence before host mutation
+- executor preflight evidence before host mutation
+- minimal CivicCore install kit evidence before module installers
 
 ## Implementation Boundary
 

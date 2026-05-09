@@ -26,6 +26,11 @@ node_modules/
 _site/
 .jekyll-cache/
 
+# Installer runtime evidence and generated local environments
+installer/reports/
+installer/generated/**/.venv/
+test-results/
+
 # Generated manuals should be release artifacts, not hand-reviewed source.
 USER-MANUAL.docx
 USER-MANUAL.pdf

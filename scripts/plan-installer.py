@@ -9,12 +9,18 @@ import platform
 import shutil
 import subprocess
 import sys
+import tomllib
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "installer" / "modules.json"
+REPORT_ROOT = ROOT / "installer" / "reports"
+GENERATED_ROOT = ROOT / "installer" / "generated"
+SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 
 
 class PlannerError(RuntimeError):
@@ -125,21 +131,21 @@ EVIDENCE_REPORTS = [
         "id": "artifact_versions",
         "phase": "execute",
         "path_template": "installer/reports/{run_id}/artifact-versions.json",
-        "required_fields": ["run_id", "module", "repo", "version", "civiccore_requirement"],
+        "required_fields": ["run_id", "artifacts", "mutates_host"],
         "redaction": "public version metadata only",
     },
     {
         "id": "service_config",
         "phase": "execute",
         "path_template": "installer/reports/{run_id}/service-config.json",
-        "required_fields": ["run_id", "module", "service_name", "ports", "data_paths"],
+        "required_fields": ["run_id", "services", "ports", "data_paths", "mutates_host"],
         "redaction": "record paths and ports; reject secret values",
     },
     {
         "id": "health_checks",
         "phase": "verify",
         "path_template": "installer/reports/{run_id}/health-checks.json",
-        "required_fields": ["run_id", "module", "endpoint", "status", "actionable_failure"],
+        "required_fields": ["run_id", "checks", "mutates_host"],
         "redaction": "response summaries only, no full records or sensitive payloads",
     },
     {
@@ -186,6 +192,20 @@ EVIDENCE_REPORTS = [
     },
 ]
 
+REPORTS_BY_ID = {str(report["id"]): report for report in EVIDENCE_REPORTS}
+SECRET_FIELD_MARKERS = (
+    "authorization",
+    "cookie",
+    "credential",
+    "env",
+    "environment",
+    "jwt",
+    "key",
+    "password",
+    "secret",
+    "token",
+)
+
 
 def load_manifest(path: Path = MANIFEST) -> dict[str, Any]:
     with path.open(encoding="utf-8") as handle:
@@ -193,6 +213,170 @@ def load_manifest(path: Path = MANIFEST) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise PlannerError("Manifest root must be an object.")
     return data
+
+
+def make_run_id(now: datetime | None = None) -> str:
+    timestamp = (now or datetime.now(UTC)).strftime("%Y%m%dT%H%M%SZ")
+    return f"{timestamp}-{uuid4().hex[:8]}"
+
+
+def _contains_secret_shape(value: Any, *, parent_key: str = "") -> bool:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            key_text = str(key).lower()
+            if any(marker in key_text for marker in SECRET_FIELD_MARKERS):
+                return True
+            if _contains_secret_shape(child, parent_key=key_text):
+                return True
+    elif isinstance(value, list):
+        return any(_contains_secret_shape(item, parent_key=parent_key) for item in value)
+    return False
+
+
+def _validate_required_fields(report_id: str, payload: dict[str, Any]) -> list[str]:
+    report = REPORTS_BY_ID[report_id]
+    errors: list[str] = []
+    for field in report["required_fields"]:
+        if field not in payload:
+            errors.append(f"{report_id} missing required field: {field}")
+    if _contains_secret_shape(payload):
+        errors.append(f"{report_id} contains a field that looks secret-bearing or like an environment dump")
+    return errors
+
+
+def _write_json_report(report_id: str, payload: dict[str, Any]) -> Path:
+    if report_id not in REPORTS_BY_ID:
+        raise PlannerError(f"Unknown evidence report id: {report_id}")
+    errors = _validate_required_fields(report_id, payload)
+    if errors:
+        raise PlannerError("; ".join(errors))
+    path = ROOT / str(REPORTS_BY_ID[report_id]["path_template"]).format(run_id=payload["run_id"])
+    if not _is_within(path, REPORT_ROOT):
+        raise PlannerError(f"Report path is outside installer reports root: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def _is_within(child: Path, parent: Path) -> bool:
+    try:
+        child.resolve().relative_to(parent.resolve())
+    except ValueError:
+        return False
+    return True
+
+
+def _dry_run_report_payload(*, run_id: str, plan: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "run_id": run_id,
+        "profile": plan["profile"],
+        "modules": plan["modules"],
+        "actions": plan["actions"],
+        "mutates_host": plan["mutates_host"],
+        "dry_run": plan["dry_run"],
+        "menu_style": plan.get("menu_style", {}),
+        "host": plan.get("host", {}),
+    }
+
+
+def _readiness_report_payload(*, run_id: str, readiness: dict[str, Any]) -> dict[str, Any]:
+    block = readiness["readiness"]
+    return {
+        "run_id": run_id,
+        "status": block["status"],
+        "checks": block["checks"],
+        "next_action": block["next_action"],
+        "detection_source": readiness["detection_source"],
+        "profile": readiness["profile"],
+        "scenario": readiness.get("scenario"),
+        "mutates_host": readiness["mutates_host"],
+        "dry_run": readiness["dry_run"],
+    }
+
+
+def _approval_report_payload(*, run_id: str, gate: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "run_id": run_id,
+        "approval_required": True,
+        "approval_received": gate["approval_received"],
+        "operator_action": "execution_requested",
+        "execution_status": gate["execution_status"],
+        "gate_status": gate["gate_status"],
+        "mutates_host": gate["mutates_host"],
+        "dry_run": gate["dry_run"],
+        "next_action": gate["next_action"],
+    }
+
+
+def _artifact_report_payload(*, run_id: str, artifact_resolution: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "run_id": run_id,
+        "artifacts": artifact_resolution["artifacts"],
+        "mutates_host": artifact_resolution["mutates_host"],
+        "profile": artifact_resolution["profile"],
+        "status": artifact_resolution["status"],
+        "blockers": artifact_resolution["blockers"],
+        "next_action": artifact_resolution["next_action"],
+    }
+
+
+def _service_config_report_payload(*, run_id: str, profile_config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "run_id": run_id,
+        "services": profile_config["services"],
+        "ports": profile_config["ports"],
+        "data_paths": profile_config["data_paths"],
+        "mutates_host": profile_config["mutates_host"],
+        "profile": profile_config["profile"],
+        "status": profile_config["status"],
+        "next_action": profile_config["next_action"],
+    }
+
+
+def _health_report_payload(*, run_id: str, health_plan: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "run_id": run_id,
+        "checks": health_plan["checks"],
+        "mutates_host": health_plan["mutates_host"],
+        "profile": health_plan["profile"],
+        "status": health_plan["status"],
+        "next_action": health_plan["next_action"],
+    }
+
+
+def write_report_for_plan(
+    *,
+    plan: dict[str, Any],
+    mode: str,
+    run_id: str | None = None,
+) -> dict[str, Any]:
+    report_run_id = run_id or make_run_id()
+    written: list[Path] = []
+    if mode == "plan":
+        written.append(_write_json_report("dry_run_plan", _dry_run_report_payload(run_id=report_run_id, plan=plan)))
+    elif mode == "readiness":
+        written.append(
+            _write_json_report("readiness_report", _readiness_report_payload(run_id=report_run_id, readiness=plan))
+        )
+    elif mode == "approval":
+        written.append(_write_json_report("approval_record", _approval_report_payload(run_id=report_run_id, gate=plan)))
+    elif mode == "artifacts":
+        written.append(
+            _write_json_report("artifact_versions", _artifact_report_payload(run_id=report_run_id, artifact_resolution=plan))
+        )
+    elif mode == "profile_config":
+        written.append(
+            _write_json_report("service_config", _service_config_report_payload(run_id=report_run_id, profile_config=plan))
+        )
+    elif mode == "health_checks":
+        written.append(_write_json_report("health_checks", _health_report_payload(run_id=report_run_id, health_plan=plan)))
+    else:
+        raise PlannerError(f"Report writing is not supported for mode: {mode}")
+    return {
+        "run_id": report_run_id,
+        "reports_written": [str(path.relative_to(ROOT)) for path in written],
+        "mutates_host": False,
+    }
 
 
 def _profiles_by_id(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -601,6 +785,644 @@ def build_execution_gate(
     }
 
 
+def _local_repo_path(repo: str) -> Path:
+    name = repo.split("/")[-1]
+    if name == "civicsuite":
+        return ROOT
+    return ROOT.parent / name
+
+
+def _read_pyproject_version(path: Path) -> str | None:
+    for candidate in (path / "pyproject.toml", path / "backend" / "pyproject.toml"):
+        if not candidate.is_file():
+            continue
+        try:
+            data = tomllib.loads(candidate.read_text(encoding="utf-8"))
+        except (tomllib.TOMLDecodeError, UnicodeDecodeError):
+            continue
+        project = data.get("project", {})
+        if isinstance(project, dict) and project.get("version"):
+            return str(project["version"])
+        tool = data.get("tool", {})
+        poetry = tool.get("poetry", {}) if isinstance(tool, dict) else {}
+        if isinstance(poetry, dict) and poetry.get("version"):
+            return str(poetry["version"])
+    return None
+
+
+def _latest_local_tag(path: Path) -> str | None:
+    if not (path / ".git").exists():
+        return None
+    try:
+        proc = subprocess.run(
+            ["git", "tag", "--sort=-creatordate"],
+            cwd=path,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    tags = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+    return tags[0] if tags else None
+
+
+def _checksum_assets(path: Path) -> list[str]:
+    candidates = [
+        path / "dist" / "SHA256SUMS.txt",
+        path / "release" / "SHA256SUMS.txt",
+        path / "SHA256SUMS.txt",
+    ]
+    return [str(candidate.relative_to(path)) for candidate in candidates if candidate.is_file()]
+
+
+def _dist_assets(path: Path, package_name: str, version: str | None) -> list[Path]:
+    if not version:
+        return []
+    dist = path / "dist"
+    if not dist.is_dir():
+        return []
+    normalized_name = package_name.replace("-", "_")
+    patterns = [
+        f"{normalized_name}-{version}-*.whl",
+        f"{package_name}-{version}-*.whl",
+        f"{normalized_name}-{version}.tar.gz",
+        f"{package_name}-{version}.tar.gz",
+    ]
+    assets: list[Path] = []
+    for pattern in patterns:
+        assets.extend(sorted(dist.glob(pattern)))
+    return assets
+
+
+def build_artifact_resolution(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+    host: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    plan = build_install_plan(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+    )
+    modules = _modules_by_id(manifest)
+    artifacts: list[dict[str, Any]] = []
+    blockers: list[str] = []
+    warnings: list[str] = []
+    for module_id in plan["modules"]:
+        module = modules[module_id]
+        repo = str(module.get("repo", ""))
+        local_path = _local_repo_path(repo)
+        local_exists = local_path.exists()
+        version = _read_pyproject_version(local_path) if local_exists else None
+        latest_tag = _latest_local_tag(local_path) if local_exists else None
+        checksum_files = _checksum_assets(local_path) if local_exists else []
+        dist_assets = _dist_assets(local_path, module_id, version) if local_exists else []
+        artifact_status = "resolved"
+        if not local_exists:
+            artifact_status = "blocked"
+            blockers.append(f"{module_id}: local checkout not found at {local_path}")
+        elif not version:
+            artifact_status = "needs_version_metadata"
+            warnings.append(f"{module_id}: version metadata was not found in pyproject surfaces")
+        elif not latest_tag:
+            artifact_status = "needs_release_tag"
+            warnings.append(f"{module_id}: no local release tag was found")
+        elif not dist_assets:
+            artifact_status = "needs_dist_artifact"
+            warnings.append(f"{module_id}: no local dist artifact found for version {version}")
+        if not checksum_files:
+            warnings.append(f"{module_id}: no local SHA256SUMS.txt found in standard artifact paths")
+        artifacts.append(
+            {
+                "module": module_id,
+                "display_name": module.get("display_name"),
+                "repo": repo,
+                "local_path": str(local_path),
+                "local_checkout_found": local_exists,
+                "version": version,
+                "latest_local_tag": latest_tag,
+                "civiccore_requirement": module.get("civiccore_requirement"),
+                "checksum_files": checksum_files,
+                "dist_assets": [str(asset.relative_to(local_path)) for asset in dist_assets],
+                "artifact_status": artifact_status,
+                "resolver_mode": "local_read_only",
+            }
+        )
+    return {
+        "dry_run": True,
+        "mutates_host": False,
+        "profile": profile_id,
+        "modules": plan["modules"],
+        "artifacts": artifacts,
+        "status": "blocked" if blockers else "warning" if warnings else "ready",
+        "blockers": blockers,
+        "warnings": warnings,
+        "next_action": (
+            "Resolve missing local checkouts before installer execution."
+            if blockers
+            else "Review warnings and add artifact metadata/checksums before host mutation."
+            if warnings
+            else "Artifact metadata is ready for non-mutating profile config generation."
+        ),
+    }
+
+
+def build_profile_config(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+    host: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    plan = build_install_plan(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+    )
+    modules = _modules_by_id(manifest)
+    services: list[dict[str, Any]] = []
+    ports: list[dict[str, Any]] = []
+    data_paths: list[dict[str, Any]] = []
+    for module_id in plan["modules"]:
+        module = modules[module_id]
+        service_name = module_id.replace("-", "_")
+        default_port = module.get("default_port")
+        services.append(
+            {
+                "module": module_id,
+                "service_name": service_name,
+                "repo": module.get("repo"),
+                "compose_profile": profile_id,
+                "depends_on": [dependency.replace("-", "_") for dependency in module.get("dependencies", [])],
+                "health_endpoint": f"http://localhost:{default_port}/health" if default_port else None,
+                "configuration_status": "planned_only",
+            }
+        )
+        if default_port:
+            ports.append({"module": module_id, "service_name": service_name, "container_port": default_port, "host_port": default_port})
+        data_paths.append(
+            {
+                "module": module_id,
+                "service_name": service_name,
+                "path": f"data/{module_id}",
+                "purpose": "planned local persistent data root",
+            }
+        )
+    return {
+        "dry_run": True,
+        "mutates_host": False,
+        "profile": profile_id,
+        "compose_file": f"installer/generated/{profile_id}/compose.yaml",
+        "env_file": f"installer/generated/{profile_id}/.env.example",
+        "services": services,
+        "ports": ports,
+        "data_paths": data_paths,
+        "status": "planned",
+        "next_action": "Review generated profile plan before any compose/env files are written.",
+    }
+
+
+def build_health_check_plan(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+    host: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    profile_config = build_profile_config(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+    )
+    checks: list[dict[str, Any]] = []
+    for service in profile_config["services"]:
+        endpoint = service.get("health_endpoint")
+        checks.append(
+            {
+                "module": service["module"],
+                "service_name": service["service_name"],
+                "endpoint": endpoint,
+                "status": "planned_only" if endpoint else "manual_check_required",
+                "starts_service": False,
+                "actionable_failure": (
+                    f"If {service['module']} health fails, inspect its install log, port assignment, and CivicCore compatibility before retrying."
+                    if endpoint
+                    else f"{service['module']} has no default port; define a module-specific health proof before execution."
+                ),
+            }
+        )
+    return {
+        "dry_run": True,
+        "mutates_host": False,
+        "starts_service": False,
+        "profile": profile_id,
+        "checks": checks,
+        "status": "planned",
+        "next_action": "Use this health plan after an approved executor starts services in a future slice.",
+    }
+
+
+def _minimal_civiccore_artifact(artifact_resolution: dict[str, Any]) -> dict[str, Any]:
+    artifacts = artifact_resolution.get("artifacts", [])
+    for artifact in artifacts:
+        if isinstance(artifact, dict) and artifact.get("module") == "civiccore":
+            return artifact
+    raise PlannerError("CivicCore artifact metadata was not resolved.")
+
+
+def _windows_path_string(path: Path) -> str:
+    text = str(path)
+    if text.startswith("/mnt/") and len(text) > 6 and text[6] == "/":
+        drive = text[5].upper()
+        return f"{drive}:/{text[7:]}"
+    return text.replace("\\", "/")
+
+
+def _posix_path_string(path: Path) -> str:
+    text = str(path).replace("\\", "/")
+    if len(text) >= 3 and text[1:3] == ":/":
+        drive = text[0].lower()
+        return f"/mnt/{drive}/{text[3:]}"
+    return text
+
+
+def _install_kit_files(*, artifact: dict[str, Any]) -> dict[str, str]:
+    version = artifact.get("version")
+    if not version:
+        raise PlannerError("CivicCore version metadata is required before generating an install kit.")
+    local_path = Path(str(artifact.get("local_path", "")))
+    dist_assets = artifact.get("dist_assets", [])
+    wheel_assets = [asset for asset in dist_assets if str(asset).endswith(".whl")]
+    if not wheel_assets:
+        raise PlannerError("CivicCore wheel artifact is required before generating an install kit.")
+    wheel_path = local_path / str(wheel_assets[0])
+    wheel_for_windows = _windows_path_string(wheel_path)
+    wheel_for_posix = _posix_path_string(wheel_path)
+    plan = {
+        "profile": "minimal",
+        "modules": ["civiccore"],
+        "mutates_host_when_run": True,
+        "generated_by": "scripts/plan-installer.py --generate-install-kit",
+        "civiccore": {
+            "version": version,
+            "local_artifact": _windows_path_string(wheel_path),
+            "local_artifact_posix": wheel_for_posix,
+            "repo_path": str(local_path),
+            "verify_command": "python -c \"import civiccore; print(civiccore.__version__)\"",
+        },
+        "operator_boundary": {
+            "generator_mutates_host": False,
+            "installer_scripts_mutate_when_operator_runs_them": True,
+            "does_not_install_system_dependencies": True,
+            "does_not_start_services": True,
+        },
+    }
+    return {
+        "README.md": f"""# CivicSuite Minimal Install Kit
+
+Profile: `minimal`
+
+This generated kit installs CivicCore only. It does not install Docker, WSL,
+Python, or other baseline system dependencies. It does not start services or
+containers.
+
+Run one of the platform scripts from this directory after reviewing
+`civiccore-install-plan.json`.
+
+Windows:
+
+```powershell
+.\\install-civiccore.ps1
+.\\verify-civiccore.ps1
+.\\reset-civiccore.ps1
+```
+
+macOS/Linux:
+
+```bash
+bash install-civiccore.sh
+bash verify-civiccore.sh
+bash reset-civiccore.sh
+```
+
+The install scripts create a local `.venv` inside this generated kit and install
+CivicCore from the local wheel artifact:
+
+Windows artifact path:
+
+`{wheel_for_windows}`
+
+macOS/Linux/WSL artifact path:
+
+`{wheel_for_posix}`
+""",
+        "requirements.txt": f"{wheel_for_windows}\n",
+        "civiccore-install-plan.json": json.dumps(plan, indent=2, sort_keys=True) + "\n",
+        "install-civiccore.ps1": f"""$ErrorActionPreference = "Stop"
+$KitRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$VenvPath = Join-Path $KitRoot ".venv"
+$WheelPath = "{wheel_for_windows}"
+
+function Invoke-Step {{
+    param([scriptblock]$Command)
+    & $Command
+    if ($LASTEXITCODE -ne 0) {{
+        throw "Command failed with exit code $LASTEXITCODE"
+    }}
+}}
+
+if (-not (Get-Command python -ErrorAction SilentlyContinue)) {{
+    throw "Python 3.11+ is required before installing CivicCore. Install Python, reopen this terminal, then rerun this script."
+}}
+
+Invoke-Step {{ python -m venv $VenvPath }}
+Invoke-Step {{ & (Join-Path $VenvPath "Scripts\\python.exe") -m pip install --upgrade pip }}
+Invoke-Step {{ & (Join-Path $VenvPath "Scripts\\python.exe") -m pip install $WheelPath }}
+Invoke-Step {{ & (Join-Path $VenvPath "Scripts\\python.exe") -c "import civiccore; print('CivicCore ' + civiccore.__version__ + ' installed')" }}
+""",
+        "install-civiccore.sh": f"""#!/usr/bin/env bash
+set -euo pipefail
+KIT_ROOT="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+VENV_PATH="${{KIT_ROOT}}/.venv"
+WHEEL_PATH="{wheel_for_posix}"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Python 3.11+ is required before installing CivicCore. Install Python, reopen this terminal, then rerun this script." >&2
+  exit 1
+fi
+
+python3 -m venv "${{VENV_PATH}}"
+"${{VENV_PATH}}/bin/python" -m pip install --upgrade pip
+"${{VENV_PATH}}/bin/python" -m pip install "${{WHEEL_PATH}}"
+"${{VENV_PATH}}/bin/python" -c "import civiccore; print('CivicCore ' + civiccore.__version__ + ' installed')"
+""",
+        "verify-civiccore.ps1": """$ErrorActionPreference = "Stop"
+$KitRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PythonPath = Join-Path $KitRoot ".venv\\Scripts\\python.exe"
+
+if (-not (Test-Path $PythonPath)) {
+    throw "CivicCore is not installed in this kit yet. Run .\\install-civiccore.ps1 first."
+}
+
+& $PythonPath -c "import civiccore; print(civiccore.__version__)"
+""",
+        "reset-civiccore.ps1": """$ErrorActionPreference = "Stop"
+$KitRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$VenvPath = Join-Path $KitRoot ".venv"
+
+if (Test-Path $VenvPath) {
+    Remove-Item -LiteralPath $VenvPath -Recurse -Force
+    Write-Host "Removed kit-local CivicCore virtual environment: $VenvPath"
+} else {
+    Write-Host "No kit-local CivicCore virtual environment found. Nothing to reset."
+}
+""",
+        "verify-civiccore.sh": """#!/usr/bin/env bash
+set -euo pipefail
+KIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_PATH="${KIT_ROOT}/.venv/bin/python"
+
+if [[ ! -x "${PYTHON_PATH}" ]]; then
+  echo "CivicCore is not installed in this kit yet. Run bash install-civiccore.sh first." >&2
+  exit 1
+fi
+
+"${PYTHON_PATH}" -c "import civiccore; print(civiccore.__version__)"
+""",
+        "reset-civiccore.sh": """#!/usr/bin/env bash
+set -euo pipefail
+KIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_PATH="${KIT_ROOT}/.venv"
+
+if [[ -d "${VENV_PATH}" ]]; then
+  rm -rf "${VENV_PATH}"
+  echo "Removed kit-local CivicCore virtual environment: ${VENV_PATH}"
+else
+  echo "No kit-local CivicCore virtual environment found. Nothing to reset."
+fi
+""",
+    }
+
+
+def generate_minimal_install_kit(
+    *,
+    manifest: dict[str, Any],
+    output_root: Path = GENERATED_ROOT,
+) -> dict[str, Any]:
+    plan = build_install_plan(manifest=manifest, profile_id="minimal", menu_style="guided")
+    if plan["modules"] != ["civiccore"]:
+        raise PlannerError("Minimal install kit may only include CivicCore.")
+    artifacts = build_artifact_resolution(manifest=manifest, profile_id="minimal", menu_style="guided")
+    artifact = _minimal_civiccore_artifact(artifacts)
+    files = _install_kit_files(artifact=artifact)
+    target = output_root / "minimal"
+    if not _is_within(target, output_root):
+        raise PlannerError(f"Generated installer path is outside installer generated root: {target}")
+    written: list[str] = []
+    target.mkdir(parents=True, exist_ok=True)
+    for relative_path, content in files.items():
+        path = target / relative_path
+        if not _is_within(path, target):
+            raise PlannerError(f"Generated installer file path escaped target root: {path}")
+        path.write_text(content, encoding="utf-8", newline="\n")
+        written.append(str(path.relative_to(ROOT)))
+    for script_name in ("install-civiccore.sh", "verify-civiccore.sh", "reset-civiccore.sh"):
+        script = target / script_name
+        try:
+            script.chmod(0o755)
+        except OSError:
+            pass
+    return {
+        "dry_run": False,
+        "mutates_host": False,
+        "profile": "minimal",
+        "modules": ["civiccore"],
+        "generated_root": str(target.relative_to(ROOT)),
+        "files_written": written,
+        "installer_scripts_mutate_when_run": True,
+        "does_not_install_system_dependencies": True,
+        "does_not_start_services": True,
+        "next_action": "Review the generated kit, then run the platform install script only when host mutation is approved.",
+    }
+
+
+def run_clerk_core_cleanroom_proof(*, run_id: str | None = None) -> dict[str, Any]:
+    proof_run_id = run_id or f"clerk-core-cleanroom-{make_run_id()}"
+    if not SERVICE_CLEANROOM_RUNNER.is_file():
+        raise PlannerError(f"Missing service cleanroom runner: {SERVICE_CLEANROOM_RUNNER}")
+    proc = subprocess.run(
+        [sys.executable, str(SERVICE_CLEANROOM_RUNNER), "--run-id", proof_run_id],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+        timeout=3600,
+    )
+    proof_path = REPORT_ROOT / proof_run_id / "service-ui-proof.json"
+    proof: dict[str, Any] | None = None
+    if proof_path.is_file():
+        proof = json.loads(proof_path.read_text(encoding="utf-8"))
+    status = "passed" if proc.returncode == 0 and proof and proof.get("status") == "passed" else "failed"
+    return {
+        "dry_run": False,
+        "mutates_host": True,
+        "profile": "clerk-core",
+        "proof_mode": "cleanroom-service",
+        "run_id": proof_run_id,
+        "status": status,
+        "runner": str(SERVICE_CLEANROOM_RUNNER.relative_to(ROOT)),
+        "proof_path": str(proof_path.relative_to(ROOT)),
+        "api_health": _proof_step_status(proof, "api_health"),
+        "frontend_health": _proof_step_status(proof, "frontend_health"),
+        "playwright_live_ui": _proof_step_status(proof, "playwright_live_ui"),
+        "stdout": proc.stdout,
+        "stderr": proc.stderr,
+        "returncode": proc.returncode,
+        "next_action": (
+            "Use this cleanroom proof as the clerk-core service gate."
+            if status == "passed"
+            else "Inspect service-ui-proof.json and runner output for the failing cleanroom step."
+        ),
+    }
+
+
+def summarize_clerk_core_cleanroom_gate(proof: dict[str, Any]) -> dict[str, Any]:
+    status = "passed" if proof.get("status") == "passed" else "failed"
+    check_names = (
+        "api_health",
+        "frontend_health",
+        "playwright_live_ui",
+    )
+    checks = [
+        {
+            "name": name,
+            "status": proof.get(name) or "missing",
+            "next_action": (
+                "No action required."
+                if proof.get(name) == "passed"
+                else f"Inspect {proof.get('proof_path', 'service-ui-proof.json')} and fix the {name} failure."
+            ),
+        }
+        for name in check_names
+    ]
+    return {
+        "dry_run": False,
+        "mutates_host": True,
+        "gate": "clerk-core-cleanroom",
+        "profile": "clerk-core",
+        "status": status,
+        "run_id": proof.get("run_id"),
+        "proof_path": proof.get("proof_path"),
+        "host_mutation_scope": [
+            "Docker images",
+            "Docker containers",
+            "Docker networks",
+            "Docker volumes",
+            "installer report evidence",
+        ],
+        "teardown": "Compose stack is torn down with volumes removed by the cleanroom runner.",
+        "checks": checks,
+        "next_action": (
+            "Gate passed. Treat clerk-core service/UI cleanroom evidence as current."
+            if status == "passed"
+            else "Gate failed. Open the proof path and runner output, fix the first failed check, then rerun this gate."
+        ),
+    }
+
+
+def run_clerk_core_cleanroom_gate(*, run_id: str | None = None) -> dict[str, Any]:
+    proof = run_clerk_core_cleanroom_proof(run_id=run_id)
+    return summarize_clerk_core_cleanroom_gate(proof)
+
+
+def _proof_step_status(proof: dict[str, Any] | None, step_name: str) -> str | None:
+    if not proof:
+        return None
+    for step in proof.get("steps", []):
+        if isinstance(step, dict) and step.get("name") == step_name:
+            if "status" in step:
+                return str(step["status"])
+            if "returncode" in step:
+                return "passed" if step.get("returncode") == 0 else "failed"
+    return None
+
+
+def build_executor_preflight(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+    host: dict[str, str] | None = None,
+    readiness_scenario: str = "nominal",
+) -> dict[str, Any]:
+    readiness = build_readiness_model(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+        scenario=readiness_scenario,
+    )
+    artifacts = build_artifact_resolution(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+    )
+    profile_config = build_profile_config(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+    )
+    health = build_health_check_plan(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        host=host,
+    )
+    blockers: list[str] = []
+    if readiness["readiness"]["status"] == "blocked":
+        blockers.append("readiness_blocked")
+    if artifacts["status"] == "blocked":
+        blockers.append("artifact_resolution_blocked")
+    blockers.append("executor_not_implemented")
+    return {
+        "dry_run": True,
+        "mutates_host": False,
+        "profile": profile_id,
+        "status": "blocked",
+        "blockers": blockers,
+        "readiness_status": readiness["readiness"]["status"],
+        "artifact_status": artifacts["status"],
+        "profile_config_status": profile_config["status"],
+        "health_plan_status": health["status"],
+        "approval_required": EXECUTION_TOKEN,
+        "next_action": "Executor remains blocked until readiness, artifact resolution, profile config, health planning, and user approval are all satisfied in a future mutating tier.",
+    }
+
+
 def build_executor_design(
     *,
     manifest: dict[str, Any],
@@ -795,6 +1617,51 @@ def main() -> int:
         help="Print the future installer evidence/report schema without writing reports.",
     )
     parser.add_argument(
+        "--show-artifacts",
+        action="store_true",
+        help="Print non-mutating local artifact and version resolution for the selected profile.",
+    )
+    parser.add_argument(
+        "--show-profile-config",
+        action="store_true",
+        help="Print non-mutating compose/profile configuration planning for the selected profile.",
+    )
+    parser.add_argument(
+        "--show-health-checks",
+        action="store_true",
+        help="Print non-mutating health-check planning for the selected profile.",
+    )
+    parser.add_argument(
+        "--show-preflight",
+        action="store_true",
+        help="Print non-mutating executor preflight status for the selected profile.",
+    )
+    parser.add_argument(
+        "--generate-install-kit",
+        action="store_true",
+        help="Write the minimal CivicCore install kit under installer/generated/minimal.",
+    )
+    parser.add_argument(
+        "--run-cleanroom-proof",
+        action="store_true",
+        help="Run the mutating cleanroom proof for the selected profile.",
+    )
+    parser.add_argument(
+        "--run-cleanroom-gate",
+        action="store_true",
+        help="Run the mutating clerk-core cleanroom gate and print concise pass/fail output.",
+    )
+    parser.add_argument(
+        "--write-report",
+        action="store_true",
+        help="Write a validated non-mutating installer evidence report for plan/readiness/approval output.",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Optional run id for --write-report. Defaults to a UTC timestamp plus random suffix.",
+    )
+    parser.add_argument(
         "--approval-token",
         default=None,
         help="Explicit approval token for future mutating execution gates.",
@@ -808,14 +1675,24 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Required; planner does not mutate host state.")
     args = parser.parse_args()
 
-    if not args.dry_run:
+    mutating_cleanroom_requested = args.run_cleanroom_proof or args.run_cleanroom_gate
+    if args.dry_run and mutating_cleanroom_requested:
+        print(
+            "ERROR: --dry-run cannot be combined with the mutating cleanroom proof/gate. "
+            "Rerun without --dry-run only when Docker cleanroom mutation is approved.",
+            file=sys.stderr,
+        )
+        return 2
+    if not args.dry_run and not args.generate_install_kit and not mutating_cleanroom_requested:
         print("ERROR: --dry-run is required. This planner is non-mutating.", file=sys.stderr)
         return 2
 
     try:
         manifest = load_manifest(Path(args.manifest))
+        report_mode = "plan"
         if args.show_menu:
             plan = build_menu_model(manifest=manifest, menu_style=args.menu_style)
+            report_mode = "menu"
         elif args.show_readiness:
             detected = detect_host_dependencies() if args.detect_host else None
             plan = build_readiness_model(
@@ -826,6 +1703,7 @@ def main() -> int:
                 scenario=args.readiness_scenario,
                 detected=detected,
             )
+            report_mode = "readiness"
         elif args.execute:
             plan = build_execution_gate(
                 manifest=manifest,
@@ -834,6 +1712,7 @@ def main() -> int:
                 menu_style=args.menu_style,
                 approval_token=args.approval_token,
             )
+            report_mode = "approval"
         elif args.show_executor_design:
             plan = build_executor_design(
                 manifest=manifest,
@@ -841,6 +1720,7 @@ def main() -> int:
                 selected_modules=[str(module) for module in args.module],
                 menu_style=args.menu_style,
             )
+            report_mode = "executor_design"
         elif args.show_evidence_schema:
             plan = build_evidence_schema(
                 manifest=manifest,
@@ -848,12 +1728,68 @@ def main() -> int:
                 selected_modules=[str(module) for module in args.module],
                 menu_style=args.menu_style,
             )
+            report_mode = "evidence_schema"
+        elif args.show_artifacts:
+            plan = build_artifact_resolution(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+            )
+            report_mode = "artifacts"
+        elif args.show_profile_config:
+            plan = build_profile_config(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+            )
+            report_mode = "profile_config"
+        elif args.show_health_checks:
+            plan = build_health_check_plan(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+            )
+            report_mode = "health_checks"
+        elif args.show_preflight:
+            plan = build_executor_preflight(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+                readiness_scenario=args.readiness_scenario,
+            )
+            report_mode = "preflight"
+        elif args.generate_install_kit:
+            if args.profile != "minimal":
+                raise PlannerError("--generate-install-kit currently supports only --profile minimal.")
+            plan = generate_minimal_install_kit(manifest=manifest)
+            report_mode = "generate_install_kit"
+        elif args.run_cleanroom_proof:
+            if args.profile != "clerk-core":
+                raise PlannerError("--run-cleanroom-proof currently supports only --profile clerk-core.")
+            plan = run_clerk_core_cleanroom_proof(run_id=args.run_id)
+            report_mode = "cleanroom_proof"
+        elif args.run_cleanroom_gate:
+            if args.profile != "clerk-core":
+                raise PlannerError("--run-cleanroom-gate currently supports only --profile clerk-core.")
+            plan = run_clerk_core_cleanroom_gate(run_id=args.run_id)
+            report_mode = "cleanroom_gate"
         else:
             plan = build_install_plan(
                 manifest=manifest,
                 profile_id=args.profile,
                 selected_modules=[str(module) for module in args.module],
                 menu_style=args.menu_style,
+            )
+            report_mode = "plan"
+        if args.write_report:
+            plan["evidence_report"] = write_report_for_plan(
+                plan=plan,
+                mode=report_mode,
+                run_id=args.run_id,
             )
     except PlannerError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
