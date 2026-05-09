@@ -146,6 +146,54 @@ def write_records_override(target: Path) -> Path:
     return path
 
 
+def normalize_records_frontend_dockerfile(target: Path) -> None:
+    dockerfile = target / "Dockerfile.frontend"
+    if not dockerfile.is_file():
+        return
+    text = dockerfile.read_text(encoding="utf-8")
+    heredoc = """# SPA fallback + API proxy
+RUN cat > /etc/nginx/conf.d/default.conf << 'NGINX'
+server {
+    listen 80;
+
+    location /api/ {
+        proxy_pass http://api:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+}
+NGINX
+"""
+    if heredoc not in text:
+        return
+    config = """server {
+    listen 80;
+
+    location /api/ {
+        proxy_pass http://api:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+}
+"""
+    (target / "nginx-civicsuite.conf").write_text(config, encoding="utf-8", newline="\n")
+    dockerfile.write_text(
+        text.replace(heredoc, "# SPA fallback + API proxy\nCOPY nginx-civicsuite.conf /etc/nginx/conf.d/default.conf\n"),
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def write_clerk_env(target: Path) -> None:
     if target.is_file():
         return
@@ -212,6 +260,7 @@ def prepare_sources(install_root: Path) -> dict[str, Path | str]:
     install_root.mkdir(parents=True, exist_ok=True)
     copy_source(source_root("civicrecords-ai"), ctx["records_source"])  # type: ignore[arg-type]
     copy_source(source_root("civicclerk"), ctx["clerk_source"])  # type: ignore[arg-type]
+    normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
     write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
     write_records_override(ctx["records_source"])  # type: ignore[arg-type]
     write_clerk_env(ctx["clerk_source"] / ".env")  # type: ignore[operator]

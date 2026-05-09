@@ -4,19 +4,19 @@
       "bundle_root": "installer/generated/bundles/clerk-core/windows/CivicSuite-clerk-core-windows",
       "path": "installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip",
       "platform": "windows",
-      "sha256": "c3b022bd48416811cbed6112540d6f5e185829d21ed380104b101464c4b690d1"
+      "sha256": "d4c34cf8d1af19eb478aa2f06a64f3d24f04f8e885a4b0cd7aba6cdff8675533"
     },
     {
       "bundle_root": "installer/generated/bundles/clerk-core/macos/CivicSuite-clerk-core-macos",
       "path": "installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz",
       "platform": "macos",
-      "sha256": "f0aa51e8fe6468adcdb981ef1ff4ac8fd4875d02aeed36dd10f1958d779b5950"
+      "sha256": "c4325dbdce96c1279d509c93f6a63e18f1f6dd8a1f6c5f021118e920ad24c837"
     },
     {
       "bundle_root": "installer/generated/bundles/clerk-core/linux/CivicSuite-clerk-core-linux",
       "path": "installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz",
       "platform": "linux",
-      "sha256": "d79f36f51040bbbf2ee3ffbf0e9f1633d15d7ac839a248a12f32294edb1e4486"
+      "sha256": "b3c8dc6af64f4227c9a77f3f0e2d67f710e6b12fba5365552fec9ee867cb1401"
     }
   ],
   "checksum_file": "installer/dist/CivicSuite-clerk-core-0.1.0-SHA256SUMS.txt",
