@@ -22,6 +22,8 @@ REQUIRED=(
   docs/release-recovery-status.md
   docs/compatibility/index.md
   docs/deployment/local-demo-profile.md
+  docs/installer/suite-installer-plan.md
+  docs/installer/installer-checkpoint-2026-05-09.md
   docs/ux/shared-shell-inventory.md
   docs/architecture/ADR-0004-shared-shell-boundaries.md
   docs/connectors/import-export-template.md
@@ -32,6 +34,8 @@ REQUIRED=(
   docs/architecture/ADR-0007-first-production-depth-workflow.md
   docs/github-discussions-seed.md
   scripts/verify-deployment-profile.py
+  scripts/verify-installer-plan.py
+  scripts/plan-installer.py
   scripts/verify-suite-state.py
   .github/PULL_REQUEST_TEMPLATE.md
   .github/ISSUE_TEMPLATE/bug_report.md

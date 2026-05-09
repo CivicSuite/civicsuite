@@ -41,6 +41,9 @@ jobs:
       - name: Verify deployment profile statically
         run: python scripts/verify-deployment-profile.py --static-only
 
+      - name: Verify installer plan
+        run: python scripts/verify-installer-plan.py
+
       - name: Verify suite state against GitHub releases
         env:
           GH_TOKEN: ${{ github.token }}
