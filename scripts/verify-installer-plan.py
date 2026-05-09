@@ -22,6 +22,7 @@ WINDOWS_LAUNCHER = ROOT / "installer" / "windows" / "plan-installer.ps1"
 MACOS_LAUNCHER = ROOT / "installer" / "macos" / "plan-installer.sh"
 LINUX_LAUNCHER = ROOT / "installer" / "linux" / "plan-installer.sh"
 GENERATED_MINIMAL = ROOT / "installer" / "generated" / "minimal"
+GENERATED_PACKAGES = ROOT / "installer" / "generated" / "packages"
 
 REQUIRED_PROFILES = {"minimal", "clerk-core", "land-use", "full-suite", "custom"}
 REQUIRED_MODULES = {
@@ -69,6 +70,7 @@ REQUIRED_DOC_PHRASES = (
     "health-check plan",
     "executor preflight",
     "install kit",
+    "profile package",
     "cleanroom",
     "cleanroom gate",
     "Playwright",
@@ -601,6 +603,60 @@ def check_planner(data: dict[str, object]) -> list[str]:
         if "cannot be combined" not in proc.stderr:
             errors.append(fail(f"{flag} dry-run rejection must explain the operator fix"))
 
+    if not hasattr(module, "generate_profile_package"):
+        errors.append(fail("planner must expose profile package generator"))
+    else:
+        package = module.generate_profile_package(
+            manifest=data,
+            profile_id="clerk-core",
+            menu_style="guided",
+            platform_id="all",
+        )
+        if package.get("mutates_host") is not False:
+            errors.append(fail("profile package generator must not mutate host state"))
+        if package.get("native_installers_packaged") is not False:
+            errors.append(fail("profile package generator must not claim native installers are packaged"))
+        if package.get("platforms") != ["windows", "macos", "linux"]:
+            errors.append(fail("profile package generator must emit all platform packages by default"))
+        for platform_id, launcher in (
+            ("windows", "start-civicsuite-installer.ps1"),
+            ("macos", "start-civicsuite-installer.sh"),
+            ("linux", "start-civicsuite-installer.sh"),
+        ):
+            package_dir = GENERATED_PACKAGES / "clerk-core" / platform_id
+            for name in ("README.md", "install-plan.json", launcher):
+                if not (package_dir / name).is_file():
+                    errors.append(fail(f"profile package missing {platform_id}/{name}"))
+            plan_path = package_dir / "install-plan.json"
+            if plan_path.is_file():
+                plan_data = json.loads(plan_path.read_text(encoding="utf-8"))
+                if plan_data.get("profile") != "clerk-core" or "civiccore" not in plan_data.get("modules", []):
+                    errors.append(fail(f"profile package {platform_id} plan has wrong profile/modules"))
+        for platform_id in ("macos", "linux"):
+            package_launcher = GENERATED_PACKAGES / "clerk-core" / platform_id / "start-civicsuite-installer.sh"
+            ok, output = run_launcher(["bash", package_launcher.relative_to(ROOT).as_posix(), "plan"])
+            if not ok:
+                errors.append(fail(f"profile package {platform_id} launcher failed: {output}"))
+            elif '"profile": "clerk-core"' not in output or '"mutates_host": false' not in output:
+                errors.append(fail(f"profile package {platform_id} launcher did not return the dry-run plan"))
+        windows_launcher = GENERATED_PACKAGES / "clerk-core" / "windows" / "start-civicsuite-installer.ps1"
+        if powershell_command():
+            ok, output = run_launcher(
+                [
+                    powershell_command() or "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(windows_launcher),
+                    "-Plan",
+                ]
+            )
+            if not ok:
+                errors.append(fail(f"profile package windows launcher failed: {output}"))
+            elif '"profile": "clerk-core"' not in output or '"mutates_host": false' not in output:
+                errors.append(fail("profile package windows launcher did not return the dry-run plan"))
+
     if has_local_civiccore_wheel():
         install_kit = module.generate_minimal_install_kit(manifest=data)
         if install_kit.get("mutates_host") is not False:
@@ -823,6 +879,23 @@ def check_launchers() -> list[str]:
                 errors.append(fail(f"windows launcher -GenerateInstallKit failed: {output}"))
             elif '"mutates_host": false' not in output or '"generated_root"' not in output:
                 errors.append(fail("windows launcher -GenerateInstallKit did not return expected non-mutating model"))
+        ok, output = run_launcher(
+            [
+                powershell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(WINDOWS_LAUNCHER),
+                "-Profile",
+                "clerk-core",
+                "-GenerateProfilePackage",
+            ]
+        )
+        if not ok:
+            errors.append(fail(f"windows launcher -GenerateProfilePackage failed: {output}"))
+        elif '"mutates_host": false' not in output or '"package_root"' not in output:
+            errors.append(fail("windows launcher -GenerateProfilePackage did not return expected package model"))
         launcher_text = WINDOWS_LAUNCHER.read_text(encoding="utf-8")
         if "RunCleanroomProof" not in launcher_text or "--run-cleanroom-proof" not in launcher_text:
             errors.append(fail("windows launcher missing cleanroom proof switch"))
@@ -896,6 +969,11 @@ def check_launchers() -> list[str]:
                 errors.append(fail(f"{name} launcher --generate-install-kit failed: {output}"))
             elif '"mutates_host": false' not in output or '"generated_root"' not in output:
                 errors.append(fail(f"{name} launcher --generate-install-kit did not return expected non-mutating model"))
+        ok, output = run_launcher(["bash", launcher_path, "--profile", "clerk-core", "--generate-profile-package"])
+        if not ok:
+            errors.append(fail(f"{name} launcher --generate-profile-package failed: {output}"))
+        elif '"mutates_host": false' not in output or '"package_root"' not in output:
+            errors.append(fail(f"{name} launcher --generate-profile-package did not return expected package model"))
         launcher_text = path.read_text(encoding="utf-8")
         if "--run-cleanroom-proof" not in launcher_text:
             errors.append(fail(f"{name} launcher missing cleanroom proof flag"))

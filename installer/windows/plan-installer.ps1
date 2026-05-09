@@ -13,6 +13,9 @@ param(
     [switch]$ShowHealthChecks,
     [switch]$ShowPreflight,
     [switch]$GenerateInstallKit,
+    [switch]$GenerateProfilePackage,
+    [ValidateSet("all", "windows", "macos", "linux")]
+    [string]$PackagePlatform = "all",
     [switch]$RunCleanroomProof,
     [switch]$RunCleanroomGate,
     [switch]$WriteReport,
@@ -27,7 +30,7 @@ $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 $Planner = Join-Path $RepoRoot "scripts\plan-installer.py"
 
 $ArgsList = @($Planner, "--profile", $Profile, "--menu-style", $MenuStyle)
-if (-not $RunCleanroomProof -and -not $RunCleanroomGate) {
+if (-not $RunCleanroomProof -and -not $RunCleanroomGate -and -not $GenerateProfilePackage) {
     $ArgsList += "--dry-run"
 }
 if ($ShowMenu) {
@@ -65,6 +68,9 @@ if ($ShowPreflight) {
 }
 if ($GenerateInstallKit) {
     $ArgsList += "--generate-install-kit"
+}
+if ($GenerateProfilePackage) {
+    $ArgsList += @("--generate-profile-package", "--package-platform", $PackagePlatform)
 }
 if ($RunCleanroomProof) {
     $ArgsList += "--run-cleanroom-proof"
@@ -124,6 +130,9 @@ if ($ShowPreflight) {
 }
 if ($GenerateInstallKit) {
     Write-Host "Minimal CivicCore install kit generation requested: writes installer/generated only"
+}
+if ($GenerateProfilePackage) {
+    Write-Host "Profile package generation requested: writes installer/generated/packages only"
 }
 if ($RunCleanroomProof) {
     Write-Host "Cleanroom proof requested: Docker cleanroom runner will build/start/verify/teardown"
