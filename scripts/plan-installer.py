@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import hashlib
 import json
 import platform
 import shutil
 import subprocess
 import sys
+import tarfile
 import tomllib
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -21,6 +24,8 @@ MANIFEST = ROOT / "installer" / "modules.json"
 REPORT_ROOT = ROOT / "installer" / "reports"
 GENERATED_ROOT = ROOT / "installer" / "generated"
 PACKAGE_ROOT = GENERATED_ROOT / "packages"
+NATIVE_ROOT = GENERATED_ROOT / "native"
+DIST_ROOT = ROOT / "installer" / "dist"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 
 
@@ -1286,6 +1291,10 @@ def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str
         return f"""param(
     [switch]$Readiness,
     [switch]$Plan,
+    [switch]$Install,
+    [switch]$Verify,
+    [switch]$Repair,
+    [switch]$Uninstall,
     [switch]$Gate
 )
 
@@ -1301,6 +1310,26 @@ if ($Gate) {{
 
 if ($Plan) {{
     python $Planner --profile {profile_id} --menu-style {menu_style} --dry-run
+    exit $LASTEXITCODE
+}}
+
+if ($Install) {{
+    python $Planner --profile {profile_id} --menu-style {menu_style} --execute --dry-run
+    exit $LASTEXITCODE
+}}
+
+if ($Verify) {{
+    python $Planner --profile {profile_id} --menu-style {menu_style} --show-health-checks --dry-run
+    exit $LASTEXITCODE
+}}
+
+if ($Repair) {{
+    python $Planner --profile {profile_id} --menu-style {menu_style} --show-preflight --dry-run
+    exit $LASTEXITCODE
+}}
+
+if ($Uninstall) {{
+    python $Planner --profile {profile_id} --menu-style {menu_style} --show-executor-design --dry-run
     exit $LASTEXITCODE
 }}
 
@@ -1322,11 +1351,23 @@ case "${{MODE}}" in
   plan)
     python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --dry-run
     ;;
+  install)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --execute --dry-run
+    ;;
+  verify)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-health-checks --dry-run
+    ;;
+  repair)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-preflight --dry-run
+    ;;
+  uninstall)
+    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-executor-design --dry-run
+    ;;
   readiness)
     python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|gate]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall|gate]" >&2
     exit 2
     ;;
 esac
@@ -1368,7 +1409,17 @@ gate for profiles that have a gate.
    {plan_command}
    ```
 
-3. Run the cleanroom gate when Docker mutation is approved:
+3. Run the lifecycle command you need:
+
+   ```text
+   {plan_command}
+   ```
+
+   Available lifecycle modes: readiness, plan, install, verify, repair,
+   uninstall, and gate. Install, repair, and uninstall are still guarded by the
+   planner until the mutating executor is implemented.
+
+4. Run the cleanroom gate when Docker mutation is approved:
 
    ```text
    {gate_command}
@@ -1450,6 +1501,219 @@ def generate_profile_package(
         "operator_entrypoints_mutate_only_in_gate_mode": True,
         "native_installers_packaged": False,
         "next_action": "Review generated platform packages, then run readiness from the target platform package.",
+    }
+
+
+def _native_manifest_files(*, profile_id: str, platform_id: str, version: str, package_dir: Path) -> dict[str, str]:
+    package_rel = package_dir.relative_to(ROOT).as_posix()
+    if platform_id == "windows":
+        return {
+            "CivicSuiteInstaller.iss": f"""; CivicSuite Windows installer wrapper manifest.
+; Build with Inno Setup after reviewing the generated package payload.
+
+#define AppName "CivicSuite"
+#define AppVersion "{version}"
+#define AppPublisher "CivicSuite"
+#define PackageSource "..\\..\\packages\\{profile_id}\\windows"
+
+[Setup]
+AppId={{{{CIVICSUITE-{profile_id.upper()}-{version}}}}}
+AppName={{#AppName}}
+AppVersion={{#AppVersion}}
+AppPublisher={{#AppPublisher}}
+DefaultDirName={{autopf}}\\CivicSuite
+DefaultGroupName=CivicSuite
+OutputBaseFilename=CivicSuite-{profile_id}-Setup-{version}
+Compression=lzma
+SolidCompression=yes
+PrivilegesRequired=lowest
+
+[Files]
+Source: "{{#PackageSource}}\\*"; DestDir: "{{app}}"; Flags: recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{{group}}\\CivicSuite Installer"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{{app}}\\start-civicsuite-installer.ps1"" -Readiness"
+""",
+            "README.md": f"""# Windows Native Wrapper
+
+Payload source: `{package_rel}`
+
+Use `CivicSuiteInstaller.iss` with Inno Setup to build a Windows installer that
+wraps the generated operator package. The wrapper opens the readiness flow by
+default and keeps privileged dependency installation outside silent mutation.
+""",
+        }
+    if platform_id == "macos":
+        return {
+            "distribution.xml": f"""<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+  <title>CivicSuite {profile_id}</title>
+  <options customize="never" require-scripts="false"/>
+  <domains enable_anywhere="true"/>
+  <pkg-ref id="gov.civicsuite.{profile_id}" version="{version}">CivicSuite-{profile_id}.pkg</pkg-ref>
+  <choices-outline>
+    <line choice="default"/>
+  </choices-outline>
+  <choice id="default" title="CivicSuite {profile_id}">
+    <pkg-ref id="gov.civicsuite.{profile_id}"/>
+  </choice>
+</installer-gui-script>
+""",
+            "pkgbuild.txt": f"""pkgbuild --root "{package_rel}" --identifier gov.civicsuite.{profile_id} --version {version} CivicSuite-{profile_id}.pkg
+productbuild --distribution distribution.xml --package-path . CivicSuite-{profile_id}-{version}.pkg
+""",
+            "README.md": f"""# macOS Native Wrapper
+
+Payload source: `{package_rel}`
+
+Use `pkgbuild` and `productbuild` with the included distribution file to create
+a signed macOS package after code-signing policy is settled.
+""",
+        }
+    return {
+        "debian/control": f"""Package: civicsuite-{profile_id}
+Version: {version}
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: CivicSuite <support@civicsuite.local>
+Depends: python3
+Description: CivicSuite {profile_id} installer package
+ Operator-facing CivicSuite installer package with readiness, plan, verify,
+ repair, uninstall, and cleanroom gate entrypoints.
+""",
+        "debian/install": f"""../../packages/{profile_id}/linux/* opt/civicsuite/{profile_id}/
+""",
+        "debian/postinst": """#!/usr/bin/env bash
+set -euo pipefail
+echo "CivicSuite package installed. Run /opt/civicsuite/*/start-civicsuite-installer.sh readiness"
+""",
+        "README.md": f"""# Linux Native Wrapper
+
+Payload source: `{package_rel}`
+
+Use the `debian/` metadata as the first `.deb` wrapper for the generated Linux
+operator package. Dependency installation remains explicit and operator-led.
+""",
+    }
+
+
+def _write_tree(root: Path, files: dict[str, str]) -> list[str]:
+    written: list[str] = []
+    for relative_path, content in files.items():
+        path = root / relative_path
+        if not _is_within(path, root):
+            raise PlannerError(f"Generated file path escaped root: {path}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8", newline="\n")
+        written.append(str(path.relative_to(ROOT)))
+        if path.name == "postinst":
+            try:
+                path.chmod(0o755)
+            except OSError:
+                pass
+    return written
+
+
+def _archive_directory(source: Path, target: Path, *, platform_id: str) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.suffix == ".zip":
+        with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(source.rglob("*")):
+                if path.is_file():
+                    archive.write(path, path.relative_to(source.parent))
+        return
+    with tarfile.open(target, "w:gz") as archive:
+        archive.add(source, arcname=source.name)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def generate_release_artifacts(
+    *,
+    manifest: dict[str, Any],
+    profile_id: str,
+    selected_modules: list[str] | None = None,
+    menu_style: str = "guided",
+    version: str = "0.1.0",
+    platform_id: str = "all",
+) -> dict[str, Any]:
+    package = generate_profile_package(
+        manifest=manifest,
+        profile_id=profile_id,
+        selected_modules=selected_modules,
+        menu_style=menu_style,
+        platform_id=platform_id,
+    )
+    platforms = package["platforms"]
+    native_written: list[str] = []
+    archives: list[dict[str, str]] = []
+    for target_platform in platforms:
+        package_dir = PACKAGE_ROOT / profile_id / target_platform
+        native_dir = NATIVE_ROOT / profile_id / target_platform
+        native_written.extend(
+            _write_tree(
+                native_dir,
+                _native_manifest_files(
+                    profile_id=profile_id,
+                    platform_id=target_platform,
+                    version=version,
+                    package_dir=package_dir,
+                ),
+            )
+        )
+        suffix = ".zip" if target_platform == "windows" else ".tar.gz"
+        archive_name = f"CivicSuite-{profile_id}-{target_platform}-{version}{suffix}"
+        archive_path = DIST_ROOT / archive_name
+        _archive_directory(package_dir, archive_path, platform_id=target_platform)
+        archives.append(
+            {
+                "platform": target_platform,
+                "path": str(archive_path.relative_to(ROOT)),
+                "sha256": _sha256(archive_path),
+            }
+        )
+    checksum_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-SHA256SUMS.txt"
+    checksum_path.parent.mkdir(parents=True, exist_ok=True)
+    checksum_path.write_text(
+        "".join(f"{artifact['sha256']}  {Path(artifact['path']).name}\n" for artifact in archives),
+        encoding="utf-8",
+        newline="\n",
+    )
+    release_manifest = {
+        "schema_version": 1,
+        "installer_version": version,
+        "profile": profile_id,
+        "menu_style": menu_style,
+        "platforms": platforms,
+        "modules": package["modules"],
+        "archives": archives,
+        "checksum_file": str(checksum_path.relative_to(ROOT)),
+        "native_wrapper_status": "manifests_generated",
+        "native_installers_built": False,
+        "next_action": "Build/sign native wrappers from installer/generated/native or publish the verified archives.",
+    }
+    manifest_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-release-manifest.json"
+    manifest_path.write_text(json.dumps(release_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return {
+        "dry_run": False,
+        "mutates_host": False,
+        "profile": profile_id,
+        "installer_version": version,
+        "platforms": platforms,
+        "package_files_written": package["files_written"],
+        "native_files_written": native_written,
+        "archives": archives,
+        "checksum_file": str(checksum_path.relative_to(ROOT)),
+        "release_manifest": str(manifest_path.relative_to(ROOT)),
+        "native_installers_built": False,
+        "next_action": "Publish archives now, or build/sign native wrappers from generated manifests.",
     }
 
 
@@ -1839,6 +2103,16 @@ def main() -> int:
         help="Write cross-platform operator package files under installer/generated/packages.",
     )
     parser.add_argument(
+        "--generate-release-artifacts",
+        action="store_true",
+        help="Write profile packages, native wrapper manifests, archives, and checksums.",
+    )
+    parser.add_argument(
+        "--installer-version",
+        default="0.1.0",
+        help="Installer artifact version for --generate-release-artifacts.",
+    )
+    parser.add_argument(
         "--package-platform",
         default="all",
         choices=("all", "windows", "macos", "linux"),
@@ -1890,6 +2164,7 @@ def main() -> int:
         not args.dry_run
         and not args.generate_install_kit
         and not args.generate_profile_package
+        and not args.generate_release_artifacts
         and not mutating_cleanroom_requested
     ):
         print("ERROR: --dry-run is required. This planner is non-mutating.", file=sys.stderr)
@@ -1984,6 +2259,16 @@ def main() -> int:
                 platform_id=args.package_platform,
             )
             report_mode = "profile_package"
+        elif args.generate_release_artifacts:
+            plan = generate_release_artifacts(
+                manifest=manifest,
+                profile_id=args.profile,
+                selected_modules=[str(module) for module in args.module],
+                menu_style=args.menu_style,
+                version=args.installer_version,
+                platform_id=args.package_platform,
+            )
+            report_mode = "release_artifacts"
         elif args.run_cleanroom_proof:
             if args.profile != "clerk-core":
                 raise PlannerError("--run-cleanroom-proof currently supports only --profile clerk-core.")

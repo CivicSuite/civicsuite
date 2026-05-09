@@ -22,7 +22,17 @@ gate for profiles that have a gate.
    bash ./start-civicsuite-installer.sh plan
    ```
 
-3. Run the cleanroom gate when Docker mutation is approved:
+3. Run the lifecycle command you need:
+
+   ```text
+   bash ./start-civicsuite-installer.sh plan
+   ```
+
+   Available lifecycle modes: readiness, plan, install, verify, repair,
+   uninstall, and gate. Install, repair, and uninstall are still guarded by the
+   planner until the mutating executor is implemented.
+
+4. Run the cleanroom gate when Docker mutation is approved:
 
    ```text
    bash ./start-civicsuite-installer.sh gate

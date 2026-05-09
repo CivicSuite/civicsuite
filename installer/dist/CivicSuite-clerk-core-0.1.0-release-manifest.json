@@ -1,0 +1,37 @@
+{
+  "archives": [
+    {
+      "path": "installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip",
+      "platform": "windows",
+      "sha256": "210de2cf6a245b0eaeec04e1a13420b1dd6fe4206ae8ff35ebc30012357b7883"
+    },
+    {
+      "path": "installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz",
+      "platform": "macos",
+      "sha256": "575033d3d58246e9f787c89324fbc8718df56913fb6675c1d32d5a24f4615745"
+    },
+    {
+      "path": "installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz",
+      "platform": "linux",
+      "sha256": "e24342a8d84e1d092b0d9bca7a5bdf7ddf3718781e2a4b11a3d35121e282105d"
+    }
+  ],
+  "checksum_file": "installer/dist/CivicSuite-clerk-core-0.1.0-SHA256SUMS.txt",
+  "installer_version": "0.1.0",
+  "menu_style": "guided",
+  "modules": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk"
+  ],
+  "native_installers_built": false,
+  "native_wrapper_status": "manifests_generated",
+  "next_action": "Build/sign native wrappers from installer/generated/native or publish the verified archives.",
+  "platforms": [
+    "windows",
+    "macos",
+    "linux"
+  ],
+  "profile": "clerk-core",
+  "schema_version": 1
+}

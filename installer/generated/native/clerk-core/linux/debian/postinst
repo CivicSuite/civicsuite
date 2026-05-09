@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+echo "CivicSuite package installed. Run /opt/civicsuite/*/start-civicsuite-installer.sh readiness"

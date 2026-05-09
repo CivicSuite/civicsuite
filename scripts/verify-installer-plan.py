@@ -23,6 +23,8 @@ MACOS_LAUNCHER = ROOT / "installer" / "macos" / "plan-installer.sh"
 LINUX_LAUNCHER = ROOT / "installer" / "linux" / "plan-installer.sh"
 GENERATED_MINIMAL = ROOT / "installer" / "generated" / "minimal"
 GENERATED_PACKAGES = ROOT / "installer" / "generated" / "packages"
+GENERATED_NATIVE = ROOT / "installer" / "generated" / "native"
+DIST = ROOT / "installer" / "dist"
 
 REQUIRED_PROFILES = {"minimal", "clerk-core", "land-use", "full-suite", "custom"}
 REQUIRED_MODULES = {
@@ -71,6 +73,7 @@ REQUIRED_DOC_PHRASES = (
     "executor preflight",
     "install kit",
     "profile package",
+    "release artifacts",
     "cleanroom",
     "cleanroom gate",
     "Playwright",
@@ -657,6 +660,42 @@ def check_planner(data: dict[str, object]) -> list[str]:
             elif '"profile": "clerk-core"' not in output or '"mutates_host": false' not in output:
                 errors.append(fail("profile package windows launcher did not return the dry-run plan"))
 
+    if not hasattr(module, "generate_release_artifacts"):
+        errors.append(fail("planner must expose release artifact generator"))
+    else:
+        release = module.generate_release_artifacts(
+            manifest=data,
+            profile_id="clerk-core",
+            menu_style="guided",
+            version="0.1.0",
+            platform_id="all",
+        )
+        if release.get("mutates_host") is not False:
+            errors.append(fail("release artifact generator must not mutate host state"))
+        if release.get("native_installers_built") is not False:
+            errors.append(fail("release artifact generator must not claim signed native installers were built"))
+        if len(release.get("archives", [])) != 3:
+            errors.append(fail("release artifact generator must emit one archive per platform"))
+        for artifact in release.get("archives", []):
+            artifact_path = ROOT / artifact.get("path", "")
+            if not artifact_path.is_file():
+                errors.append(fail(f"release archive missing: {artifact.get('path')}"))
+            if len(str(artifact.get("sha256", ""))) != 64:
+                errors.append(fail(f"release archive missing sha256: {artifact.get('path')}"))
+        checksum_path = ROOT / release.get("checksum_file", "")
+        manifest_path = ROOT / release.get("release_manifest", "")
+        if not checksum_path.is_file():
+            errors.append(fail("release artifacts must write SHA256SUMS"))
+        if not manifest_path.is_file():
+            errors.append(fail("release artifacts must write release manifest"))
+        for platform_id, required in (
+            ("windows", "CivicSuiteInstaller.iss"),
+            ("macos", "distribution.xml"),
+            ("linux", "debian/control"),
+        ):
+            if not (GENERATED_NATIVE / "clerk-core" / platform_id / required).is_file():
+                errors.append(fail(f"native wrapper missing {platform_id}/{required}"))
+
     if has_local_civiccore_wheel():
         install_kit = module.generate_minimal_install_kit(manifest=data)
         if install_kit.get("mutates_host") is not False:
@@ -896,6 +935,23 @@ def check_launchers() -> list[str]:
             errors.append(fail(f"windows launcher -GenerateProfilePackage failed: {output}"))
         elif '"mutates_host": false' not in output or '"package_root"' not in output:
             errors.append(fail("windows launcher -GenerateProfilePackage did not return expected package model"))
+        ok, output = run_launcher(
+            [
+                powershell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(WINDOWS_LAUNCHER),
+                "-Profile",
+                "clerk-core",
+                "-GenerateReleaseArtifacts",
+            ]
+        )
+        if not ok:
+            errors.append(fail(f"windows launcher -GenerateReleaseArtifacts failed: {output}"))
+        elif '"mutates_host": false' not in output or '"release_manifest"' not in output:
+            errors.append(fail("windows launcher -GenerateReleaseArtifacts did not return expected artifact model"))
         launcher_text = WINDOWS_LAUNCHER.read_text(encoding="utf-8")
         if "RunCleanroomProof" not in launcher_text or "--run-cleanroom-proof" not in launcher_text:
             errors.append(fail("windows launcher missing cleanroom proof switch"))
@@ -974,6 +1030,11 @@ def check_launchers() -> list[str]:
             errors.append(fail(f"{name} launcher --generate-profile-package failed: {output}"))
         elif '"mutates_host": false' not in output or '"package_root"' not in output:
             errors.append(fail(f"{name} launcher --generate-profile-package did not return expected package model"))
+        ok, output = run_launcher(["bash", launcher_path, "--profile", "clerk-core", "--generate-release-artifacts"])
+        if not ok:
+            errors.append(fail(f"{name} launcher --generate-release-artifacts failed: {output}"))
+        elif '"mutates_host": false' not in output or '"release_manifest"' not in output:
+            errors.append(fail(f"{name} launcher --generate-release-artifacts did not return expected artifact model"))
         launcher_text = path.read_text(encoding="utf-8")
         if "--run-cleanroom-proof" not in launcher_text:
             errors.append(fail(f"{name} launcher missing cleanroom proof flag"))

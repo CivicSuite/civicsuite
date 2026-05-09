@@ -22,7 +22,17 @@ gate for profiles that have a gate.
    .\start-civicsuite-installer.ps1 -Plan
    ```
 
-3. Run the cleanroom gate when Docker mutation is approved:
+3. Run the lifecycle command you need:
+
+   ```text
+   .\start-civicsuite-installer.ps1 -Plan
+   ```
+
+   Available lifecycle modes: readiness, plan, install, verify, repair,
+   uninstall, and gate. Install, repair, and uninstall are still guarded by the
+   planner until the mutating executor is implemented.
+
+4. Run the cleanroom gate when Docker mutation is approved:
 
    ```text
    .\start-civicsuite-installer.ps1 -Gate

@@ -233,6 +233,29 @@ it may build/start/teardown Docker resources and write evidence under
 `.deb`, or `.rpm` installers yet; they are the reviewed operator UX package that
 native packaging should wrap next.
 
+## Release Artifacts
+
+The installer can generate the full distributable artifact set for a profile:
+
+```powershell
+python scripts\plan-installer.py --profile clerk-core --generate-release-artifacts --installer-version 0.1.0
+```
+
+This writes operator packages under `installer/generated/packages`, native
+wrapper manifests under `installer/generated/native`, platform archives under
+`installer/dist`, a `SHA256SUMS.txt` file, and a release manifest describing the
+profile, modules, platforms, archive paths, and checksums.
+
+The generated native wrapper manifests are:
+
+- Windows: Inno Setup `.iss`
+- macOS: `pkgbuild` / `productbuild` distribution files
+- Linux: Debian package metadata
+
+The generator does not build or sign native OS installers by itself. It produces
+verified payloads and wrapper manifests that can be built by the platform
+packaging tools in release infrastructure.
+
 ## Artifact, Profile, And Health Planning
 
 Before host mutation exists, the installer can render the next executor inputs

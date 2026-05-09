@@ -13,11 +13,23 @@ case "${MODE}" in
   plan)
     python3 "${PLANNER}" --profile clerk-core --menu-style guided --dry-run
     ;;
+  install)
+    python3 "${PLANNER}" --profile clerk-core --menu-style guided --execute --dry-run
+    ;;
+  verify)
+    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-health-checks --dry-run
+    ;;
+  repair)
+    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-preflight --dry-run
+    ;;
+  uninstall)
+    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-executor-design --dry-run
+    ;;
   readiness)
     python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-readiness --detect-host --dry-run
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|gate]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall|gate]" >&2
     exit 2
     ;;
 esac
