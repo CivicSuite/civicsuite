@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sys
 import importlib.util
 import subprocess
@@ -651,6 +652,12 @@ def run_launcher(command: list[str]) -> tuple[bool, str]:
     return proc.returncode == 0, output
 
 
+def powershell_command() -> str | None:
+    if os.environ.get("CIVICSUITE_VERIFY_NO_POWERSHELL") == "1":
+        return None
+    return shutil.which("powershell") or shutil.which("pwsh")
+
+
 def check_launchers() -> list[str]:
     errors: list[str] = []
     launchers = {
@@ -678,10 +685,11 @@ def check_launchers() -> list[str]:
             if phrase in text:
                 errors.append(fail(f"{name} launcher contains mutating phrase: {phrase}"))
 
-    if WINDOWS_LAUNCHER.is_file():
+    powershell = powershell_command()
+    if WINDOWS_LAUNCHER.is_file() and powershell:
         ok, output = run_launcher(
             [
-                "powershell",
+                powershell,
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -702,7 +710,7 @@ def check_launchers() -> list[str]:
 
         ok, output = run_launcher(
             [
-                "powershell",
+                powershell,
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -720,7 +728,7 @@ def check_launchers() -> list[str]:
 
         ok, output = run_launcher(
             [
-                "powershell",
+                powershell,
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -738,7 +746,7 @@ def check_launchers() -> list[str]:
 
         ok, output = run_launcher(
             [
-                "powershell",
+                powershell,
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -756,7 +764,7 @@ def check_launchers() -> list[str]:
 
         ok, output = run_launcher(
             [
-                "powershell",
+                powershell,
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -782,7 +790,7 @@ def check_launchers() -> list[str]:
         ):
             ok, output = run_launcher(
                 [
-                    "powershell",
+                    powershell,
                     "-NoProfile",
                     "-ExecutionPolicy",
                     "Bypass",
@@ -800,7 +808,7 @@ def check_launchers() -> list[str]:
         if has_local_civiccore_wheel():
             ok, output = run_launcher(
                 [
-                    "powershell",
+                    powershell,
                     "-NoProfile",
                     "-ExecutionPolicy",
                     "Bypass",
