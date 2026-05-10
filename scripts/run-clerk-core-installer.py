@@ -11,6 +11,8 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -22,6 +24,13 @@ DEFAULT_INSTALL_ROOT = ROOT / "installer" / "runtime" / "clerk-core"
 
 RECORDS_PORTS = {"api": 18000, "web": 18080}
 CLERK_PORTS = {"api": 18776, "web": 18081}
+CLERK_STAFF_MODE_PROTECTED = "protected"
+CLERK_STAFF_MODE_OPEN = "open"
+CLERK_OPEN_MODE_WARNING = (
+    "WARNING: --staff-mode open allows anonymous writes to civicclerk endpoints.\n"
+    "WARNING: Use ONLY for local rehearsal. Never on a network-reachable host.\n"
+    "WARNING: Re-run with --staff-mode protected for any deployment evaluation."
+)
 
 
 class InstallerError(RuntimeError):
@@ -194,7 +203,7 @@ NGINX
     )
 
 
-def write_clerk_env(target: Path) -> None:
+def write_clerk_env(target: Path, *, staff_mode: str = CLERK_STAFF_MODE_PROTECTED) -> None:
     if target.is_file():
         return
     values = {
@@ -203,7 +212,7 @@ def write_clerk_env(target: Path) -> None:
         "CIVICCLERK_POSTGRES_DB": "civicclerk",
         "CIVICCLERK_API_PORT": str(CLERK_PORTS["api"]),
         "CIVICCLERK_WEB_PORT": str(CLERK_PORTS["web"]),
-        "CIVICCLERK_STAFF_AUTH_MODE": "open",
+        "CIVICCLERK_STAFF_AUTH_MODE": staff_mode,
         "CIVICCLERK_DEMO_SEED": "1",
         "CIVICCLERK_CONNECTOR_SYNC_ENABLED": "false",
         "CIVICCLERK_CONNECTOR_SYNC_PAYLOAD_DIR_HOST": "./connector-imports",
@@ -243,6 +252,52 @@ def wait_for_url(url: str, *, timeout_seconds: int = 360) -> dict[str, object]:
     return {"status": "failed", "attempts": attempts[-10:]}
 
 
+def get_json(url: str, *, timeout_seconds: int = 10) -> tuple[int, dict[str, object]]:
+    with urllib.request.urlopen(url, timeout=timeout_seconds) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+        return response.status, payload
+
+
+def post_json(url: str, payload: dict[str, object], *, timeout_seconds: int = 10) -> tuple[int, dict[str, object]]:
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8")
+        return exc.code, json.loads(body) if body else {}
+
+
+def verify_clerk_protected_default() -> dict[str, object]:
+    base = f"http://127.0.0.1:{CLERK_PORTS['api']}"
+    checks: list[dict[str, object]] = []
+    try:
+        status, readiness = get_json(f"{base}/staff/auth-readiness")
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"name": "civicclerk_protected_default", "status": "failed", "error": str(exc), "checks": checks}
+    checks.append({"name": "auth_readiness", "status_code": status, "payload": readiness})
+    if status != 200 or readiness.get("mode") != CLERK_STAFF_MODE_PROTECTED:
+        return {"name": "civicclerk_protected_default", "status": "failed", "checks": checks}
+
+    write_probes = [
+        ("meeting_bodies", "/meeting-bodies", {"name": "City Council", "body_type": "city_council"}),
+        ("meetings", "/meetings", {"title": "Council Meeting", "meeting_type": "regular"}),
+        ("motions", "/meetings/not-a-meeting/motions", {"text": "Move to approve.", "actor": "clerk@example.gov"}),
+        ("votes", "/motions/not-a-motion/votes", {"voter_name": "Council Member Rivera", "vote": "aye", "actor": "clerk@example.gov"}),
+    ]
+    for name, path, payload in write_probes:
+        status_code, body = post_json(f"{base}{path}", payload)
+        checks.append({"name": name, "path": path, "status_code": status_code, "payload": body})
+        if status_code != 401:
+            return {"name": "civicclerk_protected_default", "status": "failed", "checks": checks}
+    return {"name": "civicclerk_protected_default", "status": "passed", "checks": checks}
+
+
 def lifecycle_context(install_root: Path) -> dict[str, Path | str]:
     if not is_within(install_root, ROOT):
         raise InstallerError(f"Install root must stay inside this bundle/repo: {install_root}")
@@ -255,7 +310,11 @@ def lifecycle_context(install_root: Path) -> dict[str, Path | str]:
     }
 
 
-def prepare_sources(install_root: Path) -> dict[str, Path | str]:
+def prepare_sources(
+    install_root: Path,
+    *,
+    staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
+) -> dict[str, Path | str]:
     ctx = lifecycle_context(install_root)
     install_root.mkdir(parents=True, exist_ok=True)
     copy_source(source_root("civicrecords-ai"), ctx["records_source"])  # type: ignore[arg-type]
@@ -263,11 +322,16 @@ def prepare_sources(install_root: Path) -> dict[str, Path | str]:
     normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
     write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
     write_records_override(ctx["records_source"])  # type: ignore[arg-type]
-    write_clerk_env(ctx["clerk_source"] / ".env")  # type: ignore[operator]
+    write_clerk_env(ctx["clerk_source"] / ".env", staff_mode=staff_mode)  # type: ignore[operator]
     return ctx
 
 
-def install(install_root: Path, *, report_dir: Path) -> dict[str, object]:
+def install(
+    install_root: Path,
+    *,
+    report_dir: Path,
+    staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
+) -> dict[str, object]:
     require_command("docker")
     docker_info = run(["docker", "info"], cwd=ROOT, timeout=30)
     if docker_info.returncode != 0:
@@ -275,7 +339,7 @@ def install(install_root: Path, *, report_dir: Path) -> dict[str, object]:
             "Docker is installed but not running. Start Docker Desktop or Docker Engine, wait for it to be ready, "
             "then rerun install."
         )
-    ctx = prepare_sources(install_root)
+    ctx = prepare_sources(install_root, staff_mode=staff_mode)
     steps: list[dict[str, object]] = []
     for name, source_key, project_key, services in (
         ("civicrecords-ai", "records_source", "records_project", ("api", "frontend")),
@@ -305,6 +369,8 @@ def verify(install_root: Path, *, report_dir: Path) -> dict[str, object]:
         {"name": "civicclerk_api", "url": f"http://127.0.0.1:{CLERK_PORTS['api']}/health", **wait_for_url(f"http://127.0.0.1:{CLERK_PORTS['api']}/health", timeout_seconds=180)},
         {"name": "civicclerk_web", "url": f"http://127.0.0.1:{CLERK_PORTS['web']}/", **wait_for_url(f"http://127.0.0.1:{CLERK_PORTS['web']}/", timeout_seconds=120)},
     ]
+    if checks[2]["status"] == "passed":
+        checks.append(verify_clerk_protected_default())
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
     return {"status": status, "checks": checks}
 
@@ -346,7 +412,15 @@ def main() -> int:
     parser.add_argument("--install-root", default=str(DEFAULT_INSTALL_ROOT))
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--remove-files", action="store_true")
+    parser.add_argument(
+        "--staff-mode",
+        choices=(CLERK_STAFF_MODE_PROTECTED, CLERK_STAFF_MODE_OPEN),
+        default=CLERK_STAFF_MODE_PROTECTED,
+        help="CivicClerk staff auth default for install/repair. Open mode is explicit local-rehearsal opt-in.",
+    )
     args = parser.parse_args()
+    if args.staff_mode == CLERK_STAFF_MODE_OPEN:
+        print(CLERK_OPEN_MODE_WARNING, file=sys.stderr)
 
     run_id = args.run_id or make_run_id()
     report_dir = REPORT_ROOT / run_id
@@ -356,6 +430,7 @@ def main() -> int:
         "mode": args.mode,
         "install_root": str(install_root),
         "mutates_host": args.mode in {"install", "repair", "uninstall"},
+        "civicclerk_staff_mode": args.staff_mode,
         "status": "failed",
         "started_at": datetime.now(UTC).isoformat(),
         "ports": {"civicrecords-ai": RECORDS_PORTS, "civicclerk": CLERK_PORTS},
@@ -367,11 +442,11 @@ def main() -> int:
             payload["docker"] = {"returncode": info.returncode, "stdout": info.stdout[-1000:], "stderr": info.stderr[-1000:]}
             payload["status"] = "passed" if info.returncode == 0 else "failed"
         elif args.mode == "install":
-            payload.update(install(install_root, report_dir=report_dir))
+            payload.update(install(install_root, report_dir=report_dir, staff_mode=args.staff_mode))
         elif args.mode == "verify":
             payload.update(verify(install_root, report_dir=report_dir))
         elif args.mode == "repair":
-            payload.update(install(install_root, report_dir=report_dir))
+            payload.update(install(install_root, report_dir=report_dir, staff_mode=args.staff_mode))
         elif args.mode == "uninstall":
             payload.update(uninstall(install_root, report_dir=report_dir, remove_files=args.remove_files))
     except (InstallerError, subprocess.TimeoutExpired) as exc:

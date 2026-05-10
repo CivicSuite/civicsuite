@@ -290,7 +290,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: provisional v1.0.0 tag; v1.0.1 recovery patch required after the open-mode default fix.
+Status: v1.0.1 recovery patch shipped with QA-001 security default change; anonymous staff writes are denied by default.
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -1005,7 +1005,7 @@ This section previously enumerated per-module shipping prose. That prose drifted
 |---|---:|---:|---|
 | civiccore | 1.0.1 | n/a | Real shared platform; recovery patch shipped with security hardening for auth error payloads. |
 | civicrecords-ai | 1.4.10 | 0.22.1 | Developer-preview records product; target v1.5.0 after CivicCore upgrade. |
-| civicclerk | 1.0.0 | 1.0.1 | Real meeting workflow; CivicCore pin bumped, but v1.0.1 recovery patch still requires the open-mode default fix. |
+| civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
 | civiccode | 0.5.0 | 1.0.1 | Demoted from false v1.0.0; meaningful runtime depth but not v1.0 product-ready. |
 | civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |
 | civicplan | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth planning support. |
@@ -1020,10 +1020,9 @@ A municipality cannot today run end-to-end on this suite. The immediate work is 
 The v0.1.x foundation lane created real repository surfaces and release artifacts, but it did not create city-ready products. The next sequence is recovery first, then productization:
 
 1. Complete Sprint A release-integrity demotion and lockstep gates.
-2. Patch CivicClerk to v1.0.1 after the open-mode default fix.
-3. Upgrade CivicRecords AI to CivicCore v1.0.1 and release it as v1.5.0.
-4. Stabilize the installer profile and per-module version pin strategy.
-5. Resume productization one module at a time from the active queue; no lateral v1.0 sweeps.
+2. Upgrade CivicRecords AI to CivicCore v1.0.1 and release it as v1.5.0.
+3. Stabilize the installer profile and per-module version pin strategy.
+4. Resume productization one module at a time from the active queue; no lateral v1.0 sweeps.
 6. Continue CivicCore shared-extraction depth only where an active module needs the shared capability.
 7. Add cross-module tests before advertising suite-level workflows.
 8. Update the compatibility matrix, spec, verifier, installer metadata, downstream pins, changelog, tag, and release notes together whenever a release label changes.

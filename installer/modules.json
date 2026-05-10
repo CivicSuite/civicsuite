@@ -150,13 +150,13 @@
                                              "civiccore"
                                          ],
                         "default_port":  8010,
-                        "installer_status":  "v1_0_1_recovery_patch_required_after_open_mode_fix",
+                        "installer_status":  "v1_0_1_recovery_patch_shipped_protected_default",
                         "proof_required":  [
                                                "install",
                                                "health_check",
                                                "restart"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "1.0.1"
                     },
                     {
                         "id":  "civiccode",

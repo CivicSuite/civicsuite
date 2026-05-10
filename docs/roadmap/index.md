@@ -1,4 +1,4 @@
-# CivicSuite Roadmap
+﻿# CivicSuite Roadmap
 
 This roadmap starts from a hard truth: **"all repos have releases" is not the same thing as "a city can run on this suite."** The destination is a deployable, operable, supportable municipal product suite with shared security, identity, upgrade, governance, and integration patterns. The path has to be staged, with hard exit criteria and explicit ownership of the seams where suite projects usually fail.
 
@@ -293,7 +293,7 @@ Exit criteria:
 
 1. Use the shared extraction consumer rollout playbook for the next `civiccore` fan-out work.
 2. Keep extracting reusable `civicrecords-ai` and `civicclerk` capabilities into `civiccore` when they will serve more than one module.
-3. Use `civicclerk v1.0.0` as the second-product reference for mock-city contracts, integration-depth contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.
+3. Use `civicclerk v1.0.1` as the second-product reference for mock-city contracts, integration-depth contracts, unsigned-installer operator guidance, and site-specific deployment proof slots.
 4. Define the shared upgrade-path pattern before broadening more platform dependency fan-out.
 5. Stand up the explicit cross-module integration ownership model for the starter set.
 6. Resolve the CivicAPI and CivicRegWatch ADRs before scaffolding runtime repos.

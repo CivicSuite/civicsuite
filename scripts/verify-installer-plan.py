@@ -16,6 +16,7 @@ MANIFEST = ROOT / "installer" / "modules.json"
 CONTRACT = ROOT / "installer" / "README.md"
 PLAN = ROOT / "docs" / "installer" / "suite-installer-plan.md"
 PLANNER = ROOT / "scripts" / "plan-installer.py"
+INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 CLEANROOM_RUNNER = ROOT / "scripts" / "run-minimal-cleanroom.py"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 WINDOWS_LAUNCHER = ROOT / "installer" / "windows" / "plan-installer.ps1"
@@ -115,6 +116,45 @@ def check_docs() -> list[str]:
         for phrase in REQUIRED_DOC_PHRASES:
             if phrase not in text:
                 errors.append(fail(f"{path.relative_to(ROOT)} missing phrase: {phrase}"))
+    return errors
+
+
+def check_clerk_core_staff_mode_contract() -> list[str]:
+    errors: list[str] = []
+    if not INSTALLER_LIFECYCLE_RUNNER.is_file():
+        return [fail(f"missing {INSTALLER_LIFECYCLE_RUNNER.relative_to(ROOT)}")]
+    spec = importlib.util.spec_from_file_location("run_clerk_core_installer", INSTALLER_LIFECYCLE_RUNNER)
+    if spec is None or spec.loader is None:
+        return [fail("could not load clerk-core installer lifecycle runner")]
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    proof_root = ROOT / "installer" / "reports" / "verify-clerk-auth-default"
+    proof_root.mkdir(parents=True, exist_ok=True)
+    default_env = proof_root / "default.env"
+    open_env = proof_root / "open.env"
+    for path in (default_env, open_env):
+        if path.exists():
+            path.unlink()
+    module.write_clerk_env(default_env)
+    module.write_clerk_env(open_env, staff_mode=module.CLERK_STAFF_MODE_OPEN)
+    default_text = default_env.read_text(encoding="utf-8")
+    open_text = open_env.read_text(encoding="utf-8")
+
+    if "CIVICCLERK_STAFF_AUTH_MODE=protected" not in default_text:
+        errors.append(fail("clerk-core installer default staff mode must be protected"))
+    if "CIVICCLERK_STAFF_AUTH_MODE=open" not in open_text:
+        errors.append(fail("clerk-core installer open mode must remain explicit opt-in"))
+
+    runner_text = INSTALLER_LIFECYCLE_RUNNER.read_text(encoding="utf-8")
+    for phrase in (
+        "--staff-mode",
+        "allows anonymous writes to civicclerk endpoints",
+        "Use ONLY for local rehearsal",
+        "Re-run with --staff-mode protected",
+    ):
+        if phrase not in runner_text:
+            errors.append(fail(f"clerk-core installer staff-mode warning missing phrase: {phrase}"))
     return errors
 
 
@@ -1217,6 +1257,7 @@ def main() -> int:
         except Exception as exc:
             errors.append(fail(f"could not parse manifest: {exc}"))
     errors.extend(check_docs())
+    errors.extend(check_clerk_core_staff_mode_contract())
     errors.extend(check_cleanroom_workflow())
 
     if errors:
