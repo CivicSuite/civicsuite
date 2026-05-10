@@ -38,7 +38,18 @@ Why first now: CivicRecords AI is real and already beyond the v1 question, but i
 
 Definition of Done: read `.agent-workflows/PROJECT_CONTROL_PLANE.md`, the audit punch-list, and CivicRecords AI's own release gates before starting.
 
-Current status: YELLOW, not started in this sprint.
+Current status: RED, halted under directive section 4.7 after partial completion.
+
+Halt evidence:
+
+- CivicRecords AI PR #69 merged at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
+- CivicRecords AI tag `v1.5.0` points at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
+- Local `bash scripts/verify-release.sh` passed with 633 backend tests, 36 frontend tests, 4 Playwright tests, and runtime install proof for `civicrecords-ai==1.5.0` with `civiccore==1.0.1`.
+- PR #69 GitHub CI passed all five checks.
+- GitHub Release `v1.5.0` was not created because `civicrecords-ai/.github/workflows/release.yml` has the audit TEST-022 YAML parse bug in its release-notes HEREDOC block.
+- Halt handoff: `.agent-workflows/HANDOFF_2026-05-10_CIVICRECORDS_AI_V150_PAUSED.md`.
+
+Next action: fix `release.yml`, re-trigger the v1.5.0 release workflow, then resume umbrella truth reconciliation and final handoff.
 
 ## Queued Targets
 

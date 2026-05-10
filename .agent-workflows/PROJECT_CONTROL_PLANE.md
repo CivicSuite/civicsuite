@@ -47,6 +47,16 @@ Active target: CivicRecords AI CivicCore migration and v1.5.0 release.
 
 Why next: CivicRecords AI is the remaining real product with a legacy CivicCore v0.22.1 pin. Migrating it to CivicCore v1.0.1 and releasing v1.5.0 unblocks future full-suite installer truth.
 
+Currently halted:
+
+- Status: RED under directive section 4.7.
+- CivicRecords AI PR #69 merged at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
+- CivicRecords AI tag `v1.5.0` points at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
+- Local release verifier and PR #69 GitHub CI are green.
+- GitHub Release `v1.5.0` does not exist because `civicrecords-ai/.github/workflows/release.yml` fails before jobs start.
+- Halt handoff: `.agent-workflows/HANDOFF_2026-05-10_CIVICRECORDS_AI_V150_PAUSED.md`.
+- Next action: fix audit TEST-022 in `release.yml`, re-run the v1.5.0 release workflow, then resume umbrella truth reconciliation.
+
 Allowed now:
 
 - Read CivicRecords AI, CivicCore, the audit package, and the unified spec for the CivicCore migration.
