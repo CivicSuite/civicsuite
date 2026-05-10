@@ -180,6 +180,16 @@ The initial profile set is defined in `installer/modules.json`:
 - Full Suite: all 26 tracked CivicSuite repos, ordered by dependencies.
 - Custom: operator-selected modules with dependency validation.
 
+Verified v1.0.0 module selector integrations:
+
+- CivicInspect: custom selection resolves CivicCore, CivicCode, CivicPermit,
+  and CivicInspect with CivicCore 1.0.0 and v1 proof requirements.
+- CivicGrants: custom selection resolves CivicCore, CivicRecords AI, and
+  CivicGrants with CivicCore 1.0.0 and v1 proof requirements. CivicRecords AI
+  currently reports a dependency artifact warning in local dry-run evidence
+  because this checkout does not have local `dist` artifacts, but CivicGrants
+  itself resolves its v1.0.0 artifacts, checksum file, and tag.
+
 Initial menu styles:
 
 - Guided: recommended step-by-step setup.

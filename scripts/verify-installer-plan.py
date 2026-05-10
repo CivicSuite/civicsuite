@@ -358,6 +358,44 @@ def check_planner(data: dict[str, object]) -> list[str]:
             if proof not in proof_required:
                 errors.append(fail(f"CivicInspect install action missing proof requirement {proof}"))
 
+    civicgrants_selector = [
+        item
+        for item in selectable
+        if isinstance(item, dict) and item.get("id") == "civicgrants"
+    ]
+    if not civicgrants_selector:
+        errors.append(fail("menu model must expose CivicGrants as a selectable module"))
+    elif civicgrants_selector[0].get("civiccore_requirement") != "1.0.0":
+        errors.append(fail("CivicGrants selector must require CivicCore 1.0.0"))
+
+    civicgrants_plan = module.build_install_plan(
+        manifest=data,
+        profile_id="custom",
+        selected_modules=["civicgrants"],
+        menu_style="guided",
+        host={"system": "Windows", "release": "test", "machine": "x86_64"},
+    )
+    if "civicgrants" not in civicgrants_plan.get("modules", []):
+        errors.append(fail("custom CivicGrants plan must include civicgrants"))
+    for required_dependency in ("civiccore", "civicrecords-ai"):
+        if required_dependency not in civicgrants_plan.get("modules", []):
+            errors.append(fail(f"custom CivicGrants plan missing dependency {required_dependency}"))
+    civicgrants_actions = [
+        action
+        for action in civicgrants_plan.get("actions", [])
+        if isinstance(action, dict) and action.get("module") == "civicgrants"
+    ]
+    if not civicgrants_actions:
+        errors.append(fail("custom CivicGrants plan must include a CivicGrants install action"))
+    else:
+        action = civicgrants_actions[0]
+        if action.get("civiccore_requirement") != "1.0.0":
+            errors.append(fail("CivicGrants install action must require CivicCore 1.0.0"))
+        proof_required = action.get("proof_required", [])
+        for proof in ("module_selection", "install_plan", "artifact_resolution", "health_check", "restart"):
+            if proof not in proof_required:
+                errors.append(fail(f"CivicGrants install action missing proof requirement {proof}"))
+
     readiness_scenarios = {
         "nominal": "ready",
         "missing-docker": "blocked",
