@@ -11,6 +11,14 @@ verified as a selectable/custom module with CivicCore 1.0.0, CivicCode, and
 CivicPermit dependency resolution through the planner. macOS remains beta/YELLOW
 until real macOS lifecycle certification exists.
 
+Update: CivicGrants v1.0.0 was added to the installer/module-selection proof
+path after its module repo release. Custom CivicGrants selection now resolves
+`civiccore`, `civicrecords-ai`, and `civicgrants`; CivicGrants requires
+CivicCore 1.0.0 and uses the v1 proof list: module selection, install plan,
+artifact resolution, health check, and restart. The CivicGrants artifact proof
+resolves `dist\civicgrants-1.0.0-py3-none-any.whl`,
+`dist\civicgrants-1.0.0.tar.gz`, `dist\SHA256SUMS.txt`, and tag `v1.0.0`.
+
 ## Scope Completed
 
 This checkpoint records the first safe installer slice for CivicSuite. The work
