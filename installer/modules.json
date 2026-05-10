@@ -35,7 +35,7 @@
       "id": "land-use",
       "label": "Land Use",
       "description": "Install the land-use and development starter profile.",
-      "modules": ["civiccore", "civiccode", "civiczone", "civicplan", "civicpermit"]
+      "modules": ["civiccore", "civiccode", "civiczone", "civicplan", "civicpermit", "civicinspect"]
     },
     {
       "id": "full-suite",
@@ -197,11 +197,11 @@
       "role": "inspection workflow",
       "selectable": true,
       "required": false,
-      "civiccore_requirement": "0.3.0",
-      "dependencies": ["civiccore", "civicpermit"],
+      "civiccore_requirement": "1.0.0",
+      "dependencies": ["civiccore", "civiccode", "civicpermit"],
       "default_port": 8061,
-      "installer_status": "tracked_suite_module_needs_installer_proof",
-      "proof_required": ["install", "health_check", "restart"]
+      "installer_status": "v1_0_0_released_installer_plan_verified",
+      "proof_required": ["module_selection", "install_plan", "artifact_resolution", "health_check", "restart"]
     },
     {
       "id": "civicgrants",

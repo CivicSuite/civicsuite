@@ -46,6 +46,14 @@ into an operator-facing menu. The dry-run selector model must expose the profile
 choices, selectable modules, and selected menu style before any install behavior
 exists.
 
+Module v1.0.0 release gates now depend on this selector. A CivicSuite module is
+not a complete v1.0.0 product unless it is represented in the
+installer/module-selection path and the planner verifies that the selected
+module can be resolved with its dependencies, CivicCore requirement, and proof
+requirements. If macOS remains beta/YELLOW, Windows/Linux installer integration
+evidence plus an explicit macOS limitation note is acceptable until the macOS
+installer lifecycle gate is solved.
+
 Every warning or failure must say what happened and what the operator should do
 next. Dry-run readiness output must include concrete fix steps before any real
 install behavior is allowed.
@@ -168,7 +176,7 @@ The initial profile set is defined in `installer/modules.json`:
 
 - Minimal: CivicCore only.
 - Clerk Core: CivicCore, CivicRecords AI, CivicClerk.
-- Land Use: CivicCore, CivicCode, CivicZone, CivicPlan, CivicPermit.
+- Land Use: CivicCore, CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect.
 - Full Suite: all 26 tracked CivicSuite repos, ordered by dependencies.
 - Custom: operator-selected modules with dependency validation.
 
