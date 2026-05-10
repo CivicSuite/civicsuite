@@ -8,7 +8,7 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 ## Read Me First
 
-CivicSuite is **not procurement-ready** today. Public release tags exist on multiple module repos, but they are **frozen as provisional** until each repo passes the recovery gates documented in [`docs/release-recovery-status.md`](docs/release-recovery-status.md). False v1.0.0 tags for CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are being replaced with honest recovery labels: CivicCode v0.5.0 and the six scaffold modules v0.2.0. CivicCore and CivicClerk are split out for v1.0.1 recovery patches; CivicRecords AI moves later to v1.5.0 after its CivicCore upgrade.
+CivicSuite is **not procurement-ready** today. Public release tags exist on multiple module repos, but they are **frozen as provisional** until each repo passes the recovery gates documented in [`docs/release-recovery-status.md`](docs/release-recovery-status.md). False v1.0.0 tags for CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are being replaced with honest recovery labels: CivicCode v0.5.0 and the six scaffold modules v0.2.0. CivicCore v1.0.1 is the current shared-platform recovery patch; CivicClerk still needs its v1.0.1 recovery patch after the open-mode default fix. CivicRecords AI moves later to v1.5.0 after its CivicCore upgrade.
 
 Why the freeze: in a five-day window between 2026-05-01 and 2026-05-06, the org pushed multiple v1.0.0 / v0.22.x release labels across 7+ repos as part of a coordination sweep that the project owner subsequently halted. Two follow-on lateral sweeps (2026-05-07 and 2026-05-08) put v1.0.0 tags on `civicinspect`, `civicgrants`, and `civicprocure` against the explicit halt. None of those tags constitute promotion. The recovery-status doc is the operating truth source for which labels are real.
 
@@ -18,21 +18,21 @@ If you are evaluating CivicSuite for a municipality, treat this state as *develo
 
 ## Suite Status
 
-Status snapshot: **2026-05-09**
+Status snapshot: **2026-05-10**
 
 | Tier | Count | What it means today |
 |---|---:|---|
-| Corrective recovery labels | 10 repos | CivicCore and CivicClerk require v1.0.1 recovery patches. CivicRecords AI targets v1.5.0 after its CivicCore upgrade. CivicCode is demoted to v0.5.0. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0. |
+| Corrective recovery labels | 10 repos | CivicCore v1.0.1 is the shared-platform recovery patch. CivicClerk requires a v1.0.1 recovery patch after the open-mode default fix. CivicRecords AI targets v1.5.0 after its CivicCore upgrade. CivicCode is demoted to v0.5.0. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0. |
 | Foundation / planned | 18 of 28 product modules | The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. |
 
-`civiccore` is the shared platform package consumed by every module and is itself under recovery review.
+`civiccore` is the shared platform package consumed by every module; v1.0.1 is the current recovery patch with auth-error-payload hardening.
 
 The most important distinction: **"all repos have releases" is not the same thing as "a city can run on this suite."** That gap is what the recovery gates exist to close.
 
 ## What Is Available Today
 
 - **`civicrecords-ai`** (FOIA / public records) — the most mature product-shaped repo. Its v1.4.10 tag is provisional pending recovery; treat it as a developer preview. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore`** (shared platform) — substantial real subsystems exist (LLM provider abstraction, audit primitives, connector contracts, search helpers, schedule validation). v1.0.0 line is provisional. Repo: <https://github.com/CivicSuite/civiccore>
+- **`civiccore`** (shared platform) — substantial real subsystems exist (LLM provider abstraction, audit primitives, connector contracts, search helpers, schedule validation). v1.0.1 is the current shared-platform recovery patch with auth-error-payload hardening. Repo: <https://github.com/CivicSuite/civiccore>
 - **`civicclerk`** (meetings/agendas/minutes) — substantial workflow code, mock-city test fixtures, first React staff workspace. Provisional v1.0.0 tag. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`civiccode`, `civiczone`, `civicplan`, `civicpermit`** — runtime foundations with bounded shipped surfaces; false v1.0.0 labels are being superseded by CivicCode v0.5.0 and CivicZone/CivicPlan/CivicPermit v0.2.0 recovery releases.
 - **`civicinspect`, `civicgrants`, `civicprocure`** — recently tagged v1.0.0 against the 2026-05-07 halt; false labels are being superseded by v0.2.0 recovery releases.

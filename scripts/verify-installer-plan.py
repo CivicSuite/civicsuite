@@ -312,8 +312,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
     ]
     if not civicinspect_selector:
         errors.append(fail("menu model must expose CivicInspect as a selectable module"))
-    elif civicinspect_selector[0].get("civiccore_requirement") != "1.0.0":
-        errors.append(fail("CivicInspect selector must require CivicCore 1.0.0"))
+    elif civicinspect_selector[0].get("civiccore_requirement") != "1.0.1":
+        errors.append(fail("CivicInspect selector must require CivicCore 1.0.1"))
 
     civicinspect_plan = module.build_install_plan(
         manifest=data,
@@ -336,8 +336,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(fail("custom CivicInspect plan must include a CivicInspect install action"))
     else:
         action = civicinspect_actions[0]
-        if action.get("civiccore_requirement") != "1.0.0":
-            errors.append(fail("CivicInspect install action must require CivicCore 1.0.0"))
+        if action.get("civiccore_requirement") != "1.0.1":
+            errors.append(fail("CivicInspect install action must require CivicCore 1.0.1"))
         proof_required = action.get("proof_required", [])
         for proof in ("module_selection", "install_plan", "artifact_resolution", "health_check", "restart"):
             if proof not in proof_required:
@@ -350,8 +350,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
     ]
     if not civicgrants_selector:
         errors.append(fail("menu model must expose CivicGrants as a selectable module"))
-    elif civicgrants_selector[0].get("civiccore_requirement") != "1.0.0":
-        errors.append(fail("CivicGrants selector must require CivicCore 1.0.0"))
+    elif civicgrants_selector[0].get("civiccore_requirement") != "1.0.1":
+        errors.append(fail("CivicGrants selector must require CivicCore 1.0.1"))
 
     civicgrants_plan = module.build_install_plan(
         manifest=data,
@@ -374,8 +374,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(fail("custom CivicGrants plan must include a CivicGrants install action"))
     else:
         action = civicgrants_actions[0]
-        if action.get("civiccore_requirement") != "1.0.0":
-            errors.append(fail("CivicGrants install action must require CivicCore 1.0.0"))
+        if action.get("civiccore_requirement") != "1.0.1":
+            errors.append(fail("CivicGrants install action must require CivicCore 1.0.1"))
         proof_required = action.get("proof_required", [])
         for proof in ("module_selection", "install_plan", "artifact_resolution", "health_check", "restart"):
             if proof not in proof_required:
@@ -388,8 +388,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
     ]
     if not civicprocure_selector:
         errors.append(fail("menu model must expose CivicProcure as a selectable module"))
-    elif civicprocure_selector[0].get("civiccore_requirement") != "1.0.0":
-        errors.append(fail("CivicProcure selector must require CivicCore 1.0.0"))
+    elif civicprocure_selector[0].get("civiccore_requirement") != "1.0.1":
+        errors.append(fail("CivicProcure selector must require CivicCore 1.0.1"))
 
     civicprocure_plan = module.build_install_plan(
         manifest=data,
@@ -412,8 +412,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(fail("custom CivicProcure plan must include a CivicProcure install action"))
     else:
         action = civicprocure_actions[0]
-        if action.get("civiccore_requirement") != "1.0.0":
-            errors.append(fail("CivicProcure install action must require CivicCore 1.0.0"))
+        if action.get("civiccore_requirement") != "1.0.1":
+            errors.append(fail("CivicProcure install action must require CivicCore 1.0.1"))
         proof_required = action.get("proof_required", [])
         for proof in ("module_selection", "install_plan", "artifact_resolution", "health_check", "restart"):
             if proof not in proof_required:
@@ -886,7 +886,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
         if boundary.get("does_not_start_services") is not True:
             errors.append(fail("minimal install kit must not start services"))
     requirements = GENERATED_MINIMAL / "requirements.txt"
-    if requirements.is_file() and "civiccore-1.0.0-py3-none-any.whl" not in requirements.read_text(encoding="utf-8"):
+    if requirements.is_file() and "civiccore-1.0.1-py3-none-any.whl" not in requirements.read_text(encoding="utf-8"):
         errors.append(fail("minimal install kit requirements must point to the CivicCore wheel"))
 
     try:

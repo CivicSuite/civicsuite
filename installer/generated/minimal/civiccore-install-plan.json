@@ -1,10 +1,10 @@
 {
   "civiccore": {
-    "local_artifact": "C:/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.0-py3-none-any.whl",
-    "local_artifact_posix": "/mnt/c/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.0-py3-none-any.whl",
+    "local_artifact": "C:/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.1-py3-none-any.whl",
+    "local_artifact_posix": "/mnt/c/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.1-py3-none-any.whl",
     "repo_path": "/mnt/c/Users/scott/OneDrive/Desktop/Claude/civiccore",
     "verify_command": "python -c \"import civiccore; print(civiccore.__version__)\"",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "generated_by": "scripts/plan-installer.py --generate-install-kit",
   "modules": [

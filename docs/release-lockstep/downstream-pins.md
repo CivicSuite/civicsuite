@@ -19,6 +19,19 @@ For this recovery batch:
 | CivicSuite/civicgrants | `release/demote-false-v1` | 0.2.0 | same hash-locked CivicCore wheel |
 | CivicSuite/civicprocure | `release/demote-false-v1` | 0.2.0 | same hash-locked CivicCore wheel |
 
+For the CivicCore v1.0.1 security-hardening recovery patch:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicinspect | #8 | 0.2.0 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+| CivicSuite/civiczone | #17 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicgrants | #7 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicprocure | #7 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civiccode | #54 | 0.5.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicplan | #9 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicpermit | #10 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicclerk | #155 | 1.0.0 | same hash-locked CivicCore wheel |
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`
