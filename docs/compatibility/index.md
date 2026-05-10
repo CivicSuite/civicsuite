@@ -1,4 +1,4 @@
-# CivicCore <-> Module Compatibility Matrix
+﻿# CivicCore <-> Module Compatibility Matrix
 
 This matrix tracks the compatibility contract between the shared `civiccore`
 package and the suite modules that consume it. It is the suite's
@@ -14,7 +14,7 @@ provisional until the repo passes the recovery gates in
 |-----------------|--------------------------------|-----------------|------------|----------------------------|---------------|-------|
 | civiccore       | CivicSuite/civiccore           | 1.0.1           | 2026-05-10 | n/a                        | 2026-05-10    | Recovery patch shipped with auth-error-payload hardening; v1.0 is superseded. |
 | civicrecords-ai | CivicSuite/civicrecords-ai     | 1.4.10          | 2026-05-03 | `==0.22.1`                 | 2026-05-07    | Public tag exists; recovery status is provisional. The repo must reconcile its current release label with its own changelog language before promotion. |
-| civicclerk      | CivicSuite/civicclerk          | 1.0.0           | 2026-05-06 | `==1.0.1`                  | 2026-05-10    | CivicCore pin bumped to v1.0.1; CivicClerk v1.0.1 recovery patch still requires the open-mode default fix before promotion. |
+| civicclerk      | CivicSuite/civicclerk          | 1.0.1           | 2026-05-10 | `==1.0.1`                  | 2026-05-10    | Recovery patch shipped with protected staff auth defaults; anonymous staff writes are denied by default. |
 | civicregwatch   | CivicSuite/civicregwatch       | planned         | not released | TBD                      | 2026-04-30    | New planned federal regulatory intelligence module. Implementation spec exists in `specs/05_civicregwatch.md`; repo and civiccore pin are not scaffolded yet. |
 | civicapi        | CivicSuite/civicapi            | planned         | not released | TBD                      | 2026-04-30    | New planned public read-only data gateway module. Implementation spec exists in `specs/06_civicapi.md`; repo and civiccore pin are not scaffolded yet. |
 | civiccode       | CivicSuite/civiccode           | 0.5.0           | 2026-05-10 | `==1.0.1`                  | 2026-05-10    | Demoted from false v1.0.0 to honest recovery label. Meaningful runtime depth exists, but not v1.0 product-ready. |

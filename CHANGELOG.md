@@ -22,6 +22,7 @@ This changelog will be split going forward: (a) doc / governance / spec changes 
 ### Changed
 
 - **2026-05-10.** chore: civiccore v1.0.1 suite-truth reconciliation. The umbrella truth surface now records CivicCore [v1.0.1](https://github.com/CivicSuite/civiccore/releases/tag/v1.0.1) as the current shared-platform recovery patch, including auth-error-payload hardening documented by [`docs/audits/civiccore-audit-full-2026-05-07.md`](docs/audits/civiccore-audit-full-2026-05-07.md). Downstream CivicCore pins for CivicClerk, CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure now reconcile to the v1.0.1 wheel.
+- **2026-05-10.** chore: civicclerk v1.0.1 suite-truth reconciliation. CivicClerk [v1.0.1](https://github.com/CivicSuite/civicclerk/releases/tag/v1.0.1) is now the current recovery label after the QA-001 security-default fix. Fresh installs deny anonymous staff writes by default, `open` mode is explicit opt-in for local rehearsal, and installer truth now records the protected default.
 
 ### Added
 

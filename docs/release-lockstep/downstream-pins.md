@@ -32,6 +32,12 @@ For the CivicCore v1.0.1 security-hardening recovery patch:
 | CivicSuite/civicpermit | #10 | 0.2.0 | same hash-locked CivicCore wheel |
 | CivicSuite/civicclerk | #155 | 1.0.0 | same hash-locked CivicCore wheel |
 
+For the CivicClerk v1.0.1 QA-001 security-default recovery patch:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicclerk | #156 | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`

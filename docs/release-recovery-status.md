@@ -23,7 +23,7 @@ Demotion pattern:
 | Repo | Previous public label | Corrective label | Decision |
 |---|---:|---:|---|
 | civiccore | v1.0.0 / v1.0 | v1.0.1 shipped | Real platform; release-hygiene patch, not demotion. v1.0.1 shipped 2026-05-10 with auth-error-payload hardening (5 fields removed); v1.0 superseded. |
-| civicclerk | v1.0.0 | v1.0.1 next | Real product-shaped workflow; patch after open-mode default fix, not demotion. |
+| civicclerk | v1.0.0 | v1.0.1 shipped | Real product-shaped workflow; v1.0.1 shipped 2026-05-10 with QA-001 security default change. Fresh installs deny anonymous staff writes by default; open mode is explicit local-rehearsal opt-in. |
 | civicrecords-ai | v1.4.10 | v1.5.0 next | Upgrade to CivicCore v1.0.1, then minor recovery release. |
 | civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. |
 | civiczone | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
@@ -55,6 +55,7 @@ Demotion pattern:
 - **2026-05-09:** external audit identified 154 findings and confirmed the false-label pattern.
 - **2026-05-10:** corrective decision recorded: CivicCode -> v0.5.0; CivicZone/CivicPlan/CivicPermit/CivicInspect/CivicGrants/CivicProcure -> v0.2.0; CivicCore/CivicClerk/CivicRecords AI split into recovery releases.
 - **2026-05-10:** CivicCore v1.0.1 shipped as a recovery patch with auth-error-payload hardening. The auth hardening removes `token_roles`, `principal`, `principal_roles`, `client_host`, and `trusted_proxy_cidrs` from CivicCore auth error responses; CivicCore v1.0 is superseded.
+- **2026-05-10:** CivicClerk v1.0.1 shipped as a recovery patch for QA-001. The default staff auth mode is now `protected`; anonymous writes to `/meeting-bodies`, `/meetings`, `/motions`, and `/votes` return 401 by default. `open` mode remains available only as an explicit local-rehearsal opt-in.
 
 ## Language Rules
 
