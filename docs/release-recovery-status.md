@@ -1,63 +1,62 @@
 # CivicSuite Release Recovery Status
 
-Status date: 2026-05-07
+Status date: 2026-05-10
 
 ## Current Rule
 
-Public "shipping", "product-ready", "city-ready", and "v1.0.0 proves
-release maturity" claims are frozen across the CivicSuite family until each
-repo re-earns that status through the recovery gates below.
+Public "shipping", "product-ready", "city-ready", and "v1.0.0 proves release maturity" claims are blocked unless the module appears below with an explicit recovery-passed status. The 2026-05-09 external audit found that multiple v1.0.0 labels were false.
 
-Existing GitHub tags remain historical release artifacts. They must be treated
-as provisional labels, not procurement or production-readiness claims, unless a
-repo has passed its recovery gate after this document's status date.
+## Corrective Decision
 
-## Recovery Gates
+The project owner selected Option 1: yank/demote false v1.0 releases, but do not re-tag v1.0.0 at a different SHA.
 
-Each repo must pass all applicable gates before any public doc calls it
-product-ready, shipping, city-ready, or a completed v1 product:
+Demotion pattern:
 
-1. Full audit packet using the workspace `audit-full` standard.
-2. Careful-coding evidence for every non-trivial fix.
-3. Real user-flow Playwright tests for every frontend product path.
-4. Runtime install proof from a clean environment.
-5. Version and compatibility consistency checks across source, docs, tags, and matrix.
-6. Security scans for code, dependency, and secret risks.
-7. Documentation source-of-truth enforcement.
-8. Explicit mock-vs-production labeling for every integration, identity, connector, backup, vendor, and AI claim.
-9. Release notes that separate code changes from docs-only changes.
-10. CI evidence that publishes or links the artifacts used to make the claim.
+- Delete or supersede the false GitHub v1.0.0 release page.
+- Publish a new honest version label instead of rewriting v1.0.0 history.
+- Publish wheels using the honest version filename.
+- Keep CivicCore URL pins hash-locked with `#sha256=`.
+- Update the unified spec, this recovery doc, the compatibility matrix, `scripts/verify-suite-state.py`, `installer/modules.json`, downstream `pyproject.toml`, and changelog together.
 
-## Current Repo Status
+## Module Decision Table
 
-| Repo | Public label before recovery | Recovery status |
-|---|---|---|
-| civicrecords-ai | v1.4.10 shipping flagship | Provisional; do not promote until recovery gate passes. |
-| civiccore | v1.0 shared platform | Provisional; do not promote until recovery gate passes. |
-| civicclerk | v1.0.0 productizing candidate | Provisional; do not promote until recovery gate passes. |
-| civiccode | v1.0.0 / active productization line | Provisional; do not promote until recovery gate passes. |
-| civiczone | v1.0.0 | Provisional; do not promote until recovery gate passes. |
-| civicplan | v1.0.0 | Provisional; do not promote until recovery gate passes. |
-| civicpermit | v1.0.0 | Provisional; do not promote until recovery gate passes. |
-| civicinspect and remaining modules | v0.1.x foundations | Foundation only; not product-ready. |
+| Repo | Previous public label | Corrective label | Decision |
+|---|---:|---:|---|
+| civiccore | v1.0.0 / v1.0 | v1.0.1 next | Real platform; release-hygiene patch, not demotion. |
+| civicclerk | v1.0.0 | v1.0.1 next | Real product-shaped workflow; patch after open-mode default fix, not demotion. |
+| civicrecords-ai | v1.4.10 | v1.5.0 next | Upgrade to CivicCore v1.0.0, then minor recovery release. |
+| civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. |
+| civiczone | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
+| civicplan | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
+| civicpermit | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
+| civicinspect | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. |
+| civicgrants | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. |
+| civicprocure | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. |
+
+## Recovery Gates Before Any Future v1 Claim
+
+1. Unified spec scope checked for the module.
+2. Required features implemented or intentionally deferred in release notes.
+3. Browser-verified UX at desktop and mobile widths for every user-facing path.
+4. Loading, success, empty, error, and partial states checked where applicable.
+5. Browser console, keyboard/focus, accessibility, and copy review recorded.
+6. Adversarial mock validation completed for integration behavior.
+7. Full local tests and lint/static checks pass.
+8. `scripts/verify-release.sh` passes if present.
+9. Documentation updated: README, CHANGELOG, user manual, security/release notes, docs index, and module docs.
+10. Independent release-gate audit has no unresolved Blocker or Critical findings.
+11. Installer/module-selection integration is proven for the module.
+12. CI is green after push/merge/release.
+
+## Drift Incident Log
+
+- **2026-05-07:** the owner halted lateral release sweeping and required active-module locking.
+- **2026-05-08 to 2026-05-10:** CivicInspect, CivicGrants, CivicProcure, and other scaffold-depth repos were treated as v1.0.0 despite insufficient product depth.
+- **2026-05-09:** external audit identified 154 findings and confirmed the false-label pattern.
+- **2026-05-10:** corrective decision recorded: CivicCode -> v0.5.0; CivicZone/CivicPlan/CivicPermit/CivicInspect/CivicGrants/CivicProcure -> v0.2.0; CivicCore/CivicClerk/CivicRecords AI split into recovery releases.
 
 ## Language Rules
 
-Use:
+Use: "demoted recovery label", "developer preview", "foundation surface", "mock integration", "recovery patch required".
 
-- "public tag exists"
-- "historical release artifact"
-- "provisional release label"
-- "foundation surface"
-- "mock contract fixture"
-- "docs-render smoke"
-
-Do not use until a recovery gate passes:
-
-- "product-ready"
-- "city-ready"
-- "shipping product"
-- "production-usable"
-- "browser QA" for static docs rendering
-- "ships OIDC/vendor/backup integration" when only a mock or fixture exists
-
+Do not use for demoted modules: "v1.0.0", "product-ready", "city-ready", "shipping product", "production-usable", or "done".

@@ -252,34 +252,6 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicpermit",
             "civicinspect",
         ],
-        "full-suite": [
-            "civiccore",
-            "civicrecords-ai",
-            "civicclerk",
-            "civiccode",
-            "civiczone",
-            "civicaccess",
-            "civicplan",
-            "civicpermit",
-            "civicinspect",
-            "civicgrants",
-            "civicprocure",
-            "civiccontracts",
-            "civicboards",
-            "civicnotice",
-            "civic311",
-            "civiccomms",
-            "civicdata",
-            "civichr",
-            "civicbudget",
-            "civiclegal",
-            "civicelections",
-            "civicutility",
-            "civiccourt",
-            "civicsafety",
-            "civiclibrary",
-            "civicparks",
-        ],
     }
     for profile, expected_modules in scenarios.items():
         plan = module.build_install_plan(
@@ -303,6 +275,19 @@ def check_planner(data: dict[str, object]) -> list[str]:
             errors.append(fail(f"{profile} plan must end with verify_profile"))
         if plan.get("menu_style", {}).get("id") != "guided":
             errors.append(fail(f"{profile} plan missing guided menu style"))
+
+    try:
+        module.build_install_plan(
+            manifest=data,
+            profile_id="full-suite",
+            menu_style="guided",
+            host={"system": "Windows", "release": "test", "machine": "x86_64"},
+        )
+    except Exception as exc:
+        if "Profile full-suite is disabled" not in str(exc):
+            errors.append(fail(f"full-suite failed with wrong disabled-profile error: {exc}"))
+    else:
+        errors.append(fail("full-suite profile should be disabled until CivicRecords AI and demoted labels are reconciled"))
 
     menu_model = module.build_menu_model(manifest=data, menu_style="department")
     if menu_model.get("mutates_host") is not False:

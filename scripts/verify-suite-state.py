@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
+UNIFIED_SPEC = ROOT / "docs" / "CivicSuiteUnifiedSpec.md"
 CURRENT_PLATFORM_CIVICCORE = "1.0.0"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 
@@ -95,16 +96,16 @@ REPOS: tuple[RepoSpec, ...] = (
         "civiccode",
         "CivicSuite/civiccode",
         "civiccode",
-        "1.0.0",
+        "0.5.0",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
-    RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
     RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicplan", "CivicSuite/civicplan", "civicplan", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicpermit", "CivicSuite/civicpermit", "civicpermit", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicinspect", "CivicSuite/civicinspect", "civicinspect", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicgrants", "CivicSuite/civicgrants", "civicgrants", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "1.0.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicplan", "CivicSuite/civicplan", "civicplan", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicpermit", "CivicSuite/civicpermit", "civicpermit", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicinspect", "CivicSuite/civicinspect", "civicinspect", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicgrants", "CivicSuite/civicgrants", "civicgrants", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
+    RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
     RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
     RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
     RepoSpec(
@@ -142,6 +143,22 @@ def read_pyproject(path: Path) -> dict[str, object]:
 
 def compatibility_text() -> str:
     return COMPATIBILITY_MATRIX.read_text(encoding="utf-8")
+
+
+def spec_versions() -> dict[str, str]:
+    text = UNIFIED_SPEC.read_text(encoding="utf-8")
+    match = re.search(
+        r"## 18\. Current Shipped State(?P<section>.*?)(?=## 19\. Post-Foundation Build Sequence)",
+        text,
+        flags=re.S,
+    )
+    if not match:
+        return {}
+    versions: dict[str, str] = {}
+    row_pattern = re.compile(r"^\|\s*(civic[\w-]+)\s*\|\s*([0-9]+\.[0-9]+\.[0-9]+)\s*\|", re.M)
+    for repo, version in row_pattern.findall(match.group("section")):
+        versions[repo] = version
+    return versions
 
 
 def run_json(command: list[str]) -> tuple[int, dict[str, object] | None, str]:
@@ -212,6 +229,19 @@ def check_compatibility_matrix(spec: RepoSpec, matrix: str, remote_only: bool) -
     return errors
 
 
+def check_unified_spec(spec: RepoSpec, versions: dict[str, str]) -> list[str]:
+    if spec.name not in versions:
+        return []
+    if versions[spec.name] != spec.version:
+        return [
+            fail(
+                f"UnifiedSpec section 18 version {versions[spec.name]!r} "
+                f"!= RepoSpec version {spec.version!r}"
+            )
+        ]
+    return []
+
+
 def check_release(spec: RepoSpec, remote_only: bool) -> list[str]:
     tag = spec.tag(remote_only)
     code, data, message = run_json(
@@ -241,7 +271,13 @@ def check_release(spec: RepoSpec, remote_only: bool) -> list[str]:
     return errors
 
 
-def check_repo(spec: RepoSpec, matrix: str, remote: bool, remote_only: bool) -> list[str]:
+def check_repo(
+    spec: RepoSpec,
+    matrix: str,
+    spec_version_map: dict[str, str],
+    remote: bool,
+    remote_only: bool,
+) -> list[str]:
     repo_path = WORKSPACE / spec.local_dir
     errors = []
     if not remote_only:
@@ -250,6 +286,7 @@ def check_repo(spec: RepoSpec, matrix: str, remote: bool, remote_only: bool) -> 
         errors.extend(check_required_artifacts(repo_path))
         errors.extend(check_pyproject(spec, repo_path))
     errors.extend(check_compatibility_matrix(spec, matrix, remote_only=remote_only))
+    errors.extend(check_unified_spec(spec, spec_version_map))
     if remote:
         errors.extend(check_release(spec, remote_only=remote_only))
     return errors
@@ -272,6 +309,7 @@ def main() -> int:
         args.remote = True
 
     matrix = compatibility_text()
+    spec_version_map = spec_versions()
     any_failures = False
     print("==> CivicSuite suite-state verification")
     print(f"workspace: {WORKSPACE}")
@@ -280,7 +318,13 @@ def main() -> int:
     print(f"local sibling clone checks: {'disabled' if args.remote_only else 'enabled'}")
 
     for spec in REPOS:
-        errors = check_repo(spec, matrix, remote=args.remote, remote_only=args.remote_only)
+        errors = check_repo(
+            spec,
+            matrix,
+            spec_version_map,
+            remote=args.remote,
+            remote_only=args.remote_only,
+        )
         if errors:
             any_failures = True
             print(f"[{spec.name}] FAIL")

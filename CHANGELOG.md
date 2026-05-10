@@ -5,9 +5,36 @@ All notable changes to the civicsuite umbrella repo are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## Release recovery notice (2026-05-09)
+
+The block of entries below dated 2026-05-01 through 2026-05-08 referring to "compatibility publication," "shipping records product," "shipping flagship," "v1.0.0," and similar promotion-language are **doc-update entries against tags that are now frozen pending recovery gates** (see `docs/release-recovery-status.md`). They are preserved here as historical record but should not be read as ship signals.
+
+The 2026-05-07 release-workflow-failure handoff (`HANDOFF_2026-05-07_CIVICSUITE_RELEASE_WORKFLOW_FAILURE_AND_SHUTDOWN.md`) explains the context: a lateral v1.0 sweep across multiple repos was halted by the project owner. Three of those repos (civicinspect, civicgrants, civicprocure) subsequently received v1.0.0 tags between 2026-05-07 and 2026-05-08 in a continuation of the same workflow violation. None of those tags constitute promotion.
+
+This changelog will be split going forward: (a) doc / governance / spec changes go here; (b) per-module ship signals go in each module's own CHANGELOG. Inline version numbers in this file may be stale; the canonical pairing source is [docs/compatibility/index.md](docs/compatibility/index.md).
+
+---
+
 ## [Unreleased]
 
 ### Added
+
+- **2026-05-09.** Drafted umbrella documentation rewrite suite at `audit-civicsuite-2026-05-09/doc-rewrites/`: refreshed README, new STATUS.md (module-by-module honest status), new FAQ.md (civic-operator FAQ), new ARCHITECTURE.md (with Mermaid suite diagram), refreshed USER-MANUAL.md with "Your first task" walkthrough, and updated release-recovery-status.md with drift incident log for the three v1.0.0 drift repos.
+- **2026-05-09.** Documented the three v1.0.0 drift repos (civicinspect, civicgrants, civicprocure) in the recovery-status doc.
+
+### Changed
+
+- **2026-05-09.** Reframed the 2026-05-01 → 2026-05-08 changelog cluster as doc-update entries (release recovery notice above).
+
+---
+
+## Historical entries (preserved; framing reset by 2026-05-09 recovery notice above)
+
+The following entries are kept as historical record. Their inline "shipping," "compatibility publication," "v1.0.0," and similar promotion language refers to release labels that are currently **frozen pending recovery**. Do not read these as ship signals.
+
+### Added (pre-recovery)
 
 - **Deployment profile wheel-contract fix** (2026-05-06): the post-foundation
   Docker demo now pins CivicCode `v0.1.18` to the published `civiccore v0.22.0`
@@ -19,94 +46,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   README, README.txt, user manual, roadmap, and landing page now record
   CivicCore `v1.0.0`, CivicClerk `v1.0.0`, CivicCode `v0.1.18`, and the
   current local CivicNotice `v0.1.2` split instead of stale pre-1.0 values.
+
+  *(Recovery note: these label changes are doc reflections of release tags now under recovery freeze.)*
+
 - **CO-7 CivicCore freeze lockstep** (2026-05-05): compatibility matrix,
   suite-state verifier, and unified spec now record CivicCore `v0.22.1` as the
   attested baseline and document the placeholder-namespace audit before the
   freeze-line tag.
-- **CivicCode v0.1.17 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, roadmap, and unified spec now record the durable codifier sync source-state release, release-provenance gate documentation, and continued `civiccore v0.22.0` dependency line.
-- **CivicCode v0.1.16 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable local import-job ledger release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
-- **CivicCode v0.1.15 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable CivicClerk ordinance handoff and handoff audit-event persistence release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
-- **CivicCode v0.1.14 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable staff interpretation-note and plain-language summary persistence release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
-- **CivicCode v0.1.13 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable section/version lifecycle release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
-- **CivicCode v0.1.12 compatibility publication** (2026-05-04): compatibility matrix, suite-state verifier, README, README.txt, user manual, landing page, and unified spec now record the durable popular-question discovery release while keeping CivicCode aligned to the published `civiccore v0.22.0` dependency line.
-- **CivicCode v0.1.7 compatibility publication** (2026-05-03): compatibility matrix, suite-state verifier, deployment-profile verifier, post-foundation demo compose profile, README, README.txt, user manual, landing page, diagrams, roadmap, and unified spec now record the codifier live-sync foundation release while aligning CivicCode to the published `civiccore v0.21.0` dependency line.
-- **CivicCode v0.1.6 compatibility publication** (2026-05-03): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, user manual, landing page, diagrams, and unified spec now record the reusable mock-city codifier contract release while aligning CivicCode to the published `civiccore v0.21.0` dependency line.
-- **CivicCore v0.21.0 / CivicRecords AI v1.4.8 / CivicClerk v0.1.19 compatibility publication** (2026-05-03): compatibility matrix, README, README.txt, user manual, landing page, roadmap, deployment profile, suite-state verifier, and unified spec now record shared schedule validation in `civiccore`, CivicRecords AI consuming the published `civiccore v0.21.0` scheduling helpers, and CivicClerk publishing the v0.1.19 CivicCore alignment release. CivicClerk remains developer-finished/pilot-ready with site-specific production proofs still external.
-- **CivicCore v0.20.0 / CivicRecords AI v1.4.7 / CivicClerk v0.1.18 compatibility publication** (2026-05-02): compatibility matrix, README, README.txt, user manual, landing page, roadmap, and unified spec now record shared startup configuration validation in `civiccore`, plus CivicRecords AI and CivicClerk consuming the published `civiccore v0.20.0` release line.
-- **CivicCode v0.1.5 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, landing page, and unified spec now record the staff code lifecycle workspace release while keeping CivicCode on the published `civiccore v0.19.0` dependency line.
-- **CivicCode v0.1.4 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, landing page, diagrams, and unified spec now record CivicCode as the active municipal-code productization lane with the staff source registry workspace, staff-header-protected source operations, and published `civiccore v0.19.0` dependency.
-- **CivicCode v0.1.2 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, landing page, and unified spec now record CivicCode consuming the published `civiccore v0.19.0` release wheel while shipping the source-registry persistence foundation.
-- **CivicCore v0.19.0 / CivicRecords AI v1.4.6 / CivicClerk v0.1.17 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, user manual, landing page, roadmap, and unified spec now record the reusable vendor-delta and mock-city contract extraction in `civiccore`, plus CivicRecords AI and CivicClerk consuming the published `civiccore v0.19.0` release line.
-- **CivicCore v0.18.1 / CivicRecords AI v1.4.5 / CivicClerk v0.1.16 compatibility publication** (2026-05-02): compatibility matrix, suite-state verifier, deployment-profile verifier, README, README.txt, user manual, landing page, roadmap, and unified spec now record the shared live-sync retry/circuit primitive rollout plus CivicClerk's reusable mock municipal IdP and backup-retention/off-host contract suites. CivicRecords AI and CivicClerk both consume the published `civiccore v0.18.1` release line, and CivicClerk v0.1.16 is published with the CivicCore sync-consumer, mock-city auth, and backup-readiness milestones.
-- **Roadmap precision after CivicClerk OIDC/live-sync completion** (2026-05-02): current-priority language now treats OIDC browser-session support and vendor-network live sync as shipped foundations, narrows remaining CivicClerk production work to municipal IdP configuration proof and deployment hardening, and documents unsigned Windows installer warnings as the expected developer-cycle posture until a certificate is available.
-- **CivicRecords AI v1.4.4 compatibility publication** (2026-05-01): compatibility matrix, suite-state verifier, README, README.txt, landing page, and unified spec now record CivicRecords AI v1.4.4 as the published shipping records product on `civiccore v0.17.0`, including persisted audit-log hash/verification helper reuse and published installer/checksum release assets.
-- **CivicClerk v0.1.13 compatibility publication** (2026-05-01): compatibility matrix now records CivicClerk v0.1.13 as the published release on `civiccore v0.17.0` after the release workflow published the wheel, sdist, and checksum assets for the React/Docker product rehearsal, enterprise signing-readiness, and scheduled local connector-sync milestone.
-- **CivicRegWatch and CivicAPI planning specs** (2026-04-30): added `specs/05_civicregwatch.md` and `specs/06_civicapi.md`, integrated both modules into the unified suite spec, and synchronized the umbrella README, user manual, landing page, roadmap, compatibility matrix, catalog, charter, and consistency reference around the new 28-product-module count.
-- **Compatibility matrix catch-up for active CivicCore rollout lines** (2026-04-29): README, README.txt, user manual, landing page, and compatibility matrix now reflect the current mixed shared-platform state: `civiccore v0.11.0`, `civicclerk v0.1.4` on `v0.11.0`, `civiclegal v0.1.2` on `v0.11.0`, `civicrecords-ai v1.4.1` on `v0.10.0`, and the earlier auth-rollout consumers (`civicbudget`, `civiccourt`, `civicdata`) on `v0.4.0`.
-- **Continuity gate and canonical roadmap reset** (2026-04-29): added `SUCCESSION.md`, rewrote the roadmap index around the phased product-program plan, updated the governance index, and reset the umbrella README/README.txt/landing page to the explicit `Shipping / Productizing / Foundation` taxonomy so suite-level docs no longer imply that “all repos have releases” means “city-ready suite.”
-- **Phase 0 continuity closeout** (2026-04-29): documented the active second org owner (`APirateMonk`), recorded the current tag-driven GitHub release custody model for `civiccore` and `civicrecords-ai`, and advanced the umbrella continuity status from “blocked on single owner” to “continuity baseline complete.”
 
-- **CivicRecords AI v1.4.1 compatibility update** (2026-04-28): compatibility matrix, suite-state verifier, README, README.txt, and landing page now reflect the CivicRecords AI patch release pinned to `civiccore==0.3.0`.
-- **Civic311 v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the Civic311 dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicNotice v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicNotice dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicBoards v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicBoards dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicContracts v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicContracts dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicProcure v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicProcure dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicGrants v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicGrants dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicInspect v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicInspect dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicPermit v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicPermit dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicCode v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, deployment profile verifier, and suite-state verifier now reflect the CivicCode dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicZone v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, deployment profile verifier, and suite-state verifier now reflect the CivicZone dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicAccess v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicAccess dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicPlan v0.1.1 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the CivicPlan dependency-alignment release pinned to `civiccore==0.3.0`.
-- **CivicClerk production-depth staff screens update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, deployment profile verifier, and suite-state verifier now reflect post-release live `/staff` screens for connector import and packet export alongside the existing intake, notice, outcomes, minutes, and archive screens.
-- **CivicCore v0.3.0 compatibility update** (2026-04-28): README, user manual, landing page, unified spec current-state section, compatibility matrix, and suite-state verifier now reflect the published v0.3.0 shared-primitives release while most existing module pins remain `==0.2.0` until consumer updates.
-- Added `docs/roadmap/civiccode-next-module-plan.md` as the historical CivicCode planning artifact that unblocked CivicZone runtime work.
-- **CivicZone v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicZone runtime release pinned to `civiccore==0.2.0`.
-- **CivicAccess v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicAccess runtime release pinned to `civiccore==0.2.0`.
-- **CivicPlan v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicPlan runtime release pinned to `civiccore==0.2.0`.
-- **CivicPermit v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicPermit runtime release pinned to `civiccore==0.2.0`.
-- **CivicInspect v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicInspect runtime release pinned to `civiccore==0.2.0`.
-- **CivicGrants v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicGrants runtime release pinned to `civiccore==0.2.0`.
-- **CivicProcure v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicProcure runtime release pinned to `civiccore==0.2.0`.
-- **CivicContracts v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicContracts runtime release pinned to `civiccore==0.2.0`.
-- **CivicBoards v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicBoards runtime release pinned to `civiccore==0.2.0`.
-- **CivicNotice v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicNotice runtime release pinned to `civiccore==0.2.0`.
-- **Civic311 v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first Civic311 runtime release pinned to `civiccore==0.2.0`.
-- **CivicComms v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicComms runtime release pinned to `civiccore==0.2.0`.
-- **CivicData Bridge v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicData runtime release pinned to `civiccore==0.2.0`.
-- **CivicHR v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicHR runtime release pinned to `civiccore==0.2.0`.
-- **CivicBudget v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicBudget runtime release pinned to `civiccore==0.2.0`.
-- **CivicLegal v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicLegal runtime release pinned to `civiccore==0.2.0`.
-- **CivicElections v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicElections runtime release pinned to `civiccore==0.2.0`.
-- **CivicCourt v0.1.0 compatibility update** (2026-04-27): README, README.txt, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicCourt runtime release pinned to `civiccore==0.2.0`.
-- **CivicSafety v0.1.0 compatibility update** (2026-04-27): README, README.txt, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicSafety runtime release pinned to `civiccore==0.2.0`.
-- **CivicLibrary v0.1.0 compatibility update** (2026-04-27): README, README.txt, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicLibrary runtime release pinned to `civiccore==0.2.0`.
-- **CivicParks v0.1.0 compatibility update** (2026-04-27): README, README.txt, landing page, roadmap, unified spec current-state section, architecture diagram, and compatibility matrix now reflect the first CivicParks runtime release pinned to `civiccore==0.2.0`.
-- **Post-foundation sequence correction** (2026-04-27): unified spec section 19 now describes post-foundation hardening instead of the completed next-module build lane.
-- **Post-foundation hardening plan** (2026-04-27): roadmap now links the active suite hardening plan covering suite-state verification, deployment profile, shared shell boundaries, connector templates, CivicCore v0.3.0 extraction candidates, and the recommended first production-depth workflow.
-- **Suite-state verifier** (2026-04-27): added `scripts/verify-suite-state.py` as the first post-foundation Lane 1 artifact for checking local repo state, version truth, CivicCore pins, docs artifacts, compatibility rows, and optional GitHub release assets.
-- **Local demo deployment profile** (2026-04-27): added the first Lane 2 deployment profile for CivicRecords AI + CivicClerk + CivicCode + CivicZone, plus a verifier for compose shape, local-first defaults, and no-network module health smoke checks.
-- **Shared shell boundary** (2026-04-27): added ADR-0004 and a shared shell UX inventory to define navigation, status, empty/error, citation, export, and browser-QA conventions before any shared frontend package extraction.
-- **Connector import/export boundary** (2026-04-28): added ADR-0005 and the suite connector template for file drops, CSV imports, static export bundles, manifests, checksums, and the no-write-back-before-audit boundary.
-- **CivicCore v0.3.0 extraction proposal** (2026-04-28): added ADR-0006 and a bounded proposal for audit primitives, source/provenance metadata, connector/export manifests, city profile configuration, and export-bundle utilities.
-- **CivicClerk production-depth workflow plan** (2026-04-28): added ADR-0007 and the first integrated production-depth sprint plan for agenda packet and notice workflow across CivicClerk, CivicRecords AI, CivicCode, CivicZone, and CivicCore.
-- Added `docs/CivicSuiteUnifiedSpec.md` as the canonical suite specification, consolidating the DOCX source set, current repo truth, Apache 2.0 licensing decision, 7-tier module catalog, CivicCore shipped/planned boundary, and CivicClerk/CivicZone module requirements.
-- **CivicClerk scaffold registration** (2026-04-26): `CivicSuite/civicclerk` created as the next module repo; roadmap, compatibility matrix, and README updated to distinguish scaffolded-but-not-installable from planned-only modules.
-- **Phase 2 documentation closeout** (2026-04-25): full set of community files (`SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`), GitHub issue templates (bug, feature, documentation), pull request template, and GitHub Discussions seed posts (`docs/github-discussions-seed.md`).
-- Suite orientation manual `USER-MANUAL.md` (three parts: municipal decision-makers, developers/IT, architecture reference) plus `.txt`, `.pdf`, `.docx` companion formats.
-- Plain-text `README.txt` companion to `README.md`.
-- `scripts/verify-docs.sh` — required-artifact and stale-current-facing-string check. Run before every push.
+  *(This entry is real and is the most defensible "shipping" claim in the cluster — v0.22.1 is the attested baseline. v1.0 carries that attestation forward but has not re-earned it under the recovery gates.)*
 
-### Changed
-- Registered the new `CivicSuite/civiccode` scaffold and Milestone 0 completion across README, user manual, landing page, roadmap, and unified spec while preserving the no-runtime-shipped boundary.
-- Updated the roadmap and canonical unified spec current-state sections after CivicClerk v0.1.0 and the `/staff` UI foundation shipped; CivicCode is now the next module lane.
-- **CivicClerk staff workflow UI foundation reflected in suite docs** (2026-04-27): README, user manual, landing page, and compatibility matrix now mention the `/staff` browser UI foundation shipped after the v0.1.0 release while preserving the full-workflow-UI planned boundary.
-- **CivicCode v0.1.0 compatibility update** (2026-04-27): README, user manual, landing page, roadmap, unified spec current-state section, and compatibility matrix now reflect the first CivicCode runtime release pinned to `civiccore==0.2.0`.
-- **Compatibility matrix updated for CivicClerk v0.1.0** (2026-04-27): `CivicSuite/civicclerk` now records the published runtime-foundation release paired to `civiccore==0.2.0`.
-- **Compatibility matrix updated to current truth** (`docs/compatibility/index.md`): civiccore now at `0.3.0`, civicrecords-ai remains at `1.4.0` pinned to `==0.2.0`, and the matrix distinguishes latest platform release from exact module pins.
-- **Landing page (`docs/index.html`) refreshed**: civiccore status now shows "Shipping v0.3.0" with the v0.3 shared-primitives surface; the records-ai repo link points at the transferred `CivicSuite/civicrecords-ai` home.
-- README rewritten to lead with current suite status (what's shipping, what's planned but not started) instead of the workspace-bootstrap framing.
+- **CivicCode v0.1.17 compatibility publication** (2026-05-04) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.16 compatibility publication** (2026-05-04) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.15 compatibility publication** (2026-05-04) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.14 compatibility publication** (2026-05-04) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.13 compatibility publication** (2026-05-04) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.12 compatibility publication** (2026-05-04) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.7 compatibility publication** (2026-05-03) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCode v0.1.6 compatibility publication** (2026-05-03) — *doc-update entry; CivicCode tag frozen pending recovery.*
+- **CivicCore v0.21.0 / CivicRecords AI v1.4.8 / CivicClerk v0.1.19 compatibility publication** (2026-05-03) — *doc-update entry; tags frozen.*
+- **CivicCore v0.20.0 / CivicRecords AI v1.4.7 / CivicClerk v0.1.18 compatibility publication** (2026-05-02) — *doc-update entry; tags frozen.*
+- **CivicCode v0.1.5 compatibility publication** (2026-05-02) — *doc-update entry; tag frozen.*
+- **CivicCode v0.1.4 compatibility publication** (2026-05-02) — *doc-update entry; tag frozen.*
+- **CivicCode v0.1.2 compatibility publication** (2026-05-02) — *doc-update entry; tag frozen.*
+- **CivicCore v0.19.0 / CivicRecords AI v1.4.6 / CivicClerk v0.1.17 compatibility publication** (2026-05-02) — *doc-update entry; tags frozen.*
+- **CivicCore v0.18.1 / CivicRecords AI v1.4.5 / CivicClerk v0.1.16 compatibility publication** (2026-05-02) — *doc-update entry; tags frozen.*
+- **Roadmap precision after CivicClerk OIDC/live-sync completion** (2026-05-02) — *the roadmap-precision entry is real; the underlying claim that "OIDC browser-session support and vendor-network live sync" are shipped foundations is mock-validated, not production-validated. See STATUS.md and DOC-024 in audit-civicsuite-2026-05-09.*
+- **CivicRecords AI v1.4.4 compatibility publication** (2026-05-01) — *doc-update entry. The phrase "the published shipping records product" used in the original entry is overstated; civicrecords-ai's own README labels v1.4.10 as "do-not-promote."*
+- **CivicClerk v0.1.13 compatibility publication** (2026-05-01) — *doc-update entry; tag frozen.*
+- **CivicRegWatch and CivicAPI planning specs** (2026-04-30) — *real entry. Specs added; no runtime work yet.*
+- **Compatibility matrix catch-up for active CivicCore rollout lines** (2026-04-29) — *real entry.*
+- **Continuity gate and canonical roadmap reset** (2026-04-29) — *real entry. SUCCESSION.md added; this is the original honesty-framing intervention.*
+- **Phase 0 continuity closeout** (2026-04-29) — *real entry. Second org owner added.*
+
+- **CivicRecords AI v1.4.1 compatibility update** (2026-04-28): compatibility matrix and downstream docs updated to reflect the records patch release. *Real entry, but the "shipping" framing predates the recovery freeze.*
+- The **2026-04-27 to 2026-04-28 cluster** of v0.1.0 → v0.1.1 module-foundation publications represents real foundation-tier release work across the catalog. These tags exist and are not under recovery freeze (v0.1.x is the foundation tier, which has not been claimed as product-ready). They are best read as: "this module repo now exists with the minimum scaffolding."
+- **Post-foundation sequence correction** (2026-04-27) — *real entry.*
+- **Post-foundation hardening plan** (2026-04-27) — *real entry.*
+- **Suite-state verifier** (2026-04-27): `scripts/verify-suite-state.py` added. *Real entry.*
+- **Local demo deployment profile** (2026-04-27) — *real entry.*
+- **Shared shell boundary** (2026-04-27): ADR-0004 + shared shell UX inventory added. *Real entry.*
+- **Connector import/export boundary** (2026-04-28): ADR-0005 + suite connector template added. *Real entry.*
+- **CivicCore v0.3.0 extraction proposal** (2026-04-28): ADR-0006 + bounded proposal added. *Real entry.*
+- **CivicClerk production-depth workflow plan** (2026-04-28): ADR-0007 + first integrated production-depth sprint plan added. *Real entry.*
+
+- Added `docs/CivicSuiteUnifiedSpec.md` as the canonical suite specification.
+- **CivicClerk scaffold registration** (2026-04-26): `CivicSuite/civicclerk` created.
+- **Phase 2 documentation closeout** (2026-04-25): full set of community files, GitHub issue templates, PR template, GitHub Discussions seed posts.
+- Suite orientation manual `USER-MANUAL.md` (three parts).
+- Plain-text `README.txt` companion.
+- `scripts/verify-docs.sh` — required-artifact and stale-current-facing-string check.
+
+### Changed (pre-recovery)
+
+- Registered `CivicSuite/civiccode` scaffold and Milestone 0 completion across umbrella docs while preserving the no-runtime-shipped boundary.
+- Updated roadmap and unified spec current-state sections after CivicClerk v0.1.0 and `/staff` UI foundation shipped.
+- **CivicClerk staff workflow UI foundation reflected in suite docs** (2026-04-27): umbrella docs now mention the `/staff` browser UI foundation while preserving the full-workflow-UI planned boundary.
+- **CivicCode v0.1.0 compatibility update** (2026-04-27).
+- **Compatibility matrix updated for CivicClerk v0.1.0** (2026-04-27).
+- **Compatibility matrix updated to current truth.**
+- **Landing page (`docs/index.html`) refreshed.**
+- README rewritten to lead with current suite status (this was the original honesty-framing pass).
 
 ## [Phase 1] - 2026-04-24
 
@@ -119,10 +119,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CONTRIBUTING.md with the bug-routing decision tree from CivicCore Extraction Spec section 18.
 
 ### Changed
-- License for code switched from MIT to Apache License 2.0 (LICENSE-CODE updated; CONSISTENCY.md section 6 and all four specs updated to match). Documentation license (CC BY 4.0 in LICENSE) is unchanged.
-- Three doc-drift fixes flagged by audit review of Day-3 inventory: governance/index.md license bullet, CONTRIBUTING.md repo URLs, LICENSE snippets footer.
-- Spec 02 sections 8 and 9 updated to match actual civicrecords-ai paths (LLM module, sovereignty verification, app-shell, letters/fees locations).
+- License for code switched from MIT to Apache License 2.0.
+- Three doc-drift fixes flagged by audit review of Day-3 inventory.
+- Spec 02 sections 8 and 9 updated to match actual civicrecords-ai paths.
 - CONSISTENCY.md drift-watch item 6 added.
-- ADR-0002 (SQLAlchemy declarative Base lives in civiccore.models.base) and ADR-0003 (CivicCore Alembic baselines after 787207afc66a) added to the architecture index.
-- ADR-0003 substantially rewritten same day after audit review (the original "baseline = revision after 787207afc66a, exact rev TBD" was underspecified and structurally wrong — records' migration graph already extends through `019_encrypt_connection_config`, well past `787207afc66a`). Replacement names the exact baseline migration (`civiccore_0001_baseline_v1.py`), enumerates the 14 records migrations that need idempotent guards, specifies the 6-line records env.py wiring, walks all three deployment scenarios (existing v1.2.x upgrade, fresh install, civiccore-first install), and defines the three CI integration gates that block Phase 1 PR merge.
-- Compatibility matrix updated after Phase 1 ship: `civiccore` now recorded at `0.1.0`, and `civicrecords-ai` recorded as post-Phase-1 `master` consuming the `civiccore` `v0.1.0` release artifact while `v1.3.0` release hardening is in progress.
+- ADR-0002 and ADR-0003 added; ADR-0003 substantially rewritten.
+- Compatibility matrix updated after Phase 1 ship: `civiccore` recorded at `0.1.0`.

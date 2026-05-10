@@ -12,6 +12,9 @@ REQUIRED=(
   USER-MANUAL.md
   USER-MANUAL.txt
   CHANGELOG.md
+  STATUS.md
+  FAQ.md
+  ARCHITECTURE.md
   CONTRIBUTING.md
   LICENSE
   SECURITY.md
@@ -20,6 +23,7 @@ REQUIRED=(
   .gitignore
   docs/index.html
   docs/release-recovery-status.md
+  docs/release-lockstep/downstream-pins.md
   docs/compatibility/index.md
   docs/deployment/local-demo-profile.md
   docs/installer/suite-installer-plan.md
@@ -37,6 +41,8 @@ REQUIRED=(
   scripts/verify-installer-plan.py
   scripts/plan-installer.py
   scripts/verify-suite-state.py
+  scripts/verify-release-lockstep.py
+  .github/workflows/release-lockstep-gate.yml
   .github/PULL_REQUEST_TEMPLATE.md
   .github/ISSUE_TEMPLATE/bug_report.md
   .github/ISSUE_TEMPLATE/feature_request.md

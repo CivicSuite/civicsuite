@@ -2191,6 +2191,9 @@ def build_install_plan(
             raise PlannerError("Custom profile requires at least one selected module.")
         requested_modules = ["civiccore", *requested]
     else:
+        if profile.get("disabled") is True:
+            reason = profile.get("disabled_reason") or "profile is disabled"
+            raise PlannerError(f"Profile {profile_id} is disabled: {reason}")
         profile_modules = profile.get("modules", [])
         if not isinstance(profile_modules, list):
             raise PlannerError(f"Profile {profile_id} modules must be a list.")
