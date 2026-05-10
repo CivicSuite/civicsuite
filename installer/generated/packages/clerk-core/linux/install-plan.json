@@ -44,7 +44,7 @@
       "type": "install_module"
     },
     {
-      "civiccore_requirement": "1.0.0",
+      "civiccore_requirement": "1.0.1",
       "display_name": "CivicClerk",
       "module": "civicclerk",
       "proof_required": [

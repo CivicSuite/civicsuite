@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 $KitRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $VenvPath = Join-Path $KitRoot ".venv"
-$WheelPath = "C:/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.0-py3-none-any.whl"
+$WheelPath = "C:/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.1-py3-none-any.whl"
 
 function Invoke-Step {
     param([scriptblock]$Command)
