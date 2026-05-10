@@ -83,7 +83,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  true,
-                         "disabled_reason":  "Disabled until CivicRecords AI upgrades to CivicCore 1.0.0 and demoted module labels are published; current full-suite dependency graph mixes incompatible/recovery labels."
+                         "disabled_reason":  "Disabled until CivicRecords AI upgrades to CivicCore 1.0.1 and demoted module labels are published; current full-suite dependency graph mixes incompatible/recovery labels."
                      },
                      {
                          "id":  "custom",
@@ -107,13 +107,13 @@
                         "dependencies":  [
 
                                          ],
-                        "installer_status":  "v1_0_1_recovery_patch_required",
+                        "installer_status":  "v1_0_1_recovery_patch_shipped",
                         "proof_required":  [
                                                "install",
                                                "version_check",
                                                "compatibility_matrix_check"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "1.0.1"
                     },
                     {
                         "id":  "civicrecords-ai",
@@ -145,7 +145,7 @@
                         "role":  "meetings workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore"
                                          ],
@@ -166,7 +166,7 @@
                         "role":  "municipal code",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore",
                                              "civicclerk"
@@ -191,7 +191,7 @@
                         "role":  "zoning and land use",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode"
@@ -216,7 +216,7 @@
                         "role":  "planning policy lookup",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore",
                                              "civiczone",
@@ -242,7 +242,7 @@
                         "role":  "permit intake readiness",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode",
@@ -288,7 +288,7 @@
                         "role":  "inspection workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode",
@@ -314,7 +314,7 @@
                         "role":  "grants workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore",
                                              "civicrecords-ai"
@@ -339,7 +339,7 @@
                         "role":  "procurement workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.0",
+                        "civiccore_requirement":  "1.0.1",
                         "dependencies":  [
                                              "civiccore"
                                          ],

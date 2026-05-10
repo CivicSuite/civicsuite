@@ -22,9 +22,9 @@ Demotion pattern:
 
 | Repo | Previous public label | Corrective label | Decision |
 |---|---:|---:|---|
-| civiccore | v1.0.0 / v1.0 | v1.0.1 next | Real platform; release-hygiene patch, not demotion. |
+| civiccore | v1.0.0 / v1.0 | v1.0.1 shipped | Real platform; release-hygiene patch, not demotion. v1.0.1 shipped 2026-05-10 with auth-error-payload hardening (5 fields removed); v1.0 superseded. |
 | civicclerk | v1.0.0 | v1.0.1 next | Real product-shaped workflow; patch after open-mode default fix, not demotion. |
-| civicrecords-ai | v1.4.10 | v1.5.0 next | Upgrade to CivicCore v1.0.0, then minor recovery release. |
+| civicrecords-ai | v1.4.10 | v1.5.0 next | Upgrade to CivicCore v1.0.1, then minor recovery release. |
 | civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. |
 | civiczone | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
 | civicplan | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
@@ -54,6 +54,7 @@ Demotion pattern:
 - **2026-05-08 to 2026-05-10:** CivicInspect, CivicGrants, CivicProcure, and other scaffold-depth repos were treated as v1.0.0 despite insufficient product depth.
 - **2026-05-09:** external audit identified 154 findings and confirmed the false-label pattern.
 - **2026-05-10:** corrective decision recorded: CivicCode -> v0.5.0; CivicZone/CivicPlan/CivicPermit/CivicInspect/CivicGrants/CivicProcure -> v0.2.0; CivicCore/CivicClerk/CivicRecords AI split into recovery releases.
+- **2026-05-10:** CivicCore v1.0.1 shipped as a recovery patch with auth-error-payload hardening. The auth hardening removes `token_roles`, `principal`, `principal_roles`, `client_host`, and `trusted_proxy_cidrs` from CivicCore auth error responses; CivicCore v1.0 is superseded.
 
 ## Language Rules
 

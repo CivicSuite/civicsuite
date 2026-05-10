@@ -19,6 +19,10 @@ This changelog will be split going forward: (a) doc / governance / spec changes 
 
 ## [Unreleased]
 
+### Changed
+
+- **2026-05-10.** chore: civiccore v1.0.1 suite-truth reconciliation. The umbrella truth surface now records CivicCore [v1.0.1](https://github.com/CivicSuite/civiccore/releases/tag/v1.0.1) as the current shared-platform recovery patch, including auth-error-payload hardening documented by [`docs/audits/civiccore-audit-full-2026-05-07.md`](docs/audits/civiccore-audit-full-2026-05-07.md). Downstream CivicCore pins for CivicClerk, CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure now reconcile to the v1.0.1 wheel.
+
 ### Added
 
 - **2026-05-09.** Drafted umbrella documentation rewrite suite at `audit-civicsuite-2026-05-09/doc-rewrites/`: refreshed README, new STATUS.md (module-by-module honest status), new FAQ.md (civic-operator FAQ), new ARCHITECTURE.md (with Mermaid suite diagram), refreshed USER-MANUAL.md with "Your first task" walkthrough, and updated release-recovery-status.md with drift incident log for the three v1.0.0 drift repos.

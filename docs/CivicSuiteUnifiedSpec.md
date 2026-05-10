@@ -86,7 +86,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v1.0.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction:
+Current shipped CivicCore v1.0.1 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction. The v1.0.1 recovery patch includes security hardening for auth error payloads:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -221,7 +221,7 @@ CivicCore is the shared platform, not a user-facing product.
 
 ### 6.1 Shipped
 
-Current shipped CivicCore v1.0.0 includes:
+Current shipped CivicCore v1.0.1 includes:
 
 - Migration runner and baseline migration strategy
 - Shared SQLAlchemy `Base`
@@ -274,7 +274,7 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: provisional v1.0.0 tag; v1.0.1 recovery patch required. Architectural target: shared-platform release with many planned extractions.
+Status: v1.0.1 recovery patch shipped with security hardening for auth error payloads. Architectural target: shared-platform release with many planned extractions.
 Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, auth helpers, search/access helpers, connector primitives, ingest contracts, scheduling helpers, verification helpers, and future full document/search/catalog/exemption/scaffold primitives.
 
 ### Tier 1 - Clerk Core
@@ -1003,16 +1003,16 @@ This section previously enumerated per-module shipping prose. That prose drifted
 
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
-| civiccore | 1.0.0 | n/a | Real shared platform; v1.0.1 recovery patch required, not demoted. |
+| civiccore | 1.0.1 | n/a | Real shared platform; recovery patch shipped with security hardening for auth error payloads. |
 | civicrecords-ai | 1.4.10 | 0.22.1 | Developer-preview records product; target v1.5.0 after CivicCore upgrade. |
-| civicclerk | 1.0.0 | 1.0.0 | Real meeting workflow; v1.0.1 recovery patch required after open-mode default fix. |
-| civiccode | 0.5.0 | 1.0.0 | Demoted from false v1.0.0; meaningful runtime depth but not v1.0 product-ready. |
-| civiczone | 0.2.0 | 1.0.0 | Demoted from false v1.0.0; scaffold-depth zoning support. |
-| civicplan | 0.2.0 | 1.0.0 | Demoted from false v1.0.0; scaffold-depth planning support. |
-| civicpermit | 0.2.0 | 1.0.0 | Demoted from false v1.0.0; scaffold-depth permit support. |
-| civicinspect | 0.2.0 | 1.0.0 | Demoted from false v1.0.0; scaffold-depth inspection support. |
-| civicgrants | 0.2.0 | 1.0.0 | Demoted from false v1.0.0; scaffold-depth grants support. |
-| civicprocure | 0.2.0 | 1.0.0 | Demoted from false v1.0.0; scaffold-depth procurement support. |
+| civicclerk | 1.0.0 | 1.0.1 | Real meeting workflow; CivicCore pin bumped, but v1.0.1 recovery patch still requires the open-mode default fix. |
+| civiccode | 0.5.0 | 1.0.1 | Demoted from false v1.0.0; meaningful runtime depth but not v1.0 product-ready. |
+| civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |
+| civicplan | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth planning support. |
+| civicpermit | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth permit support. |
+| civicinspect | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth inspection support. |
+| civicgrants | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth grants support. |
+| civicprocure | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth procurement support. |
 
 A municipality cannot today run end-to-end on this suite. The immediate work is release-integrity recovery, security-default repair, install-path correction, and then module productization one module at a time.
 ## 19. Post-Foundation Build Sequence
@@ -1020,8 +1020,8 @@ A municipality cannot today run end-to-end on this suite. The immediate work is 
 The v0.1.x foundation lane created real repository surfaces and release artifacts, but it did not create city-ready products. The next sequence is recovery first, then productization:
 
 1. Complete Sprint A release-integrity demotion and lockstep gates.
-2. Patch CivicCore to v1.0.1 and CivicClerk to v1.0.1 after the open-mode default fix.
-3. Upgrade CivicRecords AI to CivicCore v1.0.0 and release it as v1.5.0.
+2. Patch CivicClerk to v1.0.1 after the open-mode default fix.
+3. Upgrade CivicRecords AI to CivicCore v1.0.1 and release it as v1.5.0.
 4. Stabilize the installer profile and per-module version pin strategy.
 5. Resume productization one module at a time from the active queue; no lateral v1.0 sweeps.
 6. Continue CivicCore shared-extraction depth only where an active module needs the shared capability.

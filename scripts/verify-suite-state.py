@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
 UNIFIED_SPEC = ROOT / "docs" / "CivicSuiteUnifiedSpec.md"
-CURRENT_PLATFORM_CIVICCORE = "1.0.0"
+CURRENT_PLATFORM_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 
 REQUIRED_ARTIFACTS = (
@@ -73,9 +73,9 @@ REPOS: tuple[RepoSpec, ...] = (
         "civiccore",
         "CivicSuite/civiccore",
         "civiccore",
-        "1.0.0",
+        "1.0.1",
         civiccore_required=None,
-        release_tag="v1.0",
+        release_tag="v1.0.1",
     ),
     RepoSpec(
         "civicrecords-ai",
@@ -90,7 +90,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "CivicSuite/civicclerk",
         "civicclerk",
         "1.0.0",
-        civiccore_required="1.0.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(
         "civiccode",
