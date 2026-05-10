@@ -243,7 +243,15 @@ def check_planner(data: dict[str, object]) -> list[str]:
     scenarios = {
         "minimal": ["civiccore"],
         "clerk-core": ["civiccore", "civicrecords-ai", "civicclerk"],
-        "land-use": ["civiccore", "civicclerk", "civiccode", "civiczone", "civicplan", "civicpermit"],
+        "land-use": [
+            "civiccore",
+            "civicclerk",
+            "civiccode",
+            "civiczone",
+            "civicplan",
+            "civicpermit",
+            "civicinspect",
+        ],
         "full-suite": [
             "civiccore",
             "civicrecords-ai",
@@ -312,6 +320,43 @@ def check_planner(data: dict[str, object]) -> list[str]:
     selectable = selector.get("selectable_modules", []) if isinstance(selector, dict) else []
     if not isinstance(selectable, list) or len(selectable) != len(REQUIRED_MODULES) - 1:
         errors.append(fail("menu model must expose every selectable non-CivicCore module"))
+    civicinspect_selector = [
+        item
+        for item in selectable
+        if isinstance(item, dict) and item.get("id") == "civicinspect"
+    ]
+    if not civicinspect_selector:
+        errors.append(fail("menu model must expose CivicInspect as a selectable module"))
+    elif civicinspect_selector[0].get("civiccore_requirement") != "1.0.0":
+        errors.append(fail("CivicInspect selector must require CivicCore 1.0.0"))
+
+    civicinspect_plan = module.build_install_plan(
+        manifest=data,
+        profile_id="custom",
+        selected_modules=["civicinspect"],
+        menu_style="guided",
+        host={"system": "Windows", "release": "test", "machine": "x86_64"},
+    )
+    if "civicinspect" not in civicinspect_plan.get("modules", []):
+        errors.append(fail("custom CivicInspect plan must include civicinspect"))
+    for required_dependency in ("civiccore", "civiccode", "civicpermit"):
+        if required_dependency not in civicinspect_plan.get("modules", []):
+            errors.append(fail(f"custom CivicInspect plan missing dependency {required_dependency}"))
+    civicinspect_actions = [
+        action
+        for action in civicinspect_plan.get("actions", [])
+        if isinstance(action, dict) and action.get("module") == "civicinspect"
+    ]
+    if not civicinspect_actions:
+        errors.append(fail("custom CivicInspect plan must include a CivicInspect install action"))
+    else:
+        action = civicinspect_actions[0]
+        if action.get("civiccore_requirement") != "1.0.0":
+            errors.append(fail("CivicInspect install action must require CivicCore 1.0.0"))
+        proof_required = action.get("proof_required", [])
+        for proof in ("module_selection", "install_plan", "artifact_resolution", "health_check", "restart"):
+            if proof not in proof_required:
+                errors.append(fail(f"CivicInspect install action missing proof requirement {proof}"))
 
     readiness_scenarios = {
         "nominal": "ready",

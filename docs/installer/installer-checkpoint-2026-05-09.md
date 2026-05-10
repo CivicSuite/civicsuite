@@ -5,6 +5,12 @@ clerk-core distributable package lifecycle verified for Windows and Linux
 archives. macOS archive extraction/readiness/plan proof exists; full macOS
 runtime proof still requires a macOS host or VM.
 
+Update: module v1.0.0 release gates now require installer/module-selection
+integration. CivicInspect was retroactively added to the land-use profile and
+verified as a selectable/custom module with CivicCore 1.0.0, CivicCode, and
+CivicPermit dependency resolution through the planner. macOS remains beta/YELLOW
+until real macOS lifecycle certification exists.
+
 ## Scope Completed
 
 This checkpoint records the first safe installer slice for CivicSuite. The work
