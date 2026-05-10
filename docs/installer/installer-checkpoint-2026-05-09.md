@@ -19,6 +19,16 @@ artifact resolution, health check, and restart. The CivicGrants artifact proof
 resolves `dist\civicgrants-1.0.0-py3-none-any.whl`,
 `dist\civicgrants-1.0.0.tar.gz`, `dist\SHA256SUMS.txt`, and tag `v1.0.0`.
 
+Update: CivicProcure v1.0.0 was added to the installer/module-selection proof
+path after its module repo release. Custom CivicProcure selection now resolves
+`civiccore` and `civicprocure`; CivicProcure requires CivicCore 1.0.0 and uses
+the v1 proof list: module selection, install plan, artifact resolution, health
+check, and restart. CivicContracts remains a context relationship, not an
+installer dependency, until CivicContracts has its own v1.0.0 release. The
+CivicProcure artifact proof resolves
+`dist\civicprocure-1.0.0-py3-none-any.whl`,
+`dist\civicprocure-1.0.0.tar.gz`, `dist\SHA256SUMS.txt`, and tag `v1.0.0`.
+
 ## Scope Completed
 
 This checkpoint records the first safe installer slice for CivicSuite. The work

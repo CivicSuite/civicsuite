@@ -189,6 +189,11 @@ Verified v1.0.0 module selector integrations:
   currently reports a dependency artifact warning in local dry-run evidence
   because this checkout does not have local `dist` artifacts, but CivicGrants
   itself resolves its v1.0.0 artifacts, checksum file, and tag.
+- CivicProcure: custom selection resolves CivicCore and CivicProcure with
+  CivicCore 1.0.0 and v1 proof requirements. CivicProcure itself resolves its
+  v1.0.0 artifacts, checksum file, and tag. CivicContracts remains a context
+  relationship, not an installer dependency, until CivicContracts has its own
+  v1.0.0 release.
 
 Initial menu styles:
 
