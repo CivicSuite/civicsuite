@@ -27,7 +27,7 @@ Release artifacts:
 | Artifact | SHA256 |
 |---|---|
 | `civicclerk-1.0.1-py3-none-any.whl` | `e6d9fd34406c1bad74c3400f1a32ae9f4d883bcf455f9c6a05f171d8869b76a7` |
-| `civicclerk-1.0.1.tar.gz` | `3ac5baec7ed32b55701ef4f85230404098482beb471377f8324e7e1d9` |
+| `civicclerk-1.0.1.tar.gz` | `3ac5baec7ed32b55701ef4f85230404098482beb471377f8324e7e1b31a7e1d9` |
 
 ## Browser/UX Evidence
 
