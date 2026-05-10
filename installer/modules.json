@@ -225,11 +225,11 @@
       "role": "procurement workflow",
       "selectable": true,
       "required": false,
-      "civiccore_requirement": "0.3.0",
+      "civiccore_requirement": "1.0.0",
       "dependencies": ["civiccore"],
       "default_port": 8063,
-      "installer_status": "tracked_suite_module_needs_installer_proof",
-      "proof_required": ["install", "health_check", "restart"]
+      "installer_status": "v1_0_0_released_installer_plan_verified",
+      "proof_required": ["module_selection", "install_plan", "artifact_resolution", "health_check", "restart"]
     },
     {
       "id": "civiccontracts",

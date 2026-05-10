@@ -396,6 +396,44 @@ def check_planner(data: dict[str, object]) -> list[str]:
             if proof not in proof_required:
                 errors.append(fail(f"CivicGrants install action missing proof requirement {proof}"))
 
+    civicprocure_selector = [
+        item
+        for item in selectable
+        if isinstance(item, dict) and item.get("id") == "civicprocure"
+    ]
+    if not civicprocure_selector:
+        errors.append(fail("menu model must expose CivicProcure as a selectable module"))
+    elif civicprocure_selector[0].get("civiccore_requirement") != "1.0.0":
+        errors.append(fail("CivicProcure selector must require CivicCore 1.0.0"))
+
+    civicprocure_plan = module.build_install_plan(
+        manifest=data,
+        profile_id="custom",
+        selected_modules=["civicprocure"],
+        menu_style="guided",
+        host={"system": "Windows", "release": "test", "machine": "x86_64"},
+    )
+    if "civicprocure" not in civicprocure_plan.get("modules", []):
+        errors.append(fail("custom CivicProcure plan must include civicprocure"))
+    for required_dependency in ("civiccore",):
+        if required_dependency not in civicprocure_plan.get("modules", []):
+            errors.append(fail(f"custom CivicProcure plan missing dependency {required_dependency}"))
+    civicprocure_actions = [
+        action
+        for action in civicprocure_plan.get("actions", [])
+        if isinstance(action, dict) and action.get("module") == "civicprocure"
+    ]
+    if not civicprocure_actions:
+        errors.append(fail("custom CivicProcure plan must include a CivicProcure install action"))
+    else:
+        action = civicprocure_actions[0]
+        if action.get("civiccore_requirement") != "1.0.0":
+            errors.append(fail("CivicProcure install action must require CivicCore 1.0.0"))
+        proof_required = action.get("proof_required", [])
+        for proof in ("module_selection", "install_plan", "artifact_resolution", "health_check", "restart"):
+            if proof not in proof_required:
+                errors.append(fail(f"CivicProcure install action missing proof requirement {proof}"))
+
     readiness_scenarios = {
         "nominal": "ready",
         "missing-docker": "blocked",
