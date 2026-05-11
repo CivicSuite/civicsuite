@@ -1,0 +1,133 @@
+# SPDX-License-Identifier: Apache-2.0
+
+pipeline_run:
+  id: "2026-05-11-d2-b3-staff-key-gate"
+  type: module-release
+  branch: "feature/d2-b3-staff-key-gate-2026-05-11"
+
+  goal: >
+    Extract a shared CivicCore staff-key gate and replace bespoke staff-key
+    comparisons so staff authorization uses one audited constant-time helper.
+
+  active_scope:
+    audit_items:
+      - "D2: Extract civiccore.auth.staff_key_gate(env_var, header)."
+      - "B3: Replace staff_key != expected_key with hmac.compare_digest across affected modules."
+    target_module: "civiccore"
+    dependent_modules:
+      - civicclerk
+      - civiccode
+      - civiczone
+      - civicplan
+      - civicpermit
+      - civicinspect
+      - civicgrants
+      - civicprocure
+
+  phase0:
+    report: "C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/.agent-runs/2026-05-11-d2-b3-staff-key-gate/phase0-report.md"
+    bundled_fix_pr: "https://github.com/CivicSuite/civiccore/pull/55"
+    bundled_fix_merge_sha: "7a176a0deda7cce849cc648b15469e3b3af0de72"
+    result: "PASS: 6/6 checks after bundled infrastructure fix."
+
+  allowed_paths:
+    - "civiccore/civiccore/auth/**"
+    - "civiccore/tests/**"
+    - "civicclerk/civicclerk/**"
+    - "civicclerk/tests/**"
+    - "civiccode/civiccode/**"
+    - "civiccode/tests/**"
+    - "civiczone/civiczone/**"
+    - "civiczone/tests/**"
+    - "civicplan/civicplan/**"
+    - "civicplan/tests/**"
+    - "civicpermit/civicpermit/**"
+    - "civicpermit/tests/**"
+    - "civicinspect/civicinspect/**"
+    - "civicinspect/tests/**"
+    - "civicgrants/civicgrants/**"
+    - "civicgrants/tests/**"
+    - "civicprocure/civicprocure/**"
+    - "civicprocure/tests/**"
+    - "CivicSuite/.agent-workflows/**"
+    - "CivicSuite/docs/CivicSuiteUnifiedSpec.md"
+
+  approval_time_scope_decision:
+    status: "APPROVED by Scott on 2026-05-11"
+    decision: >
+      Manifest as written plus pre-authorized CivicCore release/pin amendment.
+      New helper is a backwards-compatible public symbol, so the CivicCore
+      release version is v1.1.0.
+    why: >
+      Downstream modules are installed from pinned CivicCore release wheels.
+      Importing a new shared helper requires a controlled CivicCore release,
+      downstream pin updates, and umbrella truth reconciliation instead of a
+      local-only source patch.
+
+  forbidden_paths:
+    - "civiccore/release-artifacts/**"
+    - "civicrecords-ai/**"
+    - "CivicSuite/installer/**"
+    - "CivicSuite/scripts/verify-suite-state.py"
+    - "CivicSuite/CHANGELOG.md"
+    - "CivicSuite/docs/release-recovery-status.md"
+    - "CivicSuite/docs/release-lockstep/**"
+    - "**/docs/audits/**"
+    - "**/docs/qa/**"
+    - "**/docs/evidence/**"
+    - "**/docs/browser-qa-*-summary.md"
+    - "**/docs/browser-qa-*.png"
+
+  non_goals:
+    - "Do not modify CivicRecords AI."
+    - "Do not move, delete, retag, or rewrite any release history."
+    - "Do not touch the seven demoted releases from CivicSuite PR #115."
+    - "Do not perform module feature work beyond replacing staff-key auth gates."
+    - "Do not update FROZEN-EVIDENCE or SHAPE-GUARD files."
+    - "Do not introduce a new auth scheme; preserve existing env var and header contracts unless a test proves the old contract is broken."
+
+  expected_outputs:
+    - "civiccore exposes civiccore.auth.staff_key_gate(env_var, header)."
+    - "staff_key_gate uses hmac.compare_digest for byte comparison."
+    - "staff_key_gate has tests for missing env var, missing header, invalid key, valid key, and constant-time comparison path."
+    - "civiccore v1.1.0 is released after Phase 2 local rehearsal passes."
+    - "Affected modules import and use the shared helper instead of bespoke staff-key comparison blocks."
+    - "Affected module tests cover authorized and unauthorized staff-key requests."
+    - "Affected downstream pyproject.toml files pin civiccore v1.1.0 with #sha256."
+    - "Umbrella release-tag PR reconciles spec, verifier, modules.json, CHANGELOG, release-recovery-status, and downstream-pins."
+    - "No FROZEN-EVIDENCE or SHAPE-GUARD files are changed."
+    - "Documentation/spec note is updated only if the public contract changes."
+
+  required_gates:
+    - human_approval_manifest
+    - phase0_preflight_passed
+    - phase2_local_release_rehearsal_passed
+    - civiccore_v1_1_0_release_published
+    - downstream_module_ci_green
+    - release_lockstep_gate_passed
+    - verify_suite_state_remote_only_passed
+    - policy_passed
+    - tests_passed
+    - docs_updated_if_contract_changes
+    - human_approval_merge
+
+  risk: high
+
+  rollback_plan: >
+    Revert the product PR(s) that introduce staff_key_gate usage. If a later
+    approved release/pin amendment occurs, revert the umbrella truth PR and
+    downstream pin PRs in reverse order before reverting the CivicCore helper.
+
+  definition_of_done: >
+    D2+B3 are complete only when CivicCore owns one tested staff-key gate using
+    hmac.compare_digest, CivicCore v1.1.0 is released with all artifacts, all
+    affected modules use that helper without bespoke timing-vulnerable
+    comparisons and pin the v1.1.0 wheel with sha256, local and module CI pass,
+    umbrella release-truth artifacts land through release-lockstep-gate,
+    verify-suite-state.py --remote-only passes, and a durable handoff records
+    Phase 0 evidence, PRs, test output, tag-move record, and verifier output.
+
+  director_notes:
+    - "Before editing, grep every affected module for _require_staff_role, staff_key, expected_key, compare_digest, and X-Civic*-Staff-Key."
+    - "Classify all hits using LIVE-STATE / FROZEN-EVIDENCE / SHAPE-GUARD / OWN-MODULE-VERSION rules."
+    - "If a downstream module cannot import the new helper without a CivicCore release bump, stop for manifest amendment rather than ad hoc release work."

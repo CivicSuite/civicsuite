@@ -67,9 +67,9 @@ Why first now: D2/B3 closed the shared staff-key timing issue. B2 is the next hi
 
 Definition of Done: inventory every JWT secret and first-admin password path in the targeted deployment stack, move secret material to Docker secrets or bind-mounted secret files where in scope, update docs/tests, and preserve release-lockstep truth if installer metadata changes.
 
-Current status: YELLOW, queued and ready for scoped execution.
+Current status: RED at Phase 2 rehearsal. Phase 0 inventory and Phase 1 PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4) are landed; the directive's literal acceptance command `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` still returns the two `_FILE` pointer env names.
 
-Next action: run the v0.2 Phase 0 infrastructure preflight for the selected B2 target scope, then produce the B2 manifest before edits.
+Next action: open Phase 1B PR in civicrecords-ai to remove the `_FILE` pointer env names from the container env, tighten the contract test and `scripts/verify-release.sh` predicate to the directive's literal grep `JWT_SECRET|FIRST_ADMIN_PASSWORD` (unanchored, no `=` suffix), then rerun Phase 2 rehearsal and halt at the human tag-push approval gate.
 
 ## Queued Targets
 
