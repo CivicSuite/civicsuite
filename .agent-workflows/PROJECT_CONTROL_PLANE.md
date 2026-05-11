@@ -68,9 +68,11 @@ Evidence:
 
 ## Current Scope Boundary
 
-Active target: Audit punch-list B2 security-secret handling recovery.
+Active target: Audit punch-list B2 security-secret handling recovery - Phase 1 merged, Phase 2 RED.
 
-Why next: D2/B3 closed the shared staff-key timing and duplication problem. The next highest-value security-default gap is B2: move JWT secret and first admin password material out of container environment variables and into Docker secrets or bind-mounted secret files.
+State on resume: civicrecords-ai PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4) moved JWT and first-admin-password material into Docker secret files. Phase 2 rehearsal at `civicrecords-ai/.agent-runs/b2-phase2-rehearsal.md` declares RED because the directive's literal `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` still returns the two `_FILE` pointer env names. No v1.6.0 tag is pushed. The merged contract test (`backend/tests/test_docker_secret_contract.py`) and the verifier (`scripts/verify-release.sh:63`) lock a predicate anchored on `=`, which is strictly narrower than the directive's grep - both must be tightened in Phase 1B.
+
+Why next: close Phase 1B before any v1.6.0 tag.
 
 Allowed now:
 
