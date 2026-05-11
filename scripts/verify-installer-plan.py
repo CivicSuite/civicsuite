@@ -316,18 +316,35 @@ def check_planner(data: dict[str, object]) -> list[str]:
         if plan.get("menu_style", {}).get("id") != "guided":
             errors.append(fail(f"{profile} plan missing guided menu style"))
 
-    try:
-        module.build_install_plan(
-            manifest=data,
-            profile_id="full-suite",
-            menu_style="guided",
-            host={"system": "Windows", "release": "test", "machine": "x86_64"},
-        )
-    except Exception as exc:
-        if "Profile full-suite is disabled" not in str(exc):
-            errors.append(fail(f"full-suite failed with wrong disabled-profile error: {exc}"))
-    else:
-        errors.append(fail("full-suite profile should be disabled until CivicRecords AI and demoted labels are reconciled"))
+    full_suite_profile = next(
+        (
+            profile
+            for profile in data.get("profiles", [])
+            if isinstance(profile, dict) and profile.get("id") == "full-suite"
+        ),
+        {},
+    )
+    full_suite_plan = module.build_install_plan(
+        manifest=data,
+        profile_id="full-suite",
+        menu_style="guided",
+        host={"system": "Windows", "release": "test", "machine": "x86_64"},
+    )
+    if full_suite_plan.get("mutates_host") is not False:
+        errors.append(fail("full-suite plan must be non-mutating"))
+    if full_suite_plan.get("dry_run") is not True:
+        errors.append(fail("full-suite plan must be marked dry_run"))
+    if full_suite_plan.get("modules") != full_suite_profile.get("modules"):
+        errors.append(fail("full-suite plan must include the reconciled full-suite profile modules"))
+    full_suite_action_types = [
+        action.get("type")
+        for action in full_suite_plan.get("actions", [])
+        if isinstance(action, dict)
+    ]
+    if "install_module" not in full_suite_action_types:
+        errors.append(fail("full-suite plan missing install_module actions"))
+    if full_suite_action_types[-1:] != ["verify_profile"]:
+        errors.append(fail("full-suite plan must end with verify_profile"))
 
     menu_model = module.build_menu_model(manifest=data, menu_style="department")
     if menu_model.get("mutates_host") is not False:
