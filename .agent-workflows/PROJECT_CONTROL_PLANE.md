@@ -1,6 +1,6 @@
 # CivicSuite Project Control Plane
 
-Last updated: 2026-05-10
+Last updated: 2026-05-11
 
 ## Project Goal
 
@@ -41,58 +41,58 @@ Evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed after PR #117 merged.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-10_CIVICCLERK_B1_COMPLETE.md`.
 
+Completed: CivicRecords AI CivicCore migration and v1.5.0 release.
+
+Evidence:
+
+- CivicRecords AI PR #69 migrated the product to CivicCore v1.0.1 and bumped CivicRecords AI to v1.5.0 at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
+- CivicRecords AI v1.5.0 release exists: `https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.5.0`.
+- CivicRecords AI v1.5.0 setup SHA256: `b48e4591c6d7bde3476078ee648d89e8e6a4e18b24ff0487ec9762af690b8ac5`.
+- Release workflow fixes landed in CivicRecords AI PRs #70, #71, #72, and #73.
+- CivicSuite umbrella PR #121 merged at `3cf9f8289f1090b1c6dd9270d7e184793870df2d` through green `release-lockstep-gate`.
+- Full-suite installer profile is re-enabled after the CivicRecords AI / CivicCore pin alignment.
+- `python scripts/verify-suite-state.py --remote-only` passed after PR #121 merged.
+- Final handoff: `.agent-workflows/HANDOFF_2026-05-11_CIVICRECORDS_AI_V150_COMPLETE.md`.
+
 ## Current Scope Boundary
 
-Active target: CivicRecords AI CivicCore migration and v1.5.0 release.
+Active target: Audit punch-list section B/C/D recovery.
 
-Why next: CivicRecords AI is the remaining real product with a legacy CivicCore v0.22.1 pin. Migrating it to CivicCore v1.0.1 and releasing v1.5.0 unblocks future full-suite installer truth.
-
-Currently halted:
-
-- Status: RED under directive section 4.7.
-- CivicRecords AI PR #69 merged at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
-- CivicRecords AI tag `v1.5.0` points at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
-- Local release verifier and PR #69 GitHub CI are green.
-- GitHub Release `v1.5.0` does not exist because `civicrecords-ai/.github/workflows/release.yml` fails before jobs start.
-- Halt handoff: `.agent-workflows/HANDOFF_2026-05-10_CIVICRECORDS_AI_V150_PAUSED.md`.
-- Next action: fix audit TEST-022 in `release.yml`, re-run the v1.5.0 release workflow, then resume umbrella truth reconciliation.
+Why next: CivicRecords AI now shares CivicCore v1.0.1 with the rest of the active product/platform repos and the full-suite installer profile is re-enabled. The next highest-value work is closing the audit's remaining security-default, install-path, and module-honesty gaps.
 
 Allowed now:
 
-- Read CivicRecords AI, CivicCore, the audit package, and the unified spec for the CivicCore migration.
-- Change CivicRecords AI dependency pins, compatibility code, tests, docs, release evidence, and installer truth needed for v1.5.0.
-- Run CivicRecords AI local verification, browser/UX checks where applicable, and GitHub CI.
-- Open and merge CivicRecords AI PRs required for the migration and v1.5.0 release.
-- Update umbrella release-truth artifacts through the release-lockstep gate if CivicRecords AI's recovery label changes.
+- Read the audit package, sprint punch-list, unified spec, release recovery status, installer docs, and current module truth artifacts.
+- Make scoped fixes for audit punch-list section B/C/D items after the relevant active scope is selected and documented.
+- Use the release-lockstep gate for any release-truth PR.
+- Keep CivicRecords AI `workflow_dispatch` as a low-priority release-infrastructure follow-up, not part of the completed v1.5.0 migration.
 
 Not allowed now:
 
 - Revisit, move, delete, or retag the seven demoted releases from PR #115.
 - Modify CivicCore release artifacts; v1.0.1 is final.
 - Reopen CivicClerk B1 unless a regression is found; CivicClerk v1.0.1 is shipped.
+- Reopen CivicRecords AI v1.5.0 migration unless a regression is found; CivicRecords AI v1.5.0 is shipped.
 - Tag any module as v1.0 or higher unless its full recovery gate and installer integration are satisfied.
 - Bypass release-lockstep-gate, admin-merge around it, force-push, delete tags, or rewrite history.
 - Use unauthorized skills or plugins.
 
 ## Definition Of Done For Current Target
 
-The CivicRecords AI migration target is complete only when:
+The audit punch-list B/C/D recovery target is complete only when:
 
-1. CivicRecords AI depends on CivicCore v1.0.1 using the authorized package pin pattern.
-2. Compatibility code and tests pass against CivicCore v1.0.1 without silently weakening behavior.
-3. User-facing docs explain the migration and any operator-visible compatibility changes.
-4. Browser/UX evidence is captured for relevant request/search/admin surfaces if frontend behavior changes.
-5. The repo's full local release verifier passes.
-6. GitHub CI is green after push/merge.
-7. CivicRecords AI v1.5.0 release artifacts exist and the umbrella truth files move through `release-lockstep-gate`.
-8. Handoff/update evidence is written before advancing to the next queued target.
+1. The selected B/C/D scope is explicitly named before edits.
+2. All changed behavior is covered by local tests and docs.
+3. Any frontend/operator-facing surface has browser/UX evidence if touched.
+4. Release-truth artifacts move through `release-lockstep-gate` if version, installer, or verifier truth changes.
+5. Handoff/update evidence is written before advancing to the next queued target.
 
 ## Stop Conditions
 
 Stop and report before continuing if:
 
 - The fix would require changing CivicCore release artifacts.
-- A test failure indicates a behavior change outside CivicRecords AI's CivicCore migration scope.
+- A test failure indicates a behavior change outside the selected audit punch-list scope.
 - `release-lockstep-gate` or required CI fails for a non-trivial reason.
 - A destructive action, force-push, tag deletion, history rewrite, signing key, paid service, or production secret is requested.
 
