@@ -45,17 +45,31 @@ Completion evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-11_CIVICRECORDS_AI_V150_COMPLETE.md`.
 
+4. **D2/B3 shared staff-key gate extraction and rollout** - GREEN
+
+Why it was next: audit D2 and B3 shared one root problem: six modules carried bespoke staff-key checks instead of a shared CivicCore helper, leaving timing-safe comparison discipline scattered across repos.
+
+Completion evidence:
+
+- CivicCore PR #56 merged at `411a4f4a833c91a787dacf1485f643f564e174c2`, adding `civiccore.auth.staff_key_gate`.
+- CivicCore v1.1.0 release: `https://github.com/CivicSuite/civiccore/releases/tag/v1.1.0`.
+- CivicCore v1.1.0 wheel SHA256: `3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87`.
+- Six downstream rollout PRs merged: CivicCode #55, CivicPlan #10, CivicPermit #11, CivicInspect #9, CivicGrants #8, CivicProcure #8.
+- Umbrella PR #123 merged at `63528de` through green `release-lockstep-gate`.
+- `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge.
+- Final handoff: `.agent-workflows/HANDOFF_2026-05-11_D2_B3_STAFF_KEY_GATE_COMPLETE.md`.
+
 ## Active Target #1
 
-1. **Audit punch-list section B/C/D recovery**
+1. **Audit punch-list B2 security-secret handling recovery**
 
-Why first now: CivicCore v1.0.1, CivicClerk v1.0.1, and CivicRecords AI v1.5.0 are now reconciled in suite truth. The next work should close the audit's remaining security-default, install-path, and module-honesty gaps instead of reopening completed release plumbing.
+Why first now: D2/B3 closed the shared staff-key timing issue. B2 is the next highest-trust security-default gap: move JWT secret and first admin password material out of recoverable container environment variables.
 
-Definition of Done: read `.agent-workflows/PROJECT_CONTROL_PLANE.md`, `audit-civicsuite-2026-05-09/sprint-punchlist.md`, and relevant release-recovery docs before selecting the first B/C/D fix scope.
+Definition of Done: inventory every JWT secret and first-admin password path in the targeted deployment stack, move secret material to Docker secrets or bind-mounted secret files where in scope, update docs/tests, and preserve release-lockstep truth if installer metadata changes.
 
 Current status: YELLOW, queued and ready for scoped execution.
 
-Next action: select the first B/C/D punch-list item, state the active scope boundary, and execute with tests/docs/QA evidence.
+Next action: run the v0.2 Phase 0 infrastructure preflight for the selected B2 target scope, then produce the B2 manifest before edits.
 
 ## Queued Targets
 
@@ -67,6 +81,10 @@ Why second: macOS full lifecycle proof still requires a real macOS host or runne
 
 Why third: the v1.5.0 recovery exposed that tag-triggered releases are hard to rerun safely. Adding `workflow_dispatch` to `civicrecords-ai/.github/workflows/release.yml` is a low-priority release-infrastructure improvement now that v1.5.0 has shipped.
 
+4. **Remaining audit punch-list C/D recovery**
+
+Why fourth: after B2, the remaining install-path and module-honesty gaps should continue one bounded manifest at a time: C4/C6 and D1/D3/D4/D5/D6.
+
 ## Current Decision
 
-Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with audit punch-list section B/C/D recovery, because the platform/product release-truth blockers are now closed and the remaining audit issues are the next trust blockers.
+Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with audit punch-list B2 because D2/B3 is now GREEN and B2 is the next direct security-default trust blocker.
