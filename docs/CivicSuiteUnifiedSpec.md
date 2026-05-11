@@ -86,7 +86,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v1.0.1 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction. The v1.0.1 recovery patch includes security hardening for auth error payloads:
+Current shipped CivicCore v1.1.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction. The v1.1.0 release adds a shared timing-safe staff-key gate for downstream modules and retains the v1.0.1 security hardening for auth error payloads:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -221,7 +221,7 @@ CivicCore is the shared platform, not a user-facing product.
 
 ### 6.1 Shipped
 
-Current shipped CivicCore v1.0.1 includes:
+Current shipped CivicCore v1.1.0 includes:
 
 - Migration runner and baseline migration strategy
 - Shared SQLAlchemy `Base`
@@ -239,6 +239,7 @@ Current shipped CivicCore v1.0.1 includes:
 - Local city profile configuration
 - Storage-neutral onboarding profile interview helpers
 - Bearer-role and trusted-header auth helpers for downstream FastAPI services
+- Timing-safe staff-key gate helper for downstream FastAPI services
 - Connector import normalization, delta planning, retry/circuit-breaker primitives, and source-list status projection
 - Shared ingest discovery/fetch contracts and cited-source validation
 - Search normalization, deterministic matching, permission-aware access helpers, and reciprocal-rank fusion
@@ -274,7 +275,7 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: v1.0.1 recovery patch shipped with security hardening for auth error payloads. Architectural target: shared-platform release with many planned extractions.
+Status: v1.1.0 shipped with the shared `staff_key_gate` helper; v1.0.1 recovery hardening for auth error payloads remains included. Architectural target: shared-platform release with many planned extractions.
 Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, auth helpers, search/access helpers, connector primitives, ingest contracts, scheduling helpers, verification helpers, and future full document/search/catalog/exemption/scaffold primitives.
 
 ### Tier 1 - Clerk Core
@@ -1003,16 +1004,16 @@ This section previously enumerated per-module shipping prose. That prose drifted
 
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
-| civiccore | 1.0.1 | n/a | Real shared platform; recovery patch shipped with security hardening for auth error payloads. |
+| civiccore | 1.1.0 | n/a | Real shared platform; v1.1.0 adds shared `staff_key_gate` with timing-safe staff-key comparison; v1.0.1 auth hardening remains included. |
 | civicrecords-ai | 1.5.0 | 1.0.1 | Records product recovery release shipped after CivicCore v1.0.1 migration; full-suite pin alignment restored. |
 | civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
-| civiccode | 0.5.0 | 1.0.1 | Demoted from false v1.0.0; meaningful runtime depth but not v1.0 product-ready. |
+| civiccode | 0.5.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 in the D2/B3 staff-key helper rollout. |
 | civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |
-| civicplan | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth planning support. |
-| civicpermit | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth permit support. |
-| civicinspect | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth inspection support. |
-| civicgrants | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth grants support. |
-| civicprocure | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth procurement support. |
+| civicplan | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicpermit | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicinspect | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicgrants | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicprocure | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 
 A municipality cannot today run end-to-end on this suite. The immediate work is release-integrity recovery, security-default repair, install-path correction, and then module productization one module at a time.
 ## 19. Post-Foundation Build Sequence
@@ -1020,12 +1021,11 @@ A municipality cannot today run end-to-end on this suite. The immediate work is 
 The v0.1.x foundation lane created real repository surfaces and release artifacts, but it did not create city-ready products. The next sequence is recovery first, then productization:
 
 1. Complete Sprint A release-integrity demotion and lockstep gates.
-2. Upgrade CivicRecords AI to CivicCore v1.0.1 and release it as v1.5.0.
-3. Stabilize the installer profile and per-module version pin strategy.
-4. Resume productization one module at a time from the active queue; no lateral v1.0 sweeps.
-6. Continue CivicCore shared-extraction depth only where an active module needs the shared capability.
-7. Add cross-module tests before advertising suite-level workflows.
-8. Update the compatibility matrix, spec, verifier, installer metadata, downstream pins, changelog, tag, and release notes together whenever a release label changes.
+2. Keep the installer profile and per-module version pin strategy aligned with released artifacts.
+3. Resume productization one module at a time from the active queue; no lateral v1.0 sweeps.
+4. Continue CivicCore shared-extraction depth only where an active module needs the shared capability.
+5. Add cross-module tests before advertising suite-level workflows.
+6. Update the compatibility matrix, spec, verifier, installer metadata, downstream pins, changelog, tag, and release notes together whenever a release label changes.
 
 Parallel CivicCore work should extract only the shared capabilities needed by the active module and should not invent unused abstractions.
 ## 20. Open Questions Requiring ADRs

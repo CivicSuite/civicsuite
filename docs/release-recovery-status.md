@@ -22,16 +22,16 @@ Demotion pattern:
 
 | Repo | Previous public label | Corrective label | Decision |
 |---|---:|---:|---|
-| civiccore | v1.0.0 / v1.0 | v1.0.1 shipped | Real platform; release-hygiene patch, not demotion. v1.0.1 shipped 2026-05-10 with auth-error-payload hardening (5 fields removed); v1.0 superseded. |
+| civiccore | v1.0.0 / v1.0 | v1.1.0 shipped | Real platform; v1.1.0 shipped 2026-05-11 with shared `staff_key_gate` and timing-safe staff-key comparison. v1.0.1 auth-error-payload hardening remains included; v1.0 superseded. |
 | civicclerk | v1.0.0 | v1.0.1 shipped | Real product-shaped workflow; v1.0.1 shipped 2026-05-10 with QA-001 security default change. Fresh installs deny anonymous staff writes by default; open mode is explicit local-rehearsal opt-in. |
 | civicrecords-ai | v1.4.10 | v1.5.0 shipped | CivicCore v1.0.1 migration shipped 2026-05-11; full-suite profile re-enabled after unified CivicCore pin alignment. |
-| civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. |
+| civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. D2/B3 rollout moved this repo to CivicCore v1.1.0. |
 | civiczone | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
-| civicplan | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
-| civicpermit | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
-| civicinspect | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. |
-| civicgrants | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. |
-| civicprocure | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. |
+| civicplan | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
+| civicpermit | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
+| civicinspect | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
+| civicgrants | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
+| civicprocure | v1.0.0 | v0.2.0 | Demote; false label after recovery halt. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
 
 ## Recovery Gates Before Any Future v1 Claim
 
@@ -57,6 +57,7 @@ Demotion pattern:
 - **2026-05-10:** CivicCore v1.0.1 shipped as a recovery patch with auth-error-payload hardening. The auth hardening removes `token_roles`, `principal`, `principal_roles`, `client_host`, and `trusted_proxy_cidrs` from CivicCore auth error responses; CivicCore v1.0 is superseded.
 - **2026-05-10:** CivicClerk v1.0.1 shipped as a recovery patch for QA-001. The default staff auth mode is now `protected`; anonymous writes to `/meeting-bodies`, `/meetings`, `/motions`, and `/votes` return 401 by default. `open` mode remains available only as an explicit local-rehearsal opt-in.
 - **2026-05-11:** CivicRecords AI v1.5.0 shipped after migrating from CivicCore v0.22.1 to v1.0.1. The v1.5.0 release workflow exposed and fixed three latent release-infrastructure defects: release-notes YAML parsing, Windows runner attempting Linux Docker Compose verification, and a hermetic CI admin email using the `.local` reserved domain. The full-suite profile is re-enabled after this unified CivicCore pin alignment.
+- **2026-05-11:** CivicCore v1.1.0 shipped with the shared `staff_key_gate` helper. CivicCode, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure now consume the hash-locked v1.1.0 wheel for the D2/B3 timing-safe staff-key rollout; CivicRecords AI, CivicClerk, and CivicZone remain on the v1.0.1 recovery pin.
 
 ## Language Rules
 
