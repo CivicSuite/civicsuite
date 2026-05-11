@@ -44,6 +44,19 @@ For the CivicRecords AI v1.5.0 CivicCore migration:
 |---|---:|---:|---|
 | CivicSuite/civicrecords-ai | #69 | 1.5.0 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
 
+For the CivicCore v1.1.0 staff-key gate release:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civiccode | #55 | 0.5.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
+| CivicSuite/civicplan | #10 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicpermit | #11 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicinspect | #9 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicgrants | #8 | 0.2.0 | same hash-locked CivicCore wheel |
+| CivicSuite/civicprocure | #8 | 0.2.0 | same hash-locked CivicCore wheel |
+
+CivicRecords AI, CivicClerk, and CivicZone remain on the CivicCore v1.0.1 recovery pin because they were outside the D2/B3 staff-key rollout scope.
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`

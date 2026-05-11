@@ -83,7 +83,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  false,
-                         "disabled_reason":  "Re-enabled after CivicRecords AI v1.5.0 unified the CivicCore v1.0.1 pin across active product/platform repos."
+                         "disabled_reason":  "Re-enabled after CivicRecords AI v1.5.0 unified the CivicCore v1.0.1 pin; D2/B3 modules now consume the backwards-compatible CivicCore v1.1.0 staff-key helper."
                      },
                      {
                          "id":  "custom",
@@ -107,13 +107,13 @@
                         "dependencies":  [
 
                                          ],
-                        "installer_status":  "v1_0_1_recovery_patch_shipped",
+                        "installer_status":  "v1_1_0_staff_key_gate_shipped",
                         "proof_required":  [
                                                "install",
                                                "version_check",
                                                "compatibility_matrix_check"
                                            ],
-                        "current_version":  "1.0.1"
+                        "current_version":  "1.1.0"
                     },
                     {
                         "id":  "civicrecords-ai",
@@ -166,7 +166,7 @@
                         "role":  "municipal code",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicclerk"
@@ -216,7 +216,7 @@
                         "role":  "planning policy lookup",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiczone",
@@ -242,7 +242,7 @@
                         "role":  "permit intake readiness",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode",
@@ -288,7 +288,7 @@
                         "role":  "inspection workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode",
@@ -314,7 +314,7 @@
                         "role":  "grants workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicrecords-ai"
@@ -339,7 +339,7 @@
                         "role":  "procurement workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
