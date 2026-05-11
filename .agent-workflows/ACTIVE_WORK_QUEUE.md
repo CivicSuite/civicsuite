@@ -1,6 +1,6 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-05-10
+Last updated: 2026-05-11
 
 ## Completed Target
 
@@ -30,26 +30,32 @@ Completion evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-10_CIVICCLERK_B1_COMPLETE.md`.
 
-## Active Target #1
+3. **CivicRecords AI CivicCore migration and v1.5.0 release** - GREEN
 
-1. **CivicRecords AI CivicCore migration and v1.5.0 release**
+Why it was next: CivicRecords AI was real and already beyond the v1 question, but it still pinned CivicCore v0.22.1. Migrating it to CivicCore v1.0.1 unblocked the full-suite installer profile and closed the next major release-truth gap.
 
-Why first now: CivicRecords AI is real and already beyond the v1 question, but it still pins CivicCore v0.22.1. Migrating it to CivicCore v1.0.1 unblocks the future full-suite installer profile and closes the next major release-truth gap.
-
-Definition of Done: read `.agent-workflows/PROJECT_CONTROL_PLANE.md`, the audit punch-list, and CivicRecords AI's own release gates before starting.
-
-Current status: RED, halted under directive section 4.7 after partial completion.
-
-Halt evidence:
+Completion evidence:
 
 - CivicRecords AI PR #69 merged at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
-- CivicRecords AI tag `v1.5.0` points at `a0b1c467c43ebc84cfda25c7dab77d2d4d832292`.
-- Local `bash scripts/verify-release.sh` passed with 633 backend tests, 36 frontend tests, 4 Playwright tests, and runtime install proof for `civicrecords-ai==1.5.0` with `civiccore==1.0.1`.
-- PR #69 GitHub CI passed all five checks.
-- GitHub Release `v1.5.0` was not created because `civicrecords-ai/.github/workflows/release.yml` has the audit TEST-022 YAML parse bug in its release-notes HEREDOC block.
-- Halt handoff: `.agent-workflows/HANDOFF_2026-05-10_CIVICRECORDS_AI_V150_PAUSED.md`.
+- CivicRecords AI v1.5.0 release: `https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.5.0`.
+- CivicRecords AI v1.5.0 setup SHA256: `b48e4591c6d7bde3476078ee648d89e8e6a4e18b24ff0487ec9762af690b8ac5`.
+- Release workflow hardening PRs merged: #70 YAML parse fix, #71 Linux/Windows job split, #72 container-log diagnostics, #73 `.local` admin email fix.
+- Umbrella PR #121 merged at `3cf9f8289f1090b1c6dd9270d7e184793870df2d` through green `release-lockstep-gate`.
+- Full-suite installer profile is re-enabled.
+- `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge.
+- Final handoff: `.agent-workflows/HANDOFF_2026-05-11_CIVICRECORDS_AI_V150_COMPLETE.md`.
 
-Next action: fix `release.yml`, re-trigger the v1.5.0 release workflow, then resume umbrella truth reconciliation and final handoff.
+## Active Target #1
+
+1. **Audit punch-list section B/C/D recovery**
+
+Why first now: CivicCore v1.0.1, CivicClerk v1.0.1, and CivicRecords AI v1.5.0 are now reconciled in suite truth. The next work should close the audit's remaining security-default, install-path, and module-honesty gaps instead of reopening completed release plumbing.
+
+Definition of Done: read `.agent-workflows/PROJECT_CONTROL_PLANE.md`, `audit-civicsuite-2026-05-09/sprint-punchlist.md`, and relevant release-recovery docs before selecting the first B/C/D fix scope.
+
+Current status: YELLOW, queued and ready for scoped execution.
+
+Next action: select the first B/C/D punch-list item, state the active scope boundary, and execute with tests/docs/QA evidence.
 
 ## Queued Targets
 
@@ -57,10 +63,10 @@ Next action: fix `release.yml`, re-trigger the v1.5.0 release workflow, then res
 
 Why second: macOS full lifecycle proof still requires a real macOS host or runner. The installer remains YELLOW for macOS runtime certification until that exists or the published platform matrix is narrowed.
 
-3. **Audit punch-list section B/C/D recovery**
+3. **CivicRecords AI release workflow_dispatch follow-up**
 
-Why third: after CivicRecords migration, the next recovery work should address security defaults, install path, and module honesty from the audit punch-list in order.
+Why third: the v1.5.0 recovery exposed that tag-triggered releases are hard to rerun safely. Adding `workflow_dispatch` to `civicrecords-ai/.github/workflows/release.yml` is a low-priority release-infrastructure improvement now that v1.5.0 has shipped.
 
 ## Current Decision
 
-Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with CivicRecords AI CivicCore migration and v1.5.0, because it is the next release-truth blocker and it unblocks the future full-suite installer profile.
+Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with audit punch-list section B/C/D recovery, because the platform/product release-truth blockers are now closed and the remaining audit issues are the next trust blockers.
