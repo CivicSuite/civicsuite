@@ -54,44 +54,58 @@ Evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed after PR #121 merged.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-11_CIVICRECORDS_AI_V150_COMPLETE.md`.
 
+Completed: D2/B3 shared staff-key gate extraction and rollout.
+
+Evidence:
+
+- CivicCore PR #56 merged at `411a4f4a833c91a787dacf1485f643f564e174c2`, adding `civiccore.auth.staff_key_gate` with timing-safe staff-key comparison and unit tests.
+- CivicCore v1.1.0 release exists: `https://github.com/CivicSuite/civiccore/releases/tag/v1.1.0`.
+- CivicCore v1.1.0 wheel SHA256: `3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87`.
+- Downstream D2/B3 rollout PRs merged: CivicCode #55, CivicPlan #10, CivicPermit #11, CivicInspect #9, CivicGrants #8, and CivicProcure #8.
+- CivicSuite umbrella PR #123 merged at `63528de` through green `release-lockstep-gate`.
+- `python scripts/verify-suite-state.py --remote-only` passed after PR #123 merged.
+- Final handoff: `.agent-workflows/HANDOFF_2026-05-11_D2_B3_STAFF_KEY_GATE_COMPLETE.md`.
+
 ## Current Scope Boundary
 
-Active target: Audit punch-list section B/C/D recovery.
+Active target: Audit punch-list B2 security-secret handling recovery.
 
-Why next: CivicRecords AI now shares CivicCore v1.0.1 with the rest of the active product/platform repos and the full-suite installer profile is re-enabled. The next highest-value work is closing the audit's remaining security-default, install-path, and module-honesty gaps.
+Why next: D2/B3 closed the shared staff-key timing and duplication problem. The next highest-value security-default gap is B2: move JWT secret and first admin password material out of container environment variables and into Docker secrets or bind-mounted secret files.
 
 Allowed now:
 
 - Read the audit package, sprint punch-list, unified spec, release recovery status, installer docs, and current module truth artifacts.
-- Make scoped fixes for audit punch-list section B/C/D items after the relevant active scope is selected and documented.
+- Make scoped fixes for audit punch-list B2 after the relevant repos, secret flows, tests, and docs surfaces are inventoried.
 - Use the release-lockstep gate for any release-truth PR.
 - Keep CivicRecords AI `workflow_dispatch` as a low-priority release-infrastructure follow-up, not part of the completed v1.5.0 migration.
 
 Not allowed now:
 
 - Revisit, move, delete, or retag the seven demoted releases from PR #115.
-- Modify CivicCore release artifacts; v1.0.1 is final.
+- Modify CivicCore release artifacts; v1.1.0 is final for the D2/B3 helper release.
 - Reopen CivicClerk B1 unless a regression is found; CivicClerk v1.0.1 is shipped.
 - Reopen CivicRecords AI v1.5.0 migration unless a regression is found; CivicRecords AI v1.5.0 is shipped.
+- Reopen the D2/B3 staff-key gate rollout unless a regression is found; CivicCore v1.1.0 and the six downstream PRs are shipped.
 - Tag any module as v1.0 or higher unless its full recovery gate and installer integration are satisfied.
 - Bypass release-lockstep-gate, admin-merge around it, force-push, delete tags, or rewrite history.
 - Use unauthorized skills or plugins.
 
 ## Definition Of Done For Current Target
 
-The audit punch-list B/C/D recovery target is complete only when:
+The audit punch-list B2 recovery target is complete only when:
 
-1. The selected B/C/D scope is explicitly named before edits.
-2. All changed behavior is covered by local tests and docs.
-3. Any frontend/operator-facing surface has browser/UX evidence if touched.
-4. Release-truth artifacts move through `release-lockstep-gate` if version, installer, or verifier truth changes.
-5. Handoff/update evidence is written before advancing to the next queued target.
+1. The B2 scope and affected secret surfaces are explicitly named before edits.
+2. JWT secret and first-admin password handling no longer rely on recoverable container env values in the targeted deployment path.
+3. All changed behavior is covered by local tests and docs.
+4. Any frontend/operator-facing surface has browser/UX evidence if touched.
+5. Release-truth artifacts move through `release-lockstep-gate` if version, installer, or verifier truth changes.
+6. Handoff/update evidence is written before advancing to the next queued target.
 
 ## Stop Conditions
 
 Stop and report before continuing if:
 
-- The fix would require changing CivicCore release artifacts.
+- The fix would require changing already-published release artifacts.
 - A test failure indicates a behavior change outside the selected audit punch-list scope.
 - `release-lockstep-gate` or required CI fails for a non-trivial reason.
 - A destructive action, force-push, tag deletion, history rewrite, signing key, paid service, or production secret is requested.
