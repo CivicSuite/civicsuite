@@ -81,9 +81,9 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicrecords-ai",
         "CivicSuite/civicrecords-ai",
         "civicrecords-ai",
-        "1.4.10",
+        "1.5.0",
         "backend/pyproject.toml",
-        civiccore_required="0.22.1",
+        civiccore_required="1.0.1",
     ),
     RepoSpec(
         "civicclerk",

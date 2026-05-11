@@ -283,7 +283,7 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
-Status: provisional v1.4.10 tag; target v1.5.0 after CivicCore upgrade.
+Status: v1.5.0 recovery release shipped after CivicCore v1.0.1 migration.
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
 #### CivicClerk
@@ -1004,7 +1004,7 @@ This section previously enumerated per-module shipping prose. That prose drifted
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
 | civiccore | 1.0.1 | n/a | Real shared platform; recovery patch shipped with security hardening for auth error payloads. |
-| civicrecords-ai | 1.4.10 | 0.22.1 | Developer-preview records product; target v1.5.0 after CivicCore upgrade. |
+| civicrecords-ai | 1.5.0 | 1.0.1 | Records product recovery release shipped after CivicCore v1.0.1 migration; full-suite pin alignment restored. |
 | civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
 | civiccode | 0.5.0 | 1.0.1 | Demoted from false v1.0.0; meaningful runtime depth but not v1.0 product-ready. |
 | civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |
