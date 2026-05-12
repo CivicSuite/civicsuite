@@ -44,18 +44,35 @@ def run(
     )
 
 
+def ensure_secret_files(source: Path) -> None:
+    secret_dir = source / "data" / "secrets"
+    secret_dir.mkdir(parents=True, exist_ok=True)
+    secrets_to_write = {
+        "jwt_secret": secrets.token_hex(32),
+        "first_admin_password": f"Cleanroom-{secrets.token_hex(16)}",
+    }
+    for name, value in secrets_to_write.items():
+        path = secret_dir / name
+        if not path.is_file():
+            path.write_text(value + "\n", encoding="utf-8")
+        try:
+            path.chmod(0o400)
+        except OSError:
+            pass
+
+
 def write_env(target: Path) -> dict[str, str]:
+    ensure_secret_files(target.parent)
     values = {
         "DATABASE_URL": "postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords",
-        "JWT_SECRET": secrets.token_hex(32),
         "FIRST_ADMIN_EMAIL": "admin@example.gov",
-        "FIRST_ADMIN_PASSWORD": f"Cleanroom-{secrets.token_hex(16)}",
         "OLLAMA_BASE_URL": "http://ollama:11434",
         "REDIS_URL": "redis://redis:6379/0",
         "AUDIT_RETENTION_DAYS": "1095",
         "CONNECTOR_HOST_ALLOWLIST": "",
         "PORTAL_MODE": "private",
         "ENCRYPTION_KEY": base64.urlsafe_b64encode(os.urandom(32)).decode(),
+        "CIVICRECORDS_SECRET_DIR": "./data/secrets",
     }
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
     return values
