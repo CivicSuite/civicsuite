@@ -67,9 +67,9 @@ Why first now: D2/B3 closed the shared staff-key timing issue. B2 is the next hi
 
 Definition of Done: inventory every JWT secret and first-admin password path in the targeted deployment stack, move secret material to Docker secrets or bind-mounted secret files where in scope, update docs/tests, and preserve release-lockstep truth if installer metadata changes.
 
-Current status: RED at Phase 2 rehearsal. Phase 0 inventory and Phase 1 PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4) are landed; the directive's literal acceptance command `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` still returns the two `_FILE` pointer env names.
+Current status: Phase 2 GREEN, pre-tag approval gate. Phase 0 inventory, Phase 1 PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4), and Phase 1B PR #76 (merge SHA 5e7425dc7a226f63a4ba8a91aa76cb30491c03ef) are landed; the directive's literal acceptance command `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` returns zero matching lines (`exit=1`) in the Phase 2 rehearsal artifact.
 
-Next action: open Phase 1B PR in civicrecords-ai to remove the `_FILE` pointer env names from the container env, tighten the contract test and `scripts/verify-release.sh` predicate to the directive's literal grep `JWT_SECRET|FIRST_ADMIN_PASSWORD` (unanchored, no `=` suffix), then rerun Phase 2 rehearsal and halt at the human tag-push approval gate.
+Next action: halt for Scott v1.6.0 tag-push approval; on approval, push the v1.6.0 tag, wait for release workflow success, then open the umbrella release-truth PR (`modules.json`, spec §18, compatibility/index.md, release-recovery-status, downstream-pins, CHANGELOG, verify-suite-state.py) with the `release-tag` label.
 
 ## Queued Targets
 

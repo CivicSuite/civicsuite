@@ -68,11 +68,11 @@ Evidence:
 
 ## Current Scope Boundary
 
-Active target: Audit punch-list B2 security-secret handling recovery - Phase 1 merged, Phase 2 RED.
+Active target: Audit punch-list B2 security-secret handling recovery - Phase 2 GREEN, pre-tag approval gate.
 
-State on resume: civicrecords-ai PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4) moved JWT and first-admin-password material into Docker secret files. Phase 2 rehearsal at `civicrecords-ai/.agent-runs/b2-phase2-rehearsal.md` declares RED because the directive's literal `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` still returns the two `_FILE` pointer env names. No v1.6.0 tag is pushed. The merged contract test (`backend/tests/test_docker_secret_contract.py`) and the verifier (`scripts/verify-release.sh:63`) lock a predicate anchored on `=`, which is strictly narrower than the directive's grep - both must be tightened in Phase 1B.
+State on resume: civicrecords-ai PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4) moved JWT and first-admin-password material into Docker secret files. civicrecords-ai PR #76 (merge SHA 5e7425dc7a226f63a4ba8a91aa76cb30491c03ef) removed the `_FILE` pointer env names from the container env and tightened `backend/tests/test_docker_secret_contract.py` plus `scripts/verify-release.sh` to the directive's literal `JWT_SECRET|FIRST_ADMIN_PASSWORD` predicate. Phase 2 rehearsal at `civicrecords-ai/.agent-runs/b2-phase2-rehearsal.md` is GREEN: `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"; echo exit=$?` returns `exit=1`. No v1.6.0 tag is pushed.
 
-Why next: close Phase 1B before any v1.6.0 tag.
+Why next: halt for Scott approval before any v1.6.0 tag push; on approval, proceed to release workflow and umbrella release-truth reconciliation.
 
 Allowed now:
 
