@@ -284,7 +284,7 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
-Status: v1.5.0 recovery release shipped after CivicCore v1.0.1 migration.
+Status: v1.6.0 B2 recovery release shipped after Docker secret extraction; CivicCore v1.0.1 pin unchanged.
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
 #### CivicClerk
@@ -1005,7 +1005,7 @@ This section previously enumerated per-module shipping prose. That prose drifted
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
 | civiccore | 1.1.0 | n/a | Real shared platform; v1.1.0 adds shared `staff_key_gate` with timing-safe staff-key comparison; v1.0.1 auth hardening remains included. |
-| civicrecords-ai | 1.5.0 | 1.0.1 | Records product recovery release shipped after CivicCore v1.0.1 migration; full-suite pin alignment restored. |
+| civicrecords-ai | 1.6.0 | 1.0.1 | B2 audit punch-list closed: JWT secret and first-admin password material moved to Docker secret files; container env no longer exposes any JWT_SECRET* or FIRST_ADMIN_PASSWORD* name. |
 | civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
 | civiccode | 0.5.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 in the D2/B3 staff-key helper rollout. |
 | civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |

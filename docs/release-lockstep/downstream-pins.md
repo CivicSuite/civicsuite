@@ -57,6 +57,14 @@ For the CivicCore v1.1.0 staff-key gate release:
 
 CivicRecords AI, CivicClerk, and CivicZone remain on the CivicCore v1.0.1 recovery pin because they were outside the D2/B3 staff-key rollout scope.
 
+For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicrecords-ai | #76 | 1.6.0 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
+CivicRecords AI remains on the CivicCore v1.0.1 recovery pin; the B2 release did not move the CivicCore pin.
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`
