@@ -1,6 +1,6 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 ## Completed Target
 
@@ -59,32 +59,43 @@ Completion evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-11_D2_B3_STAFF_KEY_GATE_COMPLETE.md`.
 
+5. **Audit punch-list B2 security-secret handling recovery** - GREEN
+
+Why it was next: D2/B3 closed the shared staff-key timing issue. B2 was the next highest-trust security-default gap: move JWT secret and first admin password material out of recoverable container environment variables.
+
+Completion evidence:
+
+- CivicRecords AI Phase 1 PR #74 merged at `902db173366359124e4d8e84f3c440df61aa62f4`.
+- CivicRecords AI Phase 1B PR #76 merged at `5e7425dc7a226f63a4ba8a91aa76cb30491c03ef`.
+- CivicRecords AI v1.6.0 release: `https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.6.0`.
+- v1.6.0 setup SHA256: `5d4d55edc4a030ab86068ff3ab578ea97f5e7b2a5982c90ba302752e0f1d9022`.
+- Umbrella PR #128 merged at `07544e01ec285a2116e63c76075d224136b8c3c0` through green `release-lockstep-gate`.
+- The literal B2 acceptance command `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` returns zero matching lines (`exit=1`) in the Phase 2 rehearsal artifact.
+- `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge, with CivicRecords AI at 1.6.0.
+- Final handoff: `.agent-workflows/HANDOFF_2026-05-12_B2_COMPLETE.md`.
+
 ## Active Target #1
 
-1. **Audit punch-list B2 security-secret handling recovery**
+1. **Installer/macOS certification follow-up**
 
-Why first now: D2/B3 closed the shared staff-key timing issue. B2 is the next highest-trust security-default gap: move JWT secret and first admin password material out of recoverable container environment variables.
+Why first now: B2 is closed and the queue already identifies macOS full lifecycle certification as the next installer trust gap. The suite still needs a real macOS host/runner proof, or the published platform matrix must be narrowed honestly.
 
-Definition of Done: inventory every JWT secret and first-admin password path in the targeted deployment stack, move secret material to Docker secrets or bind-mounted secret files where in scope, update docs/tests, and preserve release-lockstep truth if installer metadata changes.
+Definition of Done: decide and document the macOS runner strategy, produce a real macOS lifecycle proof or update the supported-platform truth sources to remove unsupported macOS claims, and keep release/install documentation in lockstep.
 
-Current status: Phase 2 GREEN, pre-tag approval gate. Phase 0 inventory, Phase 1 PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4), and Phase 1B PR #76 (merge SHA 5e7425dc7a226f63a4ba8a91aa76cb30491c03ef) are landed; the directive's literal acceptance command `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` returns zero matching lines (`exit=1`) in the Phase 2 rehearsal artifact.
+Current status: YELLOW, queued for scoped execution after B2 completion.
 
-Next action: halt for Scott v1.6.0 tag-push approval; on approval, push the v1.6.0 tag, wait for release workflow success, then open the umbrella release-truth PR (`modules.json`, spec §18, compatibility/index.md, release-recovery-status, downstream-pins, CHANGELOG, verify-suite-state.py) with the `release-tag` label.
+Next action: run the v0.2 Phase 0 infrastructure preflight for the macOS certification scope, then produce a narrow manifest before edits.
 
 ## Queued Targets
 
-2. **Installer/macOS certification follow-up**
+2. **CivicRecords AI release workflow_dispatch follow-up**
 
-Why second: macOS full lifecycle proof still requires a real macOS host or runner. The installer remains YELLOW for macOS runtime certification until that exists or the published platform matrix is narrowed.
+Why second: the v1.5.0 recovery exposed that tag-triggered releases are hard to rerun safely. Adding `workflow_dispatch` to `civicrecords-ai/.github/workflows/release.yml` is a low-priority release-infrastructure improvement now that v1.5.0 has shipped.
 
-3. **CivicRecords AI release workflow_dispatch follow-up**
+3. **Remaining audit punch-list C/D recovery**
 
-Why third: the v1.5.0 recovery exposed that tag-triggered releases are hard to rerun safely. Adding `workflow_dispatch` to `civicrecords-ai/.github/workflows/release.yml` is a low-priority release-infrastructure improvement now that v1.5.0 has shipped.
-
-4. **Remaining audit punch-list C/D recovery**
-
-Why fourth: after B2, the remaining install-path and module-honesty gaps should continue one bounded manifest at a time: C4/C6 and D1/D3/D4/D5/D6.
+Why third: after B2, the remaining install-path and module-honesty gaps should continue one bounded manifest at a time: C4/C6 and D1/D3/D4/D5/D6.
 
 ## Current Decision
 
-Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with audit punch-list B2 because D2/B3 is now GREEN and B2 is the next direct security-default trust blocker.
+Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with Installer/macOS certification follow-up because B2 is now GREEN and macOS runtime certification is the next unresolved installer trust gap.
