@@ -83,7 +83,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  false,
-                         "disabled_reason":  "Re-enabled after CivicRecords AI v1.5.0 unified the CivicCore v1.0.1 pin; D2/B3 modules now consume the backwards-compatible CivicCore v1.1.0 staff-key helper."
+                         "disabled_reason":  "Re-enabled after CivicRecords AI v1.5.0 unified the CivicCore v1.0.1 pin; CivicRecords AI v1.6.0 keeps that pin while closing B2 Docker secret handling."
                      },
                      {
                          "id":  "custom",
@@ -128,14 +128,14 @@
                                              "civiccore"
                                          ],
                         "default_port":  8000,
-                        "installer_status":  "v1_5_0_recovery_shipped",
+                        "installer_status":  "v1_6_0_b2_docker_secrets_shipped",
                         "proof_required":  [
                                                "install",
                                                "health_check",
                                                "restart",
                                                "repair"
                                            ],
-                        "current_version":  "1.5.0"
+                        "current_version":  "1.6.0"
                     },
                     {
                         "id":  "civicclerk",
