@@ -1,6 +1,6 @@
 # CivicSuite Project Control Plane
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 ## Project Goal
 
@@ -66,20 +66,32 @@ Evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed after PR #123 merged.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-11_D2_B3_STAFF_KEY_GATE_COMPLETE.md`.
 
+Completed: Audit punch-list B2 security-secret handling recovery.
+
+Evidence:
+
+- CivicRecords AI PR #74 moved raw JWT and first-admin-password material into Docker secret files at `902db173366359124e4d8e84f3c440df61aa62f4`.
+- CivicRecords AI PR #76 removed the `_FILE` pointer env names from the container env and tightened the release verifier/test predicate at `5e7425dc7a226f63a4ba8a91aa76cb30491c03ef`.
+- CivicRecords AI v1.6.0 release exists: `https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.6.0`.
+- CivicRecords AI v1.6.0 setup SHA256: `5d4d55edc4a030ab86068ff3ab578ea97f5e7b2a5982c90ba302752e0f1d9022`.
+- CivicSuite umbrella PR #128 merged at `07544e01ec285a2116e63c76075d224136b8c3c0` through green `release-lockstep-gate`.
+- `python scripts/verify-suite-state.py --remote-only` passed after PR #128 merged, with CivicRecords AI at 1.6.0.
+- Final handoff: `.agent-workflows/HANDOFF_2026-05-12_B2_COMPLETE.md`.
+
 ## Current Scope Boundary
 
-Active target: Audit punch-list B2 security-secret handling recovery - Phase 2 GREEN, pre-tag approval gate.
+Active target: Installer/macOS certification follow-up.
 
-State on resume: civicrecords-ai PR #74 (merge SHA 902db173366359124e4d8e84f3c440df61aa62f4) moved JWT and first-admin-password material into Docker secret files. civicrecords-ai PR #76 (merge SHA 5e7425dc7a226f63a4ba8a91aa76cb30491c03ef) removed the `_FILE` pointer env names from the container env and tightened `backend/tests/test_docker_secret_contract.py` plus `scripts/verify-release.sh` to the directive's literal `JWT_SECRET|FIRST_ADMIN_PASSWORD` predicate. Phase 2 rehearsal at `civicrecords-ai/.agent-runs/b2-phase2-rehearsal.md` is GREEN: `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"; echo exit=$?` returns `exit=1`. No v1.6.0 tag is pushed.
+State on resume: B2 is shipped as CivicRecords AI v1.6.0 and suite truth is reconciled. The next queued installer trust gap is macOS lifecycle certification: either produce a real macOS host/runner proof, or narrow the published platform matrix honestly if macOS cannot be supported.
 
-Why next: halt for Scott approval before any v1.6.0 tag push; on approval, proceed to release workflow and umbrella release-truth reconciliation.
+Why next: macOS full lifecycle proof remains unresolved after the Windows/Linux installer work. The queue identifies this as the next installer certification follow-up.
 
 Allowed now:
 
 - Read the audit package, sprint punch-list, unified spec, release recovery status, installer docs, and current module truth artifacts.
-- Make scoped fixes for audit punch-list B2 after the relevant repos, secret flows, tests, and docs surfaces are inventoried.
+- Make scoped fixes for the macOS certification follow-up after the runner/platform surfaces and published support claims are inventoried.
 - Use the release-lockstep gate for any release-truth PR.
-- Keep CivicRecords AI `workflow_dispatch` as a low-priority release-infrastructure follow-up, not part of the completed v1.5.0 migration.
+- Keep CivicRecords AI `workflow_dispatch` as a low-priority release-infrastructure follow-up, not part of the macOS certification target.
 
 Not allowed now:
 
@@ -88,16 +100,17 @@ Not allowed now:
 - Reopen CivicClerk B1 unless a regression is found; CivicClerk v1.0.1 is shipped.
 - Reopen CivicRecords AI v1.5.0 migration unless a regression is found; CivicRecords AI v1.5.0 is shipped.
 - Reopen the D2/B3 staff-key gate rollout unless a regression is found; CivicCore v1.1.0 and the six downstream PRs are shipped.
+- Reopen B2 unless a regression is found; CivicRecords AI v1.6.0 is shipped.
 - Tag any module as v1.0 or higher unless its full recovery gate and installer integration are satisfied.
 - Bypass release-lockstep-gate, admin-merge around it, force-push, delete tags, or rewrite history.
 - Use unauthorized skills or plugins.
 
 ## Definition Of Done For Current Target
 
-The audit punch-list B2 recovery target is complete only when:
+The Installer/macOS certification follow-up is complete only when:
 
-1. The B2 scope and affected secret surfaces are explicitly named before edits.
-2. JWT secret and first-admin password handling no longer rely on recoverable container env values in the targeted deployment path.
+1. The macOS runner/platform scope is explicitly named before edits.
+2. The project either has a real macOS lifecycle proof or published support claims are narrowed to match actual proof.
 3. All changed behavior is covered by local tests and docs.
 4. Any frontend/operator-facing surface has browser/UX evidence if touched.
 5. Release-truth artifacts move through `release-lockstep-gate` if version, installer, or verifier truth changes.
