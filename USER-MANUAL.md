@@ -47,7 +47,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 ### Prerequisites
 
 - A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Desktop** (Windows 10/11, macOS 13+) or Docker Engine (Linux). On Windows, also WSL 2 + Virtual Machine Platform.
+- **Docker Desktop** (Windows 10/11) or Docker Engine (Linux). Windows-only currently; macOS support pending lifecycle certification (Docker Desktop on macOS 13+ runs the script path but is not lifecycle-certified). On Windows, also WSL 2 + Virtual Machine Platform.
 - About 30 minutes for first install (model downloads).
 
 ### Install (Windows)
@@ -60,7 +60,11 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
    - **Start CivicRecords AI** — daily start (`docker compose up -d`).
    - **Install or Repair CivicRecords AI** — bootstrap / repair.
 
-### Install (Linux / macOS)
+### Install (Linux / macOS) — script path, not lifecycle-certified
+
+Windows-only currently; macOS support pending lifecycle certification. The
+script path below runs on Linux and macOS today but is not
+lifecycle-certified.
 
 ```bash
 git clone https://github.com/CivicSuite/civicrecords-ai.git

@@ -20,13 +20,13 @@ A release tag means "we put a version label on this commit." A procurement-ready
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (e.g., `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake; `civiczone` reads `civiccode` for code text). A single-module install is a supported design goal.
 
-In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile on Windows and Linux; macOS is not certified.
+In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile on Windows and Linux. Windows-only currently; macOS support pending lifecycle certification.
 
 ## What does "civic operator" actually need to run CivicSuite?
 
 For the modules that have install paths today:
 - A machine with **8+ CPU cores, 32 GB RAM, 50 GB free disk space** (per `civicrecords-ai` requirements; civicclerk roughly similar).
-- **Docker Desktop** (Windows 10/11, macOS 13+) or Docker Engine (Linux). WSL 2 + Virtual Machine Platform on Windows.
+- **Docker Desktop** (Windows 10/11) or Docker Engine (Linux). Windows-only currently; macOS support pending lifecycle certification (Docker Desktop on macOS 13+ runs the script path but is not lifecycle-certified). WSL 2 + Virtual Machine Platform on Windows.
 - **No internet connection required** after initial install. CivicSuite is local-first by design.
 - A staff person comfortable running install scripts and reading PowerShell or bash output.
 - Access to your city's documents (file shares, SharePoint, etc.) via the connectors that exist today.
