@@ -16,8 +16,8 @@ bundle using Docker.
 
 The suite installer must support:
 
-- Windows 10/11
-- macOS 13 or newer
+- Windows 10/11 (lifecycle-certified target)
+- macOS 13 or newer — Windows-only currently; macOS support pending lifecycle certification
 - Linux, with Ubuntu LTS as the first proof target
 
 From a zero-baseline machine, the installer must:
@@ -36,7 +36,7 @@ Per-module installers do not satisfy this contract.
 
 The installer must treat these as explicit baseline checks:
 
-- Docker Desktop on Windows/macOS, or Docker Engine on Linux.
+- Docker Desktop on Windows (lifecycle-certified) or macOS (Windows-only currently; macOS support pending lifecycle certification), or Docker Engine on Linux.
 - WSL 2 and Virtual Machine Platform on Windows when Docker Desktop requires it.
 - Sufficient RAM and disk space for the chosen profile.
 - Local container runtime availability.

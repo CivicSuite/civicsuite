@@ -54,17 +54,17 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 
 ## Quick Start
 
-**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. Verified lifecycle on Windows and Linux; **macOS uncertified** as of 2026-05-09.
+**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. Windows-only currently; macOS support pending lifecycle certification. Lifecycle verified on Windows and Linux as of 2026-05-09.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`
-- macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(beta only, full lifecycle not certified)*
+- macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(Windows-only currently; macOS support pending lifecycle certification)*
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
 
 **Per-module install path:**
 
-- FOIA / public records: <https://github.com/CivicSuite/civicrecords-ai> â€” Windows installer published per release; macOS/Linux via shell script.
+- FOIA / public records: <https://github.com/CivicSuite/civicrecords-ai> â€” Windows-only currently; macOS support pending lifecycle certification. macOS and Linux operators may use the `install.sh` script path, which is not lifecycle-certified.
 - Other modules: see each module's README for install instructions. Most modules ship as Python packages depending on `civiccore`.
 
 If you are orienting yourself for the first time, read in this order:
