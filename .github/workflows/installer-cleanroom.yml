@@ -41,10 +41,10 @@ jobs:
             os: windows-latest
             archive: installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip
           - platform: macos
-            os: ubuntu-latest
+            os: [self-hosted, linux, x64]
             archive: installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz
           - platform: linux
-            os: ubuntu-latest
+            os: [self-hosted, linux, x64]
             archive: installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz
     steps:
       - name: Check out repository
@@ -84,7 +84,7 @@ jobs:
 
   linux-package-lifecycle:
     name: linux archive full lifecycle
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 120
     steps:
       - name: Check out repository
