@@ -1,0 +1,232 @@
+# SPDX-License-Identifier: Apache-2.0
+# agent-pipeline-claude v1.2.1 manifest
+# Run: 2026-05-13-macos-honest-narrowing
+# Drafted by manifest-drafter under autonomous grant
+# .agent-workflows/autonomous-grants/candidate-b-macos-2026-05-13.md
+
+pipeline_run:
+  id: "2026-05-13-macos-honest-narrowing"  # drafted from orchestrator input
+  type: feature  # drafted from orchestrator input (documentation sweep, not bugfix or module-release)
+
+  # v1.2.1 autonomous-mode fields
+  gate_policy: autonomous  # drafted from autonomous grant (validated AUTONOMOUS-ACTIVE, 5.3h remaining)
+  autonomous_grant: ".agent-workflows/autonomous-grants/candidate-b-macos-2026-05-13.md"  # drafted from orchestrator input
+
+  # v1.2.0+ multi-repo field — three sibling repos, each with its own scope
+  target_repos:
+    - name: "CivicSuite/civicsuite"
+      local_path: "C:/Users/scott/dev/civicsuite"
+      branch: "chore/macos-honest-narrowing"  # drafted from orchestrator hard-constraint
+      allowed_paths:
+        - "README.md"
+        - "README.txt"
+        - "USER-MANUAL.md"
+        - "USER-MANUAL.txt"
+        - "FAQ.md"
+        - "STATUS.md"
+        - "SUPPORT.md"
+        - "docs/**/*.md"  # platform-matrix-bearing docs surfaces only; forbidden_paths excludes audits/evidence/QA
+        - "installer/README.md"
+        - ".agent-runs/2026-05-13-macos-honest-narrowing/**"
+      forbidden_paths:
+        - "backend/**"
+        - "frontend/**"
+        - "civiccore/**"
+        - "civicclerk/**"
+        - "civicrecords-ai/**"
+        - "tests/**"
+        - "**/tests/**"
+        - "scripts/**"
+        - ".github/workflows/**"
+        - "pyproject.toml"
+        - "**/pyproject.toml"
+        - "package.json"
+        - "**/package.json"
+        - "**/_version.py"
+        - "CHANGELOG.md"
+        - "docs/adr/**"
+        - "docs/audits/**"
+        - "docs/qa/**"
+        - "docs/evidence/**"
+        - "docs/release-lockstep/**"
+        - "docs/release-recovery-status.md"
+        - "release-artifacts/**"
+        - "installer/generated/**"
+        - "FROZEN-EVIDENCE*"
+        - "SHAPE-GUARD*"
+        - "**/*.docx"
+        - "**/*.pdf"
+        - "**/*.png"
+
+    - name: "CivicSuite/civicrecords-ai"
+      local_path: "C:/Users/scott/dev/civicrecords-ai"
+      branch: "chore/macos-honest-narrowing"  # drafted from orchestrator hard-constraint
+      allowed_paths:
+        - "README.md"
+        - "README.txt"
+        - "USER-MANUAL.md"
+        - "USER-MANUAL.txt"
+        - "docs/**/*.md"
+        - "installer/windows/README.md"
+      forbidden_paths:
+        - "civicrecords_ai/**"
+        - "src/**"
+        - "tests/**"
+        - "**/tests/**"
+        - "scripts/**"
+        - ".github/workflows/**"
+        - "pyproject.toml"
+        - "**/pyproject.toml"
+        - "package.json"
+        - "**/package.json"
+        - "**/_version.py"
+        - "CHANGELOG.md"
+        - "docs/adr/**"
+        - "docs/audits/**"
+        - "docs/qa/**"
+        - "docs/evidence/**"
+        - "release-artifacts/**"
+        - "FROZEN-EVIDENCE*"
+        - "SHAPE-GUARD*"
+        - "**/*.docx"
+        - "**/*.pdf"
+        - "**/*.png"
+
+    - name: "CivicSuite/civicclerk"
+      local_path: "C:/Users/scott/dev/civicclerk"
+      branch: "chore/macos-honest-narrowing"  # drafted from orchestrator hard-constraint
+      allowed_paths:
+        - "README.md"
+        - "README.txt"
+        - "USER-MANUAL.md"
+        - "USER-MANUAL.txt"
+        - "docs/**/*.md"
+        - "installer/windows/README.md"
+      forbidden_paths:
+        - "civicclerk/**"
+        - "src/**"
+        - "backend/**"
+        - "frontend/**"
+        - "tests/**"
+        - "**/tests/**"
+        - "scripts/**"
+        - ".github/workflows/**"
+        - "pyproject.toml"
+        - "**/pyproject.toml"
+        - "package.json"
+        - "**/package.json"
+        - "**/_version.py"
+        - "CHANGELOG.md"
+        - "MILESTONE_*_DONE.md"
+        - "PRODUCTION_DEPTH_*_DONE.md"
+        - "docs/adr/**"
+        - "docs/audits/**"
+        - "docs/qa/**"
+        - "docs/evidence/**"
+        - "release-artifacts/**"
+        - "FROZEN-EVIDENCE*"
+        - "SHAPE-GUARD*"
+        - "**/*.docx"
+        - "**/*.pdf"
+        - "**/*.png"
+
+  # Top-level branch retained for v1.1.x schema compatibility; all three repos use the same name
+  branch: "chore/macos-honest-narrowing"  # drafted from orchestrator hard-constraint
+
+  goal: "Sweep README, USER-MANUAL, FAQ, STATUS, and platform-matrix surfaces across the CivicSuite umbrella plus civicrecords-ai and civicclerk to replace unqualified macOS support claims with 'Windows-only currently; macOS support pending lifecycle certification,' honestly narrowing the published platform matrix to match actual lifecycle-certified support."  # drafted from orchestrator input (user_description) + PROJECT_CONTROL_PLANE.md line 83
+
+  advances_target: "Installer/macOS certification follow-up — honest-narrowing branch"  # drafted from PROJECT_CONTROL_PLANE.md line 83
+  authorizing_source: ".agent-workflows/PROJECT_CONTROL_PLANE.md:83-94"  # drafted from PROJECT_CONTROL_PLANE.md Active-target stanza + "Allowed now" list
+
+  # Schema-level allowed_paths union (per-repo scope is the real contract under target_repos)
+  allowed_paths:
+    - "README.md"
+    - "README.txt"
+    - "USER-MANUAL.md"
+    - "USER-MANUAL.txt"
+    - "FAQ.md"
+    - "STATUS.md"
+    - "SUPPORT.md"
+    - "docs/**/*.md"
+    - "installer/README.md"
+    - "installer/windows/README.md"
+    - ".agent-runs/2026-05-13-macos-honest-narrowing/**"
+  # drafted from orchestrator hard-constraints (documentation surfaces only)
+
+  forbidden_paths:
+    - "backend/**"
+    - "frontend/**"
+    - "civiccore/**"
+    - "civicclerk/**"
+    - "civicrecords-ai/**"
+    - "civicrecords_ai/**"
+    - "src/**"
+    - "tests/**"
+    - "**/tests/**"
+    - "scripts/**"
+    - ".github/workflows/**"
+    - "pyproject.toml"
+    - "**/pyproject.toml"
+    - "package.json"
+    - "**/package.json"
+    - "**/_version.py"
+    - "CHANGELOG.md"
+    - "docs/adr/**"
+    - "docs/audits/**"
+    - "docs/qa/**"
+    - "docs/evidence/**"
+    - "docs/release-lockstep/**"
+    - "docs/release-recovery-status.md"
+    - "release-artifacts/**"
+    - "installer/generated/**"
+    - "FROZEN-EVIDENCE*"
+    - "SHAPE-GUARD*"
+    - "**/*.docx"
+    - "**/*.pdf"
+    - "**/*.png"
+  # drafted from orchestrator hard-constraints + PROJECT_CONTROL_PLANE.md "Not allowed now" list
+
+  non_goals:
+    - "No app-code changes in any of the three repos."
+    - "No version bumps, no pyproject.toml edits, no _version.py edits."
+    - "No release artifacts, tags, or release publish actions."
+    - "No CHANGELOG edits (this is documentation-claim narrowing, not a release)."
+    - "No CI/workflow file changes."
+    - "No edits to release-lockstep, release-recovery-status, audits, QA, or evidence files."
+    - "No edits to FROZEN-EVIDENCE or SHAPE-GUARD files."
+    - "No regeneration of installer/generated/** READMEs (those are produced by the installer build, not hand-edited)."
+    - "No edits to .docx, .pdf, .png, or other binary documentation artifacts (markdown sources only)."
+    - "No admin-merge of any opened PR (forbidden by autonomous grant; manager-gate is PROMOTE-only)."
+    - "Do not revisit, move, delete, or retag any released module (per PROJECT_CONTROL_PLANE.md Not allowed now)."
+  # drafted from orchestrator hard-constraints + PROJECT_CONTROL_PLANE.md:96-106 Not-allowed-now list + autonomous-grant Forbidden-actions
+
+  expected_outputs:
+    - "Open PR on CivicSuite/civicsuite branch chore/macos-honest-narrowing narrowing macOS claims across README.md, USER-MANUAL.md, FAQ.md, STATUS.md, SUPPORT.md, and any docs/**/*.md platform-matrix surface."
+    - "Open PR on CivicSuite/civicrecords-ai branch chore/macos-honest-narrowing narrowing macOS claims across README.md, USER-MANUAL.md, and any docs/**/*.md platform-matrix surface."
+    - "Open PR on CivicSuite/civicclerk branch chore/macos-honest-narrowing narrowing macOS claims across README.md, USER-MANUAL.md, and any docs/**/*.md platform-matrix surface."
+    - "Every previously unqualified macOS support claim across the three repos is replaced by the exact phrase 'Windows-only currently; macOS support pending lifecycle certification.' or a clearly-scoped equivalent that preserves the surrounding sentence's meaning."
+    - "Inventory artifact at .agent-runs/2026-05-13-macos-honest-narrowing/macos-claim-inventory.md listing every line edited in every repo with before/after snippets."
+    - "Plain-text mirrors (README.txt, USER-MANUAL.txt) are kept consistent with their .md counterparts wherever they exist."
+    - "No PR is admin-merged; all three PRs land in 'open, awaiting human merge' state."
+  # drafted from orchestrator hard-constraints + role-file expected_outputs rule (each entry testable)
+
+  required_gates:
+    - human_approval_manifest
+    - human_approval_plan
+    - policy_passed
+    - tests_passed
+    - human_approval_merge
+  # drafted from template default (autonomous grant satisfies manifest/plan/merge gates per its Authorized-gates field; verifier will record gate-flips with grant citation)
+
+  risk: low  # drafted from orchestrator hard-constraints (docs-only, no app behavior changes)
+
+  rollback_plan: "git revert <commit-sha> on each of the three opened PRs. Documentation-only change with no schema migration, no release artifact, and no version bump, so nothing else needs unwinding. If a PR has already been merged at rollback time (it should not be — autonomous grant forbids admin-merge), open a revert PR against main on each affected repo."  # drafted from orchestrator hard-constraints
+
+  definition_of_done: "Macos honest-narrowing is satisfied when (1) every unqualified macOS support claim across README/USER-MANUAL/FAQ/STATUS/SUPPORT and any platform-matrix-bearing markdown in CivicSuite/civicsuite, CivicSuite/civicrecords-ai, and CivicSuite/civicclerk has been replaced with 'Windows-only currently; macOS support pending lifecycle certification.' or a clearly-scoped equivalent; (2) the changed claims are consistent across all touched surfaces in all three repos with no surface left contradicting another; (3) plain-text mirrors (.txt) match their markdown counterparts where both exist; (4) pre-existing test suites in each repo still pass with no code changes (documentation-only sweep should not move any test outcome); (5) one PR is opened on each repo against chore/macos-honest-narrowing -> main, none admin-merged, each awaiting human merge per the autonomous grant's Forbidden-actions clause; and (6) the run's macos-claim-inventory.md captures every edited line with before/after snippets so the human reviewer can audit the full blast radius in one read."  # drafted from PROJECT_CONTROL_PLANE.md §"Definition Of Done For Current Target" items 1-3 + orchestrator hard-constraints
+
+  director_notes:
+    - "researcher: grep all three repos for case-insensitive 'macos', 'mac os', 'os x', 'apple', 'darwin' before listing surfaces — claims may be phrased many ways."
+    - "researcher: distinguish 'unqualified macOS support claim' (a published promise that needs narrowing) from 'macOS runner internal note' (engineering aside that may stay) — only the user-facing published claims are in scope."
+    - "researcher: surface every platform-matrix table (markdown tables with OS columns) in scope-eligible files; tables are the highest-density source of claims and the easiest to leave inconsistent across repos."
+    - "executor: this is an autonomous run under .agent-workflows/autonomous-grants/candidate-b-macos-2026-05-13.md — do NOT admin-merge any PR; manager-gate is PROMOTE-only and admin-merge is explicitly in Forbidden-actions."
+  # drafted from orchestrator user_description + autonomous-grant Forbidden-actions + role-file director_notes guidance

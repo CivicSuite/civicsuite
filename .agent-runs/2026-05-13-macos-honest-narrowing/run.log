@@ -1,0 +1,13 @@
+2026-05-13T21:56:30Z RUN_START run_id=2026-05-13-macos-honest-narrowing pipeline=feature mode=autonomous grant=.agent-workflows/autonomous-grants/candidate-b-macos-2026-05-13.md
+2026-05-13T21:58:00Z STAGE_DONE manifest artifact=manifest.yaml verdict=AUTONOMOUS-APPROVE
+2026-05-13T22:08:33Z STAGE_DONE research artifact=research.md
+2026-05-13T22:12:53Z STAGE_DONE plan artifact=plan.md verdict=AUTONOMOUS-APPROVE
+2026-05-13T22:13:28Z STAGE_DONE test-write artifact=failing-tests-report.md note=docs-only-N/A
+2026-05-13T22:26:20Z STAGE_DONE execute artifact=implementation-report.md prs=civicsuite#132,civicrecords-ai#80
+2026-05-13T22:27:18Z STAGE_DONE policy artifact=policy-report.md verdict=PASS
+2026-05-13T22:35:18Z STAGE_DONE verify artifact=verifier-report.md verdict=PASS
+2026-05-13T22:35:18Z STAGE_DONE drift-detect artifact=drift-report.md verdict=PASS
+2026-05-13T22:35:18Z STAGE_DONE critique artifact=critic-report.md verdict=PROMOTE-recommended
+2026-05-13T22:35:38Z STAGE_DONE auto-promote artifact=auto-promote-report.md verdict=NOT_ELIGIBLE reason=policy-and-tests-signals-missing
+2026-05-13T22:38:18Z STAGE_DONE manager artifact=manager-decision.md verdict=AUTONOMOUS-PROMOTE
+2026-05-13T22:38:18Z RUN_COMPLETE disposition=PROMOTED pr1=civicsuite#132 pr2=civicrecords-ai#80
