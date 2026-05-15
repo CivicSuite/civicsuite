@@ -172,6 +172,22 @@ def write_records_override(target: Path) -> Path:
     return path
 
 
+def normalize_records_compose_ports(target: Path) -> None:
+    compose_file = target / "docker-compose.yml"
+    if not compose_file.is_file():
+        return
+    text = compose_file.read_text(encoding="utf-8")
+    replacements = {
+        '"8000:8000"': f'"{RECORDS_PORTS["api"]}:8000"',
+        "'8000:8000'": f"'{RECORDS_PORTS['api']}:8000'",
+        '"8080:80"': f'"{RECORDS_PORTS["web"]}:80"',
+        "'8080:80'": f"'{RECORDS_PORTS['web']}:80'",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    compose_file.write_text(text, encoding="utf-8", newline="\n")
+
+
 def normalize_records_frontend_dockerfile(target: Path) -> None:
     dockerfile = target / "Dockerfile.frontend"
     if not dockerfile.is_file():
@@ -336,6 +352,7 @@ def prepare_sources(
     install_root.mkdir(parents=True, exist_ok=True)
     copy_source(source_root("civicrecords-ai"), ctx["records_source"])  # type: ignore[arg-type]
     copy_source(source_root("civicclerk"), ctx["clerk_source"])  # type: ignore[arg-type]
+    normalize_records_compose_ports(ctx["records_source"])  # type: ignore[arg-type]
     normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
     write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
     write_records_override(ctx["records_source"])  # type: ignore[arg-type]

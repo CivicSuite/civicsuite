@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -53,6 +54,28 @@ def extract(archive: Path, target: Path) -> Path:
     if len(roots) != 1:
         raise RuntimeError(f"Expected one extracted bundle root in {target}, found {len(roots)}.")
     return roots[0]
+
+
+def remove_tree_with_retry(path: Path) -> None:
+    last_error: OSError | None = None
+    for attempt in range(8):
+        try:
+            for child in path.rglob("*"):
+                try:
+                    child.chmod(0o700 if child.is_dir() else 0o600)
+                except OSError:
+                    pass
+            try:
+                path.chmod(0o700)
+            except OSError:
+                pass
+            shutil.rmtree(path)
+            return
+        except OSError as exc:
+            last_error = exc
+            time.sleep(0.25 * (attempt + 1))
+    if last_error is not None:
+        raise last_error
 
 
 def infer_platform(archive: Path) -> str:
@@ -170,7 +193,7 @@ def main() -> int:
         "steps": steps,
     }
     if extract_root.exists():
-        shutil.rmtree(extract_root)
+        remove_tree_with_retry(extract_root)
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "installer-package-cleanroom.json").write_text(
         json.dumps(proof, indent=2, sort_keys=True) + "\n",

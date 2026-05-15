@@ -8,6 +8,7 @@ import shutil
 import sys
 import importlib.util
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -155,6 +156,24 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
     ):
         if phrase not in runner_text:
             errors.append(fail(f"clerk-core installer staff-mode warning missing phrase: {phrase}"))
+    with tempfile.TemporaryDirectory() as temp_dir:
+        compose_file = Path(temp_dir) / "docker-compose.yml"
+        compose_file.write_text(
+            'services:\n'
+            '  api:\n'
+            '    ports:\n'
+            '      - "8000:8000"\n'
+            '  frontend:\n'
+            '    ports:\n'
+            '      - "8080:80"\n',
+            encoding="utf-8",
+        )
+        module.normalize_records_compose_ports(Path(temp_dir))
+        normalized = compose_file.read_text(encoding="utf-8")
+        if '"8000:8000"' in normalized or '"8080:80"' in normalized:
+            errors.append(fail("clerk-core installer must replace CivicRecords default host ports"))
+        if '"18000:8000"' not in normalized or '"18080:80"' not in normalized:
+            errors.append(fail("clerk-core installer must normalize CivicRecords ports to installer-assigned ports"))
     return errors
 
 
