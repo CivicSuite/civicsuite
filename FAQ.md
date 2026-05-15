@@ -20,13 +20,13 @@ A release tag means "we put a version label on this commit." A procurement-ready
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (e.g., `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake; `civiczone` reads `civiccode` for code text). A single-module install is a supported design goal.
 
-In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile around a Linux/container-first core. Windows and macOS are wrapper platforms around that core; Windows lifecycle support requires matching Windows Docker Desktop evidence, and macOS support remains pending lifecycle certification on a real macOS host.
+In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile around a Linux/container-first core. Windows and macOS are wrapper platforms around that core; Windows has matching-host Docker Desktop lifecycle evidence on Windows 11 + WSL 2, and macOS support remains pending lifecycle certification on a real macOS host.
 
 ## What does "civic operator" actually need to run CivicSuite?
 
 For the modules that have install paths today:
 - A machine with **8+ CPU cores, 32 GB RAM, 50 GB free disk space** (per `civicrecords-ai` requirements; civicclerk roughly similar).
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and lifecycle proof path. WSL 2 + Virtual Machine Platform are required on Windows; Windows and macOS lifecycle claims are bounded by matching-host evidence, and macOS remains pending full lifecycle certification.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. WSL 2 + Virtual Machine Platform are required on Windows; Windows has matching-host Docker Desktop lifecycle evidence, and macOS remains pending full lifecycle certification.
 - **No internet connection required** after initial install. CivicSuite is local-first by design.
 - A staff person comfortable running install scripts and reading PowerShell or bash output.
 - Access to your city's documents (file shares, SharePoint, etc.) via the connectors that exist today.

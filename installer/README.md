@@ -262,10 +262,10 @@ extracted bundle, remove the extracted payload, and write evidence under
 `matching_host_lifecycle`, `matching_host_lifecycle_failed`,
 `host_platform_mismatch`, or `unsupported_lifecycle`. Full
 install/repair/verify/uninstall proof is certification evidence only when the
-archive is run on a matching host or VM. Windows lifecycle evidence must come
-from a Windows Docker Desktop host; macOS lifecycle evidence must come from a
-Darwin/macOS Docker Desktop host. macOS package runs from Linux or Windows hosts
-are archive/readiness evidence only.
+archive is run on a matching host or VM. Windows lifecycle evidence now exists
+from a Windows 11 + WSL 2 Docker Desktop host; macOS lifecycle evidence must
+come from a Darwin/macOS Docker Desktop host. macOS package runs from Linux or
+Windows hosts are archive/readiness evidence only.
 
 This writes Windows, macOS, and Linux package directories under
 `installer/generated/packages/{profile}`. Each package contains:

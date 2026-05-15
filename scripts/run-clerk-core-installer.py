@@ -28,6 +28,7 @@ DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
 CLERK_STAFF_MODE_PROTECTED = "protected"
 CLERK_STAFF_MODE_OPEN = "open"
+WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 CLERK_OPEN_MODE_WARNING = (
     "WARNING: --staff-mode open allows anonymous writes to civicclerk endpoints.\n"
     "WARNING: Use ONLY for local rehearsal. Never on a network-reachable host.\n"
@@ -108,6 +109,7 @@ def run(command: list[str], *, cwd: Path, timeout: int = 900) -> subprocess.Comp
     return subprocess.run(
         command,
         cwd=cwd,
+        env=installer_subprocess_env(),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -117,8 +119,34 @@ def run(command: list[str], *, cwd: Path, timeout: int = 900) -> subprocess.Comp
     )
 
 
-def require_command(name: str) -> str:
+def known_command_path(name: str) -> str | None:
     found = shutil.which(name)
+    if found:
+        return found
+    if sys.platform.startswith("win") and name == "docker":
+        docker_exe = WINDOWS_DOCKER_DESKTOP_BIN / "docker.exe"
+        if docker_exe.is_file():
+            return str(docker_exe)
+    return None
+
+
+def installer_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    if sys.platform.startswith("win") and WINDOWS_DOCKER_DESKTOP_BIN.is_dir():
+        docker_bin = str(WINDOWS_DOCKER_DESKTOP_BIN)
+        current_path = env.get("PATH", "")
+        path_parts = [part for part in current_path.split(os.pathsep) if part]
+        if docker_bin.lower() not in {part.lower() for part in path_parts}:
+            env["PATH"] = docker_bin + os.pathsep + current_path
+    return env
+
+
+def docker_command() -> str:
+    return known_command_path("docker") or "docker"
+
+
+def require_command(name: str) -> str:
+    found = known_command_path(name)
     if not found:
         raise InstallerError(
             f"{name} was not found. Install Docker Desktop on Windows/macOS or Docker Engine on Linux, "
@@ -326,7 +354,7 @@ def write_clerk_env(
 
 
 def compose(project: str, source: Path, *args: str) -> list[str]:
-    command = ["docker", "compose", "-p", project, "-f", "docker-compose.yml"]
+    command = [docker_command(), "compose", "-p", project, "-f", "docker-compose.yml"]
     override = source / "docker-compose.civicsuite.override.yml"
     if override.is_file():
         command.extend(["-f", override.name])
@@ -441,7 +469,7 @@ def install(
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
 ) -> dict[str, object]:
     require_command("docker")
-    docker_info = run(["docker", "info"], cwd=ROOT, timeout=30)
+    docker_info = run([docker_command(), "info"], cwd=ROOT, timeout=30)
     if docker_info.returncode != 0:
         raise InstallerError(
             "Docker is installed but not running. Start Docker Desktop or Docker Engine, wait for it to be ready, "
@@ -573,7 +601,7 @@ def main() -> int:
     try:
         if args.mode == "readiness":
             require_command("docker")
-            info = run(["docker", "info"], cwd=ROOT, timeout=30)
+            info = run([docker_command(), "info"], cwd=ROOT, timeout=30)
             payload["docker"] = {"returncode": info.returncode, "stdout": info.stdout[-1000:], "stderr": info.stderr[-1000:]}
             payload["status"] = "passed" if info.returncode == 0 else "failed"
         elif args.mode == "install":

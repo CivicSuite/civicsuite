@@ -47,7 +47,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 ### Prerequisites
 
 - A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and lifecycle proof path. On Windows, also WSL 2 + Virtual Machine Platform. Windows lifecycle proof requires matching Windows Docker Desktop evidence, and macOS remains pending full lifecycle certification.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. Windows has matching-host Docker Desktop lifecycle evidence for the clerk-core beta, and macOS remains pending full lifecycle certification.
 - About 30 minutes for first install (model downloads).
 
 ### Install (Windows wrapper)

@@ -160,9 +160,9 @@ launchers. CivicSuite's core runtime path is Linux/container-first; Windows and
 macOS are wrapper platforms around that core. Each package report classifies the
 evidence as archive/readiness, matching-host lifecycle, host-platform mismatch,
 or unsupported lifecycle. Linux lifecycle proof is the primary zero-baseline machine
-proof focus. Windows lifecycle proof must come from a matching Windows
-Docker Desktop host or be recorded as blocker/unsupported evidence, and full
-macOS runtime proof still requires a macOS host or VM.
+proof focus. Windows has matching-host Docker Desktop lifecycle proof
+from a Windows 11 + WSL 2 host; full macOS runtime proof still requires a
+macOS host or VM.
 
 The hosted package cleanroom workflow is:
 `.github/workflows/installer-cleanroom.yml`.
@@ -172,9 +172,10 @@ uses concurrency and short artifact retention as cost controls. It proves
 extracted archive readiness/plan for Windows, Linux, and macOS package
 artifacts, then runs the full Linux package install/repair/verify/uninstall
 lifecycle and uploads JSON installer evidence without the extracted bundle
-payload. Windows and macOS full lifecycle certification still requires real
-operator-like VMs because hosted CI does not provide the same Docker Desktop
-baseline.
+payload. Windows lifecycle proof is captured by a matching Windows Docker
+Desktop local run until a dedicated Windows Docker lifecycle runner is added to
+CI. macOS full lifecycle certification still requires a real operator-like
+macOS VM because hosted CI does not provide the same Docker Desktop baseline.
 
 ## Supported Profiles
 
