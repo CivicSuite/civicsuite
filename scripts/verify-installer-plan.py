@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "installer" / "modules.json"
 CONTRACT = ROOT / "installer" / "README.md"
 PLAN = ROOT / "docs" / "installer" / "suite-installer-plan.md"
+STARTER_SET_CONTRACT = ROOT / "docs" / "installer" / "starter-set-release-contract.md"
 PLANNER = ROOT / "scripts" / "plan-installer.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 PACKAGE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-installer-package-cleanroom.py"
@@ -127,6 +128,21 @@ def check_docs() -> list[str]:
         for phrase in REQUIRED_DOC_PHRASES:
             if phrase not in text:
                 errors.append(fail(f"{path.relative_to(ROOT)} missing phrase: {phrase}"))
+    if not STARTER_SET_CONTRACT.is_file():
+        errors.append(fail(f"missing {STARTER_SET_CONTRACT.relative_to(ROOT)}"))
+    else:
+        contract = STARTER_SET_CONTRACT.read_text(encoding="utf-8")
+        for phrase in (
+            "CivicCore installs first",
+            "CivicRecords AI and CivicClerk are selectable",
+            "macOS lifecycle testing is intentionally on hold",
+            "Linux and Windows proof are the priority",
+            "CivicRecords AI reports v1.6.1",
+            "CivicClerk reports v1.0.1 with CivicCore v1.0.1",
+            "not yet a claim that CivicRecords AI and CivicClerk exchange workflow records",
+        ):
+            if phrase not in contract:
+                errors.append(fail(f"{STARTER_SET_CONTRACT.relative_to(ROOT)} missing phrase: {phrase}"))
     return errors
 
 
@@ -164,7 +180,12 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
         "--records-api-port",
         "--compose-project-suffix",
         "CIVICSUITE_INSTALLER_RUN_ID",
+        "CIVICSUITE_INSTALLER_INSTALL_ROOT",
         "compose_projects",
+        "verify_civiccore_contract",
+        "starter_set_civiccore_contract",
+        '"civiccore") == "1.0.1"',
+        '"version") == "1.6.1"',
         "allows anonymous writes to civicclerk endpoints",
         "Use ONLY for local rehearsal",
         "Re-run with --staff-mode protected",
@@ -963,13 +984,13 @@ def check_planner(data: dict[str, object]) -> list[str]:
             readme_path = package_dir / "README.md"
             if readme_path.is_file():
                 readme = readme_path.read_text(encoding="utf-8")
-                for phrase in ("unsigned", "open-source beta", "SHA256", "Windows"):
+                for phrase in ("unsigned", "open-source beta", "SHA256", "Windows", "official CivicSuite"):
                     if phrase not in readme:
                         errors.append(fail(f"profile package {platform_id} README missing unsigned beta phrase: {phrase}"))
             launcher_path = package_dir / launcher
             if launcher_path.is_file():
                 launcher_text = launcher_path.read_text(encoding="utf-8")
-                for phrase in ("unsigned", "SHA256", "open-source beta"):
+                for phrase in ("unsigned", "SHA256", "open-source beta", "official CivicSuite"):
                     if phrase not in launcher_text:
                         errors.append(fail(f"profile package {platform_id} launcher missing unsigned beta phrase: {phrase}"))
             plan_path = package_dir / "install-plan.json"
@@ -1066,6 +1087,11 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 errors.append(fail("release manifest must mark unsigned OSS beta distribution"))
             if signing.get("signed") is not False or "SHA256" not in signing.get("trust_path", ""):
                 errors.append(fail("release manifest must document unsigned signing status and SHA256 trust path"))
+            signing_text = json.dumps(signing, sort_keys=True)
+            if "official CivicSuite" not in signing_text:
+                errors.append(fail("release manifest signing block must require official CivicSuite source verification"))
+            if "build/sign" in release_manifest.get("next_action", "") or "certificates are available" in signing_text:
+                errors.append(fail("release manifest must not imply future paid signing is the public trust path"))
             archive_hygiene = release_manifest.get("archive_hygiene", {})
             if archive_hygiene.get("status") != "passed":
                 errors.append(fail("release manifest must record passed archive hygiene"))
@@ -1079,7 +1105,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             native_readme = GENERATED_NATIVE / "clerk-core" / platform_id / "README.md"
             if native_readme.is_file():
                 text = native_readme.read_text(encoding="utf-8")
-                if "unsigned" not in text or "SHA256" not in text:
+                if "unsigned" not in text or "SHA256" not in text or "official CivicSuite" not in text:
                     errors.append(fail(f"native wrapper {platform_id} README must explain unsigned checksum trust path"))
 
     if has_local_civiccore_wheel():

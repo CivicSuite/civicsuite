@@ -34,14 +34,14 @@ INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 SIGNING_STATUS = {
     "signed": False,
     "status": "unsigned_oss_beta",
-    "reason": "CivicSuite is an open-source beta project and signing certificates are not available yet.",
-    "trust_path": "Verify the release SHA256 checksum before running the installer package.",
+    "reason": "CivicSuite is a small free open-source beta project and the public installer is intentionally unsigned.",
+    "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package.",
 }
 
 ARCHIVE_HYGIENE_FORBIDDEN_MARKERS = (
     "/.agent-runs/",
     "/.runtime-proof",
-    "/.venv/",
+    "/.venv",
     "/__pycache__/",
     "/.pytest_cache/",
     "/.ruff_cache/",
@@ -71,6 +71,7 @@ SOURCE_BUNDLE_FORBIDDEN_NAMES = {
 SOURCE_BUNDLE_FORBIDDEN_PREFIXES = (
     ".runtime-proof",
     ".tmp-",
+    ".venv",
 )
 
 
@@ -1351,8 +1352,7 @@ def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str
     [switch]$Install,
     [switch]$Verify,
     [switch]$Repair,
-    [switch]$Uninstall,
-    [switch]$Gate
+    [switch]$Uninstall
 )
 
 $ErrorActionPreference = "Stop"
@@ -1363,13 +1363,8 @@ $Lifecycle = Join-Path $RepoRoot "scripts\\run-clerk-core-installer.py"
 
 Write-Host "CivicSuite OSS beta installer package"
 Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
-Write-Host "Trust path: verify the SHA256 checksum from installer\\dist before running lifecycle commands."
-Write-Host "Project status: open-source beta; code signing certificates are not available yet."
-
-if ($Gate) {{
-    python $Planner --profile {profile_id} --menu-style {menu_style} --run-cleanroom-gate
-    exit $LASTEXITCODE
-}}
+Write-Host "Trust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands."
+Write-Host "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
 if ($Plan) {{
     python $Planner --profile {profile_id} --menu-style {menu_style} --dry-run
@@ -1409,14 +1404,11 @@ LIFECYCLE="${{REPO_ROOT}}/scripts/run-clerk-core-installer.py"
 
 echo "CivicSuite OSS beta installer package"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
-echo "Trust path: verify the SHA256 checksum from installer/dist before running lifecycle commands."
-echo "Project status: open-source beta; code signing certificates are not available yet."
+echo "Trust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands."
+echo "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
 MODE="${{1:-readiness}}"
 case "${{MODE}}" in
-  gate)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --run-cleanroom-gate
-    ;;
   plan)
     python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --dry-run
     ;;
@@ -1436,7 +1428,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall|gate]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall]" >&2
     exit 2
     ;;
 esac
@@ -1449,11 +1441,9 @@ def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, 
     if platform_id == "windows":
         readiness = f".\\{launcher} -Readiness"
         plan_command = f".\\{launcher} -Plan"
-        gate_command = f".\\{launcher} -Gate"
     else:
         readiness = f"bash ./{launcher} readiness"
         plan_command = f"bash ./{launcher} plan"
-        gate_command = f"bash ./{launcher} gate"
     return f"""# CivicSuite Installer Package - {platform_id}
 
 Profile: `{profile_id}`
@@ -1462,18 +1452,21 @@ Menu style: `{menu_style}`
 ## Unsigned OSS Beta Notice
 
 This package is unsigned. CivicSuite is an open-source beta project and signing
-certificates are not available yet. Windows may show SmartScreen or Unknown
-Publisher warnings. macOS may show unidentified developer warnings. Linux
-package tools may show an unsigned/local package warning.
+certificates are not used for the public installer path. Windows may show
+SmartScreen or Unknown Publisher warnings. macOS may show unidentified
+developer warnings. Linux package tools may show an unsigned/local package
+warning.
 
 This is expected for this beta distribution. Verify the SHA256 checksum from
-`installer/dist` before running the package. If the checksum does not match,
-stop and download the artifact again from the project release source.
+`installer/dist` and confirm the artifact came from the official CivicSuite
+GitHub release source or your IT team's verified source build before running
+the package. If the checksum does not match, stop and download the artifact
+again from the project release source.
 
 ## Platform Warning Guidance
 
 - Windows: choose More info, confirm the app name/path, then choose Run anyway
-  only after the checksum matches.
+  only after the checksum matches and the artifact source is verified.
 - macOS: use System Settings > Privacy & Security to allow the package only
   after the checksum matches.
 - Linux: install from the local archive/package only after verifying the
@@ -1507,14 +1500,8 @@ profile.
    ```
 
    Available lifecycle modes: readiness, plan, install, verify, repair,
-   uninstall, and gate. Install, repair, uninstall, and gate are mutating: they
+   and uninstall. Install, repair, and uninstall are mutating: they
    create or remove Docker resources and write installer reports.
-
-4. Run the cleanroom gate when Docker mutation is approved:
-
-   ```text
-   {gate_command}
-   ```
 
 ## Selected Modules
 
@@ -1527,9 +1514,17 @@ profile.
   CivicClerk from the bundled source tree.
 - Verify mode checks live service endpoints.
 - Uninstall mode removes the clerk-core Docker containers and volumes.
-- Gate mode is mutating: it may build/start/teardown Docker resources and write
-  installer evidence under `installer/reports`.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
+
+The repo/source checkout cleanroom gate remains available outside this
+distributable archive:
+
+```text
+python scripts/plan-installer.py --profile {profile_id} --run-cleanroom-gate
+```
+
+That source gate uses repo-local Playwright dependencies and is not packaged
+inside the distributable archive.
 """
 
 
@@ -1656,10 +1651,11 @@ Use `CivicSuiteInstaller.iss` with Inno Setup to build a Windows installer that
 wraps the generated operator package. The wrapper opens the readiness flow by
 default and keeps privileged dependency installation outside silent mutation.
 
-This beta wrapper is unsigned until project signing certificates are available.
-Windows SmartScreen or Unknown Publisher warnings are expected. Verify the
-release SHA256 checksum before running the installer, then use More info > Run
-anyway only if the checksum matches.
+This beta wrapper is intentionally unsigned for the public CivicSuite
+open-source path. Windows SmartScreen or Unknown Publisher warnings are
+expected. Verify the release SHA256 checksum and official CivicSuite source
+before running the installer, then use More info > Run anyway only if the
+checksum and source match.
 """,
         }
     if platform_id == "macos":
@@ -1686,10 +1682,10 @@ productbuild --distribution distribution.xml --package-path . CivicSuite-{profil
 Payload source: `{package_rel}`
 
 Use `pkgbuild` and `productbuild` with the included distribution file to create
-a macOS package. This beta wrapper is unsigned until project signing
-certificates are available. macOS unidentified developer warnings are expected.
-Verify the release SHA256 checksum before allowing the package in Privacy &
-Security.
+a macOS package. This beta wrapper is intentionally unsigned for the public
+CivicSuite open-source path. macOS unidentified developer warnings are
+expected. Verify the release SHA256 checksum and official CivicSuite source
+before allowing the package in Privacy & Security.
 """,
         }
     return {
@@ -1716,8 +1712,9 @@ Payload source: `{package_rel}`
 
 Use the `debian/` metadata as the first `.deb` wrapper for the generated Linux
 operator package. Dependency installation remains explicit and operator-led.
-This beta wrapper is unsigned until project signing keys are available. Verify
-the release SHA256 checksum before installing the local package.
+This beta wrapper is intentionally unsigned for the public CivicSuite
+open-source path. Verify the release SHA256 checksum and official CivicSuite
+source before installing the local package.
 """,
     }
 
@@ -1857,6 +1854,7 @@ def _stage_release_bundle(*, profile_id: str, platform_id: str, package_dir: Pat
     (bundle_dir / "scripts").mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / "scripts" / "plan-installer.py", bundle_dir / "scripts" / "plan-installer.py")
     shutil.copy2(INSTALLER_LIFECYCLE_RUNNER, bundle_dir / "scripts" / "run-clerk-core-installer.py")
+    shutil.copy2(SERVICE_CLEANROOM_RUNNER, bundle_dir / "scripts" / "run-civicrecords-cleanroom.py")
     (bundle_dir / "installer").mkdir(parents=True, exist_ok=True)
     shutil.copy2(MANIFEST, bundle_dir / "installer" / "modules.json")
     modules_root = bundle_dir / "modules"
@@ -1990,7 +1988,7 @@ def generate_release_artifacts(
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "native_wrapper_status": "manifests_generated",
         "native_installers_built": False,
-        "next_action": "Publish verified unsigned beta archives now, or build/sign native wrappers when certificates are available.",
+        "next_action": "Publish verified unsigned beta archives only through the SHA256 and official-source trust path.",
     }
     manifest_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-release-manifest.json"
     manifest_path.write_text(json.dumps(release_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -2007,7 +2005,7 @@ def generate_release_artifacts(
         "release_manifest": str(manifest_path.relative_to(ROOT)),
         "native_installers_built": False,
         "signing": SIGNING_STATUS,
-        "next_action": "Publish verified unsigned beta archives now, or build/sign native wrappers when certificates are available.",
+        "next_action": "Publish verified unsigned beta archives only through the SHA256 and official-source trust path.",
     }
 
 
@@ -2595,6 +2593,8 @@ def main() -> int:
         return 2
 
     print(json.dumps(plan, indent=2, sort_keys=True))
+    if args.run_cleanroom_gate and plan.get("status") != "passed":
+        return 1
     return 0
 
 

@@ -13,7 +13,7 @@ provisional until the repo passes the recovery gates in
 | Module          | Repo                           | Current version | Released   | Compatible CivicCore range | Last verified | Notes |
 |-----------------|--------------------------------|-----------------|------------|----------------------------|---------------|-------|
 | civiccore       | CivicSuite/civiccore           | 1.1.0           | 2026-05-11 | n/a                        | 2026-05-11    | Minor platform release adding shared `staff_key_gate` with timing-safe staff-key comparison; v1.0.1 auth hardening remains included. |
-| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.6.0           | 2026-05-12 | `==1.0.1`                  | 2026-05-12    | B2 audit punch-list closed: secret material moved to Docker secret files; container env no longer exposes any `JWT_SECRET*` or `FIRST_ADMIN_PASSWORD*` name. |
+| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.6.1           | 2026-05-15 | `==1.0.1`                  | 2026-05-15    | Ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery. |
 | civicclerk      | CivicSuite/civicclerk          | 1.0.1           | 2026-05-10 | `==1.0.1`                  | 2026-05-10    | Recovery patch shipped with protected staff auth defaults; anonymous staff writes are denied by default. |
 | civicregwatch   | CivicSuite/civicregwatch       | planned         | not released | TBD                      | 2026-04-30    | New planned federal regulatory intelligence module. Implementation spec exists in `specs/05_civicregwatch.md`; repo and civiccore pin are not scaffolded yet. |
 | civicapi        | CivicSuite/civicapi            | planned         | not released | TBD                      | 2026-04-30    | New planned public read-only data gateway module. Implementation spec exists in `specs/06_civicapi.md`; repo and civiccore pin are not scaffolded yet. |
@@ -72,6 +72,7 @@ local and published pins when they differ.
 
 | Date       | civiccore | Module / version       | Result | Evidence |
 |------------|-----------|------------------------|--------|----------|
+| 2026-05-15 | 1.0.1     | civicrecords-ai 1.6.1       | green  | Ingestion worker event-loop recovery patch shipped; worker tasks create and dispose their async SQLAlchemy engine inside each task coroutine instead of reusing a module-global engine across Celery prefork task event loops. |
 | 2026-05-12 | 1.0.1     | civicrecords-ai 1.6.0       | green  | B2 audit punch-list closed: JWT_SECRET and FIRST_ADMIN_PASSWORD material moved to Docker Compose secret files; release verifier and contract test enforce the literal `JWT_SECRET\|FIRST_ADMIN_PASSWORD` directive grep returning zero container env matches. |
 | 2026-05-11 | 1.1.0     | civiccore 1.1.0 + civiccode/civicplan/civicpermit/civicinspect/civicgrants/civicprocure | green | CivicCore v1.1.0 shipped `staff_key_gate`; six D2/B3 module PRs updated hash-locked pins and replaced bespoke staff-key comparisons where present. |
 | 2026-05-10 | 1.0.1     | civiccore 1.0.1        | green  | CivicCore recovery patch shipped with auth-error-payload hardening; downstream pin sweep reconciled CivicClerk, CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure to the hash-locked v1.0.1 wheel. |

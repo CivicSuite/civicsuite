@@ -18,7 +18,9 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "installer" / "reports"
-CIVICRECORDS = ROOT.parent / "civicrecords-ai"
+BUNDLED_CIVICRECORDS = ROOT / "modules" / "civicrecords-ai"
+CIVICRECORDS = BUNDLED_CIVICRECORDS if BUNDLED_CIVICRECORDS.is_dir() else ROOT.parent / "civicrecords-ai"
+WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 
 
 def make_run_id() -> str:
@@ -35,6 +37,7 @@ def run(
     return subprocess.run(
         command,
         cwd=cwd,
+        env=cleanroom_subprocess_env(),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -42,6 +45,27 @@ def run(
         check=False,
         timeout=timeout,
     )
+
+
+def cleanroom_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    if sys.platform.startswith("win") and WINDOWS_DOCKER_DESKTOP_BIN.is_dir():
+        docker_bin = str(WINDOWS_DOCKER_DESKTOP_BIN)
+        current_path = env.get("PATH", "")
+        path_parts = [part for part in current_path.split(os.pathsep) if part]
+        if docker_bin.lower() not in {part.lower() for part in path_parts}:
+            env["PATH"] = docker_bin + os.pathsep + current_path
+    return env
+
+
+def docker_command() -> str:
+    found = shutil.which("docker")
+    if found:
+        return found
+    docker_exe = WINDOWS_DOCKER_DESKTOP_BIN / "docker.exe"
+    if sys.platform.startswith("win") and docker_exe.is_file():
+        return str(docker_exe)
+    return "docker"
 
 
 def ensure_secret_files(source: Path) -> None:
@@ -85,6 +109,8 @@ def copy_source(target: Path) -> None:
         ".git",
         ".claude",
         ".ruff_cache",
+        ".venv",
+        ".venv*",
         ".pytest_cache",
         ".tmp-*",
         "backend-failed.log",
@@ -113,9 +139,17 @@ def write_override(target: Path, *, api_port: int, frontend_port: int) -> Path:
     return override
 
 
+def normalize_compose_ports(target: Path, *, api_port: int, frontend_port: int) -> None:
+    compose = target / "docker-compose.yml"
+    text = compose.read_text(encoding="utf-8")
+    text = text.replace('"8000:8000"', f'"{api_port}:8000"')
+    text = text.replace('"8080:80"', f'"{frontend_port}:80"')
+    compose.write_text(text, encoding="utf-8", newline="\n")
+
+
 def compose_command(project: str, source: Path, *args: str) -> list[str]:
     return [
-        "docker",
+        docker_command(),
         "compose",
         "-p",
         project,
@@ -222,7 +256,7 @@ def main() -> int:
     run_id = args.run_id or make_run_id()
     project = run_id.replace("_", "-").lower()[:50]
     report_dir = REPORT_ROOT / run_id
-    source = report_dir / "source"
+    source = ROOT / "r" / run_id / "records" if sys.platform.startswith("win") and BUNDLED_CIVICRECORDS.is_dir() else report_dir / "source"
     report_dir.mkdir(parents=True, exist_ok=True)
     proof_path = report_dir / "service-ui-proof.json"
     proof: dict[str, object] = {
@@ -241,6 +275,7 @@ def main() -> int:
     try:
         copy_source(source)
         write_env(source / ".env")
+        normalize_compose_ports(source, api_port=args.api_port, frontend_port=args.frontend_port)
         write_override(source, api_port=args.api_port, frontend_port=args.frontend_port)
 
         build = run(compose_command(project, source, "build", "api", "frontend"), cwd=source, timeout=1800)
@@ -278,7 +313,12 @@ def main() -> int:
         return 0 if proof["status"] == "passed" else 1
     finally:
         if not args.keep_running:
-            down = run(compose_command(project, source, "down", "-v"), cwd=source, timeout=300) if source.exists() else None
+            down = None
+            if source.exists():
+                try:
+                    down = run(compose_command(project, source, "down", "-v"), cwd=source, timeout=300)
+                except OSError as exc:
+                    proof["steps"].append({"name": "compose_down", "status": "failed", "error": str(exc)})
             if down is not None:
                 proof["steps"].append({"name": "compose_down", "returncode": down.returncode, "stdout": down.stdout, "stderr": down.stderr})
         proof_path.write_text(json.dumps(proof, indent=2, sort_keys=True) + "\n", encoding="utf-8")

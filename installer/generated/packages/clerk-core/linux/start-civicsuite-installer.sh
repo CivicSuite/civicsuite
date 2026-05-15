@@ -8,14 +8,11 @@ LIFECYCLE="${REPO_ROOT}/scripts/run-clerk-core-installer.py"
 
 echo "CivicSuite OSS beta installer package"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
-echo "Trust path: verify the SHA256 checksum from installer/dist before running lifecycle commands."
-echo "Project status: open-source beta; code signing certificates are not available yet."
+echo "Trust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands."
+echo "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
 MODE="${1:-readiness}"
 case "${MODE}" in
-  gate)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --run-cleanroom-gate
-    ;;
   plan)
     python3 "${PLANNER}" --profile clerk-core --menu-style guided --dry-run
     ;;
@@ -35,7 +32,7 @@ case "${MODE}" in
     python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-readiness --detect-host --dry-run
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall|gate]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall]" >&2
     exit 2
     ;;
 esac

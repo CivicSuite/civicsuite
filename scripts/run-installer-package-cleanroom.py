@@ -233,6 +233,8 @@ def main() -> int:
     lifecycle_blocked = lifecycle_requested and not host_platform_matches_target
     launcher_env = os.environ.copy()
     launcher_env["CIVICSUITE_INSTALLER_RUN_ID"] = run_id
+    if platform == "windows" and host_platform_matches_target:
+        launcher_env["CIVICSUITE_INSTALLER_INSTALL_ROOT"] = str(bundle_root / "r")
     modes = ["readiness", "plan"]
     if lifecycle_requested and not lifecycle_blocked:
         modes.extend(["install", "repair", "verify", "uninstall"])
@@ -309,6 +311,7 @@ def main() -> int:
             "run_id": run_id,
             "environment": {
                 "CIVICSUITE_INSTALLER_RUN_ID": run_id,
+                "CIVICSUITE_INSTALLER_INSTALL_ROOT": launcher_env.get("CIVICSUITE_INSTALLER_INSTALL_ROOT"),
             },
             "resolved_modes": lifecycle_summaries,
         },

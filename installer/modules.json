@@ -83,7 +83,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  false,
-                         "disabled_reason":  "Re-enabled after CivicRecords AI unified on the CivicCore v1.0.1 records/clerk profile pin; CivicRecords AI v1.6.0 keeps that pin while closing B2 Docker secret handling. The next records release needs the post-v1.6.0 ingestion worker fix."
+                         "disabled_reason":  "Re-enabled after CivicRecords AI unified on the CivicCore v1.0.1 records/clerk profile pin; CivicRecords AI v1.6.1 keeps that pin while shipping the ingestion worker event-loop recovery patch."
                      },
                      {
                          "id":  "custom",
@@ -128,14 +128,14 @@
                                              "civiccore"
                                          ],
                         "default_port":  8000,
-                        "installer_status":  "v1_6_0_b2_docker_secrets_shipped",
+                        "installer_status":  "v1_6_1_ingestion_worker_recovery_shipped",
                         "proof_required":  [
                                                "install",
                                                "health_check",
                                                "restart",
                                                "repair"
                                            ],
-                        "current_version":  "1.6.0"
+                        "current_version":  "1.6.1"
                     },
                     {
                         "id":  "civicclerk",
