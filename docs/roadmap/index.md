@@ -4,10 +4,10 @@ This roadmap starts from a hard truth: **"all repos have releases" is not the sa
 
 ## Current Status
 
-- Shipping: `civicrecords-ai`
+- Developer preview: `civicrecords-ai`
 - Productizing: `civicclerk`
 - Foundation / planned: 26 additional product modules, including newly specified `CivicRegWatch` and `CivicAPI`
-- Shared platform: `civiccore v1.0.0`
+- Shared platform: `civiccore v1.1.0`
 
 Current phase: **`Phase 1: Platform And Security Extraction` is underway.** `Phase 0: Continuity` is complete, the auth extraction pattern has already been proven across multiple consumers, and the shared notice-compliance helper is now proven in both `civicnotice` and `civicclerk`.
 

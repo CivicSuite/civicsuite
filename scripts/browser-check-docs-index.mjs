@@ -14,6 +14,28 @@ const viewports = [
 const browser = await chromium.launch();
 const results = [];
 
+async function captureScreenshot(page, screenshot) {
+  const attempts = [
+    { path: screenshot, fullPage: true },
+    { path: screenshot, fullPage: false },
+  ];
+  let lastError = null;
+  for (const options of attempts) {
+    try {
+      await page.screenshot(options);
+      return { screenshot, screenshotCaptured: true, screenshotError: null };
+    } catch (error) {
+      lastError = error;
+      await page.waitForTimeout(250);
+    }
+  }
+  return {
+    screenshot,
+    screenshotCaptured: false,
+    screenshotError: lastError?.message ?? "Unknown screenshot failure",
+  };
+}
+
 try {
   for (const viewport of viewports) {
     const page = await browser.newPage({ viewport });
@@ -34,7 +56,7 @@ try {
     await page.keyboard.press("Tab");
     const focusedText = await page.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
     const screenshot = path.join(outputDir, `docs-index-recovery-${viewport.name}-2026-05-07.png`);
-    await page.screenshot({ path: screenshot, fullPage: true });
+    const screenshotResult = await captureScreenshot(page, screenshot);
 
     results.push({
       viewport: viewport.name,
@@ -43,7 +65,7 @@ try {
       horizontalOverflow,
       focusedText,
       consoleMessages,
-      screenshot,
+      ...screenshotResult,
     });
 
     await page.close();

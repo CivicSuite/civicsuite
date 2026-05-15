@@ -1,5 +1,9 @@
 # CivicProcure v1.0.0 Installer Integration Evidence
 
+Superseded note, 2026-05-14: this is historical recovery evidence for a false
+v1.0.0 release path. CivicProcure is currently a demoted v0.2.0 recovery-label
+module and is not product-ready.
+
 Date: 2026-05-09
 
 Status: installer/module-selection proof added after the CivicProcure v1.0.0

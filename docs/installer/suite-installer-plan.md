@@ -150,14 +150,14 @@ build/start/teardown Docker resources and write proof evidence.
 
 The package-level cleanroom proof is:
 `python scripts/run-installer-package-cleanroom.py`.
-It extracts a release archive into `installer/reports/{run_id}`, runs readiness,
-plan, install, repair, verify, and uninstall from the extracted bundle, and
-records pass/fail evidence. The runner supports Windows, macOS, and Linux
-archives through the platform launchers. Windows and Linux full lifecycle proof
-has passed from regenerated release archives and remains the current
-zero-baseline machine proof for those distributable archives; macOS
-archive/readiness/plan proof has passed from this Windows/WSL host, with full
-macOS runtime proof still requiring a macOS host or VM.
+It extracts a release archive for the duration of the run, removes the extracted
+bundle before evidence upload, runs readiness, plan, install, repair, verify,
+and uninstall from the extracted bundle, and records pass/fail evidence. The
+runner supports Windows, macOS, and Linux archives through the platform
+launchers. CivicSuite's core runtime path is Linux/container-first; Windows and
+macOS are wrapper platforms around that core. Linux lifecycle proof is the
+current zero-baseline machine proof focus, Windows wrapper/readiness proof must be refreshed from clean
+packages, and full macOS runtime proof still requires a macOS host or VM.
 
 The hosted package cleanroom workflow is:
 `.github/workflows/installer-cleanroom.yml`.
@@ -165,10 +165,10 @@ It runs on demand, on a daily schedule, and when installer paths change. The
 workflow proves extracted archive readiness/plan for Windows and Linux on their
 matching hosted runners, proves macOS package archive/readiness/plan through the
 macOS launcher on hosted Linux, then runs the full Linux package
-install/repair/verify/uninstall lifecycle and uploads the installer report
-directory as CI evidence. Windows and macOS full lifecycle certification still
-requires real operator-like VMs because hosted CI does not provide the same
-Docker Desktop baseline.
+install/repair/verify/uninstall lifecycle and uploads JSON installer evidence
+without the extracted bundle payload. Windows and macOS full lifecycle
+certification still requires real operator-like VMs because hosted CI does not
+provide the same Docker Desktop baseline.
 
 ## Supported Profiles
 
@@ -180,20 +180,16 @@ The initial profile set is defined in `installer/modules.json`:
 - Full Suite: all 26 tracked CivicSuite repos, ordered by dependencies.
 - Custom: operator-selected modules with dependency validation.
 
-Verified v1.0.0 module selector integrations:
+Demoted recovery-label selector integrations:
 
 - CivicInspect: custom selection resolves CivicCore, CivicCode, CivicPermit,
-  and CivicInspect with CivicCore 1.0.0 and v1 proof requirements.
+  and CivicInspect with CivicCore 1.1.0 and recovery proof requirements.
 - CivicGrants: custom selection resolves CivicCore, CivicRecords AI, and
-  CivicGrants with CivicCore 1.0.0 and v1 proof requirements. CivicRecords AI
-  currently reports a dependency artifact warning in local dry-run evidence
-  because this checkout does not have local `dist` artifacts, but CivicGrants
-  itself resolves its v1.0.0 artifacts, checksum file, and tag.
+  CivicGrants with CivicCore 1.1.0 and recovery proof requirements.
 - CivicProcure: custom selection resolves CivicCore and CivicProcure with
-  CivicCore 1.0.0 and v1 proof requirements. CivicProcure itself resolves its
-  v1.0.0 artifacts, checksum file, and tag. CivicContracts remains a context
-  relationship, not an installer dependency, until CivicContracts has its own
-  v1.0.0 release.
+  CivicCore 1.1.0 and recovery proof requirements. CivicContracts remains a
+  context relationship, not an installer dependency, until CivicContracts has
+  its own productized release path.
 
 Initial menu styles:
 
