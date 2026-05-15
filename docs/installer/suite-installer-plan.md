@@ -52,7 +52,7 @@ installer/module-selection path and the planner verifies that the selected
 module can be resolved with its dependencies, CivicCore requirement, and proof
 requirements. If macOS remains beta/YELLOW, Windows/Linux installer integration
 evidence plus an explicit macOS limitation note is acceptable until the macOS
-installer lifecycle gate is solved.
+installer lifecycle gate is solved on a real Darwin host.
 
 Every warning or failure must say what happened and what the operator should do
 next. Dry-run readiness output must include concrete fix steps before any real
@@ -106,7 +106,9 @@ The platform package launchers call that runner for lifecycle modes. Install
 builds and starts CivicRecords AI plus CivicClerk from bundled source trees,
 verify checks four live endpoints, repair preserves generated `.env` secrets
 and rebuilds/restarts services, and uninstall tears down the profile containers
-and volumes.
+and volumes. The runner derives Docker Compose project names and host ports from
+the run id, with CLI overrides for explicit ports and project suffixes, and
+records those resolved isolation values in lifecycle reports.
 
 The release artifacts generator is:
 `python scripts/plan-installer.py --profile clerk-core --generate-release-artifacts --installer-version 0.1.0`.
@@ -155,20 +157,25 @@ bundle before evidence upload, runs readiness, plan, install, repair, verify,
 and uninstall from the extracted bundle, and records pass/fail evidence. The
 runner supports Windows, macOS, and Linux archives through the platform
 launchers. CivicSuite's core runtime path is Linux/container-first; Windows and
-macOS are wrapper platforms around that core. Linux lifecycle proof is the
-current zero-baseline machine proof focus, Windows wrapper/readiness proof must be refreshed from clean
-packages, and full macOS runtime proof still requires a macOS host or VM.
+macOS are wrapper platforms around that core. Each package report classifies the
+evidence as archive/readiness, matching-host lifecycle, host-platform mismatch,
+or unsupported lifecycle. Linux lifecycle proof is the primary zero-baseline machine
+proof focus. Windows has matching-host Docker Desktop lifecycle proof
+from a Windows 11 + WSL 2 host; full macOS runtime proof still requires a
+macOS host or VM.
 
 The hosted package cleanroom workflow is:
 `.github/workflows/installer-cleanroom.yml`.
-It runs on demand, on a daily schedule, and when installer paths change. The
-workflow proves extracted archive readiness/plan for Windows and Linux on their
-matching hosted runners, proves macOS package archive/readiness/plan through the
-macOS launcher on hosted Linux, then runs the full Linux package
-install/repair/verify/uninstall lifecycle and uploads JSON installer evidence
-without the extracted bundle payload. Windows and macOS full lifecycle
-certification still requires real operator-like VMs because hosted CI does not
-provide the same Docker Desktop baseline.
+It runs on demand and when installer paths change; the daily cron is
+intentionally absent unless a future approved run adds it back. The workflow
+uses concurrency and short artifact retention as cost controls. It proves
+extracted archive readiness/plan for Windows, Linux, and macOS package
+artifacts, then runs the full Linux package install/repair/verify/uninstall
+lifecycle and uploads JSON installer evidence without the extracted bundle
+payload. Windows lifecycle proof is captured by a matching Windows Docker
+Desktop local run until a dedicated Windows Docker lifecycle runner is added to
+CI. macOS full lifecycle certification still requires a real operator-like
+macOS VM because hosted CI does not provide the same Docker Desktop baseline.
 
 ## Supported Profiles
 

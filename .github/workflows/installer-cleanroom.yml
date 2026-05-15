@@ -2,8 +2,6 @@ name: installer-cleanroom
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 9 * * *"
   pull_request:
     paths:
       - ".github/workflows/installer-cleanroom.yml"
@@ -27,6 +25,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: installer-cleanroom-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   package-readiness-plan:
@@ -81,6 +83,7 @@ jobs:
         with:
           name: installer-${{ matrix.platform }}-package-plan
           path: installer/reports/ci-${{ matrix.platform }}-package-plan/
+          retention-days: 7
 
   linux-package-lifecycle:
     name: linux archive full lifecycle
@@ -121,3 +124,4 @@ jobs:
         with:
           name: installer-linux-package-lifecycle
           path: installer/reports/ci-linux-package-lifecycle/
+          retention-days: 7

@@ -18,7 +18,7 @@ If you are evaluating CivicSuite for a municipality, treat this state as *develo
 
 ## Suite Status
 
-Status snapshot: **2026-05-14**
+Status snapshot: **2026-05-15**
 
 | Tier | Count | What it means today |
 |---|---:|---|
@@ -54,7 +54,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 
 ## Quick Start
 
-**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Linux lifecycle proof is the current CI focus, Windows wrapper/readiness proof exists but still needs refreshed package evidence, and macOS remains archive/readiness only until real macOS lifecycle certification passes.
+**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux remains the primary runtime proof path. Windows now has matching-host Docker Desktop lifecycle evidence on a Windows 11 + WSL 2 host; macOS remains archive/readiness only until real macOS lifecycle certification passes on a Darwin host.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`

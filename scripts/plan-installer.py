@@ -90,6 +90,7 @@ READINESS_SCENARIOS = {
 EXECUTION_TOKEN = "_".join(("I", "UNDERSTAND", "THIS", "MUTATES", "HOST"))
 MIN_FREE_DISK_BYTES = 20 * 1024 * 1024 * 1024
 MIN_MEMORY_BYTES = 8 * 1024 * 1024 * 1024
+WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 
 EXECUTOR_PHASES = [
     {
@@ -542,6 +543,17 @@ def _run_probe(command: list[str], timeout: int = 5) -> dict[str, Any]:
     }
 
 
+def _known_command_path(name: str) -> str | None:
+    found = shutil.which(name)
+    if found:
+        return found
+    if platform.system() == "Windows" and name == "docker":
+        docker_exe = WINDOWS_DOCKER_DESKTOP_BIN / "docker.exe"
+        if docker_exe.is_file():
+            return str(docker_exe)
+    return None
+
+
 def _memory_bytes() -> int | None:
     if platform.system().lower() == "windows":
         class MemoryStatusEx(ctypes.Structure):
@@ -573,9 +585,9 @@ def _memory_bytes() -> int | None:
 def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, Any]:
     host_info = host or _host_platform()
     system = str(host_info.get("system", "")).lower()
-    docker_path = shutil.which("docker")
-    ollama_path = shutil.which("ollama")
-    docker_probe = _run_probe(["docker", "info", "--format", "{{.ServerVersion}}"]) if docker_path else None
+    docker_path = _known_command_path("docker")
+    ollama_path = _known_command_path("ollama")
+    docker_probe = _run_probe([docker_path, "info", "--format", "{{.ServerVersion}}"]) if docker_path else None
     root_usage = shutil.disk_usage(ROOT)
     memory_total = _memory_bytes()
 

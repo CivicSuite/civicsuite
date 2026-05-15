@@ -1,6 +1,6 @@
 # CivicSuite Module Status
 
-**Last verified:** 2026-05-14
+**Last verified:** 2026-05-15
 **Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
 This is the plain-English operating truth for CivicSuite. The unified spec describes architectural intent. This file describes release reality.
@@ -37,6 +37,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicrecords-ai` is the most mature product-shaped module, but remains developer preview until the current post-v1.6.0 ingestion fix is released and full promotion evidence is captured.
 - `civicclerk` has substantial meeting workflow code and a first React staff workspace; v1.0.1 shipped the protected-default staff auth fix, but production deployment proof is still missing.
 - `civiccore` has real shared platform primitives; v1.1.0 is the current shared platform release.
+- The suite-level `clerk-core` installer beta now records package cleanroom evidence classification and isolated lifecycle ports/projects. Linux remains the primary runtime proof path. Windows has matching-host Docker Desktop lifecycle evidence on Windows 11 + WSL 2; macOS wrapper claims remain bounded until matching-host lifecycle evidence exists.
 - `civiccode` has meaningful runtime depth, Docker/PostgreSQL demo work, seed data, and citation-grounded behavior, but not enough to keep a v1.0.0 label.
 - `civiczone`, `civicplan`, `civicpermit`, `civicinspect`, `civicgrants`, and `civicprocure` contain useful scaffolds and local mocks, but they are not city-ready products.
 

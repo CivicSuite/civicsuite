@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import sys
+import argparse
 import importlib.util
 import subprocess
 import tempfile
@@ -18,6 +19,7 @@ CONTRACT = ROOT / "installer" / "README.md"
 PLAN = ROOT / "docs" / "installer" / "suite-installer-plan.md"
 PLANNER = ROOT / "scripts" / "plan-installer.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
+PACKAGE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-installer-package-cleanroom.py"
 CLEANROOM_RUNNER = ROOT / "scripts" / "run-minimal-cleanroom.py"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 WINDOWS_LAUNCHER = ROOT / "installer" / "windows" / "plan-installer.ps1"
@@ -28,6 +30,7 @@ GENERATED_MINIMAL = ROOT / "installer" / "generated" / "minimal"
 GENERATED_PACKAGES = ROOT / "installer" / "generated" / "packages"
 GENERATED_NATIVE = ROOT / "installer" / "generated" / "native"
 DIST = ROOT / "installer" / "dist"
+REPORTS = ROOT / "installer" / "reports"
 
 REQUIRED_PROFILES = {"minimal", "clerk-core", "land-use", "full-suite", "custom"}
 REQUIRED_MODULES = {
@@ -86,6 +89,13 @@ REQUIRED_DOC_PHRASES = (
     "Linux",
     "design contract, not implementation",
 )
+ALLOWED_EVIDENCE_CLASSIFICATIONS = {
+    "archive_readiness_only",
+    "matching_host_lifecycle",
+    "matching_host_lifecycle_failed",
+    "host_platform_mismatch",
+    "unsupported_lifecycle",
+}
 
 
 def fail(message: str) -> str:
@@ -150,6 +160,11 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
     runner_text = INSTALLER_LIFECYCLE_RUNNER.read_text(encoding="utf-8")
     for phrase in (
         "--staff-mode",
+        "--port-offset",
+        "--records-api-port",
+        "--compose-project-suffix",
+        "CIVICSUITE_INSTALLER_RUN_ID",
+        "compose_projects",
         "allows anonymous writes to civicclerk endpoints",
         "Use ONLY for local rehearsal",
         "Re-run with --staff-mode protected",
@@ -168,12 +183,21 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
             '      - "8080:80"\n',
             encoding="utf-8",
         )
-        module.normalize_records_compose_ports(Path(temp_dir))
+        module.normalize_records_compose_ports(Path(temp_dir), {"api": 18123, "web": 18124})
         normalized = compose_file.read_text(encoding="utf-8")
         if '"8000:8000"' in normalized or '"8080:80"' in normalized:
             errors.append(fail("clerk-core installer must replace CivicRecords default host ports"))
-        if '"18000:8000"' not in normalized or '"18080:80"' not in normalized:
-            errors.append(fail("clerk-core installer must normalize CivicRecords ports to installer-assigned ports"))
+        if '"18123:8000"' not in normalized or '"18124:80"' not in normalized:
+            errors.append(fail("clerk-core installer must normalize CivicRecords ports to resolved installer ports"))
+    isolation = module.resolve_isolation(run_id="verify-isolation-run", port_offset=37)
+    ports = isolation.get("ports", {})
+    projects = isolation.get("compose_projects", {})
+    if not isinstance(ports, dict) or ports.get("civicrecords-ai", {}).get("api") != 18037:
+        errors.append(fail("clerk-core installer must derive CivicRecords API port from the run isolation model"))
+    if not isinstance(projects, dict) or projects.get("civicrecords-ai") == projects.get("civicclerk"):
+        errors.append(fail("clerk-core installer must resolve distinct compose project names per module"))
+    if "civicsuite-clerk-core-records" in runner_text or "civicsuite-clerk-core-clerk" in runner_text:
+        errors.append(fail("clerk-core installer must not hard-code the legacy compose project names"))
     return errors
 
 
@@ -184,12 +208,13 @@ def check_cleanroom_workflow() -> list[str]:
     text = INSTALLER_CLEANROOM_WORKFLOW.read_text(encoding="utf-8")
     required_phrases = (
         "workflow_dispatch",
-        "schedule:",
         "pull_request:",
+        "concurrency:",
         "run-installer-package-cleanroom.py",
         "--skip-install",
         "ci-linux-package-lifecycle",
         "actions/upload-artifact@v4",
+        "retention-days:",
         "repository: CivicSuite/civicrecords-ai",
         "path: modules/civicrecords-ai",
         "repository: CivicSuite/civicclerk",
@@ -198,9 +223,103 @@ def check_cleanroom_workflow() -> list[str]:
     for phrase in required_phrases:
         if phrase not in text:
             errors.append(fail(f"installer cleanroom workflow missing phrase: {phrase}"))
+    if "schedule:" in text:
+        errors.append(fail("installer cleanroom workflow must not include a daily cron without explicit approval"))
     for platform in ("windows", "macos", "linux"):
         if f"platform: {platform}" not in text:
             errors.append(fail(f"installer cleanroom workflow missing {platform} readiness/plan job"))
+    return errors
+
+
+def check_package_cleanroom_evidence_contract(*, require_reports: bool = False) -> list[str]:
+    errors: list[str] = []
+    if not PACKAGE_CLEANROOM_RUNNER.is_file():
+        return [fail(f"missing {PACKAGE_CLEANROOM_RUNNER.relative_to(ROOT)}")]
+    runner_text = PACKAGE_CLEANROOM_RUNNER.read_text(encoding="utf-8")
+    for phrase in (
+        "evidence_classification",
+        "archive_readiness_only",
+        "matching_host_lifecycle",
+        "unsupported_lifecycle",
+        "darwin",
+        "CIVICSUITE_INSTALLER_RUN_ID",
+    ):
+        if phrase not in runner_text:
+            errors.append(fail(f"package cleanroom runner missing evidence guard phrase: {phrase}"))
+    report_paths = sorted(REPORTS.glob("*/installer-package-cleanroom.json"))
+    if not report_paths:
+        if require_reports:
+            errors.append(fail("package cleanroom evidence must include at least one installer-package-cleanroom.json report"))
+        return errors
+    required_fields = {
+        "platform",
+        "host_platform",
+        "mutates_host",
+        "status",
+        "evidence_classification",
+        "host_platform_matches_target",
+        "requested_mutating_lifecycle",
+        "certification_scope",
+        "lifecycle_isolation",
+    }
+    lifecycle_modes = {"install", "repair", "verify", "uninstall"}
+    for report_path in report_paths:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        missing = sorted(required_fields - set(report))
+        if missing:
+            errors.append(fail(f"{report_path.relative_to(ROOT)} missing fields: {', '.join(missing)}"))
+            continue
+        classification = str(report.get("evidence_classification"))
+        if classification not in ALLOWED_EVIDENCE_CLASSIFICATIONS:
+            errors.append(fail(f"{report_path.relative_to(ROOT)} has unknown evidence_classification {classification}"))
+        platform = str(report.get("platform"))
+        host = str(report.get("normalized_host_platform") or report.get("host_platform"))
+        if platform == "macos" and host != "macos" and classification == "matching_host_lifecycle":
+            errors.append(fail(f"{report_path.relative_to(ROOT)} must not certify macOS lifecycle from non-Darwin host"))
+        if classification == "archive_readiness_only" and report.get("mutates_host") is not False:
+            errors.append(fail(f"{report_path.relative_to(ROOT)} archive/readiness evidence must be non-mutating"))
+        if classification == "matching_host_lifecycle":
+            modes = {str(step.get("mode")) for step in report.get("steps", []) if isinstance(step, dict)}
+            isolation = report.get("lifecycle_isolation", {})
+            resolved_modes = isolation.get("resolved_modes", []) if isinstance(isolation, dict) else []
+            if report.get("status") != "passed" or report.get("mutates_host") is not True:
+                errors.append(fail(f"{report_path.relative_to(ROOT)} matching-host lifecycle must pass and mutate host"))
+            if not lifecycle_modes.issubset(modes):
+                errors.append(fail(f"{report_path.relative_to(ROOT)} matching-host lifecycle missing lifecycle modes"))
+            if report.get("host_platform_matches_target") is not True:
+                errors.append(fail(f"{report_path.relative_to(ROOT)} matching-host lifecycle must record host/platform match"))
+            if not isinstance(resolved_modes, list) or not any(
+                isinstance(item, dict) and item.get("ports") and item.get("compose_projects") for item in resolved_modes
+            ):
+                errors.append(fail(f"{report_path.relative_to(ROOT)} matching-host lifecycle must record resolved isolation values"))
+    return errors
+
+
+def check_public_claims_bounded() -> list[str]:
+    errors: list[str] = []
+    docs = [
+        ROOT / "README.md",
+        ROOT / "STATUS.md",
+        ROOT / "FAQ.md",
+        ROOT / "USER-MANUAL.md",
+        CONTRACT,
+        PLAN,
+    ]
+    forbidden_phrases = (
+        "Windows and Linux lifecycle proof passed",
+        "macOS lifecycle certification passed",
+        "procurement ready",
+        "signed native installers",
+        "Suite 1.0",
+    )
+    for path in docs:
+        if not path.is_file():
+            errors.append(fail(f"missing public claim surface {path.relative_to(ROOT)}"))
+            continue
+        text = path.read_text(encoding="utf-8")
+        for phrase in forbidden_phrases:
+            if phrase in text:
+                errors.append(fail(f"{path.relative_to(ROOT)} contains overbroad claim phrase: {phrase}"))
     return errors
 
 
@@ -1311,7 +1430,18 @@ def check_launchers() -> list[str]:
     return errors
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Verify the CivicSuite suite-installer design contract.")
+    parser.add_argument(
+        "--require-package-cleanroom-evidence",
+        action="store_true",
+        help="Fail when installer package cleanroom reports are absent.",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
     print("==> CivicSuite installer plan verification")
     errors = []
     if not MANIFEST.is_file():
@@ -1327,6 +1457,12 @@ def main() -> int:
     errors.extend(check_docs())
     errors.extend(check_clerk_core_staff_mode_contract())
     errors.extend(check_cleanroom_workflow())
+    require_package_reports = (
+        args.require_package_cleanroom_evidence
+        or os.environ.get("CIVICSUITE_REQUIRE_PACKAGE_CLEANROOM_EVIDENCE") == "1"
+    )
+    errors.extend(check_package_cleanroom_evidence_contract(require_reports=require_package_reports))
+    errors.extend(check_public_claims_bounded())
 
     if errors:
         for error in errors:
