@@ -13,12 +13,13 @@ import os
 import socket
 import subprocess
 import sys
+import time
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Any
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from zipfile import ZipFile
 
 import yaml
@@ -45,6 +46,8 @@ MODULE_SERVICES = {
 }
 LOCAL_CIVICCORE_VERSION = "1.0.0"
 FORBIDDEN_PROVIDER_VALUES = {"openai", "anthropic"}
+WHEEL_METADATA_FETCH_ATTEMPTS = 3
+WHEEL_METADATA_FETCH_TIMEOUT_SECONDS = 60
 
 
 def fail(message: str) -> str:
@@ -129,6 +132,23 @@ def module_wheel_url(service_name: str, service_version: str) -> str:
     )
 
 
+def fetch_wheel_bytes(url: str) -> bytes:
+    last_error: Exception | None = None
+    request = Request(url, headers={"User-Agent": "CivicSuite-deployment-profile-verifier"})
+    for attempt in range(1, WHEEL_METADATA_FETCH_ATTEMPTS + 1):
+        try:
+            with urlopen(request, timeout=WHEEL_METADATA_FETCH_TIMEOUT_SECONDS) as response:
+                return response.read()
+        except Exception as exc:  # pragma: no cover - exercised by release-network failures
+            last_error = exc
+            if attempt < WHEEL_METADATA_FETCH_ATTEMPTS:
+                time.sleep(2 * attempt)
+    raise RuntimeError(
+        f"could not fetch wheel after {WHEEL_METADATA_FETCH_ATTEMPTS} attempts "
+        f"with {WHEEL_METADATA_FETCH_TIMEOUT_SECONDS}s timeout: {last_error}"
+    )
+
+
 def check_module_wheel_metadata() -> list[str]:
     errors = []
     for service_name, (_import_path, _app_name, service_version, _port, core_release_version) in MODULE_SERVICES.items():
@@ -138,8 +158,7 @@ def check_module_wheel_metadata() -> list[str]:
             f"civiccore-{expected_core_version}",
         )
         try:
-            with urlopen(module_wheel_url(service_name, service_version), timeout=30) as response:
-                wheel_bytes = response.read()
+            wheel_bytes = fetch_wheel_bytes(module_wheel_url(service_name, service_version))
             with ZipFile(BytesIO(wheel_bytes)) as wheel:
                 metadata_name = next(name for name in wheel.namelist() if name.endswith("METADATA"))
                 metadata = wheel.read(metadata_name).decode("utf-8")
