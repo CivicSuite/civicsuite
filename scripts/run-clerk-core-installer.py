@@ -26,6 +26,11 @@ DEFAULT_INSTALL_ROOT = Path(os.environ.get("CIVICSUITE_INSTALLER_INSTALL_ROOT", 
 
 DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
+MODULE_RECORDS = "civicrecords-ai"
+MODULE_CLERK = "civicclerk"
+SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK)
+DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
+SELECTED_MODULES_FILE = "selected-modules.json"
 CLERK_STAFF_MODE_PROTECTED = "protected"
 CLERK_STAFF_MODE_OPEN = "open"
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
@@ -165,6 +170,49 @@ def source_root(module_name: str) -> Path:
     raise InstallerError(
         f"Missing source for {module_name}. Expected bundled source at {bundled} or local checkout at {sibling}."
     )
+
+
+def normalize_selected_modules(selected_modules: list[str] | tuple[str, ...] | None) -> list[str]:
+    requested = list(selected_modules or DEFAULT_SELECTED_MODULES)
+    if not requested:
+        raise InstallerError("Select at least one module: civicrecords-ai or civicclerk.")
+    normalized: list[str] = []
+    for module in requested:
+        if module not in SELECTABLE_MODULES:
+            raise InstallerError(
+                f"Unsupported module {module!r}. Select one or more of: {', '.join(SELECTABLE_MODULES)}."
+            )
+        if module not in normalized:
+            normalized.append(module)
+    return normalized
+
+
+def selected_modules_path(install_root: Path) -> Path:
+    return install_root / SELECTED_MODULES_FILE
+
+
+def persist_selected_modules(install_root: Path, modules: list[str]) -> None:
+    install_root.mkdir(parents=True, exist_ok=True)
+    selected_modules_path(install_root).write_text(
+        json.dumps({"modules": modules}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def load_selected_modules(install_root: Path, selected_modules: list[str] | tuple[str, ...] | None) -> list[str]:
+    if selected_modules:
+        return normalize_selected_modules(selected_modules)
+    path = selected_modules_path(install_root)
+    if not path.is_file():
+        return list(DEFAULT_SELECTED_MODULES)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise InstallerError(f"Invalid selected module record: {path}") from exc
+    modules = payload.get("modules") if isinstance(payload, dict) else None
+    if not isinstance(modules, list) or not all(isinstance(item, str) for item in modules):
+        raise InstallerError(f"Invalid selected module record: {path}")
+    return normalize_selected_modules(modules)
 
 
 def copy_source(source: Path, target: Path) -> None:
@@ -422,44 +470,75 @@ def verify_clerk_protected_default(ports: dict[str, int]) -> dict[str, object]:
     return {"name": "civicclerk_protected_default", "status": "passed", "checks": checks}
 
 
-def verify_civiccore_contract(records_ports: dict[str, int], clerk_ports: dict[str, int]) -> dict[str, object]:
+def verify_civiccore_contract(
+    records_ports: dict[str, int],
+    clerk_ports: dict[str, int],
+    *,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, object]:
+    modules = normalize_selected_modules(selected_modules)
     checks: list[dict[str, object]] = []
     try:
-        records_status, records_health = get_json(f"http://127.0.0.1:{records_ports['api']}/health")
-        clerk_status, clerk_health = get_json(f"http://127.0.0.1:{clerk_ports['api']}/health")
+        records_status, records_health = (
+            get_json(f"http://127.0.0.1:{records_ports['api']}/health")
+            if MODULE_RECORDS in modules
+            else (None, {})
+        )
+        clerk_status, clerk_health = (
+            get_json(f"http://127.0.0.1:{clerk_ports['api']}/health")
+            if MODULE_CLERK in modules
+            else (None, {})
+        )
     except (OSError, json.JSONDecodeError) as exc:
         return {"name": "starter_set_civiccore_contract", "status": "failed", "error": str(exc), "checks": checks}
 
-    checks.append({"name": "civicrecords_health", "status_code": records_status, "payload": records_health})
-    checks.append({"name": "civicclerk_health", "status_code": clerk_status, "payload": clerk_health})
-    records_ok = records_status == 200 and records_health.get("version") == "1.6.1"
-    clerk_ok = (
-        clerk_status == 200
-        and clerk_health.get("service") == "civicclerk"
-        and clerk_health.get("version") == "1.0.1"
-        and clerk_health.get("civiccore") == "1.0.1"
-    )
+    records_ok = True
+    clerk_ok = True
+    if MODULE_RECORDS in modules:
+        checks.append({"name": "civicrecords_health", "status_code": records_status, "payload": records_health})
+        records_ok = records_status == 200 and records_health.get("version") == "1.6.1"
+    if MODULE_CLERK in modules:
+        checks.append({"name": "civicclerk_health", "status_code": clerk_status, "payload": clerk_health})
+        clerk_ok = (
+            clerk_status == 200
+            and clerk_health.get("service") == "civicclerk"
+            and clerk_health.get("version") == "1.0.1"
+            and clerk_health.get("civiccore") == "1.0.1"
+        )
+    expected: dict[str, object] = {}
+    if MODULE_RECORDS in modules:
+        expected[MODULE_RECORDS] = {"version": "1.6.1"}
+    if MODULE_CLERK in modules:
+        expected[MODULE_CLERK] = {"version": "1.0.1", "civiccore": "1.0.1"}
+    expected["civiccore"] = {
+        "role": "base dependency installed before selected modules through the installer plan"
+    }
     status = "passed" if records_ok and clerk_ok else "failed"
     return {
         "name": "starter_set_civiccore_contract",
         "status": status,
-        "expected": {
-            "civicrecords-ai": {"version": "1.6.1"},
-            "civicclerk": {"version": "1.0.1", "civiccore": "1.0.1"},
-        },
+        "selected_modules": modules,
+        "expected": expected,
         "checks": checks,
     }
 
 
-def lifecycle_context(install_root: Path, isolation: dict[str, object]) -> dict[str, object]:
+def lifecycle_context(
+    install_root: Path,
+    isolation: dict[str, object],
+    *,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, object]:
     if not is_within(install_root, ROOT):
         raise InstallerError(f"Install root must stay inside this bundle/repo: {install_root}")
     ports = isolation["ports"]
     compose_projects = isolation["compose_projects"]
     if not isinstance(ports, dict) or not isinstance(compose_projects, dict):
         raise InstallerError("Invalid isolation model.")
+    modules = load_selected_modules(install_root, selected_modules)
     return {
         "install_root": install_root,
+        "selected_modules": modules,
         "records_source": install_root / "sources" / "civicrecords-ai",
         "clerk_source": install_root / "sources" / "civicclerk",
         "records_project": compose_projects["civicrecords-ai"],
@@ -475,20 +554,25 @@ def prepare_sources(
     install_root: Path,
     *,
     isolation: dict[str, object],
+    selected_modules: list[str] | tuple[str, ...] | None = None,
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
 ) -> dict[str, object]:
-    ctx = lifecycle_context(install_root, isolation)
+    modules = normalize_selected_modules(selected_modules)
+    persist_selected_modules(install_root, modules)
+    ctx = lifecycle_context(install_root, isolation, selected_modules=modules)
     ports = ctx["ports"]  # type: ignore[assignment]
     records_ports = ports["civicrecords-ai"]  # type: ignore[index]
     clerk_ports = ports["civicclerk"]  # type: ignore[index]
     install_root.mkdir(parents=True, exist_ok=True)
-    copy_source(source_root("civicrecords-ai"), ctx["records_source"])  # type: ignore[arg-type]
-    copy_source(source_root("civicclerk"), ctx["clerk_source"])  # type: ignore[arg-type]
-    normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
-    normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
-    write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
-    write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
-    write_clerk_env(ctx["clerk_source"] / ".env", staff_mode=staff_mode, ports=clerk_ports)  # type: ignore[operator,arg-type]
+    if MODULE_RECORDS in modules:
+        copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
+        normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
+        normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
+        write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
+        write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
+    if MODULE_CLERK in modules:
+        copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
+        write_clerk_env(ctx["clerk_source"] / ".env", staff_mode=staff_mode, ports=clerk_ports)  # type: ignore[operator,arg-type]
     return ctx
 
 
@@ -497,6 +581,7 @@ def install(
     *,
     isolation: dict[str, object],
     report_dir: Path,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
 ) -> dict[str, object]:
     require_command("docker")
@@ -506,12 +591,21 @@ def install(
             "Docker is installed but not running. Start Docker Desktop or Docker Engine, wait for it to be ready, "
             "then rerun install."
         )
-    ctx = prepare_sources(install_root, isolation=isolation, staff_mode=staff_mode)
+    ctx = prepare_sources(
+        install_root,
+        isolation=isolation,
+        selected_modules=selected_modules,
+        staff_mode=staff_mode,
+    )
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
     steps: list[dict[str, object]] = []
     for name, source_key, project_key, services in (
         ("civicrecords-ai", "records_source", "records_project", ("api", "frontend")),
         ("civicclerk", "clerk_source", "clerk_project", ("api", "frontend")),
     ):
+        if name not in modules:
+            steps.append({"module": name, "step": "compose_build", "status": "skipped_not_selected"})
+            continue
         source = ctx[source_key]  # type: ignore[index]
         project = str(ctx[project_key])
         build = run(compose(project, source, "build", "--pull", "--no-cache", *services), cwd=source, timeout=2400)  # type: ignore[arg-type]
@@ -522,29 +616,43 @@ def install(
         steps.append({"module": name, "step": "compose_up", "returncode": up.returncode, "stdout": up.stdout[-4000:], "stderr": up.stderr[-4000:]})
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
-    result = verify(install_root, isolation=isolation, report_dir=report_dir)
+    result = verify(install_root, isolation=isolation, report_dir=report_dir, selected_modules=modules)  # type: ignore[arg-type]
     steps.extend(result["checks"])  # type: ignore[arg-type]
     status = "passed" if result["status"] == "passed" else "failed"
-    return {"status": status, "steps": steps}
+    return {"status": status, "selected_modules": modules, "steps": steps}
 
 
-def verify(install_root: Path, *, isolation: dict[str, object], report_dir: Path) -> dict[str, object]:
-    ctx = lifecycle_context(install_root, isolation)
+def verify(
+    install_root: Path,
+    *,
+    isolation: dict[str, object],
+    report_dir: Path,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, object]:
+    ctx = lifecycle_context(install_root, isolation, selected_modules=selected_modules)
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
     ports = ctx["ports"]  # type: ignore[assignment]
     records_ports = ports["civicrecords-ai"]  # type: ignore[index]
     clerk_ports = ports["civicclerk"]  # type: ignore[index]
-    checks = [
-        {"name": "civicrecords_api", "url": f"http://127.0.0.1:{records_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{records_ports['api']}/health", timeout_seconds=180)},
-        {"name": "civicrecords_web", "url": f"http://127.0.0.1:{records_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{records_ports['web']}/", timeout_seconds=120)},
-        {"name": "civicclerk_api", "url": f"http://127.0.0.1:{clerk_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{clerk_ports['api']}/health", timeout_seconds=180)},
-        {"name": "civicclerk_web", "url": f"http://127.0.0.1:{clerk_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{clerk_ports['web']}/", timeout_seconds=120)},
-    ]
-    if checks[2]["status"] == "passed":
+    checks: list[dict[str, object]] = []
+    records_api_passed = False
+    clerk_api_passed = False
+    if MODULE_RECORDS in modules:
+        records_api = {"name": "civicrecords_api", "url": f"http://127.0.0.1:{records_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{records_ports['api']}/health", timeout_seconds=180)}
+        checks.append(records_api)
+        checks.append({"name": "civicrecords_web", "url": f"http://127.0.0.1:{records_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{records_ports['web']}/", timeout_seconds=120)})
+        records_api_passed = records_api["status"] == "passed"
+    if MODULE_CLERK in modules:
+        clerk_api = {"name": "civicclerk_api", "url": f"http://127.0.0.1:{clerk_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{clerk_ports['api']}/health", timeout_seconds=180)}
+        checks.append(clerk_api)
+        checks.append({"name": "civicclerk_web", "url": f"http://127.0.0.1:{clerk_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{clerk_ports['web']}/", timeout_seconds=120)})
+        clerk_api_passed = clerk_api["status"] == "passed"
+    if clerk_api_passed:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
-    if checks[0]["status"] == "passed" and checks[2]["status"] == "passed":
-        checks.append(verify_civiccore_contract(records_ports, clerk_ports))  # type: ignore[arg-type]
+    if records_api_passed or clerk_api_passed:
+        checks.append(verify_civiccore_contract(records_ports, clerk_ports, selected_modules=modules))  # type: ignore[arg-type]
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
-    return {"status": status, "checks": checks}
+    return {"status": status, "selected_modules": modules, "checks": checks}
 
 
 def uninstall(
@@ -552,14 +660,19 @@ def uninstall(
     *,
     isolation: dict[str, object],
     report_dir: Path,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
     remove_files: bool = False,
 ) -> dict[str, object]:
-    ctx = lifecycle_context(install_root, isolation)
+    ctx = lifecycle_context(install_root, isolation, selected_modules=selected_modules)
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
     steps: list[dict[str, object]] = []
     for name, source_key, project_key in (
         ("civicrecords-ai", "records_source", "records_project"),
         ("civicclerk", "clerk_source", "clerk_project"),
     ):
+        if name not in modules:
+            steps.append({"module": name, "step": "compose_down", "status": "skipped_not_selected"})
+            continue
         source = ctx[source_key]  # type: ignore[index]
         if not Path(source).exists():
             steps.append({"module": name, "step": "compose_down", "status": "skipped_missing_source"})
@@ -573,7 +686,7 @@ def uninstall(
             raise InstallerError(f"Refusing to remove files outside installer/runtime: {install_root}")
         shutil.rmtree(install_root)
         steps.append({"step": "remove_install_root", "path": str(install_root.relative_to(ROOT)), "status": "removed"})
-    return {"status": "passed", "steps": steps}
+    return {"status": "passed", "selected_modules": modules, "steps": steps}
 
 
 def write_report(report_dir: Path, payload: dict[str, object]) -> None:
@@ -597,6 +710,13 @@ def main() -> int:
     parser.add_argument("--compose-project-suffix", default=None)
     parser.add_argument("--remove-files", action="store_true")
     parser.add_argument(
+        "--module",
+        action="append",
+        choices=SELECTABLE_MODULES,
+        default=None,
+        help="Install or verify one selectable module. Repeat for both. Defaults to civicrecords-ai and civicclerk.",
+    )
+    parser.add_argument(
         "--staff-mode",
         choices=(CLERK_STAFF_MODE_PROTECTED, CLERK_STAFF_MODE_OPEN),
         default=CLERK_STAFF_MODE_PROTECTED,
@@ -609,6 +729,11 @@ def main() -> int:
     run_id = args.run_id or os.environ.get("CIVICSUITE_INSTALLER_RUN_ID") or make_run_id()
     report_dir = REPORT_ROOT / run_id
     install_root = Path(args.install_root).resolve()
+    selected_modules = (
+        normalize_selected_modules(args.module)
+        if args.mode in {"install", "repair"} or args.module
+        else load_selected_modules(install_root, None)
+    )
     isolation = resolve_isolation(
         run_id=run_id,
         records_api_port=args.records_api_port,
@@ -630,6 +755,7 @@ def main() -> int:
         "compose_projects": isolation["compose_projects"],
         "isolation_id": isolation["isolation_id"],
         "port_offset": isolation["port_offset"],
+        "selected_modules": selected_modules,
     }
     try:
         if args.mode == "readiness":
@@ -638,13 +764,44 @@ def main() -> int:
             payload["docker"] = {"returncode": info.returncode, "stdout": info.stdout[-1000:], "stderr": info.stderr[-1000:]}
             payload["status"] = "passed" if info.returncode == 0 else "failed"
         elif args.mode == "install":
-            payload.update(install(install_root, isolation=isolation, report_dir=report_dir, staff_mode=args.staff_mode))
+            payload.update(
+                install(
+                    install_root,
+                    isolation=isolation,
+                    report_dir=report_dir,
+                    selected_modules=selected_modules,
+                    staff_mode=args.staff_mode,
+                )
+            )
         elif args.mode == "verify":
-            payload.update(verify(install_root, isolation=isolation, report_dir=report_dir))
+            payload.update(
+                verify(
+                    install_root,
+                    isolation=isolation,
+                    report_dir=report_dir,
+                    selected_modules=selected_modules,
+                )
+            )
         elif args.mode == "repair":
-            payload.update(install(install_root, isolation=isolation, report_dir=report_dir, staff_mode=args.staff_mode))
+            payload.update(
+                install(
+                    install_root,
+                    isolation=isolation,
+                    report_dir=report_dir,
+                    selected_modules=selected_modules,
+                    staff_mode=args.staff_mode,
+                )
+            )
         elif args.mode == "uninstall":
-            payload.update(uninstall(install_root, isolation=isolation, report_dir=report_dir, remove_files=args.remove_files))
+            payload.update(
+                uninstall(
+                    install_root,
+                    isolation=isolation,
+                    report_dir=report_dir,
+                    selected_modules=selected_modules,
+                    remove_files=args.remove_files,
+                )
+            )
     except (InstallerError, subprocess.TimeoutExpired) as exc:
         payload["status"] = "failed"
         payload["error"] = str(exc)

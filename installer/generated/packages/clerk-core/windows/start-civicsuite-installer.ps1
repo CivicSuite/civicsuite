@@ -4,7 +4,8 @@ param(
     [switch]$Install,
     [switch]$Verify,
     [switch]$Repair,
-    [switch]$Uninstall
+    [switch]$Uninstall,
+    [string[]]$Module
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,30 +19,42 @@ Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown pu
 Write-Host "Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands."
 Write-Host "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
+$PlannerArgs = @("--menu-style", "guided", "--dry-run")
+$LifecycleModuleArgs = @()
+if ($Module -and $Module.Count -gt 0) {
+    $PlannerArgs = @("--profile", "custom") + $PlannerArgs
+    foreach ($SelectedModule in $Module) {
+        $PlannerArgs += @("--module", $SelectedModule)
+        $LifecycleModuleArgs += @("--module", $SelectedModule)
+    }
+} else {
+    $PlannerArgs = @("--profile", "clerk-core") + $PlannerArgs
+}
+
 if ($Plan) {
-    python $Planner --profile clerk-core --menu-style guided --dry-run
+    python $Planner @PlannerArgs
     exit $LASTEXITCODE
 }
 
 if ($Install) {
-    python $Lifecycle install
+    python $Lifecycle install @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
 if ($Verify) {
-    python $Lifecycle verify
+    python $Lifecycle verify @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
 if ($Repair) {
-    python $Lifecycle repair
+    python $Lifecycle repair @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
 if ($Uninstall) {
-    python $Lifecycle uninstall
+    python $Lifecycle uninstall @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
-python $Planner --profile clerk-core --menu-style guided --show-readiness --detect-host --dry-run
+python $Planner @PlannerArgs --show-readiness --detect-host
 exit $LASTEXITCODE

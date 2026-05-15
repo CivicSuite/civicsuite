@@ -63,13 +63,25 @@ profile.
 - civicrecords-ai
 - civicclerk
 
+The default package selection installs both CivicRecords AI and CivicClerk on
+top of the CivicCore base contract. Operators can choose one module or both:
+
+```text
+bash ./start-civicsuite-installer.sh plan --module civicrecords-ai
+bash ./start-civicsuite-installer.sh plan --module civicclerk
+bash ./start-civicsuite-installer.sh install --module civicrecords-ai --module civicclerk
+```
+
+When a module is selected explicitly, plan/readiness use the same selection
+and install/verify/repair/uninstall pass it through to the lifecycle runner.
+
 ## Boundary
 
 - Readiness and plan modes are non-mutating.
-- Install/repair mode is mutating: it builds and starts CivicRecords AI and
-  CivicClerk from the bundled source tree.
+- Install/repair mode is mutating: it builds and starts the selected modules
+  from the bundled source tree.
 - Verify mode checks live service endpoints.
-- Uninstall mode removes the clerk-core Docker containers and volumes.
+- Uninstall mode removes the selected module Docker containers and volumes.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
 
 The repo/source checkout cleanroom gate remains available outside this

@@ -1352,7 +1352,8 @@ def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str
     [switch]$Install,
     [switch]$Verify,
     [switch]$Repair,
-    [switch]$Uninstall
+    [switch]$Uninstall,
+    [string[]]$Module
 )
 
 $ErrorActionPreference = "Stop"
@@ -1366,32 +1367,44 @@ Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown pu
 Write-Host "Trust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands."
 Write-Host "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
+$PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
+$LifecycleModuleArgs = @()
+if ($Module -and $Module.Count -gt 0) {{
+    $PlannerArgs = @("--profile", "custom") + $PlannerArgs
+    foreach ($SelectedModule in $Module) {{
+        $PlannerArgs += @("--module", $SelectedModule)
+        $LifecycleModuleArgs += @("--module", $SelectedModule)
+    }}
+}} else {{
+    $PlannerArgs = @("--profile", "{profile_id}") + $PlannerArgs
+}}
+
 if ($Plan) {{
-    python $Planner --profile {profile_id} --menu-style {menu_style} --dry-run
+    python $Planner @PlannerArgs
     exit $LASTEXITCODE
 }}
 
 if ($Install) {{
-    python $Lifecycle install
+    python $Lifecycle install @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
 if ($Verify) {{
-    python $Lifecycle verify
+    python $Lifecycle verify @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
 if ($Repair) {{
-    python $Lifecycle repair
+    python $Lifecycle repair @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
 if ($Uninstall) {{
-    python $Lifecycle uninstall
+    python $Lifecycle uninstall @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
-python $Planner --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
+python $Planner @PlannerArgs --show-readiness --detect-host
 exit $LASTEXITCODE
 """
     return f"""#!/usr/bin/env bash
@@ -1408,27 +1421,61 @@ echo "Trust path: verify the SHA256 checksum from installer/dist and the officia
 echo "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
 MODE="${{1:-readiness}}"
+if [[ "$#" -gt 0 ]]; then
+  shift || true
+fi
+
+PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
+LIFECYCLE_MODULE_ARGS=()
+SELECTED_MODULES=()
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --module)
+      if [[ "$#" -lt 2 ]]; then
+        echo "--module requires civicrecords-ai or civicclerk" >&2
+        exit 2
+      fi
+      SELECTED_MODULES+=("$2")
+      LIFECYCLE_MODULE_ARGS+=(--module "$2")
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ "${{#SELECTED_MODULES[@]}}" -gt 0 ]]; then
+  PLANNER_ARGS=(--profile custom "${{PLANNER_ARGS[@]}}")
+  for selected_module in "${{SELECTED_MODULES[@]}}"; do
+    PLANNER_ARGS+=(--module "${{selected_module}}")
+  done
+else
+  PLANNER_ARGS=(--profile {profile_id} "${{PLANNER_ARGS[@]}}")
+fi
+
 case "${{MODE}}" in
   plan)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --dry-run
+    python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}"
     ;;
   install)
-    python3 "${{LIFECYCLE}}" install
+    python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   verify)
-    python3 "${{LIFECYCLE}}" verify
+    python3 "${{LIFECYCLE}}" verify "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   repair)
-    python3 "${{LIFECYCLE}}" repair
+    python3 "${{LIFECYCLE}}" repair "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   uninstall)
-    python3 "${{LIFECYCLE}}" uninstall
+    python3 "${{LIFECYCLE}}" uninstall "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   readiness)
-    python3 "${{PLANNER}}" --profile {profile_id} --menu-style {menu_style} --show-readiness --detect-host --dry-run
+    python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--module civicrecords-ai] [--module civicclerk]" >&2
     exit 2
     ;;
 esac
@@ -1441,9 +1488,15 @@ def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, 
     if platform_id == "windows":
         readiness = f".\\{launcher} -Readiness"
         plan_command = f".\\{launcher} -Plan"
+        records_only_plan = f".\\{launcher} -Plan -Module civicrecords-ai"
+        clerk_only_plan = f".\\{launcher} -Plan -Module civicclerk"
+        both_install = f".\\{launcher} -Install -Module civicrecords-ai -Module civicclerk"
     else:
         readiness = f"bash ./{launcher} readiness"
         plan_command = f"bash ./{launcher} plan"
+        records_only_plan = f"bash ./{launcher} plan --module civicrecords-ai"
+        clerk_only_plan = f"bash ./{launcher} plan --module civicclerk"
+        both_install = f"bash ./{launcher} install --module civicrecords-ai --module civicclerk"
     return f"""# CivicSuite Installer Package - {platform_id}
 
 Profile: `{profile_id}`
@@ -1507,13 +1560,25 @@ profile.
 
 {module_lines}
 
+The default package selection installs both CivicRecords AI and CivicClerk on
+top of the CivicCore base contract. Operators can choose one module or both:
+
+```text
+{records_only_plan}
+{clerk_only_plan}
+{both_install}
+```
+
+When a module is selected explicitly, plan/readiness use the same selection
+and install/verify/repair/uninstall pass it through to the lifecycle runner.
+
 ## Boundary
 
 - Readiness and plan modes are non-mutating.
-- Install/repair mode is mutating: it builds and starts CivicRecords AI and
-  CivicClerk from the bundled source tree.
+- Install/repair mode is mutating: it builds and starts the selected modules
+  from the bundled source tree.
 - Verify mode checks live service endpoints.
-- Uninstall mode removes the clerk-core Docker containers and volumes.
+- Uninstall mode removes the selected module Docker containers and volumes.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
 
 The repo/source checkout cleanroom gate remains available outside this

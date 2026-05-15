@@ -12,27 +12,61 @@ echo "Trust path: verify the SHA256 checksum from installer/dist and the officia
 echo "Project status: small free open-source beta; the public installer is intentionally unsigned."
 
 MODE="${1:-readiness}"
+if [[ "$#" -gt 0 ]]; then
+  shift || true
+fi
+
+PLANNER_ARGS=(--menu-style "guided" --dry-run)
+LIFECYCLE_MODULE_ARGS=()
+SELECTED_MODULES=()
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --module)
+      if [[ "$#" -lt 2 ]]; then
+        echo "--module requires civicrecords-ai or civicclerk" >&2
+        exit 2
+      fi
+      SELECTED_MODULES+=("$2")
+      LIFECYCLE_MODULE_ARGS+=(--module "$2")
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ "${#SELECTED_MODULES[@]}" -gt 0 ]]; then
+  PLANNER_ARGS=(--profile custom "${PLANNER_ARGS[@]}")
+  for selected_module in "${SELECTED_MODULES[@]}"; do
+    PLANNER_ARGS+=(--module "${selected_module}")
+  done
+else
+  PLANNER_ARGS=(--profile clerk-core "${PLANNER_ARGS[@]}")
+fi
+
 case "${MODE}" in
   plan)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --dry-run
+    python3 "${PLANNER}" "${PLANNER_ARGS[@]}"
     ;;
   install)
-    python3 "${LIFECYCLE}" install
+    python3 "${LIFECYCLE}" install "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   verify)
-    python3 "${LIFECYCLE}" verify
+    python3 "${LIFECYCLE}" verify "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   repair)
-    python3 "${LIFECYCLE}" repair
+    python3 "${LIFECYCLE}" repair "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   uninstall)
-    python3 "${LIFECYCLE}" uninstall
+    python3 "${LIFECYCLE}" uninstall "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   readiness)
-    python3 "${PLANNER}" --profile clerk-core --menu-style guided --show-readiness --detect-host --dry-run
+    python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--module civicrecords-ai] [--module civicclerk]" >&2
     exit 2
     ;;
 esac
