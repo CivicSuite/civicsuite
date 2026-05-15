@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -29,10 +30,11 @@ def make_run_id() -> str:
     return f"installer-package-cleanroom-{stamp}-{uuid4().hex[:8]}"
 
 
-def run(command: list[str], *, cwd: Path, timeout: int) -> subprocess.CompletedProcess[str]:
+def run(command: list[str], *, cwd: Path, timeout: int, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         command,
         cwd=cwd,
+        env=env,
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -119,6 +121,84 @@ def mode_timeout(mode: str) -> int:
     return 900
 
 
+def parse_json_from_output(output: str) -> dict[str, object] | None:
+    decoder = json.JSONDecoder()
+    for index, char in enumerate(output):
+        if char != "{":
+            continue
+        try:
+            parsed, end = decoder.raw_decode(output[index:])
+        except json.JSONDecodeError:
+            continue
+        if output[index + end :].strip():
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    return None
+
+
+def lifecycle_summary(mode: str, payload: dict[str, object] | None) -> dict[str, object] | None:
+    if not payload:
+        return None
+    summary: dict[str, object] = {"mode": mode}
+    for key in (
+        "run_id",
+        "status",
+        "mutates_host",
+        "ports",
+        "compose_projects",
+        "isolation_id",
+        "port_offset",
+        "error",
+        "fix_steps",
+    ):
+        if key in payload:
+            summary[key] = payload[key]
+    return summary
+
+
+def normalized_host_platform() -> str:
+    if sys.platform.startswith("win"):
+        return "windows"
+    if sys.platform == "darwin":
+        return "macos"
+    if sys.platform.startswith("linux"):
+        return "linux"
+    return sys.platform
+
+
+def classify_evidence(
+    *,
+    platform: str,
+    host_platform: str,
+    skip_install: bool,
+    status: str,
+    lifecycle_blocked: bool,
+) -> str:
+    if skip_install:
+        return "archive_readiness_only"
+    if lifecycle_blocked:
+        if platform == "macos" and host_platform != "macos":
+            return "unsupported_lifecycle"
+        return "host_platform_mismatch"
+    if platform == host_platform and status == "passed":
+        return "matching_host_lifecycle"
+    if platform == host_platform:
+        return "matching_host_lifecycle_failed"
+    return "host_platform_mismatch"
+
+
+def certification_scope(classification: str) -> str:
+    scopes = {
+        "archive_readiness_only": "Archive extraction, readiness, and dry-run plan only; not lifecycle certification.",
+        "matching_host_lifecycle": "Matching-host install, repair, verify, and uninstall lifecycle evidence.",
+        "matching_host_lifecycle_failed": "Matching-host lifecycle was attempted but did not pass.",
+        "host_platform_mismatch": "Host platform did not match package target; not lifecycle certification.",
+        "unsupported_lifecycle": "Requested lifecycle is unsupported on this host; not lifecycle certification.",
+    }
+    return scopes[classification]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a cleanroom installer package lifecycle.")
     parser.add_argument("--archive", default=str(ROOT / "installer" / "dist" / "CivicSuite-clerk-core-linux-0.1.0.tar.gz"))
@@ -147,15 +227,26 @@ def main() -> int:
         pass
 
     steps: list[dict[str, object]] = []
+    host_platform = normalized_host_platform()
+    host_platform_matches_target = platform == host_platform
+    lifecycle_requested = (not args.skip_install) or args.gate
+    lifecycle_blocked = lifecycle_requested and not host_platform_matches_target
+    launcher_env = os.environ.copy()
+    launcher_env["CIVICSUITE_INSTALLER_RUN_ID"] = run_id
     modes = ["readiness", "plan"]
-    if not args.skip_install:
+    if lifecycle_requested and not lifecycle_blocked:
         modes.extend(["install", "repair", "verify", "uninstall"])
-    if args.gate:
+    if args.gate and not lifecycle_blocked:
         modes.append("gate")
     status = "passed"
+    lifecycle_summaries: list[dict[str, object]] = []
     for mode in modes:
         command = launcher_command(platform, launcher, mode, bundle_root)
-        proc = run(command, cwd=bundle_root, timeout=mode_timeout(mode))
+        proc = run(command, cwd=bundle_root, timeout=mode_timeout(mode), env=launcher_env)
+        parsed_output = parse_json_from_output(proc.stdout)
+        summary = lifecycle_summary(mode, parsed_output)
+        if summary is not None and "ports" in summary:
+            lifecycle_summaries.append(summary)
         steps.append(
             {
                 "mode": mode,
@@ -167,9 +258,9 @@ def main() -> int:
         )
         if proc.returncode != 0:
             status = "failed"
-            if mode != "uninstall":
+            if mode in {"install", "repair", "verify", "gate"}:
                 cleanup_command = launcher_command(platform, launcher, "uninstall", bundle_root)
-                cleanup = run(cleanup_command, cwd=bundle_root, timeout=900)
+                cleanup = run(cleanup_command, cwd=bundle_root, timeout=900, env=launcher_env)
                 steps.append(
                     {
                         "mode": "cleanup_after_failure",
@@ -180,16 +271,49 @@ def main() -> int:
                     }
                 )
             break
+    if lifecycle_blocked:
+        status = "blocked"
+        steps.append(
+            {
+                "mode": "lifecycle_blocked",
+                "returncode": 2,
+                "stdout": "",
+                "stderr": (
+                    f"Lifecycle certification for {platform} requires a matching host. "
+                    f"Current host is {host_platform} ({sys.platform})."
+                ),
+            }
+        )
+
+    classification = classify_evidence(
+        platform=platform,
+        host_platform=host_platform,
+        skip_install=args.skip_install,
+        status=status,
+        lifecycle_blocked=lifecycle_blocked,
+    )
 
     proof = {
         "run_id": run_id,
         "archive": str(archive),
         "platform": platform,
         "host_platform": sys.platform,
+        "normalized_host_platform": host_platform,
+        "host_platform_matches_target": host_platform_matches_target,
         "bundle_root": str(bundle_root),
         "extracted_bundle_retained": False,
         "status": status,
-        "mutates_host": not args.skip_install,
+        "mutates_host": lifecycle_requested and not lifecycle_blocked,
+        "requested_mutating_lifecycle": lifecycle_requested,
+        "lifecycle_isolation": {
+            "run_id": run_id,
+            "environment": {
+                "CIVICSUITE_INSTALLER_RUN_ID": run_id,
+            },
+            "resolved_modes": lifecycle_summaries,
+        },
+        "evidence_classification": classification,
+        "certification_scope": certification_scope(classification),
         "steps": steps,
     }
     if extract_root.exists():

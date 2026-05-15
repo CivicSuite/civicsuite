@@ -17,8 +17,8 @@ bundle using Docker.
 The suite installer must support:
 
 - Linux, with Ubuntu LTS as the first proof target.
-- Windows 10/11 through a wrapper around Docker Desktop and the same containerized services.
-- macOS 13 or newer through a wrapper around Docker Desktop; full lifecycle certification is still pending.
+- Windows 10/11 through a wrapper around Docker Desktop and the same containerized services. Lifecycle certification requires a matching Windows host or VM with Docker Desktop running.
+- macOS 13 or newer through a wrapper around Docker Desktop; full lifecycle certification is still pending and requires a real Darwin/macOS host or VM.
 
 From a zero-baseline machine, the installer must:
 
@@ -238,6 +238,14 @@ The generated `clerk-core` package entrypoints support:
 - `uninstall`: remove the profile's Docker containers and volumes.
 - `gate`: run the existing isolated cleanroom service/UI gate.
 
+Lifecycle runs derive Docker Compose project names and host ports from the
+package run id by default. Operators can override that isolation with
+`--run-id`, `--port-offset`, explicit `--records-api-port`,
+`--records-web-port`, `--clerk-api-port`, `--clerk-web-port`, or
+`--compose-project-suffix` when invoking `scripts/run-clerk-core-installer.py`
+directly. Reports record the resolved ports and Compose project names used for
+health checks.
+
 The package cleanroom runner proves the distributable archive from an extracted
 copy:
 
@@ -248,11 +256,16 @@ python scripts\run-installer-package-cleanroom.py --archive installer\dist\Civic
 ```
 
 Those commands extract the release archive, run the platform launcher from the
-extracted bundle, and write evidence under `installer/reports/{run_id}`. Full
-install/repair/verify/uninstall proof is valid only when the archive is run on a
-matching host or VM. On the current validation host, Windows and Linux lifecycle
-proof passed; macOS is limited to archive/readiness/plan proof until a macOS
-runtime is available.
+extracted bundle, remove the extracted payload, and write evidence under
+`installer/reports/{run_id}`. Each package report records an
+`evidence_classification`: `archive_readiness_only`,
+`matching_host_lifecycle`, `matching_host_lifecycle_failed`,
+`host_platform_mismatch`, or `unsupported_lifecycle`. Full
+install/repair/verify/uninstall proof is certification evidence only when the
+archive is run on a matching host or VM. Windows lifecycle evidence must come
+from a Windows Docker Desktop host; macOS lifecycle evidence must come from a
+Darwin/macOS Docker Desktop host. macOS package runs from Linux or Windows hosts
+are archive/readiness evidence only.
 
 This writes Windows, macOS, and Linux package directories under
 `installer/generated/packages/{profile}`. Each package contains:

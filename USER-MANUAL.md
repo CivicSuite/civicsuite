@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-05-14
+**Last verified:** 2026-05-15
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -47,7 +47,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 ### Prerequisites
 
 - A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and lifecycle proof path. On Windows, also WSL 2 + Virtual Machine Platform. macOS remains pending full lifecycle certification.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and lifecycle proof path. On Windows, also WSL 2 + Virtual Machine Platform. Windows lifecycle proof requires matching Windows Docker Desktop evidence, and macOS remains pending full lifecycle certification.
 - About 30 minutes for first install (model downloads).
 
 ### Install (Windows wrapper)
@@ -60,10 +60,9 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
    - **Start CivicRecords AI** — daily start (`docker compose up -d`).
    - **Install or Repair CivicRecords AI** — bootstrap / repair.
 
-### Install (Linux / macOS) — script path, not lifecycle-certified
+### Install (Linux / macOS)
 
-Linux is the primary runtime target. The script path below runs on Linux and
-macOS today, but macOS is not lifecycle-certified yet.
+Linux is the primary runtime target and has matching-host lifecycle evidence for the clerk-core beta. The script path below also runs on macOS today, but macOS is not lifecycle-certified yet.
 
 ```bash
 git clone https://github.com/CivicSuite/civicrecords-ai.git

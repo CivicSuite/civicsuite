@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -22,8 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "installer" / "reports"
 DEFAULT_INSTALL_ROOT = ROOT / "installer" / "runtime" / "clerk-core"
 
-RECORDS_PORTS = {"api": 18000, "web": 18080}
-CLERK_PORTS = {"api": 18776, "web": 18081}
+DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
+DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
 CLERK_STAFF_MODE_PROTECTED = "protected"
 CLERK_STAFF_MODE_OPEN = "open"
 CLERK_OPEN_MODE_WARNING = (
@@ -40,6 +42,58 @@ class InstallerError(RuntimeError):
 def make_run_id() -> str:
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     return f"clerk-core-install-{stamp}-{uuid4().hex[:8]}"
+
+
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9_-]+", "-", value.lower()).strip("-_")
+    if not slug or not slug[0].isalnum():
+        slug = f"run-{slug}"
+    return slug[:48]
+
+
+def derived_port_offset(run_id: str) -> int:
+    digest = hashlib.sha256(run_id.encode("utf-8")).hexdigest()
+    return int(digest[:4], 16) % 900
+
+
+def resolve_isolation(
+    *,
+    run_id: str,
+    records_api_port: int | None = None,
+    records_web_port: int | None = None,
+    clerk_api_port: int | None = None,
+    clerk_web_port: int | None = None,
+    port_offset: int | None = None,
+    compose_project_suffix: str | None = None,
+) -> dict[str, object]:
+    env_offset = os.environ.get("CIVICSUITE_INSTALLER_PORT_OFFSET")
+    resolved_offset = (
+        port_offset
+        if port_offset is not None
+        else int(env_offset)
+        if env_offset not in (None, "")
+        else derived_port_offset(run_id)
+    )
+    if resolved_offset < 0 or resolved_offset > 5000:
+        raise InstallerError("--port-offset must be between 0 and 5000.")
+    suffix = slugify(compose_project_suffix or os.environ.get("CIVICSUITE_INSTALLER_PROJECT_SUFFIX") or run_id)
+    records_ports = {
+        "api": records_api_port or DEFAULT_RECORDS_PORTS["api"] + resolved_offset,
+        "web": records_web_port or DEFAULT_RECORDS_PORTS["web"] + resolved_offset,
+    }
+    clerk_ports = {
+        "api": clerk_api_port or DEFAULT_CLERK_PORTS["api"] + resolved_offset,
+        "web": clerk_web_port or DEFAULT_CLERK_PORTS["web"] + resolved_offset,
+    }
+    return {
+        "isolation_id": suffix,
+        "port_offset": resolved_offset,
+        "ports": {"civicrecords-ai": records_ports, "civicclerk": clerk_ports},
+        "compose_projects": {
+            "civicrecords-ai": f"civicsuite-{suffix}-records",
+            "civicclerk": f"civicsuite-{suffix}-clerk",
+        },
+    }
 
 
 def is_within(child: Path, parent: Path) -> bool:
@@ -155,16 +209,16 @@ def write_records_env(target: Path) -> None:
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 
 
-def write_records_override(target: Path) -> Path:
+def write_records_override(target: Path, ports: dict[str, int]) -> Path:
     path = target / "docker-compose.civicsuite.override.yml"
     path.write_text(
         f"""services:
   api:
     ports:
-      - "{RECORDS_PORTS['api']}:8000"
+      - "{ports['api']}:8000"
   frontend:
     ports:
-      - "{RECORDS_PORTS['web']}:80"
+      - "{ports['web']}:80"
 """,
         encoding="utf-8",
         newline="\n",
@@ -172,16 +226,17 @@ def write_records_override(target: Path) -> Path:
     return path
 
 
-def normalize_records_compose_ports(target: Path) -> None:
+def normalize_records_compose_ports(target: Path, ports: dict[str, int] | None = None) -> None:
+    resolved_ports = ports or DEFAULT_RECORDS_PORTS
     compose_file = target / "docker-compose.yml"
     if not compose_file.is_file():
         return
     text = compose_file.read_text(encoding="utf-8")
     replacements = {
-        '"8000:8000"': f'"{RECORDS_PORTS["api"]}:8000"',
-        "'8000:8000'": f"'{RECORDS_PORTS['api']}:8000'",
-        '"8080:80"': f'"{RECORDS_PORTS["web"]}:80"',
-        "'8080:80'": f"'{RECORDS_PORTS['web']}:80'",
+        '"8000:8000"': f'"{resolved_ports["api"]}:8000"',
+        "'8000:8000'": f"'{resolved_ports['api']}:8000'",
+        '"8080:80"': f'"{resolved_ports["web"]}:80"',
+        "'8080:80'": f"'{resolved_ports['web']}:80'",
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -236,15 +291,21 @@ NGINX
     )
 
 
-def write_clerk_env(target: Path, *, staff_mode: str = CLERK_STAFF_MODE_PROTECTED) -> None:
+def write_clerk_env(
+    target: Path,
+    *,
+    staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
+    ports: dict[str, int] | None = None,
+) -> None:
+    resolved_ports = ports or DEFAULT_CLERK_PORTS
     if target.is_file():
         return
     values = {
         "CIVICCLERK_POSTGRES_USER": "civicclerk",
         "CIVICCLERK_POSTGRES_PASSWORD": secrets.token_hex(24),
         "CIVICCLERK_POSTGRES_DB": "civicclerk",
-        "CIVICCLERK_API_PORT": str(CLERK_PORTS["api"]),
-        "CIVICCLERK_WEB_PORT": str(CLERK_PORTS["web"]),
+        "CIVICCLERK_API_PORT": str(resolved_ports["api"]),
+        "CIVICCLERK_WEB_PORT": str(resolved_ports["web"]),
         "CIVICCLERK_STAFF_AUTH_MODE": staff_mode,
         "CIVICCLERK_DEMO_SEED": "1",
         "CIVICCLERK_CONNECTOR_SYNC_ENABLED": "false",
@@ -306,8 +367,8 @@ def post_json(url: str, payload: dict[str, object], *, timeout_seconds: int = 10
         return exc.code, json.loads(body) if body else {}
 
 
-def verify_clerk_protected_default() -> dict[str, object]:
-    base = f"http://127.0.0.1:{CLERK_PORTS['api']}"
+def verify_clerk_protected_default(ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{ports['api']}"
     checks: list[dict[str, object]] = []
     try:
         status, readiness = get_json(f"{base}/staff/auth-readiness")
@@ -331,38 +392,51 @@ def verify_clerk_protected_default() -> dict[str, object]:
     return {"name": "civicclerk_protected_default", "status": "passed", "checks": checks}
 
 
-def lifecycle_context(install_root: Path) -> dict[str, Path | str]:
+def lifecycle_context(install_root: Path, isolation: dict[str, object]) -> dict[str, object]:
     if not is_within(install_root, ROOT):
         raise InstallerError(f"Install root must stay inside this bundle/repo: {install_root}")
+    ports = isolation["ports"]
+    compose_projects = isolation["compose_projects"]
+    if not isinstance(ports, dict) or not isinstance(compose_projects, dict):
+        raise InstallerError("Invalid isolation model.")
     return {
         "install_root": install_root,
         "records_source": install_root / "sources" / "civicrecords-ai",
         "clerk_source": install_root / "sources" / "civicclerk",
-        "records_project": "civicsuite-clerk-core-records",
-        "clerk_project": "civicsuite-clerk-core-clerk",
+        "records_project": compose_projects["civicrecords-ai"],
+        "clerk_project": compose_projects["civicclerk"],
+        "ports": ports,
+        "compose_projects": compose_projects,
+        "isolation_id": isolation["isolation_id"],
+        "port_offset": isolation["port_offset"],
     }
 
 
 def prepare_sources(
     install_root: Path,
     *,
+    isolation: dict[str, object],
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
-) -> dict[str, Path | str]:
-    ctx = lifecycle_context(install_root)
+) -> dict[str, object]:
+    ctx = lifecycle_context(install_root, isolation)
+    ports = ctx["ports"]  # type: ignore[assignment]
+    records_ports = ports["civicrecords-ai"]  # type: ignore[index]
+    clerk_ports = ports["civicclerk"]  # type: ignore[index]
     install_root.mkdir(parents=True, exist_ok=True)
     copy_source(source_root("civicrecords-ai"), ctx["records_source"])  # type: ignore[arg-type]
     copy_source(source_root("civicclerk"), ctx["clerk_source"])  # type: ignore[arg-type]
-    normalize_records_compose_ports(ctx["records_source"])  # type: ignore[arg-type]
+    normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
     write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
-    write_records_override(ctx["records_source"])  # type: ignore[arg-type]
-    write_clerk_env(ctx["clerk_source"] / ".env", staff_mode=staff_mode)  # type: ignore[operator]
+    write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
+    write_clerk_env(ctx["clerk_source"] / ".env", staff_mode=staff_mode, ports=clerk_ports)  # type: ignore[operator,arg-type]
     return ctx
 
 
 def install(
     install_root: Path,
     *,
+    isolation: dict[str, object],
     report_dir: Path,
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
 ) -> dict[str, object]:
@@ -373,7 +447,7 @@ def install(
             "Docker is installed but not running. Start Docker Desktop or Docker Engine, wait for it to be ready, "
             "then rerun install."
         )
-    ctx = prepare_sources(install_root, staff_mode=staff_mode)
+    ctx = prepare_sources(install_root, isolation=isolation, staff_mode=staff_mode)
     steps: list[dict[str, object]] = []
     for name, source_key, project_key, services in (
         ("civicrecords-ai", "records_source", "records_project", ("api", "frontend")),
@@ -389,28 +463,37 @@ def install(
         steps.append({"module": name, "step": "compose_up", "returncode": up.returncode, "stdout": up.stdout[-4000:], "stderr": up.stderr[-4000:]})
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
-    result = verify(install_root, report_dir=report_dir)
+    result = verify(install_root, isolation=isolation, report_dir=report_dir)
     steps.extend(result["checks"])  # type: ignore[arg-type]
     status = "passed" if result["status"] == "passed" else "failed"
     return {"status": status, "steps": steps}
 
 
-def verify(install_root: Path, *, report_dir: Path) -> dict[str, object]:
-    lifecycle_context(install_root)
+def verify(install_root: Path, *, isolation: dict[str, object], report_dir: Path) -> dict[str, object]:
+    ctx = lifecycle_context(install_root, isolation)
+    ports = ctx["ports"]  # type: ignore[assignment]
+    records_ports = ports["civicrecords-ai"]  # type: ignore[index]
+    clerk_ports = ports["civicclerk"]  # type: ignore[index]
     checks = [
-        {"name": "civicrecords_api", "url": f"http://127.0.0.1:{RECORDS_PORTS['api']}/health", **wait_for_url(f"http://127.0.0.1:{RECORDS_PORTS['api']}/health", timeout_seconds=180)},
-        {"name": "civicrecords_web", "url": f"http://127.0.0.1:{RECORDS_PORTS['web']}/", **wait_for_url(f"http://127.0.0.1:{RECORDS_PORTS['web']}/", timeout_seconds=120)},
-        {"name": "civicclerk_api", "url": f"http://127.0.0.1:{CLERK_PORTS['api']}/health", **wait_for_url(f"http://127.0.0.1:{CLERK_PORTS['api']}/health", timeout_seconds=180)},
-        {"name": "civicclerk_web", "url": f"http://127.0.0.1:{CLERK_PORTS['web']}/", **wait_for_url(f"http://127.0.0.1:{CLERK_PORTS['web']}/", timeout_seconds=120)},
+        {"name": "civicrecords_api", "url": f"http://127.0.0.1:{records_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{records_ports['api']}/health", timeout_seconds=180)},
+        {"name": "civicrecords_web", "url": f"http://127.0.0.1:{records_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{records_ports['web']}/", timeout_seconds=120)},
+        {"name": "civicclerk_api", "url": f"http://127.0.0.1:{clerk_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{clerk_ports['api']}/health", timeout_seconds=180)},
+        {"name": "civicclerk_web", "url": f"http://127.0.0.1:{clerk_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{clerk_ports['web']}/", timeout_seconds=120)},
     ]
     if checks[2]["status"] == "passed":
-        checks.append(verify_clerk_protected_default())
+        checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
     return {"status": status, "checks": checks}
 
 
-def uninstall(install_root: Path, *, report_dir: Path, remove_files: bool = False) -> dict[str, object]:
-    ctx = lifecycle_context(install_root)
+def uninstall(
+    install_root: Path,
+    *,
+    isolation: dict[str, object],
+    report_dir: Path,
+    remove_files: bool = False,
+) -> dict[str, object]:
+    ctx = lifecycle_context(install_root, isolation)
     steps: list[dict[str, object]] = []
     for name, source_key, project_key in (
         ("civicrecords-ai", "records_source", "records_project"),
@@ -445,6 +528,12 @@ def main() -> int:
     parser.add_argument("mode", choices=("readiness", "install", "verify", "repair", "uninstall"))
     parser.add_argument("--install-root", default=str(DEFAULT_INSTALL_ROOT))
     parser.add_argument("--run-id", default=None)
+    parser.add_argument("--records-api-port", type=int, default=None)
+    parser.add_argument("--records-web-port", type=int, default=None)
+    parser.add_argument("--clerk-api-port", type=int, default=None)
+    parser.add_argument("--clerk-web-port", type=int, default=None)
+    parser.add_argument("--port-offset", type=int, default=None)
+    parser.add_argument("--compose-project-suffix", default=None)
     parser.add_argument("--remove-files", action="store_true")
     parser.add_argument(
         "--staff-mode",
@@ -456,9 +545,18 @@ def main() -> int:
     if args.staff_mode == CLERK_STAFF_MODE_OPEN:
         print(CLERK_OPEN_MODE_WARNING, file=sys.stderr)
 
-    run_id = args.run_id or make_run_id()
+    run_id = args.run_id or os.environ.get("CIVICSUITE_INSTALLER_RUN_ID") or make_run_id()
     report_dir = REPORT_ROOT / run_id
     install_root = Path(args.install_root).resolve()
+    isolation = resolve_isolation(
+        run_id=run_id,
+        records_api_port=args.records_api_port,
+        records_web_port=args.records_web_port,
+        clerk_api_port=args.clerk_api_port,
+        clerk_web_port=args.clerk_web_port,
+        port_offset=args.port_offset,
+        compose_project_suffix=args.compose_project_suffix,
+    )
     payload: dict[str, object] = {
         "run_id": run_id,
         "mode": args.mode,
@@ -467,7 +565,10 @@ def main() -> int:
         "civicclerk_staff_mode": args.staff_mode,
         "status": "failed",
         "started_at": datetime.now(UTC).isoformat(),
-        "ports": {"civicrecords-ai": RECORDS_PORTS, "civicclerk": CLERK_PORTS},
+        "ports": isolation["ports"],
+        "compose_projects": isolation["compose_projects"],
+        "isolation_id": isolation["isolation_id"],
+        "port_offset": isolation["port_offset"],
     }
     try:
         if args.mode == "readiness":
@@ -476,19 +577,19 @@ def main() -> int:
             payload["docker"] = {"returncode": info.returncode, "stdout": info.stdout[-1000:], "stderr": info.stderr[-1000:]}
             payload["status"] = "passed" if info.returncode == 0 else "failed"
         elif args.mode == "install":
-            payload.update(install(install_root, report_dir=report_dir, staff_mode=args.staff_mode))
+            payload.update(install(install_root, isolation=isolation, report_dir=report_dir, staff_mode=args.staff_mode))
         elif args.mode == "verify":
-            payload.update(verify(install_root, report_dir=report_dir))
+            payload.update(verify(install_root, isolation=isolation, report_dir=report_dir))
         elif args.mode == "repair":
-            payload.update(install(install_root, report_dir=report_dir, staff_mode=args.staff_mode))
+            payload.update(install(install_root, isolation=isolation, report_dir=report_dir, staff_mode=args.staff_mode))
         elif args.mode == "uninstall":
-            payload.update(uninstall(install_root, report_dir=report_dir, remove_files=args.remove_files))
+            payload.update(uninstall(install_root, isolation=isolation, report_dir=report_dir, remove_files=args.remove_files))
     except (InstallerError, subprocess.TimeoutExpired) as exc:
         payload["status"] = "failed"
         payload["error"] = str(exc)
         payload["fix_steps"] = [
             "Confirm Docker is installed, open, and reports a running engine.",
-            "Confirm ports 18000, 18080, 18776, and 18081 are free.",
+            "Confirm the resolved ports in the report are free, or rerun with --port-offset / explicit port flags.",
             "Run uninstall, then rerun install if a previous partial stack is present.",
         ]
     finally:
