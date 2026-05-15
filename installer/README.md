@@ -229,8 +229,8 @@ The generated `clerk-core` package entrypoints support:
   without mutating host state.
 - `plan`: print the selected profile and module order without mutating host
   state.
-- `install`: build and start CivicRecords AI and CivicClerk from bundled module
-  sources.
+- `install`: build and start the selected bundled module sources. The default
+  `clerk-core` selection starts CivicRecords AI and CivicClerk.
 - `verify`: check CivicRecords API, CivicRecords web, CivicClerk API, and
   CivicClerk web endpoints.
 - `repair`: preserve generated `.env` secrets, rebuild/restart the services,
@@ -326,9 +326,10 @@ Current trust path:
 4. Proceed through the OS warning only after the checksum matches.
 
 Windows users should choose **More info** and then **Run anyway** only after the
-checksum matches the published SHA256 value. This is expected for the unsigned
-OSS beta period and should go away once project signing certificates are
-available.
+checksum matches the published SHA256 value and the artifact came from the
+official CivicSuite release source. This warning is expected for the public
+free/open-source beta. There is no committed signed-installer path for the
+public beta; SHA256 plus official-source verification is the trust path.
 
 ## Artifact, Profile, And Health Planning
 

@@ -15,6 +15,9 @@ The starter set is the first operator-facing CivicSuite install target:
   and are both included by default in the `clerk-core` profile.
 - macOS archives and wrapper manifests are generated, but macOS lifecycle testing is intentionally on hold. Linux and Windows proof are the priority.
 
+Outside-party testing instructions live in
+[`starter-set-outside-test-guide.md`](starter-set-outside-test-guide.md).
+
 This contract does not promote the rest of the suite as product-ready. Later
 modules must earn their own installer proof before they become part of an
 operator default profile.

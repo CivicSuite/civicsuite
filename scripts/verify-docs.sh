@@ -28,6 +28,7 @@ REQUIRED=(
   docs/deployment/local-demo-profile.md
   docs/installer/suite-installer-plan.md
   docs/installer/installer-checkpoint-2026-05-09.md
+  docs/installer/starter-set-outside-test-guide.md
   docs/ux/shared-shell-inventory.md
   docs/architecture/ADR-0004-shared-shell-boundaries.md
   docs/connectors/import-export-template.md
