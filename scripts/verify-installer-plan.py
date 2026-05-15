@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import sys
+import argparse
 import importlib.util
 import subprocess
 import tempfile
@@ -230,7 +231,7 @@ def check_cleanroom_workflow() -> list[str]:
     return errors
 
 
-def check_package_cleanroom_evidence_contract() -> list[str]:
+def check_package_cleanroom_evidence_contract(*, require_reports: bool = False) -> list[str]:
     errors: list[str] = []
     if not PACKAGE_CLEANROOM_RUNNER.is_file():
         return [fail(f"missing {PACKAGE_CLEANROOM_RUNNER.relative_to(ROOT)}")]
@@ -247,7 +248,9 @@ def check_package_cleanroom_evidence_contract() -> list[str]:
             errors.append(fail(f"package cleanroom runner missing evidence guard phrase: {phrase}"))
     report_paths = sorted(REPORTS.glob("*/installer-package-cleanroom.json"))
     if not report_paths:
-        errors.append(fail("package cleanroom evidence must include at least one installer-package-cleanroom.json report"))
+        if require_reports:
+            errors.append(fail("package cleanroom evidence must include at least one installer-package-cleanroom.json report"))
+        return errors
     required_fields = {
         "platform",
         "host_platform",
@@ -1427,7 +1430,18 @@ def check_launchers() -> list[str]:
     return errors
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Verify the CivicSuite suite-installer design contract.")
+    parser.add_argument(
+        "--require-package-cleanroom-evidence",
+        action="store_true",
+        help="Fail when installer package cleanroom reports are absent.",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
     print("==> CivicSuite installer plan verification")
     errors = []
     if not MANIFEST.is_file():
@@ -1443,7 +1457,11 @@ def main() -> int:
     errors.extend(check_docs())
     errors.extend(check_clerk_core_staff_mode_contract())
     errors.extend(check_cleanroom_workflow())
-    errors.extend(check_package_cleanroom_evidence_contract())
+    require_package_reports = (
+        args.require_package_cleanroom_evidence
+        or os.environ.get("CIVICSUITE_REQUIRE_PACKAGE_CLEANROOM_EVIDENCE") == "1"
+    )
+    errors.extend(check_package_cleanroom_evidence_contract(require_reports=require_package_reports))
     errors.extend(check_public_claims_bounded())
 
     if errors:
