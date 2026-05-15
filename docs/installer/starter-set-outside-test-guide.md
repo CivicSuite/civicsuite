@@ -121,6 +121,16 @@ The package cleanroom evidence report is written under
 `installer/reports/<run-id>/installer-package-cleanroom.json` when using the
 repo-level cleanroom runner.
 
+Maintainers should use the extracted-package runner for release evidence:
+
+```powershell
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --staff-mode bearer --workflow-proof
+```
+
+The workflow-proof report must show `workflow_proof_requested=true`,
+`civicclerk_staff_mode=bearer`, and `evidence_classification=matching_host_lifecycle`
+when it is used as matching Windows or Linux lifecycle proof.
+
 ## Current Limits
 
 - macOS lifecycle testing is intentionally deferred; macOS artifacts are

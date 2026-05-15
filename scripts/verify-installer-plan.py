@@ -144,6 +144,11 @@ def check_docs() -> list[str]:
             "first-admin JWT auth",
             "bearer-protected staff auth",
             "Reports must not persist the CivicRecords admin password or bearer token",
+            "Package Cleanroom Contract",
+            "run-installer-package-cleanroom.py --archive installer\\dist\\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --staff-mode bearer --workflow-proof",
+            "workflow_proof_requested=true",
+            "civicclerk_staff_mode=bearer",
+            "Windows package workflow proof has been run on a Windows 11 host with",
             "not yet a claim that CivicRecords AI and CivicClerk exchange workflow records",
         ):
             if phrase not in contract:
@@ -167,6 +172,10 @@ def check_docs() -> list[str]:
             "CivicRecords AI API health returns `status=ok` and `version=1.6.1`",
             "CivicClerk API health returns `status=ok`, `version=1.0.1`, and",
             "anonymous staff writes are",
+            "run-installer-package-cleanroom.py --archive installer\\dist\\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --staff-mode bearer --workflow-proof",
+            "workflow_proof_requested=true",
+            "civicclerk_staff_mode=bearer",
+            "evidence_classification=matching_host_lifecycle",
             "does not claim live workflow-record exchange",
             "not a municipal procurement-ready",
         ):

@@ -71,17 +71,40 @@ The `verify` mode must check:
 - Starter-set CivicCore contract: CivicRecords AI reports v1.6.1, and
   CivicClerk reports v1.0.1 with CivicCore v1.0.1.
 
-The optional mutating workflow proof path is:
+The maintained mutating workflow proof path is:
 
 ```powershell
 python scripts\run-clerk-core-installer.py install --staff-mode bearer --workflow-proof
-python scripts\run-clerk-core-installer.py verify --workflow-proof
+python scripts\run-clerk-core-installer.py verify --staff-mode bearer --workflow-proof
 python scripts\run-clerk-core-installer.py uninstall
 ```
 
 That proof must create and fetch a real CivicRecords AI records request through
 first-admin JWT auth, and create/list a real CivicClerk agenda-intake item
 through bearer-protected staff auth. Reports must not persist the CivicRecords admin password or bearer token.
+
+## Package Cleanroom Contract
+
+The maintained outside-test proof must also run from the extracted
+distributable archive, not only from the source tree. The package cleanroom
+runner is the repo-level command for that proof:
+
+```powershell
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --staff-mode bearer --workflow-proof
+```
+
+For Linux, use the matching Linux archive on a Linux Docker host:
+
+```bash
+python scripts/run-installer-package-cleanroom.py --archive installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz --platform linux --staff-mode bearer --workflow-proof
+```
+
+A package workflow-proof report must record
+`evidence_classification=matching_host_lifecycle`, `workflow_proof_requested=true`,
+and `civicclerk_staff_mode=bearer` when it is used as Linux or Windows lifecycle
+evidence. Windows package workflow proof has been run on a Windows 11 host with
+Docker Desktop and WSL 2. macOS remains archive/readiness only until a
+Darwin/macOS Docker Desktop host runs the same lifecycle class.
 
 This is a release contract for the starter-set installer and module runtime
 pairing. It is not yet a claim that CivicRecords AI and CivicClerk exchange workflow records with each other through a live cross-module business API.
