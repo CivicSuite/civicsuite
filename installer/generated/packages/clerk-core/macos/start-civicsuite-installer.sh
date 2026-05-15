@@ -18,9 +18,22 @@ fi
 
 PLANNER_ARGS=(--menu-style "guided" --dry-run)
 LIFECYCLE_MODULE_ARGS=()
+LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
+    --staff-mode)
+      if [[ "$#" -lt 2 ]]; then
+        echo "--staff-mode requires protected, bearer, or open" >&2
+        exit 2
+      fi
+      LIFECYCLE_MODE_ARGS=(--staff-mode "$2")
+      shift 2
+      ;;
+    --workflow-proof)
+      LIFECYCLE_MODE_ARGS+=(--workflow-proof)
+      shift
+      ;;
     --module)
       if [[ "$#" -lt 2 ]]; then
         echo "--module requires civicrecords-ai or civicclerk" >&2
@@ -51,13 +64,13 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}"
     ;;
   install)
-    python3 "${LIFECYCLE}" install "${LIFECYCLE_MODULE_ARGS[@]}"
+    python3 "${LIFECYCLE}" install "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   verify)
-    python3 "${LIFECYCLE}" verify "${LIFECYCLE_MODULE_ARGS[@]}"
+    python3 "${LIFECYCLE}" verify "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   repair)
-    python3 "${LIFECYCLE}" repair "${LIFECYCLE_MODULE_ARGS[@]}"
+    python3 "${LIFECYCLE}" repair "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
   uninstall)
     python3 "${LIFECYCLE}" uninstall "${LIFECYCLE_MODULE_ARGS[@]}"
@@ -66,7 +79,7 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--module civicrecords-ai] [--module civicclerk]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
     exit 2
     ;;
 esac

@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,6 +34,8 @@ DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 SELECTED_MODULES_FILE = "selected-modules.json"
 CLERK_STAFF_MODE_PROTECTED = "protected"
 CLERK_STAFF_MODE_OPEN = "open"
+CLERK_STAFF_MODE_BEARER = "bearer"
+CLERK_WORKFLOW_PROOF_BEARER = "clerk-core-workflow-proof"
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 CLERK_OPEN_MODE_WARNING = (
     "WARNING: --staff-mode open allows anonymous writes to civicclerk endpoints.\n"
@@ -400,6 +403,11 @@ def write_clerk_env(
         "CIVICCLERK_VENDOR_NETWORK_SYNC_REPORT_DIR": "/data/exports/vendor-network-sync",
         "CIVICCLERK_VENDOR_NETWORK_SYNC_INTERVAL_SECONDS": "900",
     }
+    if staff_mode == CLERK_STAFF_MODE_BEARER:
+        values["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"] = json.dumps(
+            {CLERK_WORKFLOW_PROOF_BEARER: ["clerk_admin", "meeting_editor"]},
+            separators=(",", ":"),
+        )
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 
 
@@ -410,6 +418,17 @@ def compose(project: str, source: Path, *args: str) -> list[str]:
         command.extend(["-f", override.name])
     command.extend(args)
     return command
+
+
+def remove_tree_allowing_readonly(path: Path) -> None:
+    def _on_error(function, target, exc_info):  # type: ignore[no-untyped-def]
+        try:
+            Path(target).chmod(0o700)
+        except OSError:
+            pass
+        function(target)
+
+    shutil.rmtree(path, onerror=_on_error)
 
 
 def wait_for_url(url: str, *, timeout_seconds: int = 360) -> dict[str, object]:
@@ -424,25 +443,64 @@ def wait_for_url(url: str, *, timeout_seconds: int = 360) -> dict[str, object]:
     return {"status": "failed", "attempts": attempts[-10:]}
 
 
-def get_json(url: str, *, timeout_seconds: int = 10) -> tuple[int, dict[str, object]]:
-    with urllib.request.urlopen(url, timeout=timeout_seconds) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-        return response.status, payload
+def decode_json(body: str) -> dict[str, object]:
+    return json.loads(body) if body else {}
 
 
-def post_json(url: str, payload: dict[str, object], *, timeout_seconds: int = 10) -> tuple[int, dict[str, object]]:
+def get_json(
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    timeout_seconds: int = 10,
+) -> tuple[int, dict[str, object]]:
+    request = urllib.request.Request(url, headers=headers or {}, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            return response.status, decode_json(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        return exc.code, decode_json(exc.read().decode("utf-8"))
+
+
+def post_json(
+    url: str,
+    payload: dict[str, object],
+    *,
+    headers: dict[str, str] | None = None,
+    timeout_seconds: int = 10,
+) -> tuple[int, dict[str, object]]:
+    resolved_headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if headers:
+        resolved_headers.update(headers)
     request = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        headers=resolved_headers,
         method="POST",
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            return response.status, json.loads(response.read().decode("utf-8"))
+            return response.status, decode_json(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8")
-        return exc.code, json.loads(body) if body else {}
+        return exc.code, decode_json(exc.read().decode("utf-8"))
+
+
+def post_form(
+    url: str,
+    payload: dict[str, str],
+    *,
+    timeout_seconds: int = 10,
+) -> tuple[int, dict[str, object]]:
+    request = urllib.request.Request(
+        url,
+        data=urllib.parse.urlencode(payload).encode("utf-8"),
+        headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            return response.status, decode_json(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        return exc.code, decode_json(exc.read().decode("utf-8"))
 
 
 def verify_clerk_protected_default(ports: dict[str, int]) -> dict[str, object]:
@@ -523,6 +581,149 @@ def verify_civiccore_contract(
     }
 
 
+def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{ports['api']}"
+    checks: list[dict[str, object]] = []
+    password_path = records_source / "data" / "secrets" / "first_admin_password"
+    try:
+        password = password_path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        return {"name": "civicrecords_workflow", "status": "failed", "error": str(exc), "checks": checks}
+
+    login_status, login_body = post_form(
+        f"{base}/auth/jwt/login",
+        {"username": "admin@example.gov", "password": password},
+    )
+    checks.append(
+        {
+            "name": "admin_login",
+            "status_code": login_status,
+            "has_access_token": bool(login_body.get("access_token")),
+        }
+    )
+    token = str(login_body.get("access_token") or "")
+    if login_status != 200 or not token:
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    headers = {"Authorization": f"Bearer {token}"}
+    marker = f"starter-set workflow proof {uuid4().hex[:8]}"
+    create_status, created = post_json(
+        f"{base}/requests/",
+        {
+            "requester_name": "Starter Set Workflow Proof",
+            "requester_email": None,
+            "requester_type": "outside-test",
+            "description": f"{marker}: request for the adopted agenda packet and minutes.",
+            "priority": "normal",
+            "scope_assessment": "narrow",
+        },
+        headers=headers,
+    )
+    request_id = created.get("id")
+    checks.append(
+        {
+            "name": "create_records_request",
+            "status_code": create_status,
+            "request_id_present": bool(request_id),
+            "status": created.get("status"),
+        }
+    )
+    if create_status != 201 or not request_id:
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    get_status, fetched = get_json(f"{base}/requests/{request_id}", headers=headers)
+    checks.append(
+        {
+            "name": "fetch_records_request",
+            "status_code": get_status,
+            "id_matches": fetched.get("id") == request_id,
+        }
+    )
+    status = "passed" if get_status == 200 and fetched.get("id") == request_id else "failed"
+    return {"name": "civicrecords_workflow", "status": status, "checks": checks}
+
+
+def verify_clerk_bearer_workflow(ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{ports['api']}"
+    headers = {"Authorization": f"Bearer {CLERK_WORKFLOW_PROOF_BEARER}"}
+    checks: list[dict[str, object]] = []
+    session_status, session = get_json(f"{base}/staff/session", headers=headers)
+    checks.append(
+        {
+            "name": "staff_session",
+            "status_code": session_status,
+            "mode": session.get("mode"),
+            "roles": session.get("roles"),
+            "token_fingerprint_present": bool(session.get("token_fingerprint")),
+        }
+    )
+    if session_status != 200 or session.get("mode") != CLERK_STAFF_MODE_BEARER:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    marker = f"Starter set workflow proof {uuid4().hex[:8]}"
+    create_status, created = post_json(
+        f"{base}/agenda-intake",
+        {
+            "title": marker,
+            "department_name": "Clerk",
+            "submitted_by": "clerk@example.gov",
+            "summary": "Runtime proof that CivicClerk can accept a protected staff agenda intake item.",
+            "source_references": [{"label": "Starter-set proof", "url": "https://civicsuite.org/starter-set"}],
+        },
+        headers=headers,
+    )
+    item_id = created.get("id")
+    checks.append(
+        {
+            "name": "create_agenda_intake",
+            "status_code": create_status,
+            "item_id_present": bool(item_id),
+            "title_matches": created.get("title") == marker,
+        }
+    )
+    if create_status != 201 or not item_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    list_status, listed = get_json(f"{base}/agenda-intake", headers=headers)
+    items = listed.get("items") if isinstance(listed.get("items"), list) else []
+    found = any(isinstance(item, dict) and item.get("id") == item_id for item in items)
+    checks.append(
+        {
+            "name": "list_agenda_intake",
+            "status_code": list_status,
+            "created_item_listed": found,
+        }
+    )
+    status = "passed" if list_status == 200 and found else "failed"
+    return {"name": "civicclerk_bearer_workflow", "status": status, "checks": checks}
+
+
+def verify_starter_set_workflow_contract(
+    ctx: dict[str, object],
+    *,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, object]:
+    modules = normalize_selected_modules(selected_modules)
+    ports = ctx["ports"]
+    if not isinstance(ports, dict):
+        return {"name": "starter_set_runtime_workflows", "status": "failed", "error": "invalid ports"}
+    checks: list[dict[str, object]] = []
+    if MODULE_RECORDS in modules:
+        records_ports = ports["civicrecords-ai"]
+        checks.append(verify_records_workflow(Path(ctx["records_source"]), records_ports))  # type: ignore[arg-type]
+    if MODULE_CLERK in modules:
+        clerk_ports = ports["civicclerk"]
+        checks.append(verify_clerk_bearer_workflow(clerk_ports))  # type: ignore[arg-type]
+    status = "passed" if checks and all(check.get("status") == "passed" for check in checks) else "failed"
+    return {
+        "name": "starter_set_runtime_workflows",
+        "status": status,
+        "selected_modules": modules,
+        "auth_contract": "CivicRecords uses first-admin JWT login; CivicClerk uses bearer staff auth.",
+        "checks": checks,
+    }
+
+
 def lifecycle_context(
     install_root: Path,
     isolation: dict[str, object],
@@ -583,6 +784,7 @@ def install(
     report_dir: Path,
     selected_modules: list[str] | tuple[str, ...] | None = None,
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
+    workflow_proof: bool = False,
 ) -> dict[str, object]:
     require_command("docker")
     docker_info = run([docker_command(), "info"], cwd=ROOT, timeout=30)
@@ -616,7 +818,13 @@ def install(
         steps.append({"module": name, "step": "compose_up", "returncode": up.returncode, "stdout": up.stdout[-4000:], "stderr": up.stderr[-4000:]})
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
-    result = verify(install_root, isolation=isolation, report_dir=report_dir, selected_modules=modules)  # type: ignore[arg-type]
+    result = verify(
+        install_root,
+        isolation=isolation,
+        report_dir=report_dir,
+        selected_modules=modules,
+        workflow_proof=workflow_proof,
+    )  # type: ignore[arg-type]
     steps.extend(result["checks"])  # type: ignore[arg-type]
     status = "passed" if result["status"] == "passed" else "failed"
     return {"status": status, "selected_modules": modules, "steps": steps}
@@ -628,6 +836,7 @@ def verify(
     isolation: dict[str, object],
     report_dir: Path,
     selected_modules: list[str] | tuple[str, ...] | None = None,
+    workflow_proof: bool = False,
 ) -> dict[str, object]:
     ctx = lifecycle_context(install_root, isolation, selected_modules=selected_modules)
     modules = ctx["selected_modules"]  # type: ignore[assignment]
@@ -647,10 +856,12 @@ def verify(
         checks.append(clerk_api)
         checks.append({"name": "civicclerk_web", "url": f"http://127.0.0.1:{clerk_ports['web']}/", **wait_for_url(f"http://127.0.0.1:{clerk_ports['web']}/", timeout_seconds=120)})
         clerk_api_passed = clerk_api["status"] == "passed"
-    if clerk_api_passed:
+    if clerk_api_passed and not workflow_proof:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     if records_api_passed or clerk_api_passed:
         checks.append(verify_civiccore_contract(records_ports, clerk_ports, selected_modules=modules))  # type: ignore[arg-type]
+    if workflow_proof:
+        checks.append(verify_starter_set_workflow_contract(ctx, selected_modules=modules))
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
     return {"status": status, "selected_modules": modules, "checks": checks}
 
@@ -677,6 +888,9 @@ def uninstall(
         if not Path(source).exists():
             steps.append({"module": name, "step": "compose_down", "status": "skipped_missing_source"})
             continue
+        if not (Path(source) / "docker-compose.yml").is_file():
+            steps.append({"module": name, "step": "compose_down", "status": "skipped_missing_compose_file"})
+            continue
         down = run(compose(str(ctx[project_key]), source, "down", "-v"), cwd=source, timeout=600)  # type: ignore[arg-type]
         steps.append({"module": name, "step": "compose_down", "returncode": down.returncode, "stdout": down.stdout[-4000:], "stderr": down.stderr[-4000:]})
         if down.returncode != 0:
@@ -684,7 +898,7 @@ def uninstall(
     if remove_files and install_root.exists():
         if not is_within(install_root, ROOT / "installer" / "runtime"):
             raise InstallerError(f"Refusing to remove files outside installer/runtime: {install_root}")
-        shutil.rmtree(install_root)
+        remove_tree_allowing_readonly(install_root)
         steps.append({"step": "remove_install_root", "path": str(install_root.relative_to(ROOT)), "status": "removed"})
     return {"status": "passed", "selected_modules": modules, "steps": steps}
 
@@ -718,9 +932,14 @@ def main() -> int:
     )
     parser.add_argument(
         "--staff-mode",
-        choices=(CLERK_STAFF_MODE_PROTECTED, CLERK_STAFF_MODE_OPEN),
+        choices=(CLERK_STAFF_MODE_PROTECTED, CLERK_STAFF_MODE_OPEN, CLERK_STAFF_MODE_BEARER),
         default=CLERK_STAFF_MODE_PROTECTED,
         help="CivicClerk staff auth default for install/repair. Open mode is explicit local-rehearsal opt-in.",
+    )
+    parser.add_argument(
+        "--workflow-proof",
+        action="store_true",
+        help="Run mutating starter-set workflow proof checks after health/version verification.",
     )
     args = parser.parse_args()
     if args.staff_mode == CLERK_STAFF_MODE_OPEN:
@@ -747,7 +966,7 @@ def main() -> int:
         "run_id": run_id,
         "mode": args.mode,
         "install_root": str(install_root),
-        "mutates_host": args.mode in {"install", "repair", "uninstall"},
+        "mutates_host": args.mode in {"install", "repair", "uninstall"} or args.workflow_proof,
         "civicclerk_staff_mode": args.staff_mode,
         "status": "failed",
         "started_at": datetime.now(UTC).isoformat(),
@@ -771,6 +990,7 @@ def main() -> int:
                     report_dir=report_dir,
                     selected_modules=selected_modules,
                     staff_mode=args.staff_mode,
+                    workflow_proof=args.workflow_proof,
                 )
             )
         elif args.mode == "verify":
@@ -780,6 +1000,7 @@ def main() -> int:
                     isolation=isolation,
                     report_dir=report_dir,
                     selected_modules=selected_modules,
+                    workflow_proof=args.workflow_proof,
                 )
             )
         elif args.mode == "repair":
@@ -790,6 +1011,7 @@ def main() -> int:
                     report_dir=report_dir,
                     selected_modules=selected_modules,
                     staff_mode=args.staff_mode,
+                    workflow_proof=args.workflow_proof,
                 )
             )
         elif args.mode == "uninstall":

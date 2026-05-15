@@ -140,6 +140,10 @@ def check_docs() -> list[str]:
             "Linux and Windows proof are the priority",
             "CivicRecords AI reports v1.6.1",
             "CivicClerk reports v1.0.1 with CivicCore v1.0.1",
+            "install --staff-mode bearer --workflow-proof",
+            "first-admin JWT auth",
+            "bearer-protected staff auth",
+            "Reports must not persist the CivicRecords admin password or bearer token",
             "not yet a claim that CivicRecords AI and CivicClerk exchange workflow records",
         ):
             if phrase not in contract:
@@ -188,22 +192,30 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
     proof_root.mkdir(parents=True, exist_ok=True)
     default_env = proof_root / "default.env"
     open_env = proof_root / "open.env"
-    for path in (default_env, open_env):
+    bearer_env = proof_root / "bearer.env"
+    for path in (default_env, open_env, bearer_env):
         if path.exists():
             path.unlink()
     module.write_clerk_env(default_env)
     module.write_clerk_env(open_env, staff_mode=module.CLERK_STAFF_MODE_OPEN)
+    module.write_clerk_env(bearer_env, staff_mode=module.CLERK_STAFF_MODE_BEARER)
     default_text = default_env.read_text(encoding="utf-8")
     open_text = open_env.read_text(encoding="utf-8")
+    bearer_text = bearer_env.read_text(encoding="utf-8")
 
     if "CIVICCLERK_STAFF_AUTH_MODE=protected" not in default_text:
         errors.append(fail("clerk-core installer default staff mode must be protected"))
     if "CIVICCLERK_STAFF_AUTH_MODE=open" not in open_text:
         errors.append(fail("clerk-core installer open mode must remain explicit opt-in"))
+    if "CIVICCLERK_STAFF_AUTH_MODE=bearer" not in bearer_text:
+        errors.append(fail("clerk-core installer bearer mode must be available for workflow proof"))
+    if "CIVICCLERK_STAFF_AUTH_TOKEN_ROLES=" not in bearer_text:
+        errors.append(fail("clerk-core installer bearer mode must configure proof token roles"))
 
     runner_text = INSTALLER_LIFECYCLE_RUNNER.read_text(encoding="utf-8")
     for phrase in (
         "--staff-mode",
+        "--workflow-proof",
         "--port-offset",
         "--records-api-port",
         "--compose-project-suffix",
@@ -211,6 +223,9 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
         "CIVICSUITE_INSTALLER_INSTALL_ROOT",
         "compose_projects",
         "verify_civiccore_contract",
+        "verify_starter_set_workflow_contract",
+        "civicrecords_workflow",
+        "civicclerk_bearer_workflow",
         "starter_set_civiccore_contract",
         '"civiccore") == "1.0.1"',
         '"version") == "1.6.1"',
@@ -1012,13 +1027,13 @@ def check_planner(data: dict[str, object]) -> list[str]:
             readme_path = package_dir / "README.md"
             if readme_path.is_file():
                 readme = readme_path.read_text(encoding="utf-8")
-                for phrase in ("unsigned", "open-source beta", "SHA256", "Windows", "official CivicSuite"):
+                for phrase in ("unsigned", "open-source beta", "SHA256", "Windows", "official CivicSuite", "workflow proof", "bearer staff mode"):
                     if phrase not in readme:
                         errors.append(fail(f"profile package {platform_id} README missing unsigned beta phrase: {phrase}"))
             launcher_path = package_dir / launcher
             if launcher_path.is_file():
                 launcher_text = launcher_path.read_text(encoding="utf-8")
-                for phrase in ("unsigned", "SHA256", "open-source beta", "official CivicSuite"):
+                for phrase in ("unsigned", "SHA256", "open-source beta", "official CivicSuite", "workflow-proof" if platform_id != "windows" else "WorkflowProof"):
                     if phrase not in launcher_text:
                         errors.append(fail(f"profile package {platform_id} launcher missing unsigned beta phrase: {phrase}"))
             plan_path = package_dir / "install-plan.json"
