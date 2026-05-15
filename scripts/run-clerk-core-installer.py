@@ -22,7 +22,7 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "installer" / "reports"
-DEFAULT_INSTALL_ROOT = ROOT / "installer" / "runtime" / "clerk-core"
+DEFAULT_INSTALL_ROOT = Path(os.environ.get("CIVICSUITE_INSTALLER_INSTALL_ROOT", ROOT / "installer" / "runtime" / "clerk-core"))
 
 DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
@@ -192,7 +192,9 @@ def copy_source(source: Path, target: Path) -> None:
         "dist",
         "build",
         ".venv",
+        ".venv*",
         "backend/.venv",
+        "backend/.venv*",
     )
     shutil.copytree(source, target, ignore=ignore)
     ledger = source / "docs" / "ops" / "tier1-retrofit-ledger.json"
@@ -420,6 +422,35 @@ def verify_clerk_protected_default(ports: dict[str, int]) -> dict[str, object]:
     return {"name": "civicclerk_protected_default", "status": "passed", "checks": checks}
 
 
+def verify_civiccore_contract(records_ports: dict[str, int], clerk_ports: dict[str, int]) -> dict[str, object]:
+    checks: list[dict[str, object]] = []
+    try:
+        records_status, records_health = get_json(f"http://127.0.0.1:{records_ports['api']}/health")
+        clerk_status, clerk_health = get_json(f"http://127.0.0.1:{clerk_ports['api']}/health")
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"name": "starter_set_civiccore_contract", "status": "failed", "error": str(exc), "checks": checks}
+
+    checks.append({"name": "civicrecords_health", "status_code": records_status, "payload": records_health})
+    checks.append({"name": "civicclerk_health", "status_code": clerk_status, "payload": clerk_health})
+    records_ok = records_status == 200 and records_health.get("version") == "1.6.1"
+    clerk_ok = (
+        clerk_status == 200
+        and clerk_health.get("service") == "civicclerk"
+        and clerk_health.get("version") == "1.0.1"
+        and clerk_health.get("civiccore") == "1.0.1"
+    )
+    status = "passed" if records_ok and clerk_ok else "failed"
+    return {
+        "name": "starter_set_civiccore_contract",
+        "status": status,
+        "expected": {
+            "civicrecords-ai": {"version": "1.6.1"},
+            "civicclerk": {"version": "1.0.1", "civiccore": "1.0.1"},
+        },
+        "checks": checks,
+    }
+
+
 def lifecycle_context(install_root: Path, isolation: dict[str, object]) -> dict[str, object]:
     if not is_within(install_root, ROOT):
         raise InstallerError(f"Install root must stay inside this bundle/repo: {install_root}")
@@ -483,7 +514,7 @@ def install(
     ):
         source = ctx[source_key]  # type: ignore[index]
         project = str(ctx[project_key])
-        build = run(compose(project, source, "build", *services), cwd=source, timeout=1800)  # type: ignore[arg-type]
+        build = run(compose(project, source, "build", "--pull", "--no-cache", *services), cwd=source, timeout=2400)  # type: ignore[arg-type]
         steps.append({"module": name, "step": "compose_build", "returncode": build.returncode, "stdout": build.stdout[-4000:], "stderr": build.stderr[-4000:]})
         if build.returncode != 0:
             return {"status": "failed", "steps": steps}
@@ -510,6 +541,8 @@ def verify(install_root: Path, *, isolation: dict[str, object], report_dir: Path
     ]
     if checks[2]["status"] == "passed":
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
+    if checks[0]["status"] == "passed" and checks[2]["status"] == "passed":
+        checks.append(verify_civiccore_contract(records_ports, clerk_ports))  # type: ignore[arg-type]
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
     return {"status": status, "checks": checks}
 

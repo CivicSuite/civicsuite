@@ -6,18 +6,21 @@ Menu style: `guided`
 ## Unsigned OSS Beta Notice
 
 This package is unsigned. CivicSuite is an open-source beta project and signing
-certificates are not available yet. Windows may show SmartScreen or Unknown
-Publisher warnings. macOS may show unidentified developer warnings. Linux
-package tools may show an unsigned/local package warning.
+certificates are not used for the public installer path. Windows may show
+SmartScreen or Unknown Publisher warnings. macOS may show unidentified
+developer warnings. Linux package tools may show an unsigned/local package
+warning.
 
 This is expected for this beta distribution. Verify the SHA256 checksum from
-`installer/dist` before running the package. If the checksum does not match,
-stop and download the artifact again from the project release source.
+`installer/dist` and confirm the artifact came from the official CivicSuite
+GitHub release source or your IT team's verified source build before running
+the package. If the checksum does not match, stop and download the artifact
+again from the project release source.
 
 ## Platform Warning Guidance
 
 - Windows: choose More info, confirm the app name/path, then choose Run anyway
-  only after the checksum matches.
+  only after the checksum matches and the artifact source is verified.
 - macOS: use System Settings > Privacy & Security to allow the package only
   after the checksum matches.
 - Linux: install from the local archive/package only after verifying the
@@ -51,14 +54,8 @@ profile.
    ```
 
    Available lifecycle modes: readiness, plan, install, verify, repair,
-   uninstall, and gate. Install, repair, uninstall, and gate are mutating: they
+   and uninstall. Install, repair, and uninstall are mutating: they
    create or remove Docker resources and write installer reports.
-
-4. Run the cleanroom gate when Docker mutation is approved:
-
-   ```text
-   .\start-civicsuite-installer.ps1 -Gate
-   ```
 
 ## Selected Modules
 
@@ -73,6 +70,14 @@ profile.
   CivicClerk from the bundled source tree.
 - Verify mode checks live service endpoints.
 - Uninstall mode removes the clerk-core Docker containers and volumes.
-- Gate mode is mutating: it may build/start/teardown Docker resources and write
-  installer evidence under `installer/reports`.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
+
+The repo/source checkout cleanroom gate remains available outside this
+distributable archive:
+
+```text
+python scripts/plan-installer.py --profile clerk-core --run-cleanroom-gate
+```
+
+That source gate uses repo-local Playwright dependencies and is not packaged
+inside the distributable archive.

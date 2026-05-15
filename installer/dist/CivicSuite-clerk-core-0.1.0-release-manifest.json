@@ -3,7 +3,7 @@
     "forbidden_markers": [
       "/.agent-runs/",
       "/.runtime-proof",
-      "/.venv/",
+      "/.venv",
       "/__pycache__/",
       "/.pytest_cache/",
       "/.ruff_cache/",
@@ -19,19 +19,19 @@
       "bundle_root": "installer/generated/bundles/clerk-core/windows/CivicSuite-clerk-core-windows",
       "path": "installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip",
       "platform": "windows",
-      "sha256": "5b16e58930cff7eb0ef8b068c093fb342304b1e77ec710f8bde8cfb7b95c9891"
+      "sha256": "b716b4292c5dfef1d401e9b85696505699aa6ee67fffca149d9147d921dcbfcc"
     },
     {
       "bundle_root": "installer/generated/bundles/clerk-core/macos/CivicSuite-clerk-core-macos",
       "path": "installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz",
       "platform": "macos",
-      "sha256": "83f2ace09b961db36d2b61151bc9b763c8c1335eac2df1f31fb2d30cd8a5dad3"
+      "sha256": "f990c59a02d08d5be111737fd07626814da027d0aa6ae95020ec83da3a264de2"
     },
     {
       "bundle_root": "installer/generated/bundles/clerk-core/linux/CivicSuite-clerk-core-linux",
       "path": "installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz",
       "platform": "linux",
-      "sha256": "03b329eb6a10e8fd6560298363dc563b9a13ce215d87e377d2812fed83df3884"
+      "sha256": "cf623eca64e09b60a6d23e1412dd9088843c4509d811babca90cb35e444a6cb1"
     }
   ],
   "checksum_file": "installer/dist/CivicSuite-clerk-core-0.1.0-SHA256SUMS.txt",
@@ -45,7 +45,7 @@
   ],
   "native_installers_built": false,
   "native_wrapper_status": "manifests_generated",
-  "next_action": "Publish verified unsigned beta archives now, or build/sign native wrappers when certificates are available.",
+  "next_action": "Publish verified unsigned beta archives only through the SHA256 and official-source trust path.",
   "platforms": [
     "windows",
     "macos",
@@ -54,9 +54,9 @@
   "profile": "clerk-core",
   "schema_version": 1,
   "signing": {
-    "reason": "CivicSuite is an open-source beta project and signing certificates are not available yet.",
+    "reason": "CivicSuite is a small free open-source beta project and the public installer is intentionally unsigned.",
     "signed": false,
     "status": "unsigned_oss_beta",
-    "trust_path": "Verify the release SHA256 checksum before running the installer package."
+    "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package."
   }
 }
