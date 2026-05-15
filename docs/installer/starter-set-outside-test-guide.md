@@ -28,9 +28,10 @@ Install or enable these first:
 - Optional Ollama/model setup if the tester wants local LLM behavior beyond
   basic service health.
 
-Download the release archive from the official CivicSuite release source, then
-verify the SHA256 checksum from the published `SHA256SUMS.txt` before running
-any launcher.
+Download the release archive from the official CivicSuite release source,
+`installer-clerk-core-v0.1.0-beta.2` on this repo's Releases page, then verify
+the SHA256 checksum from the published `SHA256SUMS.txt` before running any
+launcher.
 
 ## Unsigned Windows Warning
 
