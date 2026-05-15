@@ -18,6 +18,7 @@ MANIFEST = ROOT / "installer" / "modules.json"
 CONTRACT = ROOT / "installer" / "README.md"
 PLAN = ROOT / "docs" / "installer" / "suite-installer-plan.md"
 STARTER_SET_CONTRACT = ROOT / "docs" / "installer" / "starter-set-release-contract.md"
+OUTSIDE_TEST_GUIDE = ROOT / "docs" / "installer" / "starter-set-outside-test-guide.md"
 PLANNER = ROOT / "scripts" / "plan-installer.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 PACKAGE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-installer-package-cleanroom.py"
@@ -143,6 +144,33 @@ def check_docs() -> list[str]:
         ):
             if phrase not in contract:
                 errors.append(fail(f"{STARTER_SET_CONTRACT.relative_to(ROOT)} missing phrase: {phrase}"))
+    if not OUTSIDE_TEST_GUIDE.is_file():
+        errors.append(fail(f"missing {OUTSIDE_TEST_GUIDE.relative_to(ROOT)}"))
+    else:
+        guide = OUTSIDE_TEST_GUIDE.read_text(encoding="utf-8")
+        for phrase in (
+            "outside-party test path",
+            "Linux",
+            "Windows 10/11",
+            "macOS archives are built",
+            "SmartScreen or Unknown Publisher warnings are normal",
+            "SHA256 checksum matches",
+            "official CivicSuite release source",
+            "Install",
+            "Verify",
+            "Repair",
+            "Uninstall",
+            "CivicRecords AI API health returns `status=ok` and `version=1.6.1`",
+            "CivicClerk API health returns `status=ok`, `version=1.0.1`, and",
+            "anonymous staff writes are",
+            "does not claim live workflow-record exchange",
+            "not a municipal procurement-ready",
+        ):
+            if phrase not in guide:
+                errors.append(fail(f"{OUTSIDE_TEST_GUIDE.relative_to(ROOT)} missing phrase: {phrase}"))
+    contract_text = CONTRACT.read_text(encoding="utf-8") if CONTRACT.is_file() else ""
+    if "certificates are available" in contract_text or "should go away once project signing" in contract_text:
+        errors.append(fail("installer README must not imply future signing is the public beta trust path"))
     return errors
 
 
