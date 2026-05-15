@@ -1353,6 +1353,9 @@ def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str
     [switch]$Verify,
     [switch]$Repair,
     [switch]$Uninstall,
+    [ValidateSet("protected", "bearer", "open")]
+    [string]$StaffMode = "protected",
+    [switch]$WorkflowProof,
     [string[]]$Module
 )
 
@@ -1369,6 +1372,10 @@ Write-Host "Project status: small free open-source beta; the public installer is
 
 $PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
 $LifecycleModuleArgs = @()
+$LifecycleModeArgs = @("--staff-mode", $StaffMode)
+if ($WorkflowProof) {{
+    $LifecycleModeArgs += "--workflow-proof"
+}}
 if ($Module -and $Module.Count -gt 0) {{
     $PlannerArgs = @("--profile", "custom") + $PlannerArgs
     foreach ($SelectedModule in $Module) {{
@@ -1385,17 +1392,17 @@ if ($Plan) {{
 }}
 
 if ($Install) {{
-    python $Lifecycle install @LifecycleModuleArgs
+    python $Lifecycle install @LifecycleModeArgs @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
 if ($Verify) {{
-    python $Lifecycle verify @LifecycleModuleArgs
+    python $Lifecycle verify @LifecycleModeArgs @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
 if ($Repair) {{
-    python $Lifecycle repair @LifecycleModuleArgs
+    python $Lifecycle repair @LifecycleModeArgs @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
@@ -1427,9 +1434,22 @@ fi
 
 PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
 LIFECYCLE_MODULE_ARGS=()
+LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
+    --staff-mode)
+      if [[ "$#" -lt 2 ]]; then
+        echo "--staff-mode requires protected, bearer, or open" >&2
+        exit 2
+      fi
+      LIFECYCLE_MODE_ARGS=(--staff-mode "$2")
+      shift 2
+      ;;
+    --workflow-proof)
+      LIFECYCLE_MODE_ARGS+=(--workflow-proof)
+      shift
+      ;;
     --module)
       if [[ "$#" -lt 2 ]]; then
         echo "--module requires civicrecords-ai or civicclerk" >&2
@@ -1460,13 +1480,13 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}"
     ;;
   install)
-    python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   verify)
-    python3 "${{LIFECYCLE}}" verify "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    python3 "${{LIFECYCLE}}" verify "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   repair)
-    python3 "${{LIFECYCLE}}" repair "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    python3 "${{LIFECYCLE}}" repair "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
   uninstall)
     python3 "${{LIFECYCLE}}" uninstall "${{LIFECYCLE_MODULE_ARGS[@]}}"
@@ -1475,7 +1495,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--module civicrecords-ai] [--module civicclerk]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
     exit 2
     ;;
 esac
@@ -1491,12 +1511,14 @@ def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, 
         records_only_plan = f".\\{launcher} -Plan -Module civicrecords-ai"
         clerk_only_plan = f".\\{launcher} -Plan -Module civicclerk"
         both_install = f".\\{launcher} -Install -Module civicrecords-ai -Module civicclerk"
+        workflow_proof = f".\\{launcher} -Install -StaffMode bearer -WorkflowProof"
     else:
         readiness = f"bash ./{launcher} readiness"
         plan_command = f"bash ./{launcher} plan"
         records_only_plan = f"bash ./{launcher} plan --module civicrecords-ai"
         clerk_only_plan = f"bash ./{launcher} plan --module civicclerk"
         both_install = f"bash ./{launcher} install --module civicrecords-ai --module civicclerk"
+        workflow_proof = f"bash ./{launcher} install --staff-mode bearer --workflow-proof"
     return f"""# CivicSuite Installer Package - {platform_id}
 
 Profile: `{profile_id}`
@@ -1572,12 +1594,20 @@ top of the CivicCore base contract. Operators can choose one module or both:
 When a module is selected explicitly, plan/readiness use the same selection
 and install/verify/repair/uninstall pass it through to the lifecycle runner.
 
+For a mutating workflow proof, use bearer staff mode so CivicClerk writes are
+protected while the proof creates real starter-set test records:
+
+```text
+{workflow_proof}
+```
+
 ## Boundary
 
 - Readiness and plan modes are non-mutating.
 - Install/repair mode is mutating: it builds and starts the selected modules
   from the bundled source tree.
-- Verify mode checks live service endpoints.
+- Verify mode checks live service endpoints. `--workflow-proof` /
+  `-WorkflowProof` also creates and fetches live test records.
 - Uninstall mode removes the selected module Docker containers and volumes.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
 

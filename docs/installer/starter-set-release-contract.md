@@ -71,6 +71,18 @@ The `verify` mode must check:
 - Starter-set CivicCore contract: CivicRecords AI reports v1.6.1, and
   CivicClerk reports v1.0.1 with CivicCore v1.0.1.
 
+The optional mutating workflow proof path is:
+
+```powershell
+python scripts\run-clerk-core-installer.py install --staff-mode bearer --workflow-proof
+python scripts\run-clerk-core-installer.py verify --workflow-proof
+python scripts\run-clerk-core-installer.py uninstall
+```
+
+That proof must create and fetch a real CivicRecords AI records request through
+first-admin JWT auth, and create/list a real CivicClerk agenda-intake item
+through bearer-protected staff auth. Reports must not persist the CivicRecords admin password or bearer token.
+
 This is a release contract for the starter-set installer and module runtime
 pairing. It is not yet a claim that CivicRecords AI and CivicClerk exchange workflow records with each other through a live cross-module business API.
 That workflow-level handoff remains a follow-on productization slice after the

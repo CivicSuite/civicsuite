@@ -233,6 +233,9 @@ The generated `clerk-core` package entrypoints support:
   `clerk-core` selection starts CivicRecords AI and CivicClerk.
 - `verify`: check CivicRecords API, CivicRecords web, CivicClerk API, and
   CivicClerk web endpoints.
+- `verify --workflow-proof`: run mutating starter-set workflow proof checks
+  against the selected live modules. Use with `--staff-mode bearer` during
+  install or repair so CivicClerk staff writes stay protected.
 - `repair`: preserve generated `.env` secrets, rebuild/restart the services,
   and verify health again.
 - `uninstall`: remove the profile's Docker containers and volumes.

@@ -5,6 +5,9 @@ param(
     [switch]$Verify,
     [switch]$Repair,
     [switch]$Uninstall,
+    [ValidateSet("protected", "bearer", "open")]
+    [string]$StaffMode = "protected",
+    [switch]$WorkflowProof,
     [string[]]$Module
 )
 
@@ -21,6 +24,10 @@ Write-Host "Project status: small free open-source beta; the public installer is
 
 $PlannerArgs = @("--menu-style", "guided", "--dry-run")
 $LifecycleModuleArgs = @()
+$LifecycleModeArgs = @("--staff-mode", $StaffMode)
+if ($WorkflowProof) {
+    $LifecycleModeArgs += "--workflow-proof"
+}
 if ($Module -and $Module.Count -gt 0) {
     $PlannerArgs = @("--profile", "custom") + $PlannerArgs
     foreach ($SelectedModule in $Module) {
@@ -37,17 +44,17 @@ if ($Plan) {
 }
 
 if ($Install) {
-    python $Lifecycle install @LifecycleModuleArgs
+    python $Lifecycle install @LifecycleModeArgs @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
 if ($Verify) {
-    python $Lifecycle verify @LifecycleModuleArgs
+    python $Lifecycle verify @LifecycleModeArgs @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
 if ($Repair) {
-    python $Lifecycle repair @LifecycleModuleArgs
+    python $Lifecycle repair @LifecycleModeArgs @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 

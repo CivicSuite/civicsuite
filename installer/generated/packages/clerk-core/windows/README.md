@@ -75,12 +75,20 @@ top of the CivicCore base contract. Operators can choose one module or both:
 When a module is selected explicitly, plan/readiness use the same selection
 and install/verify/repair/uninstall pass it through to the lifecycle runner.
 
+For a mutating workflow proof, use bearer staff mode so CivicClerk writes are
+protected while the proof creates real starter-set test records:
+
+```text
+.\start-civicsuite-installer.ps1 -Install -StaffMode bearer -WorkflowProof
+```
+
 ## Boundary
 
 - Readiness and plan modes are non-mutating.
 - Install/repair mode is mutating: it builds and starts the selected modules
   from the bundled source tree.
-- Verify mode checks live service endpoints.
+- Verify mode checks live service endpoints. `--workflow-proof` /
+  `-WorkflowProof` also creates and fetches live test records.
 - Uninstall mode removes the selected module Docker containers and volumes.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
 

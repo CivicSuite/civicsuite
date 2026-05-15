@@ -66,6 +66,13 @@ Module selection examples:
 .\start-civicsuite-installer.ps1 -Verify -Module civicrecords-ai -Module civicclerk
 ```
 
+Mutating workflow proof:
+
+```powershell
+.\start-civicsuite-installer.ps1 -Install -StaffMode bearer -WorkflowProof
+.\start-civicsuite-installer.ps1 -Verify -StaffMode bearer -WorkflowProof
+```
+
 ## Linux Commands
 
 From the extracted `CivicSuite-clerk-core-linux` directory:
@@ -87,6 +94,13 @@ bash ./start-civicsuite-installer.sh install --module civicrecords-ai --module c
 bash ./start-civicsuite-installer.sh verify --module civicrecords-ai --module civicclerk
 ```
 
+Mutating workflow proof:
+
+```bash
+bash ./start-civicsuite-installer.sh install --staff-mode bearer --workflow-proof
+bash ./start-civicsuite-installer.sh verify --staff-mode bearer --workflow-proof
+```
+
 ## Expected Proof
 
 The default `clerk-core` profile installs CivicCore first and then starts
@@ -99,6 +113,9 @@ CivicRecords AI and CivicClerk. A passing verify run must prove:
 - CivicClerk web responds.
 - CivicClerk staff auth is protected by default and anonymous staff writes are
   denied.
+- Optional workflow proof creates and fetches a real CivicRecords AI records
+  request, then creates and lists a real CivicClerk agenda-intake item through
+  bearer-protected staff auth.
 
 The package cleanroom evidence report is written under
 `installer/reports/<run-id>/installer-package-cleanroom.json` when using the
