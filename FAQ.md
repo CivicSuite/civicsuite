@@ -1,6 +1,6 @@
 # CivicSuite FAQ
 
-**Last verified:** 2026-05-09
+**Last verified:** 2026-05-14
 
 This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement officer) evaluating whether CivicSuite is right for them. For engineering-level questions, see [CONTRIBUTING.md](CONTRIBUTING.md). For module-by-module status, see [STATUS.md](STATUS.md).
 
@@ -8,9 +8,9 @@ This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement
 
 ## Is CivicSuite ready for production use in my city today?
 
-**No.** As of 2026-05-09, CivicSuite is under release recovery. No module has passed the recovery gates documented in [docs/release-recovery-status.md](docs/release-recovery-status.md). Public release tags exist, but the false v1.0.0 labels are being demoted instead of preserved as product claims. Any vendor or integrator claiming "we've deployed CivicSuite in production" is making a claim the project itself does not currently support.
+**No.** As of 2026-05-14, CivicSuite is under release recovery. Public release tags exist, but the false v1.0.0 labels are being demoted instead of preserved as product claims. CivicRecords AI and CivicClerk have meaningful recovery releases; they are still not procurement-ready production releases. Any vendor or integrator claiming "we've deployed CivicSuite in production" is making a claim the project itself does not currently support.
 
-The most mature module is `civicrecords-ai` (FOIA / public records). It is best treated as a developer preview today.
+The most mature module is `civicrecords-ai` (FOIA / public records). v1.6.0 is best treated as a developer preview today, and the next records release needs to include the post-v1.6.0 ingestion worker fix from main.
 
 ## What is the difference between a "release tag" and a "procurement-ready release"?
 
@@ -20,13 +20,13 @@ A release tag means "we put a version label on this commit." A procurement-ready
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (e.g., `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake; `civiczone` reads `civiccode` for code text). A single-module install is a supported design goal.
 
-In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile on Windows and Linux. Windows-only currently; macOS support pending lifecycle certification.
+In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile around a Linux/container-first core. Windows and macOS are wrapper platforms around that core; macOS support remains pending lifecycle certification.
 
 ## What does "civic operator" actually need to run CivicSuite?
 
 For the modules that have install paths today:
 - A machine with **8+ CPU cores, 32 GB RAM, 50 GB free disk space** (per `civicrecords-ai` requirements; civicclerk roughly similar).
-- **Docker Desktop** (Windows 10/11) or Docker Engine (Linux). Windows-only currently; macOS support pending lifecycle certification (Docker Desktop on macOS 13+ runs the script path but is not lifecycle-certified). WSL 2 + Virtual Machine Platform on Windows.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and lifecycle proof path. WSL 2 + Virtual Machine Platform are required on Windows; macOS remains pending full lifecycle certification.
 - **No internet connection required** after initial install. CivicSuite is local-first by design.
 - A staff person comfortable running install scripts and reading PowerShell or bash output.
 - Access to your city's documents (file shares, SharePoint, etc.) via the connectors that exist today.
@@ -49,7 +49,7 @@ CivicClerk's spec lists imports from these platforms as priority integrations, a
 
 ## Does CivicSuite have any production deployments?
 
-Not that the project documents. There are mock-city test fixtures, demo seed data ("City of Brookfield"), and Docker Compose product rehearsals, but no documented production municipal deployment. If a city has deployed CivicSuite in production, that deployment has not been recorded in the public docs as of 2026-05-09.
+Not that the project documents. There are mock-city test fixtures, demo seed data ("City of Brookfield"), and Docker Compose product rehearsals, but no documented production municipal deployment. If a city has deployed CivicSuite in production, that deployment has not been recorded in the public docs as of 2026-05-14.
 
 ## What's the licensing model? Will I owe per-seat fees?
 

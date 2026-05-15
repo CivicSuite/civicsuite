@@ -30,8 +30,8 @@ CivicCore from the local wheel artifact:
 
 Windows artifact path:
 
-`C:/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.1-py3-none-any.whl`
+`C:/Users/scott/CivicSuite/civiccore/dist/civiccore-1.1.0-py3-none-any.whl`
 
 macOS/Linux/WSL artifact path:
 
-`/mnt/c/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.1-py3-none-any.whl`
+`/mnt/c/Users/scott/CivicSuite/civiccore/dist/civiccore-1.1.0-py3-none-any.whl`

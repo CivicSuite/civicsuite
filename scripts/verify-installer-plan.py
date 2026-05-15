@@ -189,8 +189,8 @@ def check_manifest(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if data.get("schema_version") != 1:
         errors.append(fail("schema_version must be 1"))
-    if data.get("installer_status") != "design_contract":
-        errors.append(fail("installer_status must be design_contract"))
+    if data.get("installer_status") != "clerk_core_linux_first_beta":
+        errors.append(fail("installer_status must be clerk_core_linux_first_beta"))
 
     menu_styles = data.get("menu_styles")
     profiles = data.get("profiles")
@@ -839,6 +839,25 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 plan_data = json.loads(plan_path.read_text(encoding="utf-8"))
                 if plan_data.get("profile") != "clerk-core" or "civiccore" not in plan_data.get("modules", []):
                     errors.append(fail(f"profile package {platform_id} plan has wrong profile/modules"))
+                manifest_modules = {
+                    str(item.get("id")): item
+                    for item in data.get("modules", [])
+                    if isinstance(item, dict) and item.get("id")
+                }
+                plan_modules = {
+                    str(item.get("module")): item
+                    for item in plan_data.get("actions", [])
+                    if isinstance(item, dict) and item.get("type") == "install_module"
+                }
+                expected_records_requirement = manifest_modules.get("civicrecords-ai", {}).get("civiccore_requirement")
+                actual_records_requirement = plan_modules.get("civicrecords-ai", {}).get("civiccore_requirement")
+                if actual_records_requirement != expected_records_requirement:
+                    errors.append(
+                        fail(
+                            f"profile package {platform_id} CivicRecords AI CivicCore requirement "
+                            f"drifted from manifest: {actual_records_requirement!r} != {expected_records_requirement!r}"
+                        )
+                    )
         for platform_id in ("macos", "linux"):
             package_launcher = GENERATED_PACKAGES / "clerk-core" / platform_id / "start-civicsuite-installer.sh"
             ok, output = run_launcher(["bash", package_launcher.relative_to(ROOT).as_posix(), "plan"])
@@ -886,6 +905,16 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 errors.append(fail(f"release archive missing: {artifact.get('path')}"))
             if len(str(artifact.get("sha256", ""))) != 64:
                 errors.append(fail(f"release archive missing sha256: {artifact.get('path')}"))
+            if hasattr(module, "_archive_forbidden_entries"):
+                forbidden_entries = module._archive_forbidden_entries(artifact_path)
+                if forbidden_entries:
+                    sample = ", ".join(forbidden_entries[:5])
+                    errors.append(
+                        fail(
+                            f"release archive contains forbidden local state: "
+                            f"{artifact.get('path')} ({sample})"
+                        )
+                    )
         checksum_path = ROOT / release.get("checksum_file", "")
         manifest_path = ROOT / release.get("release_manifest", "")
         if not checksum_path.is_file():
@@ -899,6 +928,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 errors.append(fail("release manifest must mark unsigned OSS beta distribution"))
             if signing.get("signed") is not False or "SHA256" not in signing.get("trust_path", ""):
                 errors.append(fail("release manifest must document unsigned signing status and SHA256 trust path"))
+            archive_hygiene = release_manifest.get("archive_hygiene", {})
+            if archive_hygiene.get("status") != "passed":
+                errors.append(fail("release manifest must record passed archive hygiene"))
         for platform_id, required in (
             ("windows", "CivicSuiteInstaller.iss"),
             ("macos", "distribution.xml"),
@@ -943,7 +975,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
         if boundary.get("does_not_start_services") is not True:
             errors.append(fail("minimal install kit must not start services"))
     requirements = GENERATED_MINIMAL / "requirements.txt"
-    if requirements.is_file() and "civiccore-1.0.1-py3-none-any.whl" not in requirements.read_text(encoding="utf-8"):
+    if requirements.is_file() and "civiccore-1.1.0-py3-none-any.whl" not in requirements.read_text(encoding="utf-8"):
         errors.append(fail("minimal install kit requirements must point to the CivicCore wheel"))
 
     try:

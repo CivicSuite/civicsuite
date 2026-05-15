@@ -31,7 +31,7 @@
       "type": "install_module"
     },
     {
-      "civiccore_requirement": "0.22.1",
+      "civiccore_requirement": "1.0.1",
       "display_name": "CivicRecords AI",
       "module": "civicrecords-ai",
       "proof_required": [

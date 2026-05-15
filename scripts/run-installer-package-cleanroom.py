@@ -164,10 +164,13 @@ def main() -> int:
         "platform": platform,
         "host_platform": sys.platform,
         "bundle_root": str(bundle_root),
+        "extracted_bundle_retained": False,
         "status": status,
         "mutates_host": not args.skip_install,
         "steps": steps,
     }
+    if extract_root.exists():
+        shutil.rmtree(extract_root)
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "installer-package-cleanroom.json").write_text(
         json.dumps(proof, indent=2, sort_keys=True) + "\n",

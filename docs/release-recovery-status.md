@@ -1,6 +1,6 @@
 # CivicSuite Release Recovery Status
 
-Status date: 2026-05-10
+Status date: 2026-05-14
 
 ## Current Rule
 
@@ -24,7 +24,7 @@ Demotion pattern:
 |---|---:|---:|---|
 | civiccore | v1.0.0 / v1.0 | v1.1.0 shipped | Real platform; v1.1.0 shipped 2026-05-11 with shared `staff_key_gate` and timing-safe staff-key comparison. v1.0.1 auth-error-payload hardening remains included; v1.0 superseded. |
 | civicclerk | v1.0.0 | v1.0.1 shipped | Real product-shaped workflow; v1.0.1 shipped 2026-05-10 with QA-001 security default change. Fresh installs deny anonymous staff writes by default; open mode is explicit local-rehearsal opt-in. |
-| civicrecords-ai | v1.4.10 | v1.6.0 shipped | CivicCore v1.0.1 migration shipped 2026-05-11 as v1.5.0; B2 audit punch-list closed 2026-05-12 as v1.6.0 (JWT secret and first-admin password material moved to Docker secret files; container env no longer exposes any `JWT_SECRET*` or `FIRST_ADMIN_PASSWORD*` name). |
+| civicrecords-ai | v1.4.10 | v1.6.0 shipped | CivicCore v1.0.1 migration shipped 2026-05-11 as v1.5.0; B2 audit punch-list closed 2026-05-12 as v1.6.0 (JWT secret and first-admin password material moved to Docker secret files; container env no longer exposes any `JWT_SECRET*` or `FIRST_ADMIN_PASSWORD*` name). Main now contains a post-v1.6.0 ingestion worker fix that needs a v1.6.1 follow-up release before the next promotion claim. |
 | civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. D2/B3 rollout moved this repo to CivicCore v1.1.0. |
 | civiczone | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
 | civicplan | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
@@ -59,6 +59,7 @@ Demotion pattern:
 - **2026-05-11:** CivicRecords AI v1.5.0 shipped after migrating from CivicCore v0.22.1 to v1.0.1. The v1.5.0 release workflow exposed and fixed three latent release-infrastructure defects: release-notes YAML parsing, Windows runner attempting Linux Docker Compose verification, and a hermetic CI admin email using the `.local` reserved domain. The full-suite profile is re-enabled after this unified CivicCore pin alignment.
 - **2026-05-11:** CivicCore v1.1.0 shipped with the shared `staff_key_gate` helper. CivicCode, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure now consume the hash-locked v1.1.0 wheel for the D2/B3 timing-safe staff-key rollout; CivicRecords AI, CivicClerk, and CivicZone remain on the v1.0.1 recovery pin.
 - **2026-05-12:** CivicRecords AI v1.6.0 shipped after closing audit punch-list B2. The Phase 1 (#74) move into Docker secret files left `JWT_SECRET_FILE` and `FIRST_ADMIN_PASSWORD_FILE` pointer env names visible to the container env, which would have failed the directive's literal `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` acceptance command. Phase 1B (#76) removed the pointer env names and tightened the release verifier and contract test to the literal predicate. Phase 2 GREEN rehearsal at civicrecords-ai/.agent-runs/b2-phase2-rehearsal.md.
+- **2026-05-14:** CivicRecords AI main contains a post-v1.6.0 Celery ingestion worker event-loop fix. Treat it as a required v1.6.1 follow-up before promoting the records module beyond developer preview.
 
 ## Language Rules
 

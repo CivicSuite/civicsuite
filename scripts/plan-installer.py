@@ -38,6 +38,41 @@ SIGNING_STATUS = {
     "trust_path": "Verify the release SHA256 checksum before running the installer package.",
 }
 
+ARCHIVE_HYGIENE_FORBIDDEN_MARKERS = (
+    "/.agent-runs/",
+    "/.runtime-proof",
+    "/.venv/",
+    "/__pycache__/",
+    "/.pytest_cache/",
+    "/.ruff_cache/",
+    "/node_modules/",
+    "/playwright-report/",
+    "/test-results/",
+    "/installer/reports/",
+)
+
+SOURCE_BUNDLE_FORBIDDEN_NAMES = {
+    ".agent-runs",
+    ".agents",
+    ".claude",
+    ".env",
+    ".git",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "playwright-report",
+    "superpowers",
+    "test-results",
+}
+SOURCE_BUNDLE_FORBIDDEN_PREFIXES = (
+    ".runtime-proof",
+    ".tmp-",
+)
+
 
 class PlannerError(RuntimeError):
     pass
@@ -1512,6 +1547,8 @@ def generate_profile_package(
         package_dir = output_root / profile_id / target_platform
         if not _is_within(package_dir, output_root):
             raise PlannerError(f"Generated package path is outside installer package root: {package_dir}")
+        if package_dir.exists():
+            shutil.rmtree(package_dir)
         package_dir.mkdir(parents=True, exist_ok=True)
         files = {
             "README.md": _package_readme_text(
@@ -1740,32 +1777,38 @@ contains the sibling `{module_name}` checkout and must pass
             newline="\n",
         )
         return
-    ignore = shutil.ignore_patterns(
-        ".git",
-        ".env",
-        ".claude",
-        ".agents",
-        ".agent-workflows",
-        ".ruff_cache",
-        ".pytest_cache",
-        ".tmp-*",
-        "__pycache__",
-        "docs",
-        "node_modules",
-        "frontend/node_modules",
-        "frontend/playwright-report",
-        "frontend/test-results",
-        "docs/playwright-report",
-        "docs/superpowers",
-        "superpowers",
-        "backend/tests",
-        "tests",
-        "run-civicclerk-cleanroom.sh",
-        "dist",
-        "build",
-        ".venv",
-        "backend/.venv",
-    )
+    source_root = source.resolve()
+
+    def ignore(directory: str, names: list[str]) -> set[str]:
+        ignored: set[str] = set()
+        rel_dir = Path(directory).resolve().relative_to(source_root)
+        rel_parts = set(rel_dir.parts)
+        for name in names:
+            if name in SOURCE_BUNDLE_FORBIDDEN_NAMES:
+                ignored.add(name)
+                continue
+            if any(name.startswith(prefix) for prefix in SOURCE_BUNDLE_FORBIDDEN_PREFIXES):
+                ignored.add(name)
+                continue
+            if name == ".agent-workflows":
+                ignored.add(name)
+                continue
+            if name == "docs" and module_name != "civicrecords-ai":
+                ignored.add(name)
+                continue
+            if name == "tests":
+                ignored.add(name)
+                continue
+            if "backend" in rel_parts and name == "tests":
+                ignored.add(name)
+                continue
+            if "installer" in rel_parts and name == "reports":
+                ignored.add(name)
+                continue
+            if name == "run-civicclerk-cleanroom.sh":
+                ignored.add(name)
+        return ignored
+
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, target, ignore=ignore, dirs_exist_ok=True)
     if module_name == "civicrecords-ai":
@@ -1838,6 +1881,25 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _archive_forbidden_entries(path: Path) -> list[str]:
+    if not path.is_file():
+        return [f"<missing archive: {path}>"]
+
+    if path.suffix == ".zip":
+        with zipfile.ZipFile(path) as archive:
+            names = archive.namelist()
+    else:
+        with tarfile.open(path, "r:gz") as archive:
+            names = archive.getnames()
+
+    forbidden: list[str] = []
+    for name in names:
+        normalized = "/" + name.replace("\\", "/").lstrip("/")
+        if any(marker in normalized for marker in ARCHIVE_HYGIENE_FORBIDDEN_MARKERS):
+            forbidden.append(name)
+    return forbidden
+
+
 def generate_release_artifacts(
     *,
     manifest: dict[str, Any],
@@ -1876,6 +1938,14 @@ def generate_release_artifacts(
         archive_path = DIST_ROOT / archive_name
         bundle_dir = _stage_release_bundle(profile_id=profile_id, platform_id=target_platform, package_dir=package_dir)
         _archive_directory(bundle_dir, archive_path, platform_id=target_platform)
+        forbidden_entries = _archive_forbidden_entries(archive_path)
+        if forbidden_entries:
+            sample = ", ".join(forbidden_entries[:5])
+            raise PlannerError(
+                f"Release archive hygiene failed for {archive_path.relative_to(ROOT)}: "
+                f"{len(forbidden_entries)} forbidden entr{'y' if len(forbidden_entries) == 1 else 'ies'} "
+                f"including {sample}"
+            )
         archives.append(
             {
                 "platform": target_platform,
@@ -1901,6 +1971,10 @@ def generate_release_artifacts(
         "platforms": platforms,
         "modules": package["modules"],
         "archives": archives,
+        "archive_hygiene": {
+            "forbidden_markers": list(ARCHIVE_HYGIENE_FORBIDDEN_MARKERS),
+            "status": "passed",
+        },
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "native_wrapper_status": "manifests_generated",
         "native_installers_built": False,

@@ -1,9 +1,14 @@
 # CivicSuite Installer Checkpoint - 2026-05-09
 
-Status: CivicCore package proof, CivicRecords service/UI cleanroom proof, and
-clerk-core distributable package lifecycle verified for Windows and Linux
-archives. macOS archive extraction/readiness/plan proof exists; full macOS
-runtime proof still requires a macOS host or VM.
+Status: historical checkpoint. Current work is Linux/container-first with
+Windows and macOS wrappers around that core. The clerk-core archive generator
+now has explicit archive hygiene checks; full macOS runtime proof still
+requires a macOS host or VM.
+
+Superseded note, 2026-05-14: the v1.0.0 module-selector claims below are
+historical release-recovery evidence, not current product-readiness claims.
+CivicInspect, CivicGrants, and CivicProcure are demoted recovery-label modules
+at v0.2.0, and CivicCore is currently v1.1.0.
 
 Update: module v1.0.0 release gates now require installer/module-selection
 integration. CivicInspect was retroactively added to the land-use profile and

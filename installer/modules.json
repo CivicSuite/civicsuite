@@ -1,6 +1,6 @@
 {
     "schema_version":  1,
-    "installer_status":  "design_contract",
+    "installer_status":  "clerk_core_linux_first_beta",
     "menu_styles":  [
                         {
                             "id":  "guided",
@@ -83,7 +83,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  false,
-                         "disabled_reason":  "Re-enabled after CivicRecords AI v1.5.0 unified the CivicCore v1.0.1 pin; CivicRecords AI v1.6.0 keeps that pin while closing B2 Docker secret handling."
+                         "disabled_reason":  "Re-enabled after CivicRecords AI unified on the CivicCore v1.0.1 records/clerk profile pin; CivicRecords AI v1.6.0 keeps that pin while closing B2 Docker secret handling. The next records release needs the post-v1.6.0 ingestion worker fix."
                      },
                      {
                          "id":  "custom",

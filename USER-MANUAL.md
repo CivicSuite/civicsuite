@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-05-09
+**Last verified:** 2026-05-14
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -22,11 +22,11 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 CivicSuite is under release-recovery review. Public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims are frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
-- `civicrecords-ai` (FOIA / records) is the most mature module today; treat it as a developer preview.
-- `civicclerk` (meetings) has substantial workflow code and a first React staff workspace; provisional v1.0.0 tag.
+- `civicrecords-ai` (FOIA / records) is the most mature module today; v1.6.0 is a developer-preview release and a v1.6.1 follow-up is needed for the post-release ingestion worker fix.
+- `civicclerk` (meetings) has substantial workflow code and a first React staff workspace; v1.0.1 shipped the protected-default recovery patch.
 - CivicCode is demoted to v0.5.0; CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0.
 - The remaining 16 modules are foundation-tier surfaces (sample APIs, sample UI, civiccore alignment) — not yet usable products.
-- `civiccore` is the shared platform package under all of them; provisional v1.0 tag.
+- `civiccore` is the shared platform package under all of them; v1.1.0 is the current shared-platform release.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
 
@@ -47,10 +47,10 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 ### Prerequisites
 
 - A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Desktop** (Windows 10/11) or Docker Engine (Linux). Windows-only currently; macOS support pending lifecycle certification (Docker Desktop on macOS 13+ runs the script path but is not lifecycle-certified). On Windows, also WSL 2 + Virtual Machine Platform.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and lifecycle proof path. On Windows, also WSL 2 + Virtual Machine Platform. macOS remains pending full lifecycle certification.
 - About 30 minutes for first install (model downloads).
 
-### Install (Windows)
+### Install (Windows wrapper)
 
 1. Download `CivicRecordsAI-<version>-Setup.exe` from the latest release at <https://github.com/CivicSuite/civicrecords-ai/releases>.
 2. Verify the SHA-256 checksum published alongside the installer.
@@ -62,9 +62,8 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 
 ### Install (Linux / macOS) — script path, not lifecycle-certified
 
-Windows-only currently; macOS support pending lifecycle certification. The
-script path below runs on Linux and macOS today but is not
-lifecycle-certified.
+Linux is the primary runtime target. The script path below runs on Linux and
+macOS today, but macOS is not lifecycle-certified yet.
 
 ```bash
 git clone https://github.com/CivicSuite/civicrecords-ai.git
@@ -115,9 +114,9 @@ The umbrella does **not** contain runtime code for individual products — that 
 
 | Repo | Status (see STATUS.md for full detail) |
 |---|---|
-| `civicrecords-ai` | Most mature; v1.4.10 provisional |
-| `civiccore` | Shared platform; v1.0 provisional |
-| `civicclerk` | v1.0.0 provisional |
+| `civicrecords-ai` | Most mature; v1.6.0 developer preview with v1.6.1 follow-up needed |
+| `civiccore` | Shared platform; v1.1.0 current |
+| `civicclerk` | v1.0.1 protected-default recovery patch |
 | `civiccode` | v0.5.0 demoted recovery label |
 | `civiczone`, `civicplan`, `civicpermit` | v0.2.0 demoted recovery labels |
 | `civicinspect`, `civicgrants`, `civicprocure` | v0.2.0 demoted recovery labels |
@@ -175,7 +174,7 @@ The full suite architecture, dependency graph, data-flow rules, and CivicCore ex
                               v
                 +----------------------------+
                 |   civiccore (shared)       |
-                |   v1.0 provisional         |
+                |   v1.1.0 current           |
                 +-------------+--------------+
                               ^
                   depends on (pinned)
