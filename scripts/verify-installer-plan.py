@@ -307,6 +307,9 @@ def check_package_cleanroom_evidence_contract(*, require_reports: bool = False) 
         "unsupported_lifecycle",
         "darwin",
         "CIVICSUITE_INSTALLER_RUN_ID",
+        "--workflow-proof",
+        "workflow_proof_requested",
+        "civicclerk_staff_mode",
     ):
         if phrase not in runner_text:
             errors.append(fail(f"package cleanroom runner missing evidence guard phrase: {phrase}"))

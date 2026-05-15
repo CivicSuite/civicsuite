@@ -91,7 +91,15 @@ def infer_platform(archive: Path) -> str:
     )
 
 
-def launcher_command(platform: str, launcher: Path, mode: str, bundle_root: Path) -> list[str]:
+def launcher_command(
+    platform: str,
+    launcher: Path,
+    mode: str,
+    bundle_root: Path,
+    *,
+    staff_mode: str = "protected",
+    workflow_proof: bool = False,
+) -> list[str]:
     launcher_arg = launcher.relative_to(bundle_root).as_posix()
     if platform == "windows":
         switches = {
@@ -103,6 +111,11 @@ def launcher_command(platform: str, launcher: Path, mode: str, bundle_root: Path
             "uninstall": ["-Uninstall"],
             "gate": ["-Gate"],
         }
+        lifecycle_args: list[str] = []
+        if mode in {"install", "repair", "verify"}:
+            lifecycle_args.extend(["-StaffMode", staff_mode])
+            if workflow_proof:
+                lifecycle_args.append("-WorkflowProof")
         return [
             "powershell",
             "-NoProfile",
@@ -111,8 +124,14 @@ def launcher_command(platform: str, launcher: Path, mode: str, bundle_root: Path
             "-File",
             launcher_arg,
             *switches[mode],
+            *lifecycle_args,
         ]
-    return ["bash", launcher_arg, mode]
+    lifecycle_args = []
+    if mode in {"install", "repair", "verify"}:
+        lifecycle_args.extend(["--staff-mode", staff_mode])
+        if workflow_proof:
+            lifecycle_args.append("--workflow-proof")
+    return ["bash", launcher_arg, mode, *lifecycle_args]
 
 
 def mode_timeout(mode: str) -> int:
@@ -206,6 +225,8 @@ def main() -> int:
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--skip-install", action="store_true", help="Only verify archive extraction, readiness, and plan.")
     parser.add_argument("--gate", action="store_true", help="Run the cleanroom gate after readiness and plan.")
+    parser.add_argument("--staff-mode", choices=("protected", "bearer", "open"), default="protected")
+    parser.add_argument("--workflow-proof", action="store_true", help="Run mutating starter-set workflow proof during install/repair/verify.")
     args = parser.parse_args()
 
     archive = Path(args.archive).resolve()
@@ -243,7 +264,14 @@ def main() -> int:
     status = "passed"
     lifecycle_summaries: list[dict[str, object]] = []
     for mode in modes:
-        command = launcher_command(platform, launcher, mode, bundle_root)
+        command = launcher_command(
+            platform,
+            launcher,
+            mode,
+            bundle_root,
+            staff_mode=args.staff_mode,
+            workflow_proof=args.workflow_proof,
+        )
         proc = run(command, cwd=bundle_root, timeout=mode_timeout(mode), env=launcher_env)
         parsed_output = parse_json_from_output(proc.stdout)
         summary = lifecycle_summary(mode, parsed_output)
@@ -307,6 +335,8 @@ def main() -> int:
         "status": status,
         "mutates_host": lifecycle_requested and not lifecycle_blocked,
         "requested_mutating_lifecycle": lifecycle_requested,
+        "workflow_proof_requested": args.workflow_proof,
+        "civicclerk_staff_mode": args.staff_mode,
         "lifecycle_isolation": {
             "run_id": run_id,
             "environment": {

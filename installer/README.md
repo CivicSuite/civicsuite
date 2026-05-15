@@ -255,6 +255,7 @@ copy:
 ```powershell
 python scripts\run-installer-package-cleanroom.py
 python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip --staff-mode bearer --workflow-proof
 python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-macos-0.1.0.tar.gz --skip-install
 ```
 
@@ -269,6 +270,11 @@ archive is run on a matching host or VM. Windows lifecycle evidence now exists
 from a Windows 11 + WSL 2 Docker Desktop host; macOS lifecycle evidence must
 come from a Darwin/macOS Docker Desktop host. macOS package runs from Linux or
 Windows hosts are archive/readiness evidence only.
+
+`--workflow-proof` is intentionally mutating. Use it with
+`--staff-mode bearer` when the extracted package should create real
+CivicRecords AI and CivicClerk proof records during install, repair, and
+verify.
 
 This writes Windows, macOS, and Linux package directories under
 `installer/generated/packages/{profile}`. Each package contains:
