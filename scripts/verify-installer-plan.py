@@ -53,6 +53,8 @@ REQUIRED_MODULES = {
     "civic311",
     "civiccomms",
     "civicdata",
+    "civicregwatch",
+    "civicapi",
     "civichr",
     "civicbudget",
     "civiclegal",
@@ -63,6 +65,7 @@ REQUIRED_MODULES = {
     "civiclibrary",
     "civicparks",
 }
+PLANNED_NON_SELECTABLE_MODULES = {"civicregwatch", "civicapi"}
 REQUIRED_DOC_PHRASES = (
     "zero-baseline machine",
     "CivicCore",
@@ -338,7 +341,7 @@ def check_package_cleanroom_evidence_contract(*, require_reports: bool = False) 
         "certification_scope",
         "lifecycle_isolation",
     }
-    lifecycle_modes = {"install", "repair", "verify", "uninstall"}
+    lifecycle_modes = {"install", "repair", "verify", "backup", "restore", "uninstall"}
     for report_path in report_paths:
         report = json.loads(report_path.read_text(encoding="utf-8"))
         missing = sorted(required_fields - set(report))
@@ -529,6 +532,26 @@ def check_planner(data: dict[str, object]) -> list[str]:
             errors.append(fail(f"{profile} plan must end with verify_profile"))
         if plan.get("menu_style", {}).get("id") != "guided":
             errors.append(fail(f"{profile} plan missing guided menu style"))
+        if profile == "clerk-core":
+            verify_actions = [
+                action
+                for action in plan.get("actions", [])
+                if isinstance(action, dict) and action.get("type") == "verify_profile"
+            ]
+            verify_proof = verify_actions[0].get("proof", []) if verify_actions else []
+            for proof in ("health_checks", "restart", "backup", "restore", "actionable_failure_copy"):
+                if proof not in verify_proof:
+                    errors.append(fail(f"clerk-core verify_profile missing proof {proof}"))
+            for module_id in ("civicrecords-ai", "civicclerk"):
+                install_actions = [
+                    action
+                    for action in plan.get("actions", [])
+                    if isinstance(action, dict) and action.get("module") == module_id
+                ]
+                proof_required = install_actions[0].get("proof_required", []) if install_actions else []
+                for proof in ("install", "health_check", "restart", "repair", "backup", "restore"):
+                    if proof not in proof_required:
+                        errors.append(fail(f"{module_id} install action missing proof requirement {proof}"))
 
     full_suite_profile = next(
         (
@@ -574,7 +597,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(fail("menu model must expose all required profiles"))
     selector = menu_model.get("module_selector", {})
     selectable = selector.get("selectable_modules", []) if isinstance(selector, dict) else []
-    if not isinstance(selectable, list) or len(selectable) != len(REQUIRED_MODULES) - 1:
+    expected_selectable_count = len(REQUIRED_MODULES - {"civiccore"} - PLANNED_NON_SELECTABLE_MODULES)
+    if not isinstance(selectable, list) or len(selectable) != expected_selectable_count:
         errors.append(fail("menu model must expose every selectable non-CivicCore module"))
     civicinspect_selector = [
         item

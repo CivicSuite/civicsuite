@@ -73,6 +73,15 @@ For the CivicRecords AI v1.6.1 ingestion worker event-loop recovery patch:
 
 CivicRecords AI remains on the CivicCore v1.0.1 recovery pin; the v1.6.1 patch did not move the CivicCore pin.
 
+For the Clerk-Core City Release setup:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicregwatch | n/a | planned, no runtime repo | n/a |
+| CivicSuite/civicapi | n/a | planned, no runtime repo | n/a |
+
+CivicRegWatch and CivicAPI are spec/planning entries only. This umbrella change records them as planned, non-selectable installer modules and does not move any downstream package pin.
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`

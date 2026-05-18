@@ -1,6 +1,6 @@
 # CivicSuite Project Control Plane
 
-Last updated: 2026-05-12
+Last updated: 2026-05-18
 
 ## Project Goal
 
@@ -80,18 +80,18 @@ Evidence:
 
 ## Current Scope Boundary
 
-Active target: Installer/macOS certification follow-up.
+Active target: Clerk-Core City Release.
 
-State on resume: B2 is shipped as CivicRecords AI v1.6.0 and suite truth is reconciled. The next queued installer trust gap is macOS lifecycle certification: either produce a real macOS host/runner proof, or narrow the published platform matrix honestly if macOS cannot be supported.
+State on resume: the project owner explicitly superseded the prior installer/macOS follow-up and module queue. The active target is now the first city-deployable CivicSuite product: CivicCore, CivicRecords AI, and CivicClerk installed and operated as one Linux-first Docker/browser release with Windows and macOS wrappers. `docs/CivicSuiteUnifiedSpec.md` is the source of truth for the 28 product modules plus CivicCore.
 
-Why next: macOS full lifecycle proof remains unresolved after the Windows/Linux installer work. The queue identifies this as the next installer certification follow-up.
+Why next: prior release-status work repeatedly overstated product state. The project must finish one real public-use starter product before CivicContracts or any later module advances.
 
 Allowed now:
 
 - Read the audit package, sprint punch-list, unified spec, release recovery status, installer docs, and current module truth artifacts.
-- Make scoped fixes for the macOS certification follow-up after the runner/platform surfaces and published support claims are inventoried.
+- Make scoped fixes for the clerk-core city release across CivicSuite, CivicCore, CivicRecords AI, and CivicClerk.
 - Use the release-lockstep gate for any release-truth PR.
-- Keep CivicRecords AI `workflow_dispatch` as a low-priority release-infrastructure follow-up, not part of the macOS certification target.
+- Keep later-module and standalone macOS lifecycle certification work outside this target unless a direct clerk-core release blocker is named first.
 
 Not allowed now:
 
@@ -101,20 +101,27 @@ Not allowed now:
 - Reopen CivicRecords AI v1.5.0 migration unless a regression is found; CivicRecords AI v1.5.0 is shipped.
 - Reopen the D2/B3 staff-key gate rollout unless a regression is found; CivicCore v1.1.0 and the six downstream PRs are shipped.
 - Reopen B2 unless a regression is found; CivicRecords AI v1.6.0 is shipped.
+- Advance CivicContracts or any later module before the clerk-core city release passes its gate.
 - Tag any module as v1.0 or higher unless its full recovery gate and installer integration are satisfied.
 - Bypass release-lockstep-gate, admin-merge around it, force-push, delete tags, or rewrite history.
 - Use unauthorized skills or plugins.
 
 ## Definition Of Done For Current Target
 
-The Installer/macOS certification follow-up is complete only when:
+The Clerk-Core City Release target is satisfied only when:
 
-1. The macOS runner/platform scope is explicitly named before edits.
-2. The project either has a real macOS lifecycle proof or published support claims are narrowed to match actual proof.
-3. All changed behavior is covered by local tests and docs.
-4. Any frontend/operator-facing surface has browser/UX evidence if touched.
-5. Release-truth artifacts move through `release-lockstep-gate` if version, installer, or verifier truth changes.
-6. Handoff/update evidence is written before advancing to the next queued target.
+1. The active queue and project control plane name Clerk-Core City Release as the only active target.
+2. The canonical 28-product-module spec inventory is recorded and drift against installer/status/recovery/queue truth is named.
+3. CivicCore, CivicRecords AI, CivicClerk, and the clerk-core installer gap audit is recorded.
+4. The Linux-first Docker/browser installer path proves install, start, health, repair, backup, restore, and uninstall.
+5. Windows and macOS wrappers honestly launch the Docker/browser workflow without native-app or lifecycle-certification claims.
+6. CivicRecords AI request, search, review, and response workflows are proven inside the installed stack.
+7. CivicClerk agenda, packet, minutes, vote, notice, archive, and optional CivicRecords visibility workflows are proven inside the installed stack.
+8. AI output remains cited, staff-reviewed, and non-authoritative.
+9. Public and staff UI paths have desktop/mobile browser QA, console checks, keyboard/focus/accessibility checks, and actionable copy review.
+10. Local tests, lint/static checks, suite verifier, docs verifier, installer verifier, release scripts where present, and release-lockstep gate pass with recorded proof.
+11. Release docs and artifacts avoid full-suite, procurement, airgap, and macOS lifecycle certification claims.
+12. Handoff/update evidence is written before any remaining module queue begins.
 
 ## Stop Conditions
 

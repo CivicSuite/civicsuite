@@ -18,12 +18,12 @@ If you are evaluating CivicSuite for a municipality, treat this state as *develo
 
 ## Suite Status
 
-Status snapshot: **2026-05-15**
+Status snapshot: **2026-05-18**
 
 | Tier | Count | What it means today |
 |---|---:|---|
-| Corrective recovery labels | 10 repos | CivicCore v1.1.0 is the current shared-platform release. CivicClerk v1.0.1 is the protected-default recovery patch. CivicRecords AI v1.6.1 is shipped as developer preview with the ingestion worker recovery patch. CivicCode is demoted to v0.5.0. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0. |
-| Foundation / planned | 18 of 28 product modules | The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. |
+| Corrective recovery labels | CivicCore plus 9 product repos | CivicCore v1.1.0 is the current shared-platform release. CivicClerk v1.0.1 is the protected-default recovery patch. CivicRecords AI v1.6.1 is shipped as developer preview with the ingestion worker recovery patch. CivicCode is demoted to v0.5.0. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0. |
+| Foundation / planned | 18 named product modules plus unresolved spec-count cleanup | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The unified spec states 28 product modules plus CivicCore; the visible catalog currently names 27 product headings after CivicCore, so the final post-starter queue requires one explicit spec-count cleanup before it is frozen. |
 
 `civiccore` is the shared platform package consumed by every module; v1.1.0 is the current platform release with shared `staff_key_gate` support and the earlier auth-error-payload hardening included.
 
@@ -43,14 +43,14 @@ For honest module-by-module status see [STATUS.md](STATUS.md).
 
 ## Current Priorities
 
-The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The immediate sequence:
+The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The active execution target is now the [Clerk-Core City Release Plan](docs/roadmap/clerk-core-city-release-plan.md). The immediate sequence:
 
-1. Freeze public product-ready claims until the recovery gates pass.
-2. **Continue CivicCore shared-extraction depth before adding any new modules.** The suite's credibility depends on a richer civiccore platform, not on more catalog breadth (per the 2026-04-29 outside-review memo).
-3. Replace docs-render smoke checks with real user-flow Playwright evidence where a frontend exists.
-4. Add install/runtime proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labels.
-5. Re-audit and remediate repos one at a time. **No lateral v1.0 sweeps.**
-6. Re-earn release status only after the repo-specific recovery gate passes.
+1. Finish the clerk-core starter product around CivicCore, CivicRecords AI, CivicClerk, and the suite installer.
+2. Keep public product-ready claims frozen until the release gates pass.
+3. Prove install/start/health/repair/backup/restore/uninstall for the Linux-first Docker/browser path.
+4. Keep Windows and macOS scoped as wrappers around the Docker/browser workflow unless matching-host lifecycle evidence exists.
+5. Browser-QA the public and staff starter-product paths with real user-flow evidence.
+6. After the starter product passes its gate, reconcile the spec-count cleanup and generate the remaining-module queue from the unified spec.
 
 ## Quick Start
 

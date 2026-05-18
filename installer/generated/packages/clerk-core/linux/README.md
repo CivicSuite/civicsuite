@@ -54,8 +54,9 @@ profile.
    ```
 
    Available lifecycle modes: readiness, plan, install, verify, repair,
-   and uninstall. Install, repair, and uninstall are mutating: they
-   create or remove Docker resources and write installer reports.
+   backup, restore, and uninstall. Install, repair, backup, restore, and
+   uninstall are mutating: they create or remove Docker resources and write
+   installer reports.
 
 ## Selected Modules
 
@@ -73,7 +74,8 @@ bash ./start-civicsuite-installer.sh install --module civicrecords-ai --module c
 ```
 
 When a module is selected explicitly, plan/readiness use the same selection
-and install/verify/repair/uninstall pass it through to the lifecycle runner.
+and install/verify/repair/backup/restore/uninstall pass it through to the
+lifecycle runner.
 
 For a mutating workflow proof, use bearer staff mode so CivicClerk writes are
 protected while the proof creates real starter-set test records:
@@ -89,6 +91,11 @@ bash ./start-civicsuite-installer.sh install --staff-mode bearer --workflow-proo
   from the bundled source tree.
 - Verify mode checks live service endpoints. `--workflow-proof` /
   `-WorkflowProof` also creates and fetches live test records.
+- Backup mode writes per-module PostgreSQL custom dumps plus a manifest under
+  the installer runtime backup directory.
+- Restore mode verifies the latest backup by restoring each dump into a
+  temporary PostgreSQL restore-probe database and removing that probe after the
+  check completes.
 - Uninstall mode removes the selected module Docker containers and volumes.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
 

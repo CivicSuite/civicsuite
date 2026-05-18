@@ -22,9 +22,11 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
 UNIFIED_SPEC = ROOT / "docs" / "CivicSuiteUnifiedSpec.md"
+INSTALLER_MODULES = ROOT / "installer" / "modules.json"
 CURRENT_PLATFORM_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
+PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
 
 REQUIRED_ARTIFACTS = (
     "README.md",
@@ -160,6 +162,34 @@ def spec_versions() -> dict[str, str]:
     for repo, version in row_pattern.findall(match.group("section")):
         versions[repo] = version
     return versions
+
+
+def check_planned_spec_modules() -> list[str]:
+    errors = []
+    spec_text = UNIFIED_SPEC.read_text(encoding="utf-8")
+    installer_data = json.loads(INSTALLER_MODULES.read_text(encoding="utf-8"))
+    installer_modules = {
+        str(module.get("id")): module
+        for module in installer_data.get("modules", [])
+        if isinstance(module, dict) and module.get("id")
+    }
+    for module_id in PLANNED_SPEC_MODULES:
+        display = module_id.replace("civic", "Civic", 1)
+        if module_id == "civicregwatch":
+            display = "CivicRegWatch"
+        elif module_id == "civicapi":
+            display = "CivicAPI"
+        if display not in spec_text:
+            errors.append(fail(f"planned spec module {display} missing from unified spec"))
+        installer_module = installer_modules.get(module_id)
+        if not installer_module:
+            errors.append(fail(f"planned spec module {module_id} missing from installer/modules.json"))
+            continue
+        if installer_module.get("selectable") is not False:
+            errors.append(fail(f"planned spec module {module_id} must remain non-selectable until runtime repo exists"))
+        if installer_module.get("installer_status") != "planned_spec_module_no_runtime_repo":
+            errors.append(fail(f"planned spec module {module_id} has unexpected installer_status"))
+    return errors
 
 
 def run_json(command: list[str]) -> tuple[int, dict[str, object] | None, str]:
@@ -315,6 +345,7 @@ def main() -> int:
     print("==> CivicSuite suite-state verification")
     print(f"workspace: {WORKSPACE}")
     print(f"repos: {len(REPOS)}")
+    print(f"planned spec-only modules: {', '.join(PLANNED_SPEC_MODULES)}")
     print(f"remote release checks: {'enabled' if args.remote else 'disabled'}")
     print(f"local sibling clone checks: {'disabled' if args.remote_only else 'enabled'}")
 
@@ -333,6 +364,15 @@ def main() -> int:
                 print(f"  {error}")
         else:
             print(f"[{spec.name}] PASS {spec.matrix_version(args.remote_only)} ({spec.repo})")
+
+    planned_errors = check_planned_spec_modules()
+    if planned_errors:
+        any_failures = True
+        print("[planned-spec-modules] FAIL")
+        for error in planned_errors:
+            print(f"  {error}")
+    else:
+        print("[planned-spec-modules] PASS civicregwatch,civicapi")
 
     if any_failures:
         print("VERIFY-SUITE-STATE: FAILED")

@@ -38,7 +38,9 @@
         "install",
         "health_check",
         "restart",
-        "repair"
+        "repair",
+        "backup",
+        "restore"
       ],
       "repo": "CivicSuite/civicrecords-ai",
       "type": "install_module"
@@ -50,7 +52,10 @@
       "proof_required": [
         "install",
         "health_check",
-        "restart"
+        "restart",
+        "repair",
+        "backup",
+        "restore"
       ],
       "repo": "CivicSuite/civicclerk",
       "type": "install_module"
@@ -60,6 +65,8 @@
       "proof": [
         "health_checks",
         "restart",
+        "backup",
+        "restore",
         "actionable_failure_copy"
       ],
       "type": "verify_profile"
