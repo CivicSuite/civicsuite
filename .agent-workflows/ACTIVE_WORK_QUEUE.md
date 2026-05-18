@@ -1,6 +1,6 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-05-12
+Last updated: 2026-05-18
 
 ## Completed Target
 
@@ -76,26 +76,26 @@ Completion evidence:
 
 ## Active Target #1
 
-1. **Installer/macOS certification follow-up**
+1. **Clerk-Core City Release**
 
-Why first now: B2 is closed and the queue already identifies macOS full lifecycle certification as the next installer trust gap. The suite still needs a real macOS host/runner proof, or the published platform matrix must be narrowed honestly.
+Why first now: the project owner explicitly reset the priority to the first real public-use CivicSuite product. CivicCore, CivicRecords AI, and CivicClerk must be installable and operable together before CivicContracts or any later module work continues.
 
-Definition of Done: decide and document the macOS runner strategy, produce a real macOS lifecycle proof or update the supported-platform truth sources to remove unsupported macOS claims, and keep release/install documentation in lockstep.
+Definition of Done: ship the clerk-core starter product as a Linux-first Docker/browser release with honest Windows/macOS wrappers, full internal install/start/health/repair/backup/restore/uninstall proof, module workflow proof for CivicRecords AI and CivicClerk, browser QA, docs, tests, release-truth lockstep, and no full-suite/procurement/airgap/macOS lifecycle certification claims.
 
-Current status: YELLOW, queued for scoped execution after B2 completion.
+Current status: RED, active.
 
-Next action: run the v0.2 Phase 0 infrastructure preflight for the macOS certification scope, then produce a narrow manifest before edits.
+Next action: run the `agent-pipeline-codex` v0.9.0 parent run `2026-05-18-clerk-core-city-release`, starting with spec-truth inventory and control-plane reconciliation.
 
 ## Queued Targets
 
-2. **CivicRecords AI release workflow_dispatch follow-up**
+2. **Remaining 26 product modules in spec/dependency order**
 
-Why second: the v1.5.0 recovery exposed that tag-triggered releases are hard to rerun safely. Adding `workflow_dispatch` to `civicrecords-ai/.github/workflows/release.yml` is a low-priority release-infrastructure improvement now that v1.5.0 has shipped.
+Why second: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 28 product modules plus CivicCore. After CivicRecords AI and CivicClerk are included in the starter product, the remaining 26 product modules proceed one at a time.
 
-3. **Remaining audit punch-list C/D recovery**
+3. **Deferred release-infrastructure follow-ups**
 
-Why third: after B2, the remaining install-path and module-honesty gaps should continue one bounded manifest at a time: C4/C6 and D1/D3/D4/D5/D6.
+Why third: CivicRecords AI workflow-dispatch improvements, standalone macOS lifecycle certification, and other infrastructure refinements remain useful, but they cannot displace the clerk-core city release unless they directly block it.
 
 ## Current Decision
 
-Proceed with Active Target #1 when the next CivicSuite work session starts. Recommendation: start with Installer/macOS certification follow-up because B2 is now GREEN and macOS runtime certification is the next unresolved installer trust gap.
+Proceed with Active Target #1 now. CivicContracts and later modules are paused until the clerk-core city release passes its gate.

@@ -53,6 +53,8 @@ REQUIRED_MODULES = {
     "civic311",
     "civiccomms",
     "civicdata",
+    "civicregwatch",
+    "civicapi",
     "civichr",
     "civicbudget",
     "civiclegal",
@@ -63,6 +65,7 @@ REQUIRED_MODULES = {
     "civiclibrary",
     "civicparks",
 }
+PLANNED_NON_SELECTABLE_MODULES = {"civicregwatch", "civicapi"}
 REQUIRED_DOC_PHRASES = (
     "zero-baseline machine",
     "CivicCore",
@@ -574,7 +577,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(fail("menu model must expose all required profiles"))
     selector = menu_model.get("module_selector", {})
     selectable = selector.get("selectable_modules", []) if isinstance(selector, dict) else []
-    if not isinstance(selectable, list) or len(selectable) != len(REQUIRED_MODULES) - 1:
+    expected_selectable_count = len(REQUIRED_MODULES - {"civiccore"} - PLANNED_NON_SELECTABLE_MODULES)
+    if not isinstance(selectable, list) or len(selectable) != expected_selectable_count:
         errors.append(fail("menu model must expose every selectable non-CivicCore module"))
     civicinspect_selector = [
         item

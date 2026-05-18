@@ -72,6 +72,8 @@
                                          "civic311",
                                          "civiccomms",
                                          "civicdata",
+                                         "civicregwatch",
+                                         "civicapi",
                                          "civichr",
                                          "civicbudget",
                                          "civiclegal",
@@ -477,6 +479,44 @@
                                                "install",
                                                "health_check",
                                                "restart"
+                                           ]
+                    },
+                    {
+                        "id":  "civicregwatch",
+                        "display_name":  "CivicRegWatch",
+                        "repo":  null,
+                        "tier":  4,
+                        "role":  "federal regulatory intelligence",
+                        "selectable":  false,
+                        "required":  false,
+                        "civiccore_requirement":  null,
+                        "dependencies":  [
+                                             "civiccore"
+                                         ],
+                        "installer_status":  "planned_spec_module_no_runtime_repo",
+                        "proof_required":  [
+                                               "spec_inventory",
+                                               "runtime_repo_creation",
+                                               "installer_proof"
+                                           ]
+                    },
+                    {
+                        "id":  "civicapi",
+                        "display_name":  "CivicAPI",
+                        "repo":  null,
+                        "tier":  4,
+                        "role":  "public read-only data gateway",
+                        "selectable":  false,
+                        "required":  false,
+                        "civiccore_requirement":  null,
+                        "dependencies":  [
+                                             "civiccore"
+                                         ],
+                        "installer_status":  "planned_spec_module_no_runtime_repo",
+                        "proof_required":  [
+                                               "spec_inventory",
+                                               "runtime_repo_creation",
+                                               "installer_proof"
                                            ]
                     },
                     {

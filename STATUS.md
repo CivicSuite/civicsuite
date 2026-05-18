@@ -1,9 +1,15 @@
 # CivicSuite Module Status
 
-**Last verified:** 2026-05-15
+**Last verified:** 2026-05-18
 **Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
 This is the plain-English operating truth for CivicSuite. The unified spec describes architectural intent. This file describes release reality.
+
+## Active Public-Use Target
+
+The active target is the clerk-core starter product: CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. This target is not yet passed; it remains blocked on installer lifecycle proof, installed-stack workflow proof, browser QA, docs, tests, and release-truth lockstep.
+
+All later modules are paused until this starter target passes its gate. The unified spec states 28 product modules plus CivicCore; the visible catalog currently names 27 product headings after CivicCore, so the post-starter module queue must not be frozen until that spec-count cleanup is explicit.
 
 ## Status Legend
 

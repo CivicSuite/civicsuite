@@ -535,7 +535,7 @@ Canonical lifecycle:
 
 ## 9. CivicClerk Canonical Scope
 
-CivicClerk is Module 2 and ships a v0.1.1 runtime foundation with production-depth staff screens and civiccore==0.3.0 alignment.
+CivicClerk is Module 2. Current release truth is CivicClerk v1.0.1 with the QA-001 protected-default staff-auth recovery patch; current shipped CivicCore compatibility remains recorded in the compatibility matrix and installer metadata. The canonical scope below describes the product target that must be proven before any city-deployable clerk-core claim.
 
 ### 9.1 Product Promise
 
