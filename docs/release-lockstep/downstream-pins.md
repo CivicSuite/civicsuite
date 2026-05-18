@@ -65,6 +65,14 @@ For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
 
 CivicRecords AI remains on the CivicCore v1.0.1 recovery pin; the B2 release did not move the CivicCore pin.
 
+For the CivicRecords AI v1.6.1 ingestion worker event-loop recovery patch:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicrecords-ai | #84 | 1.6.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
+CivicRecords AI remains on the CivicCore v1.0.1 recovery pin; the v1.6.1 patch did not move the CivicCore pin.
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`

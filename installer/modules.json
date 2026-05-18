@@ -83,7 +83,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  false,
-                         "disabled_reason":  "Re-enabled after CivicRecords AI unified on the CivicCore v1.0.1 records/clerk profile pin; CivicRecords AI v1.6.1 keeps that pin while shipping the ingestion worker event-loop recovery patch."
+                         "disabled_reason":  "Re-enabled after CivicRecords AI unified on the CivicCore v1.0.1 records/clerk profile pin; CivicRecords AI v1.6.1 keeps that pin while shipping the developer-preview ingestion worker event-loop recovery patch."
                      },
                      {
                          "id":  "custom",
