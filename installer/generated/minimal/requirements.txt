@@ -1,1 +1,1 @@
-C:/Users/scott/CivicSuite/civiccore/dist/civiccore-1.1.0-py3-none-any.whl
+C:/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.1.0-py3-none-any.whl

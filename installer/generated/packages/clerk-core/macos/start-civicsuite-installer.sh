@@ -72,6 +72,12 @@ case "${MODE}" in
   repair)
     python3 "${LIFECYCLE}" repair "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
+  backup)
+    python3 "${LIFECYCLE}" backup "${LIFECYCLE_MODULE_ARGS[@]}"
+    ;;
+  restore)
+    python3 "${LIFECYCLE}" restore "${LIFECYCLE_MODULE_ARGS[@]}"
+    ;;
   uninstall)
     python3 "${LIFECYCLE}" uninstall "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
@@ -79,7 +85,7 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
     exit 2
     ;;
 esac

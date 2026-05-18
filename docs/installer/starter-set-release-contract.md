@@ -3,7 +3,7 @@
 Status: maintained installer contract for the CivicCore + CivicRecords AI +
 CivicClerk starter set.
 
-Last verified: 2026-05-15.
+Last verified: 2026-05-18.
 
 ## Scope
 
@@ -58,7 +58,7 @@ The umbrella installer contract is enforced by
 
 The maintained runtime proof path is
 `python scripts/run-clerk-core-installer.py install`, followed by `verify`,
-`repair`, and `uninstall` on the same host class.
+`repair`, `backup`, `restore`, and `uninstall` on the same host class.
 
 The `verify` mode must check:
 
@@ -76,12 +76,19 @@ The maintained mutating workflow proof path is:
 ```powershell
 python scripts\run-clerk-core-installer.py install --staff-mode bearer --workflow-proof
 python scripts\run-clerk-core-installer.py verify --staff-mode bearer --workflow-proof
+python scripts\run-clerk-core-installer.py backup
+python scripts\run-clerk-core-installer.py restore
 python scripts\run-clerk-core-installer.py uninstall
 ```
 
 That proof must create and fetch a real CivicRecords AI records request through
 first-admin JWT auth, and create/list a real CivicClerk agenda-intake item
 through bearer-protected staff auth. Reports must not persist the CivicRecords admin password or bearer token.
+
+Backup proof must create PostgreSQL custom dump files for each selected starter
+module and a `backup-manifest.json` with SHA256 digests. Restore proof must
+validate those dumps by restoring each one into a temporary restore-probe
+database and deleting that probe database after the check completes.
 
 ## Package Cleanroom Contract
 

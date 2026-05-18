@@ -109,6 +109,8 @@ def launcher_command(
             "repair": ["-Repair"],
             "verify": ["-Verify"],
             "uninstall": ["-Uninstall"],
+            "backup": ["-Backup"],
+            "restore": ["-Restore"],
             "gate": ["-Gate"],
         }
         lifecycle_args: list[str] = []
@@ -210,7 +212,7 @@ def classify_evidence(
 def certification_scope(classification: str) -> str:
     scopes = {
         "archive_readiness_only": "Archive extraction, readiness, and dry-run plan only; not lifecycle certification.",
-        "matching_host_lifecycle": "Matching-host install, repair, verify, and uninstall lifecycle evidence.",
+        "matching_host_lifecycle": "Matching-host install, repair, verify, backup, restore, and uninstall lifecycle evidence.",
         "matching_host_lifecycle_failed": "Matching-host lifecycle was attempted but did not pass.",
         "host_platform_mismatch": "Host platform did not match package target; not lifecycle certification.",
         "unsupported_lifecycle": "Requested lifecycle is unsupported on this host; not lifecycle certification.",
@@ -258,7 +260,7 @@ def main() -> int:
         launcher_env["CIVICSUITE_INSTALLER_INSTALL_ROOT"] = str(bundle_root / "r")
     modes = ["readiness", "plan"]
     if lifecycle_requested and not lifecycle_blocked:
-        modes.extend(["install", "repair", "verify", "uninstall"])
+        modes.extend(["install", "repair", "verify", "backup", "restore", "uninstall"])
     if args.gate and not lifecycle_blocked:
         modes.append("gate")
     status = "passed"
@@ -288,7 +290,7 @@ def main() -> int:
         )
         if proc.returncode != 0:
             status = "failed"
-            if mode in {"install", "repair", "verify", "gate"}:
+            if mode in {"install", "repair", "verify", "backup", "restore", "gate"}:
                 cleanup_command = launcher_command(platform, launcher, "uninstall", bundle_root)
                 cleanup = run(cleanup_command, cwd=bundle_root, timeout=900, env=launcher_env)
                 steps.append(

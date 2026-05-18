@@ -32,6 +32,7 @@ MODULE_CLERK = "civicclerk"
 SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 SELECTED_MODULES_FILE = "selected-modules.json"
+BACKUPS_DIR = "backups"
 CLERK_STAFF_MODE_PROTECTED = "protected"
 CLERK_STAFF_MODE_OPEN = "open"
 CLERK_STAFF_MODE_BEARER = "bearer"
@@ -127,6 +128,64 @@ def run(command: list[str], *, cwd: Path, timeout: int = 900) -> subprocess.Comp
     )
 
 
+def run_binary_to_file(
+    command: list[str],
+    *,
+    cwd: Path,
+    output_path: Path,
+    timeout: int = 900,
+) -> subprocess.CompletedProcess[bytes]:
+    with output_path.open("wb") as output:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            env=installer_subprocess_env(),
+            stdout=output,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=timeout,
+        )
+
+
+def run_binary_from_file(
+    command: list[str],
+    *,
+    cwd: Path,
+    input_path: Path,
+    timeout: int = 900,
+) -> subprocess.CompletedProcess[bytes]:
+    with input_path.open("rb") as input_file:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            env=installer_subprocess_env(),
+            stdin=input_file,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=timeout,
+        )
+
+
+def binary_step(
+    *,
+    module: str,
+    step: str,
+    proc: subprocess.CompletedProcess[bytes],
+    path: Path | None = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "module": module,
+        "step": step,
+        "returncode": proc.returncode,
+        "stdout": proc.stdout[-4000:].decode("utf-8", errors="replace") if proc.stdout else "",
+        "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace") if proc.stderr else "",
+    }
+    if path is not None:
+        payload["path"] = str(path)
+    return payload
+
+
 def known_command_path(name: str) -> str | None:
     found = shutil.which(name)
     if found:
@@ -194,12 +253,39 @@ def selected_modules_path(install_root: Path) -> Path:
     return install_root / SELECTED_MODULES_FILE
 
 
+def backups_root(install_root: Path) -> Path:
+    return install_root / BACKUPS_DIR
+
+
+def latest_backup_dir(install_root: Path) -> Path:
+    root = backups_root(install_root)
+    if not root.is_dir():
+        raise InstallerError(f"No backups found at {root}. Run backup before restore.")
+    candidates = sorted(path for path in root.iterdir() if path.is_dir())
+    if not candidates:
+        raise InstallerError(f"No backups found at {root}. Run backup before restore.")
+    return candidates[-1]
+
+
 def persist_selected_modules(install_root: Path, modules: list[str]) -> None:
     install_root.mkdir(parents=True, exist_ok=True)
     selected_modules_path(install_root).write_text(
         json.dumps({"modules": modules}, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.is_file():
+        return values
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
 
 
 def load_selected_modules(install_root: Path, selected_modules: list[str] | tuple[str, ...] | None) -> list[str]:
@@ -903,6 +989,148 @@ def uninstall(
     return {"status": "passed", "selected_modules": modules, "steps": steps}
 
 
+def module_database_contract(ctx: dict[str, object], module: str) -> dict[str, str | Path]:
+    if module == MODULE_RECORDS:
+        return {
+            "module": module,
+            "source": ctx["records_source"],  # type: ignore[dict-item]
+            "project": str(ctx["records_project"]),
+            "postgres_service": "postgres",
+            "postgres_user": "civicrecords",
+            "postgres_db": "civicrecords",
+        }
+    if module == MODULE_CLERK:
+        source = ctx["clerk_source"]  # type: ignore[assignment]
+        env_values = parse_env_file(Path(source) / ".env")
+        return {
+            "module": module,
+            "source": source,
+            "project": str(ctx["clerk_project"]),
+            "postgres_service": "postgres",
+            "postgres_user": env_values.get("CIVICCLERK_POSTGRES_USER", "civicclerk"),
+            "postgres_db": env_values.get("CIVICCLERK_POSTGRES_DB", "civicclerk"),
+        }
+    raise InstallerError(f"Unsupported module for backup/restore: {module}")
+
+
+def backup(
+    install_root: Path,
+    *,
+    isolation: dict[str, object],
+    report_dir: Path,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, object]:
+    require_command("docker")
+    ctx = lifecycle_context(install_root, isolation, selected_modules=selected_modules)
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
+    backup_dir = backups_root(install_root) / datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    backup_dir.mkdir(parents=True, exist_ok=False)
+    steps: list[dict[str, object]] = []
+    manifest: dict[str, object] = {
+        "created_at": datetime.now(UTC).isoformat(),
+        "selected_modules": modules,
+        "backup_dir": str(backup_dir),
+        "artifacts": [],
+    }
+    for module in modules:
+        contract = module_database_contract(ctx, str(module))
+        source = Path(contract["source"])  # type: ignore[arg-type]
+        dump_path = backup_dir / f"{module}-postgres.dump"
+        dump = run_binary_to_file(
+            compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "pg_dump", "-U", str(contract["postgres_user"]), "-d", str(contract["postgres_db"]), "-Fc"),
+            cwd=source,
+            output_path=dump_path,
+            timeout=900,
+        )
+        steps.append(binary_step(module=str(module), step="postgres_backup_dump", proc=dump, path=dump_path))
+        if dump.returncode != 0 or dump_path.stat().st_size == 0:
+            return {"status": "failed", "selected_modules": modules, "backup_dir": str(backup_dir), "steps": steps}
+        digest = hashlib.sha256(dump_path.read_bytes()).hexdigest()
+        manifest["artifacts"].append(
+            {
+                "module": module,
+                "type": "postgres_custom_dump",
+                "path": dump_path.name,
+                "sha256": digest,
+                "bytes": dump_path.stat().st_size,
+                "postgres_service": contract["postgres_service"],
+                "postgres_user": contract["postgres_user"],
+                "postgres_db": contract["postgres_db"],
+            }
+        )
+    selected_path = selected_modules_path(install_root)
+    if selected_path.is_file():
+        shutil.copy2(selected_path, backup_dir / selected_path.name)
+    manifest_path = backup_dir / "backup-manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    steps.append({"step": "write_backup_manifest", "path": str(manifest_path), "status": "passed"})
+    return {"status": "passed", "selected_modules": modules, "backup_dir": str(backup_dir), "steps": steps}
+
+
+def restore(
+    install_root: Path,
+    *,
+    isolation: dict[str, object],
+    report_dir: Path,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+    backup_dir: Path | None = None,
+) -> dict[str, object]:
+    require_command("docker")
+    ctx = lifecycle_context(install_root, isolation, selected_modules=selected_modules)
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
+    resolved_backup = backup_dir or latest_backup_dir(install_root)
+    manifest_path = resolved_backup / "backup-manifest.json"
+    if not manifest_path.is_file():
+        raise InstallerError(f"Backup manifest missing: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifacts = manifest.get("artifacts") if isinstance(manifest, dict) else None
+    if not isinstance(artifacts, list):
+        raise InstallerError(f"Backup manifest has no artifacts list: {manifest_path}")
+    artifact_by_module = {
+        str(item.get("module")): item
+        for item in artifacts
+        if isinstance(item, dict) and item.get("type") == "postgres_custom_dump"
+    }
+    steps: list[dict[str, object]] = []
+    for module in modules:
+        artifact = artifact_by_module.get(str(module))
+        if not artifact:
+            return {"status": "failed", "selected_modules": modules, "backup_dir": str(resolved_backup), "steps": steps, "error": f"missing backup artifact for {module}"}
+        dump_path = resolved_backup / str(artifact["path"])
+        if not dump_path.is_file():
+            return {"status": "failed", "selected_modules": modules, "backup_dir": str(resolved_backup), "steps": steps, "error": f"missing backup dump for {module}: {dump_path}"}
+        digest = hashlib.sha256(dump_path.read_bytes()).hexdigest()
+        if digest != artifact.get("sha256"):
+            return {"status": "failed", "selected_modules": modules, "backup_dir": str(resolved_backup), "steps": steps, "error": f"sha256 mismatch for {module} backup dump"}
+        contract = module_database_contract(ctx, str(module))
+        source = Path(contract["source"])  # type: ignore[arg-type]
+        restore_db = f"{contract['postgres_db']}_restore_probe"
+        for step_name, command in (
+            ("drop_restore_probe_before", compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "dropdb", "-U", str(contract["postgres_user"]), "--if-exists", restore_db)),
+            ("create_restore_probe", compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "createdb", "-U", str(contract["postgres_user"]), restore_db)),
+        ):
+            proc = run(command, cwd=source, timeout=300)
+            steps.append({"module": module, "step": step_name, "returncode": proc.returncode, "stdout": proc.stdout[-4000:], "stderr": proc.stderr[-4000:]})
+            if proc.returncode != 0:
+                return {"status": "failed", "selected_modules": modules, "backup_dir": str(resolved_backup), "steps": steps}
+        restored = run_binary_from_file(
+            compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "pg_restore", "-U", str(contract["postgres_user"]), "-d", restore_db),
+            cwd=source,
+            input_path=dump_path,
+            timeout=900,
+        )
+        steps.append(binary_step(module=str(module), step="restore_probe_pg_restore", proc=restored, path=dump_path))
+        cleanup = run(
+            compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "dropdb", "-U", str(contract["postgres_user"]), "--if-exists", restore_db),
+            cwd=source,
+            timeout=300,
+        )
+        steps.append({"module": module, "step": "drop_restore_probe_after", "returncode": cleanup.returncode, "stdout": cleanup.stdout[-4000:], "stderr": cleanup.stderr[-4000:]})
+        if restored.returncode != 0 or cleanup.returncode != 0:
+            return {"status": "failed", "selected_modules": modules, "backup_dir": str(resolved_backup), "steps": steps}
+    return {"status": "passed", "selected_modules": modules, "backup_dir": str(resolved_backup), "steps": steps}
+
+
 def write_report(report_dir: Path, payload: dict[str, object]) -> None:
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "clerk-core-installer-lifecycle.json").write_text(
@@ -913,7 +1141,7 @@ def write_report(report_dir: Path, payload: dict[str, object]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run CivicSuite clerk-core installer lifecycle.")
-    parser.add_argument("mode", choices=("readiness", "install", "verify", "repair", "uninstall"))
+    parser.add_argument("mode", choices=("readiness", "install", "verify", "repair", "backup", "restore", "uninstall"))
     parser.add_argument("--install-root", default=str(DEFAULT_INSTALL_ROOT))
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--records-api-port", type=int, default=None)
@@ -923,6 +1151,7 @@ def main() -> int:
     parser.add_argument("--port-offset", type=int, default=None)
     parser.add_argument("--compose-project-suffix", default=None)
     parser.add_argument("--remove-files", action="store_true")
+    parser.add_argument("--backup-dir", default=None, help="Restore from a specific backup directory. Defaults to the latest installer backup.")
     parser.add_argument(
         "--module",
         action="append",
@@ -966,7 +1195,7 @@ def main() -> int:
         "run_id": run_id,
         "mode": args.mode,
         "install_root": str(install_root),
-        "mutates_host": args.mode in {"install", "repair", "uninstall"} or args.workflow_proof,
+        "mutates_host": args.mode in {"install", "repair", "backup", "restore", "uninstall"} or args.workflow_proof,
         "civicclerk_staff_mode": args.staff_mode,
         "status": "failed",
         "started_at": datetime.now(UTC).isoformat(),
@@ -1012,6 +1241,25 @@ def main() -> int:
                     selected_modules=selected_modules,
                     staff_mode=args.staff_mode,
                     workflow_proof=args.workflow_proof,
+                )
+            )
+        elif args.mode == "backup":
+            payload.update(
+                backup(
+                    install_root,
+                    isolation=isolation,
+                    report_dir=report_dir,
+                    selected_modules=selected_modules,
+                )
+            )
+        elif args.mode == "restore":
+            payload.update(
+                restore(
+                    install_root,
+                    isolation=isolation,
+                    report_dir=report_dir,
+                    selected_modules=selected_modules,
+                    backup_dir=Path(args.backup_dir).resolve() if args.backup_dir else None,
                 )
             )
         elif args.mode == "uninstall":

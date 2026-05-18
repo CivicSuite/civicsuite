@@ -238,6 +238,10 @@ The generated `clerk-core` package entrypoints support:
   install or repair so CivicClerk staff writes stay protected.
 - `repair`: preserve generated `.env` secrets, rebuild/restart the services,
   and verify health again.
+- `backup`: write per-module PostgreSQL custom dumps and a backup manifest
+  under the installer runtime directory.
+- `restore`: verify the latest backup by restoring each module dump into a
+  temporary PostgreSQL restore-probe database, then remove the probe database.
 - `uninstall`: remove the profile's Docker containers and volumes.
 - `gate`: run the existing isolated cleanroom service/UI gate.
 
@@ -265,11 +269,11 @@ extracted bundle, remove the extracted payload, and write evidence under
 `evidence_classification`: `archive_readiness_only`,
 `matching_host_lifecycle`, `matching_host_lifecycle_failed`,
 `host_platform_mismatch`, or `unsupported_lifecycle`. Full
-install/repair/verify/uninstall proof is certification evidence only when the
-archive is run on a matching host or VM. Windows lifecycle evidence now exists
-from a Windows 11 + WSL 2 Docker Desktop host; macOS lifecycle evidence must
-come from a Darwin/macOS Docker Desktop host. macOS package runs from Linux or
-Windows hosts are archive/readiness evidence only.
+install/repair/verify/backup/restore/uninstall proof is certification evidence
+only when the archive is run on a matching host or VM. Windows lifecycle
+evidence now exists from a Windows 11 + WSL 2 Docker Desktop host; macOS
+lifecycle evidence must come from a Darwin/macOS Docker Desktop host. macOS
+package runs from Linux or Windows hosts are archive/readiness evidence only.
 
 `--workflow-proof` is intentionally mutating. Use it with
 `--staff-mode bearer` when the extracted package should create real

@@ -1352,6 +1352,8 @@ def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str
     [switch]$Install,
     [switch]$Verify,
     [switch]$Repair,
+    [switch]$Backup,
+    [switch]$Restore,
     [switch]$Uninstall,
     [ValidateSet("protected", "bearer", "open")]
     [string]$StaffMode = "protected",
@@ -1403,6 +1405,16 @@ if ($Verify) {{
 
 if ($Repair) {{
     python $Lifecycle repair @LifecycleModeArgs @LifecycleModuleArgs
+    exit $LASTEXITCODE
+}}
+
+if ($Backup) {{
+    python $Lifecycle backup @LifecycleModuleArgs
+    exit $LASTEXITCODE
+}}
+
+if ($Restore) {{
+    python $Lifecycle restore @LifecycleModuleArgs
     exit $LASTEXITCODE
 }}
 
@@ -1488,6 +1500,12 @@ case "${{MODE}}" in
   repair)
     python3 "${{LIFECYCLE}}" repair "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
+  backup)
+    python3 "${{LIFECYCLE}}" backup "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    ;;
+  restore)
+    python3 "${{LIFECYCLE}}" restore "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    ;;
   uninstall)
     python3 "${{LIFECYCLE}}" uninstall "${{LIFECYCLE_MODULE_ARGS[@]}}"
     ;;
@@ -1495,7 +1513,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
     exit 2
     ;;
 esac
@@ -1575,8 +1593,9 @@ profile.
    ```
 
    Available lifecycle modes: readiness, plan, install, verify, repair,
-   and uninstall. Install, repair, and uninstall are mutating: they
-   create or remove Docker resources and write installer reports.
+   backup, restore, and uninstall. Install, repair, backup, restore, and
+   uninstall are mutating: they create or remove Docker resources and write
+   installer reports.
 
 ## Selected Modules
 
@@ -1592,7 +1611,8 @@ top of the CivicCore base contract. Operators can choose one module or both:
 ```
 
 When a module is selected explicitly, plan/readiness use the same selection
-and install/verify/repair/uninstall pass it through to the lifecycle runner.
+and install/verify/repair/backup/restore/uninstall pass it through to the
+lifecycle runner.
 
 For a mutating workflow proof, use bearer staff mode so CivicClerk writes are
 protected while the proof creates real starter-set test records:
@@ -1608,6 +1628,11 @@ protected while the proof creates real starter-set test records:
   from the bundled source tree.
 - Verify mode checks live service endpoints. `--workflow-proof` /
   `-WorkflowProof` also creates and fetches live test records.
+- Backup mode writes per-module PostgreSQL custom dumps plus a manifest under
+  the installer runtime backup directory.
+- Restore mode verifies the latest backup by restoring each dump into a
+  temporary PostgreSQL restore-probe database and removing that probe after the
+  check completes.
 - Uninstall mode removes the selected module Docker containers and volumes.
 - Native host installer wrappers are generated but unsigned in this OSS beta.
 
@@ -2401,7 +2426,7 @@ def build_install_plan(
         {
             "type": "verify_profile",
             "profile": profile_id,
-            "proof": ["health_checks", "restart", "actionable_failure_copy"],
+            "proof": ["health_checks", "restart", "backup", "restore", "actionable_failure_copy"],
         }
     )
 

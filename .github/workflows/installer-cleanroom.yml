@@ -115,7 +115,7 @@ jobs:
       - name: Generate release artifacts
         run: python scripts/plan-installer.py --profile clerk-core --generate-release-artifacts --installer-version 0.1.0
 
-      - name: Run extracted Linux package install, repair, verify, and uninstall
+      - name: Run extracted Linux package install, repair, verify, backup, restore, and uninstall
         run: python scripts/run-installer-package-cleanroom.py --archive installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz --platform linux --run-id ci-linux-package-lifecycle
 
       - name: Upload Linux lifecycle evidence

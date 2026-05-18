@@ -4,6 +4,8 @@ param(
     [switch]$Install,
     [switch]$Verify,
     [switch]$Repair,
+    [switch]$Backup,
+    [switch]$Restore,
     [switch]$Uninstall,
     [ValidateSet("protected", "bearer", "open")]
     [string]$StaffMode = "protected",
@@ -55,6 +57,16 @@ if ($Verify) {
 
 if ($Repair) {
     python $Lifecycle repair @LifecycleModeArgs @LifecycleModuleArgs
+    exit $LASTEXITCODE
+}
+
+if ($Backup) {
+    python $Lifecycle backup @LifecycleModuleArgs
+    exit $LASTEXITCODE
+}
+
+if ($Restore) {
+    python $Lifecycle restore @LifecycleModuleArgs
     exit $LASTEXITCODE
 }
 
