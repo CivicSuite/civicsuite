@@ -26,7 +26,7 @@ When `agent-pipeline-claude:run` produces a manifest for CivicSuite work, the dr
 
 4. **`.agent-workflows/ACTIVE_WORK_QUEUE.md`** — current target tracking. The active target plus queued targets live here. A manifest claiming to advance the queue must name the queue entry it advances.
 
-5. **`.agent-workflows/HANDOFF_*.md`** — historical handoffs. Read the latest dated handoff at session start. The most recent at write time is `HANDOFF_2026-05-12_B2_COMPLETE.md` (B2 closed, CivicRecords AI v1.6.0, suite-truth reconciled).
+5. **`.agent-workflows/HANDOFF_*.md`** — historical handoffs. Read the latest dated handoff at session start. The most recent B2 completion handoff is `HANDOFF_2026-05-12_B2_COMPLETE.md` (B2 closed, CivicRecords AI v1.6.0, suite-truth reconciled); current release truth has since advanced to CivicRecords AI v1.6.1.
 
 6. **`docs/adr/`** — architectural decision records. `0001-canonical-decisions-live-in-unified-spec.md` is the bridge document that activates the ADR policy gate while per-decision ADRs are extracted over time.
 
