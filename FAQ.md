@@ -10,7 +10,7 @@ This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement
 
 **No.** As of 2026-05-14, CivicSuite is under release recovery. Public release tags exist, but the false v1.0.0 labels are being demoted instead of preserved as product claims. CivicRecords AI and CivicClerk have meaningful recovery releases; they are still not procurement-ready production releases. Any vendor or integrator claiming "we've deployed CivicSuite in production" is making a claim the project itself does not currently support.
 
-The most mature module is `civicrecords-ai` (FOIA / public records). v1.6.0 is best treated as a developer preview today, and the next records release needs to include the post-v1.6.0 ingestion worker fix from main.
+The most mature module is `civicrecords-ai` (FOIA / public records). v1.6.1 is best treated as a developer preview today; it includes the ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery.
 
 ## What is the difference between a "release tag" and a "procurement-ready release"?
 
