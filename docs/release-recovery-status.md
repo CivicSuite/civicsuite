@@ -1,6 +1,6 @@
 # CivicSuite Release Recovery Status
 
-Status date: 2026-05-14
+Status date: 2026-05-18
 
 ## Current Rule
 
@@ -61,6 +61,7 @@ Demotion pattern:
 - **2026-05-12:** CivicRecords AI v1.6.0 shipped after closing audit punch-list B2. The Phase 1 (#74) move into Docker secret files left `JWT_SECRET_FILE` and `FIRST_ADMIN_PASSWORD_FILE` pointer env names visible to the container env, which would have failed the directive's literal `docker compose exec -T api env | grep -E "JWT_SECRET|FIRST_ADMIN_PASSWORD"` acceptance command. Phase 1B (#76) removed the pointer env names and tightened the release verifier and contract test to the literal predicate. Phase 2 GREEN rehearsal at civicrecords-ai/.agent-runs/b2-phase2-rehearsal.md.
 - **2026-05-15:** CivicRecords AI v1.6.1 shipped the Celery ingestion worker event-loop recovery patch. The records module remains developer preview until full promotion evidence is captured.
 - **2026-05-18:** suite-truth verifier drift corrected after live GitHub showed CivicRecords AI v1.6.1 while `scripts/verify-suite-state.py` and the unified spec still treated v1.6.0 as current. The resolved state is that v1.6.1 is current and v1.6.0 appears only as historical B2 context.
+- **2026-05-18:** active target reset to the Clerk-Core City Release. CivicCore, CivicRecords AI, CivicClerk, and the suite installer are the only active productization target; CivicContracts and later modules are paused. CivicRegWatch and CivicAPI are recorded as planned, non-selectable installer modules with no runtime repos, and this setup does not make a product-ready or city-ready claim.
 
 ## Language Rules
 
