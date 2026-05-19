@@ -20,7 +20,7 @@ A release tag means "we put a version label on this commit." A procurement-ready
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (e.g., `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake; `civiczone` reads `civiccode` for code text). A single-module install is a supported design goal.
 
-In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta`) supports the clerk-core profile around a Linux/container-first core. Windows and macOS are wrapper platforms around that core; Windows has matching-host Docker Desktop lifecycle evidence on Windows 11 + WSL 2, and macOS support remains pending lifecycle certification on a real macOS host.
+In practice, today: only `civicrecords-ai` and `civicclerk` have install paths a non-engineer can follow on a stock machine, and both are still provisional. The suite-level installer beta (`installer-clerk-core-v0.1.0-beta.2` published, beta.3 pending release-tag lockstep) supports the clerk-core profile around a Linux/container-first core. Windows and macOS are wrapper platforms around that core; Windows has matching-host Docker Desktop lifecycle evidence on Windows 11 + WSL 2, and macOS support remains pending lifecycle certification on a real macOS host.
 
 ## What does "civic operator" actually need to run CivicSuite?
 
