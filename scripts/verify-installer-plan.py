@@ -279,6 +279,15 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
             errors.append(fail("clerk-core installer must replace CivicRecords default host ports"))
         if '"18123:8000"' not in normalized or '"18124:80"' not in normalized:
             errors.append(fail("clerk-core installer must normalize CivicRecords ports to resolved installer ports"))
+        env_file = Path(temp_dir) / ".env"
+        module.write_records_env(env_file, {"api": 18123, "web": 18124})
+        env_text = env_file.read_text(encoding="utf-8")
+        if "CIVICRECORDS_API_PORT=18123" not in env_text or "CIVICRECORDS_WEB_PORT=18124" not in env_text:
+            errors.append(fail("clerk-core installer must write CivicRecords resolved host ports into .env"))
+        module.write_records_env(env_file, {"api": 18125, "web": 18126})
+        updated_env_text = env_file.read_text(encoding="utf-8")
+        if "CIVICRECORDS_API_PORT=18125" not in updated_env_text or "CIVICRECORDS_WEB_PORT=18126" not in updated_env_text:
+            errors.append(fail("clerk-core installer must refresh CivicRecords host ports in existing .env files"))
     isolation = module.resolve_isolation(run_id="verify-isolation-run", port_offset=37)
     ports = isolation.get("ports", {})
     projects = isolation.get("compose_projects", {})

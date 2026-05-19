@@ -252,6 +252,10 @@ package run id by default. Operators can override that isolation with
 `--compose-project-suffix` when invoking `scripts/run-clerk-core-installer.py`
 directly. Reports record the resolved ports and Compose project names used for
 health checks.
+For CivicRecords AI, the installer writes the resolved API and web ports into
+the copied `.env` as `CIVICRECORDS_API_PORT` and `CIVICRECORDS_WEB_PORT` before
+Docker Compose starts, so the base Compose file and suite override both bind to
+the isolated runtime ports instead of the module defaults.
 
 The package cleanroom runner proves the distributable archive from an extracted
 copy:
