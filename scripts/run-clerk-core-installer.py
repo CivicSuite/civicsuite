@@ -358,10 +358,8 @@ def ensure_records_secret_files(source: Path, *, password_prefix: str = "ClerkCo
             pass
 
 
-def write_records_env(target: Path) -> None:
+def write_records_env(target: Path, ports: dict[str, int] | None = None) -> None:
     ensure_records_secret_files(target.parent)
-    if target.is_file():
-        return
     values = {
         "DATABASE_URL": "postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords",
         "FIRST_ADMIN_EMAIL": "admin@example.gov",
@@ -373,6 +371,16 @@ def write_records_env(target: Path) -> None:
         "ENCRYPTION_KEY": base64.urlsafe_b64encode(os.urandom(32)).decode(),
         "CIVICRECORDS_SECRET_DIR": "./data/secrets",
     }
+    if target.is_file():
+        for raw_line in target.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            values[key.strip()] = value.strip()
+    if ports is not None:
+        values["CIVICRECORDS_API_PORT"] = str(ports["api"])
+        values["CIVICRECORDS_WEB_PORT"] = str(ports["web"])
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 
 
@@ -1186,7 +1194,7 @@ def prepare_sources(
         copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
         normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
         normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
-        write_records_env(ctx["records_source"] / ".env")  # type: ignore[operator]
+        write_records_env(ctx["records_source"] / ".env", records_ports)  # type: ignore[operator]
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
         copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
