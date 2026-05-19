@@ -1,7 +1,7 @@
 {
   "name": "clerk-core-installed-browser-qa",
   "captured_at": "2026-05-19T05:34:35.593Z",
-  "baseline": "captured before CivicSuite PR #150; current merged truth is main 4c739f5e8d16c187766b2ba094d3e69379e398e7 with PR #150 port-isolation fix and main CI runs 26111415775/26111415779",
+  "baseline": "captured before CivicSuite PR #150; current merged truth is main 0e229e5db8972655002ded55add6cd0bf3701f2c with PR #150 port-isolation fix, PR #153 Windows cleanup-evidence fix, and main CI runs 26115385258/26115385070",
   "urls": {
     "recordsWeb": "http://127.0.0.1:18080",
     "recordsApi": "http://127.0.0.1:18000",

@@ -117,9 +117,11 @@ python scripts/run-installer-package-cleanroom.py --archive installer/dist/Civic
 A package workflow-proof report must record
 `evidence_classification=matching_host_lifecycle`, `workflow_proof_requested=true`,
 and `civicclerk_staff_mode=bearer` when it is used as Linux or Windows lifecycle
-evidence. Main installer-cleanroom run `26111415779` proved the Linux
-matching-host package lifecycle after PR #150, including workflow proof,
-backup, restore, and uninstall from the extracted archive. Windows package workflow proof has been run on a Windows 11 host with
+evidence. Main installer-cleanroom run `26115385070` proved the Linux
+matching-host package lifecycle after PR #153, including workflow proof,
+backup, restore, and uninstall from the extracted archive. Windows archive
+readiness now records cleanup-lock evidence without converting a passed
+readiness/plan run into a failed lifecycle claim. Windows package workflow proof has been run on a Windows 11 host with
 Docker Desktop and WSL 2. macOS remains archive/readiness only until a
 Darwin/macOS Docker Desktop host runs the same lifecycle class.
 

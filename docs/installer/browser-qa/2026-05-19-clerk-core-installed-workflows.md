@@ -2,7 +2,7 @@
 
 Status: PASSED
 
-Scope: local Docker/browser install of CivicRecords AI 1.6.1 and CivicClerk 1.0.1 for the Clerk-Core starter product. This evidence was captured before the suite PR #150 port-isolation fix and remains valid for the installed browser surfaces; PR #150/main CI separately proves the package lifecycle now binds CivicRecords to the resolved isolated ports. This is browser/user-facing QA evidence, not a claim of city production deployment or macOS lifecycle certification.
+Scope: local Docker/browser install of CivicRecords AI 1.6.1 and CivicClerk 1.0.1 for the Clerk-Core starter product. This evidence was captured before the suite PR #150 port-isolation fix and remains valid for the installed browser surfaces; PR #153/main CI separately proves the current package cleanroom baseline after the CivicRecords port-isolation and Windows cleanup-evidence fixes. This is browser/user-facing QA evidence, not a claim of city production deployment or macOS lifecycle certification.
 
 ## Runtime
 
