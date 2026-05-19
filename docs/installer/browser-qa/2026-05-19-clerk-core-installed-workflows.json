@@ -1,7 +1,7 @@
 {
   "name": "clerk-core-installed-browser-qa",
   "captured_at": "2026-05-19T05:34:35.593Z",
-  "baseline": "origin/main 681dda494c6c3109ddbc00e6f1170b54c0f0057b plus local CivicClerk docker nginx proxy fix",
+  "baseline": "captured before CivicSuite PR #150; current merged truth is main 4c739f5e8d16c187766b2ba094d3e69379e398e7 with PR #150 port-isolation fix and main CI runs 26111415775/26111415779",
   "urls": {
     "recordsWeb": "http://127.0.0.1:18080",
     "recordsApi": "http://127.0.0.1:18000",
