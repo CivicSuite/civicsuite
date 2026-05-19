@@ -7,7 +7,7 @@ This is the plain-English operating truth for CivicSuite. The unified spec descr
 
 ## Active Public-Use Target
 
-The active target is the clerk-core starter product: CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. As of main CI runs `26111415775` and `26111415779`, suite verifier truth, installer-plan verification, installed-stack workflow proof, Linux install/repair/verify/backup/restore/uninstall lifecycle proof, and installed browser QA evidence are recorded. The target is still not a public-use or city-ready release until the remaining release-readiness gate, final release notes/artifacts decision, and release-tag lockstep pass.
+The active target is the clerk-core starter product: CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. As of main CI runs `26115385258` and `26115385070`, suite verifier truth, installer-plan verification, installed-stack workflow proof, Linux install/repair/verify/backup/restore/uninstall lifecycle proof, Windows/macOS archive readiness proof, and installed browser QA evidence are recorded. The target is still not a public-use or city-ready release until the remaining release-readiness gate, final release notes/artifacts decision, and release-tag lockstep pass.
 
 All later modules are paused until this starter target passes its gate. The unified spec states 28 product modules plus CivicCore; the visible catalog currently names 27 product headings after CivicCore, so the post-starter module queue must not be frozen until that spec-count cleanup is explicit.
 

@@ -140,9 +140,9 @@ python scripts\run-installer-package-cleanroom.py --archive installer\dist\Civic
 The workflow-proof report must show `workflow_proof_requested=true`,
 `civicclerk_staff_mode=bearer`, and `evidence_classification=matching_host_lifecycle`
 when it is used as matching Windows or Linux lifecycle proof.
-For the current merged main baseline, run `26111415779` proves the Linux
+For the current merged main baseline, run `26115385070` proves the Linux
 matching-host extracted package lifecycle with workflow proof, backup, restore,
-and uninstall. Run `26111415775` proves suite verifier truth, including
+and uninstall. Run `26115385258` proves suite verifier truth, including
 `[civicrecords-ai] PASS 1.6.1` and `[clerk-core-workflow-proof] PASS`.
 
 ## Current Limits
