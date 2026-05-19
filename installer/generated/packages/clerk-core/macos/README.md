@@ -90,7 +90,9 @@ bash ./start-civicsuite-installer.sh install --staff-mode bearer --workflow-proo
 - Install/repair mode is mutating: it builds and starts the selected modules
   from the bundled source tree.
 - Verify mode checks live service endpoints. `--workflow-proof` /
-  `-WorkflowProof` also creates and fetches live test records.
+  `-WorkflowProof` also creates live CivicRecords AI request/search/review/
+  response proof records and CivicClerk agenda/packet/minutes/vote/notice/
+  archive proof records.
 - Backup mode writes per-module PostgreSQL custom dumps plus a manifest under
   the installer runtime backup directory.
 - Restore mode verifies the latest backup by restoring each dump into a

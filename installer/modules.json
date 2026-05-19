@@ -1,6 +1,14 @@
 {
     "schema_version":  1,
     "installer_status":  "clerk_core_linux_first_beta",
+    "workflow_proof_status":  {
+                                  "profile":  "clerk-core",
+                                  "scope":  [
+                                                "civicrecords-ai request/search-surface/review/response",
+                                                "civicclerk agenda/packet/minutes/vote/notice/archive"
+                                            ],
+                                  "boundary":  "Starter-profile installed-stack proof only; does not claim live cross-module record exchange, public-use readiness, or macOS lifecycle certification."
+                              },
     "menu_styles":  [
                         {
                             "id":  "guided",

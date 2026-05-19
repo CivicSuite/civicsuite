@@ -82,8 +82,16 @@ python scripts\run-clerk-core-installer.py uninstall
 ```
 
 That proof must create and fetch a real CivicRecords AI records request through
-first-admin JWT auth, and create/list a real CivicClerk agenda-intake item
-through bearer-protected staff auth. Reports must not persist the CivicRecords admin password or bearer token.
+first-admin JWT auth, exercise the search surface, submit the request for review, draft
+a response letter that remains staff-reviewable, and mark the request ready for
+release. It must also prove the CivicClerk agenda intake/review/promotion,
+meeting, packet assembly/finalization, notice checklist/posting proof,
+motion/vote capture, citation-gated minutes draft, automatic-minutes-posting
+guardrail, and public archive calendar/search path through bearer-protected
+staff auth. Reports must not persist the CivicRecords admin password or bearer
+token.
+
+Proof phrase lock: bearer-protected staff auth. Reports must not persist the CivicRecords admin password or bearer token.
 
 Backup proof must create PostgreSQL custom dump files for each selected starter
 module and a `backup-manifest.json` with SHA256 digests. Restore proof must

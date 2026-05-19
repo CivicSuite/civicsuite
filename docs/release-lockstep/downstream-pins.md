@@ -82,6 +82,15 @@ For the Clerk-Core City Release setup:
 
 CivicRegWatch and CivicAPI are spec/planning entries only. This umbrella change records them as planned, non-selectable installer modules and does not move any downstream package pin.
 
+For the Clerk-Core installed workflow proof:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicrecords-ai | n/a | 1.6.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+| CivicSuite/civicclerk | n/a | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
+No downstream module pin moved for this slice. The umbrella installer proof now exercises the installed starter profile's CivicRecords AI request/search-surface/review/response path and CivicClerk agenda/packet/minutes/vote/notice/archive path, but it does not promote either module to a new release label and does not claim live cross-module record exchange.
+
 The matching umbrella truth files are:
 
 - `docs/CivicSuiteUnifiedSpec.md`

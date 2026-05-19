@@ -1002,6 +1002,8 @@ As of 2026-05-10, current shipped/recovery truth lives in these single sources:
 
 This section previously enumerated per-module shipping prose. That prose drifted faster than the spec could be edited and conflicted with recovery framing. It is replaced by this compact recovery table. Any per-module shipping claim in section 6.1, section 7, or sections 11-12 must be cross-checked against STATUS.md before it is repeated externally.
 
+As of 2026-05-18, the clerk-core installer evidence may include optional installed-stack workflow proof for CivicRecords AI request/search-surface/review/response handling and CivicClerk agenda/packet/minutes/vote/notice/archive handling. That proof is starter-profile lifecycle evidence only; it does not supersede per-module release gates, does not prove live cross-module records exchange, and does not create a public-use or city-ready claim.
+
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
 | civiccore | 1.1.0 | n/a | Real shared platform; v1.1.0 adds shared `staff_key_gate` with timing-safe staff-key comparison; v1.0.1 auth hardening remains included. |
