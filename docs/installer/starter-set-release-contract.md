@@ -3,7 +3,7 @@
 Status: maintained installer contract for the CivicCore + CivicRecords AI +
 CivicClerk starter set.
 
-Last verified: 2026-05-18.
+Last verified: 2026-05-19.
 
 ## Scope
 
@@ -117,7 +117,9 @@ python scripts/run-installer-package-cleanroom.py --archive installer/dist/Civic
 A package workflow-proof report must record
 `evidence_classification=matching_host_lifecycle`, `workflow_proof_requested=true`,
 and `civicclerk_staff_mode=bearer` when it is used as Linux or Windows lifecycle
-evidence. Windows package workflow proof has been run on a Windows 11 host with
+evidence. Main installer-cleanroom run `26111415779` proved the Linux
+matching-host package lifecycle after PR #150, including workflow proof,
+backup, restore, and uninstall from the extracted archive. Windows package workflow proof has been run on a Windows 11 host with
 Docker Desktop and WSL 2. macOS remains archive/readiness only until a
 Darwin/macOS Docker Desktop host runs the same lifecycle class.
 
