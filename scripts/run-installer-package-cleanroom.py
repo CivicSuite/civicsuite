@@ -325,6 +325,15 @@ def main() -> int:
         lifecycle_blocked=lifecycle_blocked,
     )
 
+    cleanup_error: str | None = None
+    extracted_bundle_retained = False
+    if extract_root.exists():
+        try:
+            remove_tree_with_retry(extract_root)
+        except OSError as exc:
+            cleanup_error = str(exc)
+            extracted_bundle_retained = True
+
     proof = {
         "run_id": run_id,
         "archive": str(archive),
@@ -333,7 +342,7 @@ def main() -> int:
         "normalized_host_platform": host_platform,
         "host_platform_matches_target": host_platform_matches_target,
         "bundle_root": str(bundle_root),
-        "extracted_bundle_retained": False,
+        "extracted_bundle_retained": extracted_bundle_retained,
         "status": status,
         "mutates_host": lifecycle_requested and not lifecycle_blocked,
         "requested_mutating_lifecycle": lifecycle_requested,
@@ -351,8 +360,8 @@ def main() -> int:
         "certification_scope": certification_scope(classification),
         "steps": steps,
     }
-    if extract_root.exists():
-        remove_tree_with_retry(extract_root)
+    if cleanup_error:
+        proof["cleanup_error"] = cleanup_error
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "installer-package-cleanroom.json").write_text(
         json.dumps(proof, indent=2, sort_keys=True) + "\n",

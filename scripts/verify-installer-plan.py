@@ -347,6 +347,8 @@ def check_package_cleanroom_evidence_contract(*, require_reports: bool = False) 
         "--workflow-proof",
         "workflow_proof_requested",
         "civicclerk_staff_mode",
+        "cleanup_error",
+        "extracted_bundle_retained",
     ):
         if phrase not in runner_text:
             errors.append(fail(f"package cleanroom runner missing evidence guard phrase: {phrase}"))
