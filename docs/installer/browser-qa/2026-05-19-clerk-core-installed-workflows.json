@@ -1,0 +1,337 @@
+{
+  "name": "clerk-core-installed-browser-qa",
+  "captured_at": "2026-05-19T05:34:35.593Z",
+  "baseline": "origin/main 681dda494c6c3109ddbc00e6f1170b54c0f0057b plus local CivicClerk docker nginx proxy fix",
+  "urls": {
+    "recordsWeb": "http://127.0.0.1:18080",
+    "recordsApi": "http://127.0.0.1:18000",
+    "clerkWeb": "http://127.0.0.1:18081"
+  },
+  "health": {
+    "civicrecords": {
+      "status": "ok",
+      "version": "1.6.1"
+    },
+    "civicclerk": {
+      "status": "ok",
+      "service": "civicclerk",
+      "version": "1.0.1",
+      "civiccore": "1.0.1"
+    }
+  },
+  "checks": [
+    {
+      "id": "records-login-desktop",
+      "product": "CivicRecords AI",
+      "path": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/records-login-desktop.png",
+      "body_sample": "CR CivicRecords AI Sign in to the admin panel Email Password Sign in",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicRecords AI",
+        "Sign in"
+      ],
+      "headings": [
+        "CivicRecords AI"
+      ],
+      "controls": {
+        "buttons": 1,
+        "links": 0
+      },
+      "active_element_after_tabs": "body CRCivicRecords AISign in to the admin panelEmailPasswordSign in",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "records-login-mobile",
+      "product": "CivicRecords AI",
+      "path": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/records-login-mobile.png",
+      "body_sample": "CR CivicRecords AI Sign in to the admin panel Email Password Sign in",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicRecords AI",
+        "Sign in"
+      ],
+      "headings": [
+        "CivicRecords AI"
+      ],
+      "controls": {
+        "buttons": 1,
+        "links": 0
+      },
+      "active_element_after_tabs": "body CRCivicRecords AISign in to the admin panelEmailPasswordSign in",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "records-admin-desktop",
+      "product": "CivicRecords AI",
+      "path": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/records-admin-desktop.png",
+      "body_sample": "Skip to main content CR CivicRecords AI WORKFLOW Search Requests Exemptions SETUP Onboarding City Profile ADMINISTRATION Sources Ingestion Dashboard Users Settings Audit Log System Administrator Sign out Help Dashboard CivicRecords AI v1.6.1 REGISTERED USERS 1 AUDIT LOG ENTRIES 16 SYSTEM VERSION 1.6.1 OPEN REQUESTS 1 OVERDUE REQUESTS 0 AVG RESPONSE TIME N/A DEADLINE COMPLIANCE 100.0% SERVICES Database (PostgreSQL) Ollama (LLM Engine) Redis (Task Queue) REQUESTS BY STATUS Ready for Release 1 APPROACHING DEADLINES (WITHIN 3 DAYS) No requests with upcoming deadlines. RECENT ACTIVITY System GET /admin/coverage-gaps on http_request 5/18/2026, 11:34:29 PM System POST /auth/jwt/login on http_request 5/18/2026, 11:34:29 PM System GET /admin/coverage-gaps on http_request 5/18/2026, 11:34:00 PM Syst",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicRecords AI"
+      ],
+      "headings": [
+        "Dashboard"
+      ],
+      "controls": {
+        "buttons": 4,
+        "links": 12
+      },
+      "active_element_after_tabs": "a Requests",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-desktop",
+      "product": "CivicClerk",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/clerk-staff-desktop.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial CIVICCLERK STAFF WORKSPACE Good morning, City Clerk. Today's meeting work is grouped by urgency, public posting risk, and packet readiness. STAFF ACCESS Staff access verified Bearer token accepted for staff workflow access. Keep this token scoped to clerk workflow roles until the trusted-header SSO bridge is read",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicClerk",
+        "Agenda",
+        "Packet",
+        "Notice",
+        "Minutes"
+      ],
+      "headings": [
+        "Good morning, City Clerk.",
+        "Staff access verified",
+        "Meeting runbook",
+        "Priority queue",
+        "Meeting bodies",
+        "Schedule a meeting"
+      ],
+      "controls": {
+        "buttons": 50,
+        "links": 2
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-mobile",
+      "product": "CivicClerk",
+      "path": "/staff",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/clerk-staff-mobile.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial CIVICCLERK STAFF WORKSPACE Good morning, City Clerk. Today's meeting work is grouped by urgency, public posting risk, and packet readiness. STAFF ACCESS Staff access verified Bearer token accepted for staff workflow access. Keep this token scoped to clerk workflow roles until the trusted-header SSO bridge is ready. Mode: bearer Method: bearer clerk admin meeting editor ",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicClerk",
+        "Agenda",
+        "Packet",
+        "Notice",
+        "Minutes"
+      ],
+      "headings": [
+        "Good morning, City Clerk.",
+        "Staff access verified",
+        "Meeting runbook",
+        "Priority queue",
+        "Meeting bodies",
+        "Schedule a meeting"
+      ],
+      "controls": {
+        "buttons": 50,
+        "links": 2
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-desktop",
+      "product": "CivicClerk",
+      "path": "/public",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/clerk-public-desktop.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial RESIDENT PUBLIC PORTAL Find posted meetings without needing to understand clerk workflows. Residents can open the official agenda, packet, and approved minutes that staff have published to the public archive. Restricted or closed-session material is never exposed or hinted here. CITY OF BROOKFIELD PUBLIC RECORDS ",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Public",
+        "Meeting"
+      ],
+      "headings": [
+        "Find posted meetings without needing to understand clerk workflows.",
+        "Official meeting materials, in one place.",
+        "Posted meetings",
+        "Brookfield City Council Prior Meeting",
+        "Starter set workflow proof b32a6563 public archive",
+        "Official record detail",
+        "Brookfield City Council Prior Meeting",
+        "Search public archive"
+      ],
+      "controls": {
+        "buttons": 34,
+        "links": 3
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-mobile",
+      "product": "CivicClerk",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/clerk-public-mobile.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial RESIDENT PUBLIC PORTAL Find posted meetings without needing to understand clerk workflows. Residents can open the official agenda, packet, and approved minutes that staff have published to the public archive. Restricted or closed-session material is never exposed or hinted here. CITY OF BROOKFIELD PUBLIC RECORDS Official meeting materials, in one place. Start with the p",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Public",
+        "Meeting"
+      ],
+      "headings": [
+        "Find posted meetings without needing to understand clerk workflows.",
+        "Official meeting materials, in one place.",
+        "Posted meetings",
+        "Brookfield City Council Prior Meeting",
+        "Starter set workflow proof b32a6563 public archive",
+        "Official record detail",
+        "Brookfield City Council Prior Meeting",
+        "Search public archive"
+      ],
+      "controls": {
+        "buttons": 34,
+        "links": 3
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-protected-error-desktop",
+      "product": "CivicClerk",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-19-clerk-core-installed-workflows/clerk-protected-error-desktop.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial E Could not load dashboard Meeting body API returned 401. Confirm the backend is running, verify staff auth mode, then retry. Retry after checking API",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Confirm the backend is running",
+        "verify staff auth mode",
+        "retry"
+      ],
+      "headings": [
+        "Could not load dashboard"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ],
+      "page_errors": [],
+      "failed_responses": [
+        {
+          "status": 401,
+          "path": "/api/meeting-bodies"
+        },
+        {
+          "status": 401,
+          "path": "/api/meetings"
+        },
+        {
+          "status": 401,
+          "path": "/api/agenda-intake"
+        },
+        {
+          "status": 401,
+          "path": "/staff/session"
+        },
+        {
+          "status": 401,
+          "path": "/api/vendor-live-sync/sources"
+        },
+        {
+          "status": 401,
+          "path": "/api/integrations/readiness"
+        }
+      ],
+      "status": "passed_with_expected_protected_state"
+    }
+  ],
+  "status": "passed"
+}
