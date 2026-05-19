@@ -3,7 +3,7 @@
 Status: outside-party test path for the CivicCore + CivicRecords AI +
 CivicClerk starter set.
 
-Last verified: 2026-05-15.
+Last verified: 2026-05-19.
 
 This guide is for outside testers who want to install, verify, repair, and
 remove the current starter set on Linux or Windows. It is not a procurement or
@@ -56,6 +56,8 @@ From the extracted `CivicSuite-clerk-core-windows` directory:
 .\start-civicsuite-installer.ps1 -Install
 .\start-civicsuite-installer.ps1 -Verify
 .\start-civicsuite-installer.ps1 -Repair
+.\start-civicsuite-installer.ps1 -Backup
+.\start-civicsuite-installer.ps1 -Restore
 .\start-civicsuite-installer.ps1 -Uninstall
 ```
 
@@ -84,6 +86,8 @@ bash ./start-civicsuite-installer.sh plan
 bash ./start-civicsuite-installer.sh install
 bash ./start-civicsuite-installer.sh verify
 bash ./start-civicsuite-installer.sh repair
+bash ./start-civicsuite-installer.sh backup
+bash ./start-civicsuite-installer.sh restore
 bash ./start-civicsuite-installer.sh uninstall
 ```
 
@@ -136,6 +140,10 @@ python scripts\run-installer-package-cleanroom.py --archive installer\dist\Civic
 The workflow-proof report must show `workflow_proof_requested=true`,
 `civicclerk_staff_mode=bearer`, and `evidence_classification=matching_host_lifecycle`
 when it is used as matching Windows or Linux lifecycle proof.
+For the current merged main baseline, run `26111415779` proves the Linux
+matching-host extracted package lifecycle with workflow proof, backup, restore,
+and uninstall. Run `26111415775` proves suite verifier truth, including
+`[civicrecords-ai] PASS 1.6.1` and `[clerk-core-workflow-proof] PASS`.
 
 ## Current Limits
 
