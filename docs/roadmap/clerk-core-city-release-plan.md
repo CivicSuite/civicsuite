@@ -1,10 +1,10 @@
 # CivicSuite Clerk-Core City Release Plan
 
-This is the canonical rung plan for the first city-deployable CivicSuite public-use product. `docs/CivicSuiteUnifiedSpec.md` is the product authority: the suite contains 28 product modules plus CivicCore, and the first release target is CivicCore plus the Tier 1 clerk-core products CivicRecords AI and CivicClerk.
+This is the canonical rung plan for the first installable CivicSuite starter product beta. `docs/CivicSuiteUnifiedSpec.md` is the product authority: the suite contains 28 product modules plus CivicCore, and the first release target is CivicCore plus the Tier 1 clerk-core products CivicRecords AI and CivicClerk.
 
 ## Rung 1 - Clerk-Core City Release
 
-This rung proves CivicCore, CivicRecords AI, and CivicClerk can be installed, started, operated, repaired, backed up, restored, and uninstalled as one Linux-first Docker/browser product with Windows and macOS wrappers that launch the same Docker/browser workflow. It promotes only the starter clerk-core product and keeps every later module outside the write scope until this rung passes its release gate.
+This rung proves CivicCore, CivicRecords AI, and CivicClerk can be installed, started, operated, repaired, backed up, restored, and uninstalled as one Linux-first Docker/browser beta with Windows and macOS wrappers that launch the same Docker/browser workflow. It promotes only the starter clerk-core beta artifacts and keeps every later module outside the write scope until this rung passes its release gate.
 
 Required modules: CivicCore, CivicRecords AI, CivicClerk.
 

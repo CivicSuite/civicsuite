@@ -27,6 +27,7 @@ CURRENT_PLATFORM_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
+NEXT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0-beta.3"
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
     "civicclerk agenda/packet/minutes/vote/notice/archive",
@@ -204,6 +205,7 @@ def check_clerk_core_workflow_proof_truth() -> list[str]:
         "request/search-surface/review/response",
         "agenda/packet/minutes/vote/notice/archive",
         "does not claim live cross-module record exchange",
+        NEXT_CLERK_CORE_INSTALLER_TAG,
     )
     for phrase in required_phrases:
         if phrase not in spec_text and phrase not in installer_text:
@@ -365,6 +367,7 @@ def main() -> int:
     print(f"workspace: {WORKSPACE}")
     print(f"repos: {len(REPOS)}")
     print(f"planned spec-only modules: {', '.join(PLANNED_SPEC_MODULES)}")
+    print(f"next clerk-core installer tag: {NEXT_CLERK_CORE_INSTALLER_TAG}")
     print(f"clerk-core workflow proof scope: {'; '.join(CLERK_CORE_WORKFLOW_PROOF_SCOPE)}")
     print(f"remote release checks: {'enabled' if args.remote else 'disabled'}")
     print(f"local sibling clone checks: {'disabled' if args.remote_only else 'enabled'}")

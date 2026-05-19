@@ -1,13 +1,13 @@
 {
     "schema_version":  1,
-    "installer_status":  "clerk_core_linux_first_beta",
+    "installer_status":  "clerk_core_linux_first_beta_next_beta3_release_gate",
     "workflow_proof_status":  {
                                   "profile":  "clerk-core",
                                   "scope":  [
                                                 "civicrecords-ai request/search-surface/review/response",
                                                 "civicclerk agenda/packet/minutes/vote/notice/archive"
                                             ],
-                                  "boundary":  "Starter-profile installed-stack proof only; does not claim live cross-module record exchange, public-use readiness, or macOS lifecycle certification."
+                                  "boundary":  "Starter-profile installed-stack proof only; beta.3 may be published as an unsigned OSS beta after release-tag lockstep, but does not claim live cross-module record exchange, public-use readiness, city-ready status, procurement readiness, or macOS lifecycle certification."
                               },
     "menu_styles":  [
                         {
