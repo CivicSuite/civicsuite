@@ -16,7 +16,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -570,6 +570,29 @@ def post_json(
         return exc.code, decode_json(exc.read().decode("utf-8"))
 
 
+def patch_json(
+    url: str,
+    payload: dict[str, object],
+    *,
+    headers: dict[str, str] | None = None,
+    timeout_seconds: int = 10,
+) -> tuple[int, dict[str, object]]:
+    resolved_headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if headers:
+        resolved_headers.update(headers)
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=resolved_headers,
+        method="PATCH",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            return response.status, decode_json(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        return exc.code, decode_json(exc.read().decode("utf-8"))
+
+
 def post_form(
     url: str,
     payload: dict[str, str],
@@ -725,14 +748,86 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
             "id_matches": fetched.get("id") == request_id,
         }
     )
-    status = "passed" if get_status == 200 and fetched.get("id") == request_id else "failed"
-    return {"name": "civicrecords_workflow", "status": status, "checks": checks}
+    if get_status != 200 or fetched.get("id") != request_id:
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    search_status, search_body = get_json(f"{base}/search/filters", headers=headers)
+    checks.append(
+        {
+            "name": "search_records",
+            "status_code": search_status,
+            "file_types_present": isinstance(search_body.get("file_types"), list),
+            "source_names_present": isinstance(search_body.get("source_names"), list),
+            "departments_present": isinstance(search_body.get("departments"), list),
+        }
+    )
+    if search_status != 200 or not isinstance(search_body.get("file_types"), list):
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    searching_status, searching_body = patch_json(
+        f"{base}/requests/{request_id}",
+        {"status": "searching"},
+        headers=headers,
+    )
+    checks.append(
+        {
+            "name": "mark_request_searching",
+            "status_code": searching_status,
+            "status": searching_body.get("status"),
+        }
+    )
+    if searching_status != 200 or searching_body.get("status") != "searching":
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    review_status, review_body = post_json(f"{base}/requests/{request_id}/submit-review", {}, headers=headers)
+    checks.append(
+        {
+            "name": "submit_request_review",
+            "status_code": review_status,
+            "status": review_body.get("status"),
+        }
+    )
+    if review_status != 200 or review_body.get("status") != "in_review":
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    letter_status, letter = post_json(f"{base}/requests/{request_id}/response-letter", {}, headers=headers)
+    checks.append(
+        {
+            "name": "draft_response_letter",
+            "status_code": letter_status,
+            "letter_id_present": bool(letter.get("id")),
+            "status": letter.get("status"),
+            "human_review_required": letter.get("status") == "draft",
+            "contains_ai_disclaimer": "requires human review" in str(letter.get("generated_content", "")).lower(),
+        }
+    )
+    if letter_status != 201 or not letter.get("id") or letter.get("status") != "draft":
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    ready_status, ready_body = post_json(f"{base}/requests/{request_id}/ready-for-release", {}, headers=headers)
+    checks.append(
+        {
+            "name": "mark_ready_for_release",
+            "status_code": ready_status,
+            "status": ready_body.get("status"),
+        }
+    )
+    if ready_status != 200 or ready_body.get("status") != "ready_for_release":
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+
+    return {"name": "civicrecords_workflow", "status": "passed", "checks": checks}
 
 
 def verify_clerk_bearer_workflow(ports: dict[str, int]) -> dict[str, object]:
     base = f"http://127.0.0.1:{ports['api']}"
     headers = {"Authorization": f"Bearer {CLERK_WORKFLOW_PROOF_BEARER}"}
     checks: list[dict[str, object]] = []
+
+    def append_check(name: str, status_code: int, body: dict[str, object], **extra: object) -> bool:
+        check = {"name": name, "status_code": status_code, **extra}
+        checks.append(check)
+        return 200 <= status_code < 300
+
     session_status, session = get_json(f"{base}/staff/session", headers=headers)
     checks.append(
         {
@@ -747,12 +842,13 @@ def verify_clerk_bearer_workflow(ports: dict[str, int]) -> dict[str, object]:
         return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
 
     marker = f"Starter set workflow proof {uuid4().hex[:8]}"
+    actor = "clerk@example.gov"
     create_status, created = post_json(
         f"{base}/agenda-intake",
         {
             "title": marker,
             "department_name": "Clerk",
-            "submitted_by": "clerk@example.gov",
+            "submitted_by": actor,
             "summary": "Runtime proof that CivicClerk can accept a protected staff agenda intake item.",
             "source_references": [{"label": "Starter-set proof", "url": "https://civicsuite.org/starter-set"}],
         },
@@ -770,6 +866,34 @@ def verify_clerk_bearer_workflow(ports: dict[str, int]) -> dict[str, object]:
     if create_status != 201 or not item_id:
         return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
 
+    review_status, reviewed = post_json(
+        f"{base}/agenda-intake/{item_id}/review",
+        {"reviewer": actor, "ready": True, "notes": "Starter-set workflow proof marks this intake ready."},
+        headers=headers,
+    )
+    if not append_check("review_agenda_intake", review_status, reviewed, readiness_status=reviewed.get("readiness_status")):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if str(reviewed.get("readiness_status", "")).lower() != "ready":
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    promote_status, promoted = post_json(
+        f"{base}/agenda-intake/{item_id}/promote",
+        {"reviewer": actor, "notes": "Promoted by installed-stack starter-set proof."},
+        headers=headers,
+    )
+    agenda_item = promoted.get("agenda_item") if isinstance(promoted.get("agenda_item"), dict) else {}
+    agenda_item_id = agenda_item.get("id") if isinstance(agenda_item, dict) else None
+    if not append_check(
+        "promote_agenda_intake",
+        promote_status,
+        promoted,
+        agenda_item_id_present=bool(agenda_item_id),
+        next_step=promoted.get("next_step"),
+    ):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not agenda_item_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
     list_status, listed = get_json(f"{base}/agenda-intake", headers=headers)
     items = listed.get("items") if isinstance(listed.get("items"), list) else []
     found = any(isinstance(item, dict) and item.get("id") == item_id for item in items)
@@ -780,8 +904,215 @@ def verify_clerk_bearer_workflow(ports: dict[str, int]) -> dict[str, object]:
             "created_item_listed": found,
         }
     )
-    status = "passed" if list_status == 200 and found else "failed"
-    return {"name": "civicclerk_bearer_workflow", "status": status, "checks": checks}
+    if list_status != 200 or not found:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    body_status, body = post_json(
+        f"{base}/meeting-bodies",
+        {"name": f"{marker} City Council", "body_type": "city_council"},
+        headers=headers,
+    )
+    meeting_body_id = body.get("id")
+    if not append_check("create_meeting_body", body_status, body, meeting_body_id_present=bool(meeting_body_id)):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not meeting_body_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    scheduled_start = (datetime.now(UTC) + timedelta(days=5)).replace(microsecond=0).isoformat()
+    meeting_status, meeting = post_json(
+        f"{base}/meetings",
+        {
+            "title": f"{marker} regular meeting",
+            "meeting_type": "regular",
+            "scheduled_start": scheduled_start,
+            "meeting_body_id": meeting_body_id,
+            "location": "Council Chambers",
+        },
+        headers=headers,
+    )
+    meeting_id = meeting.get("id")
+    if not append_check("create_meeting", meeting_status, meeting, meeting_id_present=bool(meeting_id)):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not meeting_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    packet_status, packet = post_json(
+        f"{base}/meetings/{meeting_id}/packet-assemblies",
+        {
+            "title": f"{marker} packet",
+            "agenda_item_ids": [agenda_item_id],
+            "actor": actor,
+            "source_references": [{"label": "Promoted agenda intake", "id": item_id}],
+            "citations": [{"label": "Agenda item", "id": agenda_item_id}],
+        },
+        headers=headers,
+    )
+    packet_id = packet.get("id")
+    if not append_check("create_packet_assembly", packet_status, packet, packet_id_present=bool(packet_id)):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not packet_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    finalize_status, finalized = post_json(
+        f"{base}/packet-assemblies/{packet_id}/finalize",
+        {"actor": actor},
+        headers=headers,
+    )
+    if not append_check("finalize_packet_assembly", finalize_status, finalized, status=finalized.get("status")):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    posted_at = datetime.now(UTC).replace(microsecond=0).isoformat()
+    notice_payload = {
+        "notice_type": "regular",
+        "posted_at": posted_at,
+        "minimum_notice_hours": 72,
+        "statutory_basis": "Starter-set proof: regular meetings require at least 72 hours of public notice.",
+        "approved_by": actor,
+        "actor": actor,
+    }
+    notice_status, notice = post_json(f"{base}/meetings/{meeting_id}/notice-checklists", notice_payload, headers=headers)
+    notice_id = notice.get("id")
+    if not append_check("create_notice_checklist", notice_status, notice, notice_id_present=bool(notice_id), compliant=notice.get("compliant")):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not notice_id or notice.get("compliant") is not True:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    proof_status, proof = post_json(
+        f"{base}/notice-checklists/{notice_id}/posting-proof",
+        {
+            "actor": actor,
+            "posting_proof": {
+                "location": "City Hall bulletin board",
+                "posted_at": posted_at,
+                "proof_id": marker,
+            },
+        },
+        headers=headers,
+    )
+    if not append_check("attach_notice_posting_proof", proof_status, proof, posting_proof_present=bool(proof.get("posting_proof"))):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    motion_status, motion = post_json(
+        f"{base}/meetings/{meeting_id}/motions",
+        {
+            "text": f"Move to approve the {marker} packet.",
+            "actor": actor,
+            "agenda_item_id": agenda_item_id,
+            "seconded_by": "councilmember@example.gov",
+        },
+        headers=headers,
+    )
+    motion_id = motion.get("id")
+    if not append_check("capture_motion", motion_status, motion, motion_id_present=bool(motion_id)):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not motion_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    vote_status, vote = post_json(
+        f"{base}/motions/{motion_id}/votes",
+        {"voter_name": "Council Member Rivera", "vote": "aye", "actor": actor},
+        headers=headers,
+    )
+    if not append_check("capture_vote", vote_status, vote, vote_id_present=bool(vote.get("id"))):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not vote.get("id"):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    minutes_status, minutes = post_json(
+        f"{base}/meetings/{meeting_id}/minutes/drafts",
+        {
+            "model": "local-template",
+            "prompt_version": "minutes_draft@0.1.0",
+            "human_approver": actor,
+            "source_materials": [
+                {
+                    "source_id": str(motion_id),
+                    "label": "Captured motion and vote",
+                    "text": f"Motion {motion_id} approved the packet with an aye vote.",
+                }
+            ],
+            "sentences": [
+                {
+                    "text": "Council approved the packet after a recorded motion and vote.",
+                    "citations": [str(motion_id)],
+                }
+            ],
+        },
+        headers=headers,
+    )
+    minute_id = minutes.get("id")
+    if not append_check(
+        "create_minutes_draft",
+        minutes_status,
+        minutes,
+        minute_id_present=bool(minute_id),
+        human_review_required=bool(minutes.get("human_approver")),
+    ):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not minute_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    post_minutes_status, post_minutes = post_json(f"{base}/minutes/{minute_id}/post", {}, headers=headers)
+    checks.append(
+        {
+            "name": "reject_auto_minutes_post",
+            "status_code": post_minutes_status,
+            "guardrail_triggered": post_minutes_status == 409,
+            "payload": post_minutes,
+        }
+    )
+    if post_minutes_status != 409:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    archive_status, archive = post_json(
+        f"{base}/meetings/{meeting_id}/public-record",
+        {
+            "title": f"{marker} public archive",
+            "visibility": "public",
+            "posted_agenda": f"Agenda for {marker}: approve packet.",
+            "posted_packet": f"Packet for {marker}: staff report and agenda item.",
+            "approved_minutes": f"Approved minutes for {marker}: packet approved by recorded vote.",
+            "plain_language_summary": "Starter-set proof archive record for public search.",
+            "minutes_adopted_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
+            "minutes_signed_by": "City Clerk",
+        },
+        headers=headers,
+    )
+    archive_id = archive.get("id")
+    if not append_check("publish_public_archive_record", archive_status, archive, archive_id_present=bool(archive_id)):
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+    if not archive_id:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    calendar_status, calendar = get_json(f"{base}/public/meetings")
+    meetings = calendar.get("meetings") if isinstance(calendar.get("meetings"), list) else []
+    calendar_found = any(isinstance(record, dict) and record.get("id") == archive_id for record in meetings)
+    checks.append(
+        {
+            "name": "public_meeting_calendar",
+            "status_code": calendar_status,
+            "archive_record_listed": calendar_found,
+        }
+    )
+    if calendar_status != 200 or not calendar_found:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    query = urllib.parse.quote(marker)
+    search_status, archive_search = get_json(f"{base}/public/archive/search?q={query}")
+    results = archive_search.get("results") if isinstance(archive_search.get("results"), list) else []
+    search_found = any(isinstance(record, dict) and record.get("id") == archive_id for record in results)
+    checks.append(
+        {
+            "name": "public_archive_search",
+            "status_code": search_status,
+            "archive_record_found": search_found,
+            "total_count": archive_search.get("total_count"),
+        }
+    )
+    if search_status != 200 or not search_found:
+        return {"name": "civicclerk_bearer_workflow", "status": "failed", "checks": checks}
+
+    return {"name": "civicclerk_bearer_workflow", "status": "passed", "checks": checks}
 
 
 def verify_starter_set_workflow_contract(

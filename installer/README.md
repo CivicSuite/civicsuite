@@ -277,8 +277,11 @@ package runs from Linux or Windows hosts are archive/readiness evidence only.
 
 `--workflow-proof` is intentionally mutating. Use it with
 `--staff-mode bearer` when the extracted package should create real
-CivicRecords AI and CivicClerk proof records during install, repair, and
-verify.
+CivicRecords AI request/search/review/response proof records and CivicClerk
+agenda/packet/minutes/vote/notice/archive proof records during install,
+repair, and verify. The proof keeps AI-generated or AI-assisted output in
+draft/human-review states and does not claim autonomous release, denial,
+redaction, legal determination, or live cross-module workflow-record exchange.
 
 This writes Windows, macOS, and Linux package directories under
 `installer/generated/packages/{profile}`. Each package contains:

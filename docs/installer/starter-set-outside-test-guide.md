@@ -115,7 +115,12 @@ CivicRecords AI and CivicClerk. A passing verify run must prove:
 - CivicClerk staff auth is protected by default and anonymous staff writes are
   denied.
 - Optional workflow proof creates and fetches a real CivicRecords AI records
-  request, then creates and lists a real CivicClerk agenda-intake item through
+  request, runs search, submits review, drafts a staff-reviewable response, and
+  marks the request ready for release.
+- Optional workflow proof also runs CivicClerk agenda intake/review/promotion,
+  meeting creation, packet finalization, notice posting proof, motion/vote
+  capture, citation-gated minutes draft creation, automatic-minutes-posting
+  refusal, and public archive calendar/search visibility through
   bearer-protected staff auth.
 
 The package cleanroom evidence report is written under

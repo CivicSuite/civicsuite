@@ -62,6 +62,7 @@ Demotion pattern:
 - **2026-05-15:** CivicRecords AI v1.6.1 shipped the Celery ingestion worker event-loop recovery patch. The records module remains developer preview until full promotion evidence is captured.
 - **2026-05-18:** suite-truth verifier drift corrected after live GitHub showed CivicRecords AI v1.6.1 while `scripts/verify-suite-state.py` and the unified spec still treated v1.6.0 as current. The resolved state is that v1.6.1 is current and v1.6.0 appears only as historical B2 context.
 - **2026-05-18:** active target reset to the Clerk-Core City Release. CivicCore, CivicRecords AI, CivicClerk, and the suite installer are the only active productization target; CivicContracts and later modules are paused. CivicRegWatch and CivicAPI are recorded as planned, non-selectable installer modules with no runtime repos, and this setup does not make a product-ready or city-ready claim.
+- **2026-05-18:** clerk-core installed workflow proof added to the extracted-package lifecycle path. The optional proof exercises CivicRecords AI request/search-surface/review/response handling and CivicClerk agenda/packet/minutes/vote/notice/archive handling from an installed package. This is starter-profile workflow evidence only; it does not claim public-use readiness, live cross-module records exchange, or macOS lifecycle certification.
 
 ## Language Rules
 
