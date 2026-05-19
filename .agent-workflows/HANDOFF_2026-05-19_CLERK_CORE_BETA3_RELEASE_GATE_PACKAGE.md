@@ -6,6 +6,8 @@ Date: 2026-05-19
 
 - Branch: `release/clerk-core-beta3-gate-package`
 - Base: `origin/main` at `1ac8c6c`
+- PR: `CivicSuite/civicsuite#156`
+- Current branch HEAD before post-push propagation: `6f5051321476630f624de6457aa7b062ad992c36`
 - Target PR label: `release-tag`
 
 ## Scope
@@ -21,6 +23,9 @@ Active product scope remains CivicCore, CivicRecords AI 1.6.1, CivicClerk
 
 - Latest merged main verify: `26116871355`
 - Latest merged main installer-cleanroom: `26116871385`
+- PR verify: `26120468617`
+- PR installer-cleanroom: `26120468667`
+- PR release-lockstep-gate: `26120471546`
 - Required suite truth line: `[civicrecords-ai] PASS 1.6.1`
 - Required workflow line: `[clerk-core-workflow-proof] PASS`
 - Linux lifecycle proof includes workflow proof, backup, restore, and uninstall.
