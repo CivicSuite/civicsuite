@@ -7,7 +7,7 @@ This is the plain-English operating truth for CivicSuite. The unified spec descr
 
 ## Active Public-Use Target
 
-The active target is the clerk-core starter product: CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. As of main CI runs `26121483231` and `26121483212`, suite verifier truth, installer-plan verification, installed-stack workflow proof, Linux install/repair/verify/backup/restore/uninstall lifecycle proof, Windows/macOS archive readiness proof, and installed browser QA evidence are recorded. The target is still not a public-use or city-ready release; `installer-clerk-core-v0.1.0-beta.3` is the current published unsigned OSS beta for outside testing of the starter profile.
+The active target is the clerk-core starter product: CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. As of main CI runs `26134412418` and `26134412420`, suite verifier truth, installer-plan verification, installed-stack workflow proof, Linux install/repair/verify/backup/restore/uninstall lifecycle proof, Windows/macOS archive readiness proof, and installed browser QA evidence are recorded. The target is still not a public-use or city-ready release; `installer-clerk-core-v0.1.0-beta.4` is the current published unsigned OSS beta for outside testing of the starter profile.
 
 All later modules are paused until this starter target passes its gate. The unified spec states 28 product modules plus CivicCore; the visible catalog currently names 27 product headings after CivicCore, so the post-starter module queue must not be frozen until that spec-count cleanup is explicit.
 
@@ -49,4 +49,4 @@ All other modules remain foundation surfaces unless their own repo evidence says
 
 ## What Does Not Work Yet
 
-A municipality cannot run itself end-to-end on CivicSuite today. Clerk-core now has suite-level Linux lifecycle, backup/restore, installed workflow, installed browser-QA evidence, release-lockstep PR evidence, and published beta.3 artifact checksums. Missing proof still includes module-by-module feature completion for the rest of the unified spec.
+A municipality cannot run itself end-to-end on CivicSuite today. Clerk-core now has suite-level Linux lifecycle, backup/restore, installed workflow, installed browser-QA evidence, release-lockstep PR evidence, and published beta.4 artifact checksums. Missing proof still includes module-by-module feature completion for the rest of the unified spec.

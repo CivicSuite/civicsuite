@@ -27,7 +27,7 @@ CURRENT_PLATFORM_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
-CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0-beta.3"
+CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0-beta.4"
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
     "civicclerk agenda/packet/minutes/vote/notice/archive",

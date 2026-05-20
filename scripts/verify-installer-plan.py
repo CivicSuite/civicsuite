@@ -433,8 +433,8 @@ def check_manifest(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if data.get("schema_version") != 1:
         errors.append(fail("schema_version must be 1"))
-    if data.get("installer_status") != "clerk_core_linux_first_beta3_published":
-        errors.append(fail("installer_status must be clerk_core_linux_first_beta3_published"))
+    if data.get("installer_status") != "clerk_core_linux_first_beta4_published":
+        errors.append(fail("installer_status must be clerk_core_linux_first_beta4_published"))
 
     menu_styles = data.get("menu_styles")
     profiles = data.get("profiles")

@@ -1,14 +1,15 @@
 # Starter-Set Release Gate - 2026-05-19
 
-Status: beta.3 published unsigned OSS beta, not a public-use release.
+Status: beta.4 published unsigned OSS beta, not a public-use release.
 
 ## Decision
 
 The current public GitHub release is
-`installer-clerk-core-v0.1.0-beta.3` after the release-tag PR passed.
+`installer-clerk-core-v0.1.0-beta.4`; beta.3 is superseded without rewriting
+the public beta.3 tag.
 The supported artifact decision is:
 
-- Tag: `installer-clerk-core-v0.1.0-beta.3`
+- Tag: `installer-clerk-core-v0.1.0-beta.4`
 - Distribution status: unsigned OSS beta
 - Supported publish scope: clerk-core starter archives for outside testing
 - Starter profile: CivicCore, CivicRecords AI 1.6.1, and CivicClerk 1.0.1
@@ -18,17 +19,19 @@ The supported artifact decision is:
 - macOS truth: archive/readiness only until a Darwin/macOS Docker Desktop host
   runs matching-host lifecycle evidence
 
-Beta.3 superseded beta.2 after PR #156 with the `release-tag` label passed
-release-lockstep, main verify, and main installer-cleanroom.
+Beta.4 supersedes beta.3 after PR #157 with the `release-tag` label passed
+release-lockstep, main verify, and main installer-cleanroom. Beta.3 remains
+available as a superseded prerelease because its public git tag was not
+rewritten.
 
 ## Evidence Baseline
 
 Published release baseline:
 
-- Main SHA: `a3ca9d75dc51f7e0928671b30c1693eca3a3fcae`
-- Verify run: `26121483231`
-- Installer-cleanroom run: `26121483212`
-- Release-lockstep PR run: `26120937776`
+- Main SHA: `4aee5355e4a9bdb56850a16d3a10693e706f9278`
+- Verify run: `26134412418`
+- Installer-cleanroom run: `26134412420`
+- Release-lockstep PR run: `26134059097`
 - Suite truth: `[civicrecords-ai] PASS 1.6.1`
 - Workflow proof: `[clerk-core-workflow-proof] PASS`
 - Installer plan: `VERIFY-INSTALLER-PLAN: PASSED`
@@ -38,15 +41,15 @@ Published release baseline:
 - Backup evidence: `postgres_backup_dump`
 - Restore evidence: `restore_probe_pg_restore`
 
-Published beta.3 archive checksums:
+Published beta.4 archive checksums:
 
-- `CivicSuite-clerk-core-windows-0.1.0.zip`: `69bbf0d2a1378f537bb452337e41dd151e60913fb318d80476d338ac282f16e8`
-- `CivicSuite-clerk-core-macos-0.1.0.tar.gz`: `95c1ad5c5f05c59d4356bdf668376af65978f80ee9cefabcb646bb732db39724`
-- `CivicSuite-clerk-core-linux-0.1.0.tar.gz`: `c685802e9903a76337f29baf1a7298fe2a8dbd1771b01f9813a847b157efcb4e`
+- `CivicSuite-clerk-core-windows-0.1.0.zip`: `632bf24487df5a9e156a68389819dbb5914bc0f910a99621e5b8f9711b7abfa5`
+- `CivicSuite-clerk-core-macos-0.1.0.tar.gz`: `82c5baa841bd7f15485036e09380e1c4b209107121ab0d99d62b5820ab7fb86a`
+- `CivicSuite-clerk-core-linux-0.1.0.tar.gz`: `f7d72bfed585e3134249213e137c15f9d2c96f33a9f0919789d8cbfb2187cbaf`
 
 ## Release-Tag Lockstep Path
 
-The beta.3 PR included the `release-tag` label and updated or preserved
+The beta.4 release-truth PR included the `release-tag` label and updated or preserved
 these lockstep truth artifacts together:
 
 - `docs/CivicSuiteUnifiedSpec.md`
@@ -76,7 +79,7 @@ Required CI after merge:
 
 ## Forbidden Claims
 
-Do not describe beta.3 as:
+Do not describe beta.4 as:
 
 - public-use ready
 - city-ready
