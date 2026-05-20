@@ -9,6 +9,12 @@
                                             ],
                                   "boundary":  "Starter-profile installed-stack proof only; beta.4 is published as an unsigned OSS beta after release-tag lockstep, but does not claim live cross-module record exchange, public-use readiness, city-ready status, procurement readiness, or macOS lifecycle certification."
                               },
+    "public_use_gate_status":  {
+                                   "profile":  "clerk-core",
+                                   "status":  "red",
+                                   "path":  "docs/installer/starter-set-public-use-readiness-gate.md",
+                                   "boundary":  "Beta.4 remains outside-test evidence until the public-use readiness gate moves to green with fresh proof."
+                               },
     "menu_styles":  [
                         {
                             "id":  "guided",

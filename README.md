@@ -61,7 +61,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 - macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(wrapper/archive only until macOS lifecycle certification passes)*
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
-Outside testers should use the focused [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md) for the Linux/Windows install, verify, repair, and uninstall path.
+Outside testers should use the focused [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md) for the Linux/Windows install, verify, repair, and uninstall path. Promotion beyond outside-test beta is blocked by the [Clerk-Core public-use readiness gate](docs/installer/starter-set-public-use-readiness-gate.md) until every release-recovery check has current evidence.
 
 **Per-module install path:**
 
