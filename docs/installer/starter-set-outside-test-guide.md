@@ -29,7 +29,7 @@ Install or enable these first:
   basic service health.
 
 Download the release archive from the official CivicSuite release source,
-`installer-clerk-core-v0.1.0-beta.2` on this repo's Releases page, then verify
+`installer-clerk-core-v0.1.0-beta.3` on this repo's Releases page, then verify
 the SHA256 checksum from the published `SHA256SUMS.txt` before running any
 launcher.
 
