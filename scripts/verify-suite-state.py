@@ -23,6 +23,7 @@ WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
 UNIFIED_SPEC = ROOT / "docs" / "CivicSuiteUnifiedSpec.md"
 INSTALLER_MODULES = ROOT / "installer" / "modules.json"
+PUBLIC_USE_GATE = ROOT / "docs" / "installer" / "starter-set-public-use-readiness-gate.md"
 CURRENT_PLATFORM_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
@@ -210,6 +211,37 @@ def check_clerk_core_workflow_proof_truth() -> list[str]:
     for phrase in required_phrases:
         if phrase not in spec_text and phrase not in installer_text:
             errors.append(fail(f"clerk-core workflow proof truth missing phrase: {phrase}"))
+    return errors
+
+
+def check_clerk_core_public_use_gate_truth() -> list[str]:
+    errors = []
+    spec_text = UNIFIED_SPEC.read_text(encoding="utf-8")
+    installer_data = json.loads(INSTALLER_MODULES.read_text(encoding="utf-8"))
+    if not PUBLIC_USE_GATE.is_file():
+        return [fail(f"missing clerk-core public-use gate at {PUBLIC_USE_GATE.relative_to(ROOT)}")]
+    gate_text = PUBLIC_USE_GATE.read_text(encoding="utf-8")
+    status = installer_data.get("public_use_gate_status")
+    if not isinstance(status, dict):
+        errors.append(fail("installer/modules.json missing public_use_gate_status"))
+    else:
+        if status.get("profile") != "clerk-core":
+            errors.append(fail("public_use_gate_status profile must be clerk-core"))
+        if status.get("status") != "red":
+            errors.append(fail("public_use_gate_status must remain red until promotion evidence is complete"))
+        if status.get("path") != "docs/installer/starter-set-public-use-readiness-gate.md":
+            errors.append(fail("public_use_gate_status path mismatch"))
+    required_phrases = (
+        "Status: RED - beta.4 is outside-test evidence",
+        "Loading, success, empty, error, and partial states checked",
+        "Adversarial mock validation completed for integration behavior",
+        "Independent release-gate audit has no unresolved Blocker or Critical findings",
+        "Promotion beyond outside-test beta is blocked",
+    )
+    combined = f"{gate_text}\n{spec_text}"
+    for phrase in required_phrases:
+        if phrase not in combined:
+            errors.append(fail(f"clerk-core public-use gate truth missing phrase: {phrase}"))
     return errors
 
 
@@ -405,6 +437,15 @@ def main() -> int:
             print(f"  {error}")
     else:
         print("[clerk-core-workflow-proof] PASS records_request_search_review_response,civicclerk_agenda_packet_minutes_vote_notice_archive")
+
+    public_use_errors = check_clerk_core_public_use_gate_truth()
+    if public_use_errors:
+        any_failures = True
+        print("[clerk-core-public-use-gate] FAIL")
+        for error in public_use_errors:
+            print(f"  {error}")
+    else:
+        print("[clerk-core-public-use-gate] PASS red_until_promotion_evidence")
 
     if any_failures:
         print("VERIFY-SUITE-STATE: FAILED")

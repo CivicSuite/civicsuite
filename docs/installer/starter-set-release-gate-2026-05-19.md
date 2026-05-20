@@ -2,6 +2,9 @@
 
 Status: beta.4 published unsigned OSS beta, not a public-use release.
 
+Promotion beyond outside-test beta is controlled by
+[`starter-set-public-use-readiness-gate.md`](starter-set-public-use-readiness-gate.md).
+
 ## Decision
 
 The current public GitHub release is
@@ -79,15 +82,15 @@ Required CI after merge:
 
 ## Forbidden Claims
 
-Do not describe beta.4 as:
+The required limitations are:
 
-- public-use ready
-- city-ready
-- procurement-ready
-- production-ready
-- a live cross-module CivicRecords/CivicClerk records exchange
-- macOS lifecycle certified
-- a full-suite release
+- not public-use ready
+- not city-ready
+- not procurement-ready
+- not production-ready
+- not a live cross-module CivicRecords/CivicClerk records exchange
+- not macOS lifecycle certified
+- not a full-suite release
 
 ## Out Of Scope
 

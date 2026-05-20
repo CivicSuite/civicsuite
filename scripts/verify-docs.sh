@@ -29,6 +29,7 @@ REQUIRED=(
   docs/installer/suite-installer-plan.md
   docs/installer/installer-checkpoint-2026-05-09.md
   docs/installer/starter-set-outside-test-guide.md
+  docs/installer/starter-set-public-use-readiness-gate.md
   docs/ux/shared-shell-inventory.md
   docs/architecture/ADR-0004-shared-shell-boundaries.md
   docs/connectors/import-export-template.md
@@ -80,6 +81,102 @@ OVERCLAIM_HITS=$(grep -rn -E "$OVERCLAIM_PATTERN" README.md USER-MANUAL.md docs/
 if [ -n "$OVERCLAIM_HITS" ]; then
   echo "  OVERCLAIM STRINGS FOUND:"
   echo "$OVERCLAIM_HITS" | sed 's/^/    /'
+  fail=1
+fi
+
+echo "==> Clerk-core public-use overclaim check"
+PUBLIC_USE_HITS=$(python3 - <<'PY'
+from __future__ import annotations
+
+import pathlib
+import re
+
+ROOT = pathlib.Path.cwd()
+FILES = [
+    ROOT / "README.md",
+    ROOT / "README.txt",
+    ROOT / "USER-MANUAL.md",
+    ROOT / "USER-MANUAL.txt",
+    ROOT / "STATUS.md",
+    ROOT / "FAQ.md",
+    ROOT / "docs",
+]
+EXCLUDE_PARTS = {
+    "CHANGELOG.md",
+    "compatibility",
+    "release-recovery-status.md",
+    "github-discussions-seed.md",
+    "governance",
+    "audits",
+}
+PHRASES = re.compile(
+    r"(?:is|are|now|status:)\s+(?:a\s+)?(?:public-use ready|city-ready|"
+    r"production-ready|procurement-ready|public-use release)|"
+    r"(?:public-use|city|production|procurement)-ready release|"
+    r"full-suite release|live cross-module(?: records)? exchange|"
+    r"macos lifecycle certification (?:passed|complete|certified)",
+    re.IGNORECASE,
+)
+NEGATIONS = (
+    "not ",
+    "no ",
+    "does not",
+    "do not",
+    "must not",
+    "without",
+    "avoid",
+    "blocked",
+    "forbidden",
+    "outside scope",
+    "outside-test",
+    "until",
+    "remains",
+    "deferred",
+    "difference between",
+    "halt trigger",
+    "halt triggers",
+    "allowed current claim",
+    "forbidden claims",
+)
+
+def iter_paths() -> list[pathlib.Path]:
+    paths: list[pathlib.Path] = []
+    for item in FILES:
+        if item.is_file():
+            paths.append(item)
+        elif item.is_dir():
+            paths.extend(
+                p
+                for p in item.rglob("*")
+                if p.suffix.lower() in {".md", ".html"}
+                and not any(part in EXCLUDE_PARTS for part in p.parts)
+            )
+    return sorted(set(paths))
+
+for path in iter_paths():
+    rel = path.relative_to(ROOT)
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        continue
+    for number, line in enumerate(lines, 1):
+        if not PHRASES.search(line):
+            continue
+        context = "\n".join(lines[max(0, number - 4):number])
+        lowered = context.lower()
+        if any(token in lowered for token in NEGATIONS):
+            continue
+        print(f"{rel}:{number}: {line}")
+PY
+)
+PUBLIC_USE_STATUS=$?
+if [ $PUBLIC_USE_STATUS -ne 0 ]; then
+  echo "  PUBLIC-USE OVERCLAIM CHECK FAILED TO RUN"
+  fail=1
+fi
+if [ -n "$PUBLIC_USE_HITS" ]; then
+  echo "  PUBLIC-USE OVERCLAIM STRINGS FOUND:"
+  echo "$PUBLIC_USE_HITS" | sed 's/^/    /'
   fail=1
 fi
 

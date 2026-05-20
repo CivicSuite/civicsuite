@@ -234,6 +234,7 @@
       <li><a href="roadmap/index.md">Roadmap</a></li>
       <li><a href="roadmap/shared-extraction-consumer-rollout.md">Rollout playbook</a></li>
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
+      <li><a href="installer/starter-set-public-use-readiness-gate.md">Clerk-Core gate</a></li>
       <li><a href="../CHARTER.md">Charter</a></li>
       <li><a href="../USER-MANUAL.md">User manual</a></li>
     </ul>
@@ -243,29 +244,29 @@
 <main id="main">
   <section>
     <h2>Status today</h2>
-    <p>Status snapshot: <strong>2026-05-07</strong>.</p>
+    <p>Status snapshot: <strong>2026-05-20</strong>.</p>
     <table>
       <thead>
         <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td>Provisional / recovery audit</td><td>7 repos</td><td><code>civicrecords-ai</code>, <code>civiccore</code>, <code>civicclerk</code>, <code>civiccode</code>, <code>civiczone</code>, <code>civicplan</code>, and <code>civicpermit</code> have public release tags or substantial work, but those labels are provisional until real user-flow QA, install proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labeling pass.</td></tr>
-        <tr><td>Foundation / planned</td><td>21 of 28</td><td>The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. <code>CivicRegWatch</code> and <code>CivicAPI</code> are planned modules with specs but no runtime repos yet.</td></tr>
+        <tr><td>Clerk-Core beta</td><td>2 product modules plus CivicCore</td><td><code>civiccore</code>, <code>civicrecords-ai</code>, and <code>civicclerk</code> are the active starter profile. The current installer release is an unsigned OSS beta for outside testing, not a public-use release.</td></tr>
+        <tr><td>Recovery / demoted labels</td><td>7 product repos</td><td><code>civiccode</code>, <code>civiczone</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, and <code>civicprocure</code> have honest recovery labels and must not be treated as product-ready modules.</td></tr>
+        <tr><td>Foundation / planned</td><td>Remaining catalog</td><td>The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. <code>CivicRegWatch</code> and <code>CivicAPI</code> are planned modules with specs but no runtime repos yet.</td></tr>
       </tbody>
     </table>
-    <p><code>civiccore</code> is the shared-platform package. Its public v1 tag is provisional until the recovery audit confirms the platform contract.</p>
+    <p><code>civiccore</code> is the shared-platform package. The active release lock is the Clerk-Core starter product, and queued modules wait until that gate passes.</p>
   </section>
 
   <section>
     <h2>What happens next</h2>
     <div class="card">
-      <p><strong>Phase 0 is complete and Phase 1 is underway.</strong> Continuity is now an explicit gate with a real baseline. As of 2026-04-29, the <code>CivicSuite</code> GitHub org has two active owners (<code>scottconverse</code> and <code>APirateMonk</code>), the current release-custody path is documented on-repo, and the next extraction wave uses a shared consumer rollout playbook.</p>
+      <p><strong>The active work is the Clerk-Core starter product gate.</strong> The current beta has installer lifecycle, workflow proof, and browser QA evidence, but public-use promotion waits for the full gate.</p>
       <ul>
-        <li>Freeze public product-ready claims until the recovery gates pass.</li>
-        <li>Replace docs-render smoke checks with real user-flow Playwright evidence where a frontend exists.</li>
-        <li>Add install proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labels.</li>
-        <li>Re-audit and remediate repos one at a time.</li>
-        <li>Re-earn release status only after the repo-specific recovery gate passes.</li>
+        <li>Finish the Clerk-Core public-use readiness gate.</li>
+        <li>Keep CivicContracts and later modules paused until the starter profile passes.</li>
+        <li>Resolve the spec-count cleanup before freezing the post-starter queue.</li>
+        <li>Advance later modules one at a time in spec/dependency order.</li>
       </ul>
     </div>
   </section>
@@ -273,7 +274,7 @@
   <section>
     <h2>Why this framing changed</h2>
     <p>The suite now documents release labels as provisional until they are re-earned. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count or tag count.</p>
-    <p>The roadmap is designed to move the suite from a broad portfolio of promising repos into a deployable municipal starter set, then into a city-scale product platform.</p>
+    <p>The roadmap is designed to move the suite from a broad portfolio of promising repos into a proven municipal starter set, then into a city-scale product platform.</p>
   </section>
 
   <section>
@@ -290,6 +291,7 @@
       <li><a href="../SUCCESSION.md">Continuity and succession plan</a></li>
       <li><a href="governance/index.md">Governance overview</a></li>
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
+      <li><a href="installer/starter-set-public-use-readiness-gate.md">Clerk-Core public-use readiness gate</a></li>
       <li><a href="../specs/01_catalog.md">Module catalog</a></li>
       <li><a href="../docs/CivicSuiteUnifiedSpec.md">Unified suite specification</a></li>
     </ul>

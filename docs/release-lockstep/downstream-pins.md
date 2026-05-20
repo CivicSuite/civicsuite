@@ -113,3 +113,15 @@ The matching umbrella truth files are:
 - `installer/modules.json`
 - `CHANGELOG.md`
 
+For the Clerk-Core public-use readiness gate:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicrecords-ai | n/a | 1.6.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+| CivicSuite/civicclerk | n/a | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
+No downstream module pin moves for the public-use readiness gate. This umbrella
+change records the promotion blocker for moving beyond beta.4; it does not
+promote CivicRecords AI, CivicClerk, CivicCore, or the suite installer to a new
+release label.
+
