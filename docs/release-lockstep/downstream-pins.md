@@ -98,9 +98,9 @@ For the Clerk-Core beta.3 release-gate package:
 | CivicSuite/civicrecords-ai | n/a | 1.6.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
 | CivicSuite/civicclerk | n/a | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
 
-No downstream module pin moves for beta.3. The next umbrella release tag is
-`installer-clerk-core-v0.1.0-beta.3`; it supersedes beta.2 only after the
-release-tag PR passes release-lockstep and the generated SHA256 artifacts are
+No downstream module pin moves for beta.3. The current umbrella release tag is
+`installer-clerk-core-v0.1.0-beta.3`; it superseded beta.2 after the
+release-tag PR passed release-lockstep and the generated SHA256 artifacts were
 published on the GitHub release. This remains an unsigned OSS beta outside-test
 artifact, not a procurement-ready or city-ready release.
 
