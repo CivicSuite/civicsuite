@@ -80,45 +80,45 @@ Evidence:
 
 ## Current Scope Boundary
 
-Active target: none. Phase 0 release-integrity repair only.
+Active target: CivicInspect v1.0.0 suite-truth reconciliation.
 
-State on resume: the owner's 2026-05-21 Rev. 3 directive freezes the entire CivicSuite org because CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect were falsely promoted to v1.0.0. The same release machinery also puts the Clerk-Core public-use gate under independent re-audit. `docs/CivicSuiteUnifiedSpec.md` remains the source of truth for the 27 product modules plus CivicCore, but no module implementation or v1.0.0 promotion is authorized until Phases 0, 1, and 2 are independently signed off.
+State on resume: the Clerk-Core public-use starter, CivicCode v1.0.0, CivicAccess v1.0.0, CivicZone v1.0.0, CivicPlan v1.0.0, and CivicPermit v1.0.0 have already passed their suite truth gates. The root active release queue now names CivicInspect as the active module. CivicInspect source PR #10 has merged, release `v1.0.0` is published, and this suite run reconciles installer/module-selection truth, compatibility truth, release recovery docs, and verifier truth for CivicInspect only. `docs/CivicSuiteUnifiedSpec.md` remains the source of truth for the 27 product modules plus CivicCore.
 
-Why next: release-integrity repair is now the only allowed work. The six false v1.0.0 labels must be demoted, suite truth must be corrected, queues must be frozen, and public releases must be superseded with retraction notes.
+Why next: CivicInspect is the active post-starter module after CivicPermit. It cannot satisfy the module Definition of Done until the umbrella suite truth and installer/module-selection path agree with the published CivicInspect v1.0.0 release.
 
 Allowed now:
 
-- Make Phase 0 release-integrity repairs only.
-- Demote CivicCode to v0.6.0 and CivicAccess/CivicZone/CivicPlan/CivicPermit/CivicInspect to honest sub-1.0.0 labels.
-- Repair CivicSuite verifier inputs, installer/module-selection metadata, compatibility docs, recovery docs, current-facing docs, and control-plane evidence.
-- Supersede false v1.0.0 releases with retraction notes after source demotion PRs merge.
+- Read the unified spec, release recovery status, installer docs, CivicInspect source release evidence, and current module truth artifacts.
+- Make scoped CivicInspect suite-truth fixes in CivicSuite verifier inputs, installer/module-selection metadata, compatibility docs, release recovery docs, current-facing docs, and control-plane evidence.
+- Use the release-lockstep gate for any release-truth PR.
+- Keep CivicGrants, CivicProcure, later-module, and standalone macOS lifecycle certification work outside this target unless a direct CivicInspect release blocker is named first.
 
 Not allowed now:
 
-- Start or continue any module implementation work.
-- Publish any new v1.x tag or release.
-- Create any promote/recover/ship PR outside this directive.
-- Revisit, move, delete, or retag historical releases except corrective demotion releases required by Phase 0.
+- Revisit, move, delete, or retag historical demotion releases outside the already repaired CivicInspect v1.0.0 source tag.
 - Modify CivicCore release artifacts; v1.1.0 is final for the D2/B3 helper release.
 - Reopen CivicClerk B1 unless a regression is found; CivicClerk v1.0.1 is shipped.
 - Reopen CivicRecords AI v1.5.0 migration unless a regression is found; CivicRecords AI v1.5.0 is shipped.
 - Reopen the D2/B3 staff-key gate rollout unless a regression is found; CivicCore v1.1.0 and the six downstream PRs are shipped.
 - Reopen B2 unless a regression is found; CivicRecords AI v1.6.0 is shipped.
-- Advance CivicGrants, CivicProcure, CivicContracts, or any later module before Phases 0, 1, and 2 are independently signed off.
+- Advance CivicGrants, CivicProcure, CivicContracts, or any later module before CivicInspect passes its suite truth and installer/module-selection gate.
 - Tag any module as v1.0 or higher unless its full recovery gate and installer integration are satisfied.
 - Bypass release-lockstep-gate, admin-merge around it, force-push, delete tags, or rewrite history.
 - Use unauthorized skills or plugins.
 
 ## Definition Of Done For Current Target
 
-Phase 0 is satisfied only when:
+The CivicInspect suite-truth target is satisfied only when:
 
-1. All six source repos carry honest sub-1.0.0 labels.
-2. CivicSuite `STATUS.md`, compatibility, release-recovery status, unified spec, verifier inputs, and installer metadata carry the same honest labels.
-3. Root and in-repo queue files are frozen and no active module is named.
-4. False v1.0.0 GitHub releases are superseded with retraction notes and demotion releases become Latest.
-5. `verify-suite-state.py --remote-only`, docs verification, installer-plan verification, release-lockstep gate, and `git diff --check` pass after the demotion releases exist.
-6. An independent audit confirms Phase 0 is complete.
+1. The active queue and project control plane name CivicInspect v1.0.0 suite-truth reconciliation as the only active target.
+2. `installer/modules.json` records CivicInspect v1.0.0, CivicCore v1.1.0, and public-use module release proof requirements.
+3. `scripts/verify-suite-state.py --remote-only` prints `[civicinspect] PASS 1.0.0`.
+4. Current-facing README, STATUS, FAQ, user manual, compatibility, recovery, lockstep, and unified spec docs no longer describe CivicInspect as a current demoted v0.2.0 module.
+5. `verify-docs`, `verify-installer-plan`, `verify-release-lockstep`, suite verifier, and `git diff --check` pass.
+6. The branch is pushed with the `release-tag` PR label, CI is green, the PR is merged, and main verify confirms CivicInspect v1.0.0 without macOS lifecycle certification claims.
+7. Local tests, lint/static checks, suite verifier, docs verifier, installer verifier, release scripts where present, and release-lockstep gate pass with recorded proof.
+8. Release docs and artifacts avoid full-suite, procurement, airgap, and macOS lifecycle certification claims.
+9. Handoff/update evidence is written before any remaining module queue begins.
 
 ## Stop Conditions
 

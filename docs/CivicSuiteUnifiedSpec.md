@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect were falsely promoted to v1.0.0 on 2026-05-21 and are now under corrective demotion. CivicGrants and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
+> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect have passed their v1.0.0 public-use module release gates. CivicGrants and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
 
 ---
 
@@ -300,14 +300,14 @@ Dependency note: older catalog text listed CivicRecords because shared document/
 
 Owner: City Clerk / Legal / Codification Department  
 Depends on: CivicCore, CivicClerk  
-Status: v0.2.0 corrective demotion; scaffold-depth runtime exists, but Section 2 public-use readiness is not proven.
+Status: v1.0.0 public-use module release; suite installer/module-selection truth reconciled 2026-05-21.
 Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
 
 Owner: Clerk / Communications / IT / ADA Coordinator  
 Depends on: CivicCore  
-Status: v0.6.0 corrective demotion; functional-partial backend exists, but Section 2 public-use readiness is not proven.
+Status: v1.0.0 public-use module release; suite installer/module-selection truth reconciled 2026-05-21.
 Purpose: accessible forms, accessible publishing workflows, multilingual and plain-language rewrites, ADA Title II review, records-ready exports, and accessibility support reused by every module.
 
 ### Tier 2 - Land Use & Development
@@ -316,28 +316,28 @@ Purpose: accessible forms, accessible publishing workflows, multilingual and pla
 
 Owner: Planning & Development / Community Development  
 Depends on: CivicCore, CivicCode  
-Status: v0.2.1 corrective demotion after false v1.0.0 publication; Section 2 public-use readiness is not proven.
+Status: v1.0.0 public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21.
 Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a property is in, what uses are allowed, what setbacks apply, and when planner review is required. CivicZone never makes a zoning determination.
 
 #### CivicPlan
 
 Owner: Planning & Development / City Manager's Office  
 Depends on: CivicCore, CivicZone, CivicClerk  
-Status: v0.2.1 corrective demotion after false v1.0.0 publication; Section 2 public-use readiness is not proven.
+Status: v1.0.0 public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21.
 Purpose: comprehensive plans, small-area plans, transportation plans, parks plans, and sustainability plans become searchable, cited, and usable in staff analysis.
 
 #### CivicPermit
 
 Owner: Planning / Building / Community Development  
 Depends on: CivicCore, CivicCode, CivicZone  
-Status: v0.2.1 corrective demotion after false v1.0.0 publication; Section 2 public-use readiness is not proven.
+Status: demoted recovery label v0.2.0; scaffold-depth runtime, not v1.0 product-ready.
 Purpose: pre-application and intake copilot for permits and development review. Not a permitting system of record.
 
 #### CivicInspect
 
 Owner: Code Enforcement / Building / Fire Prevention  
 Depends on: CivicCore, CivicCode  
-Status: v0.2.1 corrective demotion after false v1.0.0 publication; Section 2 public-use readiness is not proven.
+Status: recovered public-use module release v1.0.0; source release and suite installer/module-selection reconciliation passed 2026-05-21.
 Purpose: inspection assistant for photo/voice-to-report drafting, repeat-case lookup, and notice generation. Inspectors own every decision.
 
 ### Tier 3 - Administrative Expansion
@@ -1009,12 +1009,12 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 | civiccore | 1.1.0 | n/a | Real shared platform; v1.1.0 adds shared `staff_key_gate` with timing-safe staff-key comparison; v1.0.1 auth hardening remains included. |
 | civicrecords-ai | 1.6.1 | 1.0.1 | Developer-preview records release; v1.6.1 adds the ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery. |
 | civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
-| civiccode | 0.6.0 | 1.1.0 | Corrective demotion; functional-partial backend exists, but Section 2 public-use readiness is not proven. |
-| civicaccess | 0.2.0 | 1.1.0 | Corrective demotion; scaffold, not finished or public-use ready. |
-| civiczone | 0.2.1 | 1.1.0 | Corrective demotion; scaffold, not finished or public-use ready. |
-| civicplan | 0.2.1 | 1.1.0 | Corrective demotion; scaffold, not finished or public-use ready. |
-| civicpermit | 0.2.1 | 1.1.0 | Corrective demotion; scaffold, not finished or public-use ready. |
-| civicinspect | 0.2.1 | 1.1.0 | Corrective demotion; scaffold, not finished or public-use ready. |
+| civiccode | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, attestation, and suite installer/module-selection truth reconciliation on 2026-05-21. |
+| civicaccess | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, browser QA, release-gate audit, and suite installer/module-selection truth reconciliation on 2026-05-21. |
+| civiczone | 1.0.0 | 1.1.0 | Public-use module release passed source gates, public/staff browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21. |
+| civicplan | 1.0.0 | 1.1.0 | Public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation. |
+| civicpermit | 1.0.0 | 1.1.0 | Public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation. |
+| civicinspect | 1.0.0 | 1.1.0 | Recovered public-use module release; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicgrants | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicprocure | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 

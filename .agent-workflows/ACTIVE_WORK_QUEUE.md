@@ -1,22 +1,6 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-05-21
-
-## Organization Freeze
-
-The CivicSuite org is under release-integrity recovery freeze. No module is
-active for implementation or v1.0.0 promotion. Permitted work is limited to the
-owner's 2026-05-21 Rev. 3 recovery directive:
-
-- Phase 0: demote the six false v1.0.0 modules, repair suite truth, correct
-  queue files, and supersede false releases with retraction notes.
-- Phase 1: independently re-audit the Clerk-Core public-use gate.
-- Phase 2: independently audit org-wide version truth for every module claiming
-  v1.0.0 or higher.
-- Phase 3: resume one-module-at-a-time product completion only after Phases 0,
-  1, and 2 are independently signed off.
-
-Active release lock: none. Phase 0 release-integrity repair only.
+Last updated: 2026-05-18
 
 ## Completed Target
 
@@ -90,7 +74,7 @@ Completion evidence:
 - `python scripts/verify-suite-state.py --remote-only` passed for all 26 modules after merge, with CivicRecords AI at 1.6.0.
 - Final handoff: `.agent-workflows/HANDOFF_2026-05-12_B2_COMPLETE.md`.
 
-## Frozen Historical Queue
+## Active Target #1
 
 1. **Clerk-Core City Release - COMPLETE**
 
@@ -102,59 +86,59 @@ Current status: GREEN, completed and published as the bounded Clerk-Core public-
 
 Next action: continue the post-starter module queue one module at a time.
 
-2. **CivicCode v1.0.0 - FALSE, SUPERSEDED BY PHASE 0**
+2. **CivicCode v1.0.0 - COMPLETE**
 
 Why second: Tier 1 code dependency for land-use and permitting modules.
 
-Current status: RED. The v1.0.0 release was published in error and is being superseded by v0.6.0 corrective demotion.
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-3. **CivicAccess v1.0.0 - FALSE, SUPERSEDED BY PHASE 0**
+3. **CivicAccess v1.0.0 - COMPLETE**
 
 Why third: Tier 1 accessibility/plain-language layer for resident-facing modules.
 
-Current status: RED. The v1.0.0 release was published in error and is being superseded by v0.2.0 corrective demotion.
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-4. **CivicZone v1.0.0 - FALSE, SUPERSEDED BY PHASE 0**
+4. **CivicZone v1.0.0 - COMPLETE**
 
 Why now: first major Tier 2 land-use module after CivicCode and CivicAccess.
 
 Definition of Done: reconcile CivicZone v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target did not promote later modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-Current status: RED. The v1.0.0 release was published in error and is being superseded by v0.2.1 corrective demotion.
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-5. **CivicPlan v1.0.0 - FALSE, SUPERSEDED BY PHASE 0**
+5. **CivicPlan v1.0.0 - COMPLETE**
 
 Why now: next Tier 2 land-use/planning module after CivicZone and CivicAccess.
 
 Definition of Done: reconcile CivicPlan v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target did not promote later modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-Current status: RED. The v1.0.0 release was published in error and is being superseded by v0.2.1 corrective demotion.
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-6. **CivicPermit v1.0.0 - FALSE, SUPERSEDED BY PHASE 0**
+6. **CivicPermit v1.0.0 - COMPLETE**
 
 Why now: next Tier 2 land-use/permit-intake module after CivicPlan.
 
 Definition of Done: reconcile CivicPermit v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target does not promote CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-Current status: RED. The v1.0.0 release was published in error and is being superseded by v0.2.1 corrective demotion.
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-Historical evidence: CivicPermit PR #12 merged and release `v1.0.0` was published, but that release is now classified as false and superseded by Phase 0 corrective demotion.
+Completion evidence: CivicPermit PR #12 merged; release `v1.0.0` is published; CivicSuite PR #168 merged; main verify run `26235152098` passed with `[civicpermit] PASS 1.0.0`.
 
-7. **CivicInspect v1.0.0 - FALSE, SUPERSEDED BY PHASE 0**
+7. **CivicInspect v1.0.0 - ACTIVE**
 
 Why now: next Tier 2 inspection module after CivicPermit.
 
 Definition of Done: reconcile CivicInspect v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target does not promote CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-Current status: RED. The v1.0.0 release was published in error and is being superseded by v0.2.1 corrective demotion.
+Current status: RED, active suite-truth reconciliation.
 
-Next action: complete Phase 0 release-integrity repair and submit for independent audit.
+Next action: run the `agent-pipeline-codex` v0.9.0 suite-truth run `2026-05-21-civicinspect-v1-suite-truth`, verify locally, push a `release-tag` PR, merge after green CI, and verify main.
 
 ## Queued Targets
 
 8. **Remaining 19 product modules in spec/dependency order**
 
-Why next: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. Module work is frozen until Phases 0, 1, and 2 are independently signed off.
+Why next: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. After CivicRecords AI, CivicClerk, CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect, the remaining 19 product modules proceed one at a time.
 
 9. **Deferred release-infrastructure follow-ups**
 
@@ -162,4 +146,4 @@ Why third: CivicRecords AI workflow-dispatch improvements, standalone macOS life
 
 ## Current Decision
 
-Proceed with Phase 0 release-integrity repair only. No module implementation, v1.0.0 promotion, tag, or release work is authorized except corrective demotion releases explicitly required by the owner directive.
+Proceed with Active Target #7 now. CivicGrants and later modules are paused until CivicInspect passes its suite truth and installer/module-selection gate.

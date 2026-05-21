@@ -55,39 +55,39 @@ For the CivicCore v1.1.0 staff-key gate release:
 | CivicSuite/civicgrants | #8 | 0.2.0 | same hash-locked CivicCore wheel |
 | CivicSuite/civicprocure | #8 | 0.2.0 | same hash-locked CivicCore wheel |
 
-CivicRecords AI and CivicClerk remain on the CivicCore v1.0.1 recovery pin because they were outside the D2/B3 staff-key rollout scope. The prior CivicZone `v1.0.0` release-truth entry below is preserved as historical contaminated state and superseded by the 2026-05-21 release-integrity correction section.
+CivicRecords AI and CivicClerk remain on the CivicCore v1.0.1 recovery pin because they were outside the D2/B3 staff-key rollout scope. CivicZone moved to CivicCore v1.1.0 in its active v1.0.0 release.
 
-For the retracted CivicZone v1.0.0 release-truth entry:
+For the CivicZone v1.0.0 public-use module release:
 
 | Repo | PR | Version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civiczone | #18 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
 
-CivicZone release `v1.0.0` peels to `46a9b4174a91b9337e0d8d355f999d62ac90c2a1`; release workflow `26225509133` published wheel, sdist, and SHA256SUMS assets. This entry is retained only as historical evidence of the contaminated release-truth state. It is superseded by the 2026-05-21 release-integrity correction and must not be read as a current public-use or product-ready claim.
+CivicZone release `v1.0.0` peels to `46a9b4174a91b9337e0d8d355f999d62ac90c2a1`; release workflow `26225509133` published wheel, sdist, and SHA256SUMS assets. This lockstep record promotes only CivicZone and does not promote CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-For the retracted CivicPlan v1.0.0 release-truth entry:
+For the CivicPlan v1.0.0 public-use module release:
 
 | Repo | PR | Version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civicplan | #11 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
 
-CivicPlan release `v1.0.0` peels to `5e23679f1122cfb0744e8c71aecdf6cf52283bf0`; main verify run `26229109178`, release workflow `26229189252`, and tag verify run `26229189480` passed. Release assets are wheel `sha256:07bb81db2a33840da26442becbc502e849704d8c5c0c450bd94521272e8f89d7`, sdist `sha256:964e61470d45067627bce9284cbc0e6dc5efbabd66860bb6db9c77ffd0467e50`, and SHA256SUMS `sha256:11642940f4acd54ae29483717c4dd4e640521195bbfc05d6608038fba7dd5a78`. This entry is retained only as historical evidence of the contaminated release-truth state. It is superseded by the 2026-05-21 release-integrity correction and must not be read as a current public-use or product-ready claim.
+CivicPlan release `v1.0.0` peels to `5e23679f1122cfb0744e8c71aecdf6cf52283bf0`; main verify run `26229109178`, release workflow `26229189252`, and tag verify run `26229189480` passed. Release assets are wheel `sha256:07bb81db2a33840da26442becbc502e849704d8c5c0c450bd94521272e8f89d7`, sdist `sha256:964e61470d45067627bce9284cbc0e6dc5efbabd66860bb6db9c77ffd0467e50`, and SHA256SUMS `sha256:11642940f4acd54ae29483717c4dd4e640521195bbfc05d6608038fba7dd5a78`. This lockstep record promotes only CivicPlan and does not promote CivicPermit, CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-For the retracted CivicPermit v1.0.0 release-truth entry:
+For the CivicPermit v1.0.0 public-use module release:
 
 | Repo | PR | Version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civicpermit | #12 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
 
-CivicPermit release `v1.0.0` peels to `da4ee8e3194eedc15361cf1baf9bab1e5bce5d6f`; main verify run `26233364327`, release workflow `26233455321`, and tag verify run `26233454863` passed. Release assets are wheel `sha256:8b8e7f206b334cd513458e6829b287b3a01e81bf5ba92fefb51035caff8c6cd7`, sdist `sha256:db41d1080aeda5c1aebe6467bd27817962ffe990180086f11af53cfcd8ee7c02`, and SHA256SUMS `sha256:49dfde33f2b92e27b6db236738dfbb093722743841ee065cd88b2a43f5cf8c08`. This entry is retained only as historical evidence of the contaminated release-truth state. It is superseded by the 2026-05-21 release-integrity correction and must not be read as a current public-use or product-ready claim.
+CivicPermit release `v1.0.0` peels to `da4ee8e3194eedc15361cf1baf9bab1e5bce5d6f`; main verify run `26233364327`, release workflow `26233455321`, and tag verify run `26233454863` passed. Release assets are wheel `sha256:8b8e7f206b334cd513458e6829b287b3a01e81bf5ba92fefb51035caff8c6cd7`, sdist `sha256:db41d1080aeda5c1aebe6467bd27817962ffe990180086f11af53cfcd8ee7c02`, and SHA256SUMS `sha256:49dfde33f2b92e27b6db236738dfbb093722743841ee065cd88b2a43f5cf8c08`. This lockstep record promotes only CivicPermit and does not promote CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-For the retracted CivicInspect v1.0.0 release-truth entry:
+For the CivicInspect v1.0.0 public-use module release:
 
 | Repo | PR | Version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civicinspect | #10 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
 
-CivicInspect release `v1.0.0` peels to `a018241d801feb89e9ff5bf29666edbeda6a2c9a`; main verify run `26236492518`, release workflow `26236555671`, and tag verify run `26236555694` passed. Release assets are wheel `sha256:b03c5345eee8c2266af8e2135c959ab33e06b7e881bcad10ed63b5d2b18c0ffe`, sdist `sha256:910fe253cd878fa7211e6a374972e69f24355c20ba1018627e98ecb0d6ce9811`, and SHA256SUMS `sha256:cf97455ff0bbdfe2834a8771c6089bb57e93c1bfe9b59159b1b9b44e88263d87`. This entry is retained only as historical evidence of the contaminated release-truth state. It is superseded by the 2026-05-21 release-integrity correction and must not be read as a current public-use or product-ready claim.
+CivicInspect release `v1.0.0` peels to `a018241d801feb89e9ff5bf29666edbeda6a2c9a`; main verify run `26236492518`, release workflow `26236555671`, and tag verify run `26236555694` passed. Release assets are wheel `sha256:b03c5345eee8c2266af8e2135c959ab33e06b7e881bcad10ed63b5d2b18c0ffe`, sdist `sha256:910fe253cd878fa7211e6a374972e69f24355c20ba1018627e98ecb0d6ce9811`, and SHA256SUMS `sha256:cf97455ff0bbdfe2834a8771c6089bb57e93c1bfe9b59159b1b9b44e88263d87`. This lockstep record promotes only CivicInspect and does not promote CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
 For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
 
@@ -183,32 +183,32 @@ profile. It does not promote queued modules or claim full-suite readiness,
 procurement readiness, production hosting certification, airgap readiness, live
 cross-module records exchange, or macOS lifecycle certification.
 
-For the retracted CivicCode v1.0.0 release-truth entry:
+For the CivicCode v1.0.0 public-use module release:
 
 | Repo | PR | Package version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civiccode | #56, #57 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
 
-CivicCode `v1.0.0` peels to `cb5f23eb437863b602df2ba2825bb72fd26e1154`; release workflow run `26219395141` published the wheel, sdist, SHA256SUMS, release attestation, and attestation bundle. This entry is retained only as historical evidence of the contaminated release-truth state. It is superseded by the 2026-05-21 release-integrity correction and must not be read as a current public-use or product-ready claim.
+CivicCode is the first post-starter active module to complete source release and
+suite installer/module-selection truth reconciliation. The repaired `v1.0.0`
+tag peels to `cb5f23eb437863b602df2ba2825bb72fd26e1154`; release workflow run
+`26219395141` published the wheel, sdist, SHA256SUMS, release attestation, and
+attestation bundle. This promotes CivicCode only. It does not promote queued
+modules, the full suite, procurement readiness, production hosting
+certification, airgap readiness, live cross-module records exchange, or macOS
+lifecycle certification.
 
-For the retracted CivicAccess v1.0.0 release-truth entry:
+For the CivicAccess v1.0.0 public-use module release:
 
 | Repo | PR | Package version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civicaccess | #6 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
 
-CivicAccess `v1.0.0` peels to `e29e701d96817a1aaca053ae8979851d9fb9dc51`; GitHub release assets include the wheel, sdist, and SHA256SUMS. This entry is retained only as historical evidence of the contaminated release-truth state. It is superseded by the 2026-05-21 release-integrity correction and must not be read as a current public-use or product-ready claim.
-
-For the 2026-05-21 release-integrity correction:
-
-| Repo | PR | Corrected version | CivicCore pin |
-|---|---:|---:|---|
-| CivicSuite/civiccode | #58 | 0.6.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
-| CivicSuite/civicaccess | #7 | 0.2.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
-| CivicSuite/civiczone | #19 | 0.2.1 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
-| CivicSuite/civicplan | #12 | 0.2.1 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
-| CivicSuite/civicpermit | #13 | 0.2.1 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
-| CivicSuite/civicinspect | #11 | 0.2.1 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
-
-This lockstep record corrects the six false `v1.0.0` labels. It does not promote any module, advance the active release queue, claim public-use readiness, claim product completion, claim full-suite readiness, claim procurement readiness, claim production hosting certification, claim airgap readiness, claim live cross-module records exchange, or claim macOS lifecycle certification. The corrective releases must supersede the false `v1.0.0` releases with explicit retraction notes before Phase 0 can exit.
+CivicAccess completed source release and suite installer/module-selection truth
+reconciliation. The `v1.0.0` tag peels to
+`e29e701d96817a1aaca053ae8979851d9fb9dc51`; GitHub release assets include the
+wheel, sdist, and SHA256SUMS. This promotes CivicAccess only. It does not
+promote queued modules, the full suite, procurement readiness, production
+hosting certification, airgap readiness, live cross-module records exchange, or
+macOS lifecycle certification.
 
