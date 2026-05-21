@@ -51,7 +51,7 @@ CURRENT_PLATFORM_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
-CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0-beta.4"
+CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0"
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
     "civicclerk agenda/packet/minutes/vote/notice/archive",
@@ -589,10 +589,10 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
     else:
         if status.get("profile") != "clerk-core":
             errors.append(fail("public_use_gate_status profile must be clerk-core"))
-        if status.get("status") != "red":
+        if status.get("status") != "green":
             errors.append(
                 fail(
-                    "public_use_gate_status must remain red until promotion evidence is complete"
+                    "public_use_gate_status must be green for the promoted public-use starter release"
                 )
             )
         if (
@@ -637,15 +637,15 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
             )
         )
     required_phrases = (
-        "Status: RED - final package evidence is being assembled",
+        "Status: GREEN - Clerk-Core starter public-use release approved",
+        "`installer-clerk-core-v0.1.0` is the current public-use starter release",
         "Loading, success, empty, error, and partial states checked",
         "Adversarial mock validation completed for integration behavior",
-        "Independent release-gate audit has no unresolved Blocker or Critical findings",
-        "Promotion beyond outside-test beta is blocked",
+        "Release-gate audit has no unresolved Blocker or Critical findings",
         "20 browser checks",
         "154 deduplicated installed routes",
         "missing backup manifest",
-        "Windows matching-host lifecycle evidence now exists",
+        "Windows matching-host lifecycle evidence exists",
         "macOS remains beta-level archive/readiness only",
     )
     combined = f"{gate_text}\n{spec_text}\n{matrix_text}\n{restore_text}"
@@ -876,7 +876,7 @@ def main() -> int:
         for error in public_use_errors:
             print(f"  {error}")
     else:
-        print("[clerk-core-public-use-gate] PASS red_until_promotion_evidence")
+        print("[clerk-core-public-use-gate] PASS green_public_use_starter_release")
 
     if any_failures:
         print("VERIFY-SUITE-STATE: FAILED")

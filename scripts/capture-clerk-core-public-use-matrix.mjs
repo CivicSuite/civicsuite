@@ -322,7 +322,7 @@ async function main() {
     adversarial,
     status: results.every((result) => result.status !== "failed") ? "capture_complete" : "capture_failed",
     qa_notes: [
-      "Capture status means the browser check rendered without capture-tool failure; it is not a public-use readiness verdict.",
+      "Capture status means the browser check rendered without capture-tool failure; release readiness is decided by the full gate.",
       "CivicClerk public screenshots were captured against a dev build that renders staff chrome, the surface switch, Show audit, INSTALL DETAIL, and QA-state controls; they are not clean public-surface proof.",
       "CivicClerk public loading/empty/error/partial states are harness-simulated, not observed production behavior.",
       "CivicRecords footer shows v1.4.1 while header and /health report v1.6.1; tracked as CivicRecords AI issue #88.",
@@ -333,7 +333,7 @@ async function main() {
   const summary = [
     "# Clerk-Core Public-Use Route And State Matrix - 2026-05-20",
     "",
-    `Status: CAPTURE COMPLETE - ${results.length}/${results.length} checks rendered; evidence for the still-RED Clerk-Core public-use gate, not a pass verdict on public-use readiness.`,
+    `Status: CAPTURE COMPLETE - ${results.length}/${results.length} checks rendered; evidence for the Clerk-Core public-use starter release gate.`,
     "",
     "Scope: local installed Clerk-Core stack containing CivicRecords AI 1.6.1 and CivicClerk 1.0.1. This is browser/API/user-facing evidence for the starter product and is not a claim of city production deployment, external municipal validation, procurement certification, airgap proof, or macOS lifecycle certification.",
     "",

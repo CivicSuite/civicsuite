@@ -593,9 +593,11 @@ def check_manifest(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if data.get("schema_version") != 1:
         errors.append(fail("schema_version must be 1"))
-    if data.get("installer_status") != "clerk_core_linux_first_beta4_published":
+    if data.get("installer_status") != "clerk_core_public_use_starter_v0_1_0_published":
         errors.append(
-            fail("installer_status must be clerk_core_linux_first_beta4_published")
+            fail(
+                "installer_status must be clerk_core_public_use_starter_v0_1_0_published"
+            )
         )
 
     menu_styles = data.get("menu_styles")
@@ -1487,7 +1489,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 readme = readme_path.read_text(encoding="utf-8")
                 for phrase in (
                     "unsigned",
-                    "open-source beta",
+                    "public-use starter",
                     "SHA256",
                     "Windows",
                     "official CivicSuite",
@@ -1497,7 +1499,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                     if phrase not in readme:
                         errors.append(
                             fail(
-                                f"profile package {platform_id} README missing unsigned beta phrase: {phrase}"
+                                f"profile package {platform_id} README missing unsigned public-use starter phrase: {phrase}"
                             )
                         )
             launcher_path = package_dir / launcher
@@ -1506,14 +1508,14 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 for phrase in (
                     "unsigned",
                     "SHA256",
-                    "open-source beta",
+                    "public-use starter",
                     "official CivicSuite",
                     "workflow-proof" if platform_id != "windows" else "WorkflowProof",
                 ):
                     if phrase not in launcher_text:
                         errors.append(
                             fail(
-                                f"profile package {platform_id} launcher missing unsigned beta phrase: {phrase}"
+                                f"profile package {platform_id} launcher missing unsigned public-use starter phrase: {phrase}"
                             )
                         )
             plan_path = package_dir / "install-plan.json"
@@ -1655,9 +1657,14 @@ def check_planner(data: dict[str, object]) -> list[str]:
         else:
             release_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             signing = release_manifest.get("signing", {})
-            if release_manifest.get("distribution_status") != "unsigned_oss_beta":
+            if (
+                release_manifest.get("distribution_status")
+                != "unsigned_public_use_starter"
+            ):
                 errors.append(
-                    fail("release manifest must mark unsigned OSS beta distribution")
+                    fail(
+                        "release manifest must mark unsigned public-use starter distribution"
+                    )
                 )
             if signing.get("signed") is not False or "SHA256" not in signing.get(
                 "trust_path", ""

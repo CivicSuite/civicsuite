@@ -54,7 +54,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 
 ## Quick Start
 
-**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux remains the primary runtime proof path. Windows and macOS remain archive/readiness wrapper paths until matching-host lifecycle evidence is recorded on those hosts.
+**Suite installer (current):** Clerk-Core public-use starter release. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux and Windows have matching-host lifecycle evidence for the Clerk-Core package. macOS is supported at beta archive/readiness level until matching-host lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`

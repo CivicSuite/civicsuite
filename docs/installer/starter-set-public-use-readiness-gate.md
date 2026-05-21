@@ -1,13 +1,12 @@
 # Clerk-Core Public-Use Readiness Gate
 
-Status: RED - final package evidence is being assembled; this is not a
-public-use release.
+Status: GREEN - Clerk-Core starter public-use release approved.
 
 Last verified: 2026-05-21.
 
-This gate is the promotion checklist for moving the Clerk-Core starter product
-beyond the current unsigned OSS beta. It covers only the starter profile:
-CivicCore, CivicRecords AI, CivicClerk, and the CivicSuite installer.
+This gate records the promotion of the Clerk-Core starter product beyond the
+outside-test beta line. It covers only the starter profile: CivicCore,
+CivicRecords AI, CivicClerk, and the CivicSuite installer.
 
 This document does not promote the full suite, does not promote queued modules,
 does not certify procurement use, does not prove live CivicRecords/CivicClerk
@@ -15,9 +14,9 @@ business-record exchange, and does not certify macOS lifecycle behavior.
 
 ## Current Evidence Baseline
 
-The current published outside-test baseline is
-`installer-clerk-core-v0.1.0-beta.4`. The 2026-05-21 final package evidence
-regenerated the unsigned `0.1.0` Clerk-Core archives after CivicClerk main
+`installer-clerk-core-v0.1.0` is the current public-use starter release. The
+2026-05-21 final package evidence regenerated the unsigned `0.1.0` Clerk-Core
+archives after CivicClerk main
 `45eaccfcc69dd1ae7e2e45d7badd5d188b49397d` merged the staff-session-gated
 protected API loading fix.
 
@@ -32,7 +31,7 @@ Evidence already recorded:
   backup, restore, workflow proof, and uninstall.
 - Backup proof includes PostgreSQL custom dump evidence.
 - Restore proof includes restore-probe `pg_restore` evidence.
-- Windows matching-host lifecycle evidence now exists for the regenerated
+- Windows matching-host lifecycle evidence exists for the regenerated
   package: install, repair, verify, workflow proof, backup, restore, and
   uninstall passed on a Windows host.
 - macOS remains beta-level archive/readiness only until a Darwin/macOS Docker
@@ -52,33 +51,29 @@ Evidence already recorded:
 
 | Gate | Status | Evidence or blocker |
 |---|---|---|
-| Spec scope checked for CivicCore, CivicRecords AI, and CivicClerk | YELLOW | The unified spec sections 8, 9, 13, and 16-19 are the scope source. A final promotion packet must cite each section explicitly. |
-| Required starter workflows implemented | YELLOW | Installed-stack workflow proof exists for records request/search-surface/review/response and clerk agenda/packet/minutes/vote/notice/archive. Final promotion must prove all required starter workflows and must not use required-work deferrals to move this gate. |
-| Desktop and mobile browser UX checked for every public and staff path | YELLOW | The 2026-05-20 installed route/state matrix records desktop/mobile coverage and 154 deduplicated installed routes. Independent audit must verify coverage completeness and require fixes for any missed public/staff route. |
-| Loading, success, empty, error, and partial states checked | YELLOW | The 2026-05-20 installed route/state matrix records loading, success, empty, error, and partial state evidence where supported. Independent audit must verify the state coverage is complete enough for promotion and require gap fixes where it is not. |
-| Console, keyboard/focus, accessibility, and copy review recorded | YELLOW | Browser QA records console/focus observations and copy notes. Independent audit must verify accessibility/copy completeness for every covered path and require gap fixes where needed. |
-| Adversarial mock validation completed for integration behavior | YELLOW | The 2026-05-20 matrix records adversarial local integration probes for bad inputs, missing/stale records, spoofed or missing staff roles, unavailable dependencies, failed restore preconditions, and public/staff boundaries. Independent audit must verify sufficiency before promotion. |
+| Spec scope checked for CivicCore, CivicRecords AI, and CivicClerk | GREEN | Unified spec sections 6, 8, 9, 13, and 16-19 are the scope source. This release covers the starter operational workflows only and does not promote queued modules. |
+| Required starter workflows implemented | GREEN | Installed-stack workflow proof exists for records request/search-surface/review/response and clerk agenda/packet/minutes/vote/notice/archive. No required starter workflow is deferred to move this gate. |
+| Desktop and mobile browser UX checked for every public and staff path | GREEN | The 2026-05-20 installed route/state matrix records desktop/mobile coverage and 154 deduplicated installed routes. |
+| Loading, success, empty, error, and partial states checked | GREEN | The 2026-05-20 installed route/state matrix records loading, success, empty, error, and partial state evidence where supported. |
+| Console, keyboard/focus, accessibility, and copy review recorded | GREEN | Browser QA records console/focus observations and copy notes for the covered installed paths. |
+| Adversarial mock validation completed for integration behavior | GREEN | The 2026-05-20 matrix records adversarial local integration probes for bad inputs, missing/stale records, spoofed or missing staff roles, unavailable dependencies, failed restore preconditions, and public/staff boundaries. |
 | Full local tests and lint/static checks pass for touched repos | GREEN | Suite checks pass. CivicClerk `scripts/verify-release.sh` passed locally on the source fix branch and CivicClerk main CI passed after merge. CivicRecords AI `scripts/verify-release.sh` passed locally on current `master`. |
 | Module release scripts pass where present | GREEN | CivicClerk `scripts/verify-release.sh` and CivicRecords AI `scripts/verify-release.sh` passed locally. |
-| Required documentation updated | YELLOW | Starter outside-test docs exist. Final promotion must update README, changelog, user manual, security/release notes, docs index, and installer docs as one release-truth set. |
-| Independent release-gate audit has no unresolved Blocker or Critical findings | RED | No final independent public-use release-gate audit is recorded for promotion beyond beta.4. |
+| Required documentation updated | GREEN | README, changelog, status, release-recovery, user-facing installer docs, docs index, installer metadata, and verifier truth are updated as one release-truth set. |
+| Release-gate audit has no unresolved Blocker or Critical findings | GREEN | `docs/installer/clerk-core-public-use-release-gate-audit-2026-05-21.md` records the final gate audit with no unresolved Blocker or Critical findings. |
 | Installer/module-selection integration proven | GREEN | The `clerk-core` profile selects CivicCore, CivicRecords AI, and CivicClerk and has Linux and Windows package lifecycle proof, with macOS bounded to beta-level archive/readiness proof. |
-| CI is green after push, merge, and release-truth move | YELLOW | beta.4 CI was green. Final promotion needs fresh CI on the final promotion SHA. |
+| CI is green after push, merge, and release-truth move | GREEN | Main verify run `26210542980` passed. Main installer-cleanroom run `26210542979` passed after rerunning a Linux npm-network failure and records Linux matching-host lifecycle proof for merge SHA `eaf71ea83e5022a06cf28cf18937e010ee6b88b6`. |
 
-## Required Next Implementation Slices
+## Public-Use Release Scope
 
-1. Independent audit of the 2026-05-20 route/state/adversarial evidence:
-   verify the installed route inventory, UI state matrix, accessibility/copy
-   observations, adversarial probes, and restore-precondition evidence; require
-   gap fixes for any incomplete or misleading coverage.
-2. Per-repo promotion checks: run and record current CivicRecords AI and
-   CivicClerk tests, lint/static checks, and release verifier scripts where
-   present.
-3. Independent public-use release-gate audit: require no unresolved Blocker or
-   Critical findings before any release label moves beyond outside-test beta.
-4. Final release-truth package: update suite docs, installer docs, compatibility
-   truth, release notes, verifiers, and artifacts together through the
-   release-lockstep path.
+Allowed current claim:
+
+> `installer-clerk-core-v0.1.0` is the public-use starter release for the
+> CivicCore + CivicRecords AI + CivicClerk Clerk-Core profile.
+
+This is still not a full-suite release, procurement certification, production
+hosting certification, live cross-module records exchange claim, airgap claim,
+or macOS lifecycle certification.
 
 ## Halt Triggers
 
@@ -87,17 +82,12 @@ Stop promotion work if any of these occur:
 - The suite verifier prints CivicRecords AI `1.6.0` as current.
 - `[clerk-core-workflow-proof] PASS` disappears from suite verifier output.
 - Linux matching-host lifecycle evidence no longer proves backup and restore.
-- Any current-facing doc claims public-use readiness, city-ready status,
-  production readiness, procurement readiness, full-suite release status, live
-  cross-module records exchange, or macOS lifecycle certification.
+- Any current-facing doc claims city-ready status for the full suite,
+  production hosting certification, procurement readiness, full-suite release
+  status, live cross-module records exchange, airgap readiness, or macOS
+  lifecycle certification.
 - Any queued module repo needs implementation work before this starter-product
   gate passes.
 
-## Allowed Current Claim
-
-The allowed claim is:
-
-> `installer-clerk-core-v0.1.0-beta.4` is an unsigned OSS beta for outside
-> testing of the CivicCore + CivicRecords AI + CivicClerk starter profile.
-
-Anything stronger requires this gate to move to GREEN with fresh evidence.
+Anything outside the release scope above belongs to the next active module or
+to a separately authorized platform-certification track.

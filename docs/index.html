@@ -244,27 +244,27 @@
 <main id="main">
   <section>
     <h2>Status today</h2>
-    <p>Status snapshot: <strong>2026-05-20</strong>.</p>
+    <p>Status snapshot: <strong>2026-05-21</strong>.</p>
     <table>
       <thead>
         <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td>Clerk-Core beta</td><td>2 product modules plus CivicCore</td><td><code>civiccore</code>, <code>civicrecords-ai</code>, and <code>civicclerk</code> are the active starter profile. The current installer release is an unsigned OSS beta for outside testing, not a public-use release.</td></tr>
+        <tr><td>Clerk-Core starter</td><td>2 product modules plus CivicCore</td><td><code>civiccore</code>, <code>civicrecords-ai</code>, and <code>civicclerk</code> are the public-use starter profile. The current installer release is <code>installer-clerk-core-v0.1.0</code>; queued modules remain outside this release.</td></tr>
         <tr><td>Recovery / demoted labels</td><td>7 product repos</td><td><code>civiccode</code>, <code>civiczone</code>, <code>civicplan</code>, <code>civicpermit</code>, <code>civicinspect</code>, <code>civicgrants</code>, and <code>civicprocure</code> have honest recovery labels and must not be treated as product-ready modules.</td></tr>
         <tr><td>Foundation / planned</td><td>Remaining catalog</td><td>The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. <code>CivicRegWatch</code> and <code>CivicAPI</code> are planned modules with specs but no runtime repos yet.</td></tr>
       </tbody>
     </table>
-    <p><code>civiccore</code> is the shared-platform package. The active release lock is the Clerk-Core starter product, and queued modules wait until that gate passes.</p>
+    <p><code>civiccore</code> is the shared-platform package. The Clerk-Core starter gate is passed for the bounded starter profile, and queued modules advance one at a time after the release tag is published.</p>
   </section>
 
   <section>
     <h2>What happens next</h2>
     <div class="card">
-      <p><strong>The active work is the Clerk-Core starter product gate.</strong> The current beta has installer lifecycle, workflow proof, and browser QA evidence, but public-use promotion waits for the full gate.</p>
+      <p><strong>The active work is the Clerk-Core starter release tag.</strong> The starter profile has installer lifecycle, workflow proof, browser QA, and release-gate evidence.</p>
       <ul>
-        <li>Finish the Clerk-Core public-use readiness gate.</li>
-        <li>Keep CivicContracts and later modules paused until the starter profile passes.</li>
+        <li>Publish <code>installer-clerk-core-v0.1.0</code> with the generated artifacts and SHA256SUMS.</li>
+        <li>Keep CivicContracts and later modules paused until the starter release tag is green.</li>
         <li>Advance later modules from the reconciled 27-module queue.</li>
         <li>Advance later modules one at a time in spec/dependency order.</li>
       </ul>
@@ -293,6 +293,7 @@
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
       <li><a href="installer/starter-set-public-use-readiness-gate.md">Clerk-Core public-use readiness gate</a></li>
       <li><a href="installer/clerk-core-final-package-evidence-2026-05-21.md">Clerk-Core final package evidence (2026-05-21)</a></li>
+      <li><a href="installer/clerk-core-public-use-release-gate-audit-2026-05-21.md">Clerk-Core public-use release-gate audit (2026-05-21)</a></li>
       <li><a href="../specs/01_catalog.md">Module catalog</a></li>
       <li><a href="../docs/CivicSuiteUnifiedSpec.md">Unified suite specification</a></li>
     </ul>

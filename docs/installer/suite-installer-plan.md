@@ -122,7 +122,7 @@ installer artifacts remain intentionally unsigned.
 
 Installer artifacts are distributable as unsigned OSS beta builds. Every
 generated package and release manifest must state that CivicSuite is an
-small free open-source beta project with intentionally unsigned public
+open-source public-use starter release with intentionally unsigned public
 installers, that Windows/macOS/Linux trust warnings are expected, and that
 SHA256 verification plus official-source verification is the current trust path
 before proceeding through any OS warning.

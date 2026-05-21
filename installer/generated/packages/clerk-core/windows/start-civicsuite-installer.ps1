@@ -19,10 +19,10 @@ $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\..\..\..\..")
 $Planner = Join-Path $RepoRoot "scripts\plan-installer.py"
 $Lifecycle = Join-Path $RepoRoot "scripts\run-clerk-core-installer.py"
 
-Write-Host "CivicSuite OSS beta installer package"
+Write-Host "CivicSuite OSS public-use starter installer package"
 Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
 Write-Host "Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands."
-Write-Host "Project status: small free open-source beta; the public installer is intentionally unsigned."
+Write-Host "Project status: public-use starter release; the installer is intentionally unsigned."
 
 $PlannerArgs = @("--menu-style", "guided", "--dry-run")
 $LifecycleModuleArgs = @()

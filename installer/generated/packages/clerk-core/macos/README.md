@@ -5,7 +5,7 @@ Menu style: `guided`
 
 ## Unsigned OSS Beta Notice
 
-This package is unsigned. CivicSuite is an open-source beta project and signing
+This package is unsigned. CivicSuite is an open-source public-use starter release and signing
 certificates are not used for the public installer path. Windows may show
 SmartScreen or Unknown Publisher warnings. macOS may show unidentified
 developer warnings. Linux package tools may show an unsigned/local package
@@ -99,7 +99,7 @@ bash ./start-civicsuite-installer.sh install --staff-mode bearer --workflow-proo
   temporary PostgreSQL restore-probe database and removing that probe after the
   check completes.
 - Uninstall mode removes the selected module Docker containers and volumes.
-- Native host installer wrappers are generated but unsigned in this OSS beta.
+- Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
 
 The repo/source checkout cleanroom gate remains available outside this
 distributable archive:

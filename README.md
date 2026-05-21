@@ -54,14 +54,14 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 
 ## Quick Start
 
-**Suite installer (current):** YELLOW beta. The current published clerk-core profile installer release source is `installer-clerk-core-v0.1.0-beta.4` on this repo's Releases page. It is an unsigned OSS beta for outside testing of the CivicCore + CivicRecords AI + CivicClerk starter profile, backed by PR #156, PR #157, main verify run `26134412418`, main installer-cleanroom run `26134412420`, and release-lockstep PR runs `26120937776` and `26134059097`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux and Windows have matching-host lifecycle evidence paths for the Clerk-Core package. macOS is supported at beta archive/readiness level until matching-host macOS lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
+**Suite installer (current):** Clerk-Core public-use starter release. The current published clerk-core profile installer release source is `installer-clerk-core-v0.1.0` on this repo's Releases page. It is an unsigned public-use starter release for the CivicCore + CivicRecords AI + CivicClerk profile, backed by main verify run `26210542980`, main installer-cleanroom run `26210542979`, Windows matching-host package lifecycle evidence, and the final release-gate audit. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux and Windows have matching-host lifecycle evidence paths for the Clerk-Core package. macOS is supported at beta archive/readiness level until matching-host macOS lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`
 - macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(wrapper/archive only until matching-host macOS lifecycle evidence exists)*
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
-Outside testers should use the focused [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md) for the Linux/Windows install, verify, repair, and uninstall path. Promotion beyond outside-test beta is blocked by the [Clerk-Core public-use readiness gate](docs/installer/starter-set-public-use-readiness-gate.md) until every release-recovery check has current evidence.
+Operators should use the focused [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md) for the Linux/Windows install, verify, repair, and uninstall path. The [Clerk-Core public-use readiness gate](docs/installer/starter-set-public-use-readiness-gate.md) records the bounded starter release scope and the claims this release does not make.
 
 **Per-module install path:**
 
