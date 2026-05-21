@@ -55,7 +55,15 @@ For the CivicCore v1.1.0 staff-key gate release:
 | CivicSuite/civicgrants | #8 | 0.2.0 | same hash-locked CivicCore wheel |
 | CivicSuite/civicprocure | #8 | 0.2.0 | same hash-locked CivicCore wheel |
 
-CivicRecords AI, CivicClerk, and CivicZone remain on the CivicCore v1.0.1 recovery pin because they were outside the D2/B3 staff-key rollout scope.
+CivicRecords AI and CivicClerk remain on the CivicCore v1.0.1 recovery pin because they were outside the D2/B3 staff-key rollout scope. CivicZone moved to CivicCore v1.1.0 in its active v1.0.0 release.
+
+For the CivicZone v1.0.0 public-use module release:
+
+| Repo | PR | Version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civiczone | #18 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
+
+CivicZone release `v1.0.0` peels to `46a9b4174a91b9337e0d8d355f999d62ac90c2a1`; release workflow `26225509133` published wheel, sdist, and SHA256SUMS assets. This lockstep record promotes only CivicZone and does not promote CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
 For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
 

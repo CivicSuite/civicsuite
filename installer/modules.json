@@ -215,22 +215,24 @@
                         "role":  "zoning and land use",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode"
                                          ],
                         "default_port":  8030,
-                        "installer_status":  "demoted_v0_2_0_recovery_label",
+                        "installer_status":  "v1_0_0_public_use_module_released",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
                                                "artifact_resolution",
                                                "health_check",
                                                "restart",
-                                               "version_label_matches_recovery_status"
+                                               "release_artifacts",
+                                               "browser_qa",
+                                               "release_gate_audit"
                                            ],
-                        "current_version":  "0.2.0"
+                        "current_version":  "1.0.0"
                     },
                     {
                         "id":  "civicplan",
