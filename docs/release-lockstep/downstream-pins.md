@@ -166,3 +166,17 @@ modules, the full suite, procurement readiness, production hosting
 certification, airgap readiness, live cross-module records exchange, or macOS
 lifecycle certification.
 
+For the CivicAccess v1.0.0 public-use module release:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicaccess | #6 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
+
+CivicAccess completed source release and suite installer/module-selection truth
+reconciliation. The `v1.0.0` tag peels to
+`e29e701d96817a1aaca053ae8979851d9fb9dc51`; GitHub release assets include the
+wheel, sdist, and SHA256SUMS. This promotes CivicAccess only. It does not
+promote queued modules, the full suite, procurement readiness, production
+hosting certification, airgap readiness, live cross-module records exchange, or
+macOS lifecycle certification.
+

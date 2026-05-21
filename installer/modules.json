@@ -292,17 +292,23 @@
                         "role":  "accessibility and public access workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "0.3.0",
+                        "civiccore_requirement":  "1.1.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8060,
-                        "installer_status":  "tracked_suite_module_needs_installer_proof",
+                        "installer_status":  "v1_0_0_public_use_module_released",
                         "proof_required":  [
-                                               "install",
+                                               "module_selection",
+                                               "install_plan",
+                                               "artifact_resolution",
                                                "health_check",
-                                               "restart"
-                                           ]
+                                               "restart",
+                                               "release_artifacts",
+                                               "browser_qa",
+                                               "release_gate_audit"
+                                           ],
+                        "current_version":  "1.0.0"
                     },
                     {
                         "id":  "civicinspect",

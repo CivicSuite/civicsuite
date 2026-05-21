@@ -146,8 +146,8 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicaccess",
         "CivicSuite/civicaccess",
         "civicaccess",
-        "0.1.1",
-        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+        "1.0.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(
         "civicplan",

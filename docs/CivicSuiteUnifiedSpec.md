@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode has since passed the v1.0.0 public-use module release gate. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
+> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode and CivicAccess have passed their v1.0.0 public-use module release gates. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
 
 ---
 
@@ -307,7 +307,7 @@ Purpose: municipal code as a first-class product. Residents and staff ask what t
 
 Owner: Clerk / Communications / IT / ADA Coordinator  
 Depends on: CivicCore  
-Status: foundation surface; not v1.0 product-ready.
+Status: v1.0.0 public-use module release; suite installer/module-selection truth reconciled 2026-05-21.
 Purpose: accessible forms, accessible publishing workflows, multilingual and plain-language rewrites, ADA Title II review, records-ready exports, and accessibility support reused by every module.
 
 ### Tier 2 - Land Use & Development
@@ -1010,6 +1010,7 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 | civicrecords-ai | 1.6.1 | 1.0.1 | Developer-preview records release; v1.6.1 adds the ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery. |
 | civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
 | civiccode | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, attestation, and suite installer/module-selection truth reconciliation on 2026-05-21. |
+| civicaccess | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, browser QA, release-gate audit, and suite installer/module-selection truth reconciliation on 2026-05-21. |
 | civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |
 | civicplan | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicpermit | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
