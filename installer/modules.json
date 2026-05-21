@@ -195,16 +195,17 @@
                                              "civicclerk"
                                          ],
                         "default_port":  8020,
-                        "installer_status":  "demoted_v0_5_0_recovery_label",
+                        "installer_status":  "v1_0_0_public_use_module_released",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
                                                "artifact_resolution",
                                                "health_check",
                                                "restart",
-                                               "version_label_matches_recovery_status"
+                                               "release_artifacts",
+                                               "release_attestation"
                                            ],
-                        "current_version":  "0.5.0"
+                        "current_version":  "1.0.0"
                     },
                     {
                         "id":  "civiczone",
