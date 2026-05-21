@@ -76,26 +76,48 @@ Completion evidence:
 
 ## Active Target #1
 
-1. **Clerk-Core City Release**
+1. **Clerk-Core City Release - COMPLETE**
 
 Why first now: the project owner explicitly reset the priority to the first real public-use CivicSuite product. CivicCore, CivicRecords AI, and CivicClerk must be installable and operable together before CivicContracts or any later module work continues.
 
 Definition of Done: ship the clerk-core starter product as a Linux-first Docker/browser release with honest Windows/macOS wrappers, full internal install/start/health/repair/backup/restore/uninstall proof, module workflow proof for CivicRecords AI and CivicClerk, browser QA, docs, tests, release-truth lockstep, and no full-suite/procurement/airgap/macOS lifecycle certification claims.
 
+Current status: GREEN, completed and published as the bounded Clerk-Core public-use starter.
+
+Next action: continue the post-starter module queue one module at a time.
+
+2. **CivicCode v1.0.0 - COMPLETE**
+
+Why second: Tier 1 code dependency for land-use and permitting modules.
+
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
+
+3. **CivicAccess v1.0.0 - COMPLETE**
+
+Why third: Tier 1 accessibility/plain-language layer for resident-facing modules.
+
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
+
+4. **CivicZone v1.0.0 - ACTIVE**
+
+Why now: first major Tier 2 land-use module after CivicCode and CivicAccess.
+
+Definition of Done: reconcile CivicZone v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target does not promote CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
+
 Current status: RED, active.
 
-Next action: run the `agent-pipeline-codex` v0.9.0 parent run `2026-05-18-clerk-core-city-release`, starting with spec-truth inventory and control-plane reconciliation.
+Next action: run the `agent-pipeline-codex` v0.9.0 suite-truth run `2026-05-21-civiczone-v1-suite-truth`, verify locally, push a `release-tag` PR, merge after green CI, and verify main.
 
 ## Queued Targets
 
-2. **Remaining 25 product modules in spec/dependency order**
+5. **Remaining 22 product modules in spec/dependency order**
 
-Why second: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. After CivicRecords AI and CivicClerk are included in the starter product, the remaining 25 product modules proceed one at a time.
+Why next: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. After CivicRecords AI, CivicClerk, CivicCode, CivicAccess, and CivicZone, the remaining 22 product modules proceed one at a time.
 
-3. **Deferred release-infrastructure follow-ups**
+6. **Deferred release-infrastructure follow-ups**
 
 Why third: CivicRecords AI workflow-dispatch improvements, standalone macOS lifecycle certification, and other infrastructure refinements remain useful, but they cannot displace the clerk-core city release unless they directly block it.
 
 ## Current Decision
 
-Proceed with Active Target #1 now. CivicContracts and later modules are paused until the clerk-core city release passes its gate.
+Proceed with Active Target #4 now. CivicPlan and later modules are paused until CivicZone passes its suite truth and installer/module-selection gate.

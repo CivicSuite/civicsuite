@@ -24,8 +24,8 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 
 - `civicrecords-ai` (FOIA / records) is the most mature module today; v1.6.1 is a developer-preview release with the ingestion worker recovery patch shipped.
 - `civicclerk` (meetings) has substantial workflow code and a first React staff workspace; v1.0.1 shipped the protected-default recovery patch.
-- CivicCode v1.0.0 and CivicAccess v1.0.0 have passed their public-use module release gates; CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain demoted to v0.2.0.
-- The remaining 16 modules are foundation-tier surfaces (sample APIs, sample UI, civiccore alignment) — not yet usable products.
+- CivicCode v1.0.0, CivicAccess v1.0.0, and CivicZone v1.0.0 have passed their public-use module release gates; CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain demoted to v0.2.0.
+- The remaining 15 modules are foundation-tier surfaces (sample APIs, sample UI, civiccore alignment) — not yet usable products.
 - `civiccore` is the shared platform package under all of them; v1.1.0 is the current shared-platform release.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
@@ -118,7 +118,8 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civicclerk` | v1.0.1 protected-default recovery patch |
 | `civiccode` | v1.0.0 public-use module release |
 | `civicaccess` | v1.0.0 public-use module release |
-| `civiczone`, `civicplan`, `civicpermit` | v0.2.0 demoted recovery labels |
+| `civiczone` | v1.0.0 public-use module release |
+| `civicplan`, `civicpermit` | v0.2.0 demoted recovery labels |
 | `civicinspect`, `civicgrants`, `civicprocure` | v0.2.0 demoted recovery labels |
 | All others | Foundation surfaces (v0.1.x) |
 | `civicregwatch`, `civicapi` | Planned; spec only |

@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode and CivicAccess have passed their v1.0.0 public-use module release gates. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
+> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode, CivicAccess, and CivicZone have passed their v1.0.0 public-use module release gates. CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
 
 ---
 
@@ -316,7 +316,7 @@ Purpose: accessible forms, accessible publishing workflows, multilingual and pla
 
 Owner: Planning & Development / Community Development  
 Depends on: CivicCore, CivicCode  
-Status: demoted recovery label v0.2.0; scaffold-depth runtime, not v1.0 product-ready.
+Status: v1.0.0 public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21.
 Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a property is in, what uses are allowed, what setbacks apply, and when planner review is required. CivicZone never makes a zoning determination.
 
 #### CivicPlan
@@ -1011,7 +1011,7 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 | civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
 | civiccode | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, attestation, and suite installer/module-selection truth reconciliation on 2026-05-21. |
 | civicaccess | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, browser QA, release-gate audit, and suite installer/module-selection truth reconciliation on 2026-05-21. |
-| civiczone | 0.2.0 | 1.0.1 | Demoted from false v1.0.0; scaffold-depth zoning support. |
+| civiczone | 1.0.0 | 1.1.0 | Public-use module release passed source gates, public/staff browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21. |
 | civicplan | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicpermit | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicinspect | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
