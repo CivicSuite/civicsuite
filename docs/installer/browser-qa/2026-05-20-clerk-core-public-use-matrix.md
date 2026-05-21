@@ -1,6 +1,6 @@
 # Clerk-Core Public-Use Route And State Matrix - 2026-05-20
 
-Status: CAPTURE COMPLETE - 20/20 checks rendered; evidence for the still-RED Clerk-Core public-use gate, not a pass verdict on public-use readiness.
+Status: CAPTURE COMPLETE - 20/20 checks rendered; evidence for the Clerk-Core public-use starter release gate.
 
 Scope: local installed Clerk-Core stack containing CivicRecords AI 1.6.1 and CivicClerk 1.0.1. This is browser/API/user-facing evidence for the starter product and is not a claim of city production deployment, external municipal validation, procurement certification, airgap proof, or macOS lifecycle certification.
 

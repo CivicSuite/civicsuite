@@ -6,10 +6,10 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../../.." && pwd)"
 PLANNER="${REPO_ROOT}/scripts/plan-installer.py"
 LIFECYCLE="${REPO_ROOT}/scripts/run-clerk-core-installer.py"
 
-echo "CivicSuite OSS beta installer package"
+echo "CivicSuite OSS public-use starter installer package"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
 echo "Trust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands."
-echo "Project status: small free open-source beta; the public installer is intentionally unsigned."
+echo "Project status: public-use starter release; the installer is intentionally unsigned."
 
 MODE="${1:-readiness}"
 if [[ "$#" -gt 0 ]]; then

@@ -133,7 +133,21 @@ For the Clerk-Core installed route/state matrix evidence:
 | CivicSuite/civicclerk | n/a | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
 
 No downstream module pin moves for the route/state matrix evidence. This
-umbrella change records installed-stack QA and adversarial local integration
-evidence for the still-RED public-use gate; it does not promote any module or
+umbrella change recorded installed-stack QA and adversarial local integration
+evidence for the then-RED public-use gate; it did not promote any module or
 installer artifact to a new release label.
+
+For the Clerk-Core public-use starter release:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicrecords-ai | n/a | 1.6.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+| CivicSuite/civicclerk | #161 | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
+No downstream module pin moves for the Clerk-Core public-use starter release.
+The umbrella installer tag is `installer-clerk-core-v0.1.0`. The release covers
+only CivicCore, CivicRecords AI, CivicClerk, and the `clerk-core` installer
+profile. It does not promote queued modules or claim full-suite readiness,
+procurement readiness, production hosting certification, airgap readiness, live
+cross-module records exchange, or macOS lifecycle certification.
 

@@ -33,8 +33,8 @@ SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 SIGNING_STATUS = {
     "signed": False,
-    "status": "unsigned_oss_beta",
-    "reason": "CivicSuite is a small free open-source beta project and the public installer is intentionally unsigned.",
+    "status": "unsigned_public_use_starter",
+    "reason": "CivicSuite is an open-source public-use starter release and the installer is intentionally unsigned.",
     "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package.",
 }
 
@@ -119,7 +119,11 @@ EXECUTOR_PHASES = [
         "mutates_host": True,
         "required_inputs": ["approved_plan", "module_artifacts"],
         "required_evidence": ["install_log", "artifact_versions", "service_config"],
-        "blocks_on": ["executor_not_implemented", "artifact_missing", "version_mismatch"],
+        "blocks_on": [
+            "executor_not_implemented",
+            "artifact_missing",
+            "version_mismatch",
+        ],
     },
     {
         "id": "verify",
@@ -163,14 +167,25 @@ EVIDENCE_REPORTS = [
         "id": "readiness_report",
         "phase": "preflight",
         "path_template": "installer/reports/{run_id}/readiness.json",
-        "required_fields": ["run_id", "status", "checks", "next_action", "detection_source"],
+        "required_fields": [
+            "run_id",
+            "status",
+            "checks",
+            "next_action",
+            "detection_source",
+        ],
         "redaction": "allow executable paths and resource totals; reject tokens and env vars",
     },
     {
         "id": "approval_record",
         "phase": "approval",
         "path_template": "installer/reports/{run_id}/approval.json",
-        "required_fields": ["run_id", "approval_required", "approval_received", "operator_action"],
+        "required_fields": [
+            "run_id",
+            "approval_required",
+            "approval_received",
+            "operator_action",
+        ],
         "redaction": "record token presence only, never persist raw approval token",
     },
     {
@@ -191,7 +206,13 @@ EVIDENCE_REPORTS = [
         "id": "service_config",
         "phase": "execute",
         "path_template": "installer/reports/{run_id}/service-config.json",
-        "required_fields": ["run_id", "services", "ports", "data_paths", "mutates_host"],
+        "required_fields": [
+            "run_id",
+            "services",
+            "ports",
+            "data_paths",
+            "mutates_host",
+        ],
         "redaction": "record paths and ports; reject secret values",
     },
     {
@@ -205,7 +226,13 @@ EVIDENCE_REPORTS = [
         "id": "restart_check",
         "phase": "verify",
         "path_template": "installer/reports/{run_id}/restart-check.json",
-        "required_fields": ["run_id", "module", "restart_attempted", "status", "duration_seconds"],
+        "required_fields": [
+            "run_id",
+            "module",
+            "restart_attempted",
+            "status",
+            "duration_seconds",
+        ],
         "redaction": "timing and status only",
     },
     {
@@ -219,7 +246,14 @@ EVIDENCE_REPORTS = [
         "id": "repair_log",
         "phase": "repair",
         "path_template": "installer/reports/{run_id}/repair-log.jsonl",
-        "required_fields": ["run_id", "timestamp", "module", "diagnostic", "repair_step", "status"],
+        "required_fields": [
+            "run_id",
+            "timestamp",
+            "module",
+            "diagnostic",
+            "repair_step",
+            "status",
+        ],
         "redaction": "scrub secrets and local account identifiers",
     },
     {
@@ -240,7 +274,12 @@ EVIDENCE_REPORTS = [
         "id": "remaining_state_report",
         "phase": "rollback",
         "path_template": "installer/reports/{run_id}/remaining-state.json",
-        "required_fields": ["run_id", "remaining_services", "remaining_data_paths", "operator_next_action"],
+        "required_fields": [
+            "run_id",
+            "remaining_services",
+            "remaining_data_paths",
+            "operator_next_action",
+        ],
         "redaction": "paths allowed; no credentials or data payloads",
     },
 ]
@@ -282,7 +321,9 @@ def _contains_secret_shape(value: Any, *, parent_key: str = "") -> bool:
             if _contains_secret_shape(child, parent_key=key_text):
                 return True
     elif isinstance(value, list):
-        return any(_contains_secret_shape(item, parent_key=parent_key) for item in value)
+        return any(
+            _contains_secret_shape(item, parent_key=parent_key) for item in value
+        )
     return False
 
 
@@ -293,7 +334,9 @@ def _validate_required_fields(report_id: str, payload: dict[str, Any]) -> list[s
         if field not in payload:
             errors.append(f"{report_id} missing required field: {field}")
     if _contains_secret_shape(payload):
-        errors.append(f"{report_id} contains a field that looks secret-bearing or like an environment dump")
+        errors.append(
+            f"{report_id} contains a field that looks secret-bearing or like an environment dump"
+        )
     return errors
 
 
@@ -303,11 +346,15 @@ def _write_json_report(report_id: str, payload: dict[str, Any]) -> Path:
     errors = _validate_required_fields(report_id, payload)
     if errors:
         raise PlannerError("; ".join(errors))
-    path = ROOT / str(REPORTS_BY_ID[report_id]["path_template"]).format(run_id=payload["run_id"])
+    path = ROOT / str(REPORTS_BY_ID[report_id]["path_template"]).format(
+        run_id=payload["run_id"]
+    )
     if not _is_within(path, REPORT_ROOT):
         raise PlannerError(f"Report path is outside installer reports root: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return path
 
 
@@ -332,7 +379,9 @@ def _dry_run_report_payload(*, run_id: str, plan: dict[str, Any]) -> dict[str, A
     }
 
 
-def _readiness_report_payload(*, run_id: str, readiness: dict[str, Any]) -> dict[str, Any]:
+def _readiness_report_payload(
+    *, run_id: str, readiness: dict[str, Any]
+) -> dict[str, Any]:
     block = readiness["readiness"]
     return {
         "run_id": run_id,
@@ -361,7 +410,9 @@ def _approval_report_payload(*, run_id: str, gate: dict[str, Any]) -> dict[str, 
     }
 
 
-def _artifact_report_payload(*, run_id: str, artifact_resolution: dict[str, Any]) -> dict[str, Any]:
+def _artifact_report_payload(
+    *, run_id: str, artifact_resolution: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "run_id": run_id,
         "artifacts": artifact_resolution["artifacts"],
@@ -373,7 +424,9 @@ def _artifact_report_payload(*, run_id: str, artifact_resolution: dict[str, Any]
     }
 
 
-def _service_config_report_payload(*, run_id: str, profile_config: dict[str, Any]) -> dict[str, Any]:
+def _service_config_report_payload(
+    *, run_id: str, profile_config: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "run_id": run_id,
         "services": profile_config["services"],
@@ -386,7 +439,9 @@ def _service_config_report_payload(*, run_id: str, profile_config: dict[str, Any
     }
 
 
-def _health_report_payload(*, run_id: str, health_plan: dict[str, Any]) -> dict[str, Any]:
+def _health_report_payload(
+    *, run_id: str, health_plan: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "run_id": run_id,
         "checks": health_plan["checks"],
@@ -406,23 +461,50 @@ def write_report_for_plan(
     report_run_id = run_id or make_run_id()
     written: list[Path] = []
     if mode == "plan":
-        written.append(_write_json_report("dry_run_plan", _dry_run_report_payload(run_id=report_run_id, plan=plan)))
+        written.append(
+            _write_json_report(
+                "dry_run_plan", _dry_run_report_payload(run_id=report_run_id, plan=plan)
+            )
+        )
     elif mode == "readiness":
         written.append(
-            _write_json_report("readiness_report", _readiness_report_payload(run_id=report_run_id, readiness=plan))
+            _write_json_report(
+                "readiness_report",
+                _readiness_report_payload(run_id=report_run_id, readiness=plan),
+            )
         )
     elif mode == "approval":
-        written.append(_write_json_report("approval_record", _approval_report_payload(run_id=report_run_id, gate=plan)))
+        written.append(
+            _write_json_report(
+                "approval_record",
+                _approval_report_payload(run_id=report_run_id, gate=plan),
+            )
+        )
     elif mode == "artifacts":
         written.append(
-            _write_json_report("artifact_versions", _artifact_report_payload(run_id=report_run_id, artifact_resolution=plan))
+            _write_json_report(
+                "artifact_versions",
+                _artifact_report_payload(
+                    run_id=report_run_id, artifact_resolution=plan
+                ),
+            )
         )
     elif mode == "profile_config":
         written.append(
-            _write_json_report("service_config", _service_config_report_payload(run_id=report_run_id, profile_config=plan))
+            _write_json_report(
+                "service_config",
+                _service_config_report_payload(
+                    run_id=report_run_id, profile_config=plan
+                ),
+            )
         )
     elif mode == "health_checks":
-        written.append(_write_json_report("health_checks", _health_report_payload(run_id=report_run_id, health_plan=plan)))
+        written.append(
+            _write_json_report(
+                "health_checks",
+                _health_report_payload(run_id=report_run_id, health_plan=plan),
+            )
+        )
     else:
         raise PlannerError(f"Report writing is not supported for mode: {mode}")
     return {
@@ -465,7 +547,9 @@ def _menu_styles_by_id(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
-def _resolve_module_order(module_ids: list[str], modules: dict[str, dict[str, Any]]) -> list[str]:
+def _resolve_module_order(
+    module_ids: list[str], modules: dict[str, dict[str, Any]]
+) -> list[str]:
     resolved: list[str] = []
     visiting: set[str] = set()
     visited: set[str] = set()
@@ -532,11 +616,16 @@ def _baseline_checks(system: str) -> list[dict[str, str]]:
 
 def _run_probe(command: list[str], timeout: int = 5) -> dict[str, Any]:
     try:
-        proc = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+        proc = subprocess.run(
+            command, capture_output=True, text=True, timeout=timeout, check=False
+        )
     except FileNotFoundError:
         return {"ok": False, "detail": f"{command[0]} was not found."}
     except subprocess.TimeoutExpired:
-        return {"ok": False, "detail": f"{' '.join(command)} timed out after {timeout} seconds."}
+        return {
+            "ok": False,
+            "detail": f"{' '.join(command)} timed out after {timeout} seconds.",
+        }
     output = (proc.stdout or proc.stderr).replace("\x00", "").strip()
     return {
         "ok": proc.returncode == 0,
@@ -557,6 +646,7 @@ def _known_command_path(name: str) -> str | None:
 
 def _memory_bytes() -> int | None:
     if platform.system().lower() == "windows":
+
         class MemoryStatusEx(ctypes.Structure):
             _fields_ = [
                 ("dwLength", ctypes.c_ulong),
@@ -588,7 +678,11 @@ def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, An
     system = str(host_info.get("system", "")).lower()
     docker_path = _known_command_path("docker")
     ollama_path = _known_command_path("ollama")
-    docker_probe = _run_probe([docker_path, "info", "--format", "{{.ServerVersion}}"]) if docker_path else None
+    docker_probe = (
+        _run_probe([docker_path, "info", "--format", "{{.ServerVersion}}"])
+        if docker_path
+        else None
+    )
     root_usage = shutil.disk_usage(ROOT)
     memory_total = _memory_bytes()
 
@@ -697,7 +791,9 @@ def _readiness_messages() -> dict[str, dict[str, Any]]:
     }
 
 
-def build_menu_model(*, manifest: dict[str, Any], menu_style: str = "guided") -> dict[str, Any]:
+def build_menu_model(
+    *, manifest: dict[str, Any], menu_style: str = "guided"
+) -> dict[str, Any]:
     profiles = _profiles_by_id(manifest)
     modules = _modules_by_id(manifest)
     menu_styles = _menu_styles_by_id(manifest)
@@ -764,7 +860,9 @@ def build_readiness_model(
     messages = _readiness_messages()
     checks: list[dict[str, Any]] = []
 
-    check_ids = [action["id"] for action in plan["actions"] if action.get("type") == "check"]
+    check_ids = [
+        action["id"] for action in plan["actions"] if action.get("type") == "check"
+    ]
     check_ids.append("civiccore-compatibility")
     for check_id in check_ids:
         message = messages[check_id]
@@ -783,12 +881,22 @@ def build_readiness_model(
                 "severity": message["severity"] if failed else "info",
                 "message": message["fail"] if failed else message["ok"],
                 "fix_steps": message["fix_steps"] if failed else [],
-                "evidence": detected_check.get("evidence", {}) if isinstance(detected_check, dict) else {},
+                "evidence": detected_check.get("evidence", {})
+                if isinstance(detected_check, dict)
+                else {},
             }
         )
 
-    blockers = [check for check in checks if check["status"] == "failed" and check["severity"] == "blocker"]
-    warnings = [check for check in checks if check["status"] == "failed" and check["severity"] == "warning"]
+    blockers = [
+        check
+        for check in checks
+        if check["status"] == "failed" and check["severity"] == "blocker"
+    ]
+    warnings = [
+        check
+        for check in checks
+        if check["status"] == "failed" and check["severity"] == "warning"
+    ]
     return {
         "dry_run": True,
         "mutates_host": False,
@@ -796,7 +904,9 @@ def build_readiness_model(
         "menu_style": plan["menu_style"],
         "host": plan["host"],
         "scenario": scenario,
-        "detection_source": detected.get("detection_source") if detected else "synthetic",
+        "detection_source": detected.get("detection_source")
+        if detected
+        else "synthetic",
         "readiness": {
             "status": "blocked" if blockers else "warning" if warnings else "ready",
             "checks": checks,
@@ -900,7 +1010,11 @@ def _checksum_assets(path: Path) -> list[str]:
         path / "release" / "SHA256SUMS.txt",
         path / "SHA256SUMS.txt",
     ]
-    return [str(candidate.relative_to(path)) for candidate in candidates if candidate.is_file()]
+    return [
+        str(candidate.relative_to(path))
+        for candidate in candidates
+        if candidate.is_file()
+    ]
 
 
 def _dist_assets(path: Path, package_name: str, version: str | None) -> list[Path]:
@@ -949,22 +1063,30 @@ def build_artifact_resolution(
         version = _read_pyproject_version(local_path) if local_exists else None
         latest_tag = _latest_local_tag(local_path) if local_exists else None
         checksum_files = _checksum_assets(local_path) if local_exists else []
-        dist_assets = _dist_assets(local_path, module_id, version) if local_exists else []
+        dist_assets = (
+            _dist_assets(local_path, module_id, version) if local_exists else []
+        )
         artifact_status = "resolved"
         if not local_exists:
             artifact_status = "blocked"
             blockers.append(f"{module_id}: local checkout not found at {local_path}")
         elif not version:
             artifact_status = "needs_version_metadata"
-            warnings.append(f"{module_id}: version metadata was not found in pyproject surfaces")
+            warnings.append(
+                f"{module_id}: version metadata was not found in pyproject surfaces"
+            )
         elif not latest_tag:
             artifact_status = "needs_release_tag"
             warnings.append(f"{module_id}: no local release tag was found")
         elif not dist_assets:
             artifact_status = "needs_dist_artifact"
-            warnings.append(f"{module_id}: no local dist artifact found for version {version}")
+            warnings.append(
+                f"{module_id}: no local dist artifact found for version {version}"
+            )
         if not checksum_files:
-            warnings.append(f"{module_id}: no local SHA256SUMS.txt found in standard artifact paths")
+            warnings.append(
+                f"{module_id}: no local SHA256SUMS.txt found in standard artifact paths"
+            )
         artifacts.append(
             {
                 "module": module_id,
@@ -976,7 +1098,9 @@ def build_artifact_resolution(
                 "latest_local_tag": latest_tag,
                 "civiccore_requirement": module.get("civiccore_requirement"),
                 "checksum_files": checksum_files,
-                "dist_assets": [str(asset.relative_to(local_path)) for asset in dist_assets],
+                "dist_assets": [
+                    str(asset.relative_to(local_path)) for asset in dist_assets
+                ],
                 "artifact_status": artifact_status,
                 "resolver_mode": "local_read_only",
             }
@@ -1029,13 +1153,25 @@ def build_profile_config(
                 "service_name": service_name,
                 "repo": module.get("repo"),
                 "compose_profile": profile_id,
-                "depends_on": [dependency.replace("-", "_") for dependency in module.get("dependencies", [])],
-                "health_endpoint": f"http://localhost:{default_port}/health" if default_port else None,
+                "depends_on": [
+                    dependency.replace("-", "_")
+                    for dependency in module.get("dependencies", [])
+                ],
+                "health_endpoint": f"http://localhost:{default_port}/health"
+                if default_port
+                else None,
                 "configuration_status": "planned_only",
             }
         )
         if default_port:
-            ports.append({"module": module_id, "service_name": service_name, "container_port": default_port, "host_port": default_port})
+            ports.append(
+                {
+                    "module": module_id,
+                    "service_name": service_name,
+                    "container_port": default_port,
+                    "host_port": default_port,
+                }
+            )
         data_paths.append(
             {
                 "module": module_id,
@@ -1128,12 +1264,16 @@ def _posix_path_string(path: Path) -> str:
 def _install_kit_files(*, artifact: dict[str, Any]) -> dict[str, str]:
     version = artifact.get("version")
     if not version:
-        raise PlannerError("CivicCore version metadata is required before generating an install kit.")
+        raise PlannerError(
+            "CivicCore version metadata is required before generating an install kit."
+        )
     local_path = Path(str(artifact.get("local_path", "")))
     dist_assets = artifact.get("dist_assets", [])
     wheel_assets = [asset for asset in dist_assets if str(asset).endswith(".whl")]
     if not wheel_assets:
-        raise PlannerError("CivicCore wheel artifact is required before generating an install kit.")
+        raise PlannerError(
+            "CivicCore wheel artifact is required before generating an install kit."
+        )
     wheel_path = local_path / str(wheel_assets[0])
     wheel_for_windows = _windows_path_string(wheel_path)
     wheel_for_posix = _posix_path_string(wheel_path)
@@ -1147,7 +1287,7 @@ def _install_kit_files(*, artifact: dict[str, Any]) -> dict[str, str]:
             "local_artifact": _windows_path_string(wheel_path),
             "local_artifact_posix": wheel_for_posix,
             "repo_path": str(local_path),
-            "verify_command": "python -c \"import civiccore; print(civiccore.__version__)\"",
+            "verify_command": 'python -c "import civiccore; print(civiccore.__version__)"',
         },
         "operator_boundary": {
             "generator_mutates_host": False,
@@ -1196,7 +1336,8 @@ macOS/Linux/WSL artifact path:
 `{wheel_for_posix}`
 """,
         "requirements.txt": f"{wheel_for_windows}\n",
-        "civiccore-install-plan.json": json.dumps(plan, indent=2, sort_keys=True) + "\n",
+        "civiccore-install-plan.json": json.dumps(plan, indent=2, sort_keys=True)
+        + "\n",
         "install-civiccore.ps1": f"""$ErrorActionPreference = "Stop"
 $KitRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $VenvPath = Join-Path $KitRoot ".venv"
@@ -1288,24 +1429,36 @@ def generate_minimal_install_kit(
     manifest: dict[str, Any],
     output_root: Path = GENERATED_ROOT,
 ) -> dict[str, Any]:
-    plan = build_install_plan(manifest=manifest, profile_id="minimal", menu_style="guided")
+    plan = build_install_plan(
+        manifest=manifest, profile_id="minimal", menu_style="guided"
+    )
     if plan["modules"] != ["civiccore"]:
         raise PlannerError("Minimal install kit may only include CivicCore.")
-    artifacts = build_artifact_resolution(manifest=manifest, profile_id="minimal", menu_style="guided")
+    artifacts = build_artifact_resolution(
+        manifest=manifest, profile_id="minimal", menu_style="guided"
+    )
     artifact = _minimal_civiccore_artifact(artifacts)
     files = _install_kit_files(artifact=artifact)
     target = output_root / "minimal"
     if not _is_within(target, output_root):
-        raise PlannerError(f"Generated installer path is outside installer generated root: {target}")
+        raise PlannerError(
+            f"Generated installer path is outside installer generated root: {target}"
+        )
     written: list[str] = []
     target.mkdir(parents=True, exist_ok=True)
     for relative_path, content in files.items():
         path = target / relative_path
         if not _is_within(path, target):
-            raise PlannerError(f"Generated installer file path escaped target root: {path}")
+            raise PlannerError(
+                f"Generated installer file path escaped target root: {path}"
+            )
         path.write_text(content, encoding="utf-8", newline="\n")
         written.append(str(path.relative_to(ROOT)))
-    for script_name in ("install-civiccore.sh", "verify-civiccore.sh", "reset-civiccore.sh"):
+    for script_name in (
+        "install-civiccore.sh",
+        "verify-civiccore.sh",
+        "reset-civiccore.sh",
+    ):
         script = target / script_name
         try:
             script.chmod(0o755)
@@ -1344,7 +1497,9 @@ def _package_launcher_name(platform_id: str) -> str:
     return "start-civicsuite-installer.sh"
 
 
-def _package_launcher_text(*, platform_id: str, profile_id: str, menu_style: str) -> str:
+def _package_launcher_text(
+    *, platform_id: str, profile_id: str, menu_style: str
+) -> str:
     if platform_id == "windows":
         return f"""param(
     [switch]$Readiness,
@@ -1367,10 +1522,10 @@ $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\\..\\..\\..\\..")
 $Planner = Join-Path $RepoRoot "scripts\\plan-installer.py"
 $Lifecycle = Join-Path $RepoRoot "scripts\\run-clerk-core-installer.py"
 
-Write-Host "CivicSuite OSS beta installer package"
+Write-Host "CivicSuite OSS public-use starter installer package"
 Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
 Write-Host "Trust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands."
-Write-Host "Project status: small free open-source beta; the public installer is intentionally unsigned."
+Write-Host "Project status: public-use starter release; the installer is intentionally unsigned."
 
 $PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
 $LifecycleModuleArgs = @()
@@ -1434,10 +1589,10 @@ REPO_ROOT="$(cd "${{SCRIPT_DIR}}/../../../../.." && pwd)"
 PLANNER="${{REPO_ROOT}}/scripts/plan-installer.py"
 LIFECYCLE="${{REPO_ROOT}}/scripts/run-clerk-core-installer.py"
 
-echo "CivicSuite OSS beta installer package"
+echo "CivicSuite OSS public-use starter installer package"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
 echo "Trust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands."
-echo "Project status: small free open-source beta; the public installer is intentionally unsigned."
+echo "Project status: public-use starter release; the installer is intentionally unsigned."
 
 MODE="${{1:-readiness}}"
 if [[ "$#" -gt 0 ]]; then
@@ -1520,7 +1675,9 @@ esac
 """
 
 
-def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, plan: dict[str, Any]) -> str:
+def _package_readme_text(
+    *, profile_id: str, menu_style: str, platform_id: str, plan: dict[str, Any]
+) -> str:
     launcher = _package_launcher_name(platform_id)
     module_lines = "\n".join(f"- {module_id}" for module_id in plan["modules"])
     if platform_id == "windows":
@@ -1528,15 +1685,21 @@ def _package_readme_text(*, profile_id: str, menu_style: str, platform_id: str, 
         plan_command = f".\\{launcher} -Plan"
         records_only_plan = f".\\{launcher} -Plan -Module civicrecords-ai"
         clerk_only_plan = f".\\{launcher} -Plan -Module civicclerk"
-        both_install = f".\\{launcher} -Install -Module civicrecords-ai -Module civicclerk"
+        both_install = (
+            f".\\{launcher} -Install -Module civicrecords-ai -Module civicclerk"
+        )
         workflow_proof = f".\\{launcher} -Install -StaffMode bearer -WorkflowProof"
     else:
         readiness = f"bash ./{launcher} readiness"
         plan_command = f"bash ./{launcher} plan"
         records_only_plan = f"bash ./{launcher} plan --module civicrecords-ai"
         clerk_only_plan = f"bash ./{launcher} plan --module civicclerk"
-        both_install = f"bash ./{launcher} install --module civicrecords-ai --module civicclerk"
-        workflow_proof = f"bash ./{launcher} install --staff-mode bearer --workflow-proof"
+        both_install = (
+            f"bash ./{launcher} install --module civicrecords-ai --module civicclerk"
+        )
+        workflow_proof = (
+            f"bash ./{launcher} install --staff-mode bearer --workflow-proof"
+        )
     return f"""# CivicSuite Installer Package - {platform_id}
 
 Profile: `{profile_id}`
@@ -1544,7 +1707,7 @@ Menu style: `{menu_style}`
 
 ## Unsigned OSS Beta Notice
 
-This package is unsigned. CivicSuite is an open-source beta project and signing
+This package is unsigned. CivicSuite is an open-source public-use starter release and signing
 certificates are not used for the public installer path. Windows may show
 SmartScreen or Unknown Publisher warnings. macOS may show unidentified
 developer warnings. Linux package tools may show an unsigned/local package
@@ -1636,7 +1799,7 @@ protected while the proof creates real starter-set test records:
   temporary PostgreSQL restore-probe database and removing that probe after the
   check completes.
 - Uninstall mode removes the selected module Docker containers and volumes.
-- Native host installer wrappers are generated but unsigned in this OSS beta.
+- Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
 
 The repo/source checkout cleanroom gate remains available outside this
 distributable archive:
@@ -1663,7 +1826,9 @@ def generate_profile_package(
     allowed_platforms = {"windows", "macos", "linux"}
     unknown_platforms = sorted(set(platforms) - allowed_platforms)
     if unknown_platforms:
-        raise PlannerError(f"Unknown installer package platform: {', '.join(unknown_platforms)}")
+        raise PlannerError(
+            f"Unknown installer package platform: {', '.join(unknown_platforms)}"
+        )
     written: list[str] = []
     for target_platform in platforms:
         plan = build_install_plan(
@@ -1675,7 +1840,9 @@ def generate_profile_package(
         )
         package_dir = output_root / profile_id / target_platform
         if not _is_within(package_dir, output_root):
-            raise PlannerError(f"Generated package path is outside installer package root: {package_dir}")
+            raise PlannerError(
+                f"Generated package path is outside installer package root: {package_dir}"
+            )
         if package_dir.exists():
             shutil.rmtree(package_dir)
         package_dir.mkdir(parents=True, exist_ok=True)
@@ -1696,7 +1863,9 @@ def generate_profile_package(
         for relative_path, content in files.items():
             path = package_dir / relative_path
             if not _is_within(path, package_dir):
-                raise PlannerError(f"Generated package file path escaped package root: {path}")
+                raise PlannerError(
+                    f"Generated package file path escaped package root: {path}"
+                )
             path.write_text(content, encoding="utf-8", newline="\n")
             written.append(str(path.relative_to(ROOT)))
         launcher = package_dir / _package_launcher_name(target_platform)
@@ -1735,12 +1904,14 @@ def _package_host(platform_id: str) -> dict[str, str]:
     raise PlannerError(f"Unknown installer package platform: {platform_id}")
 
 
-def _native_manifest_files(*, profile_id: str, platform_id: str, version: str, package_dir: Path) -> dict[str, str]:
+def _native_manifest_files(
+    *, profile_id: str, platform_id: str, version: str, package_dir: Path
+) -> dict[str, str]:
     package_rel = package_dir.relative_to(ROOT).as_posix()
     if platform_id == "windows":
         return {
             "CivicSuiteInstaller.iss": f"""; CivicSuite Windows installer wrapper manifest.
-; Unsigned OSS beta: build with Inno Setup after reviewing the generated package payload.
+; Unsigned OSS public-use starter: build with Inno Setup after reviewing the generated package payload.
 
 #define AppName "CivicSuite"
 #define AppVersion "{version}"
@@ -1864,16 +2035,26 @@ def _archive_directory(source: Path, target: Path, *, platform_id: str) -> None:
         with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for path in sorted(source.rglob("*")):
                 if path.is_file():
-                    info = zipfile.ZipInfo(str(path.relative_to(source.parent)).replace("\\", "/"))
+                    info = zipfile.ZipInfo(
+                        str(path.relative_to(source.parent)).replace("\\", "/")
+                    )
                     info.date_time = (2026, 1, 1, 0, 0, 0)
-                    info.external_attr = (0o755 if path.suffix == ".sh" else 0o644) << 16
-                    archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED)
+                    info.external_attr = (
+                        0o755 if path.suffix == ".sh" else 0o644
+                    ) << 16
+                    archive.writestr(
+                        info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED
+                    )
         return
     with target.open("wb") as raw:
         with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
             with tarfile.open(fileobj=gz, mode="w") as archive:
                 for path in sorted(source.rglob("*")):
-                    arcname = source.name / path.relative_to(source) if isinstance(source.name, Path) else f"{source.name}/{path.relative_to(source).as_posix()}"
+                    arcname = (
+                        source.name / path.relative_to(source)
+                        if isinstance(source.name, Path)
+                        else f"{source.name}/{path.relative_to(source).as_posix()}"
+                    )
                     info = archive.gettarinfo(str(path), arcname=arcname)
                     info.mtime = 0
                     info.uid = 0
@@ -1918,7 +2099,9 @@ contains the sibling `{module_name}` checkout and must pass
             if name in SOURCE_BUNDLE_FORBIDDEN_NAMES:
                 ignored.add(name)
                 continue
-            if any(name.startswith(prefix) for prefix in SOURCE_BUNDLE_FORBIDDEN_PREFIXES):
+            if any(
+                name.startswith(prefix) for prefix in SOURCE_BUNDLE_FORBIDDEN_PREFIXES
+            ):
                 ignored.add(name)
                 continue
             if name == ".agent-workflows":
@@ -1957,10 +2140,19 @@ contains the sibling `{module_name}` checkout and must pass
             shutil.copy2(ledger, ledger_target)
 
 
-def _stage_release_bundle(*, profile_id: str, platform_id: str, package_dir: Path) -> Path:
-    bundle_dir = BUNDLE_ROOT / profile_id / platform_id / f"CivicSuite-{profile_id}-{platform_id}"
+def _stage_release_bundle(
+    *, profile_id: str, platform_id: str, package_dir: Path
+) -> Path:
+    bundle_dir = (
+        BUNDLE_ROOT
+        / profile_id
+        / platform_id
+        / f"CivicSuite-{profile_id}-{platform_id}"
+    )
     if not _is_within(bundle_dir, BUNDLE_ROOT):
-        raise PlannerError(f"Bundle path is outside generated bundle root: {bundle_dir}")
+        raise PlannerError(
+            f"Bundle path is outside generated bundle root: {bundle_dir}"
+        )
     if bundle_dir.exists():
         for attempt in range(3):
             try:
@@ -1970,13 +2162,24 @@ def _stage_release_bundle(*, profile_id: str, platform_id: str, package_dir: Pat
                 if attempt == 2:
                     raise
                 time.sleep(1)
-    staged_package = bundle_dir / "installer" / "generated" / "packages" / profile_id / platform_id
+    staged_package = (
+        bundle_dir / "installer" / "generated" / "packages" / profile_id / platform_id
+    )
     staged_package.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(package_dir, staged_package)
     (bundle_dir / "scripts").mkdir(parents=True, exist_ok=True)
-    shutil.copy2(ROOT / "scripts" / "plan-installer.py", bundle_dir / "scripts" / "plan-installer.py")
-    shutil.copy2(INSTALLER_LIFECYCLE_RUNNER, bundle_dir / "scripts" / "run-clerk-core-installer.py")
-    shutil.copy2(SERVICE_CLEANROOM_RUNNER, bundle_dir / "scripts" / "run-civicrecords-cleanroom.py")
+    shutil.copy2(
+        ROOT / "scripts" / "plan-installer.py",
+        bundle_dir / "scripts" / "plan-installer.py",
+    )
+    shutil.copy2(
+        INSTALLER_LIFECYCLE_RUNNER,
+        bundle_dir / "scripts" / "run-clerk-core-installer.py",
+    )
+    shutil.copy2(
+        SERVICE_CLEANROOM_RUNNER,
+        bundle_dir / "scripts" / "run-civicrecords-cleanroom.py",
+    )
     (bundle_dir / "installer").mkdir(parents=True, exist_ok=True)
     shutil.copy2(MANIFEST, bundle_dir / "installer" / "modules.json")
     modules_root = bundle_dir / "modules"
@@ -1986,7 +2189,7 @@ def _stage_release_bundle(*, profile_id: str, platform_id: str, package_dir: Pat
     (bundle_dir / "README.md").write_text(
         f"""# CivicSuite {profile_id} Installer Bundle
 
-This unsigned OSS beta bundle is self-contained for the clerk-core profile. It
+This unsigned OSS public-use starter bundle is self-contained for the clerk-core profile. It
 includes the installer lifecycle runner, the selected platform package, and the
 module source trees needed to build/start CivicRecords AI and CivicClerk with
 Docker.
@@ -2068,7 +2271,9 @@ def generate_release_artifacts(
         suffix = ".zip" if target_platform == "windows" else ".tar.gz"
         archive_name = f"CivicSuite-{profile_id}-{target_platform}-{version}{suffix}"
         archive_path = DIST_ROOT / archive_name
-        bundle_dir = _stage_release_bundle(profile_id=profile_id, platform_id=target_platform, package_dir=package_dir)
+        bundle_dir = _stage_release_bundle(
+            profile_id=profile_id, platform_id=target_platform, package_dir=package_dir
+        )
         _archive_directory(bundle_dir, archive_path, platform_id=target_platform)
         forbidden_entries = _archive_forbidden_entries(archive_path)
         if forbidden_entries:
@@ -2089,14 +2294,17 @@ def generate_release_artifacts(
     checksum_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-SHA256SUMS.txt"
     checksum_path.parent.mkdir(parents=True, exist_ok=True)
     checksum_path.write_text(
-        "".join(f"{artifact['sha256']}  {Path(artifact['path']).name}\n" for artifact in archives),
+        "".join(
+            f"{artifact['sha256']}  {Path(artifact['path']).name}\n"
+            for artifact in archives
+        ),
         encoding="utf-8",
         newline="\n",
     )
     release_manifest = {
         "schema_version": 1,
         "installer_version": version,
-        "distribution_status": "unsigned_oss_beta",
+        "distribution_status": "unsigned_public_use_starter",
         "signing": SIGNING_STATUS,
         "profile": profile_id,
         "menu_style": menu_style,
@@ -2110,10 +2318,14 @@ def generate_release_artifacts(
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "native_wrapper_status": "manifests_generated",
         "native_installers_built": False,
-        "next_action": "Publish verified unsigned beta archives only through the SHA256 and official-source trust path.",
+        "next_action": "Publish verified unsigned public-use starter archives only through the SHA256 and official-source trust path.",
     }
-    manifest_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-release-manifest.json"
-    manifest_path.write_text(json.dumps(release_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest_path = (
+        DIST_ROOT / f"CivicSuite-{profile_id}-{version}-release-manifest.json"
+    )
+    manifest_path.write_text(
+        json.dumps(release_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     return {
         "dry_run": False,
         "mutates_host": False,
@@ -2127,14 +2339,16 @@ def generate_release_artifacts(
         "release_manifest": str(manifest_path.relative_to(ROOT)),
         "native_installers_built": False,
         "signing": SIGNING_STATUS,
-        "next_action": "Publish verified unsigned beta archives only through the SHA256 and official-source trust path.",
+        "next_action": "Publish verified unsigned public-use starter archives only through the SHA256 and official-source trust path.",
     }
 
 
 def run_clerk_core_cleanroom_proof(*, run_id: str | None = None) -> dict[str, Any]:
     proof_run_id = run_id or f"clerk-core-cleanroom-{make_run_id()}"
     if not SERVICE_CLEANROOM_RUNNER.is_file():
-        raise PlannerError(f"Missing service cleanroom runner: {SERVICE_CLEANROOM_RUNNER}")
+        raise PlannerError(
+            f"Missing service cleanroom runner: {SERVICE_CLEANROOM_RUNNER}"
+        )
     proc = subprocess.run(
         [sys.executable, str(SERVICE_CLEANROOM_RUNNER), "--run-id", proof_run_id],
         cwd=ROOT,
@@ -2149,7 +2363,11 @@ def run_clerk_core_cleanroom_proof(*, run_id: str | None = None) -> dict[str, An
     proof: dict[str, Any] | None = None
     if proof_path.is_file():
         proof = json.loads(proof_path.read_text(encoding="utf-8"))
-    status = "passed" if proc.returncode == 0 and proof and proof.get("status") == "passed" else "failed"
+    status = (
+        "passed"
+        if proc.returncode == 0 and proof and proof.get("status") == "passed"
+        else "failed"
+    )
     return {
         "dry_run": False,
         "mutates_host": True,
@@ -2317,7 +2535,14 @@ def build_executor_design(
             "entry_phase": "preflight",
             "terminal_phases": ["verify", "rollback"],
             "phases": EXECUTOR_PHASES,
-            "transition_order": ["preflight", "approval", "execute", "verify", "repair", "rollback"],
+            "transition_order": [
+                "preflight",
+                "approval",
+                "execute",
+                "verify",
+                "repair",
+                "rollback",
+            ],
         },
         "implementation_boundary": {
             "allowed_now": [
@@ -2428,7 +2653,13 @@ def build_install_plan(
         {
             "type": "verify_profile",
             "profile": profile_id,
-            "proof": ["health_checks", "restart", "backup", "restore", "actionable_failure_copy"],
+            "proof": [
+                "health_checks",
+                "restart",
+                "backup",
+                "restore",
+                "actionable_failure_copy",
+            ],
         }
     )
 
@@ -2445,8 +2676,12 @@ def build_install_plan(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create a non-mutating CivicSuite installer plan.")
-    parser.add_argument("--profile", required=True, help="Profile id from installer/modules.json.")
+    parser = argparse.ArgumentParser(
+        description="Create a non-mutating CivicSuite installer plan."
+    )
+    parser.add_argument(
+        "--profile", required=True, help="Profile id from installer/modules.json."
+    )
     parser.add_argument(
         "--module",
         action="append",
@@ -2566,7 +2801,11 @@ def main() -> int:
         choices=sorted(READINESS_SCENARIOS),
         help="Synthetic dry-run readiness state to render.",
     )
-    parser.add_argument("--dry-run", action="store_true", help="Required; planner does not mutate host state.")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Required; planner does not mutate host state.",
+    )
     args = parser.parse_args()
 
     mutating_cleanroom_requested = args.run_cleanroom_proof or args.run_cleanroom_gate
@@ -2584,7 +2823,10 @@ def main() -> int:
         and not args.generate_release_artifacts
         and not mutating_cleanroom_requested
     ):
-        print("ERROR: --dry-run is required. This planner is non-mutating.", file=sys.stderr)
+        print(
+            "ERROR: --dry-run is required. This planner is non-mutating.",
+            file=sys.stderr,
+        )
         return 2
 
     try:
@@ -2664,7 +2906,9 @@ def main() -> int:
             report_mode = "preflight"
         elif args.generate_install_kit:
             if args.profile != "minimal":
-                raise PlannerError("--generate-install-kit currently supports only --profile minimal.")
+                raise PlannerError(
+                    "--generate-install-kit currently supports only --profile minimal."
+                )
             plan = generate_minimal_install_kit(manifest=manifest)
             report_mode = "generate_install_kit"
         elif args.generate_profile_package:
@@ -2688,12 +2932,16 @@ def main() -> int:
             report_mode = "release_artifacts"
         elif args.run_cleanroom_proof:
             if args.profile != "clerk-core":
-                raise PlannerError("--run-cleanroom-proof currently supports only --profile clerk-core.")
+                raise PlannerError(
+                    "--run-cleanroom-proof currently supports only --profile clerk-core."
+                )
             plan = run_clerk_core_cleanroom_proof(run_id=args.run_id)
             report_mode = "cleanroom_proof"
         elif args.run_cleanroom_gate:
             if args.profile != "clerk-core":
-                raise PlannerError("--run-cleanroom-gate currently supports only --profile clerk-core.")
+                raise PlannerError(
+                    "--run-cleanroom-gate currently supports only --profile clerk-core."
+                )
             plan = run_clerk_core_cleanroom_gate(run_id=args.run_id)
             report_mode = "cleanroom_gate"
         else:

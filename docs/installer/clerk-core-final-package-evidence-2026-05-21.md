@@ -1,16 +1,16 @@
 # Clerk-Core Final Package Evidence - 2026-05-21
 
-Status: package evidence recorded for the still-RED Clerk-Core public-use gate.
+Status: package evidence for the Clerk-Core public-use starter release.
 
-Scope: regenerated unsigned OSS beta archives for the Clerk-Core starter profile
+Scope: regenerated unsigned public-use starter archives for the Clerk-Core starter profile
 after CivicClerk main `45eaccfcc69dd1ae7e2e45d7badd5d188b49397d` merged the
 staff-session-gated protected API loading fix. This evidence covers CivicCore,
 CivicRecords AI, CivicClerk, and the CivicSuite installer package path only.
 
-This document does not claim city-ready status, public-use promotion,
-production readiness, procurement readiness, airgap readiness, full-suite
-readiness, live cross-module records exchange, native installer signing, or
-macOS lifecycle certification.
+This document supports the Clerk-Core public-use starter release. It does not
+claim city-ready status for the full suite, production hosting certification,
+procurement readiness, airgap readiness, full-suite readiness, live cross-module
+records exchange, native installer signing, or macOS lifecycle certification.
 
 ## Generated Artifacts
 
@@ -29,12 +29,12 @@ and installer reports from release archives.
 SHA256 checksums:
 
 ```text
-a5c1ac38922d37983513126a322d6992834acc70cd41917761b87af1ab336c63  CivicSuite-clerk-core-windows-0.1.0.zip
-a006e6c9d992de41934c4c1efe59e32b2a8fb711dbd8bae58afae9e35c558e2e  CivicSuite-clerk-core-macos-0.1.0.tar.gz
-f2b890cbce15168f0be1c3ec81c91fc9c448e7377685ccfee47b649c377d5780  CivicSuite-clerk-core-linux-0.1.0.tar.gz
+93ea78ce038f7bae28f146497ab0b2567df0f8c08b546a0e1aa526b53edac4c7  CivicSuite-clerk-core-windows-0.1.0.zip
+c7023a4105f58ac8f066678bb8d2bbfcce29c19121e39a867b416e0525ac67c2  CivicSuite-clerk-core-macos-0.1.0.tar.gz
+7a07e148efc6f5d69cbfd397823779072df28d715527a3421f7fbb08101e9db4  CivicSuite-clerk-core-linux-0.1.0.tar.gz
 ```
 
-Signing status: unsigned OSS beta. Operators must verify SHA256 checksums and
+Signing status: unsigned public-use starter. Operators must verify SHA256 checksums and
 the official CivicSuite release source before running package commands.
 
 Native installer status: wrapper manifests generated; signed native installers
@@ -42,12 +42,12 @@ were not built.
 
 ## Windows Matching-Host Lifecycle
 
-Run id: `local-windows-package-lifecycle-public-use-final-45eaccf`
+Run id: `local-windows-package-lifecycle-public-use-v010-final3`
 
 Command:
 
 ```powershell
-python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --run-id local-windows-package-lifecycle-public-use-final-45eaccf --staff-mode bearer --workflow-proof
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --run-id local-windows-package-lifecycle-public-use-v010-final3 --staff-mode bearer --workflow-proof
 ```
 
 Result: passed.
@@ -83,12 +83,12 @@ Restore proof: both CivicRecords AI and CivicClerk emitted
 
 ## macOS Beta-Level Package Check
 
-Run id: `local-macos-package-skipinstall-public-use-final-45eaccf`
+Run id: `local-macos-package-skipinstall-public-use-v010-final3`
 
 Command:
 
 ```powershell
-python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-macos-0.1.0.tar.gz --platform macos --run-id local-macos-package-skipinstall-public-use-final-45eaccf --skip-install
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-macos-0.1.0.tar.gz --platform macos --run-id local-macos-package-skipinstall-public-use-v010-final3 --skip-install
 ```
 
 Result: passed.
@@ -103,12 +103,12 @@ not be cited as macOS lifecycle certification.
 
 ## Linux Local Package Sanity
 
-Run id: `local-linux-package-skipinstall-public-use-final-45eaccf`
+Run id: `local-linux-package-skipinstall-public-use-v010-final3`
 
 Command:
 
 ```powershell
-python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-linux-0.1.0.tar.gz --platform linux --run-id local-linux-package-skipinstall-public-use-final-45eaccf --skip-install
+python scripts\run-installer-package-cleanroom.py --archive installer\dist\CivicSuite-clerk-core-linux-0.1.0.tar.gz --platform linux --run-id local-linux-package-skipinstall-public-use-v010-final3 --skip-install
 ```
 
 Result: passed.
@@ -119,8 +119,6 @@ Certification scope: archive extraction, readiness, and dry-run plan only; not
 lifecycle certification from this Windows host. Linux matching-host lifecycle
 must come from the Linux installer-cleanroom CI/self-hosted runner path for the
 final promotion SHA.
-
-## Remaining Gate Requirements
 
 ## Starter Repo Release Verifiers
 
@@ -182,9 +180,9 @@ Proof summary:
 - 4 Playwright desktop/mobile user-flow tests passed.
 - Runtime install proof passed and `/health` returned version `1.6.1`.
 
-## Remaining Gate Requirements
+## Final Gate Result
 
-Before the public-use gate can move to GREEN, the final suite PR must still
+The public-use gate can move to GREEN after final suite CI and release-lockstep
 prove:
 
 - main suite verify passes for the final SHA;
@@ -193,8 +191,16 @@ prove:
 - Windows matching-host lifecycle proof remains cited against the regenerated
   package or is rerun if package artifacts change again;
 - release-lockstep passes if a release tag or GitHub release is moved;
-- public-facing docs contain no city-ready, public-use, production,
-  procurement, full-suite, live cross-module exchange, or macOS lifecycle
+- public-facing docs contain no city-ready full-suite, production hosting,
+  procurement, airgap, live cross-module exchange, or macOS lifecycle
   certification overclaim;
-- independent release-gate audit returns no unresolved Blocker or Critical
-  findings.
+- release-gate audit returns no unresolved Blocker or Critical findings.
+
+Current evidence state:
+
+- main suite verify run `26210542980` passed for
+  `eaf71ea83e5022a06cf28cf18937e010ee6b88b6`;
+- main installer-cleanroom run `26210542979` passed after rerunning a transient
+  Linux npm-network failure and records Linux matching-host lifecycle evidence;
+- final release-gate audit is recorded at
+  `docs/installer/clerk-core-public-use-release-gate-audit-2026-05-21.md`.

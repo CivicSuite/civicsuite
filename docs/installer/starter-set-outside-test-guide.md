@@ -29,7 +29,7 @@ Install or enable these first:
   basic service health.
 
 Download the release archive from the official CivicSuite release source,
-`installer-clerk-core-v0.1.0-beta.4` on this repo's Releases page, then verify
+`installer-clerk-core-v0.1.0` on this repo's Releases page, then verify
 the SHA256 checksum from the published `SHA256SUMS.txt` before running any
 launcher.
 
@@ -140,7 +140,7 @@ python scripts\run-installer-package-cleanroom.py --archive installer\dist\Civic
 The workflow-proof report must show `workflow_proof_requested=true`,
 `civicclerk_staff_mode=bearer`, and `evidence_classification=matching_host_lifecycle`
 when it is used as matching Windows or Linux lifecycle proof.
-For the current merged beta.4 baseline, run `26115385070` proves the Linux
+For the current public-use starter baseline, run `26210542979` proves the Linux
 matching-host extracted package lifecycle with workflow proof, backup, restore,
 and uninstall. Run `26115385258` proves suite verifier truth, including
 `[civicrecords-ai] PASS 1.6.1` and `[clerk-core-workflow-proof] PASS`.

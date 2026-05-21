@@ -104,7 +104,7 @@ The `civicsuite` repo is **documentation-, governance-, and coordination-first**
 - the [Shared extraction consumer rollout playbook](docs/roadmap/shared-extraction-consumer-rollout.md)
 - the unified suite specification and module catalog under `docs/` and `specs/`
 - suite-level governance and ADRs
-- the **suite installer scaffolding** under `installer/` (a working clerk-core lifecycle runner, currently YELLOW beta)
+- the **suite installer** under `installer/` (a working Clerk-Core public-use starter release path)
 - verification scripts under `scripts/`
 
 The umbrella does **not** contain runtime code for individual products — that lives in the per-module repos.

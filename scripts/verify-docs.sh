@@ -30,6 +30,7 @@ REQUIRED=(
   docs/installer/installer-checkpoint-2026-05-09.md
   docs/installer/starter-set-outside-test-guide.md
   docs/installer/starter-set-public-use-readiness-gate.md
+  docs/installer/clerk-core-public-use-release-gate-audit-2026-05-21.md
   docs/ux/shared-shell-inventory.md
   docs/architecture/ADR-0004-shared-shell-boundaries.md
   docs/connectors/import-export-template.md
