@@ -3,7 +3,7 @@
 Status: maintained installer contract for the CivicCore + CivicRecords AI +
 CivicClerk starter set.
 
-Last verified: 2026-05-19.
+Last verified: 2026-05-21.
 
 ## Scope
 
@@ -13,7 +13,10 @@ The starter set is the first operator-facing CivicSuite install target:
   depends on it.
 - CivicRecords AI and CivicClerk are selectable modules in the custom profile
   and are both included by default in the `clerk-core` profile.
-- macOS archives and wrapper manifests are generated, but macOS lifecycle testing is intentionally on hold. Linux and Windows proof are the priority.
+- Windows and Linux package lifecycle proof are required for the Clerk-Core public-use gate.
+- macOS archives and wrapper manifests are generated and supported at beta
+  archive/readiness level; full matching-host macOS lifecycle evidence still
+  requires a Darwin/macOS Docker Desktop host before any macOS lifecycle certification claim.
 
 Outside-party testing instructions live in
 [`starter-set-outside-test-guide.md`](starter-set-outside-test-guide.md).

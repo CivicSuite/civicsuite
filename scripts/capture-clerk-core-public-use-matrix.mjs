@@ -156,6 +156,7 @@ async function runPageCheck(browser, check) {
     console_messages: normalizeMessages(consoleMessages),
     page_errors: pageErrors,
     failed_responses: failedResponses.map((entry) => ({ status: entry.status, path: new URL(entry.url).pathname })),
+    allowed_failure_statuses: expectedFailuresOnly,
     status: captureStatus,
   };
 }
@@ -174,6 +175,24 @@ function routeAudience(route) {
     return "public";
   }
   return "staff";
+}
+
+function dedupeRoutes(routes) {
+  const byKey = new Map();
+  for (const route of routes) {
+    const key = `${route.product}\u0000${route.route}`;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, route);
+      continue;
+    }
+    if (existing.desktop_mobile_qa.includes("API inventory only") && !route.desktop_mobile_qa.includes("API inventory only")) {
+      byKey.set(key, route);
+    }
+  }
+  return [...byKey.values()].sort((left, right) =>
+    `${left.product} ${left.route}`.localeCompare(`${right.product} ${right.route}`),
+  );
 }
 
 async function openApiRoutes(product, baseUrl) {
@@ -215,7 +234,7 @@ async function main() {
     { id: "clerk-staff-mobile", product: "CivicClerk", surface: "staff browser", auth: "bearer staff token", state: "success", url: `${clerkWeb}/staff`, viewport: mobile, headers: { Authorization: `Bearer ${clerkToken}` }, expectedCopy: ["CivicClerk", "Agenda", "Packet", "Notice", "Minutes"] },
     { id: "clerk-public-desktop", product: "CivicClerk", surface: "public browser", auth: "none", state: "success", url: `${clerkWeb}/public`, viewport: desktop, expectedCopy: ["Public", "Meeting"] },
     { id: "clerk-public-mobile", product: "CivicClerk", surface: "public browser", auth: "none", state: "success", url: `${clerkWeb}/public`, viewport: mobile, expectedCopy: ["Public", "Meeting"] },
-    { id: "clerk-protected-error-desktop", product: "CivicClerk", surface: "staff browser", auth: "missing staff auth", state: "error", url: `${clerkWeb}/staff`, viewport: desktop, expectedCopy: ["Confirm the backend is running", "verify staff auth mode", "retry"], allowedFailureStatuses: [401] },
+    { id: "clerk-protected-error-desktop", product: "CivicClerk", surface: "staff browser", auth: "missing staff auth", state: "error", url: `${clerkWeb}/staff`, viewport: desktop, expectedCopy: ["Staff sign-in needed", "Bearer token required", "allowed roles"], allowedFailureStatuses: [401] },
     ...["success", "loading", "empty", "error", "partial"].map((state) => ({
       id: `clerk-staff-state-${state}`,
       product: "CivicClerk",
@@ -254,7 +273,7 @@ async function main() {
     civicrecords: await fetch(`${recordsApi}/health`).then((response) => response.json()),
     civicclerk: await fetch(`${clerkWeb}/api/health`).then((response) => response.json()),
   };
-  const route_inventory = [
+  const route_inventory = dedupeRoutes([
     ...(await openApiRoutes("CivicRecords AI", recordsApi)),
     ...(await openApiRoutes("CivicClerk", clerkApi)),
     { product: "CivicRecords AI", route: "/public", audience: "public", auth_requirement: "none in public portal mode", desktop_mobile_qa: "public portal browser route inventoried from React app; installed stack is private-mode for current Clerk-Core package", states: "not browser-promoted in private-mode installed package" },
@@ -270,7 +289,7 @@ async function main() {
     })),
     { product: "CivicClerk", route: "/staff", audience: "staff", auth_requirement: "bearer staff token in installed proof mode", desktop_mobile_qa: "covered in this browser matrix", states: "success/loading/empty/error/partial covered" },
     { product: "CivicClerk", route: "/public", audience: "public", auth_requirement: "none", desktop_mobile_qa: "covered in this browser matrix", states: "success/loading/empty/error/partial covered" },
-  ];
+  ]);
 
   const adversarial = {
     bad_inputs: await fetchJson(`${clerkApi}/agenda-intake`, {
@@ -295,13 +314,19 @@ async function main() {
   const report = {
     name: "clerk-core-public-use-route-state-matrix",
     captured_at: new Date().toISOString(),
-    baseline: "CivicSuite main after PR #159 merge, installed locally with run-id local-public-use-matrix and bearer workflow proof",
+    baseline: "CivicSuite main after PR #160 merge, installed locally with bearer workflow proof",
     urls: { recordsWeb, recordsApi, clerkWeb, clerkApi },
     health,
     route_inventory,
     browser_checks: results,
     adversarial,
     status: results.every((result) => result.status !== "failed") ? "capture_complete" : "capture_failed",
+    qa_notes: [
+      "Capture status means the browser check rendered without capture-tool failure; it is not a public-use readiness verdict.",
+      "CivicClerk public screenshots were captured against a dev build that renders staff chrome, the surface switch, Show audit, INSTALL DETAIL, and QA-state controls; they are not clean public-surface proof.",
+      "CivicClerk public loading/empty/error/partial states are harness-simulated, not observed production behavior.",
+      "CivicRecords footer shows v1.4.1 while header and /health report v1.6.1; tracked as CivicRecords AI issue #88.",
+    ],
   };
   await fs.writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   const routeRows = route_inventory.map((route) => `| ${route.product} | \`${route.route}\` | ${route.audience} | ${route.auth_requirement} | ${route.desktop_mobile_qa} | ${route.states} |`);
