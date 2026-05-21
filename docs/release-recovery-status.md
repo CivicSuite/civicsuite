@@ -1,6 +1,6 @@
 # CivicSuite Release Recovery Status
 
-Status date: 2026-05-18
+Status date: 2026-05-21
 
 ## Current Rule
 
@@ -25,7 +25,7 @@ Demotion pattern:
 | civiccore | v1.0.0 / v1.0 | v1.1.0 shipped | Real platform; v1.1.0 shipped 2026-05-11 with shared `staff_key_gate` and timing-safe staff-key comparison. v1.0.1 auth-error-payload hardening remains included; v1.0 superseded. |
 | civicclerk | v1.0.0 | v1.0.1 shipped | Real product-shaped workflow; v1.0.1 shipped 2026-05-10 with QA-001 security default change. Fresh installs deny anonymous staff writes by default; open mode is explicit local-rehearsal opt-in. |
 | civicrecords-ai | v1.4.10 | v1.6.1 shipped | CivicCore v1.0.1 migration shipped 2026-05-11 as v1.5.0; B2 audit punch-list closed 2026-05-12 as v1.6.0 (JWT secret and first-admin password material moved to Docker secret files; container env no longer exposes any `JWT_SECRET*` or `FIRST_ADMIN_PASSWORD*` name). v1.6.1 shipped 2026-05-15 with the ingestion worker event-loop recovery patch. |
-| civiccode | v1.0.0 | v0.5.0 | Demote; meaningful runtime depth but not v1.0. D2/B3 rollout moved this repo to CivicCore v1.1.0. |
+| civiccode | v1.0.0 false label, later repaired | v1.0.0 shipped | Recovered; the stale false tag was replaced after the source release gate passed. CivicCode v1.0.0 now peels to `cb5f23eb437863b602df2ba2825bb72fd26e1154`, with release workflow `26219395141`, artifacts, attestation, public browser QA, and suite installer/module-selection truth reconciliation. |
 | civiczone | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. |
 | civicplan | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
 | civicpermit | v1.0.0 | v0.2.0 | Demote; scaffold-depth behavior and mock integrations. D2/B3 rollout moved this repo to CivicCore v1.1.0 and shared `staff_key_gate`. |
@@ -72,9 +72,10 @@ Demotion pattern:
 - **2026-05-20/21:** installed Clerk-Core route/state evidence was added under `docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md` and `.json`, with screenshots for CivicRecords AI login/dashboard/search/request paths and CivicClerk public/staff/protected-state paths. The current regenerated matrix records 20 browser checks, 154 deduplicated installed routes, desktop/mobile coverage, loading/success/empty/error/partial state checks where supported, adversarial local integration probes, and restore-precondition behavior for a missing backup manifest. This is audit evidence for the public-use starter gate; it does not promote queued modules, city-ready full-suite status, production hosting certification, procurement readiness, live cross-module exchange, or macOS lifecycle certification.
 - **2026-05-21:** the final package evidence branch regenerated unsigned Clerk-Core `0.1.0` archives after CivicClerk main `45eaccfcc69dd1ae7e2e45d7badd5d188b49397d` merged the staff-session-gated protected API loading fix. Local Windows matching-host package lifecycle passed install, repair, verify, workflow proof, backup, restore, and uninstall; macOS remains beta-level archive/readiness only; CivicClerk and CivicRecords AI release verifiers passed locally. Final suite CI and release-gate audit later cleared the public-use starter gate.
 - **2026-05-21:** `installer-clerk-core-v0.1.0` promoted the bounded Clerk-Core public-use starter release after final gate evidence cleared. Main verify run `26210542980` passed, main installer-cleanroom run `26210542979` passed after a transient Linux npm-network rerun, Windows matching-host lifecycle evidence exists for the regenerated package, and `docs/installer/clerk-core-public-use-release-gate-audit-2026-05-21.md` records no unresolved Blocker or Critical findings. This promotes only CivicCore + CivicRecords AI + CivicClerk through the Clerk-Core installer profile; it does not promote the full suite, procurement readiness, production hosting certification, airgap readiness, live cross-module records exchange, or macOS lifecycle certification.
+- **2026-05-21:** CivicCode v1.0.0 was repaired and shipped as the first post-starter active module. PR #56 merged the v1 public-use module release line, PR #57 fixed the release workflow Playwright gate, main verify run `26219229208` passed, and release workflow run `26219395141` published `v1.0.0` with wheel, sdist, SHA256SUMS, release attestation, and attestation bundle assets. The repaired `v1.0.0` tag peels to `cb5f23eb437863b602df2ba2825bb72fd26e1154`; the old false-tag object `6dfd625cf895c6e0a9fc4038cc317adf58ce724c` is historical only. This promotes only CivicCode, not queued modules, the full suite, procurement readiness, production hosting certification, airgap readiness, or macOS lifecycle certification.
 
 ## Language Rules
 
 Use: "demoted recovery label", "developer preview", "foundation surface", "mock integration", "recovery patch required".
 
-Do not use for demoted modules: "v1.0.0", "product-ready", "city-ready", "shipping product", "production-usable", or "done".
+Do not use for demoted modules: "v1.0.0", "product-ready", "city-ready", "shipping product", "production-usable", or "done". CivicCode is no longer in the demoted-module set after the 2026-05-21 v1.0.0 repair and release.

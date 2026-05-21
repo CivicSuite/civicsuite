@@ -1,3 +1,3 @@
-93ea78ce038f7bae28f146497ab0b2567df0f8c08b546a0e1aa526b53edac4c7  CivicSuite-clerk-core-windows-0.1.0.zip
-c7023a4105f58ac8f066678bb8d2bbfcce29c19121e39a867b416e0525ac67c2  CivicSuite-clerk-core-macos-0.1.0.tar.gz
-7a07e148efc6f5d69cbfd397823779072df28d715527a3421f7fbb08101e9db4  CivicSuite-clerk-core-linux-0.1.0.tar.gz
+2efe79603aeb31e82dab448a0ba2bbd7fb67e17e4dc9b38a421f9c9136b6ede8  CivicSuite-clerk-core-windows-0.1.0.zip
+135fb2c228bd30d6027879484e1baffcd8a8d407c4f9d9aa2f9c58137cd7caa7  CivicSuite-clerk-core-macos-0.1.0.tar.gz
+77105a5c9059ddd49105fd25dd66e816c2753126a685eff22724f94b87870450  CivicSuite-clerk-core-linux-0.1.0.tar.gz

@@ -24,7 +24,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 
 - `civicrecords-ai` (FOIA / records) is the most mature module today; v1.6.1 is a developer-preview release with the ingestion worker recovery patch shipped.
 - `civicclerk` (meetings) has substantial workflow code and a first React staff workspace; v1.0.1 shipped the protected-default recovery patch.
-- CivicCode is demoted to v0.5.0; CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0.
+- CivicCode v1.0.0 has passed its public-use module release gate; CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain demoted to v0.2.0.
 - The remaining 16 modules are foundation-tier surfaces (sample APIs, sample UI, civiccore alignment) — not yet usable products.
 - `civiccore` is the shared platform package under all of them; v1.1.0 is the current shared-platform release.
 
@@ -116,7 +116,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civicrecords-ai` | Most mature; v1.6.1 developer preview with ingestion worker recovery shipped |
 | `civiccore` | Shared platform; v1.1.0 current |
 | `civicclerk` | v1.0.1 protected-default recovery patch |
-| `civiccode` | v0.5.0 demoted recovery label |
+| `civiccode` | v1.0.0 public-use module release |
 | `civiczone`, `civicplan`, `civicpermit` | v0.2.0 demoted recovery labels |
 | `civicinspect`, `civicgrants`, `civicprocure` | v0.2.0 demoted recovery labels |
 | All others | Foundation surfaces (v0.1.x) |

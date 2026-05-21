@@ -151,3 +151,18 @@ profile. It does not promote queued modules or claim full-suite readiness,
 procurement readiness, production hosting certification, airgap readiness, live
 cross-module records exchange, or macOS lifecycle certification.
 
+For the CivicCode v1.0.0 public-use module release:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civiccode | #56, #57 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
+
+CivicCode is the first post-starter active module to complete source release and
+suite installer/module-selection truth reconciliation. The repaired `v1.0.0`
+tag peels to `cb5f23eb437863b602df2ba2825bb72fd26e1154`; release workflow run
+`26219395141` published the wheel, sdist, SHA256SUMS, release attestation, and
+attestation bundle. This promotes CivicCode only. It does not promote queued
+modules, the full suite, procurement readiness, production hosting
+certification, airgap readiness, live cross-module records exchange, or macOS
+lifecycle certification.
+
