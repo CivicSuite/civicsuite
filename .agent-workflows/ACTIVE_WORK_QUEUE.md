@@ -114,26 +114,36 @@ Definition of Done: reconcile CivicPlan v1.0.0 source release truth into CivicSu
 
 Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-6. **CivicPermit v1.0.0 - ACTIVE**
+6. **CivicPermit v1.0.0 - COMPLETE**
 
 Why now: next Tier 2 land-use/permit-intake module after CivicPlan.
 
 Definition of Done: reconcile CivicPermit v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target does not promote CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
-Current status: RED, active.
+Current status: GREEN, completed with source release and suite installer/module-selection truth reconciliation.
 
-Next action: run the `agent-pipeline-codex` v0.9.0 suite-truth run `2026-05-21-civicpermit-v1-suite-truth`, verify locally, push a `release-tag` PR, merge after green CI, and verify main.
+Completion evidence: CivicPermit PR #12 merged; release `v1.0.0` is published; CivicSuite PR #168 merged; main verify run `26235152098` passed with `[civicpermit] PASS 1.0.0`.
+
+7. **CivicInspect v1.0.0 - ACTIVE**
+
+Why now: next Tier 2 inspection module after CivicPermit.
+
+Definition of Done: reconcile CivicInspect v1.0.0 source release truth into CivicSuite installer/module-selection metadata, compatibility truth, release recovery docs, current-facing docs, release-lockstep evidence, verifier truth, PR/CI/main verification, and root queue advancement. This target does not promote CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
+
+Current status: RED, active suite-truth reconciliation.
+
+Next action: run the `agent-pipeline-codex` v0.9.0 suite-truth run `2026-05-21-civicinspect-v1-suite-truth`, verify locally, push a `release-tag` PR, merge after green CI, and verify main.
 
 ## Queued Targets
 
-7. **Remaining 20 product modules in spec/dependency order**
+8. **Remaining 19 product modules in spec/dependency order**
 
-Why next: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. After CivicRecords AI, CivicClerk, CivicCode, CivicAccess, CivicZone, CivicPlan, and CivicPermit, the remaining 20 product modules proceed one at a time.
+Why next: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. After CivicRecords AI, CivicClerk, CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect, the remaining 19 product modules proceed one at a time.
 
-8. **Deferred release-infrastructure follow-ups**
+9. **Deferred release-infrastructure follow-ups**
 
 Why third: CivicRecords AI workflow-dispatch improvements, standalone macOS lifecycle certification, and other infrastructure refinements remain useful, but they cannot displace the clerk-core city release unless they directly block it.
 
 ## Current Decision
 
-Proceed with Active Target #6 now. CivicInspect and later modules are paused until CivicPermit passes its suite truth and installer/module-selection gate.
+Proceed with Active Target #7 now. CivicGrants and later modules are paused until CivicInspect passes its suite truth and installer/module-selection gate.

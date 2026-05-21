@@ -81,6 +81,14 @@ For the CivicPermit v1.0.0 public-use module release:
 
 CivicPermit release `v1.0.0` peels to `da4ee8e3194eedc15361cf1baf9bab1e5bce5d6f`; main verify run `26233364327`, release workflow `26233455321`, and tag verify run `26233454863` passed. Release assets are wheel `sha256:8b8e7f206b334cd513458e6829b287b3a01e81bf5ba92fefb51035caff8c6cd7`, sdist `sha256:db41d1080aeda5c1aebe6467bd27817962ffe990180086f11af53cfcd8ee7c02`, and SHA256SUMS `sha256:49dfde33f2b92e27b6db236738dfbb093722743841ee065cd88b2a43f5cf8c08`. This lockstep record promotes only CivicPermit and does not promote CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
+For the CivicInspect v1.0.0 public-use module release:
+
+| Repo | PR | Version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicinspect | #10 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
+
+CivicInspect release `v1.0.0` peels to `a018241d801feb89e9ff5bf29666edbeda6a2c9a`; main verify run `26236492518`, release workflow `26236555671`, and tag verify run `26236555694` passed. Release assets are wheel `sha256:b03c5345eee8c2266af8e2135c959ab33e06b7e881bcad10ed63b5d2b18c0ffe`, sdist `sha256:910fe253cd878fa7211e6a374972e69f24355c20ba1018627e98ecb0d6ce9811`, and SHA256SUMS `sha256:cf97455ff0bbdfe2834a8771c6089bb57e93c1bfe9b59159b1b9b44e88263d87`. This lockstep record promotes only CivicInspect and does not promote CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
+
 For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
 
 | Repo | PR | Package version | CivicCore pin |
