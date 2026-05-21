@@ -1,6 +1,6 @@
 # Clerk-Core Public-Use Route And State Matrix - 2026-05-20
 
-Status: PASSED
+Status: CAPTURE COMPLETE - 20/20 checks rendered; evidence for the still-RED Clerk-Core public-use gate, not a pass verdict on public-use readiness.
 
 Scope: local installed Clerk-Core stack containing CivicRecords AI 1.6.1 and CivicClerk 1.0.1. This is browser/API/user-facing evidence for the starter product and is not a claim of city production deployment, external municipal validation, procurement certification, airgap proof, or macOS lifecycle certification.
 
@@ -11,28 +11,28 @@ Scope: local installed Clerk-Core stack containing CivicRecords AI 1.6.1 and Civ
 
 ## Browser State Matrix
 
-| Check | Product | Surface | Auth | State | Viewport | Status | Screenshot |
+| Check | Product | Surface | Auth | State | Viewport | Capture | Screenshot |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| records-login-desktop | CivicRecords AI | staff browser | none before login | success | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-login-desktop.png |
-| records-login-mobile | CivicRecords AI | staff browser | none before login | success | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-login-mobile.png |
-| records-dashboard-desktop | CivicRecords AI | staff browser | first-admin JWT | success | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-dashboard-desktop.png |
-| records-search-desktop | CivicRecords AI | staff browser | first-admin JWT | success | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-search-desktop.png |
-| records-requests-mobile | CivicRecords AI | staff browser | first-admin JWT | success | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-requests-mobile.png |
-| clerk-staff-desktop | CivicClerk | staff browser | bearer staff token | success | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-desktop.png |
-| clerk-staff-mobile | CivicClerk | staff browser | bearer staff token | success | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-mobile.png |
-| clerk-public-desktop | CivicClerk | public browser | none | success | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-desktop.png |
-| clerk-public-mobile | CivicClerk | public browser | none | success | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-mobile.png |
-| clerk-protected-error-desktop | CivicClerk | staff browser | missing staff auth | error | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-protected-error-desktop.png |
-| clerk-staff-state-success | CivicClerk | staff browser | bearer staff token | success | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-success.png |
-| clerk-staff-state-loading | CivicClerk | staff browser | bearer staff token | loading | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-loading.png |
-| clerk-staff-state-empty | CivicClerk | staff browser | bearer staff token | empty | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-empty.png |
-| clerk-staff-state-error | CivicClerk | staff browser | bearer staff token | error | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-error.png |
-| clerk-staff-state-partial | CivicClerk | staff browser | bearer staff token | partial | 1440x1000 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-partial.png |
-| clerk-public-state-success | CivicClerk | public browser | none | success | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-success.png |
-| clerk-public-state-loading | CivicClerk | public browser | none | loading | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-loading.png |
-| clerk-public-state-empty | CivicClerk | public browser | none | empty | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-empty.png |
-| clerk-public-state-error | CivicClerk | public browser | none | error | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-error.png |
-| clerk-public-state-partial | CivicClerk | public browser | none | partial | 390x844 | passed | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-partial.png |
+| records-login-desktop | CivicRecords AI | staff browser | none before login | success | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-login-desktop.png |
+| records-login-mobile | CivicRecords AI | staff browser | none before login | success | 390x844 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-login-mobile.png |
+| records-dashboard-desktop | CivicRecords AI | staff browser | first-admin JWT | success | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-dashboard-desktop.png |
+| records-search-desktop | CivicRecords AI | staff browser | first-admin JWT | empty | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-search-desktop.png |
+| records-requests-mobile | CivicRecords AI | staff browser | first-admin JWT | success | 390x844 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-requests-mobile.png |
+| clerk-staff-desktop | CivicClerk | staff browser | bearer staff token | success | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-desktop.png |
+| clerk-staff-mobile | CivicClerk | staff browser | bearer staff token | success | 390x844 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-mobile.png |
+| clerk-public-desktop | CivicClerk | public browser | none | success | 1440x1000 | rendered (dev-build staff chrome visible) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-desktop.png |
+| clerk-public-mobile | CivicClerk | public browser | none | success | 390x844 | rendered (dev-build staff chrome visible) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-mobile.png |
+| clerk-protected-error-desktop | CivicClerk | staff browser | missing staff auth | error | 1440x1000 | rendered (designed error state) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-protected-error-desktop.png |
+| clerk-staff-state-success | CivicClerk | staff browser | bearer staff token | success | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-success.png |
+| clerk-staff-state-loading | CivicClerk | staff browser | bearer staff token | loading | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-loading.png |
+| clerk-staff-state-empty | CivicClerk | staff browser | bearer staff token | empty | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-empty.png |
+| clerk-staff-state-error | CivicClerk | staff browser | bearer staff token | error | 1440x1000 | rendered (designed error state) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-error.png |
+| clerk-staff-state-partial | CivicClerk | staff browser | bearer staff token | partial | 1440x1000 | rendered | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-partial.png |
+| clerk-public-state-success | CivicClerk | public browser | none | success | 390x844 | rendered (harness-simulated) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-success.png |
+| clerk-public-state-loading | CivicClerk | public browser | none | loading | 390x844 | rendered (harness-simulated) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-loading.png |
+| clerk-public-state-empty | CivicClerk | public browser | none | empty | 390x844 | rendered (harness-simulated) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-empty.png |
+| clerk-public-state-error | CivicClerk | public browser | none | error | 390x844 | rendered (harness-simulated designed error state) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-error.png |
+| clerk-public-state-partial | CivicClerk | public browser | none | partial | 390x844 | rendered (harness-simulated) | docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-partial.png |
 
 ## Installed Route Inventory
 
@@ -200,13 +200,15 @@ Scope: local installed Clerk-Core stack containing CivicRecords AI 1.6.1 and Civ
 
 - Bad input guard: HTTP 422.
 - Spoofed/missing staff role guard: HTTP 401.
-- Missing/stale CivicRecords request guard: HTTP 422.
+- Invalid-shaped CivicRecords request-id guard: HTTP 422. This current capture does not prove a true missing/stale record lookup; the capture script now uses a valid random UUID on the next installed-stack run so the missing-record path can be verified.
 - Optional unavailable/degraded integration posture: HTTP 200; payload recorded in JSON.
 - Public/staff permission boundary guard: HTTP 401.
 
 ## QA Notes
 
 - Desktop and mobile browser checks cover CivicRecords AI login/dashboard/search/requests and CivicClerk staff/public surfaces.
-- CivicClerk built-in QA state controls were exercised for loading, success, empty, error, and partial/degraded states.
+- CivicClerk public screenshots were captured against a dev build that renders staff chrome, the surface switch, Show audit, INSTALL DETAIL, and QA-state controls; they are not clean public-surface proof.
+- CivicClerk built-in QA state controls were exercised for loading, success, empty, error, and partial/degraded states; public state evidence is harness-simulated, not observed production behavior.
 - Browser console warnings/errors, page errors, failed HTTP responses, keyboard focus target after Tab, and horizontal overflow are recorded in JSON.
 - CivicRecords AI state proof is split between browser smoke checks and installed workflow proof for request/search/review/response because the current private-mode Clerk-Core package does not expose the public resident portal by default.
+- CivicRecords footer shows v1.4.1 while header and `/health` report v1.6.1; tracked as CivicRecords AI issue #88.

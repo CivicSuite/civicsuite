@@ -18,7 +18,7 @@ The suite installer must support:
 
 - Linux, with Ubuntu LTS as the first proof target.
 - Windows 10/11 through a wrapper around Docker Desktop and the same containerized services. Lifecycle certification requires a matching Windows host or VM with Docker Desktop running.
-- macOS 13 or newer through a wrapper around Docker Desktop; full lifecycle certification is still pending and requires a real Darwin/macOS host or VM.
+- macOS 13 or newer through a wrapper around Docker Desktop; full matching-host lifecycle evidence is still pending and requires a real Darwin/macOS host or VM.
 
 From a zero-baseline machine, the installer must:
 

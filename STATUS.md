@@ -43,7 +43,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicrecords-ai` is the most mature product-shaped module, but remains developer preview until full promotion evidence is captured.
 - `civicclerk` has substantial meeting workflow code and a first React staff workspace; v1.0.1 shipped the protected-default staff auth fix, but production deployment proof is still missing.
 - `civiccore` has real shared platform primitives; v1.1.0 is the current shared platform release.
-- The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows has matching-host Docker Desktop lifecycle evidence on Windows 11 + WSL 2; macOS wrapper claims remain bounded until matching-host lifecycle evidence exists.
+- The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
 - `civiccode` has meaningful runtime depth, Docker/PostgreSQL demo work, seed data, and citation-grounded behavior, but not enough to keep a v1.0.0 label.
 - `civiczone`, `civicplan`, `civicpermit`, `civicinspect`, `civicgrants`, and `civicprocure` contain useful scaffolds and local mocks, but they are not city-ready products.
 

@@ -20,7 +20,7 @@ This file contains the seed content for enabling GitHub Discussions on the `civi
 
 ## Announcements — Welcome and current suite status (PIN this)
 
-**Title:** CivicSuite — current status (April 2026)
+**Title:** CivicSuite — current status (May 2026)
 
 **Body:**
 
@@ -28,12 +28,13 @@ Welcome to the CivicSuite community space. This post is a snapshot of where the 
 
 **Shipping today:**
 
-- `civicrecords-ai` v1.4.0 — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. The records repo transferred to the `CivicSuite` GitHub org on 2026-04-25; that link is now the canonical home.
-- `civiccore` v0.2.0 — the shared platform package every module is built on. Phase 2 (the LLM abstraction module) shipped this release. Repo: <https://github.com/CivicSuite/civiccore>.
+- `civicrecords-ai` v1.6.1 — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. The records repo transferred to the `CivicSuite` GitHub org on 2026-04-25; that link is now the canonical home.
+- `civiccore` v1.1.0 — the shared platform package every module is built on. Repo: <https://github.com/CivicSuite/civiccore>.
+- `civicclerk` v1.0.1 — meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/CivicSuite/civicclerk>.
 
-**Planned, not started:**
+**Planned or queued:**
 
-- `civicclerk`, `civiczone`, and the rest of the catalog — specs only. We say so plainly because we don't want anyone evaluating the suite to think modules exist that don't.
+- Later modules remain queued until the Clerk-Core starter target clears its gate. We say so plainly because we do not want anyone evaluating the suite to think queued modules are public-use products.
 
 **What's this umbrella for?**
 
@@ -49,11 +50,11 @@ We're glad you're here.
 
 ## Roadmap — What gets built next, and why
 
-**Title:** Module sequence — what gets built after civiccore Phase 2?
+**Title:** Module sequence — what gets built after the Clerk-Core starter target?
 
 **Body:**
 
-The reconciled catalog lists 27 product modules across 7 tiers, plus CivicCore as the shared platform. We are not going to build them in order, and we are not going to build them all at once. The civiccore Phase 2 release just shipped, which unblocks a real choice for the next module.
+The reconciled catalog lists 27 product modules across 7 tiers, plus CivicCore as the shared platform. We are not going to build them in order, and we are not going to build them all at once. The Clerk-Core starter target focuses on CivicCore, CivicRecords AI, and CivicClerk first; later modules stay queued until that gate clears.
 
 **Two leading candidates:**
 
@@ -113,10 +114,10 @@ The compatibility matrix lives at [docs/compatibility/index.md](../docs/compatib
 **How to read a row:**
 
 ```
-| civicrecords-ai | 1.4.0 | 2026-04-25 | ==0.2.0 | Phase 2 LLM ... |
+| civicrecords-ai | 1.6.1 | see matrix | see matrix | Records workflow compatibility ... |
 ```
 
-Translation: civicrecords-ai version 1.4.0, released on 2026-04-25, requires exactly civiccore 0.2.0. If you install records-ai 1.4.0 with a different civiccore version, behavior is undefined.
+Translation: civicrecords-ai version 1.6.1, released after the records 1.6 line, requires the pinned civiccore version recorded in the compatibility matrix. If you install records-ai with a different civiccore version than the matrix permits, behavior is undefined.
 
 **When does the matrix get updated?**
 

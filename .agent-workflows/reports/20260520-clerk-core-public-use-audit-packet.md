@@ -20,9 +20,9 @@ Do not promote to public-use/city-ready until the independent audit reviews this
 | Linux installer lifecycle proves workflow proof, backup, restore, uninstall | Main installer-cleanroom run `26169272666`, Linux lifecycle job with `workflow_proof_requested: true`, `matching_host_lifecycle`, `postgres_backup_dump`, and `restore_probe_pg_restore` | PASS |
 | Installed route inventory exists | `docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md` and JSON evidence | PASS |
 | Browser state matrix exists | 20 local browser checks passed; screenshots under `docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/` | PASS |
-| Adversarial local mocks exist | JSON evidence records bad input, missing staff role, missing/stale record, unavailable/degraded integration posture, public/staff boundary, plus restore precondition evidence in `docs/installer/browser-qa/2026-05-20-clerk-core-restore-precondition.md` | PASS |
-| CivicRecords AI local release verifier passes | `C:\Users\scott\OneDrive\Desktop\Claude\civicrecords-verify-release-20260520.log`; exit 0; `VERIFY-RELEASE: PASSED` | PASS |
-| CivicClerk local release verifier passes | `C:\Users\scott\OneDrive\Desktop\Claude\civicclerk-verify-release-20260520-rerun2.log`; exit 0; `VERIFY-RELEASE: PASSED` | PASS |
+| Adversarial local mocks exist | JSON evidence records bad input, missing staff role, invalid-shaped request-id handling, unavailable/degraded integration posture, public/staff boundary, plus restore precondition evidence in `docs/installer/browser-qa/2026-05-20-clerk-core-restore-precondition.md`. A valid-missing UUID probe is prepared in the capture script for the next installed-stack run. | PASS |
+| CivicRecords AI local release verifier passes | Local-only evidence from `civicrecords-verify-release-20260520.log`; not committed and not auditable from this PR. Treat as implementation context, not merge-gate proof. | LOCAL-ONLY |
+| CivicClerk local release verifier passes | Local-only evidence from `civicclerk-verify-release-20260520-rerun2.log`; not committed and not auditable from this PR. Treat as implementation context, not merge-gate proof. | LOCAL-ONLY |
 | No macOS lifecycle certification claim introduced | Current-facing changed docs say macOS remains archive/readiness only until matching-host lifecycle evidence exists | PASS |
 
 ## 3. Durable Artifact Reads
@@ -33,7 +33,7 @@ Do not promote to public-use/city-ready until the independent audit reviews this
 - `README.md`: installer remains unsigned OSS beta; macOS is wrapper/archive only until matching-host evidence exists.
 - `docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md`: route inventory and browser state matrix summary.
 - `docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.json`: full route inventory, browser evidence, console/focus/overflow results, adversarial mock payloads.
-- `C:\Users\scott\OneDrive\Desktop\Claude\ACTIVE_RELEASE_QUEUE.md`: active target remains Clerk-Core only; queued module repos are paused.
+- `.agent-workflows/ACTIVE_WORK_QUEUE.md` and the workspace-level active release queue: active target remains Clerk-Core only; queued module repos are paused.
 
 ## 4. Substantive Content Checks
 
@@ -90,7 +90,7 @@ Required reads:
 - `STATUS.md`
 - `docs/CivicSuiteUnifiedSpec.md`
 - `installer/modules.json`
-- `C:\Users\scott\OneDrive\Desktop\Claude\ACTIVE_RELEASE_QUEUE.md`
+- `.agent-workflows/ACTIVE_WORK_QUEUE.md`
 
 Verify GitHub evidence:
 

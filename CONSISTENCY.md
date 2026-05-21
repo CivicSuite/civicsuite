@@ -160,6 +160,6 @@ These specific drifts have been introduced and fixed in this workspace's history
 5. **MIT vs. Apache 2.0** — project standardized on Apache 2.0 on 2026-04-23. Any new text claiming MIT for code has drifted from the current decision. The umbrella's documentation license (CC BY 4.0) and the optional prompt-library license (CC BY-SA 4.0) are unchanged.
 6. **Spec-vs-reality path drift** — Day-3 inventory (2026-04-23) found 6 places where spec 02 §8/§9 named paths in civicrecords-ai that didn't exist or had moved. Spec was updated to match reality. Future drift in either direction (renaming files in civicrecords-ai or rewriting spec paths) needs to be reconciled in the same PR.
 
-7. **27 product modules plus CivicCore** - older text drifted between 26 modules and 28 product modules. The reconciled current suite has 27 product modules plus the CivicCore shared platform. Do not collapse those into a single ambiguous count.
+7. **27 product modules plus CivicCore** - older text drifted between incompatible suite counts. The reconciled current suite has 27 product modules plus the CivicCore shared platform. Do not collapse those into a single ambiguous count.
 
 If you find any of these in a future version of CHARTER, README, or any spec, fix it and re-run the audit.

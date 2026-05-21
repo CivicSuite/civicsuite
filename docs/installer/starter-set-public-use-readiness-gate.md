@@ -28,8 +28,8 @@ Evidence already recorded:
   backup, restore, workflow proof, and uninstall.
 - Backup proof includes PostgreSQL custom dump evidence.
 - Restore proof includes restore-probe `pg_restore` evidence.
-- Windows has matching-host Docker Desktop lifecycle evidence on Windows 11
-  with WSL 2.
+- Windows and macOS remain archive/readiness wrapper paths until matching-host
+  lifecycle evidence is recorded on those hosts.
 - macOS remains archive/readiness only until a Darwin/macOS Docker Desktop host
   runs matching-host lifecycle evidence.
 - Installed browser QA evidence exists for CivicRecords AI login/admin paths

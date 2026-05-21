@@ -82,7 +82,7 @@ Evidence:
 
 Active target: Clerk-Core City Release.
 
-State on resume: the project owner explicitly superseded the prior installer/macOS follow-up and module queue. The active target is now the first city-deployable CivicSuite product: CivicCore, CivicRecords AI, and CivicClerk installed and operated as one Linux-first Docker/browser release with Windows and macOS wrappers. `docs/CivicSuiteUnifiedSpec.md` is the source of truth for the 28 product modules plus CivicCore.
+State on resume: the project owner explicitly superseded the prior installer/macOS follow-up and module queue. The active target is now the first city-deployable CivicSuite product: CivicCore, CivicRecords AI, and CivicClerk installed and operated as one Linux-first Docker/browser release with Windows and macOS wrappers. `docs/CivicSuiteUnifiedSpec.md` is the source of truth for the 27 product modules plus CivicCore.
 
 Why next: prior release-status work repeatedly overstated product state. The project must finish one real public-use starter product before CivicContracts or any later module advances.
 

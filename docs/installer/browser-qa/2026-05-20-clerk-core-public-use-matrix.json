@@ -1309,7 +1309,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "records-login-mobile",
@@ -1341,7 +1341,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "records-dashboard-desktop",
@@ -1373,14 +1373,14 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "records-search-desktop",
       "product": "CivicRecords AI",
       "surface": "staff browser",
       "auth": "first-admin JWT",
-      "state": "success",
+      "state": "empty",
       "path": "/search",
       "viewport": {
         "width": 1440,
@@ -1405,7 +1405,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "records-requests-mobile",
@@ -1436,7 +1436,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-staff-desktop",
@@ -1476,7 +1476,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-staff-mobile",
@@ -1516,7 +1516,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-public-desktop",
@@ -1556,7 +1556,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (dev-build staff chrome visible)"
     },
     {
       "id": "clerk-public-mobile",
@@ -1596,7 +1596,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (dev-build staff chrome visible)"
     },
     {
       "id": "clerk-protected-error-desktop",
@@ -1679,7 +1679,7 @@
           "path": "/api/integrations/readiness"
         }
       ],
-      "status": "passed"
+      "status": "rendered (designed error state)"
     },
     {
       "id": "clerk-staff-state-success",
@@ -1716,7 +1716,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-staff-state-loading",
@@ -1747,7 +1747,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-staff-state-empty",
@@ -1778,7 +1778,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-staff-state-error",
@@ -1810,7 +1810,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (designed error state)"
     },
     {
       "id": "clerk-staff-state-partial",
@@ -1841,7 +1841,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered"
     },
     {
       "id": "clerk-public-state-success",
@@ -1880,7 +1880,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (harness-simulated)"
     },
     {
       "id": "clerk-public-state-loading",
@@ -1911,7 +1911,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (harness-simulated)"
     },
     {
       "id": "clerk-public-state-empty",
@@ -1942,7 +1942,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (harness-simulated)"
     },
     {
       "id": "clerk-public-state-error",
@@ -1974,7 +1974,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (harness-simulated designed error state)"
     },
     {
       "id": "clerk-public-state-partial",
@@ -2005,7 +2005,7 @@
       "console_messages": [],
       "page_errors": [],
       "failed_responses": [],
-      "status": "passed"
+      "status": "rendered (harness-simulated)"
     }
   ],
   "adversarial": {
@@ -2092,7 +2092,8 @@
             }
           }
         ]
-      }
+      },
+      "evidence_note": "Current captured response proves invalid-shaped request-id validation, not a true missing/stale record lookup. The script has been updated to use a valid random UUID on the next run."
     },
     "unavailable_dependency": {
       "status": 200,
@@ -2353,5 +2354,12 @@
       }
     }
   },
-  "status": "passed"
+  "status": "capture_complete",
+  "qa_notes": [
+    "Capture status means the browser check rendered without capture-tool failure; it is not a public-use readiness verdict.",
+    "CivicClerk public screenshots were captured against a dev build that renders staff chrome, the surface switch, Show audit, INSTALL DETAIL, and QA-state controls; they are not clean public-surface proof.",
+    "CivicClerk public loading/empty/error/partial states are harness-simulated, not observed production behavior.",
+    "CivicRecords footer shows v1.4.1 while header and /health report v1.6.1; tracked as CivicRecords AI issue #88.",
+    "The current missing_record adversarial capture used an invalid-shaped request id and returned HTTP 422 uuid_parsing; the capture script now uses a valid random UUID on the next installed-stack run so it can prove the real missing-record path."
+  ]
 }
