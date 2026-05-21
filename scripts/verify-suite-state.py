@@ -386,6 +386,182 @@ def check_clerk_core_workflow_proof_truth() -> list[str]:
     return errors
 
 
+def check_public_use_matrix_json() -> list[str]:
+    errors: list[str] = []
+    try:
+        matrix = json.loads(PUBLIC_USE_MATRIX_JSON.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [fail(f"clerk-core public-use matrix JSON is invalid: {exc}")]
+
+    if not isinstance(matrix, dict):
+        return [fail("clerk-core public-use matrix JSON must be an object")]
+
+    if matrix.get("name") != "clerk-core-public-use-route-state-matrix":
+        errors.append(fail("clerk-core public-use matrix JSON has unexpected name"))
+    if matrix.get("status") != "capture_complete":
+        errors.append(
+            fail("clerk-core public-use matrix JSON must be capture_complete")
+        )
+
+    health = matrix.get("health")
+    if not isinstance(health, dict):
+        errors.append(fail("clerk-core public-use matrix JSON missing health object"))
+    else:
+        civicrecords = health.get("civicrecords")
+        civicclerk = health.get("civicclerk")
+        if not isinstance(civicrecords, dict) or civicrecords.get("version") != "1.6.1":
+            errors.append(
+                fail(
+                    "clerk-core public-use matrix JSON must prove CivicRecords AI 1.6.1 health"
+                )
+            )
+        if not isinstance(civicclerk, dict) or civicclerk.get("version") != "1.0.1":
+            errors.append(
+                fail(
+                    "clerk-core public-use matrix JSON must prove CivicClerk 1.0.1 health"
+                )
+            )
+
+    routes = matrix.get("route_inventory")
+    if not isinstance(routes, list) or not routes:
+        errors.append(fail("clerk-core public-use matrix JSON missing route_inventory"))
+    else:
+        route_keys: set[tuple[str, str]] = set()
+        required_route_fields = {
+            "product",
+            "route",
+            "audience",
+            "auth_requirement",
+            "desktop_mobile_qa",
+            "states",
+        }
+        for index, route in enumerate(routes):
+            if not isinstance(route, dict):
+                errors.append(fail(f"route_inventory[{index}] must be an object"))
+                continue
+            missing = required_route_fields - set(route)
+            if missing:
+                errors.append(
+                    fail(
+                        f"route_inventory[{index}] missing fields: {', '.join(sorted(missing))}"
+                    )
+                )
+                continue
+            key = (str(route["product"]), str(route["route"]))
+            if key in route_keys:
+                errors.append(
+                    fail(
+                        "clerk-core public-use matrix JSON has duplicate route "
+                        f"{key[0]} {key[1]}"
+                    )
+                )
+            route_keys.add(key)
+            if route.get("audience") not in {"public", "staff", "internal"}:
+                errors.append(
+                    fail(
+                        f"route_inventory[{index}] has unknown audience {route.get('audience')}"
+                    )
+                )
+        if len(routes) < 150:
+            errors.append(
+                fail(
+                    "clerk-core public-use matrix JSON route inventory is unexpectedly small"
+                )
+            )
+
+    browser_checks = matrix.get("browser_checks")
+    if not isinstance(browser_checks, list):
+        errors.append(fail("clerk-core public-use matrix JSON missing browser_checks"))
+    else:
+        states = {
+            str(check.get("state"))
+            for check in browser_checks
+            if isinstance(check, dict)
+        }
+        if len(browser_checks) != 20:
+            errors.append(
+                fail("clerk-core public-use matrix JSON must contain 20 browser checks")
+            )
+        for required_state in {"loading", "success", "empty", "error", "partial"}:
+            if required_state not in states:
+                errors.append(
+                    fail(
+                        f"clerk-core public-use matrix JSON missing browser state {required_state}"
+                    )
+                )
+        for index, check in enumerate(browser_checks):
+            if not isinstance(check, dict):
+                errors.append(fail(f"browser_checks[{index}] must be an object"))
+                continue
+            if check.get("status") == "failed":
+                errors.append(fail(f"browser_checks[{index}] is failed"))
+            if check.get("expected_copy_found") is not True:
+                errors.append(
+                    fail(f"browser_checks[{index}] did not find expected copy")
+                )
+            if check.get("horizontal_overflow") is True:
+                errors.append(
+                    fail(f"browser_checks[{index}] records horizontal overflow")
+                )
+            if check.get("page_errors"):
+                errors.append(fail(f"browser_checks[{index}] records page errors"))
+            failed_responses = check.get("failed_responses")
+            allowed_failure_statuses = {
+                status
+                for status in check.get("allowed_failure_statuses", [])
+                if isinstance(status, int)
+            }
+            has_only_allowed_failures = (
+                bool(allowed_failure_statuses)
+                and isinstance(failed_responses, list)
+                and all(
+                    isinstance(response, dict)
+                    and response.get("status") in allowed_failure_statuses
+                    for response in failed_responses
+                )
+            )
+            if check.get("console_messages") and not has_only_allowed_failures:
+                errors.append(
+                    fail(f"browser_checks[{index}] records console warnings/errors")
+                )
+
+    adversarial = matrix.get("adversarial")
+    if not isinstance(adversarial, dict):
+        errors.append(
+            fail("clerk-core public-use matrix JSON missing adversarial probes")
+        )
+    else:
+        expected_statuses = {
+            "bad_inputs": 422,
+            "missing_staff_role": 401,
+            "missing_record": 404,
+            "unavailable_dependency": 200,
+            "public_staff_boundary": 401,
+        }
+        for key, expected in expected_statuses.items():
+            probe = adversarial.get(key)
+            if not isinstance(probe, dict):
+                errors.append(fail(f"adversarial probe {key} missing"))
+                continue
+            if probe.get("status") != expected:
+                errors.append(
+                    fail(
+                        f"adversarial probe {key} expected HTTP {expected}, got {probe.get('status')}"
+                    )
+                )
+        missing_record = adversarial.get("missing_record")
+        if isinstance(missing_record, dict) and "uuid_parsing" in json.dumps(
+            missing_record
+        ):
+            errors.append(
+                fail(
+                    "adversarial missing_record must prove lookup miss, not UUID parser failure"
+                )
+            )
+
+    return errors
+
+
 def check_clerk_core_public_use_gate_truth() -> list[str]:
     errors = []
     spec_text = UNIFIED_SPEC.read_text(encoding="utf-8")
@@ -452,6 +628,8 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
                 f"missing clerk-core public-use matrix JSON at {PUBLIC_USE_MATRIX_JSON.relative_to(ROOT)}"
             )
         )
+    else:
+        errors.extend(check_public_use_matrix_json())
     if not RESTORE_PRECONDITION.is_file():
         errors.append(
             fail(
@@ -459,14 +637,16 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
             )
         )
     required_phrases = (
-        "Status: RED - beta.4 is outside-test evidence",
+        "Status: RED - final package evidence is being assembled",
         "Loading, success, empty, error, and partial states checked",
         "Adversarial mock validation completed for integration behavior",
         "Independent release-gate audit has no unresolved Blocker or Critical findings",
         "Promotion beyond outside-test beta is blocked",
         "20 browser checks",
-        "157 installed routes",
+        "154 deduplicated installed routes",
         "missing backup manifest",
+        "Windows matching-host lifecycle evidence now exists",
+        "macOS remains beta-level archive/readiness only",
     )
     combined = f"{gate_text}\n{spec_text}\n{matrix_text}\n{restore_text}"
     for phrase in required_phrases:

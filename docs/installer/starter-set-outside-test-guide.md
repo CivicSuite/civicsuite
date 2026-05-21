@@ -140,15 +140,20 @@ python scripts\run-installer-package-cleanroom.py --archive installer\dist\Civic
 The workflow-proof report must show `workflow_proof_requested=true`,
 `civicclerk_staff_mode=bearer`, and `evidence_classification=matching_host_lifecycle`
 when it is used as matching Windows or Linux lifecycle proof.
-For the current merged main baseline, run `26115385070` proves the Linux
+For the current merged beta.4 baseline, run `26115385070` proves the Linux
 matching-host extracted package lifecycle with workflow proof, backup, restore,
 and uninstall. Run `26115385258` proves suite verifier truth, including
 `[civicrecords-ai] PASS 1.6.1` and `[clerk-core-workflow-proof] PASS`.
+For the 2026-05-21 final package evidence branch,
+`local-windows-package-lifecycle-public-use-final-45eaccf` proves Windows
+matching-host install, repair, verify, workflow proof, backup, restore, and
+uninstall on the regenerated package.
 
 ## Current Limits
 
-- macOS lifecycle testing is intentionally deferred; macOS artifacts are
-  build/readiness artifacts for now.
+- macOS support is beta-level archive/readiness proof in this package. Full
+  matching-host macOS lifecycle evidence still requires a Darwin/macOS Docker
+  Desktop host run before any macOS lifecycle certification claim.
 - CivicRecords AI and CivicClerk are co-installed and contract-verified against
   CivicCore, but this guide does not claim live workflow-record exchange
   between the two modules yet.

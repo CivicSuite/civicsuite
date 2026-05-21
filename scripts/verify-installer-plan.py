@@ -144,8 +144,9 @@ def check_docs() -> list[str]:
         for phrase in (
             "CivicCore installs first",
             "CivicRecords AI and CivicClerk are selectable",
-            "macOS lifecycle testing is intentionally on hold",
-            "Linux and Windows proof are the priority",
+            "Windows and Linux package lifecycle proof are required",
+            "macOS archives and wrapper manifests are generated and supported at beta",
+            "before any macOS lifecycle certification claim",
             "CivicRecords AI reports v1.6.1",
             "CivicClerk reports v1.0.1 with CivicCore v1.0.1",
             "install --staff-mode bearer --workflow-proof",
