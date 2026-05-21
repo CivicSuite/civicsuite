@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode, CivicAccess, CivicZone, CivicPlan, and CivicPermit have passed their v1.0.0 public-use module release gates. CivicInspect, CivicGrants, and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
+> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect have passed their v1.0.0 public-use module release gates. CivicGrants and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
 
 ---
 
@@ -337,7 +337,7 @@ Purpose: pre-application and intake copilot for permits and development review. 
 
 Owner: Code Enforcement / Building / Fire Prevention  
 Depends on: CivicCore, CivicCode  
-Status: demoted recovery label v0.2.0; false v1.0.0 tag created against the recovery halt.
+Status: recovered public-use module release v1.0.0; source release and suite installer/module-selection reconciliation passed 2026-05-21.
 Purpose: inspection assistant for photo/voice-to-report drafting, repeat-case lookup, and notice generation. Inspectors own every decision.
 
 ### Tier 3 - Administrative Expansion
@@ -1014,7 +1014,7 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 | civiczone | 1.0.0 | 1.1.0 | Public-use module release passed source gates, public/staff browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21. |
 | civicplan | 1.0.0 | 1.1.0 | Public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation. |
 | civicpermit | 1.0.0 | 1.1.0 | Public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation. |
-| civicinspect | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicinspect | 1.0.0 | 1.1.0 | Recovered public-use module release; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicgrants | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicprocure | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 

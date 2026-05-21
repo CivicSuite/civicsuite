@@ -167,7 +167,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicinspect",
         "CivicSuite/civicinspect",
         "civicinspect",
-        "0.2.0",
+        "1.0.0",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(
