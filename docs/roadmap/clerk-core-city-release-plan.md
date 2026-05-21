@@ -1,6 +1,6 @@
 # CivicSuite Clerk-Core City Release Plan
 
-This is the canonical rung plan for the first installable CivicSuite starter product beta. `docs/CivicSuiteUnifiedSpec.md` is the product authority: the suite contains 28 product modules plus CivicCore, and the first release target is CivicCore plus the Tier 1 clerk-core products CivicRecords AI and CivicClerk.
+This is the canonical rung plan for the first installable CivicSuite starter product beta. `docs/CivicSuiteUnifiedSpec.md` is the product authority: the reconciled suite contains 27 product modules plus CivicCore, and the first release target is CivicCore plus the Tier 1 clerk-core products CivicRecords AI and CivicClerk.
 
 ## Rung 1 - Clerk-Core City Release
 
@@ -12,7 +12,7 @@ Scope bullets:
 
 - Reconcile suite truth to the CivicSuite Unified Specification before product edits.
 - Repair active queue authority so CivicContracts and later modules remain paused.
-- Generate the canonical 28-product-module inventory and compare it with installer metadata, status files, recovery docs, repo state, and active queues.
+- Generate the canonical 27-product-module inventory and compare it with installer metadata, status files, recovery docs, repo state, and active queues.
 - Audit CivicCore, CivicRecords AI, CivicClerk, and the CivicSuite installer against the specification.
 - Finish the clerk-core installer lifecycle for install, start, health, repair, backup, restore, and uninstall.
 - Prove CivicRecords AI request, search, review, and response workflows inside the installed stack.
@@ -25,11 +25,11 @@ Scope bullets:
 Exit criteria:
 
 - The active queue and project control plane name the clerk-core city release as the only active target.
-- Spec inventory records the 28-product-module authority and any discovered metadata drift.
+- Spec inventory records the 27-product-module authority and any discovered metadata drift.
 - CivicCore, CivicRecords AI, CivicClerk, and installer gaps are converted into tracked slices with acceptance checks.
 - The starter release artifacts and docs avoid full-suite, procurement, airgap, and macOS lifecycle certification claims.
 - Suite checks, runtime checks, installer checks, UX checks, and security checks are recorded with proof.
 
 ## Rung 2 - Remaining Spec-Ordered Modules
 
-This rung starts only after Rung 1 passes. It builds the remaining 26 product modules one at a time using the dependency graph and current implementation state from `docs/CivicSuiteUnifiedSpec.md`, with module-specific docs, tests, browser QA, installer integration, release audit, CI, and release-truth gates before each advancement.
+This rung starts only after Rung 1 passes. It builds the remaining 25 product modules one at a time using the dependency graph and current implementation state from `docs/CivicSuiteUnifiedSpec.md`, with module-specific docs, tests, browser QA, installer integration, release audit, CI, and release-truth gates before each advancement.

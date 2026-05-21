@@ -2,7 +2,7 @@
 
 Every count, cross-reference, version, and named fact used in CHARTER.md and README.md is verified here against the source-of-truth spec. Update this file whenever any of those facts change. Do not let the charter or README drift from this table.
 
-Last verified: April 30, 2026.
+Last verified: May 20, 2026.
 
 ---
 
@@ -10,7 +10,7 @@ Last verified: April 30, 2026.
 
 | Claim | Value | Source | Verified |
 |---|---|---|---|
-| Total product modules in catalog | **28** | `specs/01_catalog.md` body plus the 2026-04-30 CivicRegWatch/CivicAPI addendum and dedicated specs | verified |
+| Total product modules in catalog | **27** | `docs/CivicSuiteUnifiedSpec.md` module headings, `installer/modules.json`, and live `CivicSuite` GitHub org repo list | verified |
 | Shared platform modules | **1** (`CivicCore`) | `specs/01_catalog.md` Tier 0 and `specs/02_CivicCore.md` | verified |
 | Total tiers in catalog | **7** (Tier 0 through Tier 6) | `specs/01_catalog.md` section headers 7–13 | ✅ |
 | CivicCore extraction phases | **6** (Phase 0 through Phase 5) | `specs/02_CivicCore.md` §12 ("The six phases") | ✅ |
@@ -36,7 +36,7 @@ Last verified: April 30, 2026.
 
 ## 2. Module count by tier
 
-The product-module total is 28. `CivicCore` is the shared platform prerequisite and is counted separately so product-module math does not drift.
+The product-module total is 27. `CivicCore` is the shared platform prerequisite and is counted separately so product-module math does not drift.
 
 | Tier | Name | Count | Modules |
 |---|---|---|---|
@@ -47,10 +47,10 @@ The product-module total is 28. `CivicCore` is the shared platform prerequisite 
 | 4 | Operations & Resident Services | 5 | Civic311, CivicComms, CivicData Bridge, CivicRegWatch, CivicAPI |
 | 5 | Internal Business Functions | 4 | CivicHR Assist, CivicBudget Assist, CivicLegal Research, CivicElections Assist |
 | 6 | Specialized | 5 | CivicUtility Assist, CivicCourt Assist, CivicSafety Assist, CivicLibrary, CivicParks |
-| **Product total** | | **28** | |
-| **Platform + product total** | | **29** | Includes CivicCore plus all product modules |
+| **Product total** | | **27** | |
+| **Platform + product total** | | **28** | Includes CivicCore plus all product modules |
 
-Source: `specs/01_catalog.md` section headers §7 (Tier 0) through §13 (Tier 6), the 2026-04-30 catalog addendum, and the dedicated module specs `specs/05_civicregwatch.md` and `specs/06_civicapi.md`.
+Source: `docs/CivicSuiteUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `CivicSuite` GitHub org repo list checked on 2026-05-20.
 
 ---
 
@@ -160,6 +160,6 @@ These specific drifts have been introduced and fixed in this workspace's history
 5. **MIT vs. Apache 2.0** — project standardized on Apache 2.0 on 2026-04-23. Any new text claiming MIT for code has drifted from the current decision. The umbrella's documentation license (CC BY 4.0) and the optional prompt-library license (CC BY-SA 4.0) are unchanged.
 6. **Spec-vs-reality path drift** — Day-3 inventory (2026-04-23) found 6 places where spec 02 §8/§9 named paths in civicrecords-ai that didn't exist or had moved. Spec was updated to match reality. Future drift in either direction (renaming files in civicrecords-ai or rewriting spec paths) needs to be reconciled in the same PR.
 
-7. **28 product modules plus CivicCore** - the original catalog text said 26 modules because it counted CivicCore plus the first 25 product modules. The 2026-04-30 CivicAPI and CivicRegWatch addition makes the current suite 28 product modules plus the CivicCore shared platform. Do not collapse those into a single ambiguous count.
+7. **27 product modules plus CivicCore** - older text drifted between incompatible suite counts. The reconciled current suite has 27 product modules plus the CivicCore shared platform. Do not collapse those into a single ambiguous count.
 
 If you find any of these in a future version of CHARTER, README, or any spec, fix it and re-run the audit.

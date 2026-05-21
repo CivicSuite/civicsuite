@@ -23,7 +23,7 @@ Status snapshot: **2026-05-15**
 | Tier | Count | What it means today |
 |---|---:|---|
 | Corrective recovery labels | 10 repos | CivicCore v1.1.0 is the current shared-platform release. CivicClerk v1.0.1 is the protected-default recovery patch. CivicRecords AI v1.6.1 is shipped as developer preview with the ingestion worker recovery patch. CivicCode is demoted to v0.5.0. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0. |
-| Foundation / planned | 18 of 28 product modules | The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. |
+| Foundation / planned | 17 of 27 product modules | The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. |
 
 `civiccore` is the shared platform package consumed by every module; v1.1.0 is the current platform release with shared `staff_key_gate` support and the earlier auth-error-payload hardening included.
 
@@ -54,11 +54,11 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 
 ## Quick Start
 
-**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux remains the primary runtime proof path. Windows now has matching-host Docker Desktop lifecycle evidence on a Windows 11 + WSL 2 host; macOS remains archive/readiness only until real macOS lifecycle certification passes on a Darwin host.
+**Suite installer (current):** YELLOW beta. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0-beta`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux remains the primary runtime proof path. Windows and macOS remain archive/readiness wrapper paths until matching-host lifecycle evidence is recorded on those hosts.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`
-- macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(wrapper/archive only until macOS lifecycle certification passes)*
+- macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(wrapper/archive only until matching-host lifecycle evidence exists on a Darwin host)*
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
 
@@ -106,7 +106,7 @@ CivicSuite uses a deliberately boring stack. Every module inherits these default
 
 **Dependency rule:** modules depend on `civiccore`; `civiccore` never depends on modules. Cities run the stack on their own hardware. No cloud, no telemetry, no per-seat pricing.
 
-The suite is aiming for a first deployable "city starter set," not for all 28 product modules to become equally deep at the same time. That distinction is intentional and load-bearing.
+The suite is aiming for a first deployable "city starter set," not for all 27 product modules to become equally deep at the same time. That distinction is intentional and load-bearing.
 
 For the full architecture diagram and data-flow rules, see [ARCHITECTURE.md](ARCHITECTURE.md). For the dependency-pinning matrix between modules and civiccore versions, see [docs/compatibility/index.md](docs/compatibility/index.md).
 

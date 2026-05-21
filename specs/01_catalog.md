@@ -56,10 +56,10 @@ genuinely novel: clerk workflows, records, ordinances, zoning, planning,
 grants, procurement authoring, contracts, boards, HR policy, and
 accessibility.
 
-This document defines the full module catalog. The original April 23 catalog
-established CivicCore plus 25 product modules across 7 tiers. The 2026-04-30
-addendum adds CivicRegWatch and CivicAPI as planned product modules, bringing
-the current suite to 28 product modules plus the CivicCore shared platform. It
+This document defines the full module catalog. The April 23 catalog plus the
+2026-04-30 CivicRegWatch and CivicAPI addendum establish CivicCore plus 27
+product modules across 7 tiers. The current suite therefore has 27 product
+modules plus the CivicCore shared platform. It
 assesses where the current v3.0 spec is thin, establishes the
 shared design principles and architecture pattern, and proposes a
 four-phase rollout sequence. It is intended as a working strategic
@@ -332,7 +332,7 @@ product.
 
 Part III. Module Catalog
 
-Current catalog: 28 product modules plus CivicCore across 7 tiers (Tier 0 Foundation through Tier 6 Specialized). Each card uses a consistent shape: purpose,
+Current catalog: 27 product modules plus CivicCore across 7 tiers (Tier 0 Foundation through Tier 6 Specialized). Each card uses a consistent shape: purpose,
 owner, capabilities, source materials, AI workflows, compliance
 considerations, and scope boundaries (what this is NOT). Tier 0 is the
 foundation; every other module can be installed independently, subject

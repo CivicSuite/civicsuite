@@ -46,7 +46,7 @@ Older drafts referenced MIT. That language is superseded. Apache 2.0 is the civi
 
 ### 2.2 Module Count And Tiers
 
-The suite catalog now contains **28 product modules plus CivicCore as the Tier 0 shared platform across 7 tiers**:
+The suite catalog now contains **27 product modules plus CivicCore as the Tier 0 shared platform across 7 tiers**:
 
 - Tier 0: Foundation
 - Tier 1: Clerk Core
@@ -56,7 +56,7 @@ The suite catalog now contains **28 product modules plus CivicCore as the Tier 0
 - Tier 5: Internal Business
 - Tier 6: Specialized
 
-Older drafts said "26 modules across 6 tiers." That was an arithmetic/category drift. This document standardizes on 7 tiers, counting Tier 0 through Tier 6, and adds CivicRegWatch plus CivicAPI as planned product modules in the operations/transparency lane.
+Older drafts said "26 modules across 6 tiers." That was an arithmetic/category drift. This document standardizes on 7 tiers, counting Tier 0 through Tier 6, and adds CivicRegWatch plus CivicAPI as planned product modules in the operations/transparency lane. The reconciled catalog enumerates 27 product modules after CivicCore; live GitHub org state and installer metadata match that count.
 
 ### 2.3 Repository Placement
 

@@ -1,6 +1,6 @@
 # CivicSuite Module Status
 
-**Last verified:** 2026-05-19
+**Last verified:** 2026-05-20
 **Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
 This is the plain-English operating truth for CivicSuite. The unified spec describes architectural intent. This file describes release reality.
@@ -9,7 +9,7 @@ This is the plain-English operating truth for CivicSuite. The unified spec descr
 
 The active target is the clerk-core starter product: CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. As of main CI runs `26134412418` and `26134412420`, suite verifier truth, installer-plan verification, installed-stack workflow proof, Linux install/repair/verify/backup/restore/uninstall lifecycle proof, Windows/macOS archive readiness proof, and installed browser QA evidence are recorded. The target is still not a public-use or city-ready release; `installer-clerk-core-v0.1.0-beta.4` is the current published unsigned OSS beta for outside testing of the starter profile.
 
-All later modules are paused until this starter target passes its gate. The unified spec states 28 product modules plus CivicCore; the visible catalog currently names 27 product headings after CivicCore, so the post-starter module queue must not be frozen until that spec-count cleanup is explicit.
+All later modules are paused until this starter target passes its gate. The reconciled unified spec, installer metadata, and live GitHub org state enumerate 27 product modules plus CivicCore. After the starter target clears its gate, the remaining-module queue contains the other 25 product modules.
 
 ## Status Legend
 
@@ -43,7 +43,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicrecords-ai` is the most mature product-shaped module, but remains developer preview until full promotion evidence is captured.
 - `civicclerk` has substantial meeting workflow code and a first React staff workspace; v1.0.1 shipped the protected-default staff auth fix, but production deployment proof is still missing.
 - `civiccore` has real shared platform primitives; v1.1.0 is the current shared platform release.
-- The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows has matching-host Docker Desktop lifecycle evidence on Windows 11 + WSL 2; macOS wrapper claims remain bounded until matching-host lifecycle evidence exists.
+- The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
 - `civiccode` has meaningful runtime depth, Docker/PostgreSQL demo work, seed data, and citation-grounded behavior, but not enough to keep a v1.0.0 label.
 - `civiczone`, `civicplan`, `civicpermit`, `civicinspect`, `civicgrants`, and `civicprocure` contain useful scaffolds and local mocks, but they are not city-ready products.
 

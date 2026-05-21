@@ -130,7 +130,7 @@ before proceeding through any OS warning.
 The first cleanroom proof uses
 `python scripts/run-minimal-cleanroom.py --run-id manual-minimal-linux-cleanroom-2`
 to run the generated kit inside a disposable Linux container. That proof is not
-a replacement for full Windows/macOS/Linux VM certification, but it is the
+a replacement for full Windows/macOS/Linux VM lifecycle evidence, but it is the
 fastest repeatable clean baseline for the CivicCore-only package layer.
 
 The first service cleanroom proof uses
@@ -162,7 +162,7 @@ launchers. CivicSuite's core runtime path is Linux/container-first; Windows and
 macOS are wrapper platforms around that core. Each package report classifies the
 evidence as archive/readiness, matching-host lifecycle, host-platform mismatch,
 or unsupported lifecycle. Linux lifecycle proof is the primary zero-baseline machine
-proof focus. Windows has matching-host Docker Desktop lifecycle proof
+proof focus. Windows remains archive/readiness only until matching-host lifecycle evidence is recorded
 from a Windows 11 + WSL 2 host; full macOS runtime proof still requires a
 macOS host or VM.
 
@@ -174,10 +174,10 @@ uses concurrency and short artifact retention as cost controls. It proves
 extracted archive readiness/plan for Windows, Linux, and macOS package
 artifacts, then runs the full Linux package install/repair/verify/uninstall
 lifecycle and uploads JSON installer evidence without the extracted bundle
-payload. Windows lifecycle proof is captured by a matching Windows Docker
-Desktop local run until a dedicated Windows Docker lifecycle runner is added to
-CI. macOS full lifecycle certification still requires a real operator-like
-macOS VM because hosted CI does not provide the same Docker Desktop baseline.
+payload. Windows matching-host lifecycle proof remains a separate evidence item
+until a Windows 11 + WSL 2 Docker Desktop run is recorded and cited. macOS full
+matching-host lifecycle evidence still requires a real operator-like macOS VM
+because hosted CI does not provide the same Docker Desktop baseline.
 
 ## Supported Profiles
 

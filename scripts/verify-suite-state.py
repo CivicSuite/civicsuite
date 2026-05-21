@@ -23,7 +23,30 @@ WORKSPACE = ROOT.parent
 COMPATIBILITY_MATRIX = ROOT / "docs" / "compatibility" / "index.md"
 UNIFIED_SPEC = ROOT / "docs" / "CivicSuiteUnifiedSpec.md"
 INSTALLER_MODULES = ROOT / "installer" / "modules.json"
-PUBLIC_USE_GATE = ROOT / "docs" / "installer" / "starter-set-public-use-readiness-gate.md"
+PUBLIC_USE_GATE = (
+    ROOT / "docs" / "installer" / "starter-set-public-use-readiness-gate.md"
+)
+PUBLIC_USE_MATRIX = (
+    ROOT
+    / "docs"
+    / "installer"
+    / "browser-qa"
+    / "2026-05-20-clerk-core-public-use-matrix.md"
+)
+PUBLIC_USE_MATRIX_JSON = (
+    ROOT
+    / "docs"
+    / "installer"
+    / "browser-qa"
+    / "2026-05-20-clerk-core-public-use-matrix.json"
+)
+RESTORE_PRECONDITION = (
+    ROOT
+    / "docs"
+    / "installer"
+    / "browser-qa"
+    / "2026-05-20-clerk-core-restore-precondition.md"
+)
 CURRENT_PLATFORM_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
@@ -64,7 +87,11 @@ class RepoSpec:
     published_civiccore_required: str | None = None
 
     def matrix_version(self, remote_only: bool) -> str:
-        return self.published_version if remote_only and self.published_version else self.version
+        return (
+            self.published_version
+            if remote_only and self.published_version
+            else self.version
+        )
 
     def matrix_civiccore_required(self, remote_only: bool) -> str | None:
         if remote_only and self.published_civiccore_required is not None:
@@ -108,15 +135,69 @@ REPOS: tuple[RepoSpec, ...] = (
         "0.5.0",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
-    RepoSpec("civiczone", "CivicSuite/civiczone", "civiczone", "0.2.0", civiccore_required=RECOVERY_CIVICCORE),
-    RepoSpec("civicaccess", "CivicSuite/civicaccess", "civicaccess", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicplan", "CivicSuite/civicplan", "civicplan", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicpermit", "CivicSuite/civicpermit", "civicpermit", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicinspect", "CivicSuite/civicinspect", "civicinspect", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicgrants", "CivicSuite/civicgrants", "civicgrants", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civicprocure", "CivicSuite/civicprocure", "civicprocure", "0.2.0", civiccore_required=CURRENT_PLATFORM_CIVICCORE),
-    RepoSpec("civiccontracts", "CivicSuite/civiccontracts", "civiccontracts", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicboards", "CivicSuite/civicboards", "civicboards", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec(
+        "civiczone",
+        "CivicSuite/civiczone",
+        "civiczone",
+        "0.2.0",
+        civiccore_required=RECOVERY_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicaccess",
+        "CivicSuite/civicaccess",
+        "civicaccess",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicplan",
+        "CivicSuite/civicplan",
+        "civicplan",
+        "0.2.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicpermit",
+        "CivicSuite/civicpermit",
+        "civicpermit",
+        "0.2.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicinspect",
+        "CivicSuite/civicinspect",
+        "civicinspect",
+        "0.2.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicgrants",
+        "CivicSuite/civicgrants",
+        "civicgrants",
+        "0.2.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicprocure",
+        "CivicSuite/civicprocure",
+        "civicprocure",
+        "0.2.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+    ),
+    RepoSpec(
+        "civiccontracts",
+        "CivicSuite/civiccontracts",
+        "civiccontracts",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicboards",
+        "CivicSuite/civicboards",
+        "civicboards",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
     RepoSpec(
         "civicnotice",
         "CivicSuite/civicnotice",
@@ -126,18 +207,90 @@ REPOS: tuple[RepoSpec, ...] = (
         published_version="0.1.1",
         published_civiccore_required="0.3.0",
     ),
-    RepoSpec("civic311", "CivicSuite/civic311", "civic311", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civiccomms", "CivicSuite/civiccomms", "civiccomms", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicdata", "CivicSuite/civicdata", "civicdata", "0.1.2", civiccore_required="0.4.0"),
-    RepoSpec("civichr", "CivicSuite/civichr", "civichr", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicbudget", "CivicSuite/civicbudget", "civicbudget", "0.1.2", civiccore_required="0.4.0"),
-    RepoSpec("civiclegal", "CivicSuite/civiclegal", "civiclegal", "0.1.2", civiccore_required="0.11.0"),
-    RepoSpec("civicelections", "CivicSuite/civicelections", "civicelections", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicutility", "CivicSuite/civicutility", "civicutility", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civiccourt", "CivicSuite/civiccourt", "civiccourt", "0.1.2", civiccore_required="0.4.0"),
-    RepoSpec("civicsafety", "CivicSuite/civicsafety", "civicsafety", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civiclibrary", "CivicSuite/civiclibrary", "civiclibrary", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
-    RepoSpec("civicparks", "CivicSuite/civicparks", "civicparks", "0.1.1", civiccore_required=LEGACY_FOUNDATION_CIVICCORE),
+    RepoSpec(
+        "civic311",
+        "CivicSuite/civic311",
+        "civic311",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civiccomms",
+        "CivicSuite/civiccomms",
+        "civiccomms",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicdata",
+        "CivicSuite/civicdata",
+        "civicdata",
+        "0.1.2",
+        civiccore_required="0.4.0",
+    ),
+    RepoSpec(
+        "civichr",
+        "CivicSuite/civichr",
+        "civichr",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicbudget",
+        "CivicSuite/civicbudget",
+        "civicbudget",
+        "0.1.2",
+        civiccore_required="0.4.0",
+    ),
+    RepoSpec(
+        "civiclegal",
+        "CivicSuite/civiclegal",
+        "civiclegal",
+        "0.1.2",
+        civiccore_required="0.11.0",
+    ),
+    RepoSpec(
+        "civicelections",
+        "CivicSuite/civicelections",
+        "civicelections",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicutility",
+        "CivicSuite/civicutility",
+        "civicutility",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civiccourt",
+        "CivicSuite/civiccourt",
+        "civiccourt",
+        "0.1.2",
+        civiccore_required="0.4.0",
+    ),
+    RepoSpec(
+        "civicsafety",
+        "CivicSuite/civicsafety",
+        "civicsafety",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civiclibrary",
+        "CivicSuite/civiclibrary",
+        "civiclibrary",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
+    RepoSpec(
+        "civicparks",
+        "CivicSuite/civicparks",
+        "civicparks",
+        "0.1.1",
+        civiccore_required=LEGACY_FOUNDATION_CIVICCORE,
+    ),
 )
 
 
@@ -164,7 +317,9 @@ def spec_versions() -> dict[str, str]:
     if not match:
         return {}
     versions: dict[str, str] = {}
-    row_pattern = re.compile(r"^\|\s*(civic[\w-]+)\s*\|\s*([0-9]+\.[0-9]+\.[0-9]+)\s*\|", re.M)
+    row_pattern = re.compile(
+        r"^\|\s*(civic[\w-]+)\s*\|\s*([0-9]+\.[0-9]+\.[0-9]+)\s*\|", re.M
+    )
     for repo, version in row_pattern.findall(match.group("section")):
         versions[repo] = version
     return versions
@@ -186,15 +341,30 @@ def check_planned_spec_modules() -> list[str]:
         elif module_id == "civicapi":
             display = "CivicAPI"
         if display not in spec_text:
-            errors.append(fail(f"planned spec module {display} missing from unified spec"))
+            errors.append(
+                fail(f"planned spec module {display} missing from unified spec")
+            )
         installer_module = installer_modules.get(module_id)
         if not installer_module:
-            errors.append(fail(f"planned spec module {module_id} missing from installer/modules.json"))
+            errors.append(
+                fail(
+                    f"planned spec module {module_id} missing from installer/modules.json"
+                )
+            )
             continue
         if installer_module.get("selectable") is not False:
-            errors.append(fail(f"planned spec module {module_id} must remain non-selectable until runtime repo exists"))
-        if installer_module.get("installer_status") != "planned_spec_module_no_runtime_repo":
-            errors.append(fail(f"planned spec module {module_id} has unexpected installer_status"))
+            errors.append(
+                fail(
+                    f"planned spec module {module_id} must remain non-selectable until runtime repo exists"
+                )
+            )
+        if (
+            installer_module.get("installer_status")
+            != "planned_spec_module_no_runtime_repo"
+        ):
+            errors.append(
+                fail(f"planned spec module {module_id} has unexpected installer_status")
+            )
     return errors
 
 
@@ -210,7 +380,9 @@ def check_clerk_core_workflow_proof_truth() -> list[str]:
     )
     for phrase in required_phrases:
         if phrase not in spec_text and phrase not in installer_text:
-            errors.append(fail(f"clerk-core workflow proof truth missing phrase: {phrase}"))
+            errors.append(
+                fail(f"clerk-core workflow proof truth missing phrase: {phrase}")
+            )
     return errors
 
 
@@ -219,8 +391,22 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
     spec_text = UNIFIED_SPEC.read_text(encoding="utf-8")
     installer_data = json.loads(INSTALLER_MODULES.read_text(encoding="utf-8"))
     if not PUBLIC_USE_GATE.is_file():
-        return [fail(f"missing clerk-core public-use gate at {PUBLIC_USE_GATE.relative_to(ROOT)}")]
+        return [
+            fail(
+                f"missing clerk-core public-use gate at {PUBLIC_USE_GATE.relative_to(ROOT)}"
+            )
+        ]
     gate_text = PUBLIC_USE_GATE.read_text(encoding="utf-8")
+    matrix_text = (
+        PUBLIC_USE_MATRIX.read_text(encoding="utf-8")
+        if PUBLIC_USE_MATRIX.is_file()
+        else ""
+    )
+    restore_text = (
+        RESTORE_PRECONDITION.read_text(encoding="utf-8")
+        if RESTORE_PRECONDITION.is_file()
+        else ""
+    )
     status = installer_data.get("public_use_gate_status")
     if not isinstance(status, dict):
         errors.append(fail("installer/modules.json missing public_use_gate_status"))
@@ -228,20 +414,66 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
         if status.get("profile") != "clerk-core":
             errors.append(fail("public_use_gate_status profile must be clerk-core"))
         if status.get("status") != "red":
-            errors.append(fail("public_use_gate_status must remain red until promotion evidence is complete"))
-        if status.get("path") != "docs/installer/starter-set-public-use-readiness-gate.md":
+            errors.append(
+                fail(
+                    "public_use_gate_status must remain red until promotion evidence is complete"
+                )
+            )
+        if (
+            status.get("path")
+            != "docs/installer/starter-set-public-use-readiness-gate.md"
+        ):
             errors.append(fail("public_use_gate_status path mismatch"))
+        if (
+            status.get("route_state_matrix")
+            != "docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md"
+        ):
+            errors.append(
+                fail("public_use_gate_status route_state_matrix path mismatch")
+            )
+        if (
+            status.get("restore_precondition_evidence")
+            != "docs/installer/browser-qa/2026-05-20-clerk-core-restore-precondition.md"
+        ):
+            errors.append(
+                fail(
+                    "public_use_gate_status restore_precondition_evidence path mismatch"
+                )
+            )
+    if not PUBLIC_USE_MATRIX.is_file():
+        errors.append(
+            fail(
+                f"missing clerk-core public-use matrix at {PUBLIC_USE_MATRIX.relative_to(ROOT)}"
+            )
+        )
+    if not PUBLIC_USE_MATRIX_JSON.is_file():
+        errors.append(
+            fail(
+                f"missing clerk-core public-use matrix JSON at {PUBLIC_USE_MATRIX_JSON.relative_to(ROOT)}"
+            )
+        )
+    if not RESTORE_PRECONDITION.is_file():
+        errors.append(
+            fail(
+                f"missing clerk-core restore precondition evidence at {RESTORE_PRECONDITION.relative_to(ROOT)}"
+            )
+        )
     required_phrases = (
         "Status: RED - beta.4 is outside-test evidence",
         "Loading, success, empty, error, and partial states checked",
         "Adversarial mock validation completed for integration behavior",
         "Independent release-gate audit has no unresolved Blocker or Critical findings",
         "Promotion beyond outside-test beta is blocked",
+        "20 browser checks",
+        "157 installed routes",
+        "missing backup manifest",
     )
-    combined = f"{gate_text}\n{spec_text}"
+    combined = f"{gate_text}\n{spec_text}\n{matrix_text}\n{restore_text}"
     for phrase in required_phrases:
         if phrase not in combined:
-            errors.append(fail(f"clerk-core public-use gate truth missing phrase: {phrase}"))
+            errors.append(
+                fail(f"clerk-core public-use gate truth missing phrase: {phrase}")
+            )
     return errors
 
 
@@ -285,8 +517,13 @@ def check_pyproject(spec: RepoSpec, repo_path: Path) -> list[str]:
 
     if spec.civiccore_required:
         deps = project.get("dependencies", [])
-        dep_text = "\n".join(str(dep) for dep in deps if "civiccore" in str(dep).lower())
-        if spec.civiccore_required not in dep_text and f"v{spec.civiccore_required}" not in dep_text:
+        dep_text = "\n".join(
+            str(dep) for dep in deps if "civiccore" in str(dep).lower()
+        )
+        if (
+            spec.civiccore_required not in dep_text
+            and f"v{spec.civiccore_required}" not in dep_text
+        ):
             errors.append(
                 fail(
                     f"civiccore dependency does not reference {spec.civiccore_required}: {dep_text or '<missing>'}"
@@ -295,9 +532,13 @@ def check_pyproject(spec: RepoSpec, repo_path: Path) -> list[str]:
     return errors
 
 
-def check_compatibility_matrix(spec: RepoSpec, matrix: str, remote_only: bool) -> list[str]:
+def check_compatibility_matrix(
+    spec: RepoSpec, matrix: str, remote_only: bool
+) -> list[str]:
     errors = []
-    row_pattern = re.compile(rf"^\|\s*{re.escape(spec.name)}\s*\|(?P<row>.+)$", re.MULTILINE)
+    row_pattern = re.compile(
+        rf"^\|\s*{re.escape(spec.name)}\s*\|(?P<row>.+)$", re.MULTILINE
+    )
     match = row_pattern.search(matrix)
     if not match:
         return [fail("missing compatibility matrix row")]
@@ -309,7 +550,9 @@ def check_compatibility_matrix(spec: RepoSpec, matrix: str, remote_only: bool) -
     if spec.repo not in row:
         errors.append(fail(f"compatibility row missing repo {spec.repo}"))
     if civiccore_required and f"`=={civiccore_required}`" not in row:
-        errors.append(fail(f"compatibility row missing civiccore pin =={civiccore_required}"))
+        errors.append(
+            fail(f"compatibility row missing civiccore pin =={civiccore_required}")
+        )
     return errors
 
 
@@ -400,9 +643,13 @@ def main() -> int:
     print(f"repos: {len(REPOS)}")
     print(f"planned spec-only modules: {', '.join(PLANNED_SPEC_MODULES)}")
     print(f"current clerk-core installer tag: {CURRENT_CLERK_CORE_INSTALLER_TAG}")
-    print(f"clerk-core workflow proof scope: {'; '.join(CLERK_CORE_WORKFLOW_PROOF_SCOPE)}")
+    print(
+        f"clerk-core workflow proof scope: {'; '.join(CLERK_CORE_WORKFLOW_PROOF_SCOPE)}"
+    )
     print(f"remote release checks: {'enabled' if args.remote else 'disabled'}")
-    print(f"local sibling clone checks: {'disabled' if args.remote_only else 'enabled'}")
+    print(
+        f"local sibling clone checks: {'disabled' if args.remote_only else 'enabled'}"
+    )
 
     for spec in REPOS:
         errors = check_repo(
@@ -418,7 +665,9 @@ def main() -> int:
             for error in errors:
                 print(f"  {error}")
         else:
-            print(f"[{spec.name}] PASS {spec.matrix_version(args.remote_only)} ({spec.repo})")
+            print(
+                f"[{spec.name}] PASS {spec.matrix_version(args.remote_only)} ({spec.repo})"
+            )
 
     planned_errors = check_planned_spec_modules()
     if planned_errors:
@@ -436,7 +685,9 @@ def main() -> int:
         for error in workflow_errors:
             print(f"  {error}")
     else:
-        print("[clerk-core-workflow-proof] PASS records_request_search_review_response,civicclerk_agenda_packet_minutes_vote_notice_archive")
+        print(
+            "[clerk-core-workflow-proof] PASS records_request_search_review_response,civicclerk_agenda_packet_minutes_vote_notice_archive"
+        )
 
     public_use_errors = check_clerk_core_public_use_gate_truth()
     if public_use_errors:

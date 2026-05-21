@@ -88,9 +88,9 @@ Next action: run the `agent-pipeline-codex` v0.9.0 parent run `2026-05-18-clerk-
 
 ## Queued Targets
 
-2. **Remaining 26 product modules in spec/dependency order**
+2. **Remaining 25 product modules in spec/dependency order**
 
-Why second: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 28 product modules plus CivicCore. After CivicRecords AI and CivicClerk are included in the starter product, the remaining 26 product modules proceed one at a time.
+Why second: `docs/CivicSuiteUnifiedSpec.md` is the source of truth and says the suite has 27 product modules plus CivicCore. After CivicRecords AI and CivicClerk are included in the starter product, the remaining 25 product modules proceed one at a time.
 
 3. **Deferred release-infrastructure follow-ups**
 
