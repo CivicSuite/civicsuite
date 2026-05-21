@@ -8,9 +8,9 @@ This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement
 
 ## Is CivicSuite ready for production use in my city today?
 
-**No.** As of 2026-05-21, CivicSuite is still under release recovery outside the bounded Clerk-Core starter and the CivicCode module line. Public release tags exist, but only modules that pass the recovery gates may be treated as current public-use module releases. CivicCode v1.0.0 has passed its module release gate; CivicRecords AI and CivicClerk are included in the Clerk-Core public-use starter profile. The full suite is still not procurement-ready. Any vendor or integrator claiming "we've deployed the full CivicSuite in production" is making a claim the project itself does not currently support.
+**No.** As of 2026-05-21, CivicSuite is still under release recovery outside the bounded Clerk-Core starter and the CivicCode/CivicAccess module lines. Public release tags exist, but only modules that pass the recovery gates may be treated as current public-use module releases. CivicCode v1.0.0 and CivicAccess v1.0.0 have passed their module release gates; CivicRecords AI and CivicClerk are included in the Clerk-Core public-use starter profile. The full suite is still not procurement-ready. Any vendor or integrator claiming "we've deployed the full CivicSuite in production" is making a claim the project itself does not currently support.
 
-The current public-use path is bounded: the Clerk-Core starter profile (`civiccore`, `civicrecords-ai`, `civicclerk`) and the CivicCode v1.0.0 module release. CivicRecords AI v1.6.1 includes the ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery.
+The current public-use path is bounded: the Clerk-Core starter profile (`civiccore`, `civicrecords-ai`, `civicclerk`), the CivicCode v1.0.0 module release, and the CivicAccess v1.0.0 module release. CivicRecords AI v1.6.1 includes the ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery.
 
 ## What is the difference between a "release tag" and a "procurement-ready release"?
 
