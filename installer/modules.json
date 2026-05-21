@@ -13,6 +13,8 @@
                                    "profile":  "clerk-core",
                                    "status":  "red",
                                    "path":  "docs/installer/starter-set-public-use-readiness-gate.md",
+                                   "route_state_matrix":  "docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md",
+                                   "restore_precondition_evidence":  "docs/installer/browser-qa/2026-05-20-clerk-core-restore-precondition.md",
                                    "boundary":  "Beta.4 remains outside-test evidence until the public-use readiness gate moves to green with fresh proof."
                                },
     "menu_styles":  [

@@ -125,3 +125,15 @@ change records the promotion blocker for moving beyond beta.4; it does not
 promote CivicRecords AI, CivicClerk, CivicCore, or the suite installer to a new
 release label.
 
+For the Clerk-Core installed route/state matrix evidence:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicrecords-ai | n/a | 1.6.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+| CivicSuite/civicclerk | n/a | 1.0.1 | `civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969` |
+
+No downstream module pin moves for the route/state matrix evidence. This
+umbrella change records installed-stack QA and adversarial local integration
+evidence for the still-RED public-use gate; it does not promote any module or
+installer artifact to a new release label.
+

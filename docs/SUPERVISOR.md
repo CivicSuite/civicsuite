@@ -10,7 +10,7 @@ Skim in this order:
 
 1. `README.md` — what's here and the entry workflow (paste `CHARTER.md` to a new Claude).
 2. `CHARTER.md` — the single source of truth the agent reads first; contains roadmap + governance + bug-routing + compatibility matrix.
-3. `CONSISTENCY.md` — the numbers table (26 modules, 7 tiers, 6 CivicCore phases, etc.). If a number changed in any spec, this must match.
+3. `CONSISTENCY.md` — the numbers table (27 product modules plus CivicCore, 7 tiers, 6 CivicCore phases, etc.). If a number changed in any spec, this must match.
 4. `docs/roadmap/index.md`, `docs/architecture/index.md` (ADR-0001/0002/0003), `docs/governance/index.md` — only if the session touches them.
 5. `CHANGELOG.md` `[Unreleased]` — what's already been noted since the last release.
 

@@ -18,12 +18,12 @@ If you are evaluating CivicSuite for a municipality, treat this state as *develo
 
 ## Suite Status
 
-Status snapshot: **2026-05-18**
+Status snapshot: **2026-05-20**
 
 | Tier | Count | What it means today |
 |---|---:|---|
 | Corrective recovery labels | CivicCore plus 9 product repos | CivicCore v1.1.0 is the current shared-platform release. CivicClerk v1.0.1 is the protected-default recovery patch. CivicRecords AI v1.6.1 is shipped as developer preview with the ingestion worker recovery patch. CivicCode is demoted to v0.5.0. CivicZone, CivicPlan, CivicPermit, CivicInspect, CivicGrants, and CivicProcure are demoted to v0.2.0. |
-| Foundation / planned | 18 named product modules plus unresolved spec-count cleanup | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The unified spec states 28 product modules plus CivicCore; the visible catalog currently names 27 product headings after CivicCore, so the final post-starter queue requires one explicit spec-count cleanup before it is frozen. |
+| Foundation / planned | 18 named product modules | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The reconciled unified spec, installer metadata, and live GitHub org state now enumerate 27 product modules plus CivicCore. |
 
 `civiccore` is the shared platform package consumed by every module; v1.1.0 is the current platform release with shared `staff_key_gate` support and the earlier auth-error-payload hardening included.
 
@@ -50,15 +50,15 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 3. Prove install/start/health/repair/backup/restore/uninstall for the Linux-first Docker/browser path.
 4. Keep Windows and macOS scoped as wrappers around the Docker/browser workflow unless matching-host lifecycle evidence exists.
 5. Browser-QA the public and staff starter-product paths with real user-flow evidence.
-6. After the starter product passes its gate, reconcile the spec-count cleanup and generate the remaining-module queue from the unified spec.
+6. After the starter product passes its gate, generate the remaining-module queue from the reconciled unified spec.
 
 ## Quick Start
 
-**Suite installer (current):** YELLOW beta. The current published clerk-core profile installer release source is `installer-clerk-core-v0.1.0-beta.4` on this repo's Releases page. It is an unsigned OSS beta for outside testing of the CivicCore + CivicRecords AI + CivicClerk starter profile, backed by PR #156, PR #157, main verify run `26134412418`, main installer-cleanroom run `26134412420`, and release-lockstep PR runs `26120937776` and `26134059097`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux remains the primary runtime proof path. Windows now has matching-host Docker Desktop lifecycle evidence on a Windows 11 + WSL 2 host; macOS remains archive/readiness only until real macOS lifecycle certification passes on a Darwin host.
+**Suite installer (current):** YELLOW beta. The current published clerk-core profile installer release source is `installer-clerk-core-v0.1.0-beta.4` on this repo's Releases page. It is an unsigned OSS beta for outside testing of the CivicCore + CivicRecords AI + CivicClerk starter profile, backed by PR #156, PR #157, main verify run `26134412418`, main installer-cleanroom run `26134412420`, and release-lockstep PR runs `26120937776` and `26134059097`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is now classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux remains the primary runtime proof path. Windows now has matching-host Docker Desktop lifecycle evidence on a Windows 11 + WSL 2 host; macOS remains archive/readiness only until matching-host lifecycle evidence exists on a Darwin host.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`
-- macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(wrapper/archive only until macOS lifecycle certification passes)*
+- macOS package: `CivicSuite-clerk-core-macos-0.1.0.tar.gz` *(wrapper/archive only until matching-host macOS lifecycle evidence exists)*
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
 Outside testers should use the focused [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md) for the Linux/Windows install, verify, repair, and uninstall path. Promotion beyond outside-test beta is blocked by the [Clerk-Core public-use readiness gate](docs/installer/starter-set-public-use-readiness-gate.md) until every release-recovery check has current evidence.
@@ -107,7 +107,7 @@ CivicSuite uses a deliberately boring stack. Every module inherits these default
 
 **Dependency rule:** modules depend on `civiccore`; `civiccore` never depends on modules. Cities run the stack on their own hardware. No cloud, no telemetry, no per-seat pricing.
 
-The suite is aiming for a first deployable "city starter set," not for all 28 product modules to become equally deep at the same time. That distinction is intentional and load-bearing.
+The suite is aiming for a first installable starter beta, not for all 27 product modules to become equally deep at the same time. That distinction is intentional and load-bearing.
 
 For the full architecture diagram and data-flow rules, see [ARCHITECTURE.md](ARCHITECTURE.md). For the dependency-pinning matrix between modules and civiccore versions, see [docs/compatibility/index.md](docs/compatibility/index.md).
 

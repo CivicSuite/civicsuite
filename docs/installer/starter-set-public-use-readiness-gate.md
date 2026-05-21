@@ -35,6 +35,10 @@ Evidence already recorded:
 - Installed browser QA evidence exists for CivicRecords AI login/admin paths
   and CivicClerk staff/public/protected-state paths at desktop and mobile
   widths.
+- The 2026-05-20 installed route/state matrix records 20 browser checks and
+  157 installed routes across CivicRecords AI and CivicClerk.
+- Restore-precondition evidence records the missing backup manifest failure
+  path for a non-existent backup directory.
 
 ## Public-Use Promotion Checklist
 
@@ -42,10 +46,10 @@ Evidence already recorded:
 |---|---|---|
 | Spec scope checked for CivicCore, CivicRecords AI, and CivicClerk | YELLOW | The unified spec sections 8, 9, 13, and 16-19 are the scope source. A final promotion packet must cite each section explicitly. |
 | Required starter workflows implemented or deferrals documented | YELLOW | Installed-stack workflow proof exists for records request/search-surface/review/response and clerk agenda/packet/minutes/vote/notice/archive. Final promotion must also document any intentionally deferred public comments, live records exchange, or native installer work. |
-| Desktop and mobile browser UX checked for every public and staff path | YELLOW | Installed browser QA exists for the main paths. Final promotion must add a path inventory proving every public/staff route is covered or explicitly out of scope. |
-| Loading, success, empty, error, and partial states checked | RED | Current evidence records protected/error state and normal success paths, but does not yet map every user-facing state across both modules. |
-| Console, keyboard/focus, accessibility, and copy review recorded | YELLOW | Browser QA records console/focus observations. Final promotion must include an explicit accessibility/copy matrix for every covered path. |
-| Adversarial mock validation completed for integration behavior | RED | Installed workflow proof is positive-path plus guardrail evidence. A public-use gate needs adversarial mocks for bad inputs, stale state, spoofed roles, missing dependencies, and unavailable services. |
+| Desktop and mobile browser UX checked for every public and staff path | YELLOW | The 2026-05-20 installed route/state matrix records desktop/mobile coverage and 157 installed routes. Independent audit must verify coverage completeness and require fixes for any missed public/staff route. |
+| Loading, success, empty, error, and partial states checked | YELLOW | The 2026-05-20 installed route/state matrix records loading, success, empty, error, and partial state evidence where supported. Independent audit must verify the state coverage is complete enough for promotion and require gap fixes where it is not. |
+| Console, keyboard/focus, accessibility, and copy review recorded | YELLOW | Browser QA records console/focus observations and copy notes. Independent audit must verify accessibility/copy completeness for every covered path and require gap fixes where needed. |
+| Adversarial mock validation completed for integration behavior | YELLOW | The 2026-05-20 matrix records adversarial local integration probes for bad inputs, missing/stale records, spoofed or missing staff roles, unavailable dependencies, failed restore preconditions, and public/staff boundaries. Independent audit must verify sufficiency before promotion. |
 | Full local tests and lint/static checks pass for touched repos | YELLOW | Suite checks pass. Final promotion must record current CivicRecords AI and CivicClerk repo-local tests for the promotion branch or state an intentional deferral. |
 | Module release scripts pass where present | YELLOW | Final promotion must record `scripts/verify-release.sh` or equivalent per touched starter repo where present. |
 | Required documentation updated | YELLOW | Starter outside-test docs exist. Final promotion must update README, changelog, user manual, security/release notes, docs index, and installer docs as one release-truth set. |
@@ -55,20 +59,16 @@ Evidence already recorded:
 
 ## Required Next Implementation Slices
 
-1. Public/staff route inventory: enumerate every installed CivicRecords AI and
-   CivicClerk public/staff route and map each to desktop/mobile QA evidence.
-2. UI state matrix: record loading, success, empty, error, and partial states
-   for each user-facing route, including actionable copy and keyboard/focus
-   behavior.
-3. Adversarial integration mocks: test bad inputs, missing context, spoofed or
-   missing staff roles, stale data, unavailable module dependencies, failed
-   backup/restore preconditions, and public/staff permission boundaries.
-4. Per-repo promotion checks: run and record current CivicRecords AI and
+1. Independent audit of the 2026-05-20 route/state/adversarial evidence:
+   verify the installed route inventory, UI state matrix, accessibility/copy
+   observations, adversarial probes, and restore-precondition evidence; require
+   gap fixes for any incomplete or misleading coverage.
+2. Per-repo promotion checks: run and record current CivicRecords AI and
    CivicClerk tests, lint/static checks, and release verifier scripts where
    present.
-5. Independent public-use release-gate audit: require no unresolved Blocker or
+3. Independent public-use release-gate audit: require no unresolved Blocker or
    Critical findings before any release label moves beyond outside-test beta.
-6. Final release-truth package: update suite docs, installer docs, compatibility
+4. Final release-truth package: update suite docs, installer docs, compatibility
    truth, release notes, verifiers, and artifacts together through the
    release-lockstep path.
 

@@ -1,0 +1,2357 @@
+{
+  "name": "clerk-core-public-use-route-state-matrix",
+  "captured_at": "2026-05-20T14:47:59.395Z",
+  "baseline": "CivicSuite main after PR #159 merge, installed locally with run-id local-public-use-matrix and bearer workflow proof",
+  "urls": {
+    "recordsWeb": "http://127.0.0.1:19314",
+    "recordsApi": "http://127.0.0.1:19234",
+    "clerkWeb": "http://127.0.0.1:19315",
+    "clerkApi": "http://127.0.0.1:20010"
+  },
+  "health": {
+    "civicrecords": {
+      "status": "ok",
+      "version": "1.6.1"
+    },
+    "civicclerk": {
+      "status": "ok",
+      "service": "civicclerk",
+      "version": "1.0.1",
+      "civiccore": "1.0.1"
+    }
+  },
+  "route_inventory": [
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/coverage-gaps",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/fee-schedules",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/fee-schedules/{schedule_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/models",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/models/registry",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/models/registry/{model_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/status",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/users",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/admin/users/{user_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/analytics/operational",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/audit/export",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/audit/logs",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/audit/verify",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/auth/jwt/login",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/auth/jwt/logout",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/catalog/domains",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/catalog/load",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/catalog/systems",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/city-profile",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/config/portal-mode",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/documents/{document_id}/re-ingest",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/stats",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/test-connection",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/upload",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/ingest",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/sync-failures",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/sync-failures/dismiss-all",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/sync-failures/retry-all",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/sync-failures/{failure_id}/dismiss",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/sync-failures/{failure_id}/retry",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/sync-run-log",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/datasources/{source_id}/unpause",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/departments/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/departments/{dept_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/documents/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/documents/{document_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/documents/{document_id}/chunks",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/dashboard",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/dashboard/accuracy",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/dashboard/export",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/flags/{flag_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/flags/{request_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/rules/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/rules/{rule_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/rules/{rule_id}/history",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/rules/{rule_id}/test",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/scan/{request_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/templates/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/templates/{template_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions/templates/{template_id}/render",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/health",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/notifications/log",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/notifications/templates",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/notifications/templates/{template_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/onboarding/interview",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/stats",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/approve",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/documents",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/documents/{doc_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/estimate-fees",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/fee-waiver",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/fee-waiver/{waiver_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/fees",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/messages",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/ready-for-release",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/reject",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/response-letter",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/response-letter/{letter_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/submit-review",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/{request_id}/timeline",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/search/export",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/search/filters",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/search/query",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/search/sessions",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/search/sessions/{session_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/service-accounts/",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/service-accounts/{account_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/users/me",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/users/{id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/admin/config",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/admin/prompts",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-intake",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-intake/{item_id}/promote",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-intake/{item_id}/review",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-items",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-items/{item_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-items/{item_id}/audit",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/agenda-items/{item_id}/transitions",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/favicon.ico",
+      "audience": "staff",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/health",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/imports/{connector_name}/meetings",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/integrations/readiness",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meeting-bodies",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meeting-bodies/{body_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/action-items",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/audit",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/export-bundle",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/minutes/drafts",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/motions",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/notice-checklists",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/notices/check",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/notices/post",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/ordinance-resolution-handoff",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/packet-assemblies",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/packet-snapshots",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/public-record",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/staff-reports",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/transcripts",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/meetings/{meeting_id}/transitions",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/minutes/{minute_id}/post",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/motions/{motion_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/motions/{motion_id}/corrections",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/motions/{motion_id}/votes",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/notice-checklists/{record_id}/posting-proof",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/packet-assemblies/{record_id}/finalize",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public-comments/review-queue",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public/archive/search",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public/meetings",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public/meetings/{record_id}",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public/meetings/{record_id}/comments",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public/meetings/{record_id}/{document_kind}.txt",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff/auth-readiness",
+      "audience": "staff",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff/login",
+      "audience": "staff",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff/logout",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff/oidc/callback",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff/session",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/vendor-live-sync/sources",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/vendor-live-sync/sources/{source_id}/cursor-reset",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/vendor-live-sync/sources/{source_id}/run-log",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/votes/{vote_id}",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/votes/{vote_id}/corrections",
+      "audience": "staff",
+      "auth_requirement": "staff auth required",
+      "desktop_mobile_qa": "covered by installed-stack browser/API matrix when route participates in public, staff, or workflow-proof surfaces; otherwise API inventory only",
+      "states": "loading/success/empty/error/partial browser states covered for CivicClerk stateful surfaces; CivicRecords browser smoke covers login/dashboard/search/requests with API workflow proof for request/search/review/response"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/public",
+      "audience": "public",
+      "auth_requirement": "none in public portal mode",
+      "desktop_mobile_qa": "public portal browser route inventoried from React app; installed stack is private-mode for current Clerk-Core package",
+      "states": "not browser-promoted in private-mode installed package"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/public/register",
+      "audience": "public",
+      "auth_requirement": "none in public portal mode",
+      "desktop_mobile_qa": "public portal browser route inventoried from React app; installed stack is private-mode for current Clerk-Core package",
+      "states": "not browser-promoted in private-mode installed package"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/public/submit",
+      "audience": "public",
+      "auth_requirement": "none or resident token in public portal mode",
+      "desktop_mobile_qa": "public portal browser route inventoried from React app; installed stack is private-mode for current Clerk-Core package",
+      "states": "not browser-promoted in private-mode installed package"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "covered in this browser matrix",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/search",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "covered in this browser matrix",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "covered in this browser matrix",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/requests/:id",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/exemptions",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/sources",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/ingestion",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/users",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/onboarding",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/city-profile",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/settings",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicRecords AI",
+      "route": "/audit-log",
+      "audience": "staff",
+      "auth_requirement": "first-admin/staff JWT",
+      "desktop_mobile_qa": "inventoried from React app; API route coverage is included in OpenAPI/workflow proof where applicable",
+      "states": "CivicRecords request/search/review/response states covered through installed workflow proof; browser smoke covers login/dashboard/search/requests"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/staff",
+      "audience": "staff",
+      "auth_requirement": "bearer staff token in installed proof mode",
+      "desktop_mobile_qa": "covered in this browser matrix",
+      "states": "success/loading/empty/error/partial covered"
+    },
+    {
+      "product": "CivicClerk",
+      "route": "/public",
+      "audience": "public",
+      "auth_requirement": "none",
+      "desktop_mobile_qa": "covered in this browser matrix",
+      "states": "success/loading/empty/error/partial covered"
+    }
+  ],
+  "browser_checks": [
+    {
+      "id": "records-login-desktop",
+      "product": "CivicRecords AI",
+      "surface": "staff browser",
+      "auth": "none before login",
+      "state": "success",
+      "path": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-login-desktop.png",
+      "body_sample": "CR CivicRecords AI Sign in to the admin panel Email Password Sign in",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicRecords AI",
+        "Sign in"
+      ],
+      "headings": [
+        "CivicRecords AI"
+      ],
+      "controls": {
+        "buttons": 1,
+        "links": 0
+      },
+      "active_element_after_tabs": "body CRCivicRecords AISign in to the admin panelEmailPasswordSign in",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "records-login-mobile",
+      "product": "CivicRecords AI",
+      "surface": "staff browser",
+      "auth": "none before login",
+      "state": "success",
+      "path": "/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-login-mobile.png",
+      "body_sample": "CR CivicRecords AI Sign in to the admin panel Email Password Sign in",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicRecords AI",
+        "Sign in"
+      ],
+      "headings": [
+        "CivicRecords AI"
+      ],
+      "controls": {
+        "buttons": 1,
+        "links": 0
+      },
+      "active_element_after_tabs": "body CRCivicRecords AISign in to the admin panelEmailPasswordSign in",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "records-dashboard-desktop",
+      "product": "CivicRecords AI",
+      "surface": "staff browser",
+      "auth": "first-admin JWT",
+      "state": "success",
+      "path": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-dashboard-desktop.png",
+      "body_sample": "Skip to main content CR CivicRecords AI WORKFLOW Search Requests Exemptions SETUP Onboarding City Profile ADMINISTRATION Sources Ingestion Dashboard Users Settings Audit Log System Administrator Sign out Help Dashboard CivicRecords AI v1.6.1 REGISTERED USERS 1 AUDIT LOG ENTRIES 37 SYSTEM VERSION 1.6.1 OPEN REQUESTS 2 OVERDUE REQUESTS 0 AVG RESPONSE TIME N/A DEADLINE COMPLIANCE 100.0% SERVICES Database (PostgreSQL) Ollama (LLM Engine) Redis (Task Queue) REQUESTS BY STATUS Ready for Release 2 APPROACHING DEADLINES (WITHIN 3 DAYS) No requests with upcoming deadlines. RECENT ACTIVITY System POST /auth/jwt/login on http_request 5/20/2026, 8:47:36 AM System POST /auth/jwt/login on http_request 5/20/2026, 8:45:44 AM System POST /auth/jwt/login on http_request 5/20/2026, 8:45:25 AM System GET /aud",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicRecords AI",
+        "Requests"
+      ],
+      "headings": [
+        "Dashboard"
+      ],
+      "controls": {
+        "buttons": 4,
+        "links": 12
+      },
+      "active_element_after_tabs": "a Requests",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "records-search-desktop",
+      "product": "CivicRecords AI",
+      "surface": "staff browser",
+      "auth": "first-admin JWT",
+      "state": "success",
+      "path": "/search",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-search-desktop.png",
+      "body_sample": "Skip to main content CR CivicRecords AI WORKFLOW Search Requests Exemptions SETUP Onboarding City Profile ADMINISTRATION Sources Ingestion Dashboard Users Settings Audit Log System Administrator Sign out Help Search Records Search all all Generate AI summary Search across all ingested documents Enter a query above to search. Try: 'water quality 2025' or 'police incident reports' or 'council budget' CivicRecords AI v1.4.1 · Apache 2.0 Help · Audit Log",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Search"
+      ],
+      "headings": [
+        "Search Records",
+        "Search across all ingested documents"
+      ],
+      "controls": {
+        "buttons": 3,
+        "links": 12
+      },
+      "active_element_after_tabs": "a Requests",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "records-requests-mobile",
+      "product": "CivicRecords AI",
+      "surface": "staff browser",
+      "auth": "first-admin JWT",
+      "state": "success",
+      "path": "/requests",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/records-requests-mobile.png",
+      "body_sample": "Skip to main content CR CivicRecords AI Records Requests New Request TOTAL OPEN 2 IN REVIEW 0 APPROACHING DEADLINE 0 OVERDUE 0 all all all all to Requester Description Status Priority Deadline Created Starter Set Workflow Proof starter-set workflow proof 10860373: request for the adopted... Ready for Release normal No deadline 5/20/2026 Starter Set Workflow Proof starter-set workflow proof 5ec0dbda: request for the adopted... Ready for Release normal No deadline 5/20/2026 Showing 1–2 of 2 Previous Next CivicRecords AI v1.4.1 · Apache 2.0",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Requests"
+      ],
+      "headings": [
+        "Records Requests"
+      ],
+      "controls": {
+        "buttons": 7,
+        "links": 1
+      },
+      "active_element_after_tabs": "button Help",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-desktop",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "success",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-desktop.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial CIVICCLERK STAFF WORKSPACE Good morning, City Clerk. Today's meeting work is grouped by urgency, public posting risk, and packet readiness. STAFF ACCESS Staff access verified Bearer token accepted for staff workflow access. Keep this token scoped to clerk workflow roles until the trusted-header SSO bridge is read",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicClerk",
+        "Agenda",
+        "Packet",
+        "Notice",
+        "Minutes"
+      ],
+      "headings": [
+        "Good morning, City Clerk.",
+        "Staff access verified",
+        "Meeting runbook",
+        "Priority queue",
+        "Meeting bodies",
+        "Schedule a meeting"
+      ],
+      "controls": {
+        "buttons": 52,
+        "links": 2
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-mobile",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "success",
+      "path": "/staff",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-mobile.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial CIVICCLERK STAFF WORKSPACE Good morning, City Clerk. Today's meeting work is grouped by urgency, public posting risk, and packet readiness. STAFF ACCESS Staff access verified Bearer token accepted for staff workflow access. Keep this token scoped to clerk workflow roles until the trusted-header SSO bridge is ready. Mode: bearer Method: bearer clerk admin meeting editor ",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicClerk",
+        "Agenda",
+        "Packet",
+        "Notice",
+        "Minutes"
+      ],
+      "headings": [
+        "Good morning, City Clerk.",
+        "Staff access verified",
+        "Meeting runbook",
+        "Priority queue",
+        "Meeting bodies",
+        "Schedule a meeting"
+      ],
+      "controls": {
+        "buttons": 52,
+        "links": 2
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-desktop",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "success",
+      "path": "/public",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-desktop.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial RESIDENT PUBLIC PORTAL Find posted meetings without needing to understand clerk workflows. Residents can open the official agenda, packet, and approved minutes that staff have published to the public archive. Restricted or closed-session material is never exposed or hinted here. CITY OF BROOKFIELD PUBLIC RECORDS ",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Public",
+        "Meeting"
+      ],
+      "headings": [
+        "Find posted meetings without needing to understand clerk workflows.",
+        "Official meeting materials, in one place.",
+        "Posted meetings",
+        "Brookfield City Council Prior Meeting",
+        "Starter set workflow proof 560b4a5d public archive",
+        "Starter set workflow proof a491a3ef public archive",
+        "Official record detail",
+        "Brookfield City Council Prior Meeting",
+        "Search public archive"
+      ],
+      "controls": {
+        "buttons": 35,
+        "links": 3
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-mobile",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "success",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-mobile.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial RESIDENT PUBLIC PORTAL Find posted meetings without needing to understand clerk workflows. Residents can open the official agenda, packet, and approved minutes that staff have published to the public archive. Restricted or closed-session material is never exposed or hinted here. CITY OF BROOKFIELD PUBLIC RECORDS Official meeting materials, in one place. Start with the p",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Public",
+        "Meeting"
+      ],
+      "headings": [
+        "Find posted meetings without needing to understand clerk workflows.",
+        "Official meeting materials, in one place.",
+        "Posted meetings",
+        "Brookfield City Council Prior Meeting",
+        "Starter set workflow proof 560b4a5d public archive",
+        "Starter set workflow proof a491a3ef public archive",
+        "Official record detail",
+        "Brookfield City Council Prior Meeting",
+        "Search public archive"
+      ],
+      "controls": {
+        "buttons": 35,
+        "links": 3
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-protected-error-desktop",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "missing staff auth",
+      "state": "error",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-protected-error-desktop.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial E Could not load dashboard Meeting body API returned 401. Confirm the backend is running, verify staff auth mode, then retry. Retry after checking API",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Confirm the backend is running",
+        "verify staff auth mode",
+        "retry"
+      ],
+      "headings": [
+        "Could not load dashboard"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button A Agenda intake",
+      "horizontal_overflow": false,
+      "console_messages": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ],
+      "page_errors": [],
+      "failed_responses": [
+        {
+          "status": 401,
+          "path": "/api/meeting-bodies"
+        },
+        {
+          "status": 401,
+          "path": "/api/meetings"
+        },
+        {
+          "status": 401,
+          "path": "/api/agenda-intake"
+        },
+        {
+          "status": 401,
+          "path": "/api/vendor-live-sync/sources"
+        },
+        {
+          "status": 401,
+          "path": "/staff/session"
+        },
+        {
+          "status": 401,
+          "path": "/api/integrations/readiness"
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-state-success",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "success",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-success.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial CIVICCLERK STAFF WORKSPACE Good morning, City Clerk. Today's meeting work is grouped by urgency, public posting risk, and packet readiness. STAFF ACCESS Local rehearsal access is open Staff workflow access is running in local open mode. Switch to OIDC before shared deployment. Mode: open Method: local open access",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "CivicClerk",
+        "Staff workflow"
+      ],
+      "headings": [
+        "Good morning, City Clerk.",
+        "Local rehearsal access is open",
+        "Meeting runbook",
+        "Priority queue",
+        "Meeting bodies",
+        "Schedule a meeting"
+      ],
+      "controls": {
+        "buttons": 50,
+        "links": 2
+      },
+      "active_element_after_tabs": "button error",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-state-loading",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "loading",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-loading.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial L Loading dashboard CivicClerk is contacting the API. If this takes more than a few seconds, check the API service and reload the page. Retry loading",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Loading"
+      ],
+      "headings": [
+        "Loading dashboard"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button partial",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-state-empty",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "empty",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-empty.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial E No dashboard data yet Create a meeting body and schedule the first meeting to populate this workspace. Create first meeting",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "No dashboard"
+      ],
+      "headings": [
+        "No dashboard data yet"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button Create first meeting",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-state-error",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "error",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-error.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial E Could not load dashboard The staff API did not respond. Confirm the backend is running, verify staff auth mode, then retry. Retry after checking API",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Could not load dashboard",
+        "retry"
+      ],
+      "headings": [
+        "Could not load dashboard"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "body BCivicSuiteCity of BrookfieldD DashboardM MeetingsA Agenda intakeP Packet builde",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-staff-state-partial",
+      "product": "CivicClerk",
+      "surface": "staff browser",
+      "auth": "bearer staff token",
+      "state": "partial",
+      "path": "/staff",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-staff-state-partial.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync SPEC PAGES A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library PARTIAL INSTALL Clerk + Records + Code + Admin Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial P dashboard is partially available Some Clerk services are not installed in this environment. Install packet and minutes services or continue with calendar-only work. View installed services",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "dashboard is partially available"
+      ],
+      "headings": [
+        "dashboard is partially available"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button D Dashboard",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-state-success",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "success",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-success.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial RESIDENT PUBLIC PORTAL Find posted meetings without needing to understand clerk workflows. Residents can open the official agenda, packet, and approved minutes that staff have published to the public archive. Restricted or closed-session material is never exposed or hinted here. CITY OF BROOKFIELD PUBLIC RECORDS Official meeting materials, in one place. Start with the p",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Public",
+        "Meeting"
+      ],
+      "headings": [
+        "Find posted meetings without needing to understand clerk workflows.",
+        "Official meeting materials, in one place.",
+        "Posted meetings",
+        "City Council Regular Meeting",
+        "Parks Advisory Board Monthly Meeting",
+        "Official record detail",
+        "City Council Regular Meeting",
+        "Search public archive"
+      ],
+      "controls": {
+        "buttons": 34,
+        "links": 3
+      },
+      "active_element_after_tabs": "button error",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-state-loading",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "loading",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-loading.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial L Loading public posted meeting CivicClerk is contacting the API. If this takes more than a few seconds, check the API service and reload the page. Retry loading",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Loading"
+      ],
+      "headings": [
+        "Loading public posted meeting"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button partial",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-state-empty",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "empty",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-empty.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial E No public posted meeting data yet No public meeting records are posted yet. Staff should publish a public-safe record from the clerk workflow before residents can see agendas, packets, or approved minutes here. Ask clerk to publish",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "No public posted meeting"
+      ],
+      "headings": [
+        "No public posted meeting data yet"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button Ask clerk to publish",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-state-error",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "error",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-error.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial E Could not load public posted meeting The public archive API did not respond. Confirm the public API is running and retry; if the meeting is time-sensitive, ask the clerk for the official posted record link. Retry after checking API",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "Could not load public posted meeting",
+        "retry"
+      ],
+      "headings": [
+        "Could not load public posted meeting"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "body BCivicSuiteCity of BrookfieldD DashboardM MeetingsA Agenda intakeP Packet builde",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    },
+    {
+      "id": "clerk-public-state-partial",
+      "product": "CivicClerk",
+      "surface": "public browser",
+      "auth": "none",
+      "state": "partial",
+      "path": "/public",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-20-clerk-core-public-use-matrix/clerk-public-state-partial.png",
+      "body_sample": "B CivicSuite City of Brookfield D Dashboard M Meetings A Agenda intake P Packet builder N Notice checklist O Outcomes M Minutes M Member packet P Public posting V Vendor sync A Agenda builder S Staff reports T Transcripts P Public comments C Closed session A Archive search A Admin settings P Prompt library Search city work... Ctrl K Staff Member Resident IT/Admin Show audit QA states live success loading empty error partial P public posted meeting is partially available Public meeting records are only partially available. Residents should not assume a missing meeting is closed or nonexistent; confirm the public archive API and ask the clerk for the posted record link. Check public archive",
+      "expected_copy_found": true,
+      "expected_copy": [
+        "public posted meeting is partially available"
+      ],
+      "headings": [
+        "public posted meeting is partially available"
+      ],
+      "controls": {
+        "buttons": 31,
+        "links": 0
+      },
+      "active_element_after_tabs": "button D Dashboard",
+      "horizontal_overflow": false,
+      "console_messages": [],
+      "page_errors": [],
+      "failed_responses": [],
+      "status": "passed"
+    }
+  ],
+  "adversarial": {
+    "bad_inputs": {
+      "status": 422,
+      "body": {
+        "detail": [
+          {
+            "type": "string_too_short",
+            "loc": [
+              "body",
+              "title"
+            ],
+            "msg": "String should have at least 1 character",
+            "input": "",
+            "ctx": {
+              "min_length": 1
+            }
+          },
+          {
+            "type": "string_too_short",
+            "loc": [
+              "body",
+              "department_name"
+            ],
+            "msg": "String should have at least 1 character",
+            "input": "",
+            "ctx": {
+              "min_length": 1
+            }
+          },
+          {
+            "type": "string_too_short",
+            "loc": [
+              "body",
+              "summary"
+            ],
+            "msg": "String should have at least 1 character",
+            "input": "",
+            "ctx": {
+              "min_length": 1
+            }
+          },
+          {
+            "type": "too_short",
+            "loc": [
+              "body",
+              "source_references"
+            ],
+            "msg": "List should have at least 1 item after validation, not 0",
+            "input": [],
+            "ctx": {
+              "field_type": "List",
+              "min_length": 1,
+              "actual_length": 0
+            }
+          }
+        ]
+      }
+    },
+    "missing_staff_role": {
+      "status": 401,
+      "body": {
+        "detail": {
+          "message": "Bearer token not recognized.",
+          "fix": "Use a token configured in CIVICCLERK_STAFF_AUTH_TOKEN_ROLES with one of these roles: city_attorney, clerk_admin, clerk_editor, meeting_editor."
+        }
+      }
+    },
+    "missing_record": {
+      "status": 422,
+      "body": {
+        "detail": [
+          {
+            "type": "uuid_parsing",
+            "loc": [
+              "path",
+              "request_id"
+            ],
+            "msg": "Input should be a valid UUID, invalid character: found `n` at 1",
+            "input": "not-a-real-request",
+            "ctx": {
+              "error": "invalid character: found `n` at 1"
+            }
+          }
+        ]
+      }
+    },
+    "unavailable_dependency": {
+      "status": 200,
+      "body": {
+        "service": "civicclerk",
+        "readiness": "ready",
+        "proof_model": "adversarial_mock_validation",
+        "network_calls": false,
+        "dependent_modules_required": false,
+        "contracts": [
+          {
+            "id": "civicrecords-search",
+            "label": "CivicRecords search bridge",
+            "status": "ready",
+            "mode": "contract-and-mock",
+            "dependent_module_required": false,
+            "network_calls": false,
+            "contract_artifact": "docs/integration-depth-contracts.md#civicrecords-search-bridge",
+            "supported_operations": [
+              "permission-aware meeting archive query",
+              "closed-session refusal parity",
+              "source citation round-trip",
+              "unavailable-service fallback"
+            ],
+            "absent_dependency_behavior": "CivicClerk keeps local public archive search authoritative and returns an actionable unavailable-state contract instead of implying CivicRecords is live.",
+            "operator_fix": "When CivicRecords is installed, configure its base URL and token in deployment secrets, run the adversarial mock search suite, then enable cross-module search.",
+            "adversarial_scenarios": [
+              "closed-session result withheld from anonymous search",
+              "CivicRecords unavailable fallback preserves local public archive search",
+              "source citations are required before a result can enter minutes or packet work"
+            ]
+          },
+          {
+            "id": "civiccode-handoff",
+            "label": "CivicCode adopted-action handoff",
+            "status": "ready",
+            "mode": "contract-and-mock",
+            "dependent_module_required": false,
+            "network_calls": false,
+            "contract_artifact": "docs/integration-depth-contracts.md#civiccode-adopted-action-handoff",
+            "supported_operations": [
+              "ordinance/resolution payload export",
+              "legal reviewer and motion provenance",
+              "idempotency key generation",
+              "retry/audit ledger shape"
+            ],
+            "absent_dependency_behavior": "CivicClerk stores the handoff locally as READY_FOR_CODE_OR_LEGAL_REVIEW and keeps a file-export path available until CivicCode is reachable.",
+            "operator_fix": "After CivicCode is deployed, point the handoff client at the CivicCode intake endpoint and replay pending READY_FOR_CODE_OR_LEGAL_REVIEW records.",
+            "adversarial_scenarios": [
+              "handoff cannot reference a motion from another meeting",
+              "payload without legal reviewer is rejected before export",
+              "duplicate replay uses the same idempotency key"
+            ]
+          },
+          {
+            "id": "codification-export",
+            "label": "Codification-system fallback export",
+            "status": "ready",
+            "mode": "file-contract-and-mock",
+            "dependent_module_required": false,
+            "network_calls": false,
+            "contract_artifact": "docs/integration-depth-contracts.md#codification-system-fallback-export",
+            "supported_operations": [
+              "records-ready JSON export",
+              "checksum manifest",
+              "source packet references",
+              "human codifier review gate"
+            ],
+            "absent_dependency_behavior": "If CivicCode or a codifier API is absent, CivicClerk produces a checksumed handoff packet for the clerk/legal/codifier workflow without auto-codifying.",
+            "operator_fix": "Give the export bundle to the codifier or configure the future adapter, then record the external codification reference on the adopted item.",
+            "adversarial_scenarios": [
+              "export refuses missing checksum manifest",
+              "export labels pending ordinance language separately from adopted law",
+              "legal advice text is never generated by the export helper"
+            ]
+          },
+          {
+            "id": "cms-posting",
+            "label": "City website CMS posting",
+            "status": "ready",
+            "mode": "preview-contract-and-mock",
+            "dependent_module_required": false,
+            "network_calls": false,
+            "contract_artifact": "docs/integration-depth-contracts.md#city-website-cms-posting",
+            "supported_operations": [
+              "posting preview",
+              "clerk confirmation gate",
+              "withdrawal/rollback ledger shape",
+              "CMS unavailable fallback"
+            ],
+            "absent_dependency_behavior": "CivicClerk continues to serve its resident portal and produces a CMS-ready posting preview until a city-specific CMS adapter is configured.",
+            "operator_fix": "Select the city CMS adapter, store credentials outside the app, run the mock publish/withdrawal suite, then let the clerk confirm each posting.",
+            "adversarial_scenarios": [
+              "publish is blocked without clerk confirmation",
+              "CMS 403 returns exact permission fix guidance",
+              "withdrawal preserves public-record audit history"
+            ]
+          },
+          {
+            "id": "vendor-live-api-adapters",
+            "label": "Vendor live API adapters",
+            "status": "ready",
+            "mode": "guarded-adapter-contracts",
+            "dependent_module_required": false,
+            "network_calls": false,
+            "contract_artifact": "docs/integration-depth-contracts.md#vendor-live-api-adapters",
+            "supported_operations": [
+              "Granicus delta contract",
+              "Legistar delta contract",
+              "PrimeGov delta contract",
+              "NovusAGENDA delta contract",
+              "circuit breaker and cursor controls"
+            ],
+            "absent_dependency_behavior": "CivicClerk records source configuration, health, cursor resets, and run outcomes without pulling vendor networks until a controlled adapter run is explicitly enabled.",
+            "operator_fix": "Use local export-drop ingestion until IT approves a source URL, credentials are in deployment secrets, and the no-network hostile vendor suite passes.",
+            "adversarial_scenarios": [
+              "rate limit keeps cursor unchanged",
+              "pagination must finish before cursor advance",
+              "schema drift produces field-level import failures",
+              "partial outage records partial run status",
+              "duplicate IDs are quarantined",
+              "stale delta keeps previous success cursor"
+            ]
+          }
+        ],
+        "checks": [
+          {
+            "contract_id": "civicrecords-search",
+            "scenario": "closed_session_result_withheld",
+            "ok": true,
+            "message": "Anonymous CivicRecords mock search does not expose closed-session results.",
+            "fix": "Keep closed-session result expansion behind archive_reader or city_attorney roles."
+          },
+          {
+            "contract_id": "civicrecords-search",
+            "scenario": "dependency_unavailable_fallback",
+            "ok": true,
+            "message": "CivicRecords unavailable mock keeps CivicClerk local archive search available with fix guidance.",
+            "fix": "Continue with CivicClerk local archive search, then retry CivicRecords after IT restores the service."
+          },
+          {
+            "contract_id": "civiccode-handoff",
+            "scenario": "idempotent_replay_key",
+            "ok": true,
+            "message": "CivicCode handoff mock generates stable idempotency keys for replayed adopted actions.",
+            "fix": "Reuse the idempotency key when replaying pending CivicCode handoff records."
+          },
+          {
+            "contract_id": "codification-export",
+            "scenario": "checksumed_no_advice_export",
+            "ok": true,
+            "message": "Codification fallback mock includes a checksum and separates adopted text from legal advice.",
+            "fix": "Regenerate the export manifest if checksum, adoption label, or source references are missing."
+          },
+          {
+            "contract_id": "cms-posting",
+            "scenario": "clerk_confirmation_required",
+            "ok": true,
+            "message": "CMS posting mock blocks publication until the clerk confirms the preview.",
+            "fix": "Have the clerk approve the preview, then submit the city-specific CMS adapter publish action."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "rate_limit",
+            "ok": true,
+            "message": "Hostile fixture rate_limit is secret-free and has an actionable fix path.",
+            "fix": "Keep this fixture in the hostile-mode suite whenever the mock contract changes."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "rate_limit",
+            "ok": true,
+            "message": "legistar hostile fixture covers HTTP 429 with Retry-After during a delta pull.",
+            "fix": "Wait for the Retry-After window, confirm credentials are not shared across jobs, then retry."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "pagination",
+            "ok": true,
+            "message": "Hostile fixture pagination is secret-free and has an actionable fix path.",
+            "fix": "Keep this fixture in the hostile-mode suite whenever the mock contract changes."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "pagination",
+            "ok": true,
+            "message": "granicus hostile fixture covers response contains a next page cursor after the first page of meetings.",
+            "fix": "Follow the next page cursor until exhausted before marking the vendor pull successful."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "schema_drift",
+            "ok": true,
+            "message": "Hostile fixture schema_drift is secret-free and has an actionable fix path.",
+            "fix": "Keep this fixture in the hostile-mode suite whenever the mock contract changes."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "schema_drift",
+            "ok": true,
+            "message": "PrimeGov meeting payload is missing required field title.",
+            "fix": "Export the meeting again with title included, then retry the local import."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "partial_outage",
+            "ok": true,
+            "message": "Hostile fixture partial_outage is secret-free and has an actionable fix path.",
+            "fix": "Keep this fixture in the hostile-mode suite whenever the mock contract changes."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "partial_outage",
+            "ok": true,
+            "message": "Partial outage fixture produced 1 usable payload and 1 actionable failure.",
+            "fix": "Fix the malformed record or connector mapping, then rerun before scheduled pulls resume."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "duplicate_ids",
+            "ok": true,
+            "message": "Hostile fixture duplicate_ids is secret-free and has an actionable fix path.",
+            "fix": "Keep this fixture in the hostile-mode suite whenever the mock contract changes."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "duplicate_ids",
+            "ok": true,
+            "message": "legistar hostile fixture covers two records in the same response share the same vendor meeting id.",
+            "fix": "Quarantine the duplicate IDs, ask the vendor which record is authoritative, then rerun."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "stale_delta",
+            "ok": true,
+            "message": "Hostile fixture stale_delta is secret-free and has an actionable fix path.",
+            "fix": "Keep this fixture in the hostile-mode suite whenever the mock contract changes."
+          },
+          {
+            "contract_id": "vendor-live-api-adapters",
+            "scenario": "stale_delta",
+            "ok": true,
+            "message": "granicus hostile fixture covers vendor returns records older than the persisted success cursor.",
+            "fix": "Verify the vendor delta parameter, reset the cursor only with clerk approval, then rerun."
+          }
+        ],
+        "message": "CivicClerk integration depth is contract-backed without requiring CivicRecords, CivicCode, city CMS, codifier, or vendor live tenants to be deployed.",
+        "fix": "Keep using adversarial mocks as the release proof. When a real dependency appears, enable it only after its contract suite passes and credentials are stored outside the repo."
+      }
+    },
+    "public_staff_boundary": {
+      "status": 401,
+      "body": {
+        "detail": {
+          "message": "Bearer token required.",
+          "fix": "Send an Authorization header in the form 'Bearer <token>' using a token with one of the allowed roles."
+        }
+      }
+    }
+  },
+  "status": "passed"
+}

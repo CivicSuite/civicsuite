@@ -53,7 +53,7 @@ We're glad you're here.
 
 **Body:**
 
-The catalog lists 26 modules across 7 tiers. We are not going to build them in order, and we are not going to build them all. The civiccore Phase 2 release just shipped, which unblocks a real choice for the next module.
+The reconciled catalog lists 27 product modules across 7 tiers, plus CivicCore as the shared platform. We are not going to build them in order, and we are not going to build them all at once. The civiccore Phase 2 release just shipped, which unblocks a real choice for the next module.
 
 **Two leading candidates:**
 
