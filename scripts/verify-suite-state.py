@@ -160,7 +160,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicpermit",
         "CivicSuite/civicpermit",
         "civicpermit",
-        "0.2.0",
+        "1.0.0",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(

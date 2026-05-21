@@ -9,7 +9,7 @@ This is the plain-English operating truth for CivicSuite. The unified spec descr
 
 The clerk-core starter product is CivicCore, CivicRecords AI, CivicClerk, and the suite installer. The target is Linux-first Docker/browser operation with Windows and macOS wrappers. As of main CI runs `26210542980` and `26210542979`, suite verifier truth, installer-plan verification, installed-stack workflow proof, Linux install/repair/verify/backup/restore/uninstall lifecycle proof, Windows matching-host lifecycle evidence, macOS archive/readiness proof, installed browser QA evidence, regenerated package checksums, CivicClerk main source fix `45eaccfcc69dd1ae7e2e45d7badd5d188b49397d`, and current CivicRecords AI/CivicClerk release-verifier passes are recorded. `installer-clerk-core-v0.1.0` is the bounded public-use starter release for the Clerk-Core profile. This is not a city-ready full-suite release, procurement certification, production hosting certification, live cross-module records exchange claim, airgap claim, or macOS lifecycle certification.
 
-The starter target has passed its gate, and CivicCode, CivicAccess, CivicZone, and CivicPlan have completed active post-starter source release and suite installer/module-selection reconciliation. The reconciled unified spec, installer metadata, and live GitHub org state enumerate 27 product modules plus CivicCore. After CivicRecords AI, CivicClerk, CivicCode, CivicAccess, CivicZone, and CivicPlan, the remaining-module queue contains the other 21 product modules.
+The starter target has passed its gate, and CivicCode, CivicAccess, CivicZone, CivicPlan, and CivicPermit have completed active post-starter source release and suite installer/module-selection reconciliation. The reconciled unified spec, installer metadata, and live GitHub org state enumerate 27 product modules plus CivicCore. After CivicRecords AI, CivicClerk, CivicCode, CivicAccess, CivicZone, CivicPlan, and CivicPermit, the remaining-module queue contains the other 20 product modules.
 
 ## Status Legend
 
@@ -32,7 +32,7 @@ As of 2026-05-14, the release-integrity decision is:
 | civicaccess | v1.0.0 shipped | Recovered public-use module release; main verify, release artifacts, public browser QA, release-gate audit, and suite installer/module-selection reconciliation are recorded. |
 | civiczone | v1.0.0 shipped | Recovered public-use module release; main verify, release workflow, release artifacts, public/staff browser QA, release-gate audit, and suite installer/module-selection reconciliation are recorded. |
 | civicplan | v1.0.0 shipped | Recovered public-use module release; main verify, tag verify, release workflow, release artifacts, public browser QA, release-gate audit, and suite installer/module-selection reconciliation are recorded. |
-| civicpermit | v0.2.0 | Demoted from false v1.0.0; scaffold-depth permit support. |
+| civicpermit | v1.0.0 shipped | Recovered public-use module release; main verify, tag verify, release workflow, release artifacts, public browser QA, release-gate audit, and suite installer/module-selection reconciliation are recorded. |
 | civicinspect | v0.2.0 | Demoted from false v1.0.0; scaffold-depth inspection support. |
 | civicgrants | v0.2.0 | Demoted from false v1.0.0; scaffold-depth grants support. |
 | civicprocure | v0.2.0 | Demoted from false v1.0.0; scaffold-depth procurement support. |
@@ -45,8 +45,8 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicclerk` has substantial meeting workflow code and a first React staff workspace; v1.0.1 shipped the protected-default staff auth fix, but production deployment proof is still missing.
 - `civiccore` has real shared platform primitives; v1.1.0 is the current shared platform release.
 - The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
-- `civiccode` v1.0.0, `civicaccess` v1.0.0, `civiczone` v1.0.0, and `civicplan` v1.0.0 are shipped as post-starter recovered public-use module releases, with source release artifacts and suite installer/module-selection truth reconciled. This does not promote queued modules or the full suite.
-- `civicpermit`, `civicinspect`, `civicgrants`, and `civicprocure` contain useful scaffolds and local mocks, but they are not city-ready products.
+- `civiccode` v1.0.0, `civicaccess` v1.0.0, `civiczone` v1.0.0, `civicplan` v1.0.0, and `civicpermit` v1.0.0 are shipped as post-starter recovered public-use module releases, with source release artifacts and suite installer/module-selection truth reconciled. This does not promote queued modules or the full suite.
+- `civicinspect`, `civicgrants`, and `civicprocure` contain useful scaffolds and local mocks, but they are not city-ready products.
 
 ## What Does Not Work Yet
 
