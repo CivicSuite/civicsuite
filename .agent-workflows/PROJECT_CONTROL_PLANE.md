@@ -80,42 +80,42 @@ Evidence:
 
 ## Current Scope Boundary
 
-Active target: CivicZone v1.0.0 suite-truth reconciliation.
+Active target: CivicPlan v1.0.0 suite-truth reconciliation.
 
-State on resume: the Clerk-Core public-use starter, CivicCode v1.0.0, and CivicAccess v1.0.0 have already passed their suite truth gates. The root active release queue now names CivicZone as the active module. CivicZone source PR #18 has merged, release `v1.0.0` is published, and this suite run reconciles installer/module-selection truth, compatibility truth, release recovery docs, and verifier truth for CivicZone only. `docs/CivicSuiteUnifiedSpec.md` remains the source of truth for the 27 product modules plus CivicCore.
+State on resume: the Clerk-Core public-use starter, CivicCode v1.0.0, CivicAccess v1.0.0, and CivicZone v1.0.0 have already passed their suite truth gates. The root active release queue now names CivicPlan as the active module. CivicPlan source PR #11 has merged, release `v1.0.0` is published, and this suite run reconciles installer/module-selection truth, compatibility truth, release recovery docs, and verifier truth for CivicPlan only. `docs/CivicSuiteUnifiedSpec.md` remains the source of truth for the 27 product modules plus CivicCore.
 
-Why next: CivicZone is the active post-starter module after CivicCode and CivicAccess. It cannot satisfy the module Definition of Done until the umbrella suite truth and installer/module-selection path agree with the published CivicZone v1.0.0 release.
+Why next: CivicPlan is the active post-starter module after CivicZone. It cannot satisfy the module Definition of Done until the umbrella suite truth and installer/module-selection path agree with the published CivicPlan v1.0.0 release.
 
 Allowed now:
 
-- Read the unified spec, release recovery status, installer docs, CivicZone source release evidence, and current module truth artifacts.
-- Make scoped CivicZone suite-truth fixes in CivicSuite verifier inputs, installer/module-selection metadata, compatibility docs, release recovery docs, current-facing docs, and control-plane evidence.
+- Read the unified spec, release recovery status, installer docs, CivicPlan source release evidence, and current module truth artifacts.
+- Make scoped CivicPlan suite-truth fixes in CivicSuite verifier inputs, installer/module-selection metadata, compatibility docs, release recovery docs, current-facing docs, and control-plane evidence.
 - Use the release-lockstep gate for any release-truth PR.
-- Keep CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, later-module, and standalone macOS lifecycle certification work outside this target unless a direct CivicZone release blocker is named first.
+- Keep CivicPermit, CivicInspect, CivicGrants, CivicProcure, later-module, and standalone macOS lifecycle certification work outside this target unless a direct CivicPlan release blocker is named first.
 
 Not allowed now:
 
-- Revisit, move, delete, or retag historical demotion releases outside the already repaired CivicZone v1.0.0 source tag.
+- Revisit, move, delete, or retag historical demotion releases outside the already repaired CivicPlan v1.0.0 source tag.
 - Modify CivicCore release artifacts; v1.1.0 is final for the D2/B3 helper release.
 - Reopen CivicClerk B1 unless a regression is found; CivicClerk v1.0.1 is shipped.
 - Reopen CivicRecords AI v1.5.0 migration unless a regression is found; CivicRecords AI v1.5.0 is shipped.
 - Reopen the D2/B3 staff-key gate rollout unless a regression is found; CivicCore v1.1.0 and the six downstream PRs are shipped.
 - Reopen B2 unless a regression is found; CivicRecords AI v1.6.0 is shipped.
-- Advance CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, or any later module before CivicZone passes its suite truth and installer/module-selection gate.
+- Advance CivicPermit, CivicInspect, CivicGrants, CivicProcure, CivicContracts, or any later module before CivicPlan passes its suite truth and installer/module-selection gate.
 - Tag any module as v1.0 or higher unless its full recovery gate and installer integration are satisfied.
 - Bypass release-lockstep-gate, admin-merge around it, force-push, delete tags, or rewrite history.
 - Use unauthorized skills or plugins.
 
 ## Definition Of Done For Current Target
 
-The CivicZone suite-truth target is satisfied only when:
+The CivicPlan suite-truth target is satisfied only when:
 
-1. The active queue and project control plane name CivicZone v1.0.0 suite-truth reconciliation as the only active target.
-2. `installer/modules.json` records CivicZone v1.0.0, CivicCore v1.1.0, and public-use module release proof requirements.
-3. `scripts/verify-suite-state.py --remote-only` prints `[civiczone] PASS 1.0.0`.
-4. Current-facing README, STATUS, FAQ, user manual, compatibility, recovery, lockstep, and unified spec docs no longer describe CivicZone as a current demoted v0.2.0 module.
+1. The active queue and project control plane name CivicPlan v1.0.0 suite-truth reconciliation as the only active target.
+2. `installer/modules.json` records CivicPlan v1.0.0, CivicCore v1.1.0, and public-use module release proof requirements.
+3. `scripts/verify-suite-state.py --remote-only` prints `[civicplan] PASS 1.0.0`.
+4. Current-facing README, STATUS, FAQ, user manual, compatibility, recovery, lockstep, and unified spec docs no longer describe CivicPlan as a current demoted v0.2.0 module.
 5. `verify-docs`, `verify-installer-plan`, `verify-release-lockstep`, suite verifier, and `git diff --check` pass.
-6. The branch is pushed with the `release-tag` PR label, CI is green, the PR is merged, and main verify confirms CivicZone v1.0.0 without macOS lifecycle certification claims.
+6. The branch is pushed with the `release-tag` PR label, CI is green, the PR is merged, and main verify confirms CivicPlan v1.0.0 without macOS lifecycle certification claims.
 7. Local tests, lint/static checks, suite verifier, docs verifier, installer verifier, release scripts where present, and release-lockstep gate pass with recorded proof.
 8. Release docs and artifacts avoid full-suite, procurement, airgap, and macOS lifecycle certification claims.
 9. Handoff/update evidence is written before any remaining module queue begins.

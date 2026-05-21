@@ -65,6 +65,14 @@ For the CivicZone v1.0.0 public-use module release:
 
 CivicZone release `v1.0.0` peels to `46a9b4174a91b9337e0d8d355f999d62ac90c2a1`; release workflow `26225509133` published wheel, sdist, and SHA256SUMS assets. This lockstep record promotes only CivicZone and does not promote CivicPlan, CivicPermit, CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
+For the CivicPlan v1.0.0 public-use module release:
+
+| Repo | PR | Version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civicplan | #11 | 1.0.0 | `civiccore-1.1.0-py3-none-any.whl#sha256=3ab146f4fea2ae99640d5b1b013be1a9676de5f91b783eaeaa913043a2ae2b87` |
+
+CivicPlan release `v1.0.0` peels to `5e23679f1122cfb0744e8c71aecdf6cf52283bf0`; main verify run `26229109178`, release workflow `26229189252`, and tag verify run `26229189480` passed. Release assets are wheel `sha256:07bb81db2a33840da26442becbc502e849704d8c5c0c450bd94521272e8f89d7`, sdist `sha256:964e61470d45067627bce9284cbc0e6dc5efbabd66860bb6db9c77ffd0467e50`, and SHA256SUMS `sha256:11642940f4acd54ae29483717c4dd4e640521195bbfc05d6608038fba7dd5a78`. This lockstep record promotes only CivicPlan and does not promote CivicPermit, CivicInspect, CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
+
 For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
 
 | Repo | PR | Package version | CivicCore pin |
