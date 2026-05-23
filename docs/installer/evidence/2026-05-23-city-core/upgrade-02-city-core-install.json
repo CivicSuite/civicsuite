@@ -1,0 +1,422 @@
+{
+  "civicclerk_staff_mode": "bearer",
+  "compose_projects": {
+    "civicclerk": "civicsuite-local-clerk-to-city-upgrade-evidence2-clerk",
+    "civiccode": "civicsuite-local-clerk-to-city-upgrade-evidence2-code",
+    "civicrecords-ai": "civicsuite-local-clerk-to-city-upgrade-evidence2-records"
+  },
+  "finished_at": "2026-05-23T17:46:06.302873+00:00",
+  "install_root": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence",
+  "isolation_id": "local-clerk-to-city-upgrade-evidence2",
+  "mode": "install",
+  "mutates_host": true,
+  "port_offset": 950,
+  "ports": {
+    "civicclerk": {
+      "api": 19726,
+      "web": 19031
+    },
+    "civiccode": {
+      "api": 19770
+    },
+    "civicrecords-ai": {
+      "api": 18950,
+      "web": 19030
+    }
+  },
+  "run_id": "local-clerk-to-city-upgrade-evidence2",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-05-23T17:40:46.631500+00:00",
+  "status": "passed",
+  "steps": [
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": " Image civicsuite-local-clerk-to-city-upgrade-evidence2-records-api Building \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend Building \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend Built \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-records-api Built \n",
+      "stdout": "ic-settings, pdfminer.six, fastapi, celery, argon2-cffi, pdfplumber, fastapi-users, fastapi-users-db-sqlalchemy, civiccore, civicrecords-ai\n#21 32.44 Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 Pillow-12.2.0 PyJWT-2.13.0 aiofiles-25.1.0 alembic-1.18.4 amqp-5.3.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 asyncpg-0.31.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 billiard-4.2.4 celery-5.6.3 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 civiccore-1.2.0 civicrecords-ai-1.7.2 click-8.4.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 croniter-6.2.2 cryptography-48.0.0 dnspython-2.8.0 ecdsa-0.19.2 email-validator-2.3.0 et-xmlfile-2.0.0 fastapi-0.136.1 fastapi-users-15.0.5 fastapi-users-db-sqlalchemy-7.0.0 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 idna-3.16 iniconfig-2.3.0 kombu-5.6.2 lxml-6.1.1 makefun-1.16.0 numpy-2.4.6 openpyxl-3.1.5 packaging-26.2 passlib-1.7.4 pdfminer.six-20251230 pdfplumber-0.11.9 pgvector-0.4.2 pluggy-1.6.0 prompt-toolkit-3.0.52 psycopg2-binary-2.9.12 pwdlib-0.3.0 pyasn1-0.6.3 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pygments-2.20.0 pypdfium2-5.8.0 pytesseract-0.3.13 pytest-9.0.3 pytest-asyncio-1.3.0 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-multipart-0.0.29 pyyaml-6.0.3 redis-7.4.0 regex-2026.5.9 respx-0.23.1 rsa-4.9.1 ruff-0.15.14 six-1.17.0 soupsieve-2.8.3 sqlalchemy-2.0.49 starlette-1.1.0 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 tzlocal-5.3.1 uvicorn-0.47.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.2.0 wcwidth-0.7.0 websockets-16.0\n#21 32.44 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n#21 32.50 \n#21 32.50 [notice] A new release of pip is available: 25.0.1 -> 26.1.1\n#21 32.50 [notice] To update, run: pip install --upgrade pip\n#21 DONE 36.4s\n\n#26 [api  6/17] COPY backend/app ./app\n#26 DONE 0.2s\n\n#27 [api  7/17] COPY backend/alembic.ini .\n#27 DONE 0.1s\n\n#28 [api  8/17] COPY backend/alembic ./alembic\n#28 DONE 0.1s\n\n#29 [api  9/17] COPY backend/data ./data\n#29 DONE 0.1s\n\n#30 [api 10/17] COPY backend/compliance_templates ./compliance_templates\n#30 DONE 0.1s\n\n#31 [api 11/17] COPY backend/scripts ./scripts\n#31 DONE 0.1s\n\n#32 [api 12/17] COPY backend/tests ./tests\n#32 DONE 0.1s\n\n#33 [api 13/17] COPY .env.example docker-compose.yml ./\n#33 DONE 0.1s\n\n#34 [api 14/17] COPY scripts/verify-release.sh ./scripts/verify-release.sh\n#34 DONE 0.1s\n\n#35 [api 15/17] RUN mkdir -p docs/ops\n#35 DONE 0.3s\n\n#36 [api 16/17] COPY docs/ops/tier1-retrofit-ledger.json ./docs/ops/tier1-retrofit-ledger.json\n#36 DONE 0.1s\n\n#37 [api 17/17] COPY scripts/check-tier1-ledger.py ./scripts/check-tier1-ledger.py\n#37 DONE 0.1s\n\n#38 [api] exporting to image\n#38 exporting layers\n#38 exporting layers 13.0s done\n#38 exporting manifest sha256:e0c65a85b9f01b5b9a461239036923b66464d8d1aa609ddd3a865ea355a41195 0.0s done\n#38 exporting config sha256:cabf0602a5a7b8ed8f10bb760c005c548b153ff8c8b45dbb461c84a3bbfb7f6f 0.0s done\n#38 exporting attestation manifest sha256:e52994ddd99be61b5e238d08664eaf5304bee809a414661b131bcf6c7ac5ceb6 0.0s done\n#38 exporting manifest list sha256:e8cbbca8f22a293766a6b2c0bf5aef269fbaef3e105a6873995f7b1c4d204924 0.0s done\n#38 naming to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-records-api:latest done\n#38 unpacking to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-records-api:latest\n#38 unpacking to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-records-api:latest 5.9s done\n#38 DONE 19.1s\n\n#39 [api] resolving provenance for metadata file\n#39 DONE 0.0s\n",
+      "step": "compose_build"
+    },
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": " Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Running \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Running \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Running \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Recreate \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Recreated \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Recreate \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Recreated \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Starting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Started \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Starting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Started \n",
+      "stdout": "",
+      "step": "compose_up"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": " Image civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api Building \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend Building \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api Built \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend Built \n",
+      "stdout": ".53 Successfully built civicclerk\n#27 21.68 Installing collected packages: passlib, makefun, websockets, wcwidth, vine, uvloop, tzlocal, tzdata, typing-extensions, soupsieve, six, regex, redis, pyyaml, python-multipart, python-dotenv, pypdfium2, pyjwt, pycparser, pyasn1, pwdlib, psycopg2-binary, Pillow, packaging, numpy, MarkupSafe, lxml, idna, httptools, h11, greenlet, et-xmlfile, dnspython, click, charset-normalizer, certifi, billiard, bcrypt, asyncpg, annotated-types, annotated-doc, aiofiles, uvicorn, typing-inspection, sqlalchemy, rsa, python-docx, python-dateutil, pytesseract, pydantic-core, prompt-toolkit, pgvector, openpyxl, Mako, httpcore, email-validator, ecdsa, click-plugins, click-didyoumean, cffi, beautifulsoup4, anyio, amqp, watchfiles, starlette, python-jose, pydantic, kombu, httpx, cryptography, croniter, click-repl, argon2-cffi-bindings, alembic, pydantic-settings, pdfminer.six, fastapi, celery, argon2-cffi, pdfplumber, fastapi-users, fastapi-users-db-sqlalchemy, civiccore, civicclerk\n#27 59.99 Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 Pillow-12.2.0 aiofiles-25.1.0 alembic-1.18.4 amqp-5.3.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 asyncpg-0.31.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 billiard-4.2.4 celery-5.6.3 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 civicclerk-1.0.3 civiccore-1.2.0 click-8.4.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 croniter-6.2.2 cryptography-48.0.0 dnspython-2.8.0 ecdsa-0.19.2 email-validator-2.3.0 et-xmlfile-2.0.0 fastapi-0.136.1 fastapi-users-15.0.5 fastapi-users-db-sqlalchemy-7.0.0 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 idna-3.16 kombu-5.6.2 lxml-6.1.1 makefun-1.16.0 numpy-2.4.6 openpyxl-3.1.5 packaging-26.2 passlib-1.7.4 pdfminer.six-20251230 pdfplumber-0.11.9 pgvector-0.4.2 prompt-toolkit-3.0.52 psycopg2-binary-2.9.12 pwdlib-0.3.0 pyasn1-0.6.3 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pyjwt-2.13.0 pypdfium2-5.8.0 pytesseract-0.3.13 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-multipart-0.0.29 pyyaml-6.0.3 redis-6.4.0 regex-2026.5.9 rsa-4.9.1 six-1.17.0 soupsieve-2.8.3 sqlalchemy-2.0.49 starlette-1.1.0 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 tzlocal-5.3.1 uvicorn-0.47.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.2.0 wcwidth-0.7.0 websockets-16.0\n#27 59.99 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n#27 60.07 \n#27 60.07 [notice] A new release of pip is available: 25.0.1 -> 26.1.1\n#27 60.07 [notice] To update, run: pip install --upgrade pip\n#27 DONE 89.9s\n\n#28 [api] exporting to image\n#28 exporting layers\n#28 exporting layers 11.6s done\n#28 exporting manifest sha256:bf1106df6a8c8467bacb41b832c6f93f5f1d84dfb4aca81f2871b14946084116 0.1s done\n#28 exporting config sha256:5ce337dcdd90ec5ef9689974b3f5e6bb926ae16fc8798b4cc85a374749480dc1 0.1s done\n#28 exporting attestation manifest sha256:6d942e3fe300996bfce5ae0836e857ff2241fcfc7807ed4406f439110dd65b2c 0.1s done\n#28 exporting manifest list sha256:154d60ea7b83bafc07a2ad10c62bbbe7429e5845b363047acfe09a7980266ec8\n#28 exporting manifest list sha256:154d60ea7b83bafc07a2ad10c62bbbe7429e5845b363047acfe09a7980266ec8 0.0s done\n#28 naming to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api:latest done\n#28 unpacking to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api:latest\n#28 unpacking to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api:latest 5.7s done\n#28 DONE 17.7s\n\n#29 [api] resolving provenance for metadata file\n#29 DONE 0.0s\n",
+      "step": "compose_build"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": " Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Running \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Running \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Running \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Recreate \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Recreated \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Recreate \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Recreated \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Starting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Started \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Starting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Started \n",
+      "stdout": "",
+      "step": "compose_up"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": " Image civicsuite-local-clerk-to-city-upgrade-evidence2-code-api Building \n Image civicsuite-local-clerk-to-city-upgrade-evidence2-code-api Built \n",
+      "stdout": " in directory: /tmp/pip-ephem-wheel-cache-e6htdeno/wheels/57/0f/98/bb57b2b57b95807699b822a35c022f139d38a02c27922f27ce\n#11 20.49 Successfully built civiccode\n#11 20.59 Installing collected packages: passlib, makefun, websockets, wcwidth, vine, uvloop, tzlocal, tzdata, typing-extensions, soupsieve, six, regex, redis, pyyaml, python-multipart, python-dotenv, pypdfium2, pymupdf, PyJWT, pycparser, pyasn1, pwdlib, psycopg2-binary, Pillow, packaging, numpy, MarkupSafe, lxml, idna, httptools, h11, greenlet, et-xmlfile, dnspython, click, charset-normalizer, certifi, billiard, bcrypt, asyncpg, annotated-types, annotated-doc, aiofiles, uvicorn, typing-inspection, sqlalchemy, rsa, python-docx, python-dateutil, pytesseract, pydantic-core, prompt-toolkit, pgvector, openpyxl, Mako, httpcore, email-validator, ecdsa, click-plugins, click-didyoumean, cffi, beautifulsoup4, anyio, amqp, watchfiles, starlette, python-jose, pydantic, kombu, httpx, cryptography, croniter, click-repl, argon2-cffi-bindings, alembic, pydantic-settings, pdfminer.six, fastapi, celery, argon2-cffi, pdfplumber, fastapi-users, fastapi-users-db-sqlalchemy, civiccore, civiccode\n#11 29.63 \n#11 29.63 Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 Pillow-12.2.0 PyJWT-2.13.0 aiofiles-25.1.0 alembic-1.18.4 amqp-5.3.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 asyncpg-0.31.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 billiard-4.2.4 celery-5.6.3 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 civiccode-1.0.8 civiccore-1.2.0 click-8.4.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 croniter-6.2.2 cryptography-48.0.0 dnspython-2.8.0 ecdsa-0.19.2 email-validator-2.3.0 et-xmlfile-2.0.0 fastapi-0.136.1 fastapi-users-15.0.5 fastapi-users-db-sqlalchemy-7.0.0 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httptools-0.7.1 httpx-0.28.1 idna-3.16 kombu-5.6.2 lxml-6.1.1 makefun-1.16.0 numpy-2.4.6 openpyxl-3.1.5 packaging-26.2 passlib-1.7.4 pdfminer.six-20251230 pdfplumber-0.11.9 pgvector-0.4.2 prompt-toolkit-3.0.52 psycopg2-binary-2.9.12 pwdlib-0.3.0 pyasn1-0.6.3 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pymupdf-1.27.2.3 pypdfium2-5.8.0 pytesseract-0.3.13 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-multipart-0.0.29 pyyaml-6.0.3 redis-7.4.0 regex-2026.5.9 rsa-4.9.1 six-1.17.0 soupsieve-2.8.3 sqlalchemy-2.0.49 starlette-1.1.0 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 tzlocal-5.3.1 uvicorn-0.47.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.2.0 wcwidth-0.7.0 websockets-16.0\n#11 29.63 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n#11 DONE 30.2s\n\n#12 exporting to image\n#12 exporting layers\n#12 exporting layers 10.6s done\n#12 exporting manifest sha256:142cd63afc1aa7f88aae71a4eda2b47f6c2267fe4ebfa0323adbe2458482a136 0.0s done\n#12 exporting config sha256:4e083a196991c3c3b1fd65ba1d6632e3d2753d1eb6530c212b25a1ad77fced39 0.0s done\n#12 exporting attestation manifest sha256:0743b39d1e84fb50b39df3c229fae9e679f854c7ad30dec917de4b0f611d4aa3 0.0s done\n#12 exporting manifest list sha256:4c84866a787317dc37ec1632582bbe5f1afb3d0dcbaf946a1ea78325e31f95a2\n#12 exporting manifest list sha256:4c84866a787317dc37ec1632582bbe5f1afb3d0dcbaf946a1ea78325e31f95a2 0.1s done\n#12 naming to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-code-api:latest done\n#12 unpacking to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-code-api:latest\n#12 unpacking to docker.io/library/civicsuite-local-clerk-to-city-upgrade-evidence2-code-api:latest 3.7s done\n#12 DONE 14.6s\n\n#13 resolving provenance for metadata file\n#13 DONE 0.0s\n",
+      "step": "compose_build"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": " Network civicsuite-local-clerk-to-city-upgrade-evidence2-code_default Creating \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-code_default Created \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-code_civiccode-postgres-data Creating \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-code_civiccode-postgres-data Created \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Creating \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Created \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Creating \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Created \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Starting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Started \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Waiting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Healthy \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Starting \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Started \n",
+      "stdout": "",
+      "step": "compose_up"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"version\":\"1.7.2\"}"
+        }
+      ],
+      "name": "civicrecords_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:18950/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>CivicRecords AI \u2014 Admin</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-rSHYeNFv.js\"></script>\n    <link rel=\"stylesheet\" crossorigin href=\"/assets/index-CiFT9XYx.css\">\n  </head>\n  <body>\n    <div id=\"root\"></div>\n  </body>\n"
+        }
+      ],
+      "name": "civicrecords_web",
+      "status": "passed",
+      "url": "http://127.0.0.1:19030/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"service\":\"civicclerk\",\"version\":\"1.0.3\",\"civiccore\":\"1.2.0\"}"
+        }
+      ],
+      "name": "civicclerk_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:19726/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"description\" content=\"CivicClerk staff workspace for meeting lifecycle, agenda, packet, notice, and minutes work.\" />\n    <link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\" />\n    <title>CivicClerk Staff Workspace</title>\n    <sc"
+        }
+      ],
+      "name": "civicclerk_web",
+      "status": "passed",
+      "url": "http://127.0.0.1:19031/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 52,
+          "stderr": "curl: (52) Empty reply from server\n",
+          "stdout": ""
+        },
+        {
+          "returncode": 52,
+          "stderr": "curl: (52) Empty reply from server\n",
+          "stdout": ""
+        },
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"service\":\"civiccode\",\"version\":\"1.0.8\",\"civiccore\":\"1.2.0\"}"
+        }
+      ],
+      "name": "civiccode_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:19770/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <link rel=\"icon\" href=\"data:,\" />\n  <title>Search results for 13.40.020 - CivicCode</title>\n  <style>\n    :root {\n      --ink: #1b261f;\n      --paper: #f6f0e6;\n      --card: #fffaf1;\n      --line: #22382b;\n      --moss: #496b50;\n      --marigold: #d68c17;\n  "
+        }
+      ],
+      "name": "civiccode_public_lookup",
+      "status": "passed",
+      "url": "http://127.0.0.1:19770/civiccode/search?q=13.40.020"
+    },
+    {
+      "checks": [
+        {
+          "name": "civicrecords_health",
+          "payload": {
+            "status": "ok",
+            "version": "1.7.2"
+          },
+          "status_code": 200
+        },
+        {
+          "name": "civicclerk_health",
+          "payload": {
+            "civiccore": "1.2.0",
+            "service": "civicclerk",
+            "status": "ok",
+            "version": "1.0.3"
+          },
+          "status_code": 200
+        },
+        {
+          "name": "civiccode_health",
+          "payload": {
+            "civiccore": "1.2.0",
+            "service": "civiccode",
+            "status": "ok",
+            "version": "1.0.8"
+          },
+          "status_code": 200
+        }
+      ],
+      "expected": {
+        "civicclerk": {
+          "civiccore": "1.2.0",
+          "version": "1.0.3"
+        },
+        "civiccode": {
+          "civiccore": "1.2.0",
+          "version": "1.0.8"
+        },
+        "civiccore": {
+          "role": "base dependency installed before selected modules through the installer plan"
+        },
+        "civicrecords-ai": {
+          "version": "1.7.2"
+        }
+      },
+      "name": "starter_set_civiccore_contract",
+      "selected_modules": [
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode"
+      ],
+      "status": "passed"
+    },
+    {
+      "auth_contract": "CivicRecords uses first-admin JWT login; CivicClerk uses bearer staff auth.",
+      "checks": [
+        {
+          "checks": [
+            {
+              "has_access_token": true,
+              "name": "admin_login",
+              "status_code": 200
+            },
+            {
+              "name": "create_records_request",
+              "request_id_present": true,
+              "status": "received",
+              "status_code": 201
+            },
+            {
+              "id_matches": true,
+              "name": "fetch_records_request",
+              "status_code": 200
+            },
+            {
+              "departments_present": true,
+              "file_types_present": true,
+              "name": "search_records",
+              "source_names_present": true,
+              "status_code": 200
+            },
+            {
+              "name": "mark_request_searching",
+              "status": "searching",
+              "status_code": 200
+            },
+            {
+              "name": "submit_request_review",
+              "status": "in_review",
+              "status_code": 200
+            },
+            {
+              "contains_ai_disclaimer": true,
+              "human_review_required": true,
+              "letter_id_present": true,
+              "name": "draft_response_letter",
+              "status": "draft",
+              "status_code": 201
+            },
+            {
+              "name": "mark_ready_for_release",
+              "status": "ready_for_release",
+              "status_code": 200
+            }
+          ],
+          "name": "civicrecords_workflow",
+          "status": "passed"
+        },
+        {
+          "checks": [
+            {
+              "mode": "bearer",
+              "name": "staff_session",
+              "roles": [
+                "clerk_admin",
+                "meeting_editor"
+              ],
+              "status_code": 200,
+              "token_fingerprint_present": true
+            },
+            {
+              "item_id_present": true,
+              "name": "create_agenda_intake",
+              "status_code": 201,
+              "title_matches": true
+            },
+            {
+              "name": "review_agenda_intake",
+              "readiness_status": "READY",
+              "status_code": 200
+            },
+            {
+              "agenda_item_id_present": true,
+              "name": "promote_agenda_intake",
+              "next_step": "Add the agenda item to the target meeting packet assembly.",
+              "status_code": 201
+            },
+            {
+              "created_item_listed": true,
+              "name": "list_agenda_intake",
+              "status_code": 200
+            },
+            {
+              "meeting_body_id_present": true,
+              "name": "create_meeting_body",
+              "status_code": 201
+            },
+            {
+              "meeting_id_present": true,
+              "name": "create_meeting",
+              "status_code": 201
+            },
+            {
+              "name": "create_packet_assembly",
+              "packet_id_present": true,
+              "status_code": 201
+            },
+            {
+              "name": "finalize_packet_assembly",
+              "status": "FINALIZED",
+              "status_code": 200
+            },
+            {
+              "compliant": true,
+              "name": "create_notice_checklist",
+              "notice_id_present": true,
+              "status_code": 201
+            },
+            {
+              "name": "attach_notice_posting_proof",
+              "posting_proof_present": true,
+              "status_code": 200
+            },
+            {
+              "motion_id_present": true,
+              "name": "capture_motion",
+              "status_code": 201
+            },
+            {
+              "name": "capture_vote",
+              "status_code": 201,
+              "vote_id_present": true
+            },
+            {
+              "human_review_required": false,
+              "minute_id_present": true,
+              "name": "create_minutes_draft",
+              "status_code": 201
+            },
+            {
+              "guardrail_triggered": true,
+              "name": "reject_auto_minutes_post",
+              "payload": {
+                "detail": {
+                  "fix": "Review, cite-check, and adopt minutes through a human approval workflow before public posting.",
+                  "message": "AI-drafted minutes cannot be posted automatically."
+                }
+              },
+              "status_code": 409
+            },
+            {
+              "archive_id_present": true,
+              "name": "publish_public_archive_record",
+              "status_code": 201
+            },
+            {
+              "archive_record_listed": true,
+              "name": "public_meeting_calendar",
+              "status_code": 200
+            },
+            {
+              "archive_record_found": true,
+              "name": "public_archive_search",
+              "status_code": 200,
+              "total_count": 1
+            }
+          ],
+          "name": "civicclerk_bearer_workflow",
+          "status": "passed"
+        },
+        {
+          "checks": [
+            {
+              "name": "health",
+              "payload": {
+                "civiccore": "1.2.0",
+                "service": "civiccode",
+                "status": "ok",
+                "version": "1.0.8"
+              },
+              "status_code": 200
+            },
+            {
+              "name": "seeded_section_lookup",
+              "status_code": 200
+            },
+            {
+              "name": "forged_staff_header_boundary",
+              "payload": {
+                "detail": {
+                  "fix": "Route CivicCode staff endpoint access requests through a reverse proxy inside CIVICCODE_STAFF_TRUSTED_PROXY_CIDRS and strip client-supplied copies of X-CivicCode-Actor and X-CivicCode-Role before they reach CivicCode.",
+                  "message": "Trusted staff headers were not received from an approved proxy."
+                }
+              },
+              "status_code": 403
+            }
+          ],
+          "name": "civiccode_workflow",
+          "status": "passed"
+        }
+      ],
+      "name": "starter_set_runtime_workflows",
+      "selected_modules": [
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode"
+      ],
+      "status": "passed"
+    }
+  ]
+}

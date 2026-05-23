@@ -1,0 +1,63 @@
+{
+  "civicclerk_staff_mode": "protected",
+  "compose_projects": {
+    "civicclerk": "civicsuite-local-clerk-to-city-upgrade-evidence2-clerk",
+    "civiccode": "civicsuite-local-clerk-to-city-upgrade-evidence2-code",
+    "civicrecords-ai": "civicsuite-local-clerk-to-city-upgrade-evidence2-records"
+  },
+  "finished_at": "2026-05-23T17:46:24.349025+00:00",
+  "install_root": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence",
+  "isolation_id": "local-clerk-to-city-upgrade-evidence2",
+  "mode": "uninstall",
+  "mutates_host": true,
+  "port_offset": 950,
+  "ports": {
+    "civicclerk": {
+      "api": 19726,
+      "web": 19031
+    },
+    "civiccode": {
+      "api": 19770
+    },
+    "civicrecords-ai": {
+      "api": 18950,
+      "web": 19030
+    }
+  },
+  "run_id": "local-clerk-to-city-upgrade-evidence2",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-05-23T17:46:13.814050+00:00",
+  "status": "passed",
+  "steps": [
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": " Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-frontend-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-api-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-ollama-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-postgres-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-records-redis-1 Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_ollamadata Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_uploads Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_pgdata Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_cache Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_redisdata Removing \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-records_default Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_ollamadata Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_uploads Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_pgdata Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_cache Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-records_redisdata Removed \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-records_default Removed \n",
+      "stdout": "",
+      "step": "compose_down"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": " Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-frontend-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-api-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-ollama-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-redis-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-clerk-postgres-1 Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_pgdata Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_exports Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_ollamadata Removing \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_default Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_redisdata Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_pgdata Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_exports Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_ollamadata Removed \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_redisdata Removed \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-clerk_default Removed \n",
+      "stdout": "",
+      "step": "compose_down"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": " Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-api-1 Removed \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Stopping \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Stopped \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Removing \n Container civicsuite-local-clerk-to-city-upgrade-evidence2-code-postgres-1 Removed \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-code_default Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-code_civiccode-postgres-data Removing \n Volume civicsuite-local-clerk-to-city-upgrade-evidence2-code_civiccode-postgres-data Removed \n Network civicsuite-local-clerk-to-city-upgrade-evidence2-code_default Removed \n",
+      "stdout": "",
+      "step": "compose_down"
+    },
+    {
+      "path": "installer\\runtime\\city-core-upgrade-evidence",
+      "status": "removed",
+      "step": "remove_install_root"
+    }
+  ]
+}

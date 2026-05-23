@@ -1,0 +1,67 @@
+﻿{
+  "detection_source": "synthetic",
+  "dry_run": true,
+  "host": {
+    "machine": "AMD64",
+    "release": "11",
+    "system": "Windows"
+  },
+  "menu_style": {
+    "description": "Step-by-step setup for operators who want recommendations.",
+    "id": "guided",
+    "label": "Guided Setup"
+  },
+  "mutates_host": false,
+  "profile": "city-core",
+  "readiness": {
+    "checks": [
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "container-runtime",
+        "message": "Container runtime is available for CivicSuite services.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "wsl2",
+        "message": "WSL 2 support is available for Docker Desktop on Windows.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "disk-memory",
+        "message": "Host resources are sufficient for the selected profile.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "ollama",
+        "message": "Ollama is available when local LLM features are selected.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [
+          "Review the selected module list and CivicCore requirement in installer/modules.json.",
+          "Choose a compatible profile or update the compatibility matrix before install.",
+          "Do not install a module against an unverified CivicCore version."
+        ],
+        "id": "civiccore-compatibility",
+        "message": "One or more selected modules require a different CivicCore version.",
+        "severity": "blocker",
+        "status": "failed"
+      }
+    ],
+    "next_action": "Resolve blocker fix steps, then run readiness again.",
+    "status": "blocked"
+  },
+  "scenario": "civiccore-mismatch"
+}

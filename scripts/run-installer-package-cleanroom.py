@@ -23,6 +23,11 @@ PLATFORM_LAUNCHERS = {
     "macos": Path("installer/generated/packages/clerk-core/macos/start-civicsuite-installer.sh"),
     "windows": Path("installer/generated/packages/clerk-core/windows/start-civicsuite-installer.ps1"),
 }
+LAUNCHER_NAMES = {
+    "linux": "start-civicsuite-installer.sh",
+    "macos": "start-civicsuite-installer.sh",
+    "windows": "start-civicsuite-installer.ps1",
+}
 
 
 def make_run_id() -> str:
@@ -88,6 +93,21 @@ def infer_platform(archive: Path) -> str:
     raise RuntimeError(
         f"Could not infer package platform from {archive.name}. "
         f"Pass --platform with one of: {', '.join(sorted(PLATFORM_LAUNCHERS))}."
+    )
+
+
+def find_launcher(bundle_root: Path, platform: str) -> Path:
+    expected = LAUNCHER_NAMES[platform]
+    matches = sorted(
+        bundle_root.glob(f"installer/generated/packages/*/{platform}/{expected}")
+    )
+    if len(matches) == 1:
+        return matches[0]
+    legacy = bundle_root / PLATFORM_LAUNCHERS[platform]
+    if legacy.is_file():
+        return legacy
+    raise RuntimeError(
+        f"Expected one {platform} launcher named {expected} in {bundle_root}; found {len(matches)}."
     )
 
 
@@ -240,7 +260,7 @@ def main() -> int:
     report_dir = REPORT_ROOT / run_id
     extract_root = report_dir / "extracted"
     bundle_root = extract(archive, extract_root)
-    launcher = bundle_root / PLATFORM_LAUNCHERS[platform]
+    launcher = find_launcher(bundle_root, platform)
     if not launcher.is_file():
         print(f"ERROR: extracted launcher missing: {launcher}", file=sys.stderr)
         return 2

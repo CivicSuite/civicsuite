@@ -1,0 +1,111 @@
+{
+  "actions": [
+    {
+      "description": "Docker Desktop or Docker Engine is installed and running.",
+      "id": "container-runtime",
+      "mode": "detect_or_guide",
+      "type": "check"
+    },
+    {
+      "description": "Host has enough RAM and disk for the selected profile.",
+      "id": "disk-memory",
+      "mode": "detect",
+      "type": "check"
+    },
+    {
+      "description": "Ollama is available when the selected profile enables local LLM features.",
+      "id": "ollama",
+      "mode": "optional",
+      "type": "check"
+    },
+    {
+      "civiccore_requirement": null,
+      "display_name": "CivicCore",
+      "module": "civiccore",
+      "proof_required": [
+        "install",
+        "version_check",
+        "compatibility_matrix_check"
+      ],
+      "repo": "CivicSuite/civiccore",
+      "type": "install_module"
+    },
+    {
+      "civiccore_requirement": "1.2.0",
+      "display_name": "CivicRecords AI",
+      "module": "civicrecords-ai",
+      "proof_required": [
+        "install",
+        "health_check",
+        "restart",
+        "repair",
+        "backup",
+        "restore"
+      ],
+      "repo": "CivicSuite/civicrecords-ai",
+      "type": "install_module"
+    },
+    {
+      "civiccore_requirement": "1.2.0",
+      "display_name": "CivicClerk",
+      "module": "civicclerk",
+      "proof_required": [
+        "install",
+        "health_check",
+        "restart",
+        "repair",
+        "backup",
+        "restore"
+      ],
+      "repo": "CivicSuite/civicclerk",
+      "type": "install_module"
+    },
+    {
+      "civiccore_requirement": "1.2.0",
+      "display_name": "CivicCode",
+      "module": "civiccode",
+      "proof_required": [
+        "module_selection",
+        "install_plan",
+        "artifact_resolution",
+        "health_check",
+        "restart",
+        "release_artifacts",
+        "release_attestation"
+      ],
+      "repo": "CivicSuite/civiccode",
+      "type": "install_module"
+    },
+    {
+      "profile": "city-core",
+      "proof": [
+        "health_checks",
+        "restart",
+        "backup",
+        "restore",
+        "actionable_failure_copy"
+      ],
+      "type": "verify_profile"
+    }
+  ],
+  "dry_run": true,
+  "host": {
+    "machine": "x86_64/arm64",
+    "release": "Ubuntu LTS",
+    "system": "Linux"
+  },
+  "menu_style": {
+    "description": "Step-by-step setup for operators who want recommendations.",
+    "id": "guided",
+    "label": "Guided Setup"
+  },
+  "modules": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "mutates_host": false,
+  "profile": "city-core",
+  "profile_label": "City Core"
+}
