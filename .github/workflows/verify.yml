@@ -45,6 +45,4 @@ jobs:
         run: python scripts/verify-installer-plan.py
 
       - name: Verify suite state against GitHub releases
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: python scripts/verify-suite-state.py --remote-only
