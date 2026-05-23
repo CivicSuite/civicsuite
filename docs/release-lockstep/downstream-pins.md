@@ -19,6 +19,20 @@ For this recovery batch:
 | CivicSuite/civicgrants | `release/demote-false-v1` | 0.2.0 | same hash-locked CivicCore wheel |
 | CivicSuite/civicprocure | `release/demote-false-v1` | 0.2.0 | same hash-locked CivicCore wheel |
 
+For the 2026-05-23 city-core release train:
+
+| Repo | PR / release context | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civiccore | v1.2.0 release | 1.2.0 | n/a |
+| CivicSuite/civicrecords-ai | v1.7.2 release | 1.7.2 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+| CivicSuite/civicclerk | v1.0.3 release | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+| CivicSuite/civiccode | #70 | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+
+City-core excludes CivicAccess until its depth probe gaps close and a fresh
+re-probe passes. CivicZone, CivicPlan, CivicPermit, and CivicInspect are not
+city-core cars; their v0.2.2 releases are no-functional-upgrade truth-repair
+labels that keep the existing CivicCore v1.1.0 pin.
+
 For the CivicCore v1.0.1 security-hardening recovery patch:
 
 | Repo | PR | Package version | CivicCore pin |

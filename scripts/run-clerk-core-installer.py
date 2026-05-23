@@ -31,6 +31,9 @@ MODULE_RECORDS = "civicrecords-ai"
 MODULE_CLERK = "civicclerk"
 SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
+EXPECTED_CIVICCORE_VERSION = "1.2.0"
+EXPECTED_RECORDS_VERSION = "1.7.2"
+EXPECTED_CLERK_VERSION = "1.0.3"
 SELECTED_MODULES_FILE = "selected-modules.json"
 BACKUPS_DIR = "backups"
 CLERK_STAFF_MODE_PROTECTED = "protected"
@@ -671,20 +674,20 @@ def verify_civiccore_contract(
     clerk_ok = True
     if MODULE_RECORDS in modules:
         checks.append({"name": "civicrecords_health", "status_code": records_status, "payload": records_health})
-        records_ok = records_status == 200 and records_health.get("version") == "1.6.1"
+        records_ok = records_status == 200 and records_health.get("version") == EXPECTED_RECORDS_VERSION
     if MODULE_CLERK in modules:
         checks.append({"name": "civicclerk_health", "status_code": clerk_status, "payload": clerk_health})
         clerk_ok = (
             clerk_status == 200
             and clerk_health.get("service") == "civicclerk"
-            and clerk_health.get("version") == "1.0.1"
-            and clerk_health.get("civiccore") == "1.0.1"
+            and clerk_health.get("version") == EXPECTED_CLERK_VERSION
+            and clerk_health.get("civiccore") == EXPECTED_CIVICCORE_VERSION
         )
     expected: dict[str, object] = {}
     if MODULE_RECORDS in modules:
-        expected[MODULE_RECORDS] = {"version": "1.6.1"}
+        expected[MODULE_RECORDS] = {"version": EXPECTED_RECORDS_VERSION}
     if MODULE_CLERK in modules:
-        expected[MODULE_CLERK] = {"version": "1.0.1", "civiccore": "1.0.1"}
+        expected[MODULE_CLERK] = {"version": EXPECTED_CLERK_VERSION, "civiccore": EXPECTED_CIVICCORE_VERSION}
     expected["civiccore"] = {
         "role": "base dependency installed before selected modules through the installer plan"
     }

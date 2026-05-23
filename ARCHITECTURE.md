@@ -1,6 +1,6 @@
 # CivicSuite Architecture
 
-**Last verified:** 2026-05-09
+**Last verified:** 2026-05-23
 
 This document is the suite-level architecture reference. For detailed per-module architecture, see each module's `docs/`. For the architectural intent and roadmap, see `docs/CivicSuiteUnifiedSpec.md`. For the current shipped reality, see [STATUS.md](STATUS.md).
 

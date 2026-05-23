@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-05-21).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. CivicCode, CivicAccess, CivicZone, CivicPlan, CivicPermit, and CivicInspect have passed their v1.0.0 public-use module release gates. CivicGrants and CivicProcure remain on demoted v0.2.0 recovery labels until their own active-module release turns.
+> **Release recovery banner (updated 2026-05-23).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.2, CivicClerk v1.0.3, and CivicCode v1.0.8. CivicAccess is OUT pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
 
 ---
 
@@ -86,7 +86,7 @@ Future module repositories should be created under `CivicSuite/` from the start.
 
 The long-term CivicCore responsibility set includes auth, RBAC, audit, LLM abstraction, document ingestion, hybrid search, connectors, notifications, onboarding, city profile, catalog, exemption rules, sovereignty controls, and shared module shell conventions.
 
-Current shipped CivicCore v1.1.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction. The v1.1.0 release adds a shared timing-safe staff-key gate for downstream modules and retains the v1.0.1 security hardening for auth error payloads:
+Current shipped CivicCore v1.2.0 is narrower than the long-term platform vision, but broader than the v0.2.0 LLM-only extraction. The v1.2.0 release adds the shared document-ingestion pipeline used by the city-core release cars and retains the v1.1.0 timing-safe staff-key gate plus the v1.0.1 security hardening for auth error payloads:
 
 - `civiccore.migrations`
 - `civiccore.db.Base`
@@ -275,7 +275,7 @@ No module may depend on planned CivicCore behavior unless that behavior is relea
 
 Owner: IT / platform team  
 Depends on: none  
-Status: v1.1.0 shipped with the shared `staff_key_gate` helper; v1.0.1 recovery hardening for auth error payloads remains included. Architectural target: shared-platform release with many planned extractions.
+Status: v1.2.0 shipped with the shared document-ingestion pipeline; v1.1.0 `staff_key_gate` and v1.0.1 auth-error-payload hardening remain included. Architectural target: shared-platform release with many planned extractions.
 Purpose: shared infrastructure layer for every module. CivicCore owns the common libraries, migrations, LLM abstraction, shared schema conventions, audit/provenance/manifest/export primitives, city profile configuration, auth helpers, search/access helpers, connector primitives, ingest contracts, scheduling helpers, verification helpers, and future full document/search/catalog/exemption/scaffold primitives.
 
 ### Tier 1 - Clerk Core
@@ -284,14 +284,14 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
-Status: v1.6.1 developer-preview recovery release shipped after the ingestion worker event-loop patch; CivicCore v1.0.1 pin unchanged. B2 Docker secret extraction shipped in v1.6.0.
+Status: v1.7.2 developer-preview release car shipped on CivicCore v1.2.0 with shared-ingestion consumption. B2 Docker secret extraction shipped in v1.6.0 and the ingestion worker event-loop patch shipped in v1.6.1.
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
 #### CivicClerk
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: v1.0.1 recovery patch shipped with QA-001 security default change; anonymous staff writes are denied by default.
+Status: v1.0.3 city-core release car shipped on CivicCore v1.2.0; anonymous staff writes are denied by default.
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -300,14 +300,14 @@ Dependency note: older catalog text listed CivicRecords because shared document/
 
 Owner: City Clerk / Legal / Codification Department  
 Depends on: CivicCore, CivicClerk  
-Status: v1.0.0 public-use module release; suite installer/module-selection truth reconciled 2026-05-21.
+Status: v1.0.8 city-core release car on CivicCore v1.2.0; supersedes the earlier v1.0.0 posture.
 Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
 
 Owner: Clerk / Communications / IT / ADA Coordinator  
 Depends on: CivicCore  
-Status: v1.0.0 public-use module release; suite installer/module-selection truth reconciled 2026-05-21.
+Status: OUT of city-core after the 2026-05-23 depth probe recorded NEEDS-WORK. Requires gap closure and re-probe before inclusion.
 Purpose: accessible forms, accessible publishing workflows, multilingual and plain-language rewrites, ADA Title II review, records-ready exports, and accessibility support reused by every module.
 
 ### Tier 2 - Land Use & Development
@@ -316,28 +316,28 @@ Purpose: accessible forms, accessible publishing workflows, multilingual and pla
 
 Owner: Planning & Development / Community Development  
 Depends on: CivicCore, CivicCode  
-Status: v1.0.0 public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21.
+Status: v0.2.2 no-functional-upgrade demotion label; queued for Tier 2 real work.
 Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a property is in, what uses are allowed, what setbacks apply, and when planner review is required. CivicZone never makes a zoning determination.
 
 #### CivicPlan
 
 Owner: Planning & Development / City Manager's Office  
 Depends on: CivicCore, CivicZone, CivicClerk  
-Status: v1.0.0 public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21.
+Status: v0.2.2 no-functional-upgrade demotion label; queued for Tier 2 real work.
 Purpose: comprehensive plans, small-area plans, transportation plans, parks plans, and sustainability plans become searchable, cited, and usable in staff analysis.
 
 #### CivicPermit
 
 Owner: Planning / Building / Community Development  
 Depends on: CivicCore, CivicCode, CivicZone  
-Status: demoted recovery label v0.2.0; scaffold-depth runtime, not v1.0 product-ready.
+Status: v0.2.2 no-functional-upgrade demotion label; queued for Tier 2 real work.
 Purpose: pre-application and intake copilot for permits and development review. Not a permitting system of record.
 
 #### CivicInspect
 
 Owner: Code Enforcement / Building / Fire Prevention  
 Depends on: CivicCore, CivicCode  
-Status: recovered public-use module release v1.0.0; source release and suite installer/module-selection reconciliation passed 2026-05-21.
+Status: v0.2.2 no-functional-upgrade demotion label; queued for Tier 2 real work.
 Purpose: inspection assistant for photo/voice-to-report drafting, repeat-case lookup, and notice generation. Inspectors own every decision.
 
 ### Tier 3 - Administrative Expansion
@@ -1006,15 +1006,15 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
-| civiccore | 1.1.0 | n/a | Real shared platform; v1.1.0 adds shared `staff_key_gate` with timing-safe staff-key comparison; v1.0.1 auth hardening remains included. |
-| civicrecords-ai | 1.6.1 | 1.0.1 | Developer-preview records release; v1.6.1 adds the ingestion worker event-loop recovery patch on top of the v1.6.0 B2 Docker secret-file recovery. |
-| civicclerk | 1.0.1 | 1.0.1 | Real meeting workflow; recovery patch shipped with QA-001 security default change (anonymous-write deny by default). |
-| civiccode | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, attestation, and suite installer/module-selection truth reconciliation on 2026-05-21. |
-| civicaccess | 1.0.0 | 1.1.0 | Public-use module release passed source gates, release artifacts, browser QA, release-gate audit, and suite installer/module-selection truth reconciliation on 2026-05-21. |
-| civiczone | 1.0.0 | 1.1.0 | Public-use module release passed source gates, public/staff browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation on 2026-05-21. |
-| civicplan | 1.0.0 | 1.1.0 | Public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation. |
-| civicpermit | 1.0.0 | 1.1.0 | Public-use module release passed source gates, browser QA, release-gate audit, release artifacts, and suite installer/module-selection truth reconciliation. |
-| civicinspect | 1.0.0 | 1.1.0 | Recovered public-use module release; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civiccore | 1.2.0 | n/a | Real shared platform; v1.2.0 adds shared document ingestion and retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening. |
+| civicrecords-ai | 1.7.2 | 1.2.0 | Developer-preview records release car consuming CivicCore shared ingestion. |
+| civicclerk | 1.0.3 | 1.2.0 | Real meeting workflow release car with protected staff auth defaults retained. |
+| civiccode | 1.0.8 | 1.2.0 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
+| civicaccess | 0.2.0 | 1.1.0 | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
+| civiczone | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicplan | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicpermit | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicinspect | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicgrants | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicprocure | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 
