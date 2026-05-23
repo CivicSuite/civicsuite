@@ -405,6 +405,10 @@ def check_cleanroom_workflow() -> list[str]:
         "path: modules/civicrecords-ai",
         "repository: CivicSuite/civicclerk",
         "path: modules/civicclerk",
+        "repository: CivicSuite/civiccode",
+        "path: modules/civiccode",
+        "--profile \"${{ matrix.profile }}\"",
+        "CivicSuite-city-core-linux-0.1.0.tar.gz",
         "--staff-mode bearer --workflow-proof",
         "workflow proof",
     )
@@ -1738,6 +1742,83 @@ def check_planner(data: dict[str, object]) -> list[str]:
                         fail(
                             f"native wrapper {platform_id} README must explain unsigned checksum trust path"
                         )
+                    )
+
+        city_core_release = module.generate_release_artifacts(
+            manifest=data,
+            profile_id="city-core",
+            menu_style="guided",
+            version="0.1.0",
+            platform_id="all",
+        )
+        if city_core_release.get("mutates_host") is not False:
+            errors.append(fail("city-core release artifact generator must not mutate host state"))
+        if city_core_release.get("modules") != [
+            "civiccore",
+            "civicrecords-ai",
+            "civicclerk",
+            "civiccode",
+        ]:
+            errors.append(fail("city-core release artifacts must package the four city-core modules"))
+        if len(city_core_release.get("archives", [])) != 3:
+            errors.append(fail("city-core release artifacts must emit one archive per platform"))
+        city_manifest_path = ROOT / city_core_release.get("release_manifest", "")
+        if not city_manifest_path.is_file():
+            errors.append(fail("city-core release artifacts must write release manifest"))
+        else:
+            city_manifest = json.loads(city_manifest_path.read_text(encoding="utf-8"))
+            support = city_manifest.get("platform_support", {})
+            macos_support = support.get("macos", {}) if isinstance(support, dict) else {}
+            if macos_support.get("support_status") != "beta":
+                errors.append(
+                    fail("city-core release manifest must label macOS package support as beta")
+                )
+        for platform_id, launcher in (
+            ("windows", "start-civicsuite-installer.ps1"),
+            ("macos", "start-civicsuite-installer.sh"),
+            ("linux", "start-civicsuite-installer.sh"),
+        ):
+            package_dir = GENERATED_PACKAGES / "city-core" / platform_id
+            for name in ("README.md", "install-plan.json", launcher):
+                if not (package_dir / name).is_file():
+                    errors.append(fail(f"city-core package missing {platform_id}/{name}"))
+            plan_path = package_dir / "install-plan.json"
+            if plan_path.is_file():
+                plan_data = json.loads(plan_path.read_text(encoding="utf-8"))
+                if plan_data.get("profile") != "city-core":
+                    errors.append(fail(f"city-core package {platform_id} plan has wrong profile"))
+                plan_modules = plan_data.get("modules", [])
+                for required_module in (
+                    "civiccore",
+                    "civicrecords-ai",
+                    "civicclerk",
+                    "civiccode",
+                ):
+                    if required_module not in plan_modules:
+                        errors.append(
+                            fail(
+                                f"city-core package {platform_id} plan missing {required_module}"
+                            )
+                        )
+                install_actions = [
+                    action
+                    for action in plan_data.get("actions", [])
+                    if isinstance(action, dict) and action.get("type") == "install_module"
+                ]
+                for action in install_actions:
+                    module_id = action.get("module")
+                    if module_id in {"civicrecords-ai", "civicclerk", "civiccode"} and action.get("civiccore_requirement") != "1.2.0":
+                        errors.append(
+                            fail(
+                                f"city-core package {platform_id} {module_id} must install against CivicCore 1.2.0"
+                            )
+                        )
+            launcher_path = package_dir / launcher
+            if launcher_path.is_file():
+                launcher_text = launcher_path.read_text(encoding="utf-8")
+                if "civiccode" not in launcher_text:
+                    errors.append(
+                        fail(f"city-core package {platform_id} launcher must pass CivicCode through lifecycle commands")
                     )
 
     if has_local_civiccore_wheel():

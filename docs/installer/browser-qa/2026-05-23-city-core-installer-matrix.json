@@ -1,0 +1,73 @@
+{
+  "run_id": "local-city-core-browser-qa",
+  "captured_at": "2026-05-23T17:07:44.155Z",
+  "status": "passed",
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 900
+    }
+  ],
+  "results": [
+    {
+      "id": "records-admin",
+      "viewport": "desktop",
+      "url": "http://127.0.0.1:19000/",
+      "status": 200,
+      "expected_text_present": true,
+      "console_events": [],
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-23-city-core-installer/records-admin-desktop.png"
+    },
+    {
+      "id": "records-admin",
+      "viewport": "mobile",
+      "url": "http://127.0.0.1:19000/",
+      "status": 200,
+      "expected_text_present": true,
+      "console_events": [],
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-23-city-core-installer/records-admin-mobile.png"
+    },
+    {
+      "id": "clerk-public",
+      "viewport": "desktop",
+      "url": "http://127.0.0.1:19001/public",
+      "status": 200,
+      "expected_text_present": true,
+      "console_events": [],
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-23-city-core-installer/clerk-public-desktop.png"
+    },
+    {
+      "id": "clerk-public",
+      "viewport": "mobile",
+      "url": "http://127.0.0.1:19001/public",
+      "status": 200,
+      "expected_text_present": true,
+      "console_events": [],
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-23-city-core-installer/clerk-public-mobile.png"
+    },
+    {
+      "id": "code-public-search",
+      "viewport": "desktop",
+      "url": "http://127.0.0.1:19740/civiccode/search?q=13.40.020",
+      "status": 200,
+      "expected_text_present": true,
+      "console_events": [],
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-23-city-core-installer/code-public-search-desktop.png"
+    },
+    {
+      "id": "code-public-search",
+      "viewport": "mobile",
+      "url": "http://127.0.0.1:19740/civiccode/search?q=13.40.020",
+      "status": 200,
+      "expected_text_present": true,
+      "console_events": [],
+      "screenshot": "docs/installer/browser-qa/screenshots/2026-05-23-city-core-installer/code-public-search-mobile.png"
+    }
+  ]
+}

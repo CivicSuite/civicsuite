@@ -1,0 +1,67 @@
+﻿{
+  "detection_source": "synthetic",
+  "dry_run": true,
+  "host": {
+    "machine": "AMD64",
+    "release": "11",
+    "system": "Windows"
+  },
+  "menu_style": {
+    "description": "Step-by-step setup for operators who want recommendations.",
+    "id": "guided",
+    "label": "Guided Setup"
+  },
+  "mutates_host": false,
+  "profile": "city-core",
+  "readiness": {
+    "checks": [
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "container-runtime",
+        "message": "Container runtime is available for CivicSuite services.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "wsl2",
+        "message": "WSL 2 support is available for Docker Desktop on Windows.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "disk-memory",
+        "message": "Host resources are sufficient for the selected profile.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [
+          "Install Ollama if this profile will use local LLM features.",
+          "Start Ollama and confirm models are available.",
+          "Continue without Ollama only if local LLM behavior is not required."
+        ],
+        "id": "ollama",
+        "message": "Ollama is not available; local LLM features may be disabled.",
+        "severity": "warning",
+        "status": "failed"
+      },
+      {
+        "evidence": {},
+        "fix_steps": [],
+        "id": "civiccore-compatibility",
+        "message": "Selected modules are compatible with their recorded CivicCore requirements.",
+        "severity": "info",
+        "status": "passed"
+      }
+    ],
+    "next_action": "Review warning fix steps or continue if the limitation is acceptable.",
+    "status": "warning"
+  },
+  "scenario": "ollama-missing"
+}

@@ -1530,11 +1530,17 @@ Write-Host "Project status: public-use starter release; the installer is intenti
 $PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
 $LifecycleModuleArgs = @()
 $LifecycleModeArgs = @("--staff-mode", $StaffMode)
+{'''$DefaultProfileModules = @("civicrecords-ai", "civicclerk", "civiccode")
+foreach ($DefaultModule in $DefaultProfileModules) {
+    $LifecycleModuleArgs += @("--module", $DefaultModule)
+}
+''' if profile_id == "city-core" else ""}
 if ($WorkflowProof) {{
     $LifecycleModeArgs += "--workflow-proof"
 }}
 if ($Module -and $Module.Count -gt 0) {{
     $PlannerArgs = @("--profile", "custom") + $PlannerArgs
+    $LifecycleModuleArgs = @()
     foreach ($SelectedModule in $Module) {{
         $PlannerArgs += @("--module", $SelectedModule)
         $LifecycleModuleArgs += @("--module", $SelectedModule)
@@ -1600,7 +1606,7 @@ if [[ "$#" -gt 0 ]]; then
 fi
 
 PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
-LIFECYCLE_MODULE_ARGS=()
+LIFECYCLE_MODULE_ARGS=({'"--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode"' if profile_id == "city-core" else ""})
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
 while [[ "$#" -gt 0 ]]; do
@@ -1619,7 +1625,7 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --module)
       if [[ "$#" -lt 2 ]]; then
-        echo "--module requires civicrecords-ai or civicclerk" >&2
+        echo "--module requires civicrecords-ai, civicclerk, or civiccode" >&2
         exit 2
       fi
       SELECTED_MODULES+=("$2")
@@ -1635,8 +1641,10 @@ done
 
 if [[ "${{#SELECTED_MODULES[@]}}" -gt 0 ]]; then
   PLANNER_ARGS=(--profile custom "${{PLANNER_ARGS[@]}}")
+  LIFECYCLE_MODULE_ARGS=()
   for selected_module in "${{SELECTED_MODULES[@]}}"; do
     PLANNER_ARGS+=(--module "${{selected_module}}")
+    LIFECYCLE_MODULE_ARGS+=(--module "${{selected_module}}")
   done
 else
   PLANNER_ARGS=(--profile {profile_id} "${{PLANNER_ARGS[@]}}")
@@ -1668,7 +1676,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac
@@ -1680,13 +1688,17 @@ def _package_readme_text(
 ) -> str:
     launcher = _package_launcher_name(platform_id)
     module_lines = "\n".join(f"- {module_id}" for module_id in plan["modules"])
+    lifecycle_modules = [module_id for module_id in plan["modules"] if module_id != "civiccore"]
+    lifecycle_module_args_ps = " ".join(f"-Module {module_id}" for module_id in lifecycle_modules)
+    lifecycle_module_args_sh = " ".join(f"--module {module_id}" for module_id in lifecycle_modules)
     if platform_id == "windows":
         readiness = f".\\{launcher} -Readiness"
         plan_command = f".\\{launcher} -Plan"
         records_only_plan = f".\\{launcher} -Plan -Module civicrecords-ai"
         clerk_only_plan = f".\\{launcher} -Plan -Module civicclerk"
+        code_only_plan = f".\\{launcher} -Plan -Module civiccode"
         both_install = (
-            f".\\{launcher} -Install -Module civicrecords-ai -Module civicclerk"
+            f".\\{launcher} -Install {lifecycle_module_args_ps}".strip()
         )
         workflow_proof = f".\\{launcher} -Install -StaffMode bearer -WorkflowProof"
     else:
@@ -1694,8 +1706,9 @@ def _package_readme_text(
         plan_command = f"bash ./{launcher} plan"
         records_only_plan = f"bash ./{launcher} plan --module civicrecords-ai"
         clerk_only_plan = f"bash ./{launcher} plan --module civicclerk"
+        code_only_plan = f"bash ./{launcher} plan --module civiccode"
         both_install = (
-            f"bash ./{launcher} install --module civicrecords-ai --module civicclerk"
+            f"bash ./{launcher} install {lifecycle_module_args_sh}".strip()
         )
         workflow_proof = (
             f"bash ./{launcher} install --staff-mode bearer --workflow-proof"
@@ -1727,6 +1740,15 @@ again from the project release source.
   after the checksum matches.
 - Linux: install from the local archive/package only after verifying the
   checksum file.
+- Docker Desktop or Docker Engine is running. If it is not running, the installer
+  says how to start Docker before retrying.
+- Required ports are free. If a port is occupied, rerun after closing the
+  conflicting service or use the documented port-offset flags from the lifecycle
+  runner.
+- The host has at least 8 GB RAM and 20 GB free disk for the full city-core
+  stack.
+- Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
+  or a compatible Docker Engine and permission to run an unsigned local archive.
 
 This package is the operator-facing installer entrypoint for the selected
 platform. It does not install privileged baseline software by itself. It checks
@@ -1764,12 +1786,13 @@ profile.
 
 {module_lines}
 
-The default package selection installs both CivicRecords AI and CivicClerk on
-top of the CivicCore base contract. Operators can choose one module or both:
+The default package selection installs this package profile on top of the
+CivicCore base contract. Operators can choose one module or the whole profile:
 
 ```text
 {records_only_plan}
 {clerk_only_plan}
+{code_only_plan}
 {both_install}
 ```
 
@@ -1791,14 +1814,21 @@ protected while the proof creates real starter-set test records:
   from the bundled source tree.
 - Verify mode checks live service endpoints. `--workflow-proof` /
   `-WorkflowProof` also creates live CivicRecords AI request/search/review/
-  response proof records and CivicClerk agenda/packet/minutes/vote/notice/
-  archive proof records.
+  response proof records, CivicClerk agenda/packet/minutes/vote/notice/
+  archive proof records, and CivicCode health/public lookup proof when
+  CivicCode is selected.
 - Backup mode writes per-module PostgreSQL custom dumps plus a manifest under
   the installer runtime backup directory.
 - Restore mode verifies the latest backup by restoring each dump into a
   temporary PostgreSQL restore-probe database and removing that probe after the
   check completes.
 - Uninstall mode removes the selected module Docker containers and volumes.
+- Re-running install or repair over an existing install is expected to be
+  idempotent: the installer keeps existing source trees and refreshes runtime
+  configuration without deleting data. Use backup before any destructive reset.
+- Rollback path: run backup, then uninstall; if you need a clean reset, remove
+  the runtime directory only after confirming the backup manifest and dumps
+  exist.
 - Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
 
 The repo/source checkout cleanroom gate remains available outside this
@@ -2184,14 +2214,23 @@ def _stage_release_bundle(
     shutil.copy2(MANIFEST, bundle_dir / "installer" / "modules.json")
     modules_root = bundle_dir / "modules"
     modules_root.mkdir(parents=True, exist_ok=True)
-    _copy_bundle_source("civicrecords-ai", modules_root / "civicrecords-ai")
-    _copy_bundle_source("civicclerk", modules_root / "civicclerk")
+    plan_path = package_dir / "install-plan.json"
+    bundled_modules = ["civicrecords-ai", "civicclerk"]
+    if plan_path.is_file():
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        bundled_modules = [
+            str(module_id)
+            for module_id in plan.get("modules", [])
+            if str(module_id) != "civiccore"
+        ]
+    for module_name in bundled_modules:
+        _copy_bundle_source(module_name, modules_root / module_name)
     (bundle_dir / "README.md").write_text(
         f"""# CivicSuite {profile_id} Installer Bundle
 
-This unsigned OSS public-use starter bundle is self-contained for the clerk-core profile. It
+This unsigned OSS public-use starter bundle is self-contained for the {profile_id} profile. It
 includes the installer lifecycle runner, the selected platform package, and the
-module source trees needed to build/start CivicRecords AI and CivicClerk with
+module source trees needed to build/start the selected CivicSuite modules with
 Docker.
 
 Start here:
@@ -2289,6 +2328,12 @@ def generate_release_artifacts(
                 "path": str(archive_path.relative_to(ROOT)),
                 "sha256": _sha256(archive_path),
                 "bundle_root": str(bundle_dir.relative_to(ROOT)),
+                "support_status": "beta" if target_platform == "macos" else "supported_package",
+                "certification_scope": (
+                    "macOS archive/readiness beta; not matching-host lifecycle certification"
+                    if target_platform == "macos"
+                    else "package archive generated for matching-host cleanroom lifecycle"
+                ),
             }
         )
     checksum_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-SHA256SUMS.txt"
@@ -2310,6 +2355,17 @@ def generate_release_artifacts(
         "menu_style": menu_style,
         "platforms": platforms,
         "modules": package["modules"],
+        "platform_support": {
+            platform: {
+                "support_status": "beta" if platform == "macos" else "supported_package",
+                "certification_scope": (
+                    "macOS archive/readiness beta; not matching-host lifecycle certification"
+                    if platform == "macos"
+                    else "matching-host cleanroom lifecycle required for promotion"
+                ),
+            }
+            for platform in platforms
+        },
         "archives": archives,
         "archive_hygiene": {
             "forbidden_markers": list(ARCHIVE_HYGIENE_FORBIDDEN_MARKERS),
@@ -2332,6 +2388,7 @@ def generate_release_artifacts(
         "profile": profile_id,
         "installer_version": version,
         "platforms": platforms,
+        "modules": package["modules"],
         "package_files_written": package["files_written"],
         "native_files_written": native_written,
         "archives": archives,
