@@ -1,6 +1,6 @@
 {
     "schema_version":  1,
-    "installer_status":  "clerk_core_public_use_starter_v0_1_0_published",
+    "installer_status":  "city_core_beta_ready_truth_reconciled",
     "workflow_proof_status":  {
                                   "profile":  "clerk-core",
                                   "scope":  [
@@ -54,9 +54,27 @@
                                      ]
                      },
                      {
+                         "id":  "city-core",
+                         "label":  "City Core",
+                         "description":  "Install the beta-ready city-core profile: records, clerk, and municipal code on CivicCore.",
+                         "modules":  [
+                                         "civiccore",
+                                         "civicrecords-ai",
+                                         "civicclerk",
+                                         "civiccode"
+                                     ],
+                         "status":  "beta_ready_pending_installer_dist_and_integration_proof",
+                         "excluded_modules":  [
+                                                {
+                                                    "id":  "civicaccess",
+                                                    "reason":  "OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe."
+                                                }
+                                            ]
+                     },
+                     {
                          "id":  "land-use",
                          "label":  "Land Use",
-                         "description":  "Install the land-use and development starter profile.",
+                         "description":  "Queued Tier 2 profile; disabled until CivicZone, CivicPlan, CivicPermit, and CivicInspect complete real release turns.",
                          "modules":  [
                                          "civiccore",
                                          "civiccode",
@@ -64,7 +82,9 @@
                                          "civicplan",
                                          "civicpermit",
                                          "civicinspect"
-                                     ]
+                                     ],
+                         "disabled":  true,
+                         "disabled_reason":  "queued - depends on Tier 2 module work after city-core ships"
                      },
                      {
                          "id":  "full-suite",
@@ -100,8 +120,8 @@
                                          "civiclibrary",
                                          "civicparks"
                                      ],
-                         "disabled":  false,
-                         "disabled_reason":  "Re-enabled after CivicRecords AI unified on the CivicCore v1.0.1 records/clerk profile pin; CivicRecords AI v1.6.1 keeps that pin while shipping the developer-preview ingestion worker event-loop recovery patch."
+                         "disabled":  true,
+                         "disabled_reason":  "15 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite"
                      },
                      {
                          "id":  "custom",
@@ -125,13 +145,13 @@
                         "dependencies":  [
 
                                          ],
-                        "installer_status":  "v1_1_0_staff_key_gate_shipped",
+                        "installer_status":  "v1_2_0_shared_ingestion_shipped",
                         "proof_required":  [
                                                "install",
                                                "version_check",
                                                "compatibility_matrix_check"
                                            ],
-                        "current_version":  "1.1.0"
+                        "current_version":  "1.2.0"
                     },
                     {
                         "id":  "civicrecords-ai",
@@ -141,12 +161,12 @@
                         "role":  "records workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8000,
-                        "installer_status":  "v1_6_1_ingestion_worker_recovery_shipped",
+                        "installer_status":  "v1_7_1_city_core_release_car",
                         "proof_required":  [
                                                "install",
                                                "health_check",
@@ -155,7 +175,7 @@
                                                "backup",
                                                "restore"
                                            ],
-                        "current_version":  "1.6.1"
+                        "current_version":  "1.7.1"
                     },
                     {
                         "id":  "civicclerk",
@@ -165,12 +185,12 @@
                         "role":  "meetings workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.0.1",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8010,
-                        "installer_status":  "v1_0_1_recovery_patch_shipped_protected_default",
+                        "installer_status":  "v1_0_3_city_core_release_car",
                         "proof_required":  [
                                                "install",
                                                "health_check",
@@ -179,7 +199,7 @@
                                                "backup",
                                                "restore"
                                            ],
-                        "current_version":  "1.0.1"
+                        "current_version":  "1.0.3"
                     },
                     {
                         "id":  "civiccode",
@@ -189,13 +209,13 @@
                         "role":  "municipal code",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicclerk"
                                          ],
                         "default_port":  8020,
-                        "installer_status":  "v1_0_0_public_use_module_released",
+                        "installer_status":  "v1_0_8_city_core_release_car",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -205,7 +225,7 @@
                                                "release_artifacts",
                                                "release_attestation"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "1.0.8"
                     },
                     {
                         "id":  "civiczone",
@@ -221,7 +241,7 @@
                                              "civiccode"
                                          ],
                         "default_port":  8030,
-                        "installer_status":  "v1_0_0_public_use_module_released",
+                        "installer_status":  "demoted_v0_2_2_truth_repair_no_functional_upgrade",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -229,10 +249,9 @@
                                                "health_check",
                                                "restart",
                                                "release_artifacts",
-                                               "browser_qa",
-                                               "release_gate_audit"
+                                               "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "0.2.2"
                     },
                     {
                         "id":  "civicplan",
@@ -249,7 +268,7 @@
                                              "civicclerk"
                                          ],
                         "default_port":  8040,
-                        "installer_status":  "v1_0_0_public_use_module_released",
+                        "installer_status":  "demoted_v0_2_2_truth_repair_no_functional_upgrade",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -257,10 +276,9 @@
                                                "health_check",
                                                "restart",
                                                "release_artifacts",
-                                               "browser_qa",
-                                               "release_gate_audit"
+                                               "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "0.2.2"
                     },
                     {
                         "id":  "civicpermit",
@@ -277,7 +295,7 @@
                                              "civiczone"
                                          ],
                         "default_port":  8050,
-                        "installer_status":  "v1_0_0_public_use_module_released",
+                        "installer_status":  "demoted_v0_2_2_truth_repair_no_functional_upgrade",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -285,10 +303,9 @@
                                                "health_check",
                                                "restart",
                                                "release_artifacts",
-                                               "browser_qa",
-                                               "release_gate_audit"
+                                               "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "0.2.2"
                     },
                     {
                         "id":  "civicaccess",
@@ -303,18 +320,18 @@
                                              "civiccore"
                                          ],
                         "default_port":  8060,
-                        "installer_status":  "v1_0_0_public_use_module_released",
+                        "installer_status":  "excluded_from_city_core_needs_work_probe",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
                                                "artifact_resolution",
                                                "health_check",
                                                "restart",
-                                               "release_artifacts",
-                                               "browser_qa",
-                                               "release_gate_audit"
+                                               "gap_closure",
+                                               "re_probe",
+                                               "public_use_gate"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "0.2.0"
                     },
                     {
                         "id":  "civicinspect",
@@ -331,7 +348,7 @@
                                              "civicpermit"
                                          ],
                         "default_port":  8061,
-                        "installer_status":  "v1_0_0_public_use_module_released",
+                        "installer_status":  "demoted_v0_2_2_truth_repair_no_functional_upgrade",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -339,10 +356,9 @@
                                                "health_check",
                                                "restart",
                                                "release_artifacts",
-                                               "browser_qa",
-                                               "release_gate_audit"
+                                               "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "1.0.0"
+                        "current_version":  "0.2.2"
                     },
                     {
                         "id":  "civicgrants",

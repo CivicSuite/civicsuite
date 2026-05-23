@@ -47,7 +47,8 @@ RESTORE_PRECONDITION = (
     / "browser-qa"
     / "2026-05-20-clerk-core-restore-precondition.md"
 )
-CURRENT_PLATFORM_CIVICCORE = "1.1.0"
+CURRENT_PLATFORM_CIVICCORE = "1.2.0"
+DEMOTION_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
@@ -85,6 +86,7 @@ class RepoSpec:
     release_tag: str | None = None
     published_version: str | None = None
     published_civiccore_required: str | None = None
+    release_required: bool = True
 
     def matrix_version(self, remote_only: bool) -> str:
         return (
@@ -109,80 +111,81 @@ REPOS: tuple[RepoSpec, ...] = (
         "civiccore",
         "CivicSuite/civiccore",
         "civiccore",
-        "1.1.0",
+        "1.2.0",
         civiccore_required=None,
-        release_tag="v1.1.0",
+        release_tag="v1.2.0",
     ),
     RepoSpec(
         "civicrecords-ai",
         "CivicSuite/civicrecords-ai",
         "civicrecords-ai",
-        "1.6.1",
+        "1.7.1",
         "backend/pyproject.toml",
-        civiccore_required=RECOVERY_CIVICCORE,
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(
         "civicclerk",
         "CivicSuite/civicclerk",
         "civicclerk",
-        "1.0.1",
-        civiccore_required=RECOVERY_CIVICCORE,
+        "1.0.3",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(
         "civiccode",
         "CivicSuite/civiccode",
         "civiccode",
-        "1.0.0",
+        "1.0.8",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),
     RepoSpec(
         "civiczone",
         "CivicSuite/civiczone",
         "civiczone",
-        "1.0.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        "0.2.2",
+        civiccore_required=DEMOTION_CIVICCORE,
     ),
     RepoSpec(
         "civicaccess",
         "CivicSuite/civicaccess",
         "civicaccess",
-        "1.0.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        "0.2.0",
+        civiccore_required=DEMOTION_CIVICCORE,
+        release_required=False,
     ),
     RepoSpec(
         "civicplan",
         "CivicSuite/civicplan",
         "civicplan",
-        "1.0.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        "0.2.2",
+        civiccore_required=DEMOTION_CIVICCORE,
     ),
     RepoSpec(
         "civicpermit",
         "CivicSuite/civicpermit",
         "civicpermit",
-        "1.0.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        "0.2.2",
+        civiccore_required=DEMOTION_CIVICCORE,
     ),
     RepoSpec(
         "civicinspect",
         "CivicSuite/civicinspect",
         "civicinspect",
-        "1.0.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        "0.2.2",
+        civiccore_required=DEMOTION_CIVICCORE,
     ),
     RepoSpec(
         "civicgrants",
         "CivicSuite/civicgrants",
         "civicgrants",
         "0.2.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        civiccore_required=DEMOTION_CIVICCORE,
     ),
     RepoSpec(
         "civicprocure",
         "CivicSuite/civicprocure",
         "civicprocure",
         "0.2.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        civiccore_required=DEMOTION_CIVICCORE,
     ),
     RepoSpec(
         "civiccontracts",
@@ -365,6 +368,43 @@ def check_planned_spec_modules() -> list[str]:
             errors.append(
                 fail(f"planned spec module {module_id} has unexpected installer_status")
             )
+    return errors
+
+
+def check_city_core_profile_truth() -> list[str]:
+    errors = []
+    installer_data = json.loads(INSTALLER_MODULES.read_text(encoding="utf-8"))
+    profiles = {
+        str(profile.get("id")): profile
+        for profile in installer_data.get("profiles", [])
+        if isinstance(profile, dict) and profile.get("id")
+    }
+    city_core = profiles.get("city-core")
+    if not isinstance(city_core, dict):
+        return [fail("installer/modules.json missing city-core profile")]
+    expected_modules = ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"]
+    if city_core.get("modules") != expected_modules:
+        errors.append(
+            fail(
+                "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode"
+            )
+        )
+    excluded = city_core.get("excluded_modules")
+    if not isinstance(excluded, list) or not any(
+        isinstance(item, dict)
+        and item.get("id") == "civicaccess"
+        and "NEEDS-WORK" in str(item.get("reason"))
+        for item in excluded
+    ):
+        errors.append(
+            fail("city-core profile must explicitly exclude CivicAccess with NEEDS-WORK probe reason")
+        )
+    land_use = profiles.get("land-use")
+    if not isinstance(land_use, dict) or land_use.get("disabled") is not True:
+        errors.append(fail("land-use profile must remain disabled until Tier 2 work"))
+    full_suite = profiles.get("full-suite")
+    if not isinstance(full_suite, dict) or full_suite.get("disabled") is not True:
+        errors.append(fail("full-suite profile must remain disabled until coherent suite proof"))
     return errors
 
 
@@ -750,6 +790,8 @@ def check_unified_spec(spec: RepoSpec, versions: dict[str, str]) -> list[str]:
 
 
 def check_release(spec: RepoSpec, remote_only: bool) -> list[str]:
+    if not spec.release_required:
+        return []
     tag = spec.tag(remote_only)
     code, data, message = run_json(
         [
@@ -857,6 +899,15 @@ def main() -> int:
             print(f"  {error}")
     else:
         print("[planned-spec-modules] PASS civicregwatch,civicapi")
+
+    city_core_errors = check_city_core_profile_truth()
+    if city_core_errors:
+        any_failures = True
+        print("[city-core-profile] FAIL")
+        for error in city_core_errors:
+            print(f"  {error}")
+    else:
+        print("[city-core-profile] PASS civiccore,civicrecords-ai,civicclerk,civiccode")
 
     workflow_errors = check_clerk_core_workflow_proof_truth()
     if workflow_errors:

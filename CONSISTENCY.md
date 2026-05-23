@@ -2,7 +2,7 @@
 
 Every count, cross-reference, version, and named fact used in CHARTER.md and README.md is verified here against the source-of-truth spec. Update this file whenever any of those facts change. Do not let the charter or README drift from this table.
 
-Last verified: May 20, 2026.
+Last verified: May 23, 2026.
 
 ---
 
@@ -50,7 +50,7 @@ The product-module total is 27. `CivicCore` is the shared platform prerequisite 
 | **Product total** | | **27** | |
 | **Platform + product total** | | **28** | Includes CivicCore plus all product modules |
 
-Source: `docs/CivicSuiteUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `CivicSuite` GitHub org repo list checked on 2026-05-20.
+Source: `docs/CivicSuiteUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `CivicSuite` GitHub org repo list checked on 2026-05-23.
 
 ---
 

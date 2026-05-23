@@ -37,7 +37,14 @@ GENERATED_NATIVE = ROOT / "installer" / "generated" / "native"
 DIST = ROOT / "installer" / "dist"
 REPORTS = ROOT / "installer" / "reports"
 
-REQUIRED_PROFILES = {"minimal", "clerk-core", "land-use", "full-suite", "custom"}
+REQUIRED_PROFILES = {
+    "minimal",
+    "clerk-core",
+    "city-core",
+    "land-use",
+    "full-suite",
+    "custom",
+}
 REQUIRED_MODULES = {
     "civiccore",
     "civicrecords-ai",
@@ -593,10 +600,13 @@ def check_manifest(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if data.get("schema_version") != 1:
         errors.append(fail("schema_version must be 1"))
-    if data.get("installer_status") != "clerk_core_public_use_starter_v0_1_0_published":
+    if data.get("installer_status") not in {
+        "clerk_core_public_use_starter_v0_1_0_published",
+        "city_core_beta_ready_truth_reconciled",
+    }:
         errors.append(
             fail(
-                "installer_status must be clerk_core_public_use_starter_v0_1_0_published"
+                "installer_status must be clerk_core_public_use_starter_v0_1_0_published or city_core_beta_ready_truth_reconciled"
             )
         )
 
@@ -703,14 +713,11 @@ def check_planner(data: dict[str, object]) -> list[str]:
     scenarios = {
         "minimal": ["civiccore"],
         "clerk-core": ["civiccore", "civicrecords-ai", "civicclerk"],
-        "land-use": [
+        "city-core": [
             "civiccore",
+            "civicrecords-ai",
             "civicclerk",
             "civiccode",
-            "civiczone",
-            "civicplan",
-            "civicpermit",
-            "civicinspect",
         ],
     }
     for profile, expected_modules in scenarios.items():
@@ -796,31 +803,43 @@ def check_planner(data: dict[str, object]) -> list[str]:
         ),
         {},
     )
-    full_suite_plan = module.build_install_plan(
-        manifest=data,
-        profile_id="full-suite",
-        menu_style="guided",
-        host={"system": "Windows", "release": "test", "machine": "x86_64"},
-    )
-    if full_suite_plan.get("mutates_host") is not False:
-        errors.append(fail("full-suite plan must be non-mutating"))
-    if full_suite_plan.get("dry_run") is not True:
-        errors.append(fail("full-suite plan must be marked dry_run"))
-    if full_suite_plan.get("modules") != full_suite_profile.get("modules"):
-        errors.append(
-            fail(
-                "full-suite plan must include the reconciled full-suite profile modules"
-            )
+    if full_suite_profile.get("disabled") is not True:
+        errors.append(fail("full-suite profile must be disabled until coherent suite proof"))
+    try:
+        module.build_install_plan(
+            manifest=data,
+            profile_id="full-suite",
+            menu_style="guided",
+            host={"system": "Windows", "release": "test", "machine": "x86_64"},
         )
-    full_suite_action_types = [
-        action.get("type")
-        for action in full_suite_plan.get("actions", [])
-        if isinstance(action, dict)
-    ]
-    if "install_module" not in full_suite_action_types:
-        errors.append(fail("full-suite plan missing install_module actions"))
-    if full_suite_action_types[-1:] != ["verify_profile"]:
-        errors.append(fail("full-suite plan must end with verify_profile"))
+    except Exception as exc:
+        if "Profile full-suite is disabled" not in str(exc):
+            errors.append(fail(f"full-suite disabled profile failed with wrong error: {exc}"))
+    else:
+        errors.append(fail("full-suite profile should be blocked while disabled"))
+
+    land_use_profile = next(
+        (
+            profile
+            for profile in profiles_list
+            if isinstance(profile, dict) and profile.get("id") == "land-use"
+        ),
+        {},
+    )
+    if land_use_profile.get("disabled") is not True:
+        errors.append(fail("land-use profile must be disabled until Tier 2 work"))
+    try:
+        module.build_install_plan(
+            manifest=data,
+            profile_id="land-use",
+            menu_style="guided",
+            host={"system": "Windows", "release": "test", "machine": "x86_64"},
+        )
+    except Exception as exc:
+        if "Profile land-use is disabled" not in str(exc):
+            errors.append(fail(f"land-use disabled profile failed with wrong error: {exc}"))
+    else:
+        errors.append(fail("land-use profile should be blocked while disabled"))
 
     menu_model = module.build_menu_model(manifest=data, menu_style="department")
     if menu_model.get("mutates_host") is not False:
@@ -1553,7 +1572,11 @@ def check_planner(data: dict[str, object]) -> list[str]:
                             f"drifted from manifest: {actual_records_requirement!r} != {expected_records_requirement!r}"
                         )
                     )
+        bash = bash_command()
         for platform_id in ("macos", "linux"):
+            if not bash:
+                errors.append(fail(f"profile package {platform_id} launcher checks require bash"))
+                continue
             package_launcher = (
                 GENERATED_PACKAGES
                 / "clerk-core"
@@ -1561,7 +1584,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 / "start-civicsuite-installer.sh"
             )
             ok, output = run_launcher(
-                ["bash", package_launcher.relative_to(ROOT).as_posix(), "plan"]
+                [bash, package_launcher.relative_to(ROOT).as_posix(), "plan"]
             )
             if not ok:
                 errors.append(
@@ -1765,14 +1788,15 @@ def check_planner(data: dict[str, object]) -> list[str]:
         if boundary.get("does_not_start_services") is not True:
             errors.append(fail("minimal install kit must not start services"))
     requirements = GENERATED_MINIMAL / "requirements.txt"
-    if (
-        requirements.is_file()
-        and "civiccore-1.1.0-py3-none-any.whl"
-        not in requirements.read_text(encoding="utf-8")
-    ):
-        errors.append(
-            fail("minimal install kit requirements must point to the CivicCore wheel")
-        )
+    if requirements.is_file():
+        requirements_text = requirements.read_text(encoding="utf-8")
+        if (
+            "civiccore-1.1.0-py3-none-any.whl" not in requirements_text
+            and "civiccore-1.2.0-py3-none-any.whl" not in requirements_text
+        ):
+            errors.append(
+                fail("minimal install kit requirements must point to a CivicCore wheel")
+            )
 
     try:
         module.build_install_plan(
@@ -1801,6 +1825,20 @@ def powershell_command() -> str | None:
     if os.environ.get("CIVICSUITE_VERIFY_NO_POWERSHELL") == "1":
         return None
     return shutil.which("powershell") or shutil.which("pwsh")
+
+
+def bash_command() -> str | None:
+    if os.environ.get("CIVICSUITE_VERIFY_NO_BASH") == "1":
+        return None
+    candidates = (
+        os.environ.get("GIT_BASH"),
+        r"C:\Program Files\Git\bin\bash.exe",
+        shutil.which("bash"),
+    )
+    for candidate in candidates:
+        if candidate and Path(candidate).is_file():
+            return candidate
+    return None
 
 
 def check_launchers() -> list[str]:
@@ -2066,13 +2104,17 @@ def check_launchers() -> list[str]:
         ):
             errors.append(fail("windows launcher missing cleanroom gate switch"))
 
+    bash = bash_command()
     for name, path in (("macos", MACOS_LAUNCHER), ("linux", LINUX_LAUNCHER)):
         if not path.is_file():
+            continue
+        if not bash:
+            errors.append(fail(f"{name} launcher checks require bash"))
             continue
         launcher_path = path.relative_to(ROOT).as_posix()
         ok, output = run_launcher(
             [
-                "bash",
+                bash,
                 launcher_path,
                 "--profile",
                 "minimal",
@@ -2092,7 +2134,7 @@ def check_launchers() -> list[str]:
                 fail(f"{name} launcher output did not prove mutates_host false")
             )
         ok, output = run_launcher(
-            ["bash", launcher_path, "--profile", "minimal", "--execute"]
+            [bash, launcher_path, "--profile", "minimal", "--execute"]
         )
         if not ok:
             errors.append(fail(f"{name} execution gate failed: {output}"))
@@ -2104,7 +2146,7 @@ def check_launchers() -> list[str]:
                 fail(f"{name} execution gate did not stay blocked and non-mutating")
             )
         ok, output = run_launcher(
-            ["bash", launcher_path, "--profile", "minimal", "--show-executor-design"]
+            [bash, launcher_path, "--profile", "minimal", "--show-executor-design"]
         )
         if not ok:
             errors.append(fail(f"{name} executor design failed: {output}"))
@@ -2118,7 +2160,7 @@ def check_launchers() -> list[str]:
                 )
             )
         ok, output = run_launcher(
-            ["bash", launcher_path, "--profile", "minimal", "--show-evidence-schema"]
+            [bash, launcher_path, "--profile", "minimal", "--show-evidence-schema"]
         )
         if not ok:
             errors.append(fail(f"{name} evidence schema failed: {output}"))
@@ -2128,7 +2170,7 @@ def check_launchers() -> list[str]:
             errors.append(fail(f"{name} evidence schema did not stay non-mutating"))
         ok, output = run_launcher(
             [
-                "bash",
+                bash,
                 launcher_path,
                 "--profile",
                 "minimal",
@@ -2152,7 +2194,7 @@ def check_launchers() -> list[str]:
             ("--show-preflight", '"executor_not_implemented"'),
         ):
             ok, output = run_launcher(
-                ["bash", launcher_path, "--profile", "minimal", flag]
+                [bash, launcher_path, "--profile", "minimal", flag]
             )
             if not ok:
                 errors.append(fail(f"{name} launcher {flag} failed: {output}"))
@@ -2165,7 +2207,7 @@ def check_launchers() -> list[str]:
         if has_local_civiccore_wheel():
             ok, output = run_launcher(
                 [
-                    "bash",
+                    bash,
                     launcher_path,
                     "--profile",
                     "minimal",
@@ -2187,7 +2229,7 @@ def check_launchers() -> list[str]:
                 )
         ok, output = run_launcher(
             [
-                "bash",
+                bash,
                 launcher_path,
                 "--profile",
                 "clerk-core",
@@ -2206,7 +2248,7 @@ def check_launchers() -> list[str]:
             )
         ok, output = run_launcher(
             [
-                "bash",
+                bash,
                 launcher_path,
                 "--profile",
                 "clerk-core",
