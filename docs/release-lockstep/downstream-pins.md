@@ -89,6 +89,15 @@ For the CivicInspect v1.0.0 public-use module release:
 
 CivicInspect release `v1.0.0` peels to `a018241d801feb89e9ff5bf29666edbeda6a2c9a`; main verify run `26236492518`, release workflow `26236555671`, and tag verify run `26236555694` passed. Release assets are wheel `sha256:b03c5345eee8c2266af8e2135c959ab33e06b7e881bcad10ed63b5d2b18c0ffe`, sdist `sha256:910fe253cd878fa7211e6a374972e69f24355c20ba1018627e98ecb0d6ce9811`, and SHA256SUMS `sha256:cf97455ff0bbdfe2834a8771c6089bb57e93c1bfe9b59159b1b9b44e88263d87`. This lockstep record promotes only CivicInspect and does not promote CivicGrants, CivicProcure, queued modules, the full suite, live cross-module records exchange, or macOS lifecycle certification.
 
+For the CivicCode v1.0.8 city-core release car:
+
+| Repo | PR | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civiccode | #70 | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+
+CivicCode v1.0.8 supersedes the earlier v1.0.0 release posture and uses the
+published CivicCore v1.2.0 release wheel. Its own release wheel is
+`civiccode-1.0.8-py3-none-any.whl#sha256=88e7842a2c17c171f741d56a1b320d7967990fc0ebbd19b7647b8dfaddb3ccc4`.
 For the CivicRecords AI v1.6.0 B2 Docker secret extraction release:
 
 | Repo | PR | Package version | CivicCore pin |
