@@ -24,7 +24,7 @@ For the 2026-05-23 city-core release train:
 | Repo | PR / release context | Package version | CivicCore pin |
 |---|---:|---:|---|
 | CivicSuite/civiccore | v1.2.0 release | 1.2.0 | n/a |
-| CivicSuite/civicrecords-ai | v1.7.1 release | 1.7.1 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+| CivicSuite/civicrecords-ai | v1.7.2 release | 1.7.2 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
 | CivicSuite/civicclerk | v1.0.3 release | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
 | CivicSuite/civiccode | #70 | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
 

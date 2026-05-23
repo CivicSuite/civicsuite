@@ -119,7 +119,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicrecords-ai",
         "CivicSuite/civicrecords-ai",
         "civicrecords-ai",
-        "1.7.1",
+        "1.7.2",
         "backend/pyproject.toml",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
     ),

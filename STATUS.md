@@ -7,7 +7,7 @@ This is the plain-English operating truth for CivicSuite. The unified spec descr
 
 ## Active Public-Use Target
 
-The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.1`, CivicClerk `v1.0.3`, and CivicCode `v1.0.8`; the next installer package must prove those four modules together before city-core can move beyond beta-ready status. The package remains Linux-first Docker/browser operation with Windows wrapper lifecycle proof required and macOS beta-level readiness until a matching-host macOS lifecycle is proven.
+The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.2`, CivicClerk `v1.0.3`, and CivicCode `v1.0.8`; the next installer package must prove those four modules together before city-core can move beyond beta-ready status. The package remains Linux-first Docker/browser operation with Windows wrapper lifecycle proof required and macOS beta-level readiness until a matching-host macOS lifecycle is proven.
 
 CivicAccess is explicitly OUT of city-core for this sprint after the 2026-05-23 depth probe on branch `probe/civicaccess-depth-2026-05-23` recorded `PROBE-PROGRESS.md` with a NEEDS-WORK verdict. CivicAccess requires gap closure and a fresh re-probe before it can be added to the city-core profile.
 
@@ -29,7 +29,7 @@ As of 2026-05-14, the release-integrity decision is:
 |---|---:|---|
 | civiccore | v1.2.0 shipped | Real shared platform; v1.2.0 shipped the shared document-ingestion pipeline and retains the earlier platform hardening. |
 | civicclerk | v1.0.3 shipped | Real meeting workflow release car pinned to CivicCore v1.2.0; protected staff auth defaults remain required. |
-| civicrecords-ai | v1.7.1 shipped | Developer preview records release car pinned to CivicCore v1.2.0 and consuming shared CivicCore ingestion. |
+| civicrecords-ai | v1.7.2 shipped | Developer preview records release car pinned to CivicCore v1.2.0 and consuming shared CivicCore ingestion. |
 | civiccode | v1.0.8 shipped | City-core release car pinned to CivicCore v1.2.0; v1.0.8 supersedes the earlier v1.0.0 posture and carries release attestation. |
 | civicaccess | OUT / v0.2.0 source truth | Excluded from city-core after NEEDS-WORK depth probe; no public-use promotion claim. |
 | civiczone | v0.2.2 | Narrow truth-repair demotion release; no functional upgrade; queued for Tier 2 real work. |
@@ -44,7 +44,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 ## What Works Today
 
 - `civiccore` v1.2.0 is the current shared platform release and includes the shared document-ingestion pipeline used by the city-core release cars.
-- `civicrecords-ai` v1.7.1 remains developer preview but now consumes CivicCore v1.2.0 shared ingestion.
+- `civicrecords-ai` v1.7.2 remains developer preview but now consumes CivicCore v1.2.0 shared ingestion.
 - `civicclerk` v1.0.3 is the current meeting workflow release car for city-core.
 - `civiccode` v1.0.8 is the current municipal-code release car for city-core.
 - The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
