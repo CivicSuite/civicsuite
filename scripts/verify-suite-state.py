@@ -74,6 +74,15 @@ REQUIRED_ARTIFACTS = (
     ".github/PULL_REQUEST_TEMPLATE.md",
 )
 
+SCAFFOLD_LAYOUT_PATHS = (
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    ".gitignore",
+    "docs/index.html",
+)
+
 
 @dataclass(frozen=True)
 class RepoSpec:
@@ -717,6 +726,18 @@ def check_required_artifacts(repo_path: Path) -> list[str]:
     return errors
 
 
+def scaffold_layout_warnings(spec: RepoSpec, repo_path: Path) -> list[str]:
+    warnings = []
+    missing_required = [
+        path for path in SCAFFOLD_LAYOUT_PATHS if not (repo_path / path).exists()
+    ]
+    if missing_required:
+        warnings.append(
+            f"{spec.name}: missing scaffold baseline path(s): {', '.join(missing_required)}"
+        )
+    return warnings
+
+
 def check_pyproject(spec: RepoSpec, repo_path: Path) -> list[str]:
     errors = []
     pyproject_path = repo_path / spec.pyproject
@@ -860,6 +881,7 @@ def main() -> int:
     matrix = compatibility_text()
     spec_version_map = spec_versions()
     any_failures = False
+    scaffold_warnings: list[str] = []
     print("==> CivicSuite suite-state verification")
     print(f"workspace: {WORKSPACE}")
     print(f"repos: {len(REPOS)}")
@@ -874,6 +896,9 @@ def main() -> int:
     )
 
     for spec in REPOS:
+        repo_path = WORKSPACE / spec.local_dir
+        if repo_path.is_dir():
+            scaffold_warnings.extend(scaffold_layout_warnings(spec, repo_path))
         errors = check_repo(
             spec,
             matrix,
@@ -928,6 +953,13 @@ def main() -> int:
             print(f"  {error}")
     else:
         print("[clerk-core-public-use-gate] PASS green_public_use_starter_release")
+
+    if scaffold_warnings:
+        print("[module-scaffold-layout] WARN")
+        for warning in scaffold_warnings:
+            print(f"  WARN: {warning}")
+    else:
+        print("[module-scaffold-layout] PASS")
 
     if any_failures:
         print("VERIFY-SUITE-STATE: FAILED")
