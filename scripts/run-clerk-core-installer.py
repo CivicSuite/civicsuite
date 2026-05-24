@@ -117,6 +117,7 @@ def resolve_isolation(
             "civicclerk": f"civicsuite-{suffix}-clerk",
             "civiccode": f"civicsuite-{suffix}-code",
         },
+        "shared_network": f"civicsuite-{suffix}-citycore",
     }
 
 
@@ -415,6 +416,57 @@ def write_records_override(target: Path, ports: dict[str, int]) -> Path:
         newline="\n",
     )
     return path
+
+
+def write_clerk_handoff_override(target: Path, shared_network: str) -> Path:
+    path = target / "docker-compose.civicsuite.override.yml"
+    path.write_text(
+        f"""services:
+  api:
+    networks:
+      default: {{}}
+      citycore_handoff: {{}}
+networks:
+  citycore_handoff:
+    external: true
+    name: {shared_network}
+""",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
+def write_code_handoff_override(target: Path, shared_network: str) -> Path:
+    path = target / "docker-compose.civicsuite.override.yml"
+    path.write_text(
+        f"""services:
+  api:
+    networks:
+      default: {{}}
+      citycore_handoff:
+        aliases:
+          - civiccode-api
+networks:
+  citycore_handoff:
+    external: true
+    name: {shared_network}
+""",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
+def ensure_shared_network(shared_network: str) -> subprocess.CompletedProcess[str]:
+    inspect = run([docker_command(), "network", "inspect", shared_network], cwd=ROOT, timeout=30)
+    if inspect.returncode == 0:
+        return inspect
+    return run([docker_command(), "network", "create", shared_network], cwd=ROOT, timeout=60)
+
+
+def remove_shared_network(shared_network: str) -> subprocess.CompletedProcess[str]:
+    return run([docker_command(), "network", "rm", shared_network], cwd=ROOT, timeout=60)
 
 
 def normalize_records_compose_ports(target: Path, ports: dict[str, int] | None = None) -> None:
@@ -1346,8 +1398,18 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
 
         warning_status, warning_lookup = get_json(f"{code_base}/api/v1/civiccode/sections/lookup?section_number=13.40.020")
         warnings = warning_lookup.get("handoff_warnings") if isinstance(warning_lookup.get("handoff_warnings"), list) else []
-        checks.append({"name": "code_pending_warning_visible", "status_code": warning_status, "warning_count": len(warnings)})
-        if warning_status != 200 or not warnings:
+        target_warning_visible = any(
+            isinstance(warning, dict) and warning.get("ordinance_number") == "2026-041" for warning in warnings
+        )
+        checks.append(
+            {
+                "name": "code_pending_warning_visible",
+                "status_code": warning_status,
+                "warning_count": len(warnings),
+                "target_warning_visible": target_warning_visible,
+            }
+        )
+        if warning_status != 200 or not target_warning_visible:
             return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
 
         version_id = f"version_{marker.replace('-', '_')}"
@@ -1386,16 +1448,20 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
 
         final_status, final_lookup = get_json(f"{code_base}/api/v1/civiccode/sections/lookup?section_number=13.40.020")
         final_warnings = final_lookup.get("handoff_warnings") if isinstance(final_lookup.get("handoff_warnings"), list) else []
+        target_warning_cleared = not any(
+            isinstance(warning, dict) and warning.get("ordinance_number") == "2026-041" for warning in final_warnings
+        )
         final_body = str(final_lookup.get("version", {}).get("body", ""))
         checks.append(
             {
                 "name": "code_lookup_after_resolution",
                 "status_code": final_status,
                 "warning_count": len(final_warnings),
+                "target_warning_cleared": target_warning_cleared,
                 "body_contains_eight_chickens": "eight backyard chickens" in final_body,
             }
         )
-        if final_status != 200 or final_warnings or "eight backyard chickens" not in final_body:
+        if final_status != 200 or not target_warning_cleared or "eight backyard chickens" not in final_body:
             return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
 
         answer_status, answer = post_json(
@@ -1478,6 +1544,7 @@ def lifecycle_context(
         "compose_projects": compose_projects,
         "isolation_id": isolation["isolation_id"],
         "port_offset": isolation["port_offset"],
+        "shared_network": isolation["shared_network"],
     }
 
 
@@ -1495,9 +1562,10 @@ def prepare_sources(
     records_ports = ports["civicrecords-ai"]  # type: ignore[index]
     clerk_ports = ports["civicclerk"]  # type: ignore[index]
     code_ports = ports["civiccode"]  # type: ignore[index]
+    shared_network = str(ctx["shared_network"])
     civiccode_intake_secret = secrets.token_urlsafe(32) if MODULE_CLERK in modules and MODULE_CODE in modules else ""
     civiccode_intake_url = (
-        f"http://host.docker.internal:{code_ports['api']}/api/v1/civiccode/staff/civicclerk/ordinance-events"
+        "http://civiccode-api:8000/api/v1/civiccode/staff/civicclerk/ordinance-events"
         if civiccode_intake_secret
         else ""
     )
@@ -1517,6 +1585,8 @@ def prepare_sources(
             civiccode_intake_url=civiccode_intake_url,
             civiccode_intake_secret=civiccode_intake_secret,
         )  # type: ignore[operator]
+        if civiccode_intake_secret:
+            write_clerk_handoff_override(ctx["clerk_source"], shared_network)  # type: ignore[arg-type]
     if MODULE_CODE in modules:
         copy_source(source_root(MODULE_CODE), ctx["code_source"])  # type: ignore[arg-type]
         write_code_env(
@@ -1524,6 +1594,8 @@ def prepare_sources(
             code_ports,  # type: ignore[arg-type]
             civiccode_intake_secret=civiccode_intake_secret,
         )  # type: ignore[operator]
+        if civiccode_intake_secret:
+            write_code_handoff_override(ctx["code_source"], shared_network)  # type: ignore[arg-type]
     return ctx
 
 
@@ -1551,6 +1623,20 @@ def install(
     )
     modules = ctx["selected_modules"]  # type: ignore[assignment]
     steps: list[dict[str, object]] = []
+    if MODULE_CLERK in modules and MODULE_CODE in modules:
+        network = ensure_shared_network(str(ctx["shared_network"]))
+        steps.append(
+            {
+                "module": "city-core",
+                "step": "ensure_shared_handoff_network",
+                "network": str(ctx["shared_network"]),
+                "returncode": network.returncode,
+                "stdout": network.stdout[-4000:],
+                "stderr": network.stderr[-4000:],
+            }
+        )
+        if network.returncode != 0:
+            return {"status": "failed", "steps": steps}
     for name, source_key, project_key, services in (
         ("civicrecords-ai", "records_source", "records_project", ("api", "frontend")),
         ("civicclerk", "clerk_source", "clerk_project", ("api", "frontend")),
@@ -1656,6 +1742,19 @@ def uninstall(
         steps.append({"module": name, "step": "compose_down", "returncode": down.returncode, "stdout": down.stdout[-4000:], "stderr": down.stderr[-4000:]})
         if down.returncode != 0:
             return {"status": "failed", "steps": steps}
+    if MODULE_CLERK in modules and MODULE_CODE in modules:
+        network = remove_shared_network(str(ctx["shared_network"]))
+        steps.append(
+            {
+                "module": "city-core",
+                "step": "remove_shared_handoff_network",
+                "network": str(ctx["shared_network"]),
+                "returncode": network.returncode,
+                "stdout": network.stdout[-4000:],
+                "stderr": network.stderr[-4000:],
+                "status": "removed" if network.returncode == 0 else "skipped_or_in_use",
+            }
+        )
     if remove_files and install_root.exists():
         if not is_within(install_root, ROOT / "installer" / "runtime"):
             raise InstallerError(f"Refusing to remove files outside installer/runtime: {install_root}")

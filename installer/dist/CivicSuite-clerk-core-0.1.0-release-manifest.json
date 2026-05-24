@@ -20,7 +20,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-clerk-core-windows-0.1.0.zip",
       "platform": "windows",
-      "sha256": "46a609d92fb6b00d1e6069858f7930c016bb4e9a7987b31045b4b4bf249d6230",
+      "sha256": "60f0a8b2205a72712c1322a0083b5f6e0047ae28fac27dd9971a7077d880f1eb",
       "support_status": "supported_package"
     },
     {
@@ -28,7 +28,7 @@
       "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
       "path": "installer\\dist\\CivicSuite-clerk-core-macos-0.1.0.tar.gz",
       "platform": "macos",
-      "sha256": "6ca51ae5df5a7b3aba8d0e2d4caeb3a7891004e6b10ad746f33acdfcef42f98f",
+      "sha256": "556c9fd2f4abf930a2bb0e16d36ba49d645192b33619baeba60836d629d634fc",
       "support_status": "beta"
     },
     {
@@ -36,7 +36,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-clerk-core-linux-0.1.0.tar.gz",
       "platform": "linux",
-      "sha256": "05fd6fd8dfda42ea2d0432423c8d9f33e856f12c08af37293b855be618b04aa6",
+      "sha256": "9b052b428dbd020f37212e0231b229e43ca8f65eb74a1d18eee672d1085726af",
       "support_status": "supported_package"
     }
   ],
