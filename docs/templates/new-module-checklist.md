@@ -47,6 +47,9 @@ Use `docs/templates/module-scaffold/` as the starting shape, then replace placeh
 - Every version surface must agree: `pyproject.toml`, README, CHANGELOG, user manual, docs landing page, GitHub release, `installer/modules.json`, compatibility matrix, and suite verifier.
 - Never tag a pre-release implementation commit. Use a fresh release commit that only updates release truth surfaces, then tag that commit.
 - Publish the same trust surface as comparable modules: wheel, sdist, SHA256SUMS, and attestation/provenance assets when the repo convention includes them.
+- Keep `.github/workflows/release.yml` release-blocking: tag releases must create a draft release, run `cleanroom-rehearsal` against the uploaded draft wheel, and publish only after the cleanroom job passes.
+- Release notes must include the cleanroom annotation with real values, not blank substitutions: `Cleanroom rehearsal: PASSED in workflow run <run-id>` and `Verified clean install of <wheel-url> from cold caches at <timestamp>`.
+- Before the first public release, run a synthetic `v0.0.1` workflow rehearsal and confirm the release notes show the real repository, tag, wheel URL, workflow run id, and timestamp.
 
 ## 5. Installer Registration
 
@@ -84,11 +87,21 @@ Minimum checks before a module PR:
 - Unit and integration tests
 - Lint/static checks
 - `scripts/verify-release.sh`, if present
+- `cleanroom-rehearsal` workflow_dispatch against the current published wheel, or a synthetic `v0.0.1` draft release for new modules before publication.
 - Browser QA for every user-facing surface at desktop and mobile widths
 - Loading, success, empty, error, and partial/degraded states
 - Browser console check
 - Keyboard/focus/accessibility check
 - Adversarial probes for bad input, missing/stale data, spoofed roles, unavailable dependencies, and public/staff boundary failures
+
+Release workflow checks:
+
+- Use runner-temp caches such as `${RUNNER_TEMP}/.npm` or `${RUNNER_TEMP}/.cache/pip`; do not wipe user-home caches on shared runners.
+- Use label-scoped Docker cleanup only: `civicsuite-cleanroom=1`. Never use unscoped Docker prune commands on shared hosts.
+- Include an always-run cleanup step that tears down the run-specific compose project and removes only labeled cleanroom containers/networks.
+- Add a per-repo cleanroom concurrency mutex: `scott-desktop-cleanroom-${{ github.repository }}`.
+- Frontend modules must add cold `npm ci --prefer-online --no-cache --no-audit --no-fund` plus build/typecheck steps to the cleanroom job.
+- Modules that publish Docker images must build with `--no-cache --pull` and label cleanroom artifacts for scoped cleanup.
 
 Minimum checks before a suite-truth PR:
 
@@ -102,4 +115,3 @@ Minimum checks before a suite-truth PR:
 A module earns `v1.0.0` only after an independent audit of the actual code and installed behavior returns zero Blocker, zero Critical, and every Major is fixed or explicitly owner-accepted in writing.
 
 Passing CI, passing release scripts, screenshots, and self-authored audit packets are claims. They help, but they do not replace independent audit.
-

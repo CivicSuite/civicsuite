@@ -4,9 +4,89 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Published release tag to rehearse from cold caches"
+        required: true
+        default: "v0.0.1"
+      wheel_url:
+        description: "Published wheel URL for the cleanroom rehearsal"
+        required: true
+        default: "https://github.com/CivicSuite/{{MODULE_REPO_NAME}}/releases/download/v0.0.1/{{MODULE_WHEEL_STEM}}-0.0.1-py3-none-any.whl"
+
+permissions:
+  contents: write
+  id-token: write
 
 jobs:
+  cleanroom-rehearsal:
+    name: cleanroom-rehearsal
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scott-desktop-cleanroom-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python for direct-pip cleanroom
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cleanroom cache strip (scoped, CivicSuite-only)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import shutil
+
+          runner_temp = os.environ["RUNNER_TEMP"]
+          for rel in (".npm", ".cache/pip"):
+              shutil.rmtree(os.path.join(runner_temp, rel), ignore_errors=True)
+          PY
+          docker builder prune --all --force --filter "label=civicsuite-cleanroom=1" || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+          docker volume ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker volume rm || true
+
+      - name: Install published wheel from release URL
+        shell: bash
+        run: |
+          TAG="${{ inputs.release_tag }}"
+          VERSION="${TAG#v}"
+          WHEEL_URL="${{ inputs.wheel_url }}"
+          echo "Cleanroom wheel URL: ${WHEEL_URL}"
+          python -m venv .cleanroom-venv
+          . .cleanroom-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install --no-cache-dir --force-reinstall "${WHEEL_URL}"
+          TESTING=1 python - <<PY
+          import {{MODULE_PACKAGE_NAME}} as module
+          from {{MODULE_PACKAGE_NAME}}.app import health
+
+          expected = "${VERSION}"
+          print(f"{{MODULE_PACKAGE_NAME}}.__version__={module.__version__}")
+          if module.__version__ != expected:
+              raise SystemExit(f"Expected {{MODULE_PACKAGE_NAME}} {expected}, got {module.__version__}")
+          print(f"health dependency smoke ok: {health()['status']}")
+          PY
+
+      - name: Always-run cleanup
+        if: always()
+        shell: bash
+        run: |
+          docker compose -p civicsuite-cleanroom-${{ github.run_id }} down -v --remove-orphans || true
+          docker ps -a --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker container rm --force || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+
   build:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -22,3 +102,140 @@ jobs:
           path: |
             dist/*
             SHA256SUMS.txt
+
+  create-draft-release:
+    name: Create draft GitHub release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-assets/
+
+      - name: Write release notes with cleanroom annotation
+        shell: bash
+        run: |
+          export VERSION="${GITHUB_REF_NAME#v}"
+          export REPO="${GITHUB_REPOSITORY}"
+          export TAG="${GITHUB_REF_NAME}"
+          export WORKFLOW_RUN_ID="${GITHUB_RUN_ID}"
+          export WHEEL_FILE="$(find release-assets -name '*-py3-none-any.whl' -type f -printf '%f\n' | head -1)"
+          if [ -z "$WHEEL_FILE" ]; then
+            echo "::error::No wheel found in release assets."
+            exit 1
+          fi
+          export WHEEL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${WHEEL_FILE}"
+          export CLEANROOM_TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          cat > release-notes.md <<EOF
+          {{MODULE_DISPLAY_NAME}} ${TAG} release.
+
+          Cleanroom rehearsal: PASSED in workflow run ${WORKFLOW_RUN_ID}.
+          Verified clean install of ${WHEEL_URL} from cold caches at ${CLEANROOM_TIMESTAMP}.
+          EOF
+
+      - name: Create draft GitHub release
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            release-assets/* \
+            --repo "$GH_REPO" \
+            --title "{{MODULE_PACKAGE_NAME}} ${{ github.ref_name }}" \
+            --notes-file release-notes.md
+
+  release-cleanroom-rehearsal:
+    name: cleanroom-rehearsal (release asset)
+    if: github.event_name == 'push'
+    needs: [create-draft-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scott-desktop-cleanroom-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python for release-asset cleanroom
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cleanroom cache strip (scoped, CivicSuite-only)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import shutil
+
+          runner_temp = os.environ["RUNNER_TEMP"]
+          for rel in (".npm", ".cache/pip"):
+              shutil.rmtree(os.path.join(runner_temp, rel), ignore_errors=True)
+          PY
+          docker builder prune --all --force --filter "label=civicsuite-cleanroom=1" || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+          docker volume ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker volume rm || true
+
+      - name: Download uploaded wheel from draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p .cleanroom-assets
+          gh release download "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --pattern '*-py3-none-any.whl' \
+            --dir .cleanroom-assets
+          find .cleanroom-assets -maxdepth 1 -type f -print
+
+      - name: Install uploaded wheel in cleanroom venv
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          WHEEL="$(find .cleanroom-assets -name '*-py3-none-any.whl' -type f | head -1)"
+          if [ -z "$WHEEL" ]; then
+            echo "::error::No module wheel downloaded from draft release."
+            exit 1
+          fi
+          echo "Cleanroom wheel asset: ${WHEEL}"
+          python -m venv .cleanroom-venv
+          . .cleanroom-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install --no-cache-dir --force-reinstall "${WHEEL}"
+          TESTING=1 python - <<PY
+          import {{MODULE_PACKAGE_NAME}} as module
+          from {{MODULE_PACKAGE_NAME}}.app import health
+
+          expected = "${VERSION}"
+          print(f"{{MODULE_PACKAGE_NAME}}.__version__={module.__version__}")
+          if module.__version__ != expected:
+              raise SystemExit(f"Expected {{MODULE_PACKAGE_NAME}} {expected}, got {module.__version__}")
+          print(f"health dependency smoke ok: {health()['status']}")
+          PY
+
+      - name: Always-run cleanup
+        if: always()
+        shell: bash
+        run: |
+          docker compose -p civicsuite-cleanroom-${{ github.run_id }} down -v --remove-orphans || true
+          docker ps -a --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker container rm --force || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+
+  publish-release:
+    name: Publish GitHub release
+    if: github.event_name == 'push'
+    needs: [release-cleanroom-rehearsal]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish release after cleanroom rehearsal
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ github.ref_name }}" --repo "$GH_REPO" --draft=false
