@@ -20,7 +20,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.0.zip",
       "platform": "windows",
-      "sha256": "4661a247b4105d484f6d39ce33e5c291fe9a6fed1dee4a6a3775fdde40285338",
+      "sha256": "c4b7dc36ca3a311bd9e1e4cea2dda532d18012bfd64e3ce1c525f4ae5986273e",
       "support_status": "supported_package"
     },
     {
@@ -28,7 +28,7 @@
       "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
       "path": "installer\\dist\\CivicSuite-city-core-macos-0.1.0.tar.gz",
       "platform": "macos",
-      "sha256": "b82e6c156982fddc6d292418289ce2b8319a58fbeba625e997d15c6fb0fbbd07",
+      "sha256": "c744769470e188ddf4cda014f070d2f811155754431ecac7e014efc1b4f4a65b",
       "support_status": "beta"
     },
     {
@@ -36,7 +36,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-city-core-linux-0.1.0.tar.gz",
       "platform": "linux",
-      "sha256": "bbd2a1054f984945188380d2504ff7354a70d5fe1d58ac7772019342985d50c4",
+      "sha256": "87e3eb4937483ed69ad6d0fb594ee0c75c804f13da89cbd1639d59df6a0a9f1e",
       "support_status": "supported_package"
     }
   ],

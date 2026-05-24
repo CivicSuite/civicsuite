@@ -1224,6 +1224,7 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
     code_ports = ports["civiccode"]
     clerk_base = f"http://127.0.0.1:{clerk_ports['api']}"
     code_base = f"http://127.0.0.1:{code_ports['api']}"
+    clerk_headers = {"Authorization": f"Bearer {CLERK_WORKFLOW_PROOF_BEARER}"}
     code_env = parse_env_file(Path(ctx["code_source"]) / ".env")  # type: ignore[arg-type]
     intake_auth = code_env.get("CIVICCODE_INTAKE_SECRET", "")
     code_headers = {
@@ -1242,6 +1243,7 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
                 "scheduled_start": datetime.now(UTC).replace(microsecond=0).isoformat(),
                 "location": "Council Chambers",
             },
+            headers=clerk_headers,
         )
         meeting_id = meeting.get("id")
         checks.append({"name": "clerk_create_meeting", "status_code": meeting_status, "id_present": bool(meeting_id)})
@@ -1256,6 +1258,7 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
                 "agenda_item_id": f"agenda-{marker}",
                 "seconded_by": "councilmember@example.gov",
             },
+            headers=clerk_headers,
         )
         motion_id = motion.get("id")
         checks.append({"name": "clerk_capture_adoption_motion", "status_code": motion_status, "id_present": bool(motion_id)})
@@ -1277,6 +1280,7 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
                 "source_document_hash": "sha256:" + hashlib.sha256(marker.encode("utf-8")).hexdigest(),
                 "source_references": [{"agenda_item_id": f"agenda-{marker}", "motion_id": motion_id}],
             },
+            headers=clerk_headers,
         )
         code_event_id = handoff.get("civiccode_event_id")
         checks.append(
