@@ -25,6 +25,15 @@ again from the project release source.
   after the checksum matches.
 - Linux: install from the local archive/package only after verifying the
   checksum file.
+- Docker Desktop or Docker Engine is running. If it is not running, the installer
+  says how to start Docker before retrying.
+- Required ports are free. If a port is occupied, rerun after closing the
+  conflicting service or use the documented port-offset flags from the lifecycle
+  runner.
+- The host has at least 8 GB RAM and 20 GB free disk for the full city-core
+  stack.
+- Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
+  or a compatible Docker Engine and permission to run an unsigned local archive.
 
 This package is the operator-facing installer entrypoint for the selected
 platform. It does not install privileged baseline software by itself. It checks
@@ -64,12 +73,13 @@ profile.
 - civicrecords-ai
 - civicclerk
 
-The default package selection installs both CivicRecords AI and CivicClerk on
-top of the CivicCore base contract. Operators can choose one module or both:
+The default package selection installs this package profile on top of the
+CivicCore base contract. Operators can choose one module or the whole profile:
 
 ```text
 bash ./start-civicsuite-installer.sh plan --module civicrecords-ai
 bash ./start-civicsuite-installer.sh plan --module civicclerk
+bash ./start-civicsuite-installer.sh plan --module civiccode
 bash ./start-civicsuite-installer.sh install --module civicrecords-ai --module civicclerk
 ```
 
@@ -91,14 +101,21 @@ bash ./start-civicsuite-installer.sh install --staff-mode bearer --workflow-proo
   from the bundled source tree.
 - Verify mode checks live service endpoints. `--workflow-proof` /
   `-WorkflowProof` also creates live CivicRecords AI request/search/review/
-  response proof records and CivicClerk agenda/packet/minutes/vote/notice/
-  archive proof records.
+  response proof records, CivicClerk agenda/packet/minutes/vote/notice/
+  archive proof records, and CivicCode health/public lookup proof when
+  CivicCode is selected.
 - Backup mode writes per-module PostgreSQL custom dumps plus a manifest under
   the installer runtime backup directory.
 - Restore mode verifies the latest backup by restoring each dump into a
   temporary PostgreSQL restore-probe database and removing that probe after the
   check completes.
 - Uninstall mode removes the selected module Docker containers and volumes.
+- Re-running install or repair over an existing install is expected to be
+  idempotent: the installer keeps existing source trees and refreshes runtime
+  configuration without deleting data. Use backup before any destructive reset.
+- Rollback path: run backup, then uninstall; if you need a clean reset, remove
+  the runtime directory only after confirming the backup manifest and dumps
+  exist.
 - Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
 
 The repo/source checkout cleanroom gate remains available outside this

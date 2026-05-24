@@ -27,11 +27,13 @@ Write-Host "Project status: public-use starter release; the installer is intenti
 $PlannerArgs = @("--menu-style", "guided", "--dry-run")
 $LifecycleModuleArgs = @()
 $LifecycleModeArgs = @("--staff-mode", $StaffMode)
+
 if ($WorkflowProof) {
     $LifecycleModeArgs += "--workflow-proof"
 }
 if ($Module -and $Module.Count -gt 0) {
     $PlannerArgs = @("--profile", "custom") + $PlannerArgs
+    $LifecycleModuleArgs = @()
     foreach ($SelectedModule in $Module) {
         $PlannerArgs += @("--module", $SelectedModule)
         $LifecycleModuleArgs += @("--module", $SelectedModule)
