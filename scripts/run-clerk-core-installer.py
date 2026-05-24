@@ -487,6 +487,8 @@ def write_clerk_env(
     *,
     staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
     ports: dict[str, int] | None = None,
+    civiccode_intake_url: str | None = None,
+    civiccode_intake_secret: str | None = None,
 ) -> None:
     resolved_ports = ports or DEFAULT_CLERK_PORTS
     if target.is_file():
@@ -512,6 +514,9 @@ def write_clerk_env(
         "CIVICCLERK_VENDOR_NETWORK_SYNC_SHARED_SECRET": "",
         "CIVICCLERK_VENDOR_NETWORK_SYNC_REPORT_DIR": "/data/exports/vendor-network-sync",
         "CIVICCLERK_VENDOR_NETWORK_SYNC_INTERVAL_SECONDS": "900",
+        "CIVICCODE_INTAKE_URL": civiccode_intake_url or "",
+        "CIVICCODE_INTAKE_SECRET": civiccode_intake_secret or "",
+        "CIVICCODE_INTAKE_ACTOR": "civicclerk-handoff@citycore.example.gov",
     }
     if staff_mode == CLERK_STAFF_MODE_BEARER:
         values["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"] = json.dumps(
@@ -521,7 +526,7 @@ def write_clerk_env(
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 
 
-def write_code_env(target: Path, ports: dict[str, int]) -> None:
+def write_code_env(target: Path, ports: dict[str, int], *, civiccode_intake_secret: str | None = None) -> None:
     if target.is_file():
         return
     password = secrets.token_hex(24)
@@ -536,6 +541,7 @@ def write_code_env(target: Path, ports: dict[str, int]) -> None:
         "CIVICCODE_DEMO_SEED": "1",
         "CIVICCODE_DEMO_ACTOR": "demo-seed@citycore.example.gov",
         "CIVICCODE_STAFF_TRUSTED_PROXY_CIDRS": "127.0.0.1/32,::1/128",
+        "CIVICCODE_INTAKE_SECRET": civiccode_intake_secret or "",
     }
     target.write_text(
         "\n".join(f"{key}={value}" for key, value in values.items()) + "\n",
@@ -1210,6 +1216,154 @@ def verify_code_workflow(ports: dict[str, int]) -> dict[str, object]:
     return {"name": "civiccode_workflow", "status": "passed", "checks": checks}
 
 
+def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
+    ports = ctx["ports"]
+    if not isinstance(ports, dict):
+        return {"name": "clerk_to_code_handoff", "status": "failed", "error": "invalid ports"}
+    clerk_ports = ports["civicclerk"]
+    code_ports = ports["civiccode"]
+    clerk_base = f"http://127.0.0.1:{clerk_ports['api']}"
+    code_base = f"http://127.0.0.1:{code_ports['api']}"
+    code_env = parse_env_file(Path(ctx["code_source"]) / ".env")  # type: ignore[arg-type]
+    intake_auth = code_env.get("CIVICCODE_INTAKE_SECRET", "")
+    code_headers = {
+        "X-CivicCode-Role": "staff",
+        "X-CivicCode-Actor": "installer-handoff-proof@example.gov",
+        "X-CivicCode-Intake-Secret": intake_auth,
+    }
+    checks: list[dict[str, object]] = []
+    try:
+        marker = f"city-core-handoff-{int(time.time())}"
+        meeting_status, meeting = post_json(
+            f"{clerk_base}/meetings",
+            {
+                "title": f"City-core handoff proof {marker}",
+                "meeting_type": "regular",
+                "scheduled_start": datetime.now(UTC).replace(microsecond=0).isoformat(),
+                "location": "Council Chambers",
+            },
+        )
+        meeting_id = meeting.get("id")
+        checks.append({"name": "clerk_create_meeting", "status_code": meeting_status, "id_present": bool(meeting_id)})
+        if meeting_status != 201 or not meeting_id:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        motion_status, motion = post_json(
+            f"{clerk_base}/meetings/{meeting_id}/motions",
+            {
+                "text": "Move to adopt ordinance 2026-041 amending backyard livestock permits.",
+                "actor": "clerk@example.gov",
+                "agenda_item_id": f"agenda-{marker}",
+                "seconded_by": "councilmember@example.gov",
+            },
+        )
+        motion_id = motion.get("id")
+        checks.append({"name": "clerk_capture_adoption_motion", "status_code": motion_status, "id_present": bool(motion_id)})
+        if motion_status != 201 or not motion_id:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        handoff_status, handoff = post_json(
+            f"{clerk_base}/meetings/{meeting_id}/ordinance-resolution-handoff",
+            {
+                "item_type": "ordinance",
+                "title": "Ordinance 2026-041 amending backyard livestock permits",
+                "actor": "clerk@example.gov",
+                "legal_reviewer": "attorney@example.gov",
+                "text": "An ordinance amending Section 13.40.020 to allow up to eight backyard chickens with a city permit.",
+                "source_motion_id": motion_id,
+                "ordinance_number": "2026-041",
+                "affected_sections": ["13.40.020"],
+                "source_document_url": f"https://city.example.gov/ordinances/{marker}.pdf",
+                "source_document_hash": "sha256:" + hashlib.sha256(marker.encode("utf-8")).hexdigest(),
+                "source_references": [{"agenda_item_id": f"agenda-{marker}", "motion_id": motion_id}],
+            },
+        )
+        code_event_id = handoff.get("civiccode_event_id")
+        checks.append(
+            {
+                "name": "clerk_emits_to_code",
+                "status_code": handoff_status,
+                "handoff_status": handoff.get("civiccode_handoff_status"),
+                "civiccode_event_id_present": bool(code_event_id),
+            }
+        )
+        if handoff_status != 201 or handoff.get("civiccode_handoff_status") != "EMIT_DELIVERED" or not code_event_id:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        warning_status, warning_lookup = get_json(f"{code_base}/api/v1/civiccode/sections/lookup?section_number=13.40.020")
+        warnings = warning_lookup.get("handoff_warnings") if isinstance(warning_lookup.get("handoff_warnings"), list) else []
+        checks.append({"name": "code_pending_warning_visible", "status_code": warning_status, "warning_count": len(warnings)})
+        if warning_status != 200 or not warnings:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        version_id = f"version_{marker.replace('-', '_')}"
+        version_status, version = post_json(
+            f"{code_base}/api/v1/civiccode/sections/sec_portland_13_40_020/versions",
+            {
+                "version_id": version_id,
+                "section_id": "sec_portland_13_40_020",
+                "source_id": "src_portland_code_13_40",
+                "version_label": "Codified ordinance 2026-041",
+                "body": "Residents may keep up to eight backyard chickens with a city permit under the city-core handoff proof.",
+                "effective_start": "2026-05-23",
+                "status": "adopted",
+                "is_current": True,
+                "adoption_event_id": str(code_event_id),
+                "amendment_event_id": str(code_event_id),
+                "amendment_summary": "Codifies the CivicClerk adopted ordinance handoff.",
+            },
+            headers=code_headers,
+        )
+        checks.append({"name": "code_create_codified_version", "status_code": version_status, "version_id": version.get("version_id")})
+        if version_status != 201 or version.get("version_id") != version_id:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        resolve_status, resolved = post_json(
+            f"{code_base}/api/v1/civiccode/staff/civicclerk/ordinance-events/{code_event_id}/resolve",
+            {"section_version_id": version_id},
+            headers=code_headers,
+        )
+        checks.append({"name": "code_resolve_handoff", "status_code": resolve_status, "handoff_state": resolved.get("handoff_state")})
+        if resolve_status != 200 or resolved.get("handoff_state") != "codified":
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        final_status, final_lookup = get_json(f"{code_base}/api/v1/civiccode/sections/lookup?section_number=13.40.020")
+        final_warnings = final_lookup.get("handoff_warnings") if isinstance(final_lookup.get("handoff_warnings"), list) else []
+        final_body = str(final_lookup.get("version", {}).get("body", ""))
+        checks.append(
+            {
+                "name": "code_lookup_after_resolution",
+                "status_code": final_status,
+                "warning_count": len(final_warnings),
+                "body_contains_eight_chickens": "eight backyard chickens" in final_body,
+            }
+        )
+        if final_status != 200 or final_warnings or "eight backyard chickens" not in final_body:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+
+        answer_status, answer = post_json(
+            f"{code_base}/api/v1/civiccode/questions/answer",
+            {"question": "How many backyard chickens can residents keep?", "section_number": "13.40.020"},
+        )
+        answer_text = str(answer.get("answer") or "")
+        citations = answer.get("citations") if isinstance(answer.get("citations"), list) else []
+        checks.append(
+            {
+                "name": "code_qa_after_handoff",
+                "status_code": answer_status,
+                "status": answer.get("status"),
+                "matched_section_number": answer.get("matched_section_number"),
+                "citation_count": len(citations),
+                "answer_mentions_eight": "eight" in answer_text.lower(),
+            }
+        )
+        if answer_status != 200 or answer.get("matched_section_number") != "13.40.020" or not citations:
+            return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"name": "clerk_to_code_handoff", "status": "failed", "error": str(exc), "checks": checks}
+    return {"name": "clerk_to_code_handoff", "status": "passed", "checks": checks}
+
+
 def verify_starter_set_workflow_contract(
     ctx: dict[str, object],
     *,
@@ -1229,6 +1383,8 @@ def verify_starter_set_workflow_contract(
     if MODULE_CODE in modules:
         code_ports = ports["civiccode"]
         checks.append(verify_code_workflow(code_ports))  # type: ignore[arg-type]
+    if MODULE_CLERK in modules and MODULE_CODE in modules:
+        checks.append(verify_clerk_to_code_handoff(ctx))
     status = "passed" if checks and all(check.get("status") == "passed" for check in checks) else "failed"
     return {
         "name": "starter_set_runtime_workflows",
@@ -1282,6 +1438,12 @@ def prepare_sources(
     records_ports = ports["civicrecords-ai"]  # type: ignore[index]
     clerk_ports = ports["civicclerk"]  # type: ignore[index]
     code_ports = ports["civiccode"]  # type: ignore[index]
+    civiccode_intake_secret = secrets.token_urlsafe(32) if MODULE_CLERK in modules and MODULE_CODE in modules else ""
+    civiccode_intake_url = (
+        f"http://host.docker.internal:{code_ports['api']}/api/v1/civiccode/staff/civicclerk/ordinance-events"
+        if civiccode_intake_secret
+        else ""
+    )
     install_root.mkdir(parents=True, exist_ok=True)
     if MODULE_RECORDS in modules:
         copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
@@ -1291,10 +1453,20 @@ def prepare_sources(
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
         copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
-        write_clerk_env(ctx["clerk_source"] / ".env", staff_mode=staff_mode, ports=clerk_ports)  # type: ignore[operator,arg-type]
+        write_clerk_env(
+            ctx["clerk_source"] / ".env",
+            staff_mode=staff_mode,
+            ports=clerk_ports,  # type: ignore[arg-type]
+            civiccode_intake_url=civiccode_intake_url,
+            civiccode_intake_secret=civiccode_intake_secret,
+        )  # type: ignore[operator]
     if MODULE_CODE in modules:
         copy_source(source_root(MODULE_CODE), ctx["code_source"])  # type: ignore[arg-type]
-        write_code_env(ctx["code_source"] / ".env", code_ports)  # type: ignore[operator,arg-type]
+        write_code_env(
+            ctx["code_source"] / ".env",
+            code_ports,  # type: ignore[arg-type]
+            civiccode_intake_secret=civiccode_intake_secret,
+        )  # type: ignore[operator]
     return ctx
 
 
