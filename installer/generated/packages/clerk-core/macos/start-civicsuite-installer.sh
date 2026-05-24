@@ -36,7 +36,7 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --module)
       if [[ "$#" -lt 2 ]]; then
-        echo "--module requires civicrecords-ai or civicclerk" >&2
+        echo "--module requires civicrecords-ai, civicclerk, or civiccode" >&2
         exit 2
       fi
       SELECTED_MODULES+=("$2")
@@ -52,8 +52,10 @@ done
 
 if [[ "${#SELECTED_MODULES[@]}" -gt 0 ]]; then
   PLANNER_ARGS=(--profile custom "${PLANNER_ARGS[@]}")
+  LIFECYCLE_MODULE_ARGS=()
   for selected_module in "${SELECTED_MODULES[@]}"; do
     PLANNER_ARGS+=(--module "${selected_module}")
+    LIFECYCLE_MODULE_ARGS+=(--module "${selected_module}")
   done
 else
   PLANNER_ARGS=(--profile clerk-core "${PLANNER_ARGS[@]}")
@@ -85,7 +87,7 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk]" >&2
+    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac
