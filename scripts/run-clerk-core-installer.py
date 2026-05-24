@@ -622,6 +622,55 @@ def post_json(
         return exc.code, decode_json(exc.read().decode("utf-8"))
 
 
+def post_json_from_compose_service(
+    *,
+    project: str,
+    source: Path,
+    service: str,
+    path: str,
+    payload: dict[str, object],
+    headers: dict[str, str] | None = None,
+    timeout_seconds: int = 30,
+) -> tuple[int, dict[str, object]]:
+    script = (
+        "import json, os, urllib.error, urllib.request\n"
+        "url = os.environ['REQUEST_URL']\n"
+        "payload = os.environ['REQUEST_JSON'].encode('utf-8')\n"
+        "headers = json.loads(os.environ.get('REQUEST_HEADERS') or '{}')\n"
+        "headers.setdefault('Content-Type', 'application/json')\n"
+        "headers.setdefault('Accept', 'application/json')\n"
+        "request = urllib.request.Request(url, data=payload, headers=headers, method='POST')\n"
+        "try:\n"
+        "    with urllib.request.urlopen(request, timeout=30) as response:\n"
+        "        body = response.read().decode('utf-8')\n"
+        "        print(json.dumps({'status': response.status, 'body': json.loads(body) if body else {}}))\n"
+        "except urllib.error.HTTPError as exc:\n"
+        "    body = exc.read().decode('utf-8')\n"
+        "    print(json.dumps({'status': exc.code, 'body': json.loads(body) if body else {}}))\n"
+    )
+    command = compose(
+        project,
+        source,
+        "exec",
+        "-T",
+        "-e",
+        f"REQUEST_URL=http://127.0.0.1:8000{path}",
+        "-e",
+        f"REQUEST_JSON={json.dumps(payload)}",
+        "-e",
+        f"REQUEST_HEADERS={json.dumps(headers or {})}",
+        service,
+        "python",
+        "-c",
+        script,
+    )
+    proc = run(command, cwd=source, timeout=timeout_seconds)
+    if proc.returncode != 0:
+        return 599, {"detail": {"message": "Container-local JSON POST failed.", "stderr": proc.stderr[-1000:]}}
+    response = decode_json(proc.stdout.strip())
+    return int(response.get("status", 599)), response.get("body", {}) if isinstance(response.get("body"), dict) else {}
+
+
 def patch_json(
     url: str,
     payload: dict[str, object],
@@ -1288,6 +1337,7 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
                 "name": "clerk_emits_to_code",
                 "status_code": handoff_status,
                 "handoff_status": handoff.get("civiccode_handoff_status"),
+                "handoff_last_error": handoff.get("civiccode_handoff_last_error"),
                 "civiccode_event_id_present": bool(code_event_id),
             }
         )
@@ -1301,9 +1351,12 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
             return {"name": "clerk_to_code_handoff", "status": "failed", "checks": checks}
 
         version_id = f"version_{marker.replace('-', '_')}"
-        version_status, version = post_json(
-            f"{code_base}/api/v1/civiccode/sections/sec_portland_13_40_020/versions",
-            {
+        version_status, version = post_json_from_compose_service(
+            project=str(ctx["code_project"]),
+            source=Path(ctx["code_source"]),  # type: ignore[arg-type]
+            service="api",
+            path="/api/v1/civiccode/sections/sec_portland_13_40_020/versions",
+            payload={
                 "version_id": version_id,
                 "section_id": "sec_portland_13_40_020",
                 "source_id": "src_portland_code_13_40",
