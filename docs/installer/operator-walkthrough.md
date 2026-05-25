@@ -26,7 +26,7 @@ The installer checks these prerequisites before it starts. If something is missi
 
 1. Download the package for your operating system:
    - Windows: `CivicSuite-city-core-windows-0.1.0.zip`
-   - Linux: `CivicSuite-city-core-linux-0.1.0.tar.gz`
+   - Linux: `CivicSuite-city-core-linux-0.1.2.tar.gz`
    - macOS: `CivicSuite-city-core-macos-0.1.0.tar.gz`
 
 2. Extract the archive into a folder you control, such as `C:\CivicSuite` or `~/CivicSuite`.
@@ -41,12 +41,15 @@ The installer checks these prerequisites before it starts. If something is missi
 
 6. Wait for the installer to complete the readiness check, build/start services, and run health checks.
 
+For the city-core profile, CivicRecords AI is configured in public portal mode by default. Residents can submit records requests at `/public/requests` after install without the operator editing configuration files. Smaller profiles may keep a private records portal unless their installer explicitly changes that setting.
+
 7. Open the service URLs printed by the installer.
 
 ## Verify The Install
 
 After install, run the verify option from the same launcher menu. It checks:
 - CivicRecords AI health and admin web shell
+- CivicRecords AI public portal mode and public request route mount
 - CivicClerk health and public/staff web shell
 - CivicCode health and public code search
 - CivicCore version contract for all selected modules
