@@ -166,7 +166,7 @@
                                              "civiccore"
                                          ],
                         "default_port":  8000,
-                        "installer_status":  "v1_7_2_city_core_release_car",
+                        "installer_status":  "v1_7_3_city_core_release_car",
                         "proof_required":  [
                                                "install",
                                                "health_check",
@@ -175,7 +175,7 @@
                                                "backup",
                                                "restore"
                                            ],
-                        "current_version":  "1.7.2"
+                        "current_version":  "1.7.3"
                     },
                     {
                         "id":  "civicclerk",

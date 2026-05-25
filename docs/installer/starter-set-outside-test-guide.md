@@ -111,7 +111,7 @@ bash ./start-civicsuite-installer.sh verify --staff-mode bearer --workflow-proof
 The default `clerk-core` profile installs CivicCore first and then starts
 CivicRecords AI and CivicClerk. A passing verify run must prove:
 
-- CivicRecords AI API health returns `status=ok` and `version=1.7.2`.
+- CivicRecords AI API health returns `status=ok` and `version=1.7.3`.
 - CivicRecords AI web responds.
 - CivicClerk API health returns `status=ok`, `version=1.0.3`, and
   `civiccore=1.2.0`.

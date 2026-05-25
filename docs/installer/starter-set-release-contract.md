@@ -32,11 +32,11 @@ The maintained starter-set pair for this slice is:
 | Component | Release | Contract |
 |---|---:|---|
 | CivicCore | 1.2.0 current platform release | Installs first in the umbrella installer and provides the shared platform baseline. |
-| CivicRecords AI | 1.7.2 | Selectable records module; runtime line consumes CivicCore 1.2.0 shared ingestion. |
+| CivicRecords AI | 1.7.3 | Selectable records module; runtime line consumes CivicCore 1.2.0 shared ingestion. |
 | CivicClerk | 1.0.3 | Selectable clerk module; `/health` must report `version=1.0.3` and `civiccore=1.2.0`. |
 
 The CivicCore 1.2.0 release is the current shared-platform release for new
-suite planning. CivicRecords AI v1.7.2 and CivicClerk v1.0.3 consume the
+suite planning. CivicRecords AI v1.7.3 and CivicClerk v1.0.3 consume the
 published CivicCore v1.2.0 wheel, so their runtime proof must verify the module
 health surfaces instead of assuming the umbrella platform version is the same as
 the module dependency pin.
@@ -71,7 +71,7 @@ The `verify` mode must check:
 - CivicClerk web health.
 - CivicClerk protected-default staff auth, including denied anonymous staff
   writes.
-- Starter-set CivicCore contract: CivicRecords AI reports v1.7.2, and
+- Starter-set CivicCore contract: CivicRecords AI reports v1.7.3, and
   CivicClerk reports v1.0.3 with CivicCore v1.2.0.
 
 The maintained mutating workflow proof path is:

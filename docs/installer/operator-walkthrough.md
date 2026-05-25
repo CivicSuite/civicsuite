@@ -6,7 +6,7 @@ This walkthrough is for a city operator installing the city-core package on a wo
 
 The city-core package installs:
 - CivicCore `1.2.0`
-- CivicRecords AI `1.7.2`
+- CivicRecords AI `1.7.3`
 - CivicClerk `1.0.3`
 - CivicCode `1.0.8`
 

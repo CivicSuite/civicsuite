@@ -21,6 +21,7 @@ This changelog will be split going forward: (a) doc / governance / spec changes 
 
 ### Changed
 
+- **2026-05-25.** chore: align city-core installer truth with CivicRecords AI v1.7.3. The release-asset convention bring-up did not change installer behavior, but the rebuilt vendored-source city-core installer now expects the v1.7.3 Records health version and records the current module-car version consistently.
 - **2026-05-23.** docs: add module-extensibility checklist and scaffold template. New module work now has a suite-level checklist, copyable baseline files, and a warning-only scaffold layout check in `verify-suite-state.py`.
 - **2026-05-23.** chore: city-core release-train truth reconciliation. CivicCore v1.2.0, CivicRecords AI v1.7.2, CivicClerk v1.0.3, and CivicCode v1.0.8 are the city-core release cars; CivicRecords AI v1.7.2 supersedes v1.7.1 after the clean installer lifecycle exposed and repaired a bad frontend lockfile tarball reference. CivicAccess is excluded after a NEEDS-WORK depth probe; CivicZone, CivicPlan, CivicPermit, and CivicInspect are recorded as no-functional-upgrade v0.2.2 demotion releases queued for Tier 2 real work. This prepares the umbrella truth for the city-core installer and integration-proof caboose without claiming city-core is released beyond beta-ready status.
 - **2026-05-21.** chore: CivicPermit v1.0.0 suite-truth reconciliation. Superseded by the 2026-05-23 v0.2.2 no-functional-upgrade demotion truth; queued for Tier 2 real work.
