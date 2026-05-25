@@ -101,6 +101,7 @@ Release workflow checks:
 - Include an always-run cleanup step that tears down the run-specific compose project and removes only labeled cleanroom containers/networks.
 - Add a per-repo cleanroom concurrency mutex: `scott-desktop-cleanroom-${{ github.repository }}`.
 - Frontend modules must add cold `npm ci --prefer-online --no-cache --no-audit --no-fund` plus build/typecheck steps to the cleanroom job.
+- If your module has a frontend, add `--cache "${RUNNER_TEMP}/.npm"` to the `npm ci` step in the cleanroom-rehearsal job in `release.yml`. The backend-only scaffold template ships without it; frontend modules must add it or risk cache leakage across runs on shared hosts.
 - Modules that publish Docker images must build with `--no-cache --pull` and label cleanroom artifacts for scoped cleanup.
 
 Minimum checks before a suite-truth PR:
