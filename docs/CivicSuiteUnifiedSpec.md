@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-05-23).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.2, CivicClerk v1.0.3, and CivicCode v1.0.8. CivicAccess is OUT pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
+> **Release recovery banner (updated 2026-05-25).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8. CivicAccess is OUT pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
 
 ---
 
@@ -284,7 +284,7 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
-Status: v1.7.2 developer-preview release car shipped on CivicCore v1.2.0 with shared-ingestion consumption. B2 Docker secret extraction shipped in v1.6.0 and the ingestion worker event-loop patch shipped in v1.6.1.
+Status: v1.7.3 developer-preview release car shipped on CivicCore v1.2.0 with shared-ingestion consumption and release-asset convention bring-up. B2 Docker secret extraction shipped in v1.6.0 and the ingestion worker event-loop patch shipped in v1.6.1.
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
 #### CivicClerk
@@ -1007,7 +1007,7 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 | Repo | Current recovery label | CivicCore pin | Status summary |
 |---|---:|---:|---|
 | civiccore | 1.2.0 | n/a | Real shared platform; v1.2.0 adds shared document ingestion and retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening. |
-| civicrecords-ai | 1.7.2 | 1.2.0 | Developer-preview records release car consuming CivicCore shared ingestion. |
+| civicrecords-ai | 1.7.3 | 1.2.0 | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 adds wheel/sdist release assets without changing installer behavior. |
 | civicclerk | 1.0.3 | 1.2.0 | Real meeting workflow release car with protected staff auth defaults retained. |
 | civiccode | 1.0.8 | 1.2.0 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
 | civicaccess | 0.2.0 | 1.1.0 | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
