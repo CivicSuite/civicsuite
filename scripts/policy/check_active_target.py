@@ -251,15 +251,16 @@ def _targets_align(manifest_value: str, control_plane_target: str) -> bool:
     return m in c or c in m
 
 
-def _log_override(repo_root: Path, run_id: str, manifest_target: str, override_reason: str) -> None:
+def _log_override(repo_root: Path, run_id: str, manifest_target: str, override_reason: str) -> bool:
     ledger = repo_root / ".agent-workflows" / "scope-overrides.md"
     ledger.parent.mkdir(parents=True, exist_ok=True)
+    normalized_reason = override_reason.strip()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     entry = (
         f"\n## {ts} — run {run_id}\n\n"
         f"- Manifest's `advances_target`: `{manifest_target}`\n"
         f"- Override reason (verbatim):\n\n"
-        f"  > {override_reason.strip()}\n"
+        f"  > {normalized_reason}\n"
     )
     if not ledger.exists():
         ledger.write_text(
@@ -268,8 +269,18 @@ def _log_override(repo_root: Path, run_id: str, manifest_target: str, override_r
             "`override_active_target` is logged here.\n",
             encoding="utf-8",
         )
+    existing = ledger.read_text(encoding="utf-8")
+    duplicate_marker = (
+        f"run {run_id}\n\n"
+        f"- Manifest's `advances_target`: `{manifest_target}`\n"
+        f"- Override reason (verbatim):\n\n"
+        f"  > {normalized_reason}\n"
+    )
+    if duplicate_marker in existing:
+        return False
     with ledger.open("a", encoding="utf-8") as f:
         f.write(entry)
+    return True
 
 
 def evaluate(
@@ -324,17 +335,22 @@ def evaluate(
 
     override = pipeline_run.get("override_active_target")
     if isinstance(override, str) and len(override.strip()) >= OVERRIDE_MIN_CHARS:
-        _log_override(
+        logged = _log_override(
             repo_root,
             run_id or pipeline_run.get("id", "unknown"),
             advances_target,
             override,
         )
+        ledger_message = (
+            "Logged to .agent-workflows/scope-overrides.md."
+            if logged
+            else "Already logged in .agent-workflows/scope-overrides.md."
+        )
         return GateResult(
             status="OVERRIDE_ACCEPTED",
             message=(
                 f"OVERRIDE_ACCEPTED — advances_target='{advances_target}' bypasses the gate. "
-                f"Logged to .agent-workflows/scope-overrides.md. "
+                f"{ledger_message} "
                 f"At the manifest gate, type OVERRIDE-CONFIRMED to proceed."
             ),
             exit_code=0,
