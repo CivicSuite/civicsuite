@@ -67,8 +67,8 @@ jobs:
           - platform: linux
             profile: city-core
             os: [self-hosted, linux, x64]
-            archive: installer/dist/CivicSuite-city-core-linux-0.1.1.tar.gz
-            installer_version: 0.1.1
+            archive: installer/dist/CivicSuite-city-core-linux-0.1.2.tar.gz
+            installer_version: 0.1.2
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -126,9 +126,9 @@ jobs:
             run_id: ci-linux-package-lifecycle
             installer_version: 0.1.0
           - profile: city-core
-            archive: installer/dist/CivicSuite-city-core-linux-0.1.1.tar.gz
+            archive: installer/dist/CivicSuite-city-core-linux-0.1.2.tar.gz
             run_id: ci-city-core-linux-package-lifecycle
-            installer_version: 0.1.1
+            installer_version: 0.1.2
     steps:
       - name: Check out repository
         uses: actions/checkout@v5

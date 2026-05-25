@@ -344,6 +344,12 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
                     "clerk-core installer must write CivicRecords resolved host ports into .env"
                 )
             )
+        if "PORTAL_MODE=private" not in env_text:
+            errors.append(
+                fail(
+                    "clerk-core installer must keep CivicRecords private mode as the default for smaller profiles"
+                )
+            )
         module.write_records_env(env_file, {"api": 18125, "web": 18126})
         updated_env_text = env_file.read_text(encoding="utf-8")
         if (
@@ -355,6 +361,21 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
                     "clerk-core installer must refresh CivicRecords host ports in existing .env files"
                 )
             )
+        module.write_records_env(env_file, {"api": 18127, "web": 18128}, portal_mode="public")
+        public_env_text = env_file.read_text(encoding="utf-8")
+        if "PORTAL_MODE=public" not in public_env_text:
+            errors.append(
+                fail(
+                    "city-core installer must be able to write CivicRecords public portal mode"
+                )
+            )
+        if module.records_portal_mode_for_modules(["civicrecords-ai", "civicclerk"]) != "private":
+            errors.append(fail("clerk-core selected modules must resolve CivicRecords private portal mode"))
+        if (
+            module.records_portal_mode_for_modules(["civicrecords-ai", "civicclerk", "civiccode"])
+            != "public"
+        ):
+            errors.append(fail("city-core selected modules must resolve CivicRecords public portal mode"))
     isolation = module.resolve_isolation(run_id="verify-isolation-run", port_offset=37)
     ports = isolation.get("ports", {})
     projects = isolation.get("compose_projects", {})
@@ -408,7 +429,7 @@ def check_cleanroom_workflow() -> list[str]:
         "repository: CivicSuite/civiccode",
         "path: modules/civiccode",
         "--profile \"${{ matrix.profile }}\"",
-        "CivicSuite-city-core-linux-0.1.1.tar.gz",
+        "CivicSuite-city-core-linux-0.1.2.tar.gz",
         "--staff-mode bearer --workflow-proof",
         "workflow proof",
     )

@@ -375,7 +375,18 @@ def ensure_records_secret_files(source: Path, *, password_prefix: str = "ClerkCo
             pass
 
 
-def write_records_env(target: Path, ports: dict[str, int] | None = None) -> None:
+def records_portal_mode_for_modules(modules: list[str] | tuple[str, ...]) -> str:
+    return "public" if MODULE_CODE in modules else "private"
+
+
+def write_records_env(
+    target: Path,
+    ports: dict[str, int] | None = None,
+    *,
+    portal_mode: str = "private",
+) -> None:
+    if portal_mode not in {"private", "public"}:
+        raise InstallerError("CivicRecords PORTAL_MODE must be either 'private' or 'public'.")
     ensure_records_secret_files(target.parent)
     values = {
         "DATABASE_URL": "postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords",
@@ -384,7 +395,6 @@ def write_records_env(target: Path, ports: dict[str, int] | None = None) -> None
         "REDIS_URL": "redis://redis:6379/0",
         "AUDIT_RETENTION_DAYS": "1095",
         "CONNECTOR_HOST_ALLOWLIST": "",
-        "PORTAL_MODE": "private",
         "ENCRYPTION_KEY": base64.urlsafe_b64encode(os.urandom(32)).decode(),
         "CIVICRECORDS_SECRET_DIR": "./data/secrets",
     }
@@ -395,6 +405,7 @@ def write_records_env(target: Path, ports: dict[str, int] | None = None) -> None
                 continue
             key, value = line.split("=", 1)
             values[key.strip()] = value.strip()
+    values["PORTAL_MODE"] = portal_mode
     if ports is not None:
         values["CIVICRECORDS_API_PORT"] = str(ports["api"])
         values["CIVICRECORDS_WEB_PORT"] = str(ports["web"])
@@ -788,6 +799,42 @@ def verify_clerk_protected_default(ports: dict[str, int]) -> dict[str, object]:
         if status_code != 401:
             return {"name": "civicclerk_protected_default", "status": "failed", "checks": checks}
     return {"name": "civicclerk_protected_default", "status": "passed", "checks": checks}
+
+
+def verify_records_portal_mode(ports: dict[str, int], *, expected_mode: str) -> dict[str, object]:
+    base = f"http://127.0.0.1:{ports['api']}"
+    checks: list[dict[str, object]] = []
+    try:
+        mode_status, mode_payload = get_json(f"{base}/config/portal-mode")
+        checks.append({"name": "portal_mode_config", "status_code": mode_status, "payload": mode_payload})
+        openapi_status, openapi_payload = get_json(f"{base}/openapi.json")
+        paths = openapi_payload.get("paths", {}) if isinstance(openapi_payload, dict) else {}
+        public_request_path_mounted = "/public/requests" in paths
+        register_path_mounted = "/auth/register" in paths
+        checks.append(
+            {
+                "name": "public_route_mounts",
+                "status_code": openapi_status,
+                "public_request_path_mounted": public_request_path_mounted,
+                "register_path_mounted": register_path_mounted,
+            }
+        )
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"name": "civicrecords_portal_mode", "status": "failed", "error": str(exc), "checks": checks}
+
+    expected_public_routes = expected_mode == "public"
+    mode_ok = mode_status == 200 and mode_payload.get("mode") == expected_mode
+    routes_ok = (
+        openapi_status == 200
+        and public_request_path_mounted is expected_public_routes
+        and register_path_mounted is expected_public_routes
+    )
+    return {
+        "name": "civicrecords_portal_mode",
+        "status": "passed" if mode_ok and routes_ok else "failed",
+        "expected_mode": expected_mode,
+        "checks": checks,
+    }
 
 
 def verify_civiccore_contract(
@@ -1574,7 +1621,11 @@ def prepare_sources(
         copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
         normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
         normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
-        write_records_env(ctx["records_source"] / ".env", records_ports)  # type: ignore[operator]
+        write_records_env(
+            ctx["records_source"] / ".env",
+            records_ports,
+            portal_mode=records_portal_mode_for_modules(modules),
+        )  # type: ignore[operator]
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
         copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
@@ -1708,6 +1759,13 @@ def verify(
         checks.append(verify_civiccore_contract(records_ports, clerk_ports, code_ports, selected_modules=modules))  # type: ignore[arg-type]
     if workflow_proof:
         checks.append(verify_starter_set_workflow_contract(ctx, selected_modules=modules))
+    if records_api_passed:
+        checks.append(
+            verify_records_portal_mode(
+                records_ports,
+                expected_mode=records_portal_mode_for_modules(modules),
+            )
+        )
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
     return {"status": status, "selected_modules": modules, "checks": checks}
 
