@@ -11,6 +11,7 @@ Scope: rebuilt Linux city-core installer archive with CivicRecords AI public por
 - Release manifest: `installer/dist/CivicSuite-city-core-0.1.2-release-manifest.json`
 - Evidence report: `installer/reports/track-b-city-core-0-1-2-linux-lifecycle/installer-package-cleanroom.json`
 - Local lifecycle run ID: `track-b-city-core-0-1-2-linux-lifecycle`
+- GitHub Actions lifecycle run: `26416891904`, job `77763184960`
 
 ## Module Sources
 
