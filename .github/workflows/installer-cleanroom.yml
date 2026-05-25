@@ -43,26 +43,32 @@ jobs:
             profile: clerk-core
             os: windows-latest
             archive: installer/dist/CivicSuite-clerk-core-windows-0.1.0.zip
+            installer_version: 0.1.0
           - platform: macos
             profile: clerk-core
             os: [self-hosted, linux, x64]
             archive: installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz
+            installer_version: 0.1.0
           - platform: linux
             profile: clerk-core
             os: [self-hosted, linux, x64]
             archive: installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz
+            installer_version: 0.1.0
           - platform: windows
             profile: city-core
             os: windows-latest
             archive: installer/dist/CivicSuite-city-core-windows-0.1.0.zip
+            installer_version: 0.1.0
           - platform: macos
             profile: city-core
             os: [self-hosted, linux, x64]
             archive: installer/dist/CivicSuite-city-core-macos-0.1.0.tar.gz
+            installer_version: 0.1.0
           - platform: linux
             profile: city-core
             os: [self-hosted, linux, x64]
-            archive: installer/dist/CivicSuite-city-core-linux-0.1.0.tar.gz
+            archive: installer/dist/CivicSuite-city-core-linux-0.1.1.tar.gz
+            installer_version: 0.1.1
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -94,7 +100,7 @@ jobs:
           python-version: "3.12"
 
       - name: Generate release artifacts
-        run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version 0.1.0
+        run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
 
       - name: Run extracted package readiness and plan
         run: python scripts/run-installer-package-cleanroom.py --archive "${{ matrix.archive }}" --platform "${{ matrix.platform }}" --skip-install --run-id "ci-${{ matrix.profile }}-${{ matrix.platform }}-package-plan"
@@ -118,9 +124,11 @@ jobs:
           - profile: clerk-core
             archive: installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz
             run_id: ci-linux-package-lifecycle
+            installer_version: 0.1.0
           - profile: city-core
-            archive: installer/dist/CivicSuite-city-core-linux-0.1.0.tar.gz
+            archive: installer/dist/CivicSuite-city-core-linux-0.1.1.tar.gz
             run_id: ci-city-core-linux-package-lifecycle
+            installer_version: 0.1.1
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -152,7 +160,7 @@ jobs:
           python-version: "3.12"
 
       - name: Generate release artifacts
-        run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version 0.1.0
+        run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
 
       - name: Run extracted Linux package install, repair, verify, workflow proof, backup, restore, and uninstall
         run: python scripts/run-installer-package-cleanroom.py --archive "${{ matrix.archive }}" --platform linux --run-id "${{ matrix.run_id }}" --staff-mode bearer --workflow-proof

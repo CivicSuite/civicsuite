@@ -408,7 +408,7 @@ def check_cleanroom_workflow() -> list[str]:
         "repository: CivicSuite/civiccode",
         "path: modules/civiccode",
         "--profile \"${{ matrix.profile }}\"",
-        "CivicSuite-city-core-linux-0.1.0.tar.gz",
+        "CivicSuite-city-core-linux-0.1.1.tar.gz",
         "--staff-mode bearer --workflow-proof",
         "workflow proof",
     )
