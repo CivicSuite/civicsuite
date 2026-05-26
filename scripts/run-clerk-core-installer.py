@@ -64,6 +64,9 @@ def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9_-]+", "-", value.lower()).strip("-_")
     if not slug or not slug[0].isalnum():
         slug = f"run-{slug}"
+    if len(slug) > 48:
+        digest = hashlib.sha256(slug.encode("utf-8")).hexdigest()[:8]
+        slug = f"{slug[:39].rstrip('-_')}-{digest}"
     return slug[:48]
 
 

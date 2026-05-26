@@ -1,12 +1,14 @@
 # CivicSuite Suite Installer Plan
 
-Status: design contract plus first working clerk-core beta lifecycle.
+Status: design contract plus first working clerk-core lifecycle; city-core profile is beta-ready pending Linux/Windows one-click lifecycle evidence.
 
 This document defines the first suite-level installer target. The current
 umbrella repo has deployment documentation and a bounded demo compose profile.
 The installer work began as a design contract, not implementation; the current
 beta now adds a real `clerk-core` package lifecycle for the first distributable
-profile.
+profile. The current city-core work extends that surface to CivicCore,
+CivicRecords AI, CivicClerk, and CivicCode without changing published module
+release artifacts.
 
 ## Why This Exists
 
@@ -185,14 +187,14 @@ The initial profile set is defined in `installer/modules.json`:
 
 - Minimal: CivicCore only.
 - Clerk Core: CivicCore, CivicRecords AI, CivicClerk.
-- Land Use: CivicCore, CivicCode, CivicZone, CivicPlan, CivicPermit, CivicInspect.
+- City Core: CivicCore, CivicRecords AI, CivicClerk, CivicCode.
+- Land Use: queued and disabled until CivicZone, CivicPlan, CivicPermit, and CivicInspect complete their own release turns.
 - Full Suite: all 26 tracked CivicSuite repos, ordered by dependencies.
 - Custom: operator-selected modules with dependency validation.
 
 Demoted recovery-label selector integrations:
 
-- CivicInspect: custom selection resolves CivicCore, CivicCode, CivicPermit,
-  and CivicInspect with CivicCore 1.1.0 and recovery proof requirements.
+- CivicInspect: queued Tier 2 module; custom selection remains disabled until its release turn.
 - CivicGrants: custom selection resolves CivicCore, CivicRecords AI, and
   CivicGrants with CivicCore 1.1.0 and recovery proof requirements.
 - CivicProcure: custom selection resolves CivicCore and CivicProcure with

@@ -1,5 +1,5 @@
 ; CivicSuite Windows installer wrapper manifest.
-; Unsigned OSS public-use starter: build with Inno Setup after reviewing the generated package payload.
+; CivicSuite city-core unsigned beta installer package: build with Inno Setup after reviewing the generated package payload.
 
 #define AppName "CivicSuite"
 #define AppVersion "0.1.0"

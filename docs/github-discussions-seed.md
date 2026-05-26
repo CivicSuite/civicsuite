@@ -28,13 +28,14 @@ Welcome to the CivicSuite community space. This post is a snapshot of where the 
 
 **Shipping today:**
 
-- `civicrecords-ai` v1.6.1 — open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>. The records repo transferred to the `CivicSuite` GitHub org on 2026-04-25; that link is now the canonical home.
-- `civiccore` v1.1.0 — the shared platform package every module is built on. Repo: <https://github.com/CivicSuite/civiccore>.
-- `civicclerk` v1.0.1 — meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/CivicSuite/civicclerk>.
+- `civiccore` v1.2.0 - the shared platform package for the active city-core profile. Repo: <https://github.com/CivicSuite/civiccore>.
+- `civicrecords-ai` v1.7.3 - open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
+- `civicclerk` v1.0.3 - meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/CivicSuite/civicclerk>.
+- `civiccode` v1.0.8 - municipal code search, cited Q&A, and Clerk ordinance handoff support. Repo: <https://github.com/CivicSuite/civiccode>.
 
 **Planned or queued:**
 
-- Later modules remain queued until the Clerk-Core starter target clears its gate. We say so plainly because we do not want anyone evaluating the suite to think queued modules are public-use products.
+- The city-core profile is active but still beta-ready pending Linux/Windows one-click lifecycle and integration proof. CivicAccess is out of city-core, and Tier 2 modules remain queued.
 
 **What's this umbrella for?**
 
@@ -50,11 +51,11 @@ We're glad you're here.
 
 ## Roadmap — What gets built next, and why
 
-**Title:** Module sequence — what gets built after the Clerk-Core starter target?
+**Title:** Module sequence - what happens after city-core installability?
 
 **Body:**
 
-The reconciled catalog lists 27 product modules across 7 tiers, plus CivicCore as the shared platform. We are not going to build them in order, and we are not going to build them all at once. The Clerk-Core starter target focuses on CivicCore, CivicRecords AI, and CivicClerk first; later modules stay queued until that gate clears.
+The reconciled catalog lists 27 product modules across 7 tiers, plus CivicCore as the shared platform. We are not going to build them in order, and we are not going to build them all at once. The active city-core target focuses on CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer; later modules stay queued until that package closes with real evidence.
 
 **Two leading candidates:**
 

@@ -3,13 +3,11 @@
 Profile: `city-core`
 Menu style: `guided`
 
-## Unsigned OSS Beta Notice
+## Unsigned City-Core Beta Notice
 
-This package is unsigned. CivicSuite is an open-source public-use starter release and signing
-certificates are not used for the public installer path. Windows may show
-SmartScreen or Unknown Publisher warnings. macOS may show unidentified
-developer warnings. Linux package tools may show an unsigned/local package
-warning.
+This package is unsigned. CivicSuite city-core is an open-source beta installer package pending Linux and Windows matching-host lifecycle proof. Signing certificates are not used for this beta installer path. Windows may show SmartScreen or Unknown Publisher
+warnings. macOS may show unidentified developer warnings. Linux package tools
+may show an unsigned/local package warning.
 
 This is expected for this beta distribution. Verify the SHA256 checksum from
 `installer/dist` and confirm the artifact came from the official CivicSuite
@@ -37,7 +35,7 @@ again from the project release source.
 
 This package is the operator-facing installer entrypoint for the selected
 platform. It does not install privileged baseline software by itself. It checks
-readiness, renders the selected install plan, installs the clerk-core runtime
+readiness, renders the selected install plan, installs the city-core runtime
 from the bundled module sources, verifies live service health, repairs by
 rebuilding/restarting the stack, and uninstalls Docker resources for the
 profile.
@@ -117,7 +115,7 @@ protected while the proof creates real starter-set test records:
 - Rollback path: run backup, then uninstall; if you need a clean reset, remove
   the runtime directory only after confirming the backup manifest and dumps
   exist.
-- Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
+- Native host installer wrappers are generated but unsigned for this distribution.
 
 The repo/source checkout cleanroom gate remains available outside this
 distributable archive:

@@ -1,1 +1,0 @@
-6afbaa3791b5699b220b8046d6901e01d62b485ea75008db4087af3628d14648  CivicSuite-city-core-linux-0.1.2.tar.gz
