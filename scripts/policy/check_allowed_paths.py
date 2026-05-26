@@ -82,6 +82,20 @@ def _load_manifest_lists(manifest_path: Path) -> tuple[list[str], list[str]]:
         sys.exit(1)
 
     text = manifest_path.read_text(encoding="utf-8")
+    if _HAS_YAML:
+        try:
+            data = yaml.safe_load(text) or {}
+        except Exception:
+            data = {}
+        pipeline_run = data.get("pipeline_run", data) if isinstance(data, dict) else {}
+        if isinstance(pipeline_run, dict):
+            allowed = pipeline_run.get("allowed_paths") or []
+            forbidden = pipeline_run.get("forbidden_paths") or []
+            return (
+                [s for s in allowed if isinstance(s, str)],
+                [s for s in forbidden if isinstance(s, str)],
+            )
+
     allowed: list[str] = []
     forbidden: list[str] = []
     current_key: str | None = None

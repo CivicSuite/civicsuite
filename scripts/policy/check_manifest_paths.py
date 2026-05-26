@@ -92,7 +92,7 @@ AUTHORIZING_SOURCE_PATTERN = re.compile(
 
 
 def _check_path_exists(
-    repo_root: Path, value: str, must_exist: bool
+    repo_root: Path, value: str, must_exist: bool, allow_outside_root: bool = False
 ) -> tuple[bool, str]:
     """Check whether a path or path-prefix exists.
 
@@ -104,11 +104,15 @@ def _check_path_exists(
     directory exists (the path will be created during the run).
     """
     p = (repo_root / value).resolve()
-    # Don't allow escaping the repo root
-    try:
-        p.relative_to(repo_root)
-    except ValueError:
-        return False, f"path escapes repo root: {value}"
+    # Don't allow escaping the repo root unless the manifest is naming an
+    # explicit sibling target repo. target_repos is documented as a sibling
+    # repo mechanism, so rejecting ../civiccore here makes the documented
+    # multi-repo shape unusable.
+    if not allow_outside_root:
+        try:
+            p.relative_to(repo_root)
+        except ValueError:
+            return False, f"path escapes repo root: {value}"
 
     if p.exists():
         return True, "exists"
@@ -229,7 +233,9 @@ def evaluate(manifest_path: Path, repo_root: Path) -> list[PathFinding]:
                 )
                 continue
             # The repo path must exist as a directory
-            ok, reason = _check_path_exists(repo_root, repo_rel, must_exist=True)
+            ok, reason = _check_path_exists(
+                repo_root, repo_rel, must_exist=True, allow_outside_root=True
+            )
             if not ok:
                 findings.append(
                     PathFinding(f"target_repos[{idx}].path", repo_rel, reason)
@@ -284,7 +290,9 @@ def evaluate(manifest_path: Path, repo_root: Path) -> list[PathFinding]:
     expected_outputs = pipeline_run.get("expected_outputs") or []
     if isinstance(expected_outputs, list):
         # Flatten allowed paths across all scopes for the "any-scope" check
-        flat_allowed: list[str] = []
+        flat_allowed: list[str] = [
+            s for s in single_repo_allowed if isinstance(s, str)
+        ]
         for _, scope_allowed, _ in repo_scopes:
             if isinstance(scope_allowed, list):
                 flat_allowed.extend(s for s in scope_allowed if isinstance(s, str))
