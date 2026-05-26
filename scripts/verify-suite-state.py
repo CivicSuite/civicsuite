@@ -53,6 +53,8 @@ RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
 CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0"
+CURRENT_CITY_CORE_INSTALLER_STATUS = "city_core_implemented_pending_ci_and_audit_full"
+EXPECTED_CITY_CORE_PROFILE_STATUS = "implemented_pending_ci_and_audit_full"
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
     "civicclerk agenda/packet/minutes/vote/notice/archive",
@@ -397,6 +399,16 @@ def check_city_core_profile_truth() -> list[str]:
             fail(
                 "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode"
             )
+        )
+    if installer_data.get("installer_status") != CURRENT_CITY_CORE_INSTALLER_STATUS:
+        errors.append(
+            fail(
+                "installer/modules.json root installer_status must record city-core implemented pending CI and audit-full"
+            )
+        )
+    if city_core.get("status") != EXPECTED_CITY_CORE_PROFILE_STATUS:
+        errors.append(
+            fail("city-core profile status must be implemented_pending_ci_and_audit_full")
         )
     excluded = city_core.get("excluded_modules")
     if not isinstance(excluded, list) or not any(

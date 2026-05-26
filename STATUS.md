@@ -1,13 +1,13 @@
 # CivicSuite Module Status
 
-**Last verified:** 2026-05-25
+**Last verified:** 2026-05-26
 **Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
 This is the plain-English operating truth for CivicSuite. The unified spec describes architectural intent. This file describes release reality.
 
 ## Active Public-Use Target
 
-The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.3`, CivicClerk `v1.0.3`, and CivicCode `v1.0.8`; the next installer package must prove those four modules together before city-core can move beyond beta-ready status. The package remains Linux-first Docker/browser operation with Windows wrapper lifecycle proof required and macOS beta-level readiness until a matching-host macOS lifecycle is proven.
+The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.3`, CivicClerk `v1.0.3`, and CivicCode `v1.0.8`; PR #183 records Implemented, pending CI and audit-full evidence for the four-module non-technical Windows/Linux installer path. The package remains bounded to unsigned vendored-source installer artifacts; macOS remains beta-level readiness only until a matching-host macOS lifecycle is proven.
 
 CivicAccess is explicitly OUT of city-core for this sprint after the 2026-05-23 depth probe on branch `probe/civicaccess-depth-2026-05-23` recorded `PROBE-PROGRESS.md` with a NEEDS-WORK verdict. CivicAccess requires gap closure and a fresh re-probe before it can be added to the city-core profile.
 
@@ -47,6 +47,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicrecords-ai` v1.7.3 remains developer preview, consumes CivicCore v1.2.0 shared ingestion, and keeps the city-core installer on the vendored-source path.
 - `civicclerk` v1.0.3 is the current meeting workflow release car for city-core.
 - `civiccode` v1.0.8 is the current municipal-code release car for city-core.
+- The suite-level `city-core` installer evidence for PR #183 records Windows and Linux one-click wrapper smoke, Guided/Manual Docker prerequisite setup paths, first-run wizard smoke, 60 GB cleanroom hygiene, and local matching-host install/repair/verify/backup/restore/uninstall lifecycle evidence under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. This is Implemented, pending CI and audit-full, not public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or full-suite release.
 - The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
 - CivicAccess is OUT of city-core pending gap closure and re-probe.
 - CivicZone, CivicPlan, CivicPermit, and CivicInspect are at v0.2.2 demotion-truth state, not public-use release state.

@@ -21,6 +21,7 @@ This changelog will be split going forward: (a) doc / governance / spec changes 
 
 ### Changed
 
+- **2026-05-26.** chore: record city-core non-technical installability truth. The city-core profile now has regenerated vendored-source Windows and Linux one-click artifacts at installer version `0.1.2`, Guided/Manual Docker prerequisite setup paths, first-run wizard smoke evidence, 60 GB matching-host cleanroom hygiene, and local Windows/Linux install-repair-verify-backup-restore-uninstall lifecycle evidence. The honest status is Implemented, pending CI and audit-full; this does not claim public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or full-suite release.
 - **2026-05-25.** v0.1.2 - city-core profile defaults records-ai to PORTAL_MODE=public. A records system without public submission is not a city records system. Smaller profiles retain the private default unless explicitly flipped.
 - **2026-05-25.** chore: align city-core installer truth with CivicRecords AI v1.7.3. The release-asset convention bring-up did not change installer behavior, but the rebuilt vendored-source city-core installer now expects the v1.7.3 Records health version and records the current module-car version consistently.
 - **2026-05-23.** docs: add module-extensibility checklist and scaffold template. New module work now has a suite-level checklist, copyable baseline files, and a warning-only scaffold layout check in `verify-suite-state.py`.

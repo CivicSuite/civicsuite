@@ -1,6 +1,6 @@
 {
     "schema_version":  1,
-    "installer_status":  "city_core_beta_ready_truth_reconciled",
+    "installer_status":  "city_core_implemented_pending_ci_and_audit_full",
     "workflow_proof_status":  {
                                   "profile":  "clerk-core",
                                   "scope":  [
@@ -63,7 +63,7 @@
                                          "civicclerk",
                                          "civiccode"
                                      ],
-                         "status":  "beta_ready_pending_installer_dist_and_integration_proof",
+                         "status":  "implemented_pending_ci_and_audit_full",
                          "excluded_modules":  [
                                                 {
                                                     "id":  "civicaccess",

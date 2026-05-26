@@ -629,10 +629,11 @@ def check_manifest(data: dict[str, object]) -> list[str]:
     if data.get("installer_status") not in {
         "clerk_core_public_use_starter_v0_1_0_published",
         "city_core_beta_ready_truth_reconciled",
+        "city_core_implemented_pending_ci_and_audit_full",
     }:
         errors.append(
             fail(
-                "installer_status must be clerk_core_public_use_starter_v0_1_0_published or city_core_beta_ready_truth_reconciled"
+                "installer_status must be clerk_core_public_use_starter_v0_1_0_published, city_core_beta_ready_truth_reconciled, or city_core_implemented_pending_ci_and_audit_full"
             )
         )
 
@@ -1769,7 +1770,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             manifest=data,
             profile_id="city-core",
             menu_style="guided",
-            version="0.1.0",
+            version="0.1.2",
             platform_id="all",
         )
         if city_core_release.get("mutates_host") is not False:
