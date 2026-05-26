@@ -27,7 +27,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
-- The city-core installer is beta-ready pending Linux and Windows one-click lifecycle, integration, browser QA, backup/restore, and final audit evidence.
+- The city-core installer has current Linux and Windows matching-host lifecycle and integration evidence in the active run record, but remains beta until first-run browser QA, documentation lockstep, CI/PR evidence, and final audit evidence close.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
 
@@ -48,7 +48,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 ### Prerequisites
 
 - A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. Windows and macOS remain archive/readiness wrapper paths until matching-host lifecycle evidence is recorded on those hosts.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. The city-core first-run wizard offers a Guided Setup path for supported Linux and Windows hosts, plus a Manual Prerequisite path for IT-managed machines. macOS remains beta/archive/readiness only.
 - About 30 minutes for first install (model downloads).
 
 ### Install (Windows wrapper)
@@ -71,12 +71,12 @@ cd civicrecords-ai
 bash install.sh
 ```
 
-The script does not install Docker/WSL — those must already be present.
+For city-core, the first-run wizard can guide supported Linux/Windows prerequisite setup, then resumes the install. For IT-managed machines, choose Manual Prerequisite after Docker/WSL is already present. macOS prerequisite bootstrap remains out of scope for this run.
 
 ### First task: search a small document set
 
 1. Open <http://localhost:8080> in your browser.
-2. Sign in with the admin credentials you configured in `.env`.
+2. Sign in with the initial administrator credential file surfaced by the installer, rotate it immediately, and store the rotated value in your municipal password vault.
 3. **Sources → Add Source** → enter a directory path with a few sample PDFs/DOCX files.
 4. Click **Ingest Now**. The pipeline parses, chunks, embeds, and indexes the documents.
 5. **Search** → type a natural-language query (e.g., "what does the city pay for streetlight maintenance?"). Results show with source attribution and relevance scores.
@@ -235,7 +235,7 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 
 | Symptom | Where to look |
 |---|---|
-| Module will not install | The module repo's `README.md` and `CONTRIBUTING.md`; if you hit a Docker/WSL prereq, the module installer should diagnose it. |
+| Module will not install | The module repo's `README.md` and `CONTRIBUTING.md`; if you hit a Docker/WSL prereq, choose Guided Setup on supported Linux/Windows hosts or Manual Prerequisite for IT-managed environments. |
 | `civiccore` version mismatch | [docs/compatibility/index.md](docs/compatibility/index.md) is the canonical pairing source. |
 | README says "shipping," recovery doc says "frozen" | The recovery doc wins. See [docs/release-recovery-status.md](docs/release-recovery-status.md). |
 | Unsure where to file a bug | [CONTRIBUTING.md](CONTRIBUTING.md) — bug-routing decision tree. |

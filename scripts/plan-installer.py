@@ -127,7 +127,7 @@ READINESS_SCENARIOS = {
 }
 
 EXECUTION_TOKEN = "_".join(("I", "UNDERSTAND", "THIS", "MUTATES", "HOST"))
-MIN_FREE_DISK_BYTES = 20 * 1024 * 1024 * 1024
+MIN_FREE_DISK_BYTES = 60 * 1024 * 1024 * 1024
 MIN_MEMORY_BYTES = 8 * 1024 * 1024 * 1024
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 
@@ -1629,6 +1629,95 @@ function Register-CivicSuiteRunOnce {{
     Write-Host "CivicSuite will resume after reboot using Windows RunOnce."
 }}
 
+function Get-CivicSuiteInstallRoot {{
+    if ($env:CIVICSUITE_INSTALLER_INSTALL_ROOT) {{
+        return $env:CIVICSUITE_INSTALLER_INSTALL_ROOT
+    }}
+    return (Join-Path $RepoRoot "installer\\runtime\\clerk-core")
+}}
+
+function Read-CivicSuiteWizardValue([string]$Label, [string]$Default = "", [switch]$Required) {{
+    $EnvName = "CIVICSUITE_" + ($Label.ToUpperInvariant() -replace "[^A-Z0-9]+", "_").Trim("_")
+    $Preset = [Environment]::GetEnvironmentVariable($EnvName)
+    if ($Preset) {{
+        Write-Host "$Label`: $Preset"
+        return $Preset
+    }}
+    while ($true) {{
+        $Suffix = if ($Default) {{ " [$Default]" }} else {{ "" }}
+        $Value = Read-Host "$Label$Suffix"
+        if (-not $Value -and $Default) {{ $Value = $Default }}
+        if ($Value -or -not $Required) {{ return $Value }}
+        Write-Host "This field is required so CivicSuite can finish first-run setup."
+    }}
+}}
+
+function Invoke-CivicSuiteFirstRunWizard {{
+    $SetupPath = $env:CIVICSUITE_SETUP_PATH
+    if (-not $SetupPath) {{
+        Write-Host ""
+        Write-Host "Choose setup path:"
+        Write-Host "1. Guided Setup - install missing WSL/Docker components with admin consent."
+        Write-Host "2. Manual Prerequisite - Docker Desktop + WSL2 are already installed."
+        $SetupPath = Read-Host "Enter 1 for Guided Setup or 2 for Manual Prerequisite"
+    }}
+    if ($SetupPath -eq "guided") {{ $SetupPath = "1" }}
+    if ($SetupPath -eq "manual") {{ $SetupPath = "2" }}
+    if ($SetupPath -ne "1" -and $SetupPath -ne "2") {{
+        Write-Error "Choose 1 or 2. No installation was started."
+        exit 2
+    }}
+
+    $OperatorName = Read-CivicSuiteWizardValue "operator name" -Required
+    $OrganizationName = Read-CivicSuiteWizardValue "organization name" -Required
+    $AdminEmail = Read-CivicSuiteWizardValue "admin email" "admin@example.gov" -Required
+    $TimeZone = Read-CivicSuiteWizardValue "time zone" ([TimeZoneInfo]::Local.Id) -Required
+    $LicenseAccept = $env:CIVICSUITE_LICENSE_ACCEPT
+    if (-not $LicenseAccept) {{
+        $LicenseAccept = Read-Host "Type ACCEPT to confirm CivicSuite terms and the Docker Desktop license prompt when Docker Desktop first starts"
+    }}
+    if ($LicenseAccept -ne "ACCEPT") {{
+        Write-Error "License acceptance is required before first-run install. No installation was started."
+        exit 2
+    }}
+
+    $env:CIVICSUITE_FIRST_ADMIN_EMAIL = $AdminEmail
+
+    $ReportDir = Join-Path $RepoRoot "installer\\reports\\first-run"
+    New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
+    $InstallRoot = Get-CivicSuiteInstallRoot
+    $ReportPath = Join-Path $ReportDir "first-run-setup.json"
+    @{{
+        setup_path = $(if ($SetupPath -eq "1") {{ "guided" }} else {{ "manual-prerequisite" }})
+        operator_name = $OperatorName
+        organization_name = $OrganizationName
+        admin_email = $AdminEmail
+        time_zone = $TimeZone
+        license_acceptance = "accepted"
+        install_root = $InstallRoot
+        generated_at = (Get-Date).ToUniversalTime().ToString("o")
+        rotation_required = $true
+    }} | ConvertTo-Json | Out-File -FilePath $ReportPath -Encoding utf8
+    Write-Host "First-run setup evidence: $ReportPath"
+    return @{{
+        setup_path = $SetupPath
+        admin_email = $AdminEmail
+        install_root = $InstallRoot
+    }}
+}}
+
+function Show-CivicSuitePostInstallDashboard([hashtable]$Wizard) {{
+    $CredentialPath = Join-Path $Wizard.install_root "sources\\civicrecords-ai\\data\\secrets\\first_admin_password"
+    Write-Host ""
+    Write-Host "CivicSuite staff dashboard is installed."
+    Write-Host "Admin email: $($Wizard.admin_email)"
+    Write-Host "Initial administrator credential file: $CredentialPath"
+    Write-Host "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+    Write-Host "Records AI staff dashboard: http://127.0.0.1:18080/"
+    Write-Host "CivicClerk staff dashboard: http://127.0.0.1:18081/"
+    Write-Host "CivicCode API/search: http://127.0.0.1:18820/"
+}}
+
 function Invoke-CivicSuiteGuidedSetup {{
     if (-not (Test-CivicSuiteAdmin)) {{
         Write-Host "CivicSuite needs Windows administrator consent to install WSL/Docker prerequisites."
@@ -1642,7 +1731,7 @@ function Invoke-CivicSuiteGuidedSetup {{
         Write-Error "Windows 10 build 19041+ or Windows 11 is required. Ask IT to upgrade Windows, then rerun CivicSuite."
         exit 2
     }}
-    if ($Arch -notin @("AMD64", "IA64")) {{
+    if ($Arch -ne "AMD64") {{
         Write-Error "This CivicSuite installer supports AMD64 Windows only in this run. ARM Windows is out of scope."
         exit 2
     }}
@@ -1681,7 +1770,7 @@ function Invoke-CivicSuiteGuidedSetup {{
     Write-Host "Guided setup prerequisites are present. Continuing with CivicSuite readiness."
 }}
 
-function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs) {{
+function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs, [switch]$ReturnAfter) {{
     if (Test-WslDocker) {{
         $RepoRootWsl = ConvertTo-WslPath $RepoRoot
         $EnvParts = @()
@@ -1696,10 +1785,12 @@ function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs) {{
         $QuotedArgs = $AllArgs | ForEach-Object {{ ConvertTo-WslArg $_ }}
         $Command = ($EnvParts -join " ") + " cd $(ConvertTo-WslArg $RepoRootWsl) && python3 scripts/run-clerk-core-installer.py " + ($QuotedArgs -join " ")
         & wsl bash -lc $Command
+        if ($ReturnAfter) {{ return $LASTEXITCODE }}
         exit $LASTEXITCODE
     }}
 
     python $Lifecycle $Mode @LifecycleArgs
+    if ($ReturnAfter) {{ return $LASTEXITCODE }}
     exit $LASTEXITCODE
 }}
 
@@ -1742,20 +1833,20 @@ if ($GuidedSetup) {{
 }}
 
 if ($FirstRun) {{
-    Write-Host ""
-    Write-Host "Choose setup path:"
-    Write-Host "1. Guided Setup - install missing WSL/Docker components with admin consent."
-    Write-Host "2. Manual Prerequisite - Docker Desktop + WSL2 are already installed."
-    $Choice = Read-Host "Enter 1 for Guided Setup or 2 for Manual Prerequisite"
-    if ($Choice -eq "1") {{
+    $Wizard = Invoke-CivicSuiteFirstRunWizard
+    if ($Wizard.setup_path -eq "1") {{
         Invoke-CivicSuiteGuidedSetup
-    }} elseif ($Choice -ne "2") {{
-        Write-Error "Choose 1 or 2. No installation was started."
-        exit 2
     }}
     python $Planner @PlannerArgs --show-readiness --detect-host
     if ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}
-    Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
+    if ($env:CIVICSUITE_FIRST_RUN_SMOKE_ONLY -eq "1") {{
+        Write-Host "First-run smoke only: setup wizard and readiness passed; install was not started."
+        exit 0
+    }}
+    $InstallExit = Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs)) -ReturnAfter
+    if ($InstallExit -ne 0) {{ exit $InstallExit }}
+    Show-CivicSuitePostInstallDashboard $Wizard
+    exit 0
 }}
 
 if ($ManualPrerequisite) {{
@@ -1813,6 +1904,113 @@ PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
 LIFECYCLE_MODULE_ARGS=({'"--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode"' if profile_id == "city-core" else ""})
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
+first_run_wizard() {{
+  local setup_path="${{CIVICSUITE_SETUP_PATH:-}}"
+  if [[ -z "$setup_path" ]]; then
+    echo ""
+    echo "Choose setup path:"
+    echo "1. Guided Setup - install missing Docker Engine components with sudo consent."
+    echo "2. Manual Prerequisite - Docker Engine is already installed."
+    printf "Enter 1 for Guided Setup or 2 for Manual Prerequisite: "
+    read -r setup_path
+  fi
+  if [[ "$setup_path" == "guided" ]]; then setup_path="1"; fi
+  if [[ "$setup_path" == "manual" ]]; then setup_path="2"; fi
+  if [[ "$setup_path" != "1" && "$setup_path" != "2" ]]; then
+    echo "Choose 1 or 2. No installation was started." >&2
+    exit 2
+  fi
+  read_wizard_value "operator name" CIVICSUITE_OPERATOR_NAME "" required
+  operator_name="$WIZARD_VALUE"
+  read_wizard_value "organization name" CIVICSUITE_ORGANIZATION_NAME "" required
+  organization_name="$WIZARD_VALUE"
+  read_wizard_value "admin email" CIVICSUITE_ADMIN_EMAIL "admin@example.gov" required
+  admin_email="$WIZARD_VALUE"
+  read_wizard_value "time zone" CIVICSUITE_TIME_ZONE "$(detect_timezone)" required
+  time_zone="$WIZARD_VALUE"
+  license_accept="${{CIVICSUITE_LICENSE_ACCEPT:-}}"
+  if [[ -z "$license_accept" ]]; then
+    printf "Type ACCEPT to confirm CivicSuite terms and any Docker license prompt shown by Docker: "
+    read -r license_accept
+  fi
+  if [[ "$license_accept" != "ACCEPT" ]]; then
+    echo "License acceptance is required before first-run install. No installation was started." >&2
+    exit 2
+  fi
+  export CIVICSUITE_FIRST_ADMIN_EMAIL="$admin_email"
+  first_run_report_dir="${{REPO_ROOT}}/installer/reports/first-run"
+  mkdir -p "$first_run_report_dir"
+  first_run_report="${{first_run_report_dir}}/first-run-setup.json"
+  setup_label="manual-prerequisite"
+  if [[ "$setup_path" == "1" ]]; then setup_label="guided"; fi
+  python3 - "$first_run_report" "$setup_label" "$operator_name" "$organization_name" "$admin_email" "$time_zone" "${{CIVICSUITE_INSTALLER_INSTALL_ROOT:-${{REPO_ROOT}}/installer/runtime/clerk-core}}" <<'PY'
+import json, sys
+from datetime import datetime, UTC
+path, setup, operator, org, email, tz, root = sys.argv[1:]
+payload = {{
+    "setup_path": setup,
+    "operator_name": operator,
+    "organization_name": org,
+    "admin_email": email,
+    "time_zone": tz,
+    "license_acceptance": "accepted",
+    "install_root": root,
+    "generated_at": datetime.now(UTC).isoformat(),
+    "rotation_required": True,
+}}
+open(path, "w", encoding="utf-8").write(json.dumps(payload, indent=2) + "\\n")
+PY
+  echo "First-run setup evidence: $first_run_report"
+  WIZARD_SETUP_PATH="$setup_path"
+  WIZARD_ADMIN_EMAIL="$admin_email"
+  WIZARD_INSTALL_ROOT="${{CIVICSUITE_INSTALLER_INSTALL_ROOT:-${{REPO_ROOT}}/installer/runtime/clerk-core}}"
+}}
+
+read_wizard_value() {{
+  local label="$1"
+  local env_name="$2"
+  local default="$3"
+  local required="${{4:-}}"
+  local preset="${{!env_name:-}}"
+  if [[ -n "$preset" ]]; then
+    echo "$label: $preset"
+    WIZARD_VALUE="$preset"
+    return
+  fi
+  while true; do
+    if [[ -n "$default" ]]; then
+      printf "%s [%s]: " "$label" "$default"
+    else
+      printf "%s: " "$label"
+    fi
+    read -r value
+    if [[ -z "$value" && -n "$default" ]]; then value="$default"; fi
+    if [[ -n "$value" || "$required" != "required" ]]; then
+      WIZARD_VALUE="$value"
+      return
+    fi
+    echo "This field is required so CivicSuite can finish first-run setup."
+  done
+}}
+
+detect_timezone() {{
+  if command -v timedatectl >/dev/null 2>&1; then
+    timedatectl show -p Timezone --value 2>/dev/null || true
+  fi
+}}
+
+show_post_install_dashboard() {{
+  local credential_path="${{WIZARD_INSTALL_ROOT}}/sources/civicrecords-ai/data/secrets/first_admin_password"
+  echo ""
+  echo "CivicSuite staff dashboard is installed."
+  echo "Admin email: $WIZARD_ADMIN_EMAIL"
+  echo "Initial administrator credential file: $credential_path"
+  echo "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+  echo "Records AI staff dashboard: http://127.0.0.1:18080/"
+  echo "CivicClerk staff dashboard: http://127.0.0.1:18081/"
+  echo "CivicCode API/search: http://127.0.0.1:18820/"
+}}
+
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --staff-mode)
@@ -1856,20 +2054,17 @@ fi
 
 case "${{MODE}}" in
   first-run)
-    echo ""
-    echo "Choose setup path:"
-    echo "1. Guided Setup - install missing Docker Engine components with sudo consent."
-    echo "2. Manual Prerequisite - Docker Engine is already installed."
-    printf "Enter 1 for Guided Setup or 2 for Manual Prerequisite: "
-    read -r setup_choice
-    if [[ "$setup_choice" == "1" ]]; then
+    first_run_wizard
+    if [[ "$WIZARD_SETUP_PATH" == "1" ]]; then
       bash "$0" bootstrap-prerequisites
-    elif [[ "$setup_choice" != "2" ]]; then
-      echo "Choose 1 or 2. No installation was started." >&2
-      exit 2
     fi
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
+    if [[ "${{CIVICSUITE_FIRST_RUN_SMOKE_ONLY:-}}" == "1" ]]; then
+      echo "First-run smoke only: setup wizard and readiness passed; install was not started."
+      exit 0
+    fi
     python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    show_post_install_dashboard
     ;;
   bootstrap-prerequisites)
     if [[ "{platform_id}" == "macos" ]]; then
@@ -1987,33 +2182,48 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 8 GB RAM and 20 GB free disk for the full city-core
+- The host has at least 8 GB RAM and 60 GB free disk for the full city-core
   stack.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 
 This package is the operator-facing installer entrypoint for the selected
-platform. It does not install privileged baseline software by itself. It checks
-readiness, renders the selected install plan, installs the {profile_id} runtime
-from the bundled module sources, verifies live service health, repairs by
-rebuilding/restarting the stack, and uninstalls Docker resources for the
-profile.
+platform. First-run mode offers Guided Setup for missing Docker/WSL
+prerequisites where this run supports it, or Manual Prerequisite mode for
+IT-managed machines. After prerequisites are present, it checks readiness,
+renders the selected install plan, installs the {profile_id} runtime from the
+bundled module sources, verifies live service health, repairs by
+rebuilding/restarting the stack, backs up/restores data, and uninstalls Docker
+resources for the profile.
 
 ## First Run
 
-1. Run readiness:
+1. For the non-technical operator path, run first-run:
+
+   ```text
+   {"." + "\\" + launcher + " -FirstRun" if platform_id == "windows" else "bash ./" + launcher + " first-run"}
+   ```
+
+   The wizard asks for setup path, operator name, organization name, admin
+   email, time zone, license acceptance, and then performs the smoke/readiness
+   check before installing. After install, it prints staff dashboard URLs and
+   the local credential-file path for the generated first administrator login.
+   Open that file once, sign in, rotate the credential immediately, then store
+   the rotated value in the municipal vault.
+
+2. For IT/admin checks, run readiness:
 
    ```text
    {readiness}
    ```
 
-2. Review the dry-run plan:
+3. Review the dry-run plan:
 
    ```text
    {plan_command}
    ```
 
-3. Install the selected profile:
+4. Install the selected profile manually:
 
    ```text
    {"." + "\\" + launcher + " -Install" if platform_id == "windows" else "bash ./" + launcher + " install"}

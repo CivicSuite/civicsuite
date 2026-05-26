@@ -393,7 +393,7 @@ def write_records_env(
     ensure_records_secret_files(target.parent)
     values = {
         "DATABASE_URL": "postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords",
-        "FIRST_ADMIN_EMAIL": "admin@example.gov",
+        "FIRST_ADMIN_EMAIL": os.environ.get("CIVICSUITE_FIRST_ADMIN_EMAIL", "admin@example.gov"),
         "OLLAMA_BASE_URL": "http://ollama:11434",
         "REDIS_URL": "redis://redis:6379/0",
         "AUDIT_RETENTION_DAYS": "1095",

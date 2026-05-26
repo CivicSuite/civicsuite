@@ -20,6 +20,113 @@ PLANNER_ARGS=(--menu-style "guided" --dry-run)
 LIFECYCLE_MODULE_ARGS=()
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
+first_run_wizard() {
+  local setup_path="${CIVICSUITE_SETUP_PATH:-}"
+  if [[ -z "$setup_path" ]]; then
+    echo ""
+    echo "Choose setup path:"
+    echo "1. Guided Setup - install missing Docker Engine components with sudo consent."
+    echo "2. Manual Prerequisite - Docker Engine is already installed."
+    printf "Enter 1 for Guided Setup or 2 for Manual Prerequisite: "
+    read -r setup_path
+  fi
+  if [[ "$setup_path" == "guided" ]]; then setup_path="1"; fi
+  if [[ "$setup_path" == "manual" ]]; then setup_path="2"; fi
+  if [[ "$setup_path" != "1" && "$setup_path" != "2" ]]; then
+    echo "Choose 1 or 2. No installation was started." >&2
+    exit 2
+  fi
+  read_wizard_value "operator name" CIVICSUITE_OPERATOR_NAME "" required
+  operator_name="$WIZARD_VALUE"
+  read_wizard_value "organization name" CIVICSUITE_ORGANIZATION_NAME "" required
+  organization_name="$WIZARD_VALUE"
+  read_wizard_value "admin email" CIVICSUITE_ADMIN_EMAIL "admin@example.gov" required
+  admin_email="$WIZARD_VALUE"
+  read_wizard_value "time zone" CIVICSUITE_TIME_ZONE "$(detect_timezone)" required
+  time_zone="$WIZARD_VALUE"
+  license_accept="${CIVICSUITE_LICENSE_ACCEPT:-}"
+  if [[ -z "$license_accept" ]]; then
+    printf "Type ACCEPT to confirm CivicSuite terms and any Docker license prompt shown by Docker: "
+    read -r license_accept
+  fi
+  if [[ "$license_accept" != "ACCEPT" ]]; then
+    echo "License acceptance is required before first-run install. No installation was started." >&2
+    exit 2
+  fi
+  export CIVICSUITE_FIRST_ADMIN_EMAIL="$admin_email"
+  first_run_report_dir="${REPO_ROOT}/installer/reports/first-run"
+  mkdir -p "$first_run_report_dir"
+  first_run_report="${first_run_report_dir}/first-run-setup.json"
+  setup_label="manual-prerequisite"
+  if [[ "$setup_path" == "1" ]]; then setup_label="guided"; fi
+  python3 - "$first_run_report" "$setup_label" "$operator_name" "$organization_name" "$admin_email" "$time_zone" "${CIVICSUITE_INSTALLER_INSTALL_ROOT:-${REPO_ROOT}/installer/runtime/clerk-core}" <<'PY'
+import json, sys
+from datetime import datetime, UTC
+path, setup, operator, org, email, tz, root = sys.argv[1:]
+payload = {
+    "setup_path": setup,
+    "operator_name": operator,
+    "organization_name": org,
+    "admin_email": email,
+    "time_zone": tz,
+    "license_acceptance": "accepted",
+    "install_root": root,
+    "generated_at": datetime.now(UTC).isoformat(),
+    "rotation_required": True,
+}
+open(path, "w", encoding="utf-8").write(json.dumps(payload, indent=2) + "\n")
+PY
+  echo "First-run setup evidence: $first_run_report"
+  WIZARD_SETUP_PATH="$setup_path"
+  WIZARD_ADMIN_EMAIL="$admin_email"
+  WIZARD_INSTALL_ROOT="${CIVICSUITE_INSTALLER_INSTALL_ROOT:-${REPO_ROOT}/installer/runtime/clerk-core}"
+}
+
+read_wizard_value() {
+  local label="$1"
+  local env_name="$2"
+  local default="$3"
+  local required="${4:-}"
+  local preset="${!env_name:-}"
+  if [[ -n "$preset" ]]; then
+    echo "$label: $preset"
+    WIZARD_VALUE="$preset"
+    return
+  fi
+  while true; do
+    if [[ -n "$default" ]]; then
+      printf "%s [%s]: " "$label" "$default"
+    else
+      printf "%s: " "$label"
+    fi
+    read -r value
+    if [[ -z "$value" && -n "$default" ]]; then value="$default"; fi
+    if [[ -n "$value" || "$required" != "required" ]]; then
+      WIZARD_VALUE="$value"
+      return
+    fi
+    echo "This field is required so CivicSuite can finish first-run setup."
+  done
+}
+
+detect_timezone() {
+  if command -v timedatectl >/dev/null 2>&1; then
+    timedatectl show -p Timezone --value 2>/dev/null || true
+  fi
+}
+
+show_post_install_dashboard() {
+  local credential_path="${WIZARD_INSTALL_ROOT}/sources/civicrecords-ai/data/secrets/first_admin_password"
+  echo ""
+  echo "CivicSuite staff dashboard is installed."
+  echo "Admin email: $WIZARD_ADMIN_EMAIL"
+  echo "Initial administrator credential file: $credential_path"
+  echo "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+  echo "Records AI staff dashboard: http://127.0.0.1:18080/"
+  echo "CivicClerk staff dashboard: http://127.0.0.1:18081/"
+  echo "CivicCode API/search: http://127.0.0.1:18820/"
+}
+
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --staff-mode)
@@ -63,20 +170,17 @@ fi
 
 case "${MODE}" in
   first-run)
-    echo ""
-    echo "Choose setup path:"
-    echo "1. Guided Setup - install missing Docker Engine components with sudo consent."
-    echo "2. Manual Prerequisite - Docker Engine is already installed."
-    printf "Enter 1 for Guided Setup or 2 for Manual Prerequisite: "
-    read -r setup_choice
-    if [[ "$setup_choice" == "1" ]]; then
+    first_run_wizard
+    if [[ "$WIZARD_SETUP_PATH" == "1" ]]; then
       bash "$0" bootstrap-prerequisites
-    elif [[ "$setup_choice" != "2" ]]; then
-      echo "Choose 1 or 2. No installation was started." >&2
-      exit 2
     fi
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
+    if [[ "${CIVICSUITE_FIRST_RUN_SMOKE_ONLY:-}" == "1" ]]; then
+      echo "First-run smoke only: setup wizard and readiness passed; install was not started."
+      exit 0
+    fi
     python3 "${LIFECYCLE}" install "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
+    show_post_install_dashboard
     ;;
   bootstrap-prerequisites)
     if [[ "linux" == "macos" ]]; then

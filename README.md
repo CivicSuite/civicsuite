@@ -8,7 +8,7 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 ## Read Me First
 
-CivicSuite is **not procurement-ready** today. The active city-core promotion package is CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, CivicCode v1.0.8, and the suite installer. Those four module release cars exist, but the city-core installer still must prove Linux and Windows one-click lifecycle, integration, browser QA, backup/restore, and documentation evidence before any claim beyond beta-ready status. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
+CivicSuite is **not procurement-ready** today. The active city-core promotion package is CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, CivicCode v1.0.8, and the suite installer. Those four module release cars exist, and the active city-core run now has current Linux/Windows matching-host lifecycle, integration, and backup/restore evidence. The package still must close first-run browser QA, documentation lockstep, CI/PR evidence, and final audit evidence before any claim beyond beta-ready status. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
 Why the freeze: in a five-day window between 2026-05-01 and 2026-05-06, the org pushed multiple v1.0.0 / v0.22.x release labels across 7+ repos as part of a coordination sweep that the project owner subsequently halted. Two follow-on lateral sweeps (2026-05-07 and 2026-05-08) put v1.0.0 tags on `civicinspect`, `civicgrants`, and `civicprocure` against the explicit halt. None of those tags constitute promotion. The recovery-status doc is the operating truth source for which labels are real.
 
@@ -22,7 +22,7 @@ Status snapshot: **2026-05-26**
 
 | Tier | Count | What it means today |
 |---|---:|---|
-| City-core release cars | CivicCore plus 3 product repos | CivicCore v1.2.0 is the shared platform release. CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8 are the city-core module cars. The city-core installer remains beta-ready pending Linux/Windows one-click lifecycle and integration proof. |
+| City-core release cars | CivicCore plus 3 product repos | CivicCore v1.2.0 is the shared platform release. CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8 are the city-core module cars. The city-core installer remains beta pending first-run browser QA, docs lockstep, CI/PR evidence, and final audit evidence. |
 | Queued / excluded modules | Tier 2 and CivicAccess | CivicAccess is out of city-core after a NEEDS-WORK depth probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued on demotion-truth labels, not city-core public-use releases. |
 | Foundation / planned | 17 named product modules | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The reconciled unified spec, installer metadata, and live GitHub org state now enumerate 27 product modules plus CivicCore. |
 
@@ -50,20 +50,20 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 
 1. Make the city-core profile installable by a non-technical municipal operator on Linux and Windows.
 2. Keep macOS explicitly beta/archive/readiness only until matching-host proof exists.
-3. Prove install/start/health/repair/backup/restore/uninstall for the city-core Docker/browser path.
-4. Browser-QA the public and staff city-core paths with real user-flow evidence.
+3. Keep Linux/Windows install/start/health/repair/backup/restore/uninstall evidence current for regenerated city-core artifacts.
+4. Browser-QA the first-run public and staff city-core paths with real user-flow evidence.
 5. Keep queued modules out of scope until city-core closes with evidence.
 
 ## Quick Start
 
-**Suite installer (current):** Clerk-Core has a published bounded starter installer release, and city-core is the active beta-ready profile that adds CivicCode to CivicCore + CivicRecords AI + CivicClerk. The city-core package is not yet promoted beyond beta-ready because Linux and Windows one-click lifecycle, cross-module integration, browser QA, backup/restore, and final audit evidence are still being assembled. CivicSuite's core runtime path is Linux/container-first; Windows is a wrapper around the same containerized core; macOS remains beta/archive/readiness only.
+**Suite installer (current):** Clerk-Core has a published bounded starter installer release, and city-core is the active beta-ready profile that adds CivicCode to CivicCore + CivicRecords AI + CivicClerk. The active run has current Linux/Windows one-click lifecycle, cross-module integration, and backup/restore evidence, but the city-core package is not promoted beyond beta-ready until first-run browser QA, documentation lockstep, CI/PR evidence, and final audit evidence close. CivicSuite's core runtime path is Linux/container-first; Windows is a wrapper around the same containerized core; macOS remains beta/archive/readiness only.
 
 - Published starter packages: `CivicSuite-clerk-core-windows-0.1.0.zip`, `CivicSuite-clerk-core-linux-0.1.0.tar.gz`, and `CivicSuite-clerk-core-macos-0.1.0.tar.gz`.
-- City-core generated package surfaces exist under the installer tree, but final Linux/Windows one-click lifecycle evidence is required before status promotion.
+- City-core generated package surfaces exist under the installer tree. The current canonical 0.1.2 artifacts for this run are preserved under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\evidence\current-0.1.2-build`; release promotion still requires first-run browser QA, CI/PR, and final audit evidence.
 - macOS package paths stay beta/archive/readiness only until matching-host macOS lifecycle evidence exists.
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
-Operators evaluating the prior starter release should use the [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md). Operators evaluating city-core should wait for the city-core Linux/Windows one-click lifecycle package and evidence from this run.
+Operators evaluating the prior starter release should use the [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md). Operators evaluating city-core should use the active run evidence path above for the current 0.1.2 package artifacts until a promoted release artifact is published.
 
 **Per-module install path:**
 

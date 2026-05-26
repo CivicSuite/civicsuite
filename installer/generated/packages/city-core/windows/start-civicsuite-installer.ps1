@@ -72,6 +72,95 @@ function Register-CivicSuiteRunOnce {
     Write-Host "CivicSuite will resume after reboot using Windows RunOnce."
 }
 
+function Get-CivicSuiteInstallRoot {
+    if ($env:CIVICSUITE_INSTALLER_INSTALL_ROOT) {
+        return $env:CIVICSUITE_INSTALLER_INSTALL_ROOT
+    }
+    return (Join-Path $RepoRoot "installer\runtime\clerk-core")
+}
+
+function Read-CivicSuiteWizardValue([string]$Label, [string]$Default = "", [switch]$Required) {
+    $EnvName = "CIVICSUITE_" + ($Label.ToUpperInvariant() -replace "[^A-Z0-9]+", "_").Trim("_")
+    $Preset = [Environment]::GetEnvironmentVariable($EnvName)
+    if ($Preset) {
+        Write-Host "$Label`: $Preset"
+        return $Preset
+    }
+    while ($true) {
+        $Suffix = if ($Default) { " [$Default]" } else { "" }
+        $Value = Read-Host "$Label$Suffix"
+        if (-not $Value -and $Default) { $Value = $Default }
+        if ($Value -or -not $Required) { return $Value }
+        Write-Host "This field is required so CivicSuite can finish first-run setup."
+    }
+}
+
+function Invoke-CivicSuiteFirstRunWizard {
+    $SetupPath = $env:CIVICSUITE_SETUP_PATH
+    if (-not $SetupPath) {
+        Write-Host ""
+        Write-Host "Choose setup path:"
+        Write-Host "1. Guided Setup - install missing WSL/Docker components with admin consent."
+        Write-Host "2. Manual Prerequisite - Docker Desktop + WSL2 are already installed."
+        $SetupPath = Read-Host "Enter 1 for Guided Setup or 2 for Manual Prerequisite"
+    }
+    if ($SetupPath -eq "guided") { $SetupPath = "1" }
+    if ($SetupPath -eq "manual") { $SetupPath = "2" }
+    if ($SetupPath -ne "1" -and $SetupPath -ne "2") {
+        Write-Error "Choose 1 or 2. No installation was started."
+        exit 2
+    }
+
+    $OperatorName = Read-CivicSuiteWizardValue "operator name" -Required
+    $OrganizationName = Read-CivicSuiteWizardValue "organization name" -Required
+    $AdminEmail = Read-CivicSuiteWizardValue "admin email" "admin@example.gov" -Required
+    $TimeZone = Read-CivicSuiteWizardValue "time zone" ([TimeZoneInfo]::Local.Id) -Required
+    $LicenseAccept = $env:CIVICSUITE_LICENSE_ACCEPT
+    if (-not $LicenseAccept) {
+        $LicenseAccept = Read-Host "Type ACCEPT to confirm CivicSuite terms and the Docker Desktop license prompt when Docker Desktop first starts"
+    }
+    if ($LicenseAccept -ne "ACCEPT") {
+        Write-Error "License acceptance is required before first-run install. No installation was started."
+        exit 2
+    }
+
+    $env:CIVICSUITE_FIRST_ADMIN_EMAIL = $AdminEmail
+
+    $ReportDir = Join-Path $RepoRoot "installer\reports\first-run"
+    New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
+    $InstallRoot = Get-CivicSuiteInstallRoot
+    $ReportPath = Join-Path $ReportDir "first-run-setup.json"
+    @{
+        setup_path = $(if ($SetupPath -eq "1") { "guided" } else { "manual-prerequisite" })
+        operator_name = $OperatorName
+        organization_name = $OrganizationName
+        admin_email = $AdminEmail
+        time_zone = $TimeZone
+        license_acceptance = "accepted"
+        install_root = $InstallRoot
+        generated_at = (Get-Date).ToUniversalTime().ToString("o")
+        rotation_required = $true
+    } | ConvertTo-Json | Out-File -FilePath $ReportPath -Encoding utf8
+    Write-Host "First-run setup evidence: $ReportPath"
+    return @{
+        setup_path = $SetupPath
+        admin_email = $AdminEmail
+        install_root = $InstallRoot
+    }
+}
+
+function Show-CivicSuitePostInstallDashboard([hashtable]$Wizard) {
+    $CredentialPath = Join-Path $Wizard.install_root "sources\civicrecords-ai\data\secrets\first_admin_password"
+    Write-Host ""
+    Write-Host "CivicSuite staff dashboard is installed."
+    Write-Host "Admin email: $($Wizard.admin_email)"
+    Write-Host "Initial administrator credential file: $CredentialPath"
+    Write-Host "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+    Write-Host "Records AI staff dashboard: http://127.0.0.1:18080/"
+    Write-Host "CivicClerk staff dashboard: http://127.0.0.1:18081/"
+    Write-Host "CivicCode API/search: http://127.0.0.1:18820/"
+}
+
 function Invoke-CivicSuiteGuidedSetup {
     if (-not (Test-CivicSuiteAdmin)) {
         Write-Host "CivicSuite needs Windows administrator consent to install WSL/Docker prerequisites."
@@ -85,7 +174,7 @@ function Invoke-CivicSuiteGuidedSetup {
         Write-Error "Windows 10 build 19041+ or Windows 11 is required. Ask IT to upgrade Windows, then rerun CivicSuite."
         exit 2
     }
-    if ($Arch -notin @("AMD64", "IA64")) {
+    if ($Arch -ne "AMD64") {
         Write-Error "This CivicSuite installer supports AMD64 Windows only in this run. ARM Windows is out of scope."
         exit 2
     }
@@ -124,7 +213,7 @@ function Invoke-CivicSuiteGuidedSetup {
     Write-Host "Guided setup prerequisites are present. Continuing with CivicSuite readiness."
 }
 
-function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs) {
+function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs, [switch]$ReturnAfter) {
     if (Test-WslDocker) {
         $RepoRootWsl = ConvertTo-WslPath $RepoRoot
         $EnvParts = @()
@@ -139,10 +228,12 @@ function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs) {
         $QuotedArgs = $AllArgs | ForEach-Object { ConvertTo-WslArg $_ }
         $Command = ($EnvParts -join " ") + " cd $(ConvertTo-WslArg $RepoRootWsl) && python3 scripts/run-clerk-core-installer.py " + ($QuotedArgs -join " ")
         & wsl bash -lc $Command
+        if ($ReturnAfter) { return $LASTEXITCODE }
         exit $LASTEXITCODE
     }
 
     python $Lifecycle $Mode @LifecycleArgs
+    if ($ReturnAfter) { return $LASTEXITCODE }
     exit $LASTEXITCODE
 }
 
@@ -185,20 +276,20 @@ if ($GuidedSetup) {
 }
 
 if ($FirstRun) {
-    Write-Host ""
-    Write-Host "Choose setup path:"
-    Write-Host "1. Guided Setup - install missing WSL/Docker components with admin consent."
-    Write-Host "2. Manual Prerequisite - Docker Desktop + WSL2 are already installed."
-    $Choice = Read-Host "Enter 1 for Guided Setup or 2 for Manual Prerequisite"
-    if ($Choice -eq "1") {
+    $Wizard = Invoke-CivicSuiteFirstRunWizard
+    if ($Wizard.setup_path -eq "1") {
         Invoke-CivicSuiteGuidedSetup
-    } elseif ($Choice -ne "2") {
-        Write-Error "Choose 1 or 2. No installation was started."
-        exit 2
     }
     python $Planner @PlannerArgs --show-readiness --detect-host
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
+    if ($env:CIVICSUITE_FIRST_RUN_SMOKE_ONLY -eq "1") {
+        Write-Host "First-run smoke only: setup wizard and readiness passed; install was not started."
+        exit 0
+    }
+    $InstallExit = Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs)) -ReturnAfter
+    if ($InstallExit -ne 0) { exit $InstallExit }
+    Show-CivicSuitePostInstallDashboard $Wizard
+    exit 0
 }
 
 if ($ManualPrerequisite) {
