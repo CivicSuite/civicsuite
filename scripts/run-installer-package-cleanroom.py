@@ -18,6 +18,7 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "installer" / "reports"
+MIN_CLEANROOM_FREE_DISK_BYTES = 60 * 1024 * 1024 * 1024
 PLATFORM_LAUNCHERS = {
     "linux": Path("installer/generated/packages/clerk-core/linux/start-civicsuite-installer.sh"),
     "macos": Path("installer/generated/packages/clerk-core/macos/start-civicsuite-installer.sh"),
@@ -47,6 +48,91 @@ def run(command: list[str], *, cwd: Path, timeout: int, env: dict[str, str] | No
         check=False,
         timeout=timeout,
     )
+
+
+def disk_snapshot(path: Path = ROOT) -> dict[str, object]:
+    usage = shutil.disk_usage(path)
+    return {
+        "path": str(path),
+        "total_bytes": usage.total,
+        "used_bytes": usage.used,
+        "free_bytes": usage.free,
+        "required_free_bytes": MIN_CLEANROOM_FREE_DISK_BYTES,
+        "passed": usage.free >= MIN_CLEANROOM_FREE_DISK_BYTES,
+    }
+
+
+def run_cleanup_command(command: list[str], *, timeout: int = 900) -> dict[str, object]:
+    proc = run(command, cwd=ROOT, timeout=timeout)
+    return {
+        "command": command,
+        "returncode": proc.returncode,
+        "stdout": proc.stdout[-8000:],
+        "stderr": proc.stderr[-8000:],
+    }
+
+
+def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bool, dict[str, object]]:
+    before = disk_snapshot()
+    evidence: dict[str, object] = {
+        "minimum_free_disk_bytes": MIN_CLEANROOM_FREE_DISK_BYTES,
+        "before": before,
+        "cleanup_approved": allow_host_cleanup,
+        "cleanup_steps": [],
+    }
+    if before["passed"]:
+        evidence["status"] = "passed"
+        evidence["after"] = before
+        return True, evidence
+
+    if not allow_host_cleanup:
+        evidence["status"] = "blocked"
+        evidence["message"] = (
+            "Cleanroom lifecycle requires at least 60 GB free. Global Docker/WSL cleanup "
+            "is destructive and requires a dedicated cleanroom host or explicit approval."
+        )
+        evidence["after"] = before
+        return False, evidence
+
+    steps: list[dict[str, object]] = []
+    docker = shutil.which("docker")
+    if docker:
+        steps.append(run_cleanup_command([docker, "system", "prune", "-af"], timeout=1800))
+    else:
+        steps.append({"command": ["docker", "system", "prune", "-af"], "returncode": 127, "stdout": "", "stderr": "docker was not found"})
+
+    if sys.platform.startswith("win"):
+        wsl = shutil.which("wsl.exe") or shutil.which("wsl")
+        if wsl:
+            steps.append(run_cleanup_command([wsl, "--shutdown"], timeout=300))
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if powershell:
+            steps.append(
+                run_cleanup_command(
+                    [
+                        powershell,
+                        "-NoProfile",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-Command",
+                        "$vhd = Get-ChildItem $env:LOCALAPPDATA\\Packages -Recurse -Filter ext4.vhdx -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 1; if ($vhd) { Optimize-VHD -Path $vhd.FullName -Mode Full } else { Write-Output 'No WSL ext4.vhdx found.' }",
+                    ],
+                    timeout=1800,
+                )
+            )
+
+    after = disk_snapshot()
+    evidence["cleanup_steps"] = steps
+    evidence["after"] = after
+    evidence["status"] = "passed" if after["passed"] else "blocked"
+    if not after["passed"]:
+        evidence["message"] = "Cleanroom lifecycle remains below 60 GB free after approved cleanup."
+    report_dir.mkdir(parents=True, exist_ok=True)
+    (report_dir / "cleanroom-hygiene-evidence.json").write_text(
+        json.dumps(evidence, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return bool(after["passed"]), evidence
 
 
 def extract(archive: Path, target: Path) -> Path:
@@ -249,6 +335,11 @@ def main() -> int:
     parser.add_argument("--gate", action="store_true", help="Run the cleanroom gate after readiness and plan.")
     parser.add_argument("--staff-mode", choices=("protected", "bearer", "open"), default="protected")
     parser.add_argument("--workflow-proof", action="store_true", help="Run mutating starter-set workflow proof during install/repair/verify.")
+    parser.add_argument(
+        "--allow-host-cleanup",
+        action="store_true",
+        help="Authorize global Docker prune and WSL shutdown/compaction when the cleanroom host has less than 60 GB free.",
+    )
     args = parser.parse_args()
 
     archive = Path(args.archive).resolve()
@@ -258,6 +349,27 @@ def main() -> int:
     platform = args.platform or infer_platform(archive)
     run_id = args.run_id or make_run_id()
     report_dir = REPORT_ROOT / run_id
+    hygiene_ok, hygiene = cleanroom_hygiene(
+        report_dir=report_dir,
+        allow_host_cleanup=args.allow_host_cleanup
+        or os.environ.get("CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED") == "1",
+    )
+    if not hygiene_ok:
+        proof = {
+            "run_id": run_id,
+            "archive": str(archive),
+            "status": "blocked",
+            "evidence_classification": "cleanroom_hygiene_blocked",
+            "certification_scope": "Cleanroom lifecycle did not run because host hygiene failed before extraction.",
+            "cleanroom_hygiene": hygiene,
+        }
+        report_dir.mkdir(parents=True, exist_ok=True)
+        (report_dir / "installer-package-cleanroom.json").write_text(
+            json.dumps(proof, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(json.dumps(proof, indent=2, sort_keys=True))
+        return 1
     extract_root = report_dir / "extracted"
     bundle_root = extract(archive, extract_root)
     launcher = find_launcher(bundle_root, platform)
@@ -378,6 +490,7 @@ def main() -> int:
         },
         "evidence_classification": classification,
         "certification_scope": certification_scope(classification),
+        "cleanroom_hygiene": hygiene,
         "steps": steps,
     }
     if cleanup_error:

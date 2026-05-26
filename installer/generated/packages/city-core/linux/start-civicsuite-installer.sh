@@ -62,6 +62,46 @@ else
 fi
 
 case "${MODE}" in
+  first-run)
+    echo ""
+    echo "Choose setup path:"
+    echo "1. Guided Setup - install missing Docker Engine components with sudo consent."
+    echo "2. Manual Prerequisite - Docker Engine is already installed."
+    printf "Enter 1 for Guided Setup or 2 for Manual Prerequisite: "
+    read -r setup_choice
+    if [[ "$setup_choice" == "1" ]]; then
+      bash "$0" bootstrap-prerequisites
+    elif [[ "$setup_choice" != "2" ]]; then
+      echo "Choose 1 or 2. No installation was started." >&2
+      exit 2
+    fi
+    python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
+    python3 "${LIFECYCLE}" install "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
+    ;;
+  bootstrap-prerequisites)
+    if [[ "linux" == "macos" ]]; then
+      echo "macOS prerequisite bootstrap is out of scope for this run. Use the documented beta readiness path only." >&2
+      exit 2
+    fi
+    report_dir="${REPO_ROOT}/installer/reports/docker-wsl-bootstrap"
+    mkdir -p "$report_dir"
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+      echo "Docker Engine is already installed and running."
+      exit 0
+    fi
+    script_path="$report_dir/get-docker.sh"
+    script_url="https://get.docker.com"
+    echo "Downloading Docker's official Linux convenience script to $script_path"
+    curl -fsSL "$script_url" -o "$script_path"
+    sha256sum "$script_path" > "$report_dir/get-docker.sha256"
+    printf '{"url":"%s","path":"%s","downloaded_at":"%s"}
+' "$script_url" "$script_path" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$report_dir/get-docker-download.json"
+    if [[ "$(id -u)" -eq 0 ]]; then
+      sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
+    else
+      sudo sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
+    fi
+    ;;
   plan)
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}"
     ;;
@@ -87,7 +127,7 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac
