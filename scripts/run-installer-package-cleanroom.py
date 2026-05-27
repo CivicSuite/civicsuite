@@ -418,7 +418,7 @@ def main() -> int:
         launcher_env["CIVICSUITE_INSTALLER_INSTALL_ROOT"] = str(bundle_root / "r")
     modes = ["readiness", "plan"]
     if lifecycle_requested and not lifecycle_blocked:
-        modes.extend(["install", "repair", "verify", "backup", "restore", "uninstall"])
+        modes.extend(["preclean", "install", "repair", "verify", "backup", "restore", "uninstall"])
     if args.gate and not lifecycle_blocked:
         modes.append("gate")
     status = "passed"
@@ -428,15 +428,16 @@ def main() -> int:
         mode_workflow_proof = args.workflow_proof and mode == "install"
         if mode_workflow_proof:
             workflow_proof_modes.append(mode)
+        launcher_mode = "uninstall" if mode == "preclean" else mode
         command = launcher_command(
             platform,
             launcher,
-            mode,
+            launcher_mode,
             bundle_root,
             staff_mode=args.staff_mode,
             workflow_proof=mode_workflow_proof,
         )
-        proc = run(command, cwd=bundle_root, timeout=mode_timeout(mode), env=launcher_env)
+        proc = run(command, cwd=bundle_root, timeout=mode_timeout(launcher_mode), env=launcher_env)
         parsed_output = parse_json_from_output(proc.stdout)
         summary = lifecycle_summary(mode, parsed_output)
         if summary is not None and "ports" in summary:
