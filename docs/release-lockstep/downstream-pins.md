@@ -51,9 +51,9 @@ hygiene, and matching-host lifecycle evidence under
 PR #183 has green verify, release-lockstep-gate, and installer-cleanroom
 checks; exact volatile PR run IDs are recorded in the PR body and run
 evidence. CivicRecords AI PR #100 is green at `d7f84a3` for CI run
-`26487863170`. The status remains Implemented, pending audit-full; this is not
+`26487863170`. The status is beta-ready truth-reconciled after audit-full; this is not
 public-use readiness, city-ready status, procurement readiness, production
-readiness, macOS lifecycle certification, or a full-suite release claim.
+readiness, macOS lifecycle certification, or full-suite promotion.
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 

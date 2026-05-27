@@ -27,7 +27,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
-- The city-core installer has current Linux and Windows matching-host lifecycle and integration evidence in the active run record, but remains beta until first-run browser QA, documentation lockstep, CI/PR evidence, and final audit evidence close.
+- The city-core installer has current Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence in the active run record. It is beta-ready truth-reconciled, not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
 
@@ -90,7 +90,7 @@ For city-core, the first-run wizard can guide supported Linux/Windows prerequisi
 ### Where to go next
 
 - For real evaluation: stand up a non-production tenant, ingest a representative document corpus, and run a week of internal staff requests through it.
-- For procurement: wait for city-core release gates and final audit evidence to pass.
+- For procurement: wait for a later procurement-readiness gate; this beta-ready truth-reconciled package is not procurement-ready.
 - For development: read [CONTRIBUTING.md](CONTRIBUTING.md) and the records-ai `docs/`.
 
 ---
