@@ -1,6 +1,6 @@
 # CivicSuite Suite Installer Plan
 
-Status: design contract plus first working clerk-core lifecycle; city-core profile is beta-ready with current Linux/Windows matching-host lifecycle evidence in the active run record, pending first-run browser QA, CI/PR evidence, and final audit.
+Status: design contract plus first working clerk-core lifecycle; city-core profile is beta-ready with current Linux/Windows matching-host lifecycle evidence and green PR CI in the active run record, pending first-run browser QA and final audit.
 
 This document defines the first suite-level installer target. The current
 umbrella repo has deployment documentation and a bounded demo compose profile.

@@ -673,10 +673,11 @@ def check_manifest(data: dict[str, object]) -> list[str]:
         "clerk_core_public_use_starter_v0_1_0_published",
         "city_core_beta_ready_truth_reconciled",
         "city_core_implemented_pending_ci_and_audit_full",
+        "city_core_implemented_pending_browser_qa_and_audit_full",
     }:
         errors.append(
             fail(
-                "installer_status must be clerk_core_public_use_starter_v0_1_0_published, city_core_beta_ready_truth_reconciled, or city_core_implemented_pending_ci_and_audit_full"
+                "installer_status must be clerk_core_public_use_starter_v0_1_0_published, city_core_beta_ready_truth_reconciled, city_core_implemented_pending_ci_and_audit_full, or city_core_implemented_pending_browser_qa_and_audit_full"
             )
         )
 

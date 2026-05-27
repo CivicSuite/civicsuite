@@ -48,7 +48,11 @@ vendored-source Windows/Linux one-click artifacts, Guided/Manual Docker
 prerequisite setup paths, first-run wizard smoke evidence, 60 GB cleanroom
 hygiene, and matching-host lifecycle evidence under
 `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`.
-The status remains Implemented, pending CI and audit-full; this is not
+PR #183 is green at `8ee2c59` for verify run `26486410138`,
+release-lockstep-gate run `26486410136`, and installer-cleanroom run
+`26486410137`. CivicRecords AI PR #100 is green at `d7f84a3` for CI run
+`26487863170`. The status remains Implemented, pending first-run browser QA
+and audit-full; this is not
 public-use readiness, city-ready status, procurement readiness, production
 readiness, macOS lifecycle certification, or a full-suite release claim.
 
