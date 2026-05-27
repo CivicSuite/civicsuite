@@ -935,6 +935,49 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
         return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
 
     headers = {"Authorization": f"Bearer {token}"}
+    me_status, me_body = get_json(f"{base}/users/me", headers=headers)
+    must_rotate = me_body.get("must_change_password") is True
+    checks.append(
+        {
+            "name": "first_admin_rotation_required",
+            "status_code": me_status,
+            "must_change_password": must_rotate,
+        }
+    )
+    if me_status != 200:
+        return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+    if must_rotate:
+        rotated_password = f"Rotated-{uuid4().hex}-A1!"
+        rotate_status, rotate_body = patch_json(
+            f"{base}/users/me",
+            {"password": rotated_password},
+            headers=headers,
+        )
+        checks.append(
+            {
+                "name": "rotate_first_admin_password",
+                "status_code": rotate_status,
+                "must_change_password": rotate_body.get("must_change_password"),
+            }
+        )
+        if rotate_status != 200 or rotate_body.get("must_change_password") is not False:
+            return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+        rotated_login_status, rotated_login_body = post_form(
+            f"{base}/auth/jwt/login",
+            {"username": "admin@example.gov", "password": rotated_password},
+        )
+        checks.append(
+            {
+                "name": "relogin_after_password_rotation",
+                "status_code": rotated_login_status,
+                "has_access_token": bool(rotated_login_body.get("access_token")),
+            }
+        )
+        token = str(rotated_login_body.get("access_token") or "")
+        if rotated_login_status != 200 or not token:
+            return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
+        headers = {"Authorization": f"Bearer {token}"}
+
     marker = f"starter-set workflow proof {uuid4().hex[:8]}"
     create_status, created = post_json(
         f"{base}/requests/",
@@ -1714,6 +1757,7 @@ def install(
         isolation=isolation,
         report_dir=report_dir,
         selected_modules=modules,
+        staff_mode=staff_mode,
         workflow_proof=workflow_proof,
     )  # type: ignore[arg-type]
     steps.extend(result["checks"])  # type: ignore[arg-type]
@@ -1727,6 +1771,7 @@ def verify(
     isolation: dict[str, object],
     report_dir: Path,
     selected_modules: list[str] | tuple[str, ...] | None = None,
+    staff_mode: str = CLERK_STAFF_MODE_PROTECTED,
     workflow_proof: bool = False,
 ) -> dict[str, object]:
     ctx = lifecycle_context(install_root, isolation, selected_modules=selected_modules)
@@ -1754,7 +1799,7 @@ def verify(
         checks.append(code_api)
         checks.append({"name": "civiccode_public_lookup", "url": f"http://127.0.0.1:{code_ports['api']}/civiccode/search?q=13.40.020", **wait_for_url(f"http://127.0.0.1:{code_ports['api']}/civiccode/search?q=13.40.020", timeout_seconds=120)})
         code_api_passed = code_api["status"] == "passed"
-    if clerk_api_passed and not workflow_proof:
+    if clerk_api_passed and not workflow_proof and staff_mode == CLERK_STAFF_MODE_PROTECTED:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     if records_api_passed or clerk_api_passed:
         checks.append(verify_civiccore_contract(records_ports, clerk_ports, code_ports, selected_modules=modules))  # type: ignore[arg-type]
@@ -1859,6 +1904,59 @@ def module_database_contract(ctx: dict[str, object], module: str) -> dict[str, s
     raise InstallerError(f"Unsupported module for backup/restore: {module}")
 
 
+def capture_row_survival_snapshot(contract: dict[str, str | Path], *, database: str | None = None) -> dict[str, object]:
+    source = Path(contract["source"])  # type: ignore[arg-type]
+    db_name = database or str(contract["postgres_db"])
+    sql = r"""
+CREATE OR REPLACE FUNCTION pg_temp.table_fingerprint(p_schema text, p_table text) RETURNS jsonb AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  EXECUTE format(
+    'SELECT jsonb_build_object(
+       ''row_count'', count(*),
+       ''fingerprint'', coalesce(md5(string_agg(md5(row_to_json(t)::text), '','' ORDER BY md5(row_to_json(t)::text))), '''')
+     ) FROM %I.%I t',
+    p_schema,
+    p_table
+  )
+  INTO result;
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+SELECT coalesce(jsonb_object_agg(schemaname || '.' || tablename, pg_temp.table_fingerprint(schemaname, tablename)), '{}'::jsonb)
+FROM pg_tables
+WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
+"""
+    proc = run(
+        compose(
+            str(contract["project"]),
+            source,
+            "exec",
+            "-T",
+            str(contract["postgres_service"]),
+            "psql",
+            "-U",
+            str(contract["postgres_user"]),
+            "-d",
+            db_name,
+            "-q",
+            "-tA",
+            "-c",
+            sql,
+        ),
+        cwd=source,
+        timeout=300,
+    )
+    if proc.returncode != 0:
+        raise InstallerError(
+            f"Failed to capture row survival snapshot for {contract['module']} "
+            f"database {db_name}: {proc.stderr[-1000:]}"
+        )
+    payload = proc.stdout.strip()
+    return json.loads(payload or "{}")
+
+
 def backup(
     install_root: Path,
     *,
@@ -1877,10 +1975,15 @@ def backup(
         "selected_modules": modules,
         "backup_dir": str(backup_dir),
         "artifacts": [],
+        "row_survival": {},
     }
     for module in modules:
         contract = module_database_contract(ctx, str(module))
         source = Path(contract["source"])  # type: ignore[arg-type]
+        before_snapshot = capture_row_survival_snapshot(contract)
+        row_survival = manifest["row_survival"]
+        if isinstance(row_survival, dict):
+            row_survival[str(module)] = {"before": before_snapshot}
         dump_path = backup_dir / f"{module}-postgres.dump"
         dump = run_binary_to_file(
             compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "pg_dump", "-U", str(contract["postgres_user"]), "-d", str(contract["postgres_db"]), "-Fc"),
@@ -1909,7 +2012,10 @@ def backup(
         shutil.copy2(selected_path, backup_dir / selected_path.name)
     manifest_path = backup_dir / "backup-manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    ledger_path = backup_dir / "record-survival-ledger.json"
+    ledger_path.write_text(json.dumps(manifest["row_survival"], indent=2, sort_keys=True) + "\n", encoding="utf-8")
     steps.append({"step": "write_backup_manifest", "path": str(manifest_path), "status": "passed"})
+    steps.append({"step": "write_record_survival_ledger", "path": str(ledger_path), "status": "passed"})
     return {"status": "passed", "selected_modules": modules, "backup_dir": str(backup_dir), "steps": steps}
 
 
@@ -1938,6 +2044,9 @@ def restore(
         if isinstance(item, dict) and item.get("type") == "postgres_custom_dump"
     }
     steps: list[dict[str, object]] = []
+    row_survival = manifest.get("row_survival") if isinstance(manifest, dict) else {}
+    if not isinstance(row_survival, dict):
+        row_survival = {}
     for module in modules:
         artifact = artifact_by_module.get(str(module))
         if not artifact:
@@ -1966,6 +2075,39 @@ def restore(
             timeout=900,
         )
         steps.append(binary_step(module=str(module), step="restore_probe_pg_restore", proc=restored, path=dump_path))
+        if restored.returncode == 0:
+            after_snapshot = capture_row_survival_snapshot(contract, database=restore_db)
+            module_survival = row_survival.get(str(module))
+            before_snapshot = module_survival.get("before") if isinstance(module_survival, dict) else None
+            survival_passed = before_snapshot == after_snapshot
+            if isinstance(module_survival, dict):
+                module_survival["after"] = after_snapshot
+                module_survival["status"] = "passed" if survival_passed else "failed"
+            else:
+                row_survival[str(module)] = {
+                    "after": after_snapshot,
+                    "status": "failed",
+                    "error": "missing backup-time row survival snapshot",
+                }
+                survival_passed = False
+            ledger_path = resolved_backup / "record-survival-ledger.json"
+            ledger_path.write_text(json.dumps(row_survival, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            steps.append(
+                {
+                    "module": module,
+                    "step": "record_survival_probe",
+                    "path": str(ledger_path),
+                    "status": "passed" if survival_passed else "failed",
+                }
+            )
+            if not survival_passed:
+                return {
+                    "status": "failed",
+                    "selected_modules": modules,
+                    "backup_dir": str(resolved_backup),
+                    "steps": steps,
+                    "error": f"row survival mismatch for {module}",
+                }
         cleanup = run(
             compose(str(contract["project"]), source, "exec", "-T", str(contract["postgres_service"]), "dropdb", "-U", str(contract["postgres_user"]), "--if-exists", restore_db),
             cwd=source,
@@ -2075,6 +2217,7 @@ def main() -> int:
                     isolation=isolation,
                     report_dir=report_dir,
                     selected_modules=selected_modules,
+                    staff_mode=args.staff_mode,
                     workflow_proof=args.workflow_proof,
                 )
             )

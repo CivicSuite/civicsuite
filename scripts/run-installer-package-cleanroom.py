@@ -284,6 +284,25 @@ def lifecycle_summary(mode: str, payload: dict[str, object] | None) -> dict[str,
     return summary
 
 
+def retain_lifecycle_evidence(bundle_root: Path, report_dir: Path) -> list[str]:
+    evidence_root = report_dir / "retained-lifecycle-evidence"
+    retained: list[str] = []
+    patterns = (
+        "installer/reports/**/*.json",
+        "installer/runtime/**/backups/**/backup-manifest.json",
+        "installer/runtime/**/backups/**/record-survival-ledger.json",
+    )
+    for pattern in patterns:
+        for source in sorted(bundle_root.glob(pattern)):
+            if not source.is_file():
+                continue
+            target = evidence_root / source.relative_to(bundle_root)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            retained.append(str(target))
+    return retained
+
+
 def normalized_host_platform() -> str:
     if sys.platform.startswith("win"):
         return "windows"
@@ -334,7 +353,14 @@ def main() -> int:
     parser.add_argument("--skip-install", action="store_true", help="Only verify archive extraction, readiness, and plan.")
     parser.add_argument("--gate", action="store_true", help="Run the cleanroom gate after readiness and plan.")
     parser.add_argument("--staff-mode", choices=("protected", "bearer", "open"), default="protected")
-    parser.add_argument("--workflow-proof", action="store_true", help="Run mutating starter-set workflow proof during install/repair/verify.")
+    parser.add_argument(
+        "--workflow-proof",
+        action="store_true",
+        help=(
+            "Run the mutating starter-set workflow proof during install. Repair/verify keep service checks "
+            "only because first-admin password rotation consumes the one-time setup secret."
+        ),
+    )
     parser.add_argument(
         "--allow-host-cleanup",
         action="store_true",
@@ -397,14 +423,18 @@ def main() -> int:
         modes.append("gate")
     status = "passed"
     lifecycle_summaries: list[dict[str, object]] = []
+    workflow_proof_modes: list[str] = []
     for mode in modes:
+        mode_workflow_proof = args.workflow_proof and mode == "install"
+        if mode_workflow_proof:
+            workflow_proof_modes.append(mode)
         command = launcher_command(
             platform,
             launcher,
             mode,
             bundle_root,
             staff_mode=args.staff_mode,
-            workflow_proof=args.workflow_proof,
+            workflow_proof=mode_workflow_proof,
         )
         proc = run(command, cwd=bundle_root, timeout=mode_timeout(mode), env=launcher_env)
         parsed_output = parse_json_from_output(proc.stdout)
@@ -457,6 +487,8 @@ def main() -> int:
         lifecycle_blocked=lifecycle_blocked,
     )
 
+    retained_evidence = retain_lifecycle_evidence(bundle_root, report_dir)
+
     cleanup_error: str | None = None
     extracted_bundle_retained = False
     if extract_root.exists():
@@ -479,6 +511,7 @@ def main() -> int:
         "mutates_host": lifecycle_requested and not lifecycle_blocked,
         "requested_mutating_lifecycle": lifecycle_requested,
         "workflow_proof_requested": args.workflow_proof,
+        "workflow_proof_modes": workflow_proof_modes,
         "civicclerk_staff_mode": args.staff_mode,
         "lifecycle_isolation": {
             "run_id": run_id,
@@ -491,6 +524,7 @@ def main() -> int:
         "evidence_classification": classification,
         "certification_scope": certification_scope(classification),
         "cleanroom_hygiene": hygiene,
+        "retained_lifecycle_evidence": retained_evidence,
         "steps": steps,
     }
     if cleanup_error:
