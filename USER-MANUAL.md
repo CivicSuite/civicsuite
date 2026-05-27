@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-05-15
+**Last verified:** 2026-05-26
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -22,11 +22,12 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 CivicSuite is under release-recovery review. Public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims are frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
-- `civicrecords-ai` (FOIA / records) is the most mature module today; v1.6.1 is a developer-preview release with the ingestion worker recovery patch shipped.
-- `civicclerk` (meetings) has substantial workflow code and a first React staff workspace; v1.0.1 shipped the protected-default recovery patch.
-- CivicCode v1.0.0, CivicAccess v1.0.0, CivicZone v1.0.0, and CivicPlan v1.0.0 have passed their public-use module release gates; CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain demoted to v0.2.0.
-- The remaining 15 modules are foundation-tier surfaces (sample APIs, sample UI, civiccore alignment) — not yet usable products.
-- `civiccore` is the shared platform package under all of them; v1.1.0 is the current shared-platform release.
+- `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
+- `civicrecords-ai` (FOIA / records) is the current developer-preview records release car at v1.7.3.
+- `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
+- `civiccode` is the current municipal-code release car at v1.0.8.
+- CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
+- The city-core installer has current Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence in the active run record. It is beta-ready truth-reconciled, not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
 
@@ -47,7 +48,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 ### Prerequisites
 
 - A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. Windows and macOS remain archive/readiness wrapper paths until matching-host lifecycle evidence is recorded on those hosts.
+- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. The city-core first-run wizard offers a Guided Setup path for supported Linux and Windows hosts, plus a Manual Prerequisite path for IT-managed machines. macOS remains beta/archive/readiness only.
 - About 30 minutes for first install (model downloads).
 
 ### Install (Windows wrapper)
@@ -62,7 +63,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 
 ### Install (Linux / macOS)
 
-Linux is the primary runtime target and has matching-host lifecycle evidence for the clerk-core beta. The script path below also runs on macOS today, but macOS is not lifecycle-certified yet.
+Linux is the primary runtime target. Windows is supported through a wrapper around the same containerized services. macOS remains beta/archive/readiness only until matching-host lifecycle evidence exists.
 
 ```bash
 git clone https://github.com/CivicSuite/civicrecords-ai.git
@@ -70,12 +71,12 @@ cd civicrecords-ai
 bash install.sh
 ```
 
-The script does not install Docker/WSL — those must already be present.
+For city-core, the first-run wizard can guide supported Linux/Windows prerequisite setup, then resumes the install. For IT-managed machines, choose Manual Prerequisite after Docker/WSL is already present. macOS prerequisite bootstrap remains out of scope for this run.
 
 ### First task: search a small document set
 
 1. Open <http://localhost:8080> in your browser.
-2. Sign in with the admin credentials you configured in `.env`.
+2. Sign in with the initial administrator credential file surfaced by the installer, rotate it immediately, and store the rotated value in your municipal password vault.
 3. **Sources → Add Source** → enter a directory path with a few sample PDFs/DOCX files.
 4. Click **Ingest Now**. The pipeline parses, chunks, embeds, and indexes the documents.
 5. **Search** → type a natural-language query (e.g., "what does the city pay for streetlight maintenance?"). Results show with source attribution and relevance scores.
@@ -89,7 +90,7 @@ The script does not install Docker/WSL — those must already be present.
 ### Where to go next
 
 - For real evaluation: stand up a non-production tenant, ingest a representative document corpus, and run a week of internal staff requests through it.
-- For procurement: wait for the recovery gates to pass.
+- For procurement: wait for a later procurement-readiness gate; this beta-ready truth-reconciled package is not procurement-ready.
 - For development: read [CONTRIBUTING.md](CONTRIBUTING.md) and the records-ai `docs/`.
 
 ---
@@ -104,7 +105,7 @@ The `civicsuite` repo is **documentation-, governance-, and coordination-first**
 - the [Shared extraction consumer rollout playbook](docs/roadmap/shared-extraction-consumer-rollout.md)
 - the unified suite specification and module catalog under `docs/` and `specs/`
 - suite-level governance and ADRs
-- the **suite installer** under `installer/` (a working Clerk-Core public-use starter release path)
+- the **suite installer** under `installer/` (a prior Clerk-Core starter release path plus the active city-core profile work)
 - verification scripts under `scripts/`
 
 The umbrella does **not** contain runtime code for individual products — that lives in the per-module repos.
@@ -113,15 +114,13 @@ The umbrella does **not** contain runtime code for individual products — that 
 
 | Repo | Status (see STATUS.md for full detail) |
 |---|---|
-| `civicrecords-ai` | Most mature; v1.6.1 developer preview with ingestion worker recovery shipped |
-| `civiccore` | Shared platform; v1.1.0 current |
-| `civicclerk` | v1.0.1 protected-default recovery patch |
-| `civiccode` | v1.0.0 public-use module release |
-| `civicaccess` | v1.0.0 public-use module release |
-| `civiczone` | v1.0.0 public-use module release |
-| `civicplan` | v1.0.0 public-use module release |
-| `civicpermit` | v0.2.0 demoted recovery label |
-| `civicinspect`, `civicgrants`, `civicprocure` | v0.2.0 demoted recovery labels |
+| `civicrecords-ai` | v1.7.3 developer-preview city-core records release car |
+| `civiccore` | Shared platform; v1.2.0 current city-core platform |
+| `civicclerk` | v1.0.3 meeting workflow city-core release car |
+| `civiccode` | v1.0.8 municipal-code city-core release car |
+| `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
+| `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
+| `civicgrants`, `civicprocure` | v0.2.0 scaffold-depth recovery labels |
 | All others | Foundation surfaces (v0.1.x) |
 | `civicregwatch`, `civicapi` | Planned; spec only |
 
@@ -236,7 +235,7 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 
 | Symptom | Where to look |
 |---|---|
-| Module will not install | The module repo's `README.md` and `CONTRIBUTING.md`; if you hit a Docker/WSL prereq, the module installer should diagnose it. |
+| Module will not install | The module repo's `README.md` and `CONTRIBUTING.md`; if you hit a Docker/WSL prereq, choose Guided Setup on supported Linux/Windows hosts or Manual Prerequisite for IT-managed environments. |
 | `civiccore` version mismatch | [docs/compatibility/index.md](docs/compatibility/index.md) is the canonical pairing source. |
 | README says "shipping," recovery doc says "frozen" | The recovery doc wins. See [docs/release-recovery-status.md](docs/release-recovery-status.md). |
 | Unsure where to file a bug | [CONTRIBUTING.md](CONTRIBUTING.md) — bug-routing decision tree. |

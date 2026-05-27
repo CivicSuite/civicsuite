@@ -39,6 +39,11 @@ import re
 import sys
 from pathlib import Path
 
+try:
+    import yaml  # type: ignore
+except ImportError:  # pragma: no cover - fallback keeps the checker stdlib-capable
+    yaml = None
+
 FORBIDDEN_STATUS_WORDS = {"done", "complete", "ready", "shippable", "taggable"}
 MIN_GOAL_CHARS = 30
 MIN_DOD_CHARS = 80
@@ -87,6 +92,15 @@ def _read_manifest(manifest_path: Path) -> dict[str, object]:
         sys.exit(1)
 
     text = manifest_path.read_text(encoding="utf-8")
+    if yaml is not None:
+        try:
+            data = yaml.safe_load(text) or {}
+        except Exception:
+            data = {}
+        pipeline_run = data.get("pipeline_run", data) if isinstance(data, dict) else {}
+        if isinstance(pipeline_run, dict):
+            return dict(pipeline_run)
+
     fields: dict[str, object] = {}
     current_list_key: str | None = None
 

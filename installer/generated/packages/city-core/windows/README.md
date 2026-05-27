@@ -3,13 +3,11 @@
 Profile: `city-core`
 Menu style: `guided`
 
-## Unsigned OSS Beta Notice
+## Unsigned City-Core Beta Notice
 
-This package is unsigned. CivicSuite is an open-source public-use starter release and signing
-certificates are not used for the public installer path. Windows may show
-SmartScreen or Unknown Publisher warnings. macOS may show unidentified
-developer warnings. Linux package tools may show an unsigned/local package
-warning.
+This package is unsigned. CivicSuite city-core is an open-source beta installer package pending Linux and Windows matching-host lifecycle proof. Signing certificates are not used for this beta installer path. Windows may show SmartScreen or Unknown Publisher
+warnings. macOS may show unidentified developer warnings. Linux package tools
+may show an unsigned/local package warning.
 
 This is expected for this beta distribution. Verify the SHA256 checksum from
 `installer/dist` and confirm the artifact came from the official CivicSuite
@@ -30,33 +28,48 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 8 GB RAM and 20 GB free disk for the full city-core
+- The host has at least 8 GB RAM and 60 GB free disk for the full city-core
   stack.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 
 This package is the operator-facing installer entrypoint for the selected
-platform. It does not install privileged baseline software by itself. It checks
-readiness, renders the selected install plan, installs the clerk-core runtime
-from the bundled module sources, verifies live service health, repairs by
-rebuilding/restarting the stack, and uninstalls Docker resources for the
-profile.
+platform. First-run mode offers Guided Setup for missing Docker/WSL
+prerequisites where this run supports it, or Manual Prerequisite mode for
+IT-managed machines. After prerequisites are present, it checks readiness,
+renders the selected install plan, installs the city-core runtime from the
+bundled module sources, verifies live service health, repairs by
+rebuilding/restarting the stack, backs up/restores data, and uninstalls Docker
+resources for the profile.
 
 ## First Run
 
-1. Run readiness:
+1. For the non-technical operator path, run first-run:
+
+   ```text
+   .\start-civicsuite-installer.ps1 -FirstRun
+   ```
+
+   The wizard asks for setup path, operator name, organization name, admin
+   email, time zone, license acceptance, and then performs the smoke/readiness
+   check before installing. After install, it prints staff dashboard URLs and
+   the local credential-file path for the generated first administrator login.
+   Open that file once, sign in, rotate the credential immediately, then store
+   the rotated value in the municipal vault.
+
+2. For IT/admin checks, run readiness:
 
    ```text
    .\start-civicsuite-installer.ps1 -Readiness
    ```
 
-2. Review the dry-run plan:
+3. Review the dry-run plan:
 
    ```text
    .\start-civicsuite-installer.ps1 -Plan
    ```
 
-3. Install the selected profile:
+4. Install the selected profile manually:
 
    ```text
    .\start-civicsuite-installer.ps1 -Install
@@ -117,7 +130,7 @@ protected while the proof creates real starter-set test records:
 - Rollback path: run backup, then uninstall; if you need a clean reset, remove
   the runtime directory only after confirming the backup manifest and dumps
   exist.
-- Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
+- Native host installer wrappers are generated but unsigned for this distribution.
 
 The repo/source checkout cleanroom gate remains available outside this
 distributable archive:

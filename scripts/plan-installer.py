@@ -31,10 +31,17 @@ BUNDLE_ROOT = GENERATED_ROOT / "bundles"
 DIST_ROOT = ROOT / "installer" / "dist"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
-SIGNING_STATUS = {
+DEFAULT_SIGNING_STATUS = {
     "signed": False,
     "status": "unsigned_public_use_starter",
     "reason": "CivicSuite is an open-source public-use starter release and the installer is intentionally unsigned.",
+    "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package.",
+}
+
+CITY_CORE_SIGNING_STATUS = {
+    "signed": False,
+    "status": "unsigned_city_core_beta",
+    "reason": "CivicSuite city-core is an unsigned beta installer package pending Linux and Windows matching-host lifecycle proof.",
     "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package.",
 }
 
@@ -75,6 +82,37 @@ SOURCE_BUNDLE_FORBIDDEN_PREFIXES = (
 )
 
 
+def _distribution_copy(profile_id: str) -> dict[str, str | dict[str, bool | str]]:
+    if profile_id == "city-core":
+        return {
+            "console_title": "CivicSuite city-core unsigned beta installer package",
+            "project_status": "Project status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.",
+            "notice_heading": "Unsigned City-Core Beta Notice",
+            "notice_body": (
+                "This package is unsigned. CivicSuite city-core is an open-source beta "
+                "installer package pending Linux and Windows matching-host lifecycle "
+                "proof. Signing certificates are not used for this beta installer path."
+            ),
+            "native_wrapper_status": "manifests_generated",
+            "distribution_status": "unsigned_city_core_beta",
+            "next_action": "Publish only after the Linux and Windows lifecycle evidence, SHA256 checksum, and official-source trust path are verified.",
+            "signing": CITY_CORE_SIGNING_STATUS,
+        }
+    return {
+        "console_title": "CivicSuite OSS public-use starter installer package",
+        "project_status": "Project status: public-use starter release; the installer is intentionally unsigned.",
+        "notice_heading": "Unsigned OSS Beta Notice",
+        "notice_body": (
+            "This package is unsigned. CivicSuite is an open-source public-use starter "
+            "release and signing certificates are not used for the public installer path."
+        ),
+        "native_wrapper_status": "manifests_generated",
+        "distribution_status": "unsigned_public_use_starter",
+        "next_action": "Publish verified unsigned public-use starter archives only through the SHA256 and official-source trust path.",
+        "signing": DEFAULT_SIGNING_STATUS,
+    }
+
+
 class PlannerError(RuntimeError):
     pass
 
@@ -89,7 +127,7 @@ READINESS_SCENARIOS = {
 }
 
 EXECUTION_TOKEN = "_".join(("I", "UNDERSTAND", "THIS", "MUTATES", "HOST"))
-MIN_FREE_DISK_BYTES = 20 * 1024 * 1024 * 1024
+MIN_FREE_DISK_BYTES = 60 * 1024 * 1024 * 1024
 MIN_MEMORY_BYTES = 8 * 1024 * 1024 * 1024
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 
@@ -644,6 +682,15 @@ def _known_command_path(name: str) -> str | None:
     return None
 
 
+def _probe_wsl_docker(wsl_path: str | None) -> dict[str, Any] | None:
+    if not wsl_path:
+        return None
+    return _run_probe(
+        [wsl_path, "bash", "-lc", "docker info --format '{{.ServerVersion}}'"],
+        timeout=30,
+    )
+
+
 def _memory_bytes() -> int | None:
     if platform.system().lower() == "windows":
 
@@ -712,12 +759,18 @@ def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, An
     }
     if system == "windows":
         wsl_path = shutil.which("wsl.exe") or shutil.which("wsl")
-        wsl_probe = _run_probe([wsl_path, "--status"]) if wsl_path else None
+        wsl_probe = _run_probe([wsl_path, "--status"], timeout=20) if wsl_path else None
+        wsl_docker_probe = _probe_wsl_docker(wsl_path)
+        if not checks["container-runtime"]["detected"] and wsl_docker_probe and wsl_docker_probe["ok"]:
+            checks["container-runtime"]["detected"] = True
+            checks["container-runtime"]["evidence"]["fallback"] = "wsl_docker"
+            checks["container-runtime"]["evidence"]["wsl_docker_probe"] = wsl_docker_probe
         checks["wsl2"] = {
             "detected": bool(wsl_path and wsl_probe and wsl_probe["ok"]),
             "evidence": {
                 "wsl_path": wsl_path,
                 "probe": wsl_probe,
+                "docker_probe": wsl_docker_probe,
             },
         }
     checks["civiccore-compatibility"] = {
@@ -1500,6 +1553,7 @@ def _package_launcher_name(platform_id: str) -> str:
 def _package_launcher_text(
     *, platform_id: str, profile_id: str, menu_style: str
 ) -> str:
+    copy = _distribution_copy(profile_id)
     if platform_id == "windows":
         return f"""param(
     [switch]$Readiness,
@@ -1510,6 +1564,9 @@ def _package_launcher_text(
     [switch]$Backup,
     [switch]$Restore,
     [switch]$Uninstall,
+    [switch]$FirstRun,
+    [switch]$GuidedSetup,
+    [switch]$ManualPrerequisite,
     [ValidateSet("protected", "bearer", "open")]
     [string]$StaffMode = "protected",
     [switch]$WorkflowProof,
@@ -1521,11 +1578,255 @@ $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\\..\\..\\..\\..")
 $Planner = Join-Path $RepoRoot "scripts\\plan-installer.py"
 $Lifecycle = Join-Path $RepoRoot "scripts\\run-clerk-core-installer.py"
+$script:CivicSuiteLastLifecycleExitCode = 0
 
-Write-Host "CivicSuite OSS public-use starter installer package"
+function ConvertTo-WslArg([string]$Value) {{
+    $SingleQuote = [char]39
+    $Replacement = $SingleQuote + '"' + $SingleQuote + '"' + $SingleQuote
+    return $SingleQuote + $Value.Replace([string]$SingleQuote, $Replacement) + $SingleQuote
+}}
+
+function ConvertTo-WslPath([string]$Value) {{
+    $Resolved = [System.IO.Path]::GetFullPath($Value)
+    if ($Resolved -match '^([A-Za-z]):\\\\(.*)$') {{
+        $Drive = $Matches[1].ToLowerInvariant()
+        $Tail = $Matches[2] -replace [regex]::Escape([string][char]92), '/'
+        return "/mnt/$Drive/$Tail"
+    }}
+    $Converted = & wsl wslpath -a $Resolved 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not $Converted) {{
+        throw "Could not translate Windows path for WSL: $Resolved"
+    }}
+    return ($Converted | Select-Object -First 1).Trim()
+}}
+
+function Test-WslDocker {{
+    $null = & wsl bash -lc 'docker info --format "{{{{.ServerVersion}}}}" >/dev/null 2>&1'
+    return $LASTEXITCODE -eq 0
+}}
+
+function Test-CivicSuiteAdmin {{
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}}
+
+function Get-CivicSuiteLastExitCode {{
+    if ($null -eq $LASTEXITCODE) {{
+        return 0
+    }}
+    return [int]$LASTEXITCODE
+}}
+
+function Get-CivicSuiteBootstrapReportDir {{
+    $ReportDir = Join-Path $RepoRoot "installer\\reports\\docker-wsl-bootstrap"
+    New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
+    return $ReportDir
+}}
+
+function Write-CivicSuiteBootstrapLog([string]$Name, [string]$Content) {{
+    $ReportDir = Get-CivicSuiteBootstrapReportDir
+    $Path = Join-Path $ReportDir $Name
+    $Content | Out-File -FilePath $Path -Encoding utf8
+    Write-Host "Bootstrap evidence: $Path"
+}}
+
+function Register-CivicSuiteRunOnce {{
+    $Command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -FirstRun"
+    New-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce" -Name "CivicSuiteInstallerResume" -Value $Command -PropertyType String -Force | Out-Null
+    Write-Host "CivicSuite will resume after reboot using Windows RunOnce."
+}}
+
+function Get-CivicSuiteInstallRoot {{
+    if ($env:CIVICSUITE_INSTALLER_INSTALL_ROOT) {{
+        return $env:CIVICSUITE_INSTALLER_INSTALL_ROOT
+    }}
+    return (Join-Path $RepoRoot "installer\\runtime\\clerk-core")
+}}
+
+function Read-CivicSuiteWizardValue([string]$Label, [string]$Default = "", [switch]$Required) {{
+    $EnvName = "CIVICSUITE_" + ($Label.ToUpperInvariant() -replace "[^A-Z0-9]+", "_").Trim("_")
+    $Preset = [Environment]::GetEnvironmentVariable($EnvName)
+    if ($Preset) {{
+        Write-Host "$Label`: $Preset"
+        return $Preset
+    }}
+    while ($true) {{
+        $Suffix = if ($Default) {{ " [$Default]" }} else {{ "" }}
+        $Value = Read-Host "$Label$Suffix"
+        if (-not $Value -and $Default) {{ $Value = $Default }}
+        if ($Value -or -not $Required) {{ return $Value }}
+        Write-Host "This field is required so CivicSuite can finish first-run setup."
+    }}
+}}
+
+function Invoke-CivicSuiteFirstRunWizard {{
+    $SetupPath = $env:CIVICSUITE_SETUP_PATH
+    if (-not $SetupPath) {{
+        Write-Host ""
+        Write-Host "Choose setup path:"
+        Write-Host "1. Guided Setup - install missing WSL/Docker components with admin consent."
+        Write-Host "2. Manual Prerequisite - Docker Desktop + WSL2 are already installed."
+        $SetupPath = Read-Host "Enter 1 for Guided Setup or 2 for Manual Prerequisite"
+    }}
+    if ($SetupPath -eq "guided") {{ $SetupPath = "1" }}
+    if ($SetupPath -eq "manual") {{ $SetupPath = "2" }}
+    if ($SetupPath -ne "1" -and $SetupPath -ne "2") {{
+        Write-Error "Choose 1 or 2. No installation was started."
+        exit 2
+    }}
+
+    $OperatorName = Read-CivicSuiteWizardValue "operator name" -Required
+    $OrganizationName = Read-CivicSuiteWizardValue "organization name" -Required
+    $AdminEmail = Read-CivicSuiteWizardValue "admin email" "admin@example.gov" -Required
+    $TimeZone = Read-CivicSuiteWizardValue "time zone" ([TimeZoneInfo]::Local.Id) -Required
+    $LicenseAccept = $env:CIVICSUITE_LICENSE_ACCEPT
+    if (-not $LicenseAccept) {{
+        $LicenseAccept = Read-Host "Type ACCEPT to confirm CivicSuite terms and the Docker Desktop license prompt when Docker Desktop first starts"
+    }}
+    if ($LicenseAccept -ne "ACCEPT") {{
+        Write-Error "License acceptance is required before first-run install. No installation was started."
+        exit 2
+    }}
+
+    $env:CIVICSUITE_FIRST_ADMIN_EMAIL = $AdminEmail
+
+    $ReportDir = Join-Path $RepoRoot "installer\\reports\\first-run"
+    New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
+    $InstallRoot = Get-CivicSuiteInstallRoot
+    $ReportPath = Join-Path $ReportDir "first-run-setup.json"
+    @{{
+        setup_path = $(if ($SetupPath -eq "1") {{ "guided" }} else {{ "manual-prerequisite" }})
+        operator_name = $OperatorName
+        organization_name = $OrganizationName
+        admin_email = $AdminEmail
+        time_zone = $TimeZone
+        license_acceptance = "accepted"
+        install_root = $InstallRoot
+        generated_at = (Get-Date).ToUniversalTime().ToString("o")
+        rotation_required = $true
+    }} | ConvertTo-Json | Out-File -FilePath $ReportPath -Encoding utf8
+    Write-Host "First-run setup evidence: $ReportPath"
+    return @{{
+        setup_path = $SetupPath
+        admin_email = $AdminEmail
+        install_root = $InstallRoot
+    }}
+}}
+
+function Show-CivicSuitePostInstallDashboard([hashtable]$Wizard) {{
+    $CredentialPath = Join-Path $Wizard.install_root "sources\\civicrecords-ai\\data\\secrets\\first_admin_password"
+    Write-Host ""
+    Write-Host "CivicSuite staff dashboard is installed."
+    Write-Host "Admin email: $($Wizard.admin_email)"
+    Write-Host "Initial administrator credential file: $CredentialPath"
+    Write-Host "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+    Write-Host "Records AI staff dashboard: http://127.0.0.1:18080/"
+    Write-Host "CivicClerk staff dashboard: http://127.0.0.1:18081/"
+    Write-Host "CivicCode API/search: http://127.0.0.1:18820/"
+}}
+
+function Invoke-CivicSuiteGuidedSetup {{
+    if (-not (Test-CivicSuiteAdmin)) {{
+        Write-Host "CivicSuite needs Windows administrator consent to install WSL/Docker prerequisites."
+        Start-Process powershell.exe -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $PSCommandPath, "-GuidedSetup")
+        exit 0
+    }}
+
+    $Build = [Environment]::OSVersion.Version.Build
+    $Arch = $env:PROCESSOR_ARCHITECTURE
+    if ($Build -lt 19041) {{
+        Write-Error "Windows 10 build 19041+ or Windows 11 is required. Ask IT to upgrade Windows, then rerun CivicSuite."
+        exit 2
+    }}
+    if ($Arch -ne "AMD64") {{
+        Write-Error "This CivicSuite installer supports AMD64 Windows only in this run. ARM Windows is out of scope."
+        exit 2
+    }}
+
+    $ReportDir = Get-CivicSuiteBootstrapReportDir
+    $WslStatus = (& wsl --status 2>&1 | Out-String)
+    Write-CivicSuiteBootstrapLog "windows-wsl-status-before.txt" $WslStatus
+    if ($LASTEXITCODE -ne 0) {{
+        Write-Host "Installing WSL2 and Virtual Machine Platform with Microsoft's official wsl --install path."
+        $WslInstall = (& wsl --install 2>&1 | Out-String)
+        Write-CivicSuiteBootstrapLog "windows-wsl-install.txt" $WslInstall
+        Register-CivicSuiteRunOnce
+        Write-Host "If Windows asks to reboot, reboot now. CivicSuite will resume automatically."
+        exit $LASTEXITCODE
+    }}
+
+    $DockerDesktop = Join-Path $env:ProgramFiles "Docker\\Docker\\Docker Desktop.exe"
+    if (-not (Test-Path $DockerDesktop)) {{
+        $InstallerUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
+        $InstallerPath = Join-Path $ReportDir "Docker Desktop Installer.exe"
+        Write-Host "Downloading Docker Desktop from the official Docker Desktop URL."
+        Invoke-WebRequest -Uri $InstallerUrl -OutFile $InstallerPath
+        $Hash = Get-FileHash -Algorithm SHA256 -Path $InstallerPath
+        Write-CivicSuiteBootstrapLog "docker-desktop-download.json" (@{{ url = $InstallerUrl; path = $InstallerPath; sha256 = $Hash.Hash; downloaded_at = (Get-Date).ToUniversalTime().ToString("o") }} | ConvertTo-Json)
+        $InstallLog = Join-Path $ReportDir "docker-desktop-install.txt"
+        $Proc = Start-Process -FilePath $InstallerPath -ArgumentList @("install", "--quiet") -Wait -PassThru -RedirectStandardOutput $InstallLog -RedirectStandardError "$InstallLog.err"
+        Register-CivicSuiteRunOnce
+        if ($Proc.ExitCode -ne 0) {{
+            Write-Error "Docker Desktop installer exited with $($Proc.ExitCode). Review $InstallLog and $InstallLog.err, then ask IT for help."
+            exit $Proc.ExitCode
+        }}
+        Write-Host "Docker Desktop installed. Start Docker Desktop, accept Docker's license at first start, then rerun CivicSuite if it does not resume automatically."
+        exit 0
+    }}
+
+    Write-Host "Guided setup prerequisites are present. Continuing with CivicSuite readiness."
+}}
+
+function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs, [switch]$ReturnAfter) {{
+    if (Test-WslDocker) {{
+        $RepoRootWsl = ConvertTo-WslPath $RepoRoot
+        $EnvParts = @()
+        if ($env:CIVICSUITE_INSTALLER_RUN_ID) {{
+            $EnvParts += "export CIVICSUITE_INSTALLER_RUN_ID=$(ConvertTo-WslArg $env:CIVICSUITE_INSTALLER_RUN_ID);"
+        }}
+        if ($env:CIVICSUITE_INSTALLER_INSTALL_ROOT) {{
+            $InstallRootWsl = ConvertTo-WslPath $env:CIVICSUITE_INSTALLER_INSTALL_ROOT
+            $EnvParts += "export CIVICSUITE_INSTALLER_INSTALL_ROOT=$(ConvertTo-WslArg $InstallRootWsl);"
+        }}
+        if ($env:CIVICSUITE_INSTALLER_PORT_OFFSET) {{
+            $EnvParts += "export CIVICSUITE_INSTALLER_PORT_OFFSET=$(ConvertTo-WslArg $env:CIVICSUITE_INSTALLER_PORT_OFFSET);"
+        }}
+        if ($env:CIVICSUITE_INSTALLER_PROJECT_SUFFIX) {{
+            $EnvParts += "export CIVICSUITE_INSTALLER_PROJECT_SUFFIX=$(ConvertTo-WslArg $env:CIVICSUITE_INSTALLER_PROJECT_SUFFIX);"
+        }}
+        if ($env:CIVICSUITE_FIRST_ADMIN_EMAIL) {{
+            $EnvParts += "export CIVICSUITE_FIRST_ADMIN_EMAIL=$(ConvertTo-WslArg $env:CIVICSUITE_FIRST_ADMIN_EMAIL);"
+        }}
+        if ($env:DOCKER_CONFIG) {{
+            $DockerConfigWsl = ConvertTo-WslPath $env:DOCKER_CONFIG
+            $EnvParts += "export DOCKER_CONFIG=$(ConvertTo-WslArg $DockerConfigWsl);"
+        }}
+        $AllArgs = @($Mode) + @($LifecycleArgs)
+        $QuotedArgs = $AllArgs | ForEach-Object {{ ConvertTo-WslArg $_ }}
+        $Command = ($EnvParts -join " ") + " cd $(ConvertTo-WslArg $RepoRootWsl) && python3 scripts/run-clerk-core-installer.py " + ($QuotedArgs -join " ")
+        & wsl bash -lc $Command
+        $ExitCode = Get-CivicSuiteLastExitCode
+        if ($ReturnAfter) {{
+            $script:CivicSuiteLastLifecycleExitCode = $ExitCode
+            return
+        }}
+        exit $ExitCode
+    }}
+
+    python $Lifecycle $Mode @LifecycleArgs
+    $ExitCode = Get-CivicSuiteLastExitCode
+    if ($ReturnAfter) {{
+        $script:CivicSuiteLastLifecycleExitCode = $ExitCode
+        return
+    }}
+    exit $ExitCode
+}}
+
+Write-Host "{copy['console_title']}"
 Write-Host "Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings."
 Write-Host "Trust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands."
-Write-Host "Project status: public-use starter release; the installer is intentionally unsigned."
+Write-Host "{copy['project_status']}"
 
 $PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
 $LifecycleModuleArgs = @()
@@ -1551,37 +1852,63 @@ if ($Module -and $Module.Count -gt 0) {{
 
 if ($Plan) {{
     python $Planner @PlannerArgs
-    exit $LASTEXITCODE
+    exit (Get-CivicSuiteLastExitCode)
+}}
+
+if ($GuidedSetup) {{
+    Invoke-CivicSuiteGuidedSetup
+    python $Planner @PlannerArgs --show-readiness --detect-host
+    exit (Get-CivicSuiteLastExitCode)
+}}
+
+if ($FirstRun) {{
+    $Wizard = Invoke-CivicSuiteFirstRunWizard
+    if ($Wizard.setup_path -eq "1") {{
+        Invoke-CivicSuiteGuidedSetup
+    }}
+    python $Planner @PlannerArgs --show-readiness --detect-host
+    $PlannerExit = Get-CivicSuiteLastExitCode
+    if ($PlannerExit -ne 0) {{ exit $PlannerExit }}
+    if ($env:CIVICSUITE_FIRST_RUN_SMOKE_ONLY -eq "1") {{
+        Write-Host "First-run smoke only: setup wizard and readiness passed; install was not started."
+        exit 0
+    }}
+    Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs)) -ReturnAfter
+    $InstallExit = $script:CivicSuiteLastLifecycleExitCode
+    if ($InstallExit -ne 0) {{ exit $InstallExit }}
+    Show-CivicSuitePostInstallDashboard $Wizard
+    exit 0
+}}
+
+if ($ManualPrerequisite) {{
+    python $Planner @PlannerArgs --show-readiness --detect-host
+    $PlannerExit = Get-CivicSuiteLastExitCode
+    if ($PlannerExit -ne 0) {{ exit $PlannerExit }}
+    Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
 }}
 
 if ($Install) {{
-    python $Lifecycle install @LifecycleModeArgs @LifecycleModuleArgs
-    exit $LASTEXITCODE
+    Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
 }}
 
 if ($Verify) {{
-    python $Lifecycle verify @LifecycleModeArgs @LifecycleModuleArgs
-    exit $LASTEXITCODE
+    Invoke-CivicSuiteLifecycle "verify" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
 }}
 
 if ($Repair) {{
-    python $Lifecycle repair @LifecycleModeArgs @LifecycleModuleArgs
-    exit $LASTEXITCODE
+    Invoke-CivicSuiteLifecycle "repair" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
 }}
 
 if ($Backup) {{
-    python $Lifecycle backup @LifecycleModuleArgs
-    exit $LASTEXITCODE
+    Invoke-CivicSuiteLifecycle "backup" (@($LifecycleModuleArgs))
 }}
 
 if ($Restore) {{
-    python $Lifecycle restore @LifecycleModuleArgs
-    exit $LASTEXITCODE
+    Invoke-CivicSuiteLifecycle "restore" (@($LifecycleModuleArgs))
 }}
 
 if ($Uninstall) {{
-    python $Lifecycle uninstall @LifecycleModuleArgs
-    exit $LASTEXITCODE
+    Invoke-CivicSuiteLifecycle "uninstall" (@($LifecycleModuleArgs))
 }}
 
 python $Planner @PlannerArgs --show-readiness --detect-host
@@ -1595,10 +1922,10 @@ REPO_ROOT="$(cd "${{SCRIPT_DIR}}/../../../../.." && pwd)"
 PLANNER="${{REPO_ROOT}}/scripts/plan-installer.py"
 LIFECYCLE="${{REPO_ROOT}}/scripts/run-clerk-core-installer.py"
 
-echo "CivicSuite OSS public-use starter installer package"
+echo "{copy['console_title']}"
 echo "Signing status: unsigned. Your OS may show an unknown developer/publisher warning."
 echo "Trust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands."
-echo "Project status: public-use starter release; the installer is intentionally unsigned."
+echo "{copy['project_status']}"
 
 MODE="${{1:-readiness}}"
 if [[ "$#" -gt 0 ]]; then
@@ -1609,6 +1936,113 @@ PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
 LIFECYCLE_MODULE_ARGS=({'"--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode"' if profile_id == "city-core" else ""})
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
+first_run_wizard() {{
+  local setup_path="${{CIVICSUITE_SETUP_PATH:-}}"
+  if [[ -z "$setup_path" ]]; then
+    echo ""
+    echo "Choose setup path:"
+    echo "1. Guided Setup - install missing Docker Engine components with sudo consent."
+    echo "2. Manual Prerequisite - Docker Engine is already installed."
+    printf "Enter 1 for Guided Setup or 2 for Manual Prerequisite: "
+    read -r setup_path
+  fi
+  if [[ "$setup_path" == "guided" ]]; then setup_path="1"; fi
+  if [[ "$setup_path" == "manual" ]]; then setup_path="2"; fi
+  if [[ "$setup_path" != "1" && "$setup_path" != "2" ]]; then
+    echo "Choose 1 or 2. No installation was started." >&2
+    exit 2
+  fi
+  read_wizard_value "operator name" CIVICSUITE_OPERATOR_NAME "" required
+  operator_name="$WIZARD_VALUE"
+  read_wizard_value "organization name" CIVICSUITE_ORGANIZATION_NAME "" required
+  organization_name="$WIZARD_VALUE"
+  read_wizard_value "admin email" CIVICSUITE_ADMIN_EMAIL "admin@example.gov" required
+  admin_email="$WIZARD_VALUE"
+  read_wizard_value "time zone" CIVICSUITE_TIME_ZONE "$(detect_timezone)" required
+  time_zone="$WIZARD_VALUE"
+  license_accept="${{CIVICSUITE_LICENSE_ACCEPT:-}}"
+  if [[ -z "$license_accept" ]]; then
+    printf "Type ACCEPT to confirm CivicSuite terms and any Docker license prompt shown by Docker: "
+    read -r license_accept
+  fi
+  if [[ "$license_accept" != "ACCEPT" ]]; then
+    echo "License acceptance is required before first-run install. No installation was started." >&2
+    exit 2
+  fi
+  export CIVICSUITE_FIRST_ADMIN_EMAIL="$admin_email"
+  first_run_report_dir="${{REPO_ROOT}}/installer/reports/first-run"
+  mkdir -p "$first_run_report_dir"
+  first_run_report="${{first_run_report_dir}}/first-run-setup.json"
+  setup_label="manual-prerequisite"
+  if [[ "$setup_path" == "1" ]]; then setup_label="guided"; fi
+  python3 - "$first_run_report" "$setup_label" "$operator_name" "$organization_name" "$admin_email" "$time_zone" "${{CIVICSUITE_INSTALLER_INSTALL_ROOT:-${{REPO_ROOT}}/installer/runtime/clerk-core}}" <<'PY'
+import json, sys
+from datetime import datetime, UTC
+path, setup, operator, org, email, tz, root = sys.argv[1:]
+payload = {{
+    "setup_path": setup,
+    "operator_name": operator,
+    "organization_name": org,
+    "admin_email": email,
+    "time_zone": tz,
+    "license_acceptance": "accepted",
+    "install_root": root,
+    "generated_at": datetime.now(UTC).isoformat(),
+    "rotation_required": True,
+}}
+open(path, "w", encoding="utf-8").write(json.dumps(payload, indent=2) + "\\n")
+PY
+  echo "First-run setup evidence: $first_run_report"
+  WIZARD_SETUP_PATH="$setup_path"
+  WIZARD_ADMIN_EMAIL="$admin_email"
+  WIZARD_INSTALL_ROOT="${{CIVICSUITE_INSTALLER_INSTALL_ROOT:-${{REPO_ROOT}}/installer/runtime/clerk-core}}"
+}}
+
+read_wizard_value() {{
+  local label="$1"
+  local env_name="$2"
+  local default="$3"
+  local required="${{4:-}}"
+  local preset="${{!env_name:-}}"
+  if [[ -n "$preset" ]]; then
+    echo "$label: $preset"
+    WIZARD_VALUE="$preset"
+    return
+  fi
+  while true; do
+    if [[ -n "$default" ]]; then
+      printf "%s [%s]: " "$label" "$default"
+    else
+      printf "%s: " "$label"
+    fi
+    read -r value
+    if [[ -z "$value" && -n "$default" ]]; then value="$default"; fi
+    if [[ -n "$value" || "$required" != "required" ]]; then
+      WIZARD_VALUE="$value"
+      return
+    fi
+    echo "This field is required so CivicSuite can finish first-run setup."
+  done
+}}
+
+detect_timezone() {{
+  if command -v timedatectl >/dev/null 2>&1; then
+    timedatectl show -p Timezone --value 2>/dev/null || true
+  fi
+}}
+
+show_post_install_dashboard() {{
+  local credential_path="${{WIZARD_INSTALL_ROOT}}/sources/civicrecords-ai/data/secrets/first_admin_password"
+  echo ""
+  echo "CivicSuite staff dashboard is installed."
+  echo "Admin email: $WIZARD_ADMIN_EMAIL"
+  echo "Initial administrator credential file: $credential_path"
+  echo "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+  echo "Records AI staff dashboard: http://127.0.0.1:18080/"
+  echo "CivicClerk staff dashboard: http://127.0.0.1:18081/"
+  echo "CivicCode API/search: http://127.0.0.1:18820/"
+}}
+
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --staff-mode)
@@ -1651,6 +2085,42 @@ else
 fi
 
 case "${{MODE}}" in
+  first-run)
+    first_run_wizard
+    if [[ "$WIZARD_SETUP_PATH" == "1" ]]; then
+      bash "$0" bootstrap-prerequisites
+    fi
+    python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
+    if [[ "${{CIVICSUITE_FIRST_RUN_SMOKE_ONLY:-}}" == "1" ]]; then
+      echo "First-run smoke only: setup wizard and readiness passed; install was not started."
+      exit 0
+    fi
+    python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
+    show_post_install_dashboard
+    ;;
+  bootstrap-prerequisites)
+    if [[ "{platform_id}" == "macos" ]]; then
+      echo "macOS prerequisite bootstrap is out of scope for this run. Use the documented beta readiness path only." >&2
+      exit 2
+    fi
+    report_dir="${{REPO_ROOT}}/installer/reports/docker-wsl-bootstrap"
+    mkdir -p "$report_dir"
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+      echo "Docker Engine is already installed and running."
+      exit 0
+    fi
+    script_path="$report_dir/get-docker.sh"
+    script_url="https://get.docker.com"
+    echo "Downloading Docker's official Linux convenience script to $script_path"
+    curl -fsSL "$script_url" -o "$script_path"
+    sha256sum "$script_path" > "$report_dir/get-docker.sha256"
+    printf '{{"url":"%s","path":"%s","downloaded_at":"%s"}}\n' "$script_url" "$script_path" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$report_dir/get-docker-download.json"
+    if [[ "$(id -u)" -eq 0 ]]; then
+      sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
+    else
+      sudo sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
+    fi
+    ;;
   plan)
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}"
     ;;
@@ -1676,7 +2146,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac
@@ -1686,6 +2156,7 @@ esac
 def _package_readme_text(
     *, profile_id: str, menu_style: str, platform_id: str, plan: dict[str, Any]
 ) -> str:
+    copy = _distribution_copy(profile_id)
     launcher = _package_launcher_name(platform_id)
     module_lines = "\n".join(f"- {module_id}" for module_id in plan["modules"])
     lifecycle_modules = [module_id for module_id in plan["modules"] if module_id != "civiccore"]
@@ -1718,13 +2189,11 @@ def _package_readme_text(
 Profile: `{profile_id}`
 Menu style: `{menu_style}`
 
-## Unsigned OSS Beta Notice
+## {copy['notice_heading']}
 
-This package is unsigned. CivicSuite is an open-source public-use starter release and signing
-certificates are not used for the public installer path. Windows may show
-SmartScreen or Unknown Publisher warnings. macOS may show unidentified
-developer warnings. Linux package tools may show an unsigned/local package
-warning.
+{copy['notice_body']} Windows may show SmartScreen or Unknown Publisher
+warnings. macOS may show unidentified developer warnings. Linux package tools
+may show an unsigned/local package warning.
 
 This is expected for this beta distribution. Verify the SHA256 checksum from
 `installer/dist` and confirm the artifact came from the official CivicSuite
@@ -1745,33 +2214,48 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 8 GB RAM and 20 GB free disk for the full city-core
+- The host has at least 8 GB RAM and 60 GB free disk for the full city-core
   stack.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 
 This package is the operator-facing installer entrypoint for the selected
-platform. It does not install privileged baseline software by itself. It checks
-readiness, renders the selected install plan, installs the clerk-core runtime
-from the bundled module sources, verifies live service health, repairs by
-rebuilding/restarting the stack, and uninstalls Docker resources for the
-profile.
+platform. First-run mode offers Guided Setup for missing Docker/WSL
+prerequisites where this run supports it, or Manual Prerequisite mode for
+IT-managed machines. After prerequisites are present, it checks readiness,
+renders the selected install plan, installs the {profile_id} runtime from the
+bundled module sources, verifies live service health, repairs by
+rebuilding/restarting the stack, backs up/restores data, and uninstalls Docker
+resources for the profile.
 
 ## First Run
 
-1. Run readiness:
+1. For the non-technical operator path, run first-run:
+
+   ```text
+   {"." + "\\" + launcher + " -FirstRun" if platform_id == "windows" else "bash ./" + launcher + " first-run"}
+   ```
+
+   The wizard asks for setup path, operator name, organization name, admin
+   email, time zone, license acceptance, and then performs the smoke/readiness
+   check before installing. After install, it prints staff dashboard URLs and
+   the local credential-file path for the generated first administrator login.
+   Open that file once, sign in, rotate the credential immediately, then store
+   the rotated value in the municipal vault.
+
+2. For IT/admin checks, run readiness:
 
    ```text
    {readiness}
    ```
 
-2. Review the dry-run plan:
+3. Review the dry-run plan:
 
    ```text
    {plan_command}
    ```
 
-3. Install the selected profile:
+4. Install the selected profile manually:
 
    ```text
    {"." + "\\" + launcher + " -Install" if platform_id == "windows" else "bash ./" + launcher + " install"}
@@ -1829,7 +2313,7 @@ protected while the proof creates real starter-set test records:
 - Rollback path: run backup, then uninstall; if you need a clean reset, remove
   the runtime directory only after confirming the backup manifest and dumps
   exist.
-- Native host installer wrappers are generated but unsigned in this OSS public-use starter release.
+- Native host installer wrappers are generated but unsigned for this distribution.
 
 The repo/source checkout cleanroom gate remains available outside this
 distributable archive:
@@ -1937,11 +2421,12 @@ def _package_host(platform_id: str) -> dict[str, str]:
 def _native_manifest_files(
     *, profile_id: str, platform_id: str, version: str, package_dir: Path
 ) -> dict[str, str]:
+    copy = _distribution_copy(profile_id)
     package_rel = package_dir.relative_to(ROOT).as_posix()
     if platform_id == "windows":
         return {
             "CivicSuiteInstaller.iss": f"""; CivicSuite Windows installer wrapper manifest.
-; Unsigned OSS public-use starter: build with Inno Setup after reviewing the generated package payload.
+; {copy['console_title']}: build with Inno Setup after reviewing the generated package payload.
 
 #define AppName "CivicSuite"
 #define AppVersion "{version}"
@@ -2173,6 +2658,7 @@ contains the sibling `{module_name}` checkout and must pass
 def _stage_release_bundle(
     *, profile_id: str, platform_id: str, package_dir: Path
 ) -> Path:
+    copy = _distribution_copy(profile_id)
     bundle_dir = (
         BUNDLE_ROOT
         / profile_id
@@ -2228,10 +2714,10 @@ def _stage_release_bundle(
     (bundle_dir / "README.md").write_text(
         f"""# CivicSuite {profile_id} Installer Bundle
 
-This unsigned OSS public-use starter bundle is self-contained for the {profile_id} profile. It
-includes the installer lifecycle runner, the selected platform package, and the
-module source trees needed to build/start the selected CivicSuite modules with
-Docker.
+{copy['notice_body']} This bundle is self-contained for the {profile_id}
+profile. It includes the installer lifecycle runner, the selected platform
+package, and the module source trees needed to build/start the selected
+CivicSuite modules with Docker.
 
 Start here:
 
@@ -2253,6 +2739,78 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _chunk_text(value: str, width: int = 76) -> list[str]:
+    return [value[index : index + width] for index in range(0, len(value), width)]
+
+
+def _write_windows_one_click_installer(
+    *, archive_path: Path, target_path: Path, profile_id: str, version: str
+) -> None:
+    marker = b"\r\n__CIVICSUITE_ZIP_PAYLOAD_BELOW__\r\n"
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    script = f"""@echo off
+setlocal EnableExtensions
+title CivicSuite {profile_id} installer {version}
+set "RUNROOT=%TEMP%\\CivicSuite-%RANDOM%-%RANDOM%"
+mkdir "%RUNROOT%" >nul 2>nul
+set "ARCHIVE=%RUNROOT%\\payload.zip"
+set "EXTRACTED=%RUNROOT%\\bundle"
+set "CIVICSUITE_SELF=%~f0"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$self=$env:CIVICSUITE_SELF; $bytes=[IO.File]::ReadAllBytes($self); $markerText=([string][char]13)+([string][char]10)+'__CIVICSUITE_ZIP_PAYLOAD_BELOW__'+([string][char]13)+([string][char]10); $marker=[Text.Encoding]::ASCII.GetBytes($markerText); $start=-1; for($i=0; $i -le $bytes.Length-$marker.Length; $i++) {{ $ok=$true; for($j=0; $j -lt $marker.Length; $j++) {{ if($bytes[$i+$j] -ne $marker[$j]) {{ $ok=$false; break }} }} if($ok) {{ $start=$i+$marker.Length; break }} }} if($start -lt 0) {{ Write-Error 'Could not find the embedded CivicSuite installer payload. Fix: verify the downloaded file is complete, then run it again.'; exit 1 }} $payload=New-Object byte[] ($bytes.Length-$start); [Array]::Copy($bytes,$start,$payload,0,$payload.Length); [IO.File]::WriteAllBytes($env:ARCHIVE,$payload); Expand-Archive -LiteralPath $env:ARCHIVE -DestinationPath $env:EXTRACTED -Force; $launcher = Get-ChildItem -LiteralPath $env:EXTRACTED -Recurse -Filter start-civicsuite-installer.ps1 | Where-Object {{ $_.FullName -like '*\\installer\\generated\\packages\\*\\windows\\*' }} | Select-Object -First 1; if (-not $launcher) {{ Write-Error 'CivicSuite Windows launcher was not found after extraction.'; exit 1 }}; if ($env:CIVICSUITE_ONE_CLICK_SMOKE_ONLY -eq '1') {{ & $launcher.FullName -Readiness; exit $LASTEXITCODE }}; & $launcher.FullName -FirstRun"
+set "STATUS=%ERRORLEVEL%"
+if not "%STATUS%"=="0" (
+  echo CivicSuite installation did not pass.
+  echo Fix: read the readiness message above, resolve the listed item, and run this installer again.
+  pause
+)
+exit /b %STATUS%
+"""
+    with target_path.open("wb") as handle:
+        handle.write(script.encode("utf-8").replace(b"\n", b"\r\n"))
+        handle.write(marker)
+        handle.write(archive_path.read_bytes())
+
+
+def _write_linux_one_click_installer(
+    *, archive_path: Path, target_path: Path, profile_id: str, version: str
+) -> None:
+    script = f"""#!/usr/bin/env bash
+set -euo pipefail
+echo "CivicSuite {profile_id} one-click installer {version}"
+RUNROOT="${{TMPDIR:-/tmp}}/civicsuite-{profile_id}-$RANDOM-$$"
+mkdir -p "$RUNROOT"
+ARCHIVE="$RUNROOT/payload.tar.gz"
+PAYLOAD_LINE=$(awk '/^__CIVICSUITE_PAYLOAD_BELOW__$/ {{ print NR + 1; exit 0; }}' "$0")
+if [[ -z "${{PAYLOAD_LINE:-}}" ]]; then
+  echo "Could not find the embedded CivicSuite installer payload." >&2
+  echo "Fix: verify the downloaded file is complete, then run it again." >&2
+  exit 1
+fi
+tail -n +"$PAYLOAD_LINE" "$0" > "$ARCHIVE"
+tar -xzf "$ARCHIVE" -C "$RUNROOT"
+launcher=$(find "$RUNROOT" -path "*/installer/generated/packages/*/linux/start-civicsuite-installer.sh" -print -quit)
+if [[ -z "${{launcher:-}}" ]]; then
+  echo "CivicSuite Linux launcher was not found after extraction." >&2
+  echo "Fix: verify the downloaded file is complete, then run it again." >&2
+  exit 1
+fi
+bash "$launcher" readiness
+if [[ "${{CIVICSUITE_ONE_CLICK_SMOKE_ONLY:-}}" == "1" ]]; then
+  exit 0
+fi
+exec bash "$launcher" first-run
+__CIVICSUITE_PAYLOAD_BELOW__
+"""
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("wb") as handle:
+        handle.write(script.encode("utf-8"))
+        handle.write(archive_path.read_bytes())
+    try:
+        target_path.chmod(0o755)
+    except OSError:
+        pass
 
 
 def _archive_forbidden_entries(path: Path) -> list[str]:
@@ -2283,6 +2841,7 @@ def generate_release_artifacts(
     version: str = "0.1.0",
     platform_id: str = "all",
 ) -> dict[str, Any]:
+    copy = _distribution_copy(profile_id)
     package = generate_profile_package(
         manifest=manifest,
         profile_id=profile_id,
@@ -2293,6 +2852,7 @@ def generate_release_artifacts(
     platforms = package["platforms"]
     native_written: list[str] = []
     archives: list[dict[str, str]] = []
+    one_click_installers: list[dict[str, str]] = []
     for target_platform in platforms:
         package_dir = PACKAGE_ROOT / profile_id / target_platform
         native_dir = NATIVE_ROOT / profile_id / target_platform
@@ -2336,12 +2896,51 @@ def generate_release_artifacts(
                 ),
             }
         )
+        if target_platform == "windows":
+            installer_path = DIST_ROOT / f"CivicSuite-{profile_id}-{target_platform}-{version}.cmd"
+            _write_windows_one_click_installer(
+                archive_path=archive_path,
+                target_path=installer_path,
+                profile_id=profile_id,
+                version=version,
+            )
+            one_click_installers.append(
+                {
+                    "platform": target_platform,
+                    "path": str(installer_path.relative_to(ROOT)),
+                    "sha256": _sha256(installer_path),
+                    "source_archive": str(archive_path.relative_to(ROOT)),
+                    "entrypoint": "double-click .cmd; readiness then install",
+                    "support_status": "supported_one_click",
+                    "certification_scope": "Windows one-click wrapper around matching-host package lifecycle",
+                }
+            )
+        elif target_platform == "linux":
+            installer_path = DIST_ROOT / f"CivicSuite-{profile_id}-{target_platform}-{version}.run"
+            _write_linux_one_click_installer(
+                archive_path=archive_path,
+                target_path=installer_path,
+                profile_id=profile_id,
+                version=version,
+            )
+            one_click_installers.append(
+                {
+                    "platform": target_platform,
+                    "path": str(installer_path.relative_to(ROOT)),
+                    "sha256": _sha256(installer_path),
+                    "source_archive": str(archive_path.relative_to(ROOT)),
+                    "entrypoint": "double-click or run .run; readiness then install",
+                    "support_status": "supported_one_click",
+                    "certification_scope": "Linux one-click wrapper around matching-host package lifecycle",
+                }
+            )
+    checksum_artifacts = archives + one_click_installers
     checksum_path = DIST_ROOT / f"CivicSuite-{profile_id}-{version}-SHA256SUMS.txt"
     checksum_path.parent.mkdir(parents=True, exist_ok=True)
     checksum_path.write_text(
         "".join(
             f"{artifact['sha256']}  {Path(artifact['path']).name}\n"
-            for artifact in archives
+            for artifact in checksum_artifacts
         ),
         encoding="utf-8",
         newline="\n",
@@ -2349,8 +2948,8 @@ def generate_release_artifacts(
     release_manifest = {
         "schema_version": 1,
         "installer_version": version,
-        "distribution_status": "unsigned_public_use_starter",
-        "signing": SIGNING_STATUS,
+        "distribution_status": copy["distribution_status"],
+        "signing": copy["signing"],
         "profile": profile_id,
         "menu_style": menu_style,
         "platforms": platforms,
@@ -2367,6 +2966,8 @@ def generate_release_artifacts(
             for platform in platforms
         },
         "archives": archives,
+        "one_click_installers": one_click_installers,
+        "one_click_installers_built": bool(one_click_installers),
         "archive_hygiene": {
             "forbidden_markers": list(ARCHIVE_HYGIENE_FORBIDDEN_MARKERS),
             "status": "passed",
@@ -2374,7 +2975,7 @@ def generate_release_artifacts(
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "native_wrapper_status": "manifests_generated",
         "native_installers_built": False,
-        "next_action": "Publish verified unsigned public-use starter archives only through the SHA256 and official-source trust path.",
+        "next_action": copy["next_action"],
     }
     manifest_path = (
         DIST_ROOT / f"CivicSuite-{profile_id}-{version}-release-manifest.json"
@@ -2392,11 +2993,13 @@ def generate_release_artifacts(
         "package_files_written": package["files_written"],
         "native_files_written": native_written,
         "archives": archives,
+        "one_click_installers": one_click_installers,
+        "one_click_installers_built": bool(one_click_installers),
         "checksum_file": str(checksum_path.relative_to(ROOT)),
         "release_manifest": str(manifest_path.relative_to(ROOT)),
         "native_installers_built": False,
-        "signing": SIGNING_STATUS,
-        "next_action": "Publish verified unsigned public-use starter archives only through the SHA256 and official-source trust path.",
+        "signing": copy["signing"],
+        "next_action": copy["next_action"],
     }
 
 

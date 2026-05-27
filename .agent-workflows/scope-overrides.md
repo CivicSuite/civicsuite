@@ -15,3 +15,10 @@ Every manifest that bypassed `check_active_target.py` via `override_active_targe
 - Override reason (verbatim):
 
   > Scott explicitly reset the current sprint in chat on 2026-05-26: disregard the prior four-module and CivicClerk directions, use the pipeline, and finish CivicCode; he also stated this overrides anything else. This run is restricted to CivicCode release completion and truth reconciliation, and does not authorize queued-module implementation or changes to already released CivicCore, CivicRecords AI, or CivicClerk artifacts.
+
+## 2026-05-26T07:04:52Z — run 2026-05-26-city-core-non-technical-installable
+
+- Manifest's `advances_target`: `City-core non-technical installability for Linux and Windows`
+- Override reason (verbatim):
+
+  > Scott's 2026-05-26 directive explicitly supersedes the prior active-target queue and authorizes this city-core installability run across the umbrella plus the four city-core module repos. This override is limited to the stated city-core deliverables and halt triggers.

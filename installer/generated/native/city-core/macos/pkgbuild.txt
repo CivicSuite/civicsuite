@@ -1,2 +1,2 @@
-pkgbuild --root "installer/generated/packages/city-core/macos" --identifier gov.civicsuite.city-core --version 0.1.0 CivicSuite-city-core.pkg
-productbuild --distribution distribution.xml --package-path . CivicSuite-city-core-0.1.0.pkg
+pkgbuild --root "installer/generated/packages/city-core/macos" --identifier gov.civicsuite.city-core --version 0.1.2 CivicSuite-city-core.pkg
+productbuild --distribution distribution.xml --package-path . CivicSuite-city-core-0.1.2.pkg

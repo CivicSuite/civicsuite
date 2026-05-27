@@ -63,7 +63,7 @@
                                          "civicclerk",
                                          "civiccode"
                                      ],
-                         "status":  "beta_ready_pending_installer_dist_and_integration_proof",
+                         "status":  "beta_ready_truth_reconciled",
                          "excluded_modules":  [
                                                 {
                                                     "id":  "civicaccess",

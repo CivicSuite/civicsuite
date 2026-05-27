@@ -1,6 +1,6 @@
 # Downstream Pin Lockstep Record
 
-Status date: 2026-05-10
+Status date: 2026-05-26
 
 This file records the downstream module version/pin changes that accompany the
 umbrella release-truth updates. It exists because the CivicSuite org uses
@@ -32,6 +32,28 @@ City-core excludes CivicAccess until its depth probe gaps close and a fresh
 re-probe passes. CivicZone, CivicPlan, CivicPermit, and CivicInspect are not
 city-core cars; their v0.2.2 releases are no-functional-upgrade truth-repair
 labels that keep the existing CivicCore v1.1.0 pin.
+
+For the 2026-05-26 city-core non-technical installability PR:
+
+| Repo | PR / branch context | Package version | CivicCore pin |
+|---|---:|---:|---|
+| CivicSuite/civiccore | PR #63 / `city-core-non-technical-install-city-core` | 1.2.0 | n/a |
+| CivicSuite/civicrecords-ai | PR #100 / `city-core-non-technical-install-city-core` | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+| CivicSuite/civicclerk | PR #170 / `city-core-non-technical-install-city-core` | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+| CivicSuite/civiccode | PR #74 / `city-core-non-technical-install-city-core` | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` |
+
+No downstream package version or CivicCore pin moves in this PR set. The change
+records installer/productization evidence for the already named city-core cars:
+vendored-source Windows/Linux one-click artifacts, Guided/Manual Docker
+prerequisite setup paths, first-run wizard smoke evidence, first-run browser QA, 60 GB cleanroom
+hygiene, and matching-host lifecycle evidence under
+`C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`.
+PR #183 has green verify, release-lockstep-gate, and installer-cleanroom
+checks; exact volatile PR run IDs are recorded in the PR body and run
+evidence. CivicRecords AI PR #100 is green at `d7f84a3` for CI run
+`26487863170`. The status is beta-ready truth-reconciled after audit-full; this is not
+public-use readiness, city-ready status, procurement readiness, production
+readiness, macOS lifecycle certification, or full-suite promotion.
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 
