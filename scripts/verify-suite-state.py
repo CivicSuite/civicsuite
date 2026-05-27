@@ -98,6 +98,7 @@ class RepoSpec:
     published_version: str | None = None
     published_civiccore_required: str | None = None
     release_required: bool = True
+    default_branch: str = "main"
 
     def matrix_version(self, remote_only: bool) -> str:
         return (
@@ -133,6 +134,7 @@ REPOS: tuple[RepoSpec, ...] = (
         "1.7.3",
         "backend/pyproject.toml",
         civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        default_branch="master",
     ),
     RepoSpec(
         "civicclerk",
@@ -728,6 +730,66 @@ def run_json(command: list[str]) -> tuple[int, dict[str, object] | None, str]:
         return 1, None, f"invalid JSON from {' '.join(command)}: {exc}"
 
 
+def run_text(command: list[str]) -> tuple[int, str]:
+    proc = subprocess.run(command, capture_output=True, text=True, check=False)
+    return proc.returncode, (proc.stdout or proc.stderr).strip()
+
+
+def installer_source_commits() -> dict[str, str]:
+    data = json.loads(INSTALLER_MODULES.read_text(encoding="utf-8"))
+    modules = data.get("modules", []) if isinstance(data, dict) else []
+    if not isinstance(modules, list):
+        return {}
+    commits: dict[str, str] = {}
+    for module in modules:
+        if not isinstance(module, dict):
+            continue
+        module_id = module.get("id")
+        source_commit = module.get("source_commit")
+        if isinstance(module_id, str) and isinstance(source_commit, str):
+            commits[module_id] = source_commit
+    return commits
+
+
+def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
+    city_core_modules = {"civiccore", "civicrecords-ai", "civicclerk", "civiccode"}
+    if spec.name not in city_core_modules:
+        return []
+    declared = installer_source_commits().get(spec.name)
+    if not declared:
+        return [fail(f"installer/modules.json missing source_commit for {spec.name}")]
+
+    if remote_only:
+        code, data, message = run_json(
+            [
+                "gh",
+                "api",
+                f"repos/{spec.repo}/branches/{spec.default_branch}",
+            ]
+        )
+        if code != 0:
+            return [fail(f"cannot read {spec.repo} {spec.default_branch} head: {message}")]
+        commit = data.get("commit") if isinstance(data, dict) else None
+        actual = commit.get("sha") if isinstance(commit, dict) else None
+    else:
+        repo_path = WORKSPACE / spec.local_dir
+        if not repo_path.is_dir():
+            return [fail(f"local repo path missing for source_commit check: {repo_path}")]
+        code, output = run_text(["git", "-C", str(repo_path), "rev-parse", "HEAD"])
+        if code != 0:
+            return [fail(f"cannot read local source HEAD for {spec.name}: {output}")]
+        actual = output
+
+    if actual != declared:
+        return [
+            fail(
+                f"installer/modules.json source_commit for {spec.name} is {declared}, "
+                f"but {'remote default branch' if remote_only else 'local sibling checkout'} is {actual}"
+            )
+        ]
+    return []
+
+
 def check_required_artifacts(repo_path: Path) -> list[str]:
     errors = []
     for artifact in REQUIRED_ARTIFACTS:
@@ -867,6 +929,7 @@ def check_repo(
             return [fail(f"local repo path missing: {repo_path}")]
         errors.extend(check_required_artifacts(repo_path))
         errors.extend(check_pyproject(spec, repo_path))
+    errors.extend(check_source_commit_pin(spec, remote_only=remote_only))
     errors.extend(check_compatibility_matrix(spec, matrix, remote_only=remote_only))
     errors.extend(check_unified_spec(spec, spec_version_map))
     if remote:

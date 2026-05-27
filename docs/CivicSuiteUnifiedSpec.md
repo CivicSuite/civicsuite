@@ -1006,19 +1006,21 @@ As of 2026-05-21, the clerk-core installer evidence includes installed-stack wor
 
 As of 2026-05-27, the city-core profile has implementation evidence for non-technical Windows and Linux installability with CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8. The vendored-source installer artifacts remain installer version `0.1.2`; the evidence covers one-click wrapper smoke, Guided/Manual Docker prerequisite setup paths, first-run wizard smoke, first-run browser QA, 60 GB cleanroom hygiene, local Windows/Linux matching-host lifecycle runs, green PR CI, and audit-full with zero unresolved Blocker or Critical findings under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks; exact volatile run IDs are recorded in the PR body and run evidence. The honest state is beta-ready truth-reconciled. This does not create public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or a full-suite release claim.
 
-| Repo | Current recovery label | CivicCore pin | Status summary |
-|---|---:|---:|---|
-| civiccore | 1.2.0 | n/a | Real shared platform; v1.2.0 adds shared document ingestion and retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening. |
-| civicrecords-ai | 1.7.3 | 1.2.0 | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 adds wheel/sdist release assets without changing installer behavior. |
-| civicclerk | 1.0.3 | 1.2.0 | Real meeting workflow release car with protected staff auth defaults retained. |
-| civiccode | 1.0.8 | 1.2.0 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
-| civicaccess | 0.2.0 | 1.1.0 | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
-| civiczone | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicplan | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicpermit | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicinspect | 0.2.2 | 1.1.0 | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicgrants | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
-| civicprocure | 0.2.0 | 1.1.0 | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+As of 2026-05-27, `installer/modules.json` is also the source-of-truth for city-core vendored-source commit pins. The installer generator must verify each local sibling checkout against that module's `source_commit` before packaging, and the lifecycle runner must verify bundled source through `SOURCE_COMMIT.txt` or a git HEAD match before use. This makes the vendored-source model reproducible without switching to published wheels.
+
+| Repo | Current recovery label | CivicCore pin | Source commit pin | Status summary |
+|---|---:|---:|---:|---|
+| civiccore | 1.2.0 | n/a | f39f1afc76b7bc37f63b76e37a9def8bcb9be0fd | Real shared platform; v1.2.0 adds shared document ingestion and retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening. |
+| civicrecords-ai | 1.7.3 | 1.2.0 | 59cabcbe5072d0c843fd57356a7d113bf90537f1 | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 adds wheel/sdist release assets without changing installer behavior. |
+| civicclerk | 1.0.3 | 1.2.0 | 3bf5293dd6a074140690598a244fce324a988143 | Real meeting workflow release car with protected staff auth defaults retained. |
+| civiccode | 1.0.8 | 1.2.0 | d2eaf1392c01cb7cc80e6bac3e2fbf8cb0b398e1 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
+| civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
+| civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicplan | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicpermit | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicinspect | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
+| civicgrants | 0.2.0 | 1.1.0 | n/a | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicprocure | 0.2.0 | 1.1.0 | n/a | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 
 A municipality cannot today run end-to-end on this suite. The immediate work is release-integrity recovery, security-default repair, install-path correction, and then module productization one module at a time.
 ## 19. Post-Foundation Build Sequence

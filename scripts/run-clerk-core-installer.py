@@ -22,6 +22,7 @@ from uuid import uuid4
 
 
 ROOT = Path(__file__).resolve().parents[1]
+MANIFEST = ROOT / "installer" / "modules.json"
 REPORT_ROOT = ROOT / "installer" / "reports"
 DEFAULT_INSTALL_ROOT = Path(os.environ.get("CIVICSUITE_INSTALLER_INSTALL_ROOT", ROOT / "installer" / "runtime" / "clerk-core"))
 
@@ -243,13 +244,60 @@ def require_command(name: str) -> str:
 def source_root(module_name: str) -> Path:
     bundled = ROOT / "modules" / module_name
     if bundled.is_dir():
-        return bundled
+        return enforce_source_commit(module_name, bundled)
     sibling = ROOT.parent / module_name
     if sibling.is_dir():
-        return sibling
+        return enforce_source_commit(module_name, sibling)
     raise InstallerError(
         f"Missing source for {module_name}. Expected bundled source at {bundled} or local checkout at {sibling}."
     )
+
+
+def declared_source_commit(module_name: str) -> str | None:
+    if not MANIFEST.is_file():
+        return None
+    try:
+        payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise InstallerError(f"Invalid installer manifest: {MANIFEST}") from exc
+    modules = payload.get("modules", []) if isinstance(payload, dict) else []
+    if not isinstance(modules, list):
+        raise InstallerError("Installer manifest modules must be a list.")
+    for module in modules:
+        if isinstance(module, dict) and module.get("id") == module_name:
+            value = module.get("source_commit")
+            return str(value) if value else None
+    return None
+
+
+def read_source_commit(source: Path) -> str:
+    marker = source / "SOURCE_COMMIT.txt"
+    if marker.is_file():
+        return marker.read_text(encoding="utf-8").strip()
+    proc = subprocess.run(
+        ["git", "-C", str(source), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip()
+        raise InstallerError(f"Cannot read source commit for {source}: {detail}")
+    return proc.stdout.strip()
+
+
+def enforce_source_commit(module_name: str, source: Path) -> Path:
+    declared = declared_source_commit(module_name)
+    if not declared:
+        return source
+    actual = read_source_commit(source)
+    if actual != declared:
+        raise InstallerError(
+            f"Source commit mismatch for {module_name}: modules.json declares {declared}, "
+            f"but {source} is at {actual}. Checkout the declared commit, or update "
+            "installer/modules.json to reflect the current source-root state."
+        )
+    return source
 
 
 def normalize_selected_modules(selected_modules: list[str] | tuple[str, ...] | None) -> list[str]:

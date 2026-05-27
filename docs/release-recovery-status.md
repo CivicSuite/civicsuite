@@ -2,6 +2,8 @@
 
 Status date: 2026-05-26
 
+Update 2026-05-27: the city-core installer vendored-source model now records explicit `source_commit` pins in `installer/modules.json` for CivicCore, CivicRecords AI, CivicClerk, and CivicCode. The installer generator and lifecycle runner enforce those pins before packaging or using vendored source. CivicRecords AI is pinned to `59cabcbe5072d0c843fd57356a7d113bf90537f1`, the post-PR-#100 merge commit that carries the CRIT-1 mobile skip-link fix.
+
 ## Current Rule
 
 Public "shipping", "product-ready", "city-ready", and "v1.0.0 proves release maturity" claims are blocked unless the module appears below with an explicit recovery-passed status. The 2026-05-09 external audit found that multiple v1.0.0 labels were false.
