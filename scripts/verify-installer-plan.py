@@ -36,6 +36,13 @@ GENERATED_PACKAGES = ROOT / "installer" / "generated" / "packages"
 GENERATED_NATIVE = ROOT / "installer" / "generated" / "native"
 DIST = ROOT / "installer" / "dist"
 REPORTS = ROOT / "installer" / "reports"
+GENERATED_ARTIFACT_ROOTS = (
+    GENERATED_MINIMAL,
+    GENERATED_PACKAGES,
+    GENERATED_NATIVE,
+    DIST,
+    REPORTS,
+)
 
 REQUIRED_PROFILES = {
     "minimal",
@@ -115,6 +122,42 @@ ALLOWED_EVIDENCE_CLASSIFICATIONS = {
 
 def fail(message: str) -> str:
     return f"FAIL: {message}"
+
+
+def snapshot_generated_artifacts() -> tuple[set[Path], set[Path]]:
+    files: set[Path] = set()
+    directories: set[Path] = set()
+    for root in GENERATED_ARTIFACT_ROOTS:
+        if not root.exists():
+            continue
+        directories.add(root.relative_to(ROOT))
+        for path in root.rglob("*"):
+            relative = path.relative_to(ROOT)
+            if path.is_dir():
+                directories.add(relative)
+            else:
+                files.add(relative)
+    return files, directories
+
+
+def cleanup_generated_artifact_noise(
+    before_files: set[Path], before_directories: set[Path]
+) -> None:
+    for root in GENERATED_ARTIFACT_ROOTS:
+        if not root.exists():
+            continue
+        for path in sorted(
+            root.rglob("*"), key=lambda item: len(item.parts), reverse=True
+        ):
+            relative = path.relative_to(ROOT)
+            if path.is_file() and relative not in before_files:
+                path.unlink()
+            elif (
+                path.is_dir()
+                and relative not in before_directories
+                and not any(path.iterdir())
+            ):
+                path.rmdir()
 
 
 def load_manifest() -> dict[str, object]:
@@ -2395,30 +2438,34 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     print("==> CivicSuite installer plan verification")
+    before_files, before_directories = snapshot_generated_artifacts()
     errors = []
-    if not MANIFEST.is_file():
-        errors.append(fail(f"missing {MANIFEST.relative_to(ROOT)}"))
-    else:
-        try:
-            manifest = load_manifest()
-            errors.extend(check_manifest(manifest))
-            errors.extend(check_planner(manifest))
-            errors.extend(check_launchers())
-        except Exception as exc:
-            errors.append(fail(f"could not parse manifest: {exc}"))
-    errors.extend(check_docs())
-    errors.extend(check_clerk_core_staff_mode_contract())
-    errors.extend(check_cleanroom_workflow())
-    require_package_reports = (
-        args.require_package_cleanroom_evidence
-        or os.environ.get("CIVICSUITE_REQUIRE_PACKAGE_CLEANROOM_EVIDENCE") == "1"
-    )
-    errors.extend(
-        check_package_cleanroom_evidence_contract(
-            require_reports=require_package_reports
+    try:
+        if not MANIFEST.is_file():
+            errors.append(fail(f"missing {MANIFEST.relative_to(ROOT)}"))
+        else:
+            try:
+                manifest = load_manifest()
+                errors.extend(check_manifest(manifest))
+                errors.extend(check_planner(manifest))
+                errors.extend(check_launchers())
+            except Exception as exc:
+                errors.append(fail(f"could not parse manifest: {exc}"))
+        errors.extend(check_docs())
+        errors.extend(check_clerk_core_staff_mode_contract())
+        errors.extend(check_cleanroom_workflow())
+        require_package_reports = (
+            args.require_package_cleanroom_evidence
+            or os.environ.get("CIVICSUITE_REQUIRE_PACKAGE_CLEANROOM_EVIDENCE") == "1"
         )
-    )
-    errors.extend(check_public_claims_bounded())
+        errors.extend(
+            check_package_cleanroom_evidence_contract(
+                require_reports=require_package_reports
+            )
+        )
+        errors.extend(check_public_claims_bounded())
+    finally:
+        cleanup_generated_artifact_noise(before_files, before_directories)
 
     if errors:
         for error in errors:
