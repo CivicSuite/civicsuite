@@ -913,6 +913,7 @@ def verify_civiccore_contract(
 def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict[str, object]:
     base = f"http://127.0.0.1:{ports['api']}"
     checks: list[dict[str, object]] = []
+    first_admin_email = os.environ.get("CIVICSUITE_FIRST_ADMIN_EMAIL", "admin@example.gov")
     password_path = records_source / "data" / "secrets" / "first_admin_password"
     try:
         password = password_path.read_text(encoding="utf-8").strip()
@@ -921,7 +922,7 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
 
     login_status, login_body = post_form(
         f"{base}/auth/jwt/login",
-        {"username": "admin@example.gov", "password": password},
+        {"username": first_admin_email, "password": password},
     )
     checks.append(
         {
@@ -964,7 +965,7 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
             return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
         rotated_login_status, rotated_login_body = post_form(
             f"{base}/auth/jwt/login",
-            {"username": "admin@example.gov", "password": rotated_password},
+            {"username": first_admin_email, "password": rotated_password},
         )
         checks.append(
             {
@@ -1749,6 +1750,21 @@ def install(
         if build.returncode != 0:
             return {"status": "failed", "steps": steps}
         up = run(compose(project, source, "up", "-d", *services), cwd=source, timeout=900)  # type: ignore[arg-type]
+        if up.returncode != 0 and (
+            "dependency failed to start" in up.stderr or "is unhealthy" in up.stderr
+        ):
+            steps.append(
+                {
+                    "module": name,
+                    "step": "compose_up_transient_health_retry",
+                    "returncode": up.returncode,
+                    "stdout": up.stdout[-4000:],
+                    "stderr": up.stderr[-4000:],
+                    "retry_after_seconds": 20,
+                }
+            )
+            time.sleep(20)
+            up = run(compose(project, source, "up", "-d", *services), cwd=source, timeout=900)  # type: ignore[arg-type]
         steps.append({"module": name, "step": "compose_up", "returncode": up.returncode, "stdout": up.stdout[-4000:], "stderr": up.stderr[-4000:]})
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}

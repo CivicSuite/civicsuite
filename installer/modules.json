@@ -1,6 +1,6 @@
 {
     "schema_version":  1,
-    "installer_status":  "city_core_implemented_pending_browser_qa_and_audit_full",
+    "installer_status":  "city_core_implemented_pending_audit_full",
     "workflow_proof_status":  {
                                   "profile":  "clerk-core",
                                   "scope":  [
@@ -63,7 +63,7 @@
                                          "civicclerk",
                                          "civiccode"
                                      ],
-                         "status":  "implemented_pending_browser_qa_and_audit_full",
+                         "status":  "implemented_pending_audit_full",
                          "excluded_modules":  [
                                                 {
                                                     "id":  "civicaccess",

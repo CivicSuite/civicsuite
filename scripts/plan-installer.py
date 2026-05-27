@@ -1578,6 +1578,7 @@ $PackageDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $PackageDir "..\\..\\..\\..\\..")
 $Planner = Join-Path $RepoRoot "scripts\\plan-installer.py"
 $Lifecycle = Join-Path $RepoRoot "scripts\\run-clerk-core-installer.py"
+$script:CivicSuiteLastLifecycleExitCode = 0
 
 function ConvertTo-WslArg([string]$Value) {{
     $SingleQuote = [char]39
@@ -1608,6 +1609,13 @@ function Test-CivicSuiteAdmin {{
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}}
+
+function Get-CivicSuiteLastExitCode {{
+    if ($null -eq $LASTEXITCODE) {{
+        return 0
+    }}
+    return [int]$LASTEXITCODE
 }}
 
 function Get-CivicSuiteBootstrapReportDir {{
@@ -1781,17 +1789,38 @@ function Invoke-CivicSuiteLifecycle([string]$Mode, [string[]]$LifecycleArgs, [sw
             $InstallRootWsl = ConvertTo-WslPath $env:CIVICSUITE_INSTALLER_INSTALL_ROOT
             $EnvParts += "export CIVICSUITE_INSTALLER_INSTALL_ROOT=$(ConvertTo-WslArg $InstallRootWsl);"
         }}
+        if ($env:CIVICSUITE_INSTALLER_PORT_OFFSET) {{
+            $EnvParts += "export CIVICSUITE_INSTALLER_PORT_OFFSET=$(ConvertTo-WslArg $env:CIVICSUITE_INSTALLER_PORT_OFFSET);"
+        }}
+        if ($env:CIVICSUITE_INSTALLER_PROJECT_SUFFIX) {{
+            $EnvParts += "export CIVICSUITE_INSTALLER_PROJECT_SUFFIX=$(ConvertTo-WslArg $env:CIVICSUITE_INSTALLER_PROJECT_SUFFIX);"
+        }}
+        if ($env:CIVICSUITE_FIRST_ADMIN_EMAIL) {{
+            $EnvParts += "export CIVICSUITE_FIRST_ADMIN_EMAIL=$(ConvertTo-WslArg $env:CIVICSUITE_FIRST_ADMIN_EMAIL);"
+        }}
+        if ($env:DOCKER_CONFIG) {{
+            $DockerConfigWsl = ConvertTo-WslPath $env:DOCKER_CONFIG
+            $EnvParts += "export DOCKER_CONFIG=$(ConvertTo-WslArg $DockerConfigWsl);"
+        }}
         $AllArgs = @($Mode) + @($LifecycleArgs)
         $QuotedArgs = $AllArgs | ForEach-Object {{ ConvertTo-WslArg $_ }}
         $Command = ($EnvParts -join " ") + " cd $(ConvertTo-WslArg $RepoRootWsl) && python3 scripts/run-clerk-core-installer.py " + ($QuotedArgs -join " ")
         & wsl bash -lc $Command
-        if ($ReturnAfter) {{ return $LASTEXITCODE }}
-        exit $LASTEXITCODE
+        $ExitCode = Get-CivicSuiteLastExitCode
+        if ($ReturnAfter) {{
+            $script:CivicSuiteLastLifecycleExitCode = $ExitCode
+            return
+        }}
+        exit $ExitCode
     }}
 
     python $Lifecycle $Mode @LifecycleArgs
-    if ($ReturnAfter) {{ return $LASTEXITCODE }}
-    exit $LASTEXITCODE
+    $ExitCode = Get-CivicSuiteLastExitCode
+    if ($ReturnAfter) {{
+        $script:CivicSuiteLastLifecycleExitCode = $ExitCode
+        return
+    }}
+    exit $ExitCode
 }}
 
 Write-Host "{copy['console_title']}"
@@ -1823,13 +1852,13 @@ if ($Module -and $Module.Count -gt 0) {{
 
 if ($Plan) {{
     python $Planner @PlannerArgs
-    exit $LASTEXITCODE
+    exit (Get-CivicSuiteLastExitCode)
 }}
 
 if ($GuidedSetup) {{
     Invoke-CivicSuiteGuidedSetup
     python $Planner @PlannerArgs --show-readiness --detect-host
-    exit $LASTEXITCODE
+    exit (Get-CivicSuiteLastExitCode)
 }}
 
 if ($FirstRun) {{
@@ -1838,12 +1867,14 @@ if ($FirstRun) {{
         Invoke-CivicSuiteGuidedSetup
     }}
     python $Planner @PlannerArgs --show-readiness --detect-host
-    if ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}
+    $PlannerExit = Get-CivicSuiteLastExitCode
+    if ($PlannerExit -ne 0) {{ exit $PlannerExit }}
     if ($env:CIVICSUITE_FIRST_RUN_SMOKE_ONLY -eq "1") {{
         Write-Host "First-run smoke only: setup wizard and readiness passed; install was not started."
         exit 0
     }}
-    $InstallExit = Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs)) -ReturnAfter
+    Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs)) -ReturnAfter
+    $InstallExit = $script:CivicSuiteLastLifecycleExitCode
     if ($InstallExit -ne 0) {{ exit $InstallExit }}
     Show-CivicSuitePostInstallDashboard $Wizard
     exit 0
@@ -1851,7 +1882,8 @@ if ($FirstRun) {{
 
 if ($ManualPrerequisite) {{
     python $Planner @PlannerArgs --show-readiness --detect-host
-    if ($LASTEXITCODE -ne 0) {{ exit $LASTEXITCODE }}
+    $PlannerExit = Get-CivicSuiteLastExitCode
+    if ($PlannerExit -ne 0) {{ exit $PlannerExit }}
     Invoke-CivicSuiteLifecycle "install" (@($LifecycleModeArgs) + @($LifecycleModuleArgs))
 }}
 
