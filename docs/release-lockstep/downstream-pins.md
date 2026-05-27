@@ -48,6 +48,15 @@ vendored-source Windows/Linux one-click artifacts, Guided/Manual Docker
 prerequisite setup paths, first-run wizard smoke evidence, first-run browser QA, 60 GB cleanroom
 hygiene, and matching-host lifecycle evidence under
 `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`.
+
+For the 2026-05-27 P1.2 source-pin bump:
+
+| Repo | Default branch context | Package version | CivicCore pin | Installer source_commit |
+|---|---|---:|---|---|
+| CivicSuite/civiccore | main | 1.2.0 | n/a | `f39f1afc76b7bc37f63b76e37a9def8bcb9be0fd` |
+| CivicSuite/civicrecords-ai | master, post-PR-#100 merge | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `59cabcbe5072d0c843fd57356a7d113bf90537f1` |
+| CivicSuite/civicclerk | main | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `3bf5293dd6a074140690598a244fce324a988143` |
+| CivicSuite/civiccode | main | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `d2eaf1392c01cb7cc80e6bac3e2fbf8cb0b398e1` |
 PR #183 has green verify, release-lockstep-gate, and installer-cleanroom
 checks; exact volatile PR run IDs are recorded in the PR body and run
 evidence. CivicRecords AI PR #100 is green at `d7f84a3` for CI run

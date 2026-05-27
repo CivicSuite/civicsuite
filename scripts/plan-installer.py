@@ -345,6 +345,45 @@ def load_manifest(path: Path = MANIFEST) -> dict[str, Any]:
     return data
 
 
+def declared_source_commit(module_name: str, manifest: dict[str, Any] | None = None) -> str | None:
+    manifest_data = manifest or load_manifest()
+    modules = manifest_data.get("modules", [])
+    if not isinstance(modules, list):
+        raise PlannerError("Manifest modules must be a list.")
+    for module in modules:
+        if isinstance(module, dict) and module.get("id") == module_name:
+            value = module.get("source_commit")
+            return str(value) if value else None
+    return None
+
+
+def git_head(path: Path) -> str:
+    proc = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip()
+        raise PlannerError(f"Cannot read source git HEAD at {path}: {detail}")
+    return proc.stdout.strip()
+
+
+def enforce_source_commit(module_name: str, source: Path) -> str | None:
+    declared = declared_source_commit(module_name)
+    if not declared:
+        return None
+    actual = git_head(source)
+    if actual != declared:
+        raise PlannerError(
+            f"Source commit mismatch for {module_name}: modules.json declares {declared}, "
+            f"but {source} is at {actual}. Checkout the declared commit, or update "
+            "installer/modules.json to reflect the current source-root state."
+        )
+    return actual
+
+
 def make_run_id(now: datetime | None = None) -> str:
     timestamp = (now or datetime.now(UTC)).strftime("%Y%m%dT%H%M%SZ")
     return f"{timestamp}-{uuid4().hex[:8]}"
@@ -2605,6 +2644,7 @@ contains the sibling `{module_name}` checkout and must pass
         )
         return
     source_root = source.resolve()
+    source_commit = enforce_source_commit(module_name, source_root)
 
     def ignore(directory: str, names: list[str]) -> set[str]:
         ignored: set[str] = set()
@@ -2640,6 +2680,12 @@ contains the sibling `{module_name}` checkout and must pass
 
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, target, ignore=ignore, dirs_exist_ok=True)
+    if source_commit:
+        (target / "SOURCE_COMMIT.txt").write_text(
+            f"{source_commit}\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     if module_name == "civicrecords-ai":
         tests_dir = target / "backend" / "tests"
         tests_dir.mkdir(parents=True, exist_ok=True)
