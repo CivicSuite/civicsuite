@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-05-26
+**Last verified:** 2026-05-28
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 

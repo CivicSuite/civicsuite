@@ -5,8 +5,8 @@ const DEFAULT_CONFIG = {
     {
       id: "records",
       name: "CivicRecords AI",
-      port: 8000,
-      href: "http://localhost:8000",
+      port: 18080,
+      href: "http://127.0.0.1:18080/",
       staffAction: "Review requests",
       residentAction: "Submit or track records requests",
       adminAction: "Check index and queue health"
@@ -14,8 +14,8 @@ const DEFAULT_CONFIG = {
     {
       id: "clerk",
       name: "CivicClerk",
-      port: 8010,
-      href: "http://localhost:8010",
+      port: 18081,
+      href: "http://127.0.0.1:18081/",
       staffAction: "Prepare agendas and minutes",
       residentAction: "View meetings and notices",
       adminAction: "Check meeting service health"
@@ -23,8 +23,8 @@ const DEFAULT_CONFIG = {
     {
       id: "code",
       name: "CivicCode",
-      port: 8020,
-      href: "http://localhost:8020",
+      port: 18820,
+      href: "http://127.0.0.1:18820/",
       staffAction: "Codify adopted ordinances",
       residentAction: "Search municipal code",
       adminAction: "Check code search service health"
@@ -53,9 +53,11 @@ const states = {
     next: "Open the Staff surface or use Ctrl-K to jump directly to a module.",
     statuses: { records: "ready", clerk: "ready", code: "ready" },
     audit: [
-      ["09:42", "Launcher opened staff workspace", "suite-launcher"],
-      ["09:41", "City-core module list resolved", "installer/modules.json"],
-      ["09:40", "Operator selected city-core profile", "installer"]
+      { time: "09:44", action: "Records request viewed by staff", source: "civicrecords-ai" },
+      { time: "09:43", action: "Meeting packet updated", source: "civicclerk" },
+      { time: "09:42", action: "Ordinance citation indexed", source: "civiccode" },
+      { time: "09:41", action: "City-core shared session validated", source: "civiccore" },
+      { time: "09:40", action: "Operator selected city-core profile", source: "suite-launcher" }
     ]
   },
   empty: {
@@ -73,8 +75,8 @@ const states = {
     next: "Run the city-core installer verify command, confirm Docker is running, then refresh this launcher.",
     statuses: { records: "error", clerk: "ready", code: "ready" },
     audit: [
-      ["09:44", "CivicRecords AI health check failed", "http://localhost:8000"],
-      ["09:43", "Launcher kept Clerk and Code links visible", "suite-launcher"]
+      { time: "09:44", action: "CivicRecords AI health check failed", source: "http://127.0.0.1:18080/" },
+      { time: "09:43", action: "Launcher kept Clerk and Code links visible", source: "suite-launcher" }
     ]
   },
   partial: {
@@ -84,8 +86,8 @@ const states = {
     next: "Open IT-Admin, inspect CivicCode service logs, then rerun verify before staff codification.",
     statuses: { records: "ready", clerk: "ready", code: "degraded" },
     audit: [
-      ["09:46", "CivicCode returned degraded health", "http://localhost:8020"],
-      ["09:45", "Records and Clerk checks passed", "suite-launcher"]
+      { time: "09:46", action: "CivicCode returned degraded health", source: "http://127.0.0.1:18820/" },
+      { time: "09:45", action: "Records and Clerk checks passed", source: "suite-launcher" }
     ]
   }
 };
@@ -111,7 +113,9 @@ const surfaceCopy = {
   }
 };
 
-const stateParam = new URLSearchParams(window.location.search).get("state") || "success";
+const searchParams = new URLSearchParams(window.location.search);
+const qaMode = searchParams.get("qa") === "1";
+const stateParam = qaMode ? searchParams.get("state") || "success" : "success";
 let activeStateKey = states[stateParam] ? stateParam : "success";
 let activeSurface = "staff";
 let paletteOpen = false;
@@ -125,7 +129,7 @@ function statusText(status) {
   return {
     ready: "Ready",
     checking: "Checking",
-    error: "Needs fix",
+    error: "Action needed",
     degraded: "Degraded"
   }[status] || "Unknown";
 }
@@ -138,7 +142,7 @@ function moduleAction(module) {
 
 function moduleMeta(module) {
   if (activeSurface === "resident") return module.id === "records" ? "Request intake" : module.id === "clerk" ? "Meetings and notices" : "Code search";
-  if (activeSurface === "admin") return `localhost:${module.port}`;
+  if (activeSurface === "admin") return new URL(module.href).host;
   return module.id === "records" ? "FOIA and public records" : module.id === "clerk" ? "Agendas, packets, minutes" : "Municipal code";
 }
 
@@ -204,9 +208,9 @@ function render() {
             <p>${surface.subhead}</p>
           </div>
           <div class="topbar-actions">
-            <select aria-label="QA state" data-state-select>
+            ${qaMode ? `<select aria-label="QA state" data-state-select>
               ${Object.keys(states).map((key) => `<option value="${key}" ${key === activeStateKey ? "selected" : ""}>${states[key].label}</option>`).join("")}
-            </select>
+            </select>` : ""}
             <button type="button" class="icon-button" aria-label="Open audit drawer" data-open-audit title="Open audit drawer">
               ${icon("audit")}
             </button>
@@ -318,7 +322,7 @@ function surfaceWork(state) {
 
 function auditDrawer(state) {
   const rows = state.audit.length
-    ? state.audit.map(([time, action, source]) => `<li><time>${time}</time><span>${action}</span><code>${source}</code></li>`).join("")
+    ? state.audit.map((event) => `<li><time>${event.time}</time><span>${event.action}</span><code>${event.source}</code></li>`).join("")
     : `<li class="empty-audit"><span>No audit events yet. Open a module or run package verify to generate local evidence.</span></li>`;
 
   return `
@@ -326,14 +330,14 @@ function auditDrawer(state) {
     <aside class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-title" tabindex="-1">
       <div class="drawer-heading">
         <div>
-          <p class="eyebrow">One click from every surface</p>
-          <h2 id="audit-title">Audit drawer</h2>
+          <p class="eyebrow">Cross-module event surface</p>
+          <h2 id="audit-title">City-core audit drawer</h2>
         </div>
         <button type="button" class="icon-button" aria-label="Close audit drawer" data-close-audit>${icon("close")}</button>
       </div>
       <ol class="audit-list">${rows}</ol>
       <div class="drawer-footer">
-        <button type="button">Export audit log</button>
+        <button type="button">Export cross-module audit log</button>
         <button type="button">Open evidence folder</button>
       </div>
     </aside>
@@ -499,4 +503,4 @@ document.addEventListener("keydown", (event) => {
 
 render();
 
-// QA fixture marker: state=loading|success|empty|error|partial
+// QA fixture marker: qa=1&state=loading|success|empty|error|partial

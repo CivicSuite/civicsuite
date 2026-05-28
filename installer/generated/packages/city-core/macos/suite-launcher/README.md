@@ -10,6 +10,7 @@ no network fonts, no build step, and no dependency install is required.
 - `src/styles.css` defines the prototype paper, navy, and gold tokens plus the
   Inter, Source Serif, and JetBrains Mono font stack with local/system
   fallbacks.
+- `civicsuite-launcher-config.js` provides installer-written module URLs.
 - `src/app.js` owns the Staff, Resident, and IT-Admin surfaces, module tiles,
   audit drawer, command palette, and QA state simulation.
 - `scripts/serve.mjs` starts a small local static server for browser QA.
@@ -23,14 +24,14 @@ npm test
 npm run serve -- --port 4179
 ```
 
-State fixtures are selected with the `state` query parameter:
+State fixtures are selected only when QA mode is explicit:
 
-- `?state=loading`
-- `?state=success`
-- `?state=empty`
-- `?state=error`
-- `?state=partial`
+- `?qa=1&state=loading`
+- `?qa=1&state=success`
+- `?qa=1&state=empty`
+- `?qa=1&state=error`
+- `?qa=1&state=partial`
 
-The module links are local defaults only. Installer packaging or later runtime
-config can override them by defining `window.CIVICSUITE_LAUNCHER_CONFIG` before
-`src/app.js` loads.
+The module links default to the city-core local ports and are overwritten by
+the installer-generated `window.CIVICSUITE_LAUNCHER_CONFIG` before `src/app.js`
+loads.

@@ -20,13 +20,22 @@ const requiredSnippets = [
   ["js", "CivicCode"],
   ["js", "command-palette"],
   ["js", "audit-drawer"],
-  ["js", "state=loading|success|empty|error|partial"],
+  ["js", "civicrecords-ai"],
+  ["js", "civicclerk"],
+  ["js", "civiccode"],
+  ["js", "civiccore"],
+  ["js", "City-core audit drawer"],
+  ["js", "Export cross-module audit log"],
+  ["js", "qa=1&state=loading|success|empty|error|partial"],
+  ["js", "http://127.0.0.1:18080/"],
+  ["js", "http://127.0.0.1:18081/"],
+  ["js", "http://127.0.0.1:18820/"],
   ["css", "--paper"],
   ["css", "--navy"],
   ["css", "--gold"],
   ["css", "Source Serif"],
   ["css", "JetBrains Mono"],
-  ["readme", "?state=partial"]
+  ["readme", "?qa=1&state=partial"]
 ];
 
 const missing = requiredSnippets.filter(([file, snippet]) => !files[file].includes(snippet));
