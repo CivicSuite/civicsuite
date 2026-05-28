@@ -3021,15 +3021,31 @@ def _stage_release_bundle(
     )
     (bundle_dir / "installer").mkdir(parents=True, exist_ok=True)
     shutil.copy2(MANIFEST, bundle_dir / "installer" / "modules.json")
-    modules_root = bundle_dir / "modules"
-    modules_root.mkdir(parents=True, exist_ok=True)
     plan_path = package_dir / "install-plan.json"
-    bundled_modules = ["civicrecords-ai", "civicclerk"]
+    plan_modules: list[str] = []
     if plan_path.is_file():
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        plan_modules = [str(module_id) for module_id in plan.get("modules", [])]
+    if _uses_suite_launcher(profile_id, plan_modules):
+        runtime_launcher = bundle_dir / "installer" / "runtime" / "suite-launcher"
+        runtime_launcher.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            SUITE_LAUNCHER_SOURCE,
+            runtime_launcher,
+            ignore=shutil.ignore_patterns(
+                "node_modules",
+                "playwright-report",
+                "test-results",
+                ".DS_Store",
+            ),
+        )
+    modules_root = bundle_dir / "modules"
+    modules_root.mkdir(parents=True, exist_ok=True)
+    bundled_modules = ["civicrecords-ai", "civicclerk"]
+    if plan_modules:
         bundled_modules = [
             str(module_id)
-            for module_id in plan.get("modules", [])
+            for module_id in plan_modules
             if str(module_id) != "civiccore"
         ]
     for module_name in bundled_modules:

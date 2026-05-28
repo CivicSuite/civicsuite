@@ -156,6 +156,19 @@ def run(command: list[str], *, cwd: Path, timeout: int = 900) -> subprocess.Comp
     )
 
 
+def compose_logs(project: str, source: Path, *services: str) -> dict[str, object]:
+    proc = run(
+        compose(project, source, "logs", "--no-color", "--tail", "200", *services),
+        cwd=source,
+        timeout=120,
+    )
+    return {
+        "returncode": proc.returncode,
+        "stdout": proc.stdout[-12000:],
+        "stderr": proc.stderr[-4000:],
+    }
+
+
 def run_binary_to_file(
     command: list[str],
     *,
@@ -1919,7 +1932,16 @@ def install(
             )
             time.sleep(20)
             up = run(compose(project, source, "up", "-d", *services), cwd=source, timeout=900)  # type: ignore[arg-type]
-        steps.append({"module": name, "step": "compose_up", "returncode": up.returncode, "stdout": up.stdout[-4000:], "stderr": up.stderr[-4000:]})
+        compose_up_step: dict[str, object] = {
+            "module": name,
+            "step": "compose_up",
+            "returncode": up.returncode,
+            "stdout": up.stdout[-4000:],
+            "stderr": up.stderr[-4000:],
+        }
+        if up.returncode != 0:
+            compose_up_step["logs"] = compose_logs(project, source, *services)  # type: ignore[arg-type]
+        steps.append(compose_up_step)
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
     result = verify(
