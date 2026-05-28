@@ -187,10 +187,10 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
-| CivicCore | 1.2.0 | shared platform | none | `e21180ba2aa7` | `v1_2_0_shared_ingestion_shipped` |
-| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `029e3c97dd30` | `v1_7_3_city_core_release_car` |
-| CivicClerk | 1.0.3 | meetings workflow | `civiccore` | `283ae1bd5f4f` | `v1_0_3_city_core_release_car` |
-| CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `d02484941437` | `v1_0_8_city_core_release_car` |
+| CivicCore | 1.2.0 | shared platform | none | `8d3336941605` | `v1_2_0_shared_ingestion_shipped` |
+| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `7182a19bb6d7` | `v1_7_3_city_core_release_car` |
+| CivicClerk | 1.0.3 | meetings workflow | `civiccore` | `4eb1adb84e39` | `v1_0_3_city_core_release_car` |
+| CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `bb7e78ab95bc` | `v1_0_8_city_core_release_car` |
 
 Excluded from city-core:
 - `civicaccess`: OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe.

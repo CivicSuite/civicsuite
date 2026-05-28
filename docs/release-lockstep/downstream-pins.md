@@ -74,10 +74,10 @@ For the 2026-05-28 real non-technical-release branch source-pin bump:
 
 | Repo | Engagement branch context | Package version | CivicCore pin | Installer source_commit |
 |---|---|---:|---|---|
-| CivicSuite/civiccore | `city-core-real-non-technical-release-civiccore` | 1.2.0 | n/a | `e21180ba2aa709d0e492393b9bdb775e7a92adac` |
-| CivicSuite/civicrecords-ai | `city-core-real-non-technical-release-records` | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `029e3c97dd30d2463ab232c26d97c75ba1ab15b9` |
-| CivicSuite/civicclerk | `city-core-real-non-technical-release-clerk` | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `283ae1bd5f4f5e4186d5f2aa122f9bab49ad616a` |
-| CivicSuite/civiccode | `city-core-real-non-technical-release-code` | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `d0248494143774319ce6b6e3de72fc10c5c7db96` |
+| CivicSuite/civiccore | `city-core-real-non-technical-release-civiccore` | 1.2.0 | n/a | `8d33369416050ff7b4306684a1ed5b865f27fec9` |
+| CivicSuite/civicrecords-ai | `city-core-real-non-technical-release-records` | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `7182a19bb6d77cf05d9c57905dda304b3f330693` |
+| CivicSuite/civicclerk | `city-core-real-non-technical-release-clerk` | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `4eb1adb84e3917037554689ecdbf505c7077d375` |
+| CivicSuite/civiccode | `city-core-real-non-technical-release-code` | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `bb7e78ab95bc9719775b913d8a25309cc346f531` |
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 
