@@ -2,7 +2,7 @@
 
 Status date: 2026-05-26
 
-Update 2026-05-28: the active city-core real non-technical-release branch pins CivicCore to `8d33369416050ff7b4306684a1ed5b865f27fec9`, CivicRecords AI to `0e22974e5a15cab4d0422b367fa4c10937122764`, CivicClerk to `a0cba3ea0ed7ee6f90d5771a2c5146bdf979e56f`, and CivicCode to `d797e79d4e48ec347130e9dc49193cbf8c691655`. These are branch-level source pins for the engagement work; they do not mutate the already-published module release objects. The installer-cleanroom workflow now checks out those same source roots before archive generation.
+Update 2026-05-28: the active city-core real non-technical-release branch pins CivicCore to `e3344c6d861f4482ffa518eea6ffed17ef391bca`, CivicRecords AI to `d3adde5a1106c1586e576d8ff98b528db44d9043`, CivicClerk to `ef08cbe512bc0ec1adb187c4967bcd888379a428`, and CivicCode to `84e5cdaceff5d82facf8abdc9700a3d91a717fe8`. These are branch-level source pins for the engagement work; they do not mutate the already-published module release objects. The installer-cleanroom workflow now checks out those same source roots before archive generation.
 
 Update 2026-05-27: the city-core installer vendored-source model now records explicit `source_commit` pins in `installer/modules.json` for CivicCore, CivicRecords AI, CivicClerk, and CivicCode. The installer generator and lifecycle runner enforce those pins before packaging or using vendored source. CivicRecords AI is pinned to `59cabcbe5072d0c843fd57356a7d113bf90537f1`, the post-PR-#100 merge commit that carries the CRIT-1 mobile skip-link fix. Operator docs now point to the live regenerated artifact trust path: generated `SHA256SUMS` or release-manifest hashes, source pin verification, and module release hashes/attestations where applicable.
 
