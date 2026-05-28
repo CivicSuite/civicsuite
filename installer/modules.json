@@ -152,7 +152,7 @@
                                                "compatibility_matrix_check"
                                            ],
                         "current_version":  "1.2.0",
-                        "source_commit":  "5c84931ffcf553a18a22570d833844e47fd173b8"
+                        "source_commit":  "90ec5417d37d469f2cf01d26ace393f67504a805"
                     },
                     {
                         "id":  "civicrecords-ai",
@@ -177,7 +177,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.7.3",
-                        "source_commit":  "0b898e9899d972ffc1f6e81e029aaf4a1981eac9"
+                        "source_commit":  "76440b3818e8d39b6ecafee61daefd3fa88f239f"
                     },
                     {
                         "id":  "civicclerk",
@@ -202,7 +202,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.0.3",
-                        "source_commit":  "7cf0d922d12fb666b245ab3d8cded0f504bed718"
+                        "source_commit":  "f6da40b7e469a2764be293fab34b5b369dff757f"
                     },
                     {
                         "id":  "civiccode",
@@ -229,7 +229,7 @@
                                                "release_attestation"
                                            ],
                         "current_version":  "1.0.8",
-                        "source_commit":  "7b506b889232915e75d64b911e3a957083ecc928"
+                        "source_commit":  "3cabf3947ced6d7788ffc301889ada9463f6b2da"
                     },
                     {
                         "id":  "civiczone",

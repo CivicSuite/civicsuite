@@ -53,9 +53,11 @@ const states = {
     next: "Open the Staff surface or use Ctrl-K to jump directly to a module.",
     statuses: { records: "ready", clerk: "ready", code: "ready" },
     audit: [
-      { time: "09:42", action: "Launcher opened staff workspace", source: "suite-launcher" },
-      { time: "09:41", action: "City-core module list resolved", source: "installer/modules.json" },
-      { time: "09:40", action: "Operator selected city-core profile", source: "installer" }
+      { time: "09:44", action: "Records request viewed by staff", source: "civicrecords-ai" },
+      { time: "09:43", action: "Meeting packet updated", source: "civicclerk" },
+      { time: "09:42", action: "Ordinance citation indexed", source: "civiccode" },
+      { time: "09:41", action: "City-core shared session validated", source: "civiccore" },
+      { time: "09:40", action: "Operator selected city-core profile", source: "suite-launcher" }
     ]
   },
   empty: {
@@ -328,14 +330,14 @@ function auditDrawer(state) {
     <aside class="audit-drawer" role="dialog" aria-modal="true" aria-labelledby="audit-title" tabindex="-1">
       <div class="drawer-heading">
         <div>
-          <p class="eyebrow">One click from every surface</p>
-          <h2 id="audit-title">Audit drawer</h2>
+          <p class="eyebrow">Cross-module event surface</p>
+          <h2 id="audit-title">City-core audit drawer</h2>
         </div>
         <button type="button" class="icon-button" aria-label="Close audit drawer" data-close-audit>${icon("close")}</button>
       </div>
       <ol class="audit-list">${rows}</ol>
       <div class="drawer-footer">
-        <button type="button">Export audit log</button>
+        <button type="button">Export cross-module audit log</button>
         <button type="button">Open evidence folder</button>
       </div>
     </aside>
