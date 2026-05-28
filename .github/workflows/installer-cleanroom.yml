@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: 4eb1adb84e3917037554689ecdbf505c7077d375
+          ref: a0cba3ea0ed7ee6f90d5771a2c5146bdf979e56f
           path: modules/civicclerk
 
       - name: Check out CivicCode bundle source
@@ -154,7 +154,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: 4eb1adb84e3917037554689ecdbf505c7077d375
+          ref: a0cba3ea0ed7ee6f90d5771a2c5146bdf979e56f
           path: modules/civicclerk
 
       - name: Check out CivicCode bundle source
