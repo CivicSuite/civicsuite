@@ -1014,7 +1014,7 @@ The suite launcher currently records local browser/runtime session state for ins
 |---|---:|---:|---:|---|
 | civiccore | 1.2.0 | n/a | 90ec5417d37d469f2cf01d26ace393f67504a805 | Real shared platform; v1.2.0 adds shared document ingestion, retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening, and carries the engagement branch shared suite-session token helpers. |
 | civicrecords-ai | 1.7.3 | 1.2.0 | 76440b3818e8d39b6ecafee61daefd3fa88f239f | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 branch accepts shared suite sessions, refreshed OpenAPI output, and includes prototype-shell UX fixes without changing the published v1.7.3 release object. |
-| civicclerk | 1.0.3 | 1.2.0 | 088705176e61c0e1aadbdc4d573d10d5e6883042 | Real meeting workflow release car with protected staff auth defaults retained, branch-level bearer handoff/session contracts, and a retry-hardened frontend dependency-audit gate. |
+| civicclerk | 1.0.3 | 1.2.0 | 9dbbbc9d5aead3438006bc9f51c0d719004484ae | Real meeting workflow release car with protected staff auth defaults retained, branch-level bearer handoff/session contracts, and a retry-hardened frontend dependency-audit gate. |
 | civiccode | 1.0.8 | 1.2.0 | dd17ea1a6462d6db8dac369811d28876a4d7920e | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and branch-level staff APIs require shared bearer sessions. |
 | civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
 | civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
