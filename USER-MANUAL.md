@@ -189,7 +189,7 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | CivicCore | 1.2.0 | shared platform | none | `5c84931ffcf5` | `v1_2_0_shared_ingestion_shipped` |
 | CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `0b898e9899d9` | `v1_7_3_city_core_release_car` |
 | CivicClerk | 1.0.3 | meetings workflow | `civiccore` | `7cf0d922d12f` | `v1_0_3_city_core_release_car` |
-| CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `e2b71fd528ea` | `v1_0_8_city_core_release_car` |
+| CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `7b506b889232` | `v1_0_8_city_core_release_car` |
 
 Excluded from city-core:
 - `civicaccess`: OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe.
