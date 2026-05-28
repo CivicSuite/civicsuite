@@ -8,6 +8,7 @@ param(
     [switch]$Restore,
     [switch]$Uninstall,
     [switch]$FirstRun,
+    [switch]$SuiteLauncher,
     [switch]$GuidedSetup,
     [switch]$ManualPrerequisite,
     [ValidateSet("protected", "bearer", "open")]
@@ -164,6 +165,8 @@ function Show-CivicSuitePostInstallDashboard([hashtable]$Wizard) {
     Write-Host "Admin email: $($Wizard.admin_email)"
     Write-Host "Initial administrator credential file: $CredentialPath"
     Write-Host "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+    Write-Host "Suite launcher: http://127.0.0.1:18082/"
+    Write-Host "Shared staff session check: CIVICCORE_SUITE_SESSION_SECRET is generated during install if missing."
     Write-Host "Records AI staff dashboard: http://127.0.0.1:18080/"
     Write-Host "CivicClerk staff dashboard: http://127.0.0.1:18081/"
     Write-Host "CivicCode API/search: http://127.0.0.1:18820/"
@@ -295,6 +298,20 @@ if ($Module -and $Module.Count -gt 0) {
 
 if ($Plan) {
     python $Planner @PlannerArgs
+    exit (Get-CivicSuiteLastExitCode)
+}
+
+if ($SuiteLauncher) {
+    $SuiteLauncherScript = Join-Path $PackageDir "suite-launcher\scripts\serve.mjs"
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        Write-Error "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun with -SuiteLauncher."
+        exit 2
+    }
+    if (-not (Test-Path $SuiteLauncherScript)) {
+        Write-Error "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher."
+        exit 2
+    }
+    & node $SuiteLauncherScript --port 18082
     exit (Get-CivicSuiteLastExitCode)
 }
 

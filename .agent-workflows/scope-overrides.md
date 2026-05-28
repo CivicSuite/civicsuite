@@ -22,3 +22,10 @@ Every manifest that bypassed `check_active_target.py` via `override_active_targe
 - Override reason (verbatim):
 
   > Scott's 2026-05-26 directive explicitly supersedes the prior active-target queue and authorizes this city-core installability run across the umbrella plus the four city-core module repos. This override is limited to the stated city-core deliverables and halt triggers.
+
+## 2026-05-27T19:07:05Z — run 2026-05-28-city-core-real-non-technical-release
+
+- Manifest's `advances_target`: `City-core real non-technical user release`
+- Override reason (verbatim):
+
+  > Scott's 2026-05-28 directive supersedes the stale PROJECT_CONTROL_PLANE active target, which still names CivicInspect suite-truth reconciliation. This run is explicitly authorized in chat and through the bridge workflow as the next city-core engagement after PR #183, PR #100, and PR #184 pre-engagement merges.

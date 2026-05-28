@@ -1,0 +1,12 @@
+{
+  "component": "suite-launcher",
+  "package_path": "suite-launcher",
+  "port": 18082,
+  "shared_staff_session": {
+    "env_var": "CIVICCORE_SUITE_SESSION_SECRET",
+    "persisted_value_in_plan": false,
+    "value_source": "generated on first install if missing"
+  },
+  "source": "installer\\runtime\\suite-launcher",
+  "url": "http://127.0.0.1:18082/"
+}

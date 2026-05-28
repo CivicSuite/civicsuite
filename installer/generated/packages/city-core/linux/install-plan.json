@@ -19,6 +19,18 @@
       "type": "check"
     },
     {
+      "description": "Suite launcher runtime files are packaged and planned for localhost:18082.",
+      "id": "suite-launcher-runtime",
+      "mode": "file_and_port_plan",
+      "type": "check"
+    },
+    {
+      "description": "Shared staff session env var CIVICCORE_SUITE_SESSION_SECRET is created at runtime if missing and shared with selected services.",
+      "id": "shared-staff-session-env",
+      "mode": "env_plan",
+      "type": "check"
+    },
+    {
       "civiccore_requirement": null,
       "display_name": "CivicCore",
       "module": "civiccore",
@@ -83,9 +95,24 @@
         "restart",
         "backup",
         "restore",
-        "actionable_failure_copy"
+        "actionable_failure_copy",
+        "suite_launcher_files",
+        "suite_launcher_port_config",
+        "shared_staff_session_check"
       ],
       "type": "verify_profile"
+    },
+    {
+      "component": "suite-launcher",
+      "port": 18082,
+      "shared_staff_session": {
+        "env_var": "CIVICCORE_SUITE_SESSION_SECRET",
+        "persisted_value_in_plan": false,
+        "value_source": "generated on first install if missing"
+      },
+      "source": "installer\\runtime\\suite-launcher",
+      "type": "configure_runtime",
+      "url": "http://127.0.0.1:18082/"
     }
   ],
   "dry_run": true,

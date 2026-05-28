@@ -59,10 +59,12 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). T
 **Suite installer (current):** Clerk-Core has a published bounded starter installer release, and city-core is the active beta-ready truth-reconciled profile that adds CivicCode to CivicCore + CivicRecords AI + CivicClerk. The active run has current Linux/Windows one-click lifecycle, cross-module integration, backup/restore, first-run browser QA, PR CI evidence, and audit-full evidence with zero unresolved Blocker or Critical findings. CivicSuite's core runtime path is Linux/container-first; Windows is a wrapper around the same containerized core; macOS remains beta/archive/readiness only.
 
 - Published starter packages: `CivicSuite-clerk-core-windows-0.1.0.zip`, `CivicSuite-clerk-core-linux-0.1.0.tar.gz`, and `CivicSuite-clerk-core-macos-0.1.0.tar.gz`.
-- City-core generated package surfaces exist under the installer tree. The current canonical 0.1.2 artifacts for this run are preserved under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\evidence\current-0.1.2-build-regenerated-2026-05-27-windows-admin-email-fix`; PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks. Exact volatile PR run IDs are recorded in the PR body and run evidence. Audit-full evidence is recorded under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\audit-full\`.
+- City-core generated package surfaces exist under the installer tree. The current canonical 0.1.2 artifacts for this run are live regenerated artifacts preserved under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\evidence\current-0.1.2-build-regenerated-2026-05-27-windows-admin-email-fix`; PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks. Exact volatile PR run IDs are recorded in the PR body and run evidence. Audit-full evidence is recorded under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\audit-full\`.
+- The city-core one-click wrappers launch the local suite launcher and first-run wizard. Linux Guided Setup uses Docker's signed package repositories where supported; Windows uses Docker Desktop plus WSL 2; macOS remains beta/archive/readiness only.
+- Trust path: verify the generated `SHA256SUMS` or release manifest from the active run evidence, confirm `installer/modules.json` `source_commit` pins for CivicCore/CivicRecords AI/CivicClerk/CivicCode, and use module release hashes/attestations where applicable. Do not restore committed `installer/dist` artifacts unless Scott explicitly decides to revive them.
 - macOS package paths stay beta/archive/readiness only until matching-host macOS lifecycle evidence exists.
 
-See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
+See [docs/troubleshooting.md](docs/troubleshooting.md) for operator recovery guidance, [installer/README.md](installer/README.md) for the generated-package contract, and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
 Operators evaluating the prior starter release should use the [starter-set outside test guide](docs/installer/starter-set-outside-test-guide.md). Operators evaluating city-core should use the active run evidence path above for the current 0.1.2 package artifacts until a promoted release artifact is published.
 
 **Per-module install path:**
@@ -135,6 +137,7 @@ The `CivicSuite` GitHub org has two active owners (`scottconverse` and `APirateM
 - FAQ: [FAQ.md](FAQ.md)
 - Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Recovery status: [docs/release-recovery-status.md](docs/release-recovery-status.md)
+- Troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md)
 - Roadmap: [docs/roadmap/index.md](docs/roadmap/index.md)
 - Governance: [docs/governance/index.md](docs/governance/index.md)
 - Compatibility matrix: [docs/compatibility/index.md](docs/compatibility/index.md)

@@ -60,9 +60,15 @@ For the 2026-05-27 P1.2 source-pin bump:
 PR #183 has green verify, release-lockstep-gate, and installer-cleanroom
 checks; exact volatile PR run IDs are recorded in the PR body and run
 evidence. CivicRecords AI PR #100 is green at `d7f84a3` for CI run
-`26487863170`. The status is beta-ready truth-reconciled after audit-full; this is not
-public-use readiness, city-ready status, procurement readiness, production
-readiness, macOS lifecycle certification, or full-suite promotion.
+`26487863170`. The operator trust path is live regenerated installer evidence:
+generated `SHA256SUMS` or release-manifest hashes, `source_commit` checks for
+vendored source, and module release hashes/attestations where applicable. The
+suite launcher is a local browser front door with local runtime session state,
+not a municipal SSO or managed cloud-session claim. The Linux Guided Setup path
+uses Docker's signed package repositories where supported. The status is
+beta-ready truth-reconciled after audit-full; this is not public-use readiness,
+city-ready status, procurement readiness, production readiness, macOS lifecycle
+certification, or full-suite promotion.
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 

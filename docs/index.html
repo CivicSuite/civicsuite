@@ -235,6 +235,7 @@
       <li><a href="roadmap/shared-extraction-consumer-rollout.md">Rollout playbook</a></li>
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
       <li><a href="installer/suite-installer-plan.md">Installer plan</a></li>
+      <li><a href="troubleshooting.md">Troubleshooting</a></li>
       <li><a href="../CHARTER.md">Charter</a></li>
       <li><a href="../USER-MANUAL.md">User manual</a></li>
     </ul>
@@ -250,7 +251,7 @@
         <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
       </thead>
       <tbody>
-        <tr><td>City-core package</td><td>3 product modules plus CivicCore</td><td><code>civiccore</code> v1.2.0, <code>civicrecords-ai</code> v1.7.3, <code>civicclerk</code> v1.0.3, and <code>civiccode</code> v1.0.8 are the active city-core profile. The active run has current Linux/Windows lifecycle, integration evidence, first-run browser QA, green PR CI, and audit-full evidence; status is beta-ready truth-reconciled with no public-use, city-ready, procurement-ready, production-ready, macOS lifecycle, or full-suite release claim.</td></tr>
+        <tr><td>City-core package</td><td>3 product modules plus CivicCore</td><td><code>civiccore</code> v1.2.0, <code>civicrecords-ai</code> v1.7.3, <code>civicclerk</code> v1.0.3, and <code>civiccode</code> v1.0.8 are the active city-core profile. The active run has current Linux/Windows lifecycle, suite launcher and first-run browser QA, green PR CI, live hash/source-pin trust evidence, and audit-full evidence; status is beta-ready truth-reconciled with no public-use, city-ready, procurement-ready, production-ready, macOS lifecycle, or full-suite release claim.</td></tr>
         <tr><td>Excluded / queued modules</td><td>Tier 2 and CivicAccess</td><td><code>civicaccess</code> is out of city-core after a NEEDS-WORK depth probe. <code>civiczone</code>, <code>civicplan</code>, <code>civicpermit</code>, and <code>civicinspect</code> are queued Tier 2 modules on demotion-truth labels.</td></tr>
         <tr><td>Recovery / scaffold labels</td><td>Remaining product repos</td><td><code>civicgrants</code>, <code>civicprocure</code>, and the remaining catalog have bounded foundations or specs and must not be treated as product-ready modules.</td></tr>
         <tr><td>Foundation / planned</td><td>Remaining catalog</td><td>The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. <code>CivicRegWatch</code> and <code>CivicAPI</code> are planned modules with specs but no runtime repos yet.</td></tr>
@@ -266,6 +267,8 @@
       <ul>
         <li>Keep macOS explicitly beta/archive/readiness only.</li>
         <li>Keep CivicAccess and Tier 2 modules outside this run.</li>
+        <li>Use live regenerated artifact hashes, source pins, and attestations as the trust path.</li>
+        <li>Keep Linux Guided Setup tied to Docker's signed package repositories where supported.</li>
         <li>Record real terminal and screenshot evidence for every integration claim.</li>
         <li>Advance later modules one at a time only after city-core closes with evidence.</li>
       </ul>
@@ -292,6 +295,7 @@
       <li><a href="../SUCCESSION.md">Continuity and succession plan</a></li>
       <li><a href="governance/index.md">Governance overview</a></li>
       <li><a href="compatibility/index.md">Compatibility matrix</a></li>
+      <li><a href="troubleshooting.md">Troubleshooting and trust path</a></li>
       <li><a href="installer/starter-set-public-use-readiness-gate.md">Clerk-Core public-use readiness gate</a></li>
       <li><a href="installer/clerk-core-final-package-evidence-2026-05-21.md">Clerk-Core final package evidence (2026-05-21)</a></li>
       <li><a href="installer/clerk-core-public-use-release-gate-audit-2026-05-21.md">Clerk-Core public-use release-gate audit (2026-05-21)</a></li>
