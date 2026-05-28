@@ -97,7 +97,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civiccode
-          ref: bb7e78ab95bc9719775b913d8a25309cc346f531
+          ref: d797e79d4e48ec347130e9dc49193cbf8c691655
           path: modules/civiccode
 
       - name: Set up Python
@@ -161,7 +161,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civiccode
-          ref: bb7e78ab95bc9719775b913d8a25309cc346f531
+          ref: d797e79d4e48ec347130e9dc49193cbf8c691655
           path: modules/civiccode
 
       - name: Set up Python
