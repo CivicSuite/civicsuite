@@ -202,7 +202,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.0.3",
-                        "source_commit":  "99f0da05ccd5dbb4e96d4f51ecefa1f5c90efac1"
+                        "source_commit":  "088705176e61c0e1aadbdc4d573d10d5e6883042"
                     },
                     {
                         "id":  "civiccode",
@@ -229,7 +229,7 @@
                                                "release_attestation"
                                            ],
                         "current_version":  "1.0.8",
-                        "source_commit":  "656b42215c8c04527a39ff80ae67fe653dbdeaf9"
+                        "source_commit":  "dd17ea1a6462d6db8dac369811d28876a4d7920e"
                     },
                     {
                         "id":  "civiczone",
