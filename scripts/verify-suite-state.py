@@ -752,6 +752,12 @@ def installer_source_commits() -> dict[str, str]:
 
 
 def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
+    """Confirm installer source pins match the checkout mode being verified.
+
+    Local engagement branches may pin PR heads before the corresponding module
+    default branch has moved; remote-only verification stays tied to default
+    branches after merge.
+    """
     city_core_modules = {"civiccore", "civicrecords-ai", "civicclerk", "civiccode"}
     if spec.name not in city_core_modules:
         return []
