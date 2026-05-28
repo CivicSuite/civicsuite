@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -785,6 +786,24 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
         if code != 0:
             return [fail(f"cannot read local source HEAD for {spec.name}: {output}")]
         actual = output
+
+    if actual != declared and remote_only and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+        code, data, message = run_json(
+            [
+                "gh",
+                "api",
+                f"repos/{spec.repo}/commits/{declared}",
+            ]
+        )
+        if code == 0 and isinstance(data, dict) and data.get("sha") == declared:
+            return []
+        return [
+            fail(
+                f"installer/modules.json source_commit for {spec.name} is {declared}, "
+                f"which is not {spec.default_branch} head {actual} and could not be read "
+                f"as a pull-request branch commit: {message}"
+            )
+        ]
 
     if actual != declared:
         return [
