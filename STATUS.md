@@ -1,13 +1,13 @@
 # CivicSuite Module Status
 
-**Last verified:** 2026-05-27
+**Last verified:** 2026-05-28
 **Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
 This is the plain-English operating truth for CivicSuite. The unified spec describes architectural intent. This file describes release reality.
 
-## Active Public-Use Target
+## Active City-Core Beta Target
 
-The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.3`, CivicClerk `v1.0.3`, and CivicCode `v1.0.8`; PR #183 records beta-ready truth-reconciled evidence for the four-module non-technical Windows/Linux installer path. PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks; exact volatile run IDs are recorded in the PR body and under the run evidence path. Local first-run browser QA covers Linux `.run` and Windows `.cmd` one-click artifacts, and audit-full records zero unresolved Blocker or Critical findings under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\audit-full\`. The package remains bounded to unsigned vendored-source installer artifacts; macOS remains beta-level readiness only until a matching-host macOS lifecycle is proven.
+The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the suite installer. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.3`, CivicClerk `v1.0.3`, and CivicCode `v1.0.8`; PR #183 records predecessor beta-ready truth-reconciled evidence for the four-module non-technical Windows/Linux installer path. The 2026-05-28 engagement is closing the full independent audit-team finding set before the beta-ready truth-reconciled label can be treated as current. Current run evidence lives at `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-28-city-core-real-non-technical-release\`. The package remains bounded to unsigned vendored-source installer artifacts; macOS remains beta-level readiness only until a matching-host macOS lifecycle is proven.
 
 The operator path uses live regenerated artifacts. Verify the generated `SHA256SUMS` or release manifest from the active run evidence, confirm the `installer/modules.json` `source_commit` pins for the four city-core repos, and use published module hashes/attestations where applicable. Do not treat old committed `installer/dist` files as canonical unless Scott explicitly confirms artifact restoration. The suite launcher is the local browser front door for city-core; its shared browser session is local runtime state, not a completed municipal SSO or managed cloud-session claim.
 

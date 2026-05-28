@@ -35,6 +35,9 @@ SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
 SUITE_LAUNCHER_PACKAGE_DIR = "suite-launcher"
 SUITE_LAUNCHER_PORT = 18082
 SUITE_SESSION_ENV = "CIVICCORE_SUITE_SESSION_" + "SEC" + "RET"
+SUITE_SESSION_REVOCATION_ENV = "CIVICCORE_SUITE_SESSION_REVOCATION_FILE"
+SUITE_SESSION_REVOCATION_FILE_NAME = "civiccore_suite_session_revocations.json"
+SUITE_SESSION_REVOCATION_CONTAINER_PATH = f"/civicsuite-shared/{SUITE_SESSION_REVOCATION_FILE_NAME}"
 DEFAULT_SIGNING_STATUS = {
     "signed": False,
     "status": "unsigned_public_use_starter",
@@ -1695,8 +1698,15 @@ def _suite_launcher_config(*, package_relative_path: str | None = None) -> dict[
         "source": str(SUITE_LAUNCHER_SOURCE.relative_to(ROOT)),
         "port": SUITE_LAUNCHER_PORT,
         "url": f"http://127.0.0.1:{SUITE_LAUNCHER_PORT}/",
+        "modules": [
+            {"id": "records", "port": 18080, "href": "http://127.0.0.1:18080/"},
+            {"id": "clerk", "port": 18081, "href": "http://127.0.0.1:18081/"},
+            {"id": "code", "port": 18820, "href": "http://127.0.0.1:18820/"},
+        ],
         "shared_staff_session": {
             "env_var": SUITE_SESSION_ENV,
+            "revocation_env_var": SUITE_SESSION_REVOCATION_ENV,
+            "revocation_file": SUITE_SESSION_REVOCATION_CONTAINER_PATH,
             "value_source": "generated on first install if missing",
             "persisted_value_in_plan": False,
         },

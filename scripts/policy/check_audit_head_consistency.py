@@ -195,12 +195,19 @@ def main() -> int:
         action="store_true",
         help="Enforce the check even when the current PR is not detected as release-tag.",
     )
+    parser.add_argument("--run", help="Limit default scan to .agent-runs/<run>.")
     parser.add_argument("--head", help="Override current git HEAD for tests or replay.")
     args = parser.parse_args()
 
     repo_root = _repo_root()
     active = args.require_consistency or _release_tag_pr_detected(repo_root)
-    paths = [Path(path) for path in args.paths] if args.paths else _default_paths(repo_root)
+    if args.paths:
+        paths = [Path(path) for path in args.paths]
+    elif args.run:
+        run_path = repo_root / ".agent-runs" / args.run
+        paths = [run_path] if run_path.exists() else []
+    else:
+        paths = _default_paths(repo_root)
 
     if not active:
         print(

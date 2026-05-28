@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Policy: live/real-wire test names must not mock their named boundary."""
+"""Policy: live, real-wire, and integration test names must match mechanics."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-CLAIM_MARKERS = ("_live_", "_real_wire_")
+CLAIM_MARKERS = ("_live_", "_real_wire_", "_integration_")
 PATCH_CALL_RE = re.compile(r"\bmonkeypatch\.setattr\s*\(")
 WORD_RE = re.compile(r"[a-z0-9]+")
 GENERIC_WORDS = {
@@ -27,8 +27,8 @@ GENERIC_WORDS = {
     "wire",
 }
 MESSAGE = (
-    "Live/real-wire test filename monkeypatches the named boundary; rename it "
-    "as unit coverage or exercise the real boundary."
+    "Live/real-wire/integration test filename monkeypatches the named boundary; "
+    "rename it as unit/shape coverage or exercise the real boundary."
 )
 
 

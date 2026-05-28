@@ -27,8 +27,8 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
-- The city-core installer has current Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence in the active run record. It is beta-ready truth-reconciled, not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
-- The suite launcher is the local browser front door for staff, resident, and IT-admin orientation over the installed services. Its current shared browser session is local runtime state, not completed municipal SSO or a managed cloud session claim.
+- The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence. The 2026-05-28 engagement is closing the full independent audit-team finding set before the beta-ready truth-reconciled label is current. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
+- The suite launcher is the local browser front door for staff, resident, and IT-admin orientation over the installed services. The 2026-05-28 engagement is proving the shared browser session across modules; until the independent audit-team rerun clears it, treat that as in-flight city-core beta work rather than a municipal managed-SSO claim.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
 
@@ -42,9 +42,9 @@ A municipality cannot today run end-to-end on this suite. Pilot evaluation is re
 
 ---
 
-## Part 1.5 — Your first task with CivicRecords AI
+## Part 1.5 - Your first task with the city-core launcher
 
-If you want to *try* CivicSuite today, this is the path. Treat this as a developer-preview walkthrough, not production setup.
+If you want to *try* CivicSuite today, start at the suite launcher. Treat this as a developer-preview walkthrough, not production setup.
 
 ### Prerequisites
 
@@ -54,13 +54,12 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 
 ### Install (Windows wrapper)
 
-1. Download `CivicRecordsAI-<version>-Setup.exe` from the latest release at <https://github.com/CivicSuite/civicrecords-ai/releases>.
-2. Verify the SHA-256 checksum published alongside the installer.
-3. Run the installer. **Windows SmartScreen will warn "Unknown publisher" — this is expected. Click "More info → Run anyway."** The installer is intentionally unsigned today.
-4. The installer fires a prereq check, then `install.ps1`. The model picker offers four Gemma 4 sizes; pick `gemma4:e4b` for the default.
-5. After install, two Start Menu entries appear:
-   - **Start CivicRecords AI** — daily start (`docker compose up -d`).
-   - **Install or Repair CivicRecords AI** — bootstrap / repair.
+1. Download the current city-core installer artifact from the active run evidence or the matching GitHub release attestation when one is published.
+2. Verify the SHA-256 checksum or release manifest from the same source.
+3. Run the installer. **Windows SmartScreen can warn "Unknown publisher" - this is expected for unsigned beta artifacts. Click "More info" only when the checksum matches the trusted artifact source.**
+4. Choose Guided Setup if Docker Desktop/WSL2 is missing on Windows or Docker Engine is missing on Linux. Choose Manual Prerequisite if IT already installed those components.
+5. Complete the first-run wizard, rotate the first administrator password, then open the suite launcher at the URL printed by the installer.
+6. From the launcher, open Records AI, CivicClerk, or CivicCode. In the current engagement, shared-session behavior is being verified across those three staff modules.
 
 ### Install (Linux / macOS)
 
