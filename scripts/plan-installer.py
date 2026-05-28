@@ -3670,13 +3670,6 @@ def build_install_plan(
                 "shared_staff_session_check",
             ]
         )
-    actions.append(
-        {
-            "type": "verify_profile",
-            "profile": profile_id,
-            "proof": verification_proof,
-        }
-    )
     if _uses_suite_launcher(profile_id, ordered_ids):
         actions.append(
             {
@@ -3684,6 +3677,13 @@ def build_install_plan(
                 **_suite_launcher_config(),
             }
         )
+    actions.append(
+        {
+            "type": "verify_profile",
+            "profile": profile_id,
+            "proof": verification_proof,
+        }
+    )
 
     return {
         "dry_run": True,

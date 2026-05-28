@@ -122,6 +122,8 @@ show_post_install_dashboard() {
   echo "Admin email: $WIZARD_ADMIN_EMAIL"
   echo "Initial administrator credential file: $credential_path"
   echo "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+  echo "Suite launcher: http://127.0.0.1:18082/"
+  echo "Shared staff session check: CIVICCORE_SUITE_SESSION_SECRET is generated during install if missing."
   echo "Records AI staff dashboard: http://127.0.0.1:18080/"
   echo "CivicClerk staff dashboard: http://127.0.0.1:18081/"
   echo "CivicCode API/search: http://127.0.0.1:18820/"
@@ -278,6 +280,18 @@ case "${MODE}" in
   plan)
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}"
     ;;
+  launcher)
+    launcher_script="${SCRIPT_DIR}/suite-launcher/scripts/serve.mjs"
+    if ! command -v node >/dev/null 2>&1; then
+      echo "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun launcher mode." >&2
+      exit 2
+    fi
+    if [[ ! -f "$launcher_script" ]]; then
+      echo "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher." >&2
+      exit 2
+    fi
+    node "$launcher_script" --port 18082
+    ;;
   install)
     python3 "${LIFECYCLE}" install "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
     ;;
@@ -300,7 +314,7 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac

@@ -1012,10 +1012,10 @@ The suite launcher currently records local browser/runtime session state for ins
 
 | Repo | Current recovery label | CivicCore pin | Source commit pin | Status summary |
 |---|---:|---:|---:|---|
-| civiccore | 1.2.0 | n/a | f39f1afc76b7bc37f63b76e37a9def8bcb9be0fd | Real shared platform; v1.2.0 adds shared document ingestion and retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening. |
-| civicrecords-ai | 1.7.3 | 1.2.0 | 59cabcbe5072d0c843fd57356a7d113bf90537f1 | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 adds wheel/sdist release assets without changing installer behavior. |
-| civicclerk | 1.0.3 | 1.2.0 | 3bf5293dd6a074140690598a244fce324a988143 | Real meeting workflow release car with protected staff auth defaults retained. |
-| civiccode | 1.0.8 | 1.2.0 | d2eaf1392c01cb7cc80e6bac3e2fbf8cb0b398e1 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
+| civiccore | 1.2.0 | n/a | e21180ba2aa709d0e492393b9bdb775e7a92adac | Real shared platform; v1.2.0 adds shared document ingestion, retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening, and carries the engagement branch shared suite-session token helpers. |
+| civicrecords-ai | 1.7.3 | 1.2.0 | 029e3c97dd30d2463ab232c26d97c75ba1ab15b9 | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 branch accepts shared suite sessions and includes prototype-shell UX fixes without changing the published v1.7.3 release object. |
+| civicclerk | 1.0.3 | 1.2.0 | 283ae1bd5f4f5e4186d5f2aa122f9bab49ad616a | Real meeting workflow release car with protected staff auth defaults retained and branch-level bearer handoff/session contracts. |
+| civiccode | 1.0.8 | 1.2.0 | d0248494143774319ce6b6e3de72fc10c5c7db96 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and branch-level staff APIs require shared bearer sessions. |
 | civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
 | civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicplan | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
