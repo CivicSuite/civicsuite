@@ -83,21 +83,21 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicrecords-ai
-          ref: 76440b3818e8d39b6ecafee61daefd3fa88f239f
+          ref: ae34a499c1e0794d3322146369f798f19bd0a146
           path: modules/civicrecords-ai
 
       - name: Check out CivicClerk bundle source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: 9dbbbc9d5aead3438006bc9f51c0d719004484ae
+          ref: f39d0eeccc6804b86c542b4cdffe4fab0665d503
           path: modules/civicclerk
 
       - name: Check out CivicCode bundle source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civiccode
-          ref: dd17ea1a6462d6db8dac369811d28876a4d7920e
+          ref: 9284fd1a0704541b3422e5dd0ba47bea3713825a
           path: modules/civiccode
 
       - name: Set up Python
@@ -147,21 +147,21 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicrecords-ai
-          ref: 76440b3818e8d39b6ecafee61daefd3fa88f239f
+          ref: ae34a499c1e0794d3322146369f798f19bd0a146
           path: modules/civicrecords-ai
 
       - name: Check out CivicClerk bundle source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: 9dbbbc9d5aead3438006bc9f51c0d719004484ae
+          ref: f39d0eeccc6804b86c542b4cdffe4fab0665d503
           path: modules/civicclerk
 
       - name: Check out CivicCode bundle source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civiccode
-          ref: dd17ea1a6462d6db8dac369811d28876a4d7920e
+          ref: 9284fd1a0704541b3422e5dd0ba47bea3713825a
           path: modules/civiccode
 
       - name: Set up Python
