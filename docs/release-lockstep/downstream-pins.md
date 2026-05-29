@@ -70,14 +70,14 @@ beta-ready truth-reconciled after audit-full; this is not public-use readiness,
 city-ready status, procurement readiness, production readiness, macOS lifecycle
 certification, or full-suite promotion.
 
-For the 2026-05-28 real non-technical-release branch source-pin bump:
+For the 2026-05-29 city-core post-merge source-pin bump:
 
-| Repo | Engagement branch context | Package version | CivicCore pin | Installer source_commit |
+| Repo | Default branch context | Package version | CivicCore pin | Installer source_commit |
 |---|---|---:|---|---|
-| CivicSuite/civiccore | `city-core-real-non-technical-release-civiccore` | 1.2.0 | n/a | `90ec5417d37d469f2cf01d26ace393f67504a805` |
-| CivicSuite/civicrecords-ai | `city-core-real-non-technical-release-records` | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `76440b3818e8d39b6ecafee61daefd3fa88f239f` |
-| CivicSuite/civicclerk | `city-core-real-non-technical-release-clerk` | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `9dbbbc9d5aead3438006bc9f51c0d719004484ae` |
-| CivicSuite/civiccode | `city-core-real-non-technical-release-code` | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `dd17ea1a6462d6db8dac369811d28876a4d7920e` |
+| CivicSuite/civiccore | `main`, post-PR-#64 merge | 1.2.0 | n/a | `9f7e3a5a0156fca779b48076d49c13181d15151c` |
+| CivicSuite/civicrecords-ai | `master`, post-PR-#101 merge | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `ae34a499c1e0794d3322146369f798f19bd0a146` |
+| CivicSuite/civicclerk | `main`, post-PR-#171 merge | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `f39d0eeccc6804b86c542b4cdffe4fab0665d503` |
+| CivicSuite/civiccode | `main`, post-PR-#75 merge | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `9284fd1a0704541b3422e5dd0ba47bea3713825a` |
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 

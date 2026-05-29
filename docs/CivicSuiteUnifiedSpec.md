@@ -1012,10 +1012,10 @@ The suite launcher currently records local browser/runtime session state for ins
 
 | Repo | Current recovery label | CivicCore pin | Source commit pin | Status summary |
 |---|---:|---:|---:|---|
-| civiccore | 1.2.0 | n/a | 90ec5417d37d469f2cf01d26ace393f67504a805 | Real shared platform; v1.2.0 adds shared document ingestion, retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening, and carries the engagement branch shared suite-session token helpers. |
-| civicrecords-ai | 1.7.3 | 1.2.0 | 76440b3818e8d39b6ecafee61daefd3fa88f239f | Developer-preview records release car consuming CivicCore shared ingestion; v1.7.3 branch accepts shared suite sessions, refreshed OpenAPI output, and includes prototype-shell UX fixes without changing the published v1.7.3 release object. |
-| civicclerk | 1.0.3 | 1.2.0 | 9dbbbc9d5aead3438006bc9f51c0d719004484ae | Real meeting workflow release car with protected staff auth defaults retained, branch-level bearer handoff/session contracts, and a retry-hardened frontend dependency-audit gate. |
-| civiccode | 1.0.8 | 1.2.0 | dd17ea1a6462d6db8dac369811d28876a4d7920e | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and branch-level staff APIs require shared bearer sessions. |
+| civiccore | 1.2.0 | n/a | 9f7e3a5a0156fca779b48076d49c13181d15151c | Real shared platform; v1.2.0 adds shared document ingestion, retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening, and carries the post-PR-#64 shared suite-session token helpers. |
+| civicrecords-ai | 1.7.3 | 1.2.0 | ae34a499c1e0794d3322146369f798f19bd0a146 | Developer-preview records release car consuming CivicCore shared ingestion; the post-PR-#101 default branch accepts shared suite sessions, refreshed OpenAPI output, and includes prototype-shell UX fixes without changing the published v1.7.3 release object. |
+| civicclerk | 1.0.3 | 1.2.0 | f39d0eeccc6804b86c542b4cdffe4fab0665d503 | Real meeting workflow release car with protected staff auth defaults retained, post-PR-#171 bearer handoff/session contracts, and a retry-hardened frontend dependency-audit gate. |
+| civiccode | 1.0.8 | 1.2.0 | 9284fd1a0704541b3422e5dd0ba47bea3713825a | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and post-PR-#75 staff APIs require shared bearer sessions. |
 | civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
 | civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicplan | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
