@@ -122,6 +122,8 @@ show_post_install_dashboard() {
   echo "Admin email: $WIZARD_ADMIN_EMAIL"
   echo "Initial administrator credential file: $credential_path"
   echo "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+  echo "Suite launcher: http://127.0.0.1:18082/"
+  echo "Shared staff session check: CIVICCORE_SUITE_SESSION_SECRET is generated during install if missing."
   echo "Records AI staff dashboard: http://127.0.0.1:18080/"
   echo "CivicClerk staff dashboard: http://127.0.0.1:18081/"
   echo "CivicCode API/search: http://127.0.0.1:18820/"
@@ -193,21 +195,102 @@ case "${MODE}" in
       echo "Docker Engine is already installed and running."
       exit 0
     fi
-    script_path="$report_dir/get-docker.sh"
-    script_url="https://get.docker.com"
-    echo "Downloading Docker's official Linux convenience script to $script_path"
-    curl -fsSL "$script_url" -o "$script_path"
-    sha256sum "$script_path" > "$report_dir/get-docker.sha256"
-    printf '{"url":"%s","path":"%s","downloaded_at":"%s"}
-' "$script_url" "$script_path" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$report_dir/get-docker-download.json"
-    if [[ "$(id -u)" -eq 0 ]]; then
-      sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
-    else
-      sudo sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
+    run_as_root() {
+      if [[ "$(id -u)" -eq 0 ]]; then
+        "$@"
+      else
+        sudo "$@"
+      fi
+    }
+    start_docker_service() {
+      if command -v systemctl >/dev/null 2>&1; then
+        run_as_root systemctl enable --now docker || run_as_root systemctl start docker || true
+      elif command -v service >/dev/null 2>&1; then
+        run_as_root service docker start || true
+      fi
+    }
+    unsupported_distro() {
+      local distro="${1:-unknown}"
+      echo "Guided setup supports Ubuntu, Debian, Fedora, CentOS, and RHEL through Docker's signed package repositories." >&2
+      echo "Detected Linux distribution: $distro." >&2
+      echo "Fix: install Docker Engine from https://docs.docker.com/engine/install/ for this host, then rerun with setup path 2 (Manual Prerequisite)." >&2
+      exit 2
+    }
+    install_docker_apt_repo() {
+      local repo_id="$1"
+      local codename="$2"
+      if [[ -z "$codename" ]]; then
+        echo "Could not detect the Debian/Ubuntu release codename for Docker's apt repository." >&2
+        echo "Fix: install Docker Engine manually from https://docs.docker.com/engine/install/${repo_id}/, then rerun with setup path 2 (Manual Prerequisite)." >&2
+        exit 2
+      fi
+      run_as_root apt-get update
+      run_as_root apt-get install -y ca-certificates curl gnupg
+      run_as_root install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL "https://download.docker.com/linux/${repo_id}/gpg" | run_as_root tee /etc/apt/keyrings/docker.asc >/dev/null
+      run_as_root chmod a+r /etc/apt/keyrings/docker.asc
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${repo_id} $codename stable" | run_as_root tee /etc/apt/sources.list.d/docker.list >/dev/null
+      run_as_root apt-get update
+      run_as_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    }
+    install_docker_rpm_repo() {
+      local repo_id="$1"
+      local repo_url="https://download.docker.com/linux/${repo_id}/docker-ce.repo"
+      if command -v dnf >/dev/null 2>&1; then
+        run_as_root dnf -y install dnf-plugins-core
+        if ! run_as_root dnf config-manager addrepo --from-repofile "$repo_url"; then
+          run_as_root dnf config-manager --add-repo "$repo_url"
+        fi
+        run_as_root dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      elif command -v yum >/dev/null 2>&1; then
+        run_as_root yum install -y yum-utils
+        run_as_root yum-config-manager --add-repo "$repo_url"
+        run_as_root yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      else
+        echo "Could not find dnf or yum for Docker's rpm repository setup." >&2
+        exit 2
+      fi
+    }
+    if [[ ! -r /etc/os-release ]]; then
+      unsupported_distro "missing /etc/os-release"
     fi
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    os_id="${ID:-}"
+    codename="${VERSION_CODENAME:-}"
+    if [[ -z "$codename" && -n "${UBUNTU_CODENAME:-}" ]]; then
+      codename="$UBUNTU_CODENAME"
+    fi
+    case "$os_id" in
+      ubuntu|debian)
+        install_docker_apt_repo "$os_id" "$codename" 2>&1 | tee "$report_dir/docker-repository-install.txt"
+        ;;
+      fedora|centos|rhel)
+        install_docker_rpm_repo "$os_id" 2>&1 | tee "$report_dir/docker-repository-install.txt"
+        ;;
+      *)
+        unsupported_distro "$os_id"
+        ;;
+    esac
+    start_docker_service
+    docker --version | tee "$report_dir/docker-version.txt" || true
+    run_as_root docker info > "$report_dir/docker-info.txt" 2>&1 || true
+    printf '{"installer":"docker-engine-signed-repository","distribution":"%s","installed_at":"%s","docs":"https://docs.docker.com/engine/install/"}\n' "$os_id" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$report_dir/docker-repository-install.json"
     ;;
   plan)
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}"
+    ;;
+  launcher)
+    launcher_script="${SCRIPT_DIR}/suite-launcher/scripts/serve.mjs"
+    if ! command -v node >/dev/null 2>&1; then
+      echo "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun launcher mode." >&2
+      exit 2
+    fi
+    if [[ ! -f "$launcher_script" ]]; then
+      echo "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher." >&2
+      exit 2
+    fi
+    node "$launcher_script" --port 18082
     ;;
   install)
     python3 "${LIFECYCLE}" install "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"
@@ -231,7 +314,7 @@ case "${MODE}" in
     python3 "${PLANNER}" "${PLANNER_ARGS[@]}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac

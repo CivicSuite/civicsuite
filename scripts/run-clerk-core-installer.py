@@ -29,6 +29,15 @@ DEFAULT_INSTALL_ROOT = Path(os.environ.get("CIVICSUITE_INSTALLER_INSTALL_ROOT", 
 DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
 DEFAULT_CODE_PORTS = {"api": 18820}
+DEFAULT_SUITE_LAUNCHER_PORT = 18082
+SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
+SUITE_LAUNCHER_DIR_NAME = "suite-launcher"
+SUITE_SESSION_ENV = "CIVICCORE_SUITE_SESSION_SECRET"
+SUITE_SESSION_REVOCATION_ENV = "CIVICCORE_SUITE_SESSION_REVOCATION_FILE"
+SUITE_SESSION_FILE_NAME = "civiccore_suite_session_value"
+SUITE_SESSION_REVOCATION_FILE_NAME = "civiccore_suite_session_revocations.json"
+SUITE_SESSION_REVOCATION_CONTAINER_PATH = f"/civicsuite-shared/{SUITE_SESSION_REVOCATION_FILE_NAME}"
+SUITE_SHARED_BIND = "../../shared:/civicsuite-shared"
 MODULE_RECORDS = "civicrecords-ai"
 MODULE_CLERK = "civicclerk"
 MODULE_CODE = "civiccode"
@@ -108,6 +117,9 @@ def resolve_isolation(
     code_ports = {
         "api": DEFAULT_CODE_PORTS["api"] + resolved_offset,
     }
+    launcher_ports = {
+        "web": DEFAULT_SUITE_LAUNCHER_PORT,
+    }
     return {
         "isolation_id": suffix,
         "port_offset": resolved_offset,
@@ -115,6 +127,7 @@ def resolve_isolation(
             "civicrecords-ai": records_ports,
             "civicclerk": clerk_ports,
             "civiccode": code_ports,
+            "suite-launcher": launcher_ports,
         },
         "compose_projects": {
             "civicrecords-ai": f"civicsuite-{suffix}-records",
@@ -145,6 +158,19 @@ def run(command: list[str], *, cwd: Path, timeout: int = 900) -> subprocess.Comp
         check=False,
         timeout=timeout,
     )
+
+
+def compose_logs(project: str, source: Path, *services: str) -> dict[str, object]:
+    proc = run(
+        compose(project, source, "logs", "--no-color", "--tail", "200", *services),
+        cwd=source,
+        timeout=120,
+    )
+    return {
+        "returncode": proc.returncode,
+        "stdout": proc.stdout[-12000:],
+        "stderr": proc.stderr[-4000:],
+    }
 
 
 def run_binary_to_file(
@@ -356,6 +382,115 @@ def parse_env_file(path: Path) -> dict[str, str]:
     return values
 
 
+def ensure_env_value(path: Path, name: str, value: str) -> None:
+    values = parse_env_file(path)
+    if values.get(name):
+        return
+    existing = path.read_text(encoding="utf-8") if path.is_file() else ""
+    line_prefix = "" if not existing or existing.endswith("\n") else "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(f"{line_prefix}{name}={value}\n")
+
+
+def suite_session_value_path(install_root: Path) -> Path:
+    return install_root / "shared" / SUITE_SESSION_FILE_NAME
+
+
+def suite_session_revocation_path(install_root: Path) -> Path:
+    return install_root / "shared" / SUITE_SESSION_REVOCATION_FILE_NAME
+
+
+def ensure_suite_session_value(install_root: Path) -> tuple[Path, str]:
+    path = suite_session_value_path(install_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        value = path.read_text(encoding="utf-8").strip()
+        if value:
+            return path, value
+    value = base64.urlsafe_b64encode(os.urandom(48)).decode("ascii").rstrip("=")
+    path.write_text(value + "\n", encoding="utf-8")
+    try:
+        path.chmod(0o400)
+    except OSError:
+        pass
+    return path, value
+
+
+def ensure_suite_session_revocation_file(install_root: Path) -> Path:
+    path = suite_session_revocation_path(install_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.is_file():
+        path.write_text("{}\n", encoding="utf-8")
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
+    return path
+
+
+def copy_suite_launcher_runtime(install_root: Path) -> Path:
+    if not SUITE_LAUNCHER_SOURCE.is_dir():
+        raise InstallerError(f"Suite launcher runtime source missing: {SUITE_LAUNCHER_SOURCE}")
+    target = install_root / SUITE_LAUNCHER_DIR_NAME
+    shutil.copytree(
+        SUITE_LAUNCHER_SOURCE,
+        target,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("node_modules", "playwright-report", "test-results"),
+    )
+    config = {
+        "component": "suite-launcher",
+        "port": DEFAULT_SUITE_LAUNCHER_PORT,
+        "url": f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/",
+        "modules": [
+            {
+                "id": "records",
+                "name": "CivicRecords AI",
+                "port": DEFAULT_RECORDS_PORTS["web"],
+                "href": f"http://127.0.0.1:{DEFAULT_RECORDS_PORTS['web']}/",
+                "staffAction": "Review requests",
+                "residentAction": "Submit or track records requests",
+                "adminAction": "Check index and queue health",
+            },
+            {
+                "id": "clerk",
+                "name": "CivicClerk",
+                "port": DEFAULT_CLERK_PORTS["web"],
+                "href": f"http://127.0.0.1:{DEFAULT_CLERK_PORTS['web']}/",
+                "staffAction": "Prepare agendas and minutes",
+                "residentAction": "View meetings and notices",
+                "adminAction": "Check meeting service health",
+            },
+            {
+                "id": "code",
+                "name": "CivicCode",
+                "port": DEFAULT_CODE_PORTS["api"],
+                "href": f"http://127.0.0.1:{DEFAULT_CODE_PORTS['api']}/",
+                "staffAction": "Codify adopted ordinances",
+                "residentAction": "Search municipal code",
+                "adminAction": "Check code search service health",
+            },
+        ],
+        "shared_staff_session": {
+            "env_var": SUITE_SESSION_ENV,
+            "value_source": "installer runtime generated value",
+            "value_persisted_in_report": False,
+        },
+    }
+    (target / "civicsuite-launcher-config.json").write_text(
+        json.dumps(config, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (target / "civicsuite-launcher-config.js").write_text(
+        "window.CIVICSUITE_LAUNCHER_CONFIG = "
+        + json.dumps(config, indent=2, sort_keys=True)
+        + ";\n",
+        encoding="utf-8",
+    )
+    return target
+
+
 def load_selected_modules(install_root: Path, selected_modules: list[str] | tuple[str, ...] | None) -> list[str]:
     if selected_modules:
         return normalize_selected_modules(selected_modules)
@@ -430,11 +565,20 @@ def records_portal_mode_for_modules(modules: list[str] | tuple[str, ...]) -> str
     return "public" if MODULE_CODE in modules else "private"
 
 
+def uses_suite_runtime(modules: list[str] | tuple[str, ...]) -> bool:
+    return (
+        MODULE_RECORDS in modules
+        and MODULE_CLERK in modules
+        and MODULE_CODE in modules
+    )
+
+
 def write_records_env(
     target: Path,
     ports: dict[str, int] | None = None,
     *,
     portal_mode: str = "private",
+    suite_session_value: str | None = None,
 ) -> None:
     if portal_mode not in {"private", "public"}:
         raise InstallerError("CivicRecords PORTAL_MODE must be either 'private' or 'public'.")
@@ -457,6 +601,9 @@ def write_records_env(
             key, value = line.split("=", 1)
             values[key.strip()] = value.strip()
     values["PORTAL_MODE"] = portal_mode
+    if suite_session_value:
+        values[SUITE_SESSION_ENV] = suite_session_value
+        values[SUITE_SESSION_REVOCATION_ENV] = SUITE_SESSION_REVOCATION_CONTAINER_PATH
     if ports is not None:
         values["CIVICRECORDS_API_PORT"] = str(ports["api"])
         values["CIVICRECORDS_WEB_PORT"] = str(ports["web"])
@@ -468,6 +615,10 @@ def write_records_override(target: Path, ports: dict[str, int]) -> Path:
     path.write_text(
         f"""services:
   api:
+    environment:
+      {SUITE_SESSION_REVOCATION_ENV}: {SUITE_SESSION_REVOCATION_CONTAINER_PATH}
+    volumes:
+      - {SUITE_SHARED_BIND}
     ports:
       - "{ports['api']}:8000"
   frontend:
@@ -485,6 +636,10 @@ def write_clerk_handoff_override(target: Path, shared_network: str) -> Path:
     path.write_text(
         f"""services:
   api:
+    environment:
+      {SUITE_SESSION_REVOCATION_ENV}: {SUITE_SESSION_REVOCATION_CONTAINER_PATH}
+    volumes:
+      - {SUITE_SHARED_BIND}
     networks:
       default: {{}}
       citycore_handoff: {{}}
@@ -504,6 +659,10 @@ def write_code_handoff_override(target: Path, shared_network: str) -> Path:
     path.write_text(
         f"""services:
   api:
+    environment:
+      {SUITE_SESSION_REVOCATION_ENV}: {SUITE_SESSION_REVOCATION_CONTAINER_PATH}
+    volumes:
+      - {SUITE_SHARED_BIND}
     networks:
       default: {{}}
       citycore_handoff:
@@ -603,9 +762,13 @@ def write_clerk_env(
     ports: dict[str, int] | None = None,
     civiccode_intake_url: str | None = None,
     civiccode_intake_secret: str | None = None,
+    suite_session_value: str | None = None,
 ) -> None:
     resolved_ports = ports or DEFAULT_CLERK_PORTS
     if target.is_file():
+        if suite_session_value:
+            ensure_env_value(target, SUITE_SESSION_ENV, suite_session_value)
+            ensure_env_value(target, SUITE_SESSION_REVOCATION_ENV, SUITE_SESSION_REVOCATION_CONTAINER_PATH)
         return
     values = {
         "CIVICCLERK_POSTGRES_USER": "civicclerk",
@@ -632,6 +795,9 @@ def write_clerk_env(
         "CIVICCODE_INTAKE_SECRET": civiccode_intake_secret or "",
         "CIVICCODE_INTAKE_ACTOR": "civicclerk-handoff@citycore.example.gov",
     }
+    if suite_session_value:
+        values[SUITE_SESSION_ENV] = suite_session_value
+        values[SUITE_SESSION_REVOCATION_ENV] = SUITE_SESSION_REVOCATION_CONTAINER_PATH
     if staff_mode == CLERK_STAFF_MODE_BEARER:
         values["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"] = json.dumps(
             {CLERK_WORKFLOW_PROOF_BEARER: ["clerk_admin", "meeting_editor"]},
@@ -640,8 +806,17 @@ def write_clerk_env(
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 
 
-def write_code_env(target: Path, ports: dict[str, int], *, civiccode_intake_secret: str | None = None) -> None:
+def write_code_env(
+    target: Path,
+    ports: dict[str, int],
+    *,
+    civiccode_intake_secret: str | None = None,
+    suite_session_value: str | None = None,
+) -> None:
     if target.is_file():
+        if suite_session_value:
+            ensure_env_value(target, SUITE_SESSION_ENV, suite_session_value)
+            ensure_env_value(target, SUITE_SESSION_REVOCATION_ENV, SUITE_SESSION_REVOCATION_CONTAINER_PATH)
         return
     password = secrets.token_hex(24)
     db_url = f"postgresql+psycopg2://civiccode:{password}@postgres:5432/civiccode"
@@ -657,6 +832,9 @@ def write_code_env(target: Path, ports: dict[str, int], *, civiccode_intake_secr
         "CIVICCODE_STAFF_TRUSTED_PROXY_CIDRS": "127.0.0.1/32,::1/128",
         "CIVICCODE_INTAKE_SECRET": civiccode_intake_secret or "",
     }
+    if suite_session_value:
+        values[SUITE_SESSION_ENV] = suite_session_value
+        values[SUITE_SESSION_REVOCATION_ENV] = SUITE_SESSION_REVOCATION_CONTAINER_PATH
     target.write_text(
         "\n".join(f"{key}={value}" for key, value in values.items()) + "\n",
         encoding="utf-8",
@@ -1712,6 +1890,14 @@ def prepare_sources(
         else ""
     )
     install_root.mkdir(parents=True, exist_ok=True)
+    suite_session_path = None
+    suite_session_revocation_path = None
+    suite_session_value = None
+    launcher_target = None
+    if uses_suite_runtime(modules):
+        suite_session_path, suite_session_value = ensure_suite_session_value(install_root)
+        suite_session_revocation_path = ensure_suite_session_revocation_file(install_root)
+        launcher_target = copy_suite_launcher_runtime(install_root)
     if MODULE_RECORDS in modules:
         copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
         normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
@@ -1720,6 +1906,7 @@ def prepare_sources(
             ctx["records_source"] / ".env",
             records_ports,
             portal_mode=records_portal_mode_for_modules(modules),
+            suite_session_value=suite_session_value,
         )  # type: ignore[operator]
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
@@ -1730,6 +1917,7 @@ def prepare_sources(
             ports=clerk_ports,  # type: ignore[arg-type]
             civiccode_intake_url=civiccode_intake_url,
             civiccode_intake_secret=civiccode_intake_secret,
+            suite_session_value=suite_session_value,
         )  # type: ignore[operator]
         if civiccode_intake_secret:
             write_clerk_handoff_override(ctx["clerk_source"], shared_network)  # type: ignore[arg-type]
@@ -1739,9 +1927,16 @@ def prepare_sources(
             ctx["code_source"] / ".env",
             code_ports,  # type: ignore[arg-type]
             civiccode_intake_secret=civiccode_intake_secret,
+            suite_session_value=suite_session_value,
         )  # type: ignore[operator]
         if civiccode_intake_secret:
             write_code_handoff_override(ctx["code_source"], shared_network)  # type: ignore[arg-type]
+    if suite_session_path is not None:
+        ctx["suite_session_path"] = suite_session_path
+    if suite_session_revocation_path is not None:
+        ctx["suite_session_revocation_path"] = suite_session_revocation_path
+    if launcher_target is not None:
+        ctx["suite_launcher_source"] = launcher_target
     return ctx
 
 
@@ -1813,7 +2008,16 @@ def install(
             )
             time.sleep(20)
             up = run(compose(project, source, "up", "-d", *services), cwd=source, timeout=900)  # type: ignore[arg-type]
-        steps.append({"module": name, "step": "compose_up", "returncode": up.returncode, "stdout": up.stdout[-4000:], "stderr": up.stderr[-4000:]})
+        compose_up_step: dict[str, object] = {
+            "module": name,
+            "step": "compose_up",
+            "returncode": up.returncode,
+            "stdout": up.stdout[-4000:],
+            "stderr": up.stderr[-4000:],
+        }
+        if up.returncode != 0:
+            compose_up_step["logs"] = compose_logs(project, source, *services)  # type: ignore[arg-type]
+        steps.append(compose_up_step)
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
     result = verify(
@@ -1827,6 +2031,110 @@ def install(
     steps.extend(result["checks"])  # type: ignore[arg-type]
     status = "passed" if result["status"] == "passed" else "failed"
     return {"status": status, "selected_modules": modules, "steps": steps}
+
+
+def verify_suite_runtime_wiring(ctx: dict[str, object]) -> list[dict[str, object]]:
+    install_root = Path(ctx["install_root"])  # type: ignore[arg-type]
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
+    launcher_root = install_root / SUITE_LAUNCHER_DIR_NAME
+    config_path = launcher_root / "civicsuite-launcher-config.json"
+    config: dict[str, object] = {}
+    if config_path.is_file():
+        try:
+            loaded = json.loads(config_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                config = loaded
+        except json.JSONDecodeError:
+            config = {}
+    launcher_files_ok = all(
+        (launcher_root / relative).is_file()
+        for relative in (
+            "index.html",
+            "civicsuite-launcher-config.js",
+            "package.json",
+            "scripts/serve.mjs",
+            "src/app.js",
+            "src/styles.css",
+        )
+    )
+    checks: list[dict[str, object]] = [
+        {
+            "name": "suite_launcher_runtime_files",
+            "status": "passed" if launcher_files_ok else "failed",
+            "path": str(launcher_root),
+            "fix_steps": [
+                "Run install or repair so the city-core package copies the suite launcher runtime.",
+                "Confirm installer/runtime/suite-launcher contains index.html, package.json, scripts/serve.mjs, and src assets.",
+            ]
+            if not launcher_files_ok
+            else [],
+        },
+        {
+            "name": "suite_launcher_port_config",
+            "status": "passed"
+            if config.get("port") == DEFAULT_SUITE_LAUNCHER_PORT
+            and config.get("url") == f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
+            else "failed",
+            "path": str(config_path),
+            "expected_port": DEFAULT_SUITE_LAUNCHER_PORT,
+            "fix_steps": [
+                "Regenerate or repair the city-core runtime so civicsuite-launcher-config.json names the suite launcher port.",
+                f"Expected localhost:{DEFAULT_SUITE_LAUNCHER_PORT} for the suite launcher.",
+            ]
+            if config.get("port") != DEFAULT_SUITE_LAUNCHER_PORT
+            else [],
+        },
+    ]
+    value_path = suite_session_value_path(install_root)
+    revocation_path = suite_session_revocation_path(install_root)
+    value_present = value_path.is_file() and bool(value_path.read_text(encoding="utf-8").strip())
+    revocation_present = revocation_path.is_file()
+    env_checks: list[dict[str, object]] = []
+    source_by_module = {
+        MODULE_RECORDS: Path(ctx["records_source"]),  # type: ignore[arg-type]
+        MODULE_CLERK: Path(ctx["clerk_source"]),  # type: ignore[arg-type]
+        MODULE_CODE: Path(ctx["code_source"]),  # type: ignore[arg-type]
+    }
+    for module in modules if isinstance(modules, list) else []:
+        source = source_by_module.get(str(module))
+        if source is None:
+            continue
+        env_path = source / ".env"
+        env_checks.append(
+            {
+                "module": module,
+                "env_path": str(env_path),
+                "present": bool(parse_env_file(env_path).get(SUITE_SESSION_ENV)),
+                "revocation_file_env_present": parse_env_file(env_path).get(SUITE_SESSION_REVOCATION_ENV)
+                == SUITE_SESSION_REVOCATION_CONTAINER_PATH,
+            }
+        )
+    shared_ok = (
+        value_present
+        and revocation_present
+        and all(check["present"] for check in env_checks)
+        and all(check["revocation_file_env_present"] for check in env_checks)
+    )
+    checks.append(
+        {
+            "name": "shared_staff_session_presence",
+            "status": "passed" if shared_ok else "failed",
+            "env_var": SUITE_SESSION_ENV,
+            "value_file": str(value_path),
+            "revocation_env_var": SUITE_SESSION_REVOCATION_ENV,
+            "revocation_file": str(revocation_path),
+            "module_env_checks": env_checks,
+            "fix_steps": [
+                "Run install or repair so the installer creates the shared staff session value.",
+                f"Confirm each selected service .env contains {SUITE_SESSION_ENV}.",
+                f"Confirm each selected service .env contains {SUITE_SESSION_REVOCATION_ENV}={SUITE_SESSION_REVOCATION_CONTAINER_PATH}.",
+                "Rerun verify after the runtime wiring check is present.",
+            ]
+            if not shared_ok
+            else [],
+        }
+    )
+    return checks
 
 
 def verify(
@@ -1848,6 +2156,8 @@ def verify(
     records_api_passed = False
     clerk_api_passed = False
     code_api_passed = False
+    if uses_suite_runtime(modules):
+        checks.extend(verify_suite_runtime_wiring(ctx))
     if MODULE_RECORDS in modules:
         records_api = {"name": "civicrecords_api", "url": f"http://127.0.0.1:{records_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{records_ports['api']}/health", timeout_seconds=180)}
         checks.append(records_api)

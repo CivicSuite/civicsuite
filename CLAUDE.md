@@ -48,7 +48,7 @@ CivicSuite work flows: **branch from main → produce a manifest that names the 
 - **AI runtime:** Ollama for LLMs, faster-whisper (CTranslate2) for ASR.
 - **Frontend:** React 18 + Vite + TypeScript + Tailwind + shadcn/ui (per unified spec §5.2).
 - **Documentation rendering:** MkDocs Material (docs site); Pandoc (USER-MANUAL.pdf / .docx).
-- **Commit convention:** Conventional Commits + DCO sign-off (every commit ends with `Signed-off-by: Name <email>`).
+- **Commit convention:** Conventional Commits + DCO sign-off (every commit ends with `Signed-off-by: Name <email>`). For release-tag PRs and city-core release engagements, Scott is the primary human author; AI implementers receive credit with a `Co-Authored-By:` trailer.
 - **Pre-commit hooks:** ruff, mypy, trailing-whitespace, end-of-file-fixer, conventional-commit-message check.
 - **License header:** `# SPDX-License-Identifier: Apache-2.0` on every source file; `# Copyright (c) The CivicSuite Authors`.
 

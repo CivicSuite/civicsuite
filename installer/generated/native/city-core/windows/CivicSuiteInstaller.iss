@@ -7,7 +7,7 @@
 #define PackageSource "..\..\packages\city-core\windows"
 
 [Setup]
-AppId={{CIVICSUITE-CITY-CORE-0.1.2}}
+AppId={{5D8D0E49-99F6-4AFB-88DD-7BE93162A554}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}

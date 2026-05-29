@@ -18,7 +18,9 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "installer" / "reports"
-MIN_CLEANROOM_FREE_DISK_BYTES = 60 * 1024 * 1024 * 1024
+MIN_CLEANROOM_FREE_DISK_GB = 60
+BYTES_PER_GB = 1024 * 1024 * 1024
+MIN_CLEANROOM_FREE_DISK_BYTES = MIN_CLEANROOM_FREE_DISK_GB * BYTES_PER_GB
 PLATFORM_LAUNCHERS = {
     "linux": Path("installer/generated/packages/clerk-core/linux/start-civicsuite-installer.sh"),
     "macos": Path("installer/generated/packages/clerk-core/macos/start-civicsuite-installer.sh"),
@@ -57,6 +59,7 @@ def disk_snapshot(path: Path = ROOT) -> dict[str, object]:
         "total_bytes": usage.total,
         "used_bytes": usage.used,
         "free_bytes": usage.free,
+        "required_free_gb": MIN_CLEANROOM_FREE_DISK_GB,
         "required_free_bytes": MIN_CLEANROOM_FREE_DISK_BYTES,
         "passed": usage.free >= MIN_CLEANROOM_FREE_DISK_BYTES,
     }
@@ -75,6 +78,7 @@ def run_cleanup_command(command: list[str], *, timeout: int = 900) -> dict[str, 
 def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bool, dict[str, object]]:
     before = disk_snapshot()
     evidence: dict[str, object] = {
+        "minimum_free_disk_gb": MIN_CLEANROOM_FREE_DISK_GB,
         "minimum_free_disk_bytes": MIN_CLEANROOM_FREE_DISK_BYTES,
         "before": before,
         "cleanup_approved": allow_host_cleanup,

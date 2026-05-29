@@ -60,9 +60,24 @@ For the 2026-05-27 P1.2 source-pin bump:
 PR #183 has green verify, release-lockstep-gate, and installer-cleanroom
 checks; exact volatile PR run IDs are recorded in the PR body and run
 evidence. CivicRecords AI PR #100 is green at `d7f84a3` for CI run
-`26487863170`. The status is beta-ready truth-reconciled after audit-full; this is not
-public-use readiness, city-ready status, procurement readiness, production
-readiness, macOS lifecycle certification, or full-suite promotion.
+`26487863170`. The operator trust path is live regenerated installer evidence:
+generated `SHA256SUMS` or release-manifest hashes, `source_commit` checks for
+vendored source, and module release hashes/attestations where applicable. The
+suite launcher is a local browser front door with local runtime session state,
+not a municipal SSO or managed cloud-session claim. The Linux Guided Setup path
+uses Docker's signed package repositories where supported. The status is
+beta-ready truth-reconciled after audit-full; this is not public-use readiness,
+city-ready status, procurement readiness, production readiness, macOS lifecycle
+certification, or full-suite promotion.
+
+For the 2026-05-29 city-core post-merge source-pin bump:
+
+| Repo | Default branch context | Package version | CivicCore pin | Installer source_commit |
+|---|---|---:|---|---|
+| CivicSuite/civiccore | `main`, post-PR-#64 merge | 1.2.0 | n/a | `9f7e3a5a0156fca779b48076d49c13181d15151c` |
+| CivicSuite/civicrecords-ai | `master`, post-PR-#101 merge | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `ae34a499c1e0794d3322146369f798f19bd0a146` |
+| CivicSuite/civicclerk | `main`, post-PR-#171 merge | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `f39d0eeccc6804b86c542b4cdffe4fab0665d503` |
+| CivicSuite/civiccode | `main`, post-PR-#75 merge | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `9284fd1a0704541b3422e5dd0ba47bea3713825a` |
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 

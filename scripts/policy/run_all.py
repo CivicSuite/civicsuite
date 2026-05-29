@@ -34,6 +34,12 @@ CHECKS: list[tuple[str, list[str]]] = [
     ("check_allowed_paths", ["check_allowed_paths.py"]),
     ("check_no_todos", ["check_no_todos.py"]),
     ("check_adr_gate", ["check_adr_gate.py"]),
+    ("check_test_naming_honesty", ["check_test_naming_honesty.py"]),
+    ("check_audit_gate_authority", ["check_audit_gate_authority.py"]),
+    ("check_audit_head_consistency", ["check_audit_head_consistency.py"]),
+    ("check_audit_artifact_completeness", ["check_audit_artifact_completeness.py"]),
+    ("check_workflow_cost_ledger", ["check_workflow_cost_ledger.py"]),
+    ("check_user_manual_artifacts", ["check_user_manual_artifacts.py"]),
     # v1.2.0: STAGE_DONE markers required through `execute` by policy stage.
     ("check_stage_done", ["check_stage_done.py", "--through", "execute"]),
 ]
@@ -61,6 +67,8 @@ def main() -> int:
         "check_manifest_schema",
         "check_manifest_immutable",
         "check_stage_done",
+        "check_workflow_cost_ledger",
+        "check_audit_head_consistency",
     }
 
     results: list[tuple[str, bool, str]] = []

@@ -31,6 +31,13 @@ BUNDLE_ROOT = GENERATED_ROOT / "bundles"
 DIST_ROOT = ROOT / "installer" / "dist"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
+SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
+SUITE_LAUNCHER_PACKAGE_DIR = "suite-launcher"
+SUITE_LAUNCHER_PORT = 18082
+SUITE_SESSION_ENV = "CIVICCORE_SUITE_SESSION_SECRET"
+SUITE_SESSION_REVOCATION_ENV = "CIVICCORE_SUITE_SESSION_REVOCATION_FILE"
+SUITE_SESSION_REVOCATION_FILE_NAME = "civiccore_suite_session_revocations.json"
+SUITE_SESSION_REVOCATION_CONTAINER_PATH = f"/civicsuite-shared/{SUITE_SESSION_REVOCATION_FILE_NAME}"
 DEFAULT_SIGNING_STATUS = {
     "signed": False,
     "status": "unsigned_public_use_starter",
@@ -43,6 +50,11 @@ CITY_CORE_SIGNING_STATUS = {
     "status": "unsigned_city_core_beta",
     "reason": "CivicSuite city-core is an unsigned beta installer package pending Linux and Windows matching-host lifecycle proof.",
     "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package.",
+}
+
+INNO_APP_IDS = {
+    "city-core": "5D8D0E49-99F6-4AFB-88DD-7BE93162A554",
+    "clerk-core": "93D44C49-0CF0-44FB-B041-0EF20C43FA32",
 }
 
 ARCHIVE_HYGIENE_FORBIDDEN_MARKERS = (
@@ -819,6 +831,22 @@ def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, An
             "note": "Compatibility is manifest-based in this dry-run slice.",
         },
     }
+    checks["suite-launcher-runtime"] = {
+        "detected": SUITE_LAUNCHER_SOURCE.is_dir()
+        and (SUITE_LAUNCHER_SOURCE / "index.html").is_file()
+        and (SUITE_LAUNCHER_SOURCE / "scripts" / "serve.mjs").is_file(),
+        "evidence": {
+            "source": str(SUITE_LAUNCHER_SOURCE.relative_to(ROOT)),
+            "port": SUITE_LAUNCHER_PORT,
+        },
+    }
+    checks["shared-staff-session-env"] = {
+        "detected": True,
+        "evidence": {
+            "env_var": SUITE_SESSION_ENV,
+            "value_source": "generated on first install if missing",
+        },
+    }
     return {
         "dry_run": True,
         "mutates_host": False,
@@ -878,6 +906,26 @@ def _readiness_messages() -> dict[str, dict[str, Any]]:
                 "Review the selected module list and CivicCore requirement in installer/modules.json.",
                 "Choose a compatible profile or update the compatibility matrix before install.",
                 "Do not install a module against an unverified CivicCore version.",
+            ],
+        },
+        "suite-launcher-runtime": {
+            "ok": f"Suite launcher runtime files are present for city-core on localhost:{SUITE_LAUNCHER_PORT}.",
+            "fail": "Suite launcher runtime files are missing from installer/runtime/suite-launcher.",
+            "severity": "blocker",
+            "fix_steps": [
+                "Restore installer/runtime/suite-launcher with index.html, package.json, scripts/serve.mjs, and src assets.",
+                "Regenerate the city-core package so the suite launcher is copied into the operator package.",
+                "Run readiness again before install or verify.",
+            ],
+        },
+        "shared-staff-session-env": {
+            "ok": f"Shared staff session check is planned through {SUITE_SESSION_ENV}.",
+            "fail": f"Shared staff session check is not represented through {SUITE_SESSION_ENV}.",
+            "severity": "blocker",
+            "fix_steps": [
+                "Regenerate the city-core plan so the shared staff session env var is present.",
+                "Run install or repair so the runtime can create the value if it is missing.",
+                "Run verify and inspect the shared_staff_session_presence check before staff use.",
             ],
         },
     }
@@ -1272,6 +1320,42 @@ def build_profile_config(
                 "purpose": "planned local persistent data root",
             }
         )
+    if _uses_suite_launcher(profile_id, plan["modules"]):
+        services.append(
+            {
+                "module": "city-core",
+                "service_name": "suite_launcher",
+                "repo": None,
+                "compose_profile": profile_id,
+                "depends_on": [
+                    module_id.replace("-", "_")
+                    for module_id in plan["modules"]
+                    if module_id != "civiccore"
+                ],
+                "health_endpoint": f"http://localhost:{SUITE_LAUNCHER_PORT}/",
+                "configuration_status": "planned_static_runtime",
+                "runtime_config": _suite_launcher_config(
+                    package_relative_path=SUITE_LAUNCHER_PACKAGE_DIR
+                ),
+            }
+        )
+        ports.append(
+            {
+                "module": "city-core",
+                "service_name": "suite_launcher",
+                "container_port": None,
+                "host_port": SUITE_LAUNCHER_PORT,
+                "purpose": "suite launcher local browser entrypoint",
+            }
+        )
+        data_paths.append(
+            {
+                "module": "city-core",
+                "service_name": "suite_launcher",
+                "path": f"installer/runtime/clerk-core/{SUITE_LAUNCHER_PACKAGE_DIR}",
+                "purpose": "installed suite launcher runtime copy",
+            }
+        )
     return {
         "dry_run": True,
         "mutates_host": False,
@@ -1304,6 +1388,23 @@ def build_health_check_plan(
     checks: list[dict[str, Any]] = []
     for service in profile_config["services"]:
         endpoint = service.get("health_endpoint")
+        if service["service_name"] == "suite_launcher":
+            checks.append(
+                {
+                    "module": service["module"],
+                    "service_name": service["service_name"],
+                    "endpoint": endpoint,
+                    "status": "planned_only",
+                    "starts_service": False,
+                    "actionable_failure": (
+                        "If the suite launcher check fails, confirm the packaged "
+                        f"{SUITE_LAUNCHER_PACKAGE_DIR} directory exists, start it "
+                        f"on localhost:{SUITE_LAUNCHER_PORT}, and rerun verify."
+                    ),
+                    "shared_staff_session_check": SUITE_SESSION_ENV,
+                }
+            )
+            continue
         checks.append(
             {
                 "module": service["module"],
@@ -1583,6 +1684,38 @@ def _package_platforms(host: dict[str, str] | None = None) -> list[str]:
     return ["windows", "macos", "linux"]
 
 
+def _uses_suite_launcher(profile_id: str, module_ids: list[str]) -> bool:
+    return profile_id == "city-core" or (
+        "civicrecords-ai" in module_ids
+        and "civicclerk" in module_ids
+        and "civiccode" in module_ids
+    )
+
+
+def _suite_launcher_config(*, package_relative_path: str | None = None) -> dict[str, Any]:
+    config: dict[str, Any] = {
+        "component": "suite-launcher",
+        "source": str(SUITE_LAUNCHER_SOURCE.relative_to(ROOT)),
+        "port": SUITE_LAUNCHER_PORT,
+        "url": f"http://127.0.0.1:{SUITE_LAUNCHER_PORT}/",
+        "modules": [
+            {"id": "records", "port": 18080, "href": "http://127.0.0.1:18080/"},
+            {"id": "clerk", "port": 18081, "href": "http://127.0.0.1:18081/"},
+            {"id": "code", "port": 18820, "href": "http://127.0.0.1:18820/"},
+        ],
+        "shared_staff_session": {
+            "env_var": SUITE_SESSION_ENV,
+            "revocation_env_var": SUITE_SESSION_REVOCATION_ENV,
+            "revocation_file": SUITE_SESSION_REVOCATION_CONTAINER_PATH,
+            "value_source": "generated on first install if missing",
+            "persisted_value_in_plan": False,
+        },
+    }
+    if package_relative_path is not None:
+        config["package_path"] = package_relative_path
+    return config
+
+
 def _package_launcher_name(platform_id: str) -> str:
     if platform_id == "windows":
         return "start-civicsuite-installer.ps1"
@@ -1604,6 +1737,7 @@ def _package_launcher_text(
     [switch]$Restore,
     [switch]$Uninstall,
     [switch]$FirstRun,
+    [switch]$SuiteLauncher,
     [switch]$GuidedSetup,
     [switch]$ManualPrerequisite,
     [ValidateSet("protected", "bearer", "open")]
@@ -1760,6 +1894,8 @@ function Show-CivicSuitePostInstallDashboard([hashtable]$Wizard) {{
     Write-Host "Admin email: $($Wizard.admin_email)"
     Write-Host "Initial administrator credential file: $CredentialPath"
     Write-Host "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+    Write-Host "Suite launcher: http://127.0.0.1:{SUITE_LAUNCHER_PORT}/"
+    Write-Host "Shared staff session check: {SUITE_SESSION_ENV} is generated during install if missing."
     Write-Host "Records AI staff dashboard: http://127.0.0.1:18080/"
     Write-Host "CivicClerk staff dashboard: http://127.0.0.1:18081/"
     Write-Host "CivicCode API/search: http://127.0.0.1:18820/"
@@ -1891,6 +2027,20 @@ if ($Module -and $Module.Count -gt 0) {{
 
 if ($Plan) {{
     python $Planner @PlannerArgs
+    exit (Get-CivicSuiteLastExitCode)
+}}
+
+if ($SuiteLauncher) {{
+    $SuiteLauncherScript = Join-Path $PackageDir "{SUITE_LAUNCHER_PACKAGE_DIR}\\scripts\\serve.mjs"
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {{
+        Write-Error "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun with -SuiteLauncher."
+        exit 2
+    }}
+    if (-not (Test-Path $SuiteLauncherScript)) {{
+        Write-Error "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher."
+        exit 2
+    }}
+    & node $SuiteLauncherScript --port {SUITE_LAUNCHER_PORT}
     exit (Get-CivicSuiteLastExitCode)
 }}
 
@@ -2077,6 +2227,8 @@ show_post_install_dashboard() {{
   echo "Admin email: $WIZARD_ADMIN_EMAIL"
   echo "Initial administrator credential file: $credential_path"
   echo "Open that file once, sign in, rotate the credential immediately, then store the rotated value in your municipal vault."
+  echo "Suite launcher: http://127.0.0.1:{SUITE_LAUNCHER_PORT}/"
+  echo "Shared staff session check: {SUITE_SESSION_ENV} is generated during install if missing."
   echo "Records AI staff dashboard: http://127.0.0.1:18080/"
   echo "CivicClerk staff dashboard: http://127.0.0.1:18081/"
   echo "CivicCode API/search: http://127.0.0.1:18820/"
@@ -2148,20 +2300,102 @@ case "${{MODE}}" in
       echo "Docker Engine is already installed and running."
       exit 0
     fi
-    script_path="$report_dir/get-docker.sh"
-    script_url="https://get.docker.com"
-    echo "Downloading Docker's official Linux convenience script to $script_path"
-    curl -fsSL "$script_url" -o "$script_path"
-    sha256sum "$script_path" > "$report_dir/get-docker.sha256"
-    printf '{{"url":"%s","path":"%s","downloaded_at":"%s"}}\n' "$script_url" "$script_path" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$report_dir/get-docker-download.json"
-    if [[ "$(id -u)" -eq 0 ]]; then
-      sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
-    else
-      sudo sh "$script_path" 2>&1 | tee "$report_dir/get-docker-install.txt"
+    run_as_root() {{
+      if [[ "$(id -u)" -eq 0 ]]; then
+        "$@"
+      else
+        sudo "$@"
+      fi
+    }}
+    start_docker_service() {{
+      if command -v systemctl >/dev/null 2>&1; then
+        run_as_root systemctl enable --now docker || run_as_root systemctl start docker || true
+      elif command -v service >/dev/null 2>&1; then
+        run_as_root service docker start || true
+      fi
+    }}
+    unsupported_distro() {{
+      local distro="${{1:-unknown}}"
+      echo "Guided setup supports Ubuntu, Debian, Fedora, CentOS, and RHEL through Docker's signed package repositories." >&2
+      echo "Detected Linux distribution: $distro." >&2
+      echo "Fix: install Docker Engine from https://docs.docker.com/engine/install/ for this host, then rerun with setup path 2 (Manual Prerequisite)." >&2
+      exit 2
+    }}
+    install_docker_apt_repo() {{
+      local repo_id="$1"
+      local codename="$2"
+      if [[ -z "$codename" ]]; then
+        echo "Could not detect the Debian/Ubuntu release codename for Docker's apt repository." >&2
+        echo "Fix: install Docker Engine manually from https://docs.docker.com/engine/install/${{repo_id}}/, then rerun with setup path 2 (Manual Prerequisite)." >&2
+        exit 2
+      fi
+      run_as_root apt-get update
+      run_as_root apt-get install -y ca-certificates curl gnupg
+      run_as_root install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL "https://download.docker.com/linux/${{repo_id}}/gpg" | run_as_root tee /etc/apt/keyrings/docker.asc >/dev/null
+      run_as_root chmod a+r /etc/apt/keyrings/docker.asc
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${{repo_id}} $codename stable" | run_as_root tee /etc/apt/sources.list.d/docker.list >/dev/null
+      run_as_root apt-get update
+      run_as_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    }}
+    install_docker_rpm_repo() {{
+      local repo_id="$1"
+      local repo_url="https://download.docker.com/linux/${{repo_id}}/docker-ce.repo"
+      if command -v dnf >/dev/null 2>&1; then
+        run_as_root dnf -y install dnf-plugins-core
+        if ! run_as_root dnf config-manager addrepo --from-repofile "$repo_url"; then
+          run_as_root dnf config-manager --add-repo "$repo_url"
+        fi
+        run_as_root dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      elif command -v yum >/dev/null 2>&1; then
+        run_as_root yum install -y yum-utils
+        run_as_root yum-config-manager --add-repo "$repo_url"
+        run_as_root yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      else
+        echo "Could not find dnf or yum for Docker's rpm repository setup." >&2
+        exit 2
+      fi
+    }}
+    if [[ ! -r /etc/os-release ]]; then
+      unsupported_distro "missing /etc/os-release"
     fi
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    os_id="${{ID:-}}"
+    codename="${{VERSION_CODENAME:-}}"
+    if [[ -z "$codename" && -n "${{UBUNTU_CODENAME:-}}" ]]; then
+      codename="$UBUNTU_CODENAME"
+    fi
+    case "$os_id" in
+      ubuntu|debian)
+        install_docker_apt_repo "$os_id" "$codename" 2>&1 | tee "$report_dir/docker-repository-install.txt"
+        ;;
+      fedora|centos|rhel)
+        install_docker_rpm_repo "$os_id" 2>&1 | tee "$report_dir/docker-repository-install.txt"
+        ;;
+      *)
+        unsupported_distro "$os_id"
+        ;;
+    esac
+    start_docker_service
+    docker --version | tee "$report_dir/docker-version.txt" || true
+    run_as_root docker info > "$report_dir/docker-info.txt" 2>&1 || true
+    printf '{{"installer":"docker-engine-signed-repository","distribution":"%s","installed_at":"%s","docs":"https://docs.docker.com/engine/install/"}}\\n' "$os_id" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$report_dir/docker-repository-install.json"
     ;;
   plan)
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}"
+    ;;
+  launcher)
+    launcher_script="${{SCRIPT_DIR}}/{SUITE_LAUNCHER_PACKAGE_DIR}/scripts/serve.mjs"
+    if ! command -v node >/dev/null 2>&1; then
+      echo "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun launcher mode." >&2
+      exit 2
+    fi
+    if [[ ! -f "$launcher_script" ]]; then
+      echo "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher." >&2
+      exit 2
+    fi
+    node "$launcher_script" --port {SUITE_LAUNCHER_PORT}
     ;;
   install)
     python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
@@ -2185,7 +2419,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
     exit 2
     ;;
 esac
@@ -2211,6 +2445,7 @@ def _package_readme_text(
             f".\\{launcher} -Install {lifecycle_module_args_ps}".strip()
         )
         workflow_proof = f".\\{launcher} -Install -StaffMode bearer -WorkflowProof"
+        suite_launcher_command = f".\\{launcher} -SuiteLauncher"
     else:
         readiness = f"bash ./{launcher} readiness"
         plan_command = f"bash ./{launcher} plan"
@@ -2223,6 +2458,7 @@ def _package_readme_text(
         workflow_proof = (
             f"bash ./{launcher} install --staff-mode bearer --workflow-proof"
         )
+        suite_launcher_command = f"bash ./{launcher} launcher"
     return f"""# CivicSuite Installer Package - {platform_id}
 
 Profile: `{profile_id}`
@@ -2277,10 +2513,21 @@ resources for the profile.
 
    The wizard asks for setup path, operator name, organization name, admin
    email, time zone, license acceptance, and then performs the smoke/readiness
-   check before installing. After install, it prints staff dashboard URLs and
-   the local credential-file path for the generated first administrator login.
-   Open that file once, sign in, rotate the credential immediately, then store
-   the rotated value in the municipal vault.
+    check before installing. After install, it prints staff dashboard URLs and
+    the local credential-file path for the generated first administrator login.
+    Open that file once, sign in, rotate the credential immediately, then store
+    the rotated value in the municipal vault.
+
+    City-core packages include the suite launcher runtime under
+    `{SUITE_LAUNCHER_PACKAGE_DIR}` and plan it for
+    `http://127.0.0.1:{SUITE_LAUNCHER_PORT}/`. The installer runtime also
+    creates `{SUITE_SESSION_ENV}` on first install if it is missing, then shares
+    that value with the selected staff services for the local session boundary.
+    To serve the launcher after install or during QA, run:
+
+    ```text
+    {suite_launcher_command}
+    ```
 
 2. For IT/admin checks, run readiness:
 
@@ -2366,6 +2613,43 @@ inside the distributable archive.
 """
 
 
+def _copy_suite_launcher_package(package_dir: Path) -> list[str]:
+    if not SUITE_LAUNCHER_SOURCE.is_dir():
+        raise PlannerError(
+            f"Suite launcher runtime source is missing: {SUITE_LAUNCHER_SOURCE}"
+        )
+    target = package_dir / SUITE_LAUNCHER_PACKAGE_DIR
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(
+        SUITE_LAUNCHER_SOURCE,
+        target,
+        ignore=shutil.ignore_patterns(
+            "node_modules",
+            "playwright-report",
+            "test-results",
+            ".DS_Store",
+        ),
+    )
+    config_path = target / "civicsuite-launcher-config.json"
+    config_path.write_text(
+        json.dumps(
+            _suite_launcher_config(package_relative_path=SUITE_LAUNCHER_PACKAGE_DIR),
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    copied = [
+        str(path.relative_to(ROOT))
+        for path in sorted(target.rglob("*"))
+        if path.is_file()
+    ]
+    return copied
+
+
 def generate_profile_package(
     *,
     manifest: dict[str, Any],
@@ -2421,6 +2705,8 @@ def generate_profile_package(
                 )
             path.write_text(content, encoding="utf-8", newline="\n")
             written.append(str(path.relative_to(ROOT)))
+        if _uses_suite_launcher(profile_id, plan["modules"]):
+            written.extend(_copy_suite_launcher_package(package_dir))
         launcher = package_dir / _package_launcher_name(target_platform)
         try:
             launcher.chmod(0o755)
@@ -2462,6 +2748,7 @@ def _native_manifest_files(
 ) -> dict[str, str]:
     copy = _distribution_copy(profile_id)
     package_rel = package_dir.relative_to(ROOT).as_posix()
+    app_id = INNO_APP_IDS.get(profile_id, INNO_APP_IDS["clerk-core"])
     if platform_id == "windows":
         return {
             "CivicSuiteInstaller.iss": f"""; CivicSuite Windows installer wrapper manifest.
@@ -2473,7 +2760,7 @@ def _native_manifest_files(
 #define PackageSource "..\\..\\packages\\{profile_id}\\windows"
 
 [Setup]
-AppId={{{{CIVICSUITE-{profile_id.upper()}-{version}}}}}
+AppId={{{{{app_id}}}
 AppName={{#AppName}}
 AppVersion={{#AppVersion}}
 AppPublisher={{#AppPublisher}}
@@ -2744,15 +3031,31 @@ def _stage_release_bundle(
     )
     (bundle_dir / "installer").mkdir(parents=True, exist_ok=True)
     shutil.copy2(MANIFEST, bundle_dir / "installer" / "modules.json")
-    modules_root = bundle_dir / "modules"
-    modules_root.mkdir(parents=True, exist_ok=True)
     plan_path = package_dir / "install-plan.json"
-    bundled_modules = ["civicrecords-ai", "civicclerk"]
+    plan_modules: list[str] = []
     if plan_path.is_file():
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        plan_modules = [str(module_id) for module_id in plan.get("modules", [])]
+    if _uses_suite_launcher(profile_id, plan_modules):
+        runtime_launcher = bundle_dir / "installer" / "runtime" / "suite-launcher"
+        runtime_launcher.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            SUITE_LAUNCHER_SOURCE,
+            runtime_launcher,
+            ignore=shutil.ignore_patterns(
+                "node_modules",
+                "playwright-report",
+                "test-results",
+                ".DS_Store",
+            ),
+        )
+    modules_root = bundle_dir / "modules"
+    modules_root.mkdir(parents=True, exist_ok=True)
+    bundled_modules = ["civicrecords-ai", "civicclerk"]
+    if plan_modules:
         bundled_modules = [
             str(module_id)
-            for module_id in plan.get("modules", [])
+            for module_id in plan_modules
             if str(module_id) != "civiccore"
         ]
     for module_name in bundled_modules:
@@ -3343,6 +3646,29 @@ def build_install_plan(
     actions: list[dict[str, Any]] = []
     for check in baseline_checks:
         actions.append({"type": "check", **check})
+    if _uses_suite_launcher(profile_id, ordered_ids):
+        actions.extend(
+            [
+                {
+                    "type": "check",
+                    "id": "suite-launcher-runtime",
+                    "mode": "file_and_port_plan",
+                    "description": (
+                        "Suite launcher runtime files are packaged and planned "
+                        f"for localhost:{SUITE_LAUNCHER_PORT}."
+                    ),
+                },
+                {
+                    "type": "check",
+                    "id": "shared-staff-session-env",
+                    "mode": "env_plan",
+                    "description": (
+                        f"Shared staff session env var {SUITE_SESSION_ENV} is "
+                        "created at runtime if missing and shared with selected services."
+                    ),
+                },
+            ]
+        )
     for module_id in ordered_ids:
         module = modules[module_id]
         actions.append(
@@ -3355,17 +3681,33 @@ def build_install_plan(
                 "proof_required": module.get("proof_required", []),
             }
         )
+    verification_proof = [
+        "health_checks",
+        "restart",
+        "backup",
+        "restore",
+        "actionable_failure_copy",
+    ]
+    if _uses_suite_launcher(profile_id, ordered_ids):
+        verification_proof.extend(
+            [
+                "suite_launcher_files",
+                "suite_launcher_port_config",
+                "shared_staff_session_check",
+            ]
+        )
+    if _uses_suite_launcher(profile_id, ordered_ids):
+        actions.append(
+            {
+                "type": "configure_runtime",
+                **_suite_launcher_config(),
+            }
+        )
     actions.append(
         {
             "type": "verify_profile",
             "profile": profile_id,
-            "proof": [
-                "health_checks",
-                "restart",
-                "backup",
-                "restore",
-                "actionable_failure_copy",
-            ],
+            "proof": verification_proof,
         }
     )
 

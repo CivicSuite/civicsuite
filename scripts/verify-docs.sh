@@ -22,6 +22,7 @@ REQUIRED=(
   SUPPORT.md
   .gitignore
   docs/index.html
+  docs/troubleshooting.md
   docs/release-recovery-status.md
   docs/release-lockstep/downstream-pins.md
   docs/compatibility/index.md
@@ -178,6 +179,11 @@ fi
 if [ -n "$PUBLIC_USE_HITS" ]; then
   echo "  PUBLIC-USE OVERCLAIM STRINGS FOUND:"
   echo "$PUBLIC_USE_HITS" | sed 's/^/    /'
+  fail=1
+fi
+
+echo "==> City-core docs truth check"
+if ! python3 scripts/docs/verify_docs_truth.py; then
   fail=1
 fi
 

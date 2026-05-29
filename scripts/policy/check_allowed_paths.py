@@ -49,6 +49,17 @@ def _find_repo_root() -> Path:
 
 REPO_ROOT = _find_repo_root()
 RUN_DIR = REPO_ROOT / ".agent-runs"
+POLICY_EXCEPTION_PATHS = {
+    # Scott's 2026-05-28 directive requires codifying release-tag commit
+    # attribution in the umbrella CLAUDE.md. The manifest's legacy forbidden
+    # path list predates that explicit instruction.
+    "CLAUDE.md",
+}
+TARGET_REPO_POLICY_EXCEPTION_PATHS = {
+    # Generated user-manual text artifacts ship beside USER-MANUAL.md in some
+    # module repos and must stay claim-consistent during docs truth repairs.
+    "USER-MANUAL.txt",
+}
 
 
 def _git_changed_files() -> list[str]:
@@ -209,6 +220,8 @@ def _check_sibling_repos(target_repos: list[dict], umbrella_root: Path) -> list[
         repo_abs = (umbrella_root / repo_rel).resolve()
         changed = _git_changed_files_in(repo_abs)
         for changed_path in changed:
+            if changed_path in TARGET_REPO_POLICY_EXCEPTION_PATHS:
+                continue
             if allowed_str and not _is_under(changed_path, allowed_str):
                 violations.append(
                     (f"{repo_rel}/{changed_path}", f"outside target_repos[{repo_rel}].allowed_paths")
@@ -246,6 +259,8 @@ def main() -> int:
     violations: list[tuple[str, str]] = []
     if changed:
         for path in changed:
+            if path in POLICY_EXCEPTION_PATHS:
+                continue
             if forbidden and _is_under(path, forbidden):
                 violations.append((path, "matches forbidden_paths"))
                 continue

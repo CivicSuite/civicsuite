@@ -46,6 +46,8 @@ This is the specific drift that has bitten CivicSuite most. Run every item befor
 - [ ] Status words: no `done`, `green`, `ready`, `taggable`, `shippable`, `complete` unless the release gate actually supports them (`VERIFY-SUITE-STATE: PASSED` + `release-lockstep-gate` green + release object exists with all artifacts).
 - [ ] Working tree clean except intentional/declared uncommitted work. The pre-existing dirty `installer/dist/` and `installer/generated/` files predate the recovery sweep — state this explicitly in the report rather than silently accepting them.
 - [ ] Cleanroom claims qualified: CI cleanroom skips are CI-only; local cleanroom skips are local-only; never collapse them.
+- [ ] Test/evidence names follow `docs/process/naming-honesty.md`: `_live_`, `_real_wire_`, and `_integration_` names are used only when the named boundary is actually exercised, not monkeypatched or stubbed.
+- [ ] Behavior proof is stronger than execution proof. For every changed behavior, identify the observable contract the test locks, the negative/failure case it covers, and the runtime or browser evidence that proves the user-facing path. A passing test that only imports, renders, or exercises a happy path without asserting the changed contract is not enough.
 - [ ] Whole-PR diff scope check: `git diff --name-status main..HEAD` must contain only the slice's intended file set. `git status --short` is not sufficient; sibling commits can land unrelated files.
 - [ ] Non-ASCII scan on every new/modified durable doc: em-dashes, arrows, section signs should be ASCII unless intentional. Run `LC_ALL=C.UTF-8 grep -P '[^\x00-\x7F]' <files>` before push.
 - [ ] **SHA citations are full-length.** Every SHA256 citation is exactly 64 hex characters; every SHA1 citation is exactly 40. Run `grep -E '[a-f0-9]{56,63}\b' <docs>` and inspect any hits as candidates for truncation. Origin receipt: CivicClerk B1 handoff 2026-05-10 required PR #119 to correct.
@@ -106,5 +108,6 @@ A chat-side promise ("I will keep this in mind") is not a behavior change. The b
 
 - `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_PROTOCOL.md` — the verification-side audit protocol (Claude reads this). The mandatory 10-section output shape and the verifier's evidence-pass rules live there. Section 21 ("Implementation-side rule pointer") and section 22 ("Known drift patterns") pair with this document.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_GATE.md` — the short mandatory gate Claude reads every turn.
+- `docs/process/naming-honesty.md` - the local naming rule for tests and evidence whose filenames claim live, real-wire, or integration coverage.
 - `~/.codex/skills/project-control-plane/SKILL.md` — Codex's skill that points at this file as the before-every-push discipline.
 - `C:\Users\scott\OneDrive\Desktop\Claude\agentic-pipeline\` — the agentic-pipeline plugin. v0.2 governs execution (4-phase module-release). v0.3 governs audit handoff (this document + the protocol + the gate).

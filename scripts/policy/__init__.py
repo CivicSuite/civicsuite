@@ -12,3 +12,12 @@ tree as `python scripts/policy/run_all.py`.
 
 Add project-specific policy checks alongside these generics.
 """
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+_POLICY_DIR = str(Path(__file__).resolve().parent)
+if _POLICY_DIR not in sys.path:
+    sys.path.insert(0, _POLICY_DIR)

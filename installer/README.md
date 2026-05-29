@@ -78,6 +78,20 @@ python scripts\plan-installer.py --profile clerk-core --menu-style guided --show
 The menu model must include profile choices, selectable modules, and the
 selected menu style without changing host state.
 
+## Suite Launcher Runtime
+
+The first city-core launcher scaffold lives at
+`installer/runtime/suite-launcher`. It is a static, self-contained runtime with
+Staff, Resident, and IT-Admin surfaces, local tiles for CivicRecords AI,
+CivicClerk, and CivicCode, a one-click audit drawer, and a Ctrl-K/Cmd-K command
+palette. It uses the prototype paper/navy/gold tokens and local font fallback
+stack only; it does not fetch network fonts or mutate host state.
+
+The launcher includes QA fixtures for loading, success, empty, error, and
+partial states through `?state=loading|success|empty|error|partial`. Runtime
+module URLs can be overridden by defining `window.CIVICSUITE_LAUNCHER_CONFIG`
+before `src/app.js` loads.
+
 ## Menu Styles
 
 Initial menu styles:

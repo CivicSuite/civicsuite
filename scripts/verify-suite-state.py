@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -752,6 +753,12 @@ def installer_source_commits() -> dict[str, str]:
 
 
 def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
+    """Confirm installer source pins match the checkout mode being verified.
+
+    Local engagement branches may pin PR heads before the corresponding module
+    default branch has moved; remote-only verification stays tied to default
+    branches after merge.
+    """
     city_core_modules = {"civiccore", "civicrecords-ai", "civicclerk", "civiccode"}
     if spec.name not in city_core_modules:
         return []
@@ -779,6 +786,24 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
         if code != 0:
             return [fail(f"cannot read local source HEAD for {spec.name}: {output}")]
         actual = output
+
+    if actual != declared and remote_only and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+        code, data, message = run_json(
+            [
+                "gh",
+                "api",
+                f"repos/{spec.repo}/commits/{declared}",
+            ]
+        )
+        if code == 0 and isinstance(data, dict) and data.get("sha") == declared:
+            return []
+        return [
+            fail(
+                f"installer/modules.json source_commit for {spec.name} is {declared}, "
+                f"which is not {spec.default_branch} head {actual} and could not be read "
+                f"as a pull-request branch commit: {message}"
+            )
+        ]
 
     if actual != declared:
         return [

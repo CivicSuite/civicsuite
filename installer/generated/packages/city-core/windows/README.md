@@ -52,10 +52,21 @@ resources for the profile.
 
    The wizard asks for setup path, operator name, organization name, admin
    email, time zone, license acceptance, and then performs the smoke/readiness
-   check before installing. After install, it prints staff dashboard URLs and
-   the local credential-file path for the generated first administrator login.
-   Open that file once, sign in, rotate the credential immediately, then store
-   the rotated value in the municipal vault.
+    check before installing. After install, it prints staff dashboard URLs and
+    the local credential-file path for the generated first administrator login.
+    Open that file once, sign in, rotate the credential immediately, then store
+    the rotated value in the municipal vault.
+
+    City-core packages include the suite launcher runtime under
+    `suite-launcher` and plan it for
+    `http://127.0.0.1:18082/`. The installer runtime also
+    creates `CIVICCORE_SUITE_SESSION_SECRET` on first install if it is missing, then shares
+    that value with the selected staff services for the local session boundary.
+    To serve the launcher after install or during QA, run:
+
+    ```text
+    .\start-civicsuite-installer.ps1 -SuiteLauncher
+    ```
 
 2. For IT/admin checks, run readiness:
 
