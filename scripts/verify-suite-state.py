@@ -56,6 +56,10 @@ PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
 CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0"
 CURRENT_CITY_CORE_INSTALLER_STATUS = "city_core_beta_ready_truth_reconciled"
 EXPECTED_CITY_CORE_PROFILE_STATUS = "beta_ready_truth_reconciled"
+CITY_CORE_SOURCE_PIN_RECOVERY = (
+    "2026-05-30 source-pin recovery includes CivicCode post-PR-#76 "
+    "default-branch head"
+)
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
     "civicclerk agenda/packet/minutes/vote/notice/archive",
@@ -985,6 +989,7 @@ def main() -> int:
     print("==> CivicSuite suite-state verification")
     print(f"workspace: {WORKSPACE}")
     print(f"repos: {len(REPOS)}")
+    print(f"city-core source pins: {CITY_CORE_SOURCE_PIN_RECOVERY}")
     print(f"planned spec-only modules: {', '.join(PLANNED_SPEC_MODULES)}")
     print(f"current clerk-core installer tag: {CURRENT_CLERK_CORE_INSTALLER_TAG}")
     print(

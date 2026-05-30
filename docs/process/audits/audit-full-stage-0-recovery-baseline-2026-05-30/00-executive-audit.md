@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-Stage 0 is acceptable to merge and tag. The branch records what was recoverable after the deleted workspace, names the lost local-only implementation state honestly, restores the CivicCode city-core source pin and installer-cleanroom workflow refs to the live post-PR-#76 default-branch head, and installs a reproducible local pre-push hook so future slices are pushed instead of accumulating as dirty worktrees. The audit found no open Blocker, Critical, Major, Minor, or Nit findings in the Stage 0 scope.
+Stage 0 is acceptable to merge and tag. The branch records what was recoverable after the deleted workspace, names the lost local-only implementation state honestly, restores the CivicCode city-core source pin, verifier output, and installer-cleanroom workflow refs to the live post-PR-#76 default-branch head, and installs a reproducible local pre-push hook so future slices are pushed instead of accumulating as dirty worktrees. The audit found no open Blocker, Critical, Major, Minor, or Nit findings in the Stage 0 scope.
 
 ## Severity Roll-Up
 
@@ -31,6 +31,7 @@ No open findings.
 - `python scripts\verify-suite-state.py --remote-only` now reports `VERIFY-SUITE-STATE: PASSED` after the CivicCode source pin restoration.
 - The Stage 0 slice is pushed to GitHub at `96d684ee7b6d3d61108ec307b8c0943b1e7960b0`.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml` now checks out the same CivicCode source head as `installer\modules.json`.
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` now prints the source-pin recovery note as part of its verifier header.
 
 ## This-Sprint Punch List
 
@@ -59,3 +60,4 @@ No open findings require blast-radius remediation. The intentional source-pin ch
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-lockstep\downstream-pins.md`
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md`
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml`
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py`

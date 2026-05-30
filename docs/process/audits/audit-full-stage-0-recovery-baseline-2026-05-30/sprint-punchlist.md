@@ -9,3 +9,4 @@ No open Stage 0 findings remain.
 - Generated hook UTF-8 BOM: fixed by writing the hook as ASCII.
 - CivicCode post-PR-#76 source-pin drift: fixed across lockstep truth files.
 - Installer-cleanroom stale CivicCode checkout ref: fixed in `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml`.
+- Lockstep verifier artifact missing from truth set: fixed in `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py`.

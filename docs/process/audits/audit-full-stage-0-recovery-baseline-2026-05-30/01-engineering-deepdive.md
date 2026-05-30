@@ -13,6 +13,7 @@ No open findings.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json` now pins CivicCode to `a960bba0a2249d118b593dd61bee3a65a69a9d77`, matching the recovered local clone and remote default branch.
 - The same CivicCode pin is mirrored in `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\CivicSuiteUnifiedSpec.md`, `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md`, and `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-lockstep\downstream-pins.md`.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml` now uses the same CivicCode checkout ref in both installer-cleanroom jobs.
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` now includes `CITY_CORE_SOURCE_PIN_RECOVERY`, satisfying the release-lockstep requirement that the verifier move with the source-pin truth artifact set.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1` writes the generated hook as ASCII, avoiding the BOM that made Git unable to spawn the first attempt.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` blocks direct pushes from `main` or `master`, blocks dirty pushes, and verifies a full 40-character HEAD SHA.
 
