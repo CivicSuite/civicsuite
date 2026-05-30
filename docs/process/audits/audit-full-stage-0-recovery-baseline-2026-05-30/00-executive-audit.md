@@ -32,6 +32,7 @@ No open findings.
 - The Stage 0 slice is pushed to GitHub at `96d684ee7b6d3d61108ec307b8c0943b1e7960b0`.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml` now checks out the same CivicCode source head as `installer\modules.json`.
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` now prints the source-pin recovery note as part of its verifier header.
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md` topology now renders CivicCode source prefix `a960bba0a224` from `installer\modules.json`.
 
 ## This-Sprint Punch List
 
@@ -61,3 +62,4 @@ No open findings require blast-radius remediation. The intentional source-pin ch
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md`
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml`
 - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py`
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md`
