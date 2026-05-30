@@ -119,7 +119,7 @@ At the end of each stage:
 5. Repeat until zero Blocker, Critical, Major, Minor, and Nit findings, or a genuine human-required blocker.
 6. Merge to the default branch.
 7. Tag the stage.
-8. Stop and report only after the merge and tag are complete.
+8. Stop and report only after the merge and tag land.
 
 ## Stage Plan
 
@@ -135,7 +135,7 @@ At the end of each stage:
 
 ## Stage 0 Exit Criteria
 
-Stage 0 is complete only when:
+Stage 0 closes only when:
 
 - this recovery baseline is committed and pushed;
 - the stage branch has an `audit-lite` report with zero findings or all findings fixed;
