@@ -8,4 +8,4 @@ No open Stage 0 findings remain.
 - Hook installer dependency on unavailable `pwsh`: fixed by generating a `powershell.exe` hook.
 - Generated hook UTF-8 BOM: fixed by writing the hook as ASCII.
 - CivicCode post-PR-#76 source-pin drift: fixed across lockstep truth files.
-
+- Installer-cleanroom stale CivicCode checkout ref: fixed in `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml`.
