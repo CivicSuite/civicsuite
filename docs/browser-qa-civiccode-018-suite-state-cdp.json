@@ -1,5 +1,5 @@
 {
-  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html",
+  "url": "file:///C:/dev/Claude/civicsuite/docs/index.html",
   "results": [
     {
       "name": "desktop",
@@ -13,7 +13,7 @@
       "hasCore022": true,
       "hasSourceProjection": true,
       "consoleWarningsErrors": [],
-      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-018-suite-state-desktop.png",
+      "screenshot": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-018-suite-state-desktop.png",
       "bytes": 276168
     },
     {
@@ -28,7 +28,7 @@
       "hasCore022": true,
       "hasSourceProjection": true,
       "consoleWarningsErrors": [],
-      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-018-suite-state-mobile.png",
+      "screenshot": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-018-suite-state-mobile.png",
       "bytes": 259908
     }
   ],

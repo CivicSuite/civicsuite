@@ -1,5 +1,5 @@
 {
-  "backup_dir": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z",
+  "backup_dir": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z",
   "civicclerk_staff_mode": "protected",
   "compose_projects": {
     "civicclerk": "civicsuite-local-clerk-to-city-upgrade-evidence2-clerk",
@@ -7,7 +7,7 @@
     "civicrecords-ai": "civicsuite-local-clerk-to-city-upgrade-evidence2-records"
   },
   "finished_at": "2026-05-23T17:46:07.702756+00:00",
-  "install_root": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence",
+  "install_root": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence",
   "isolation_id": "local-clerk-to-city-upgrade-evidence2",
   "mode": "backup",
   "mutates_host": true,
@@ -36,7 +36,7 @@
   "steps": [
     {
       "module": "civicrecords-ai",
-      "path": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\civicrecords-ai-postgres.dump",
+      "path": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\civicrecords-ai-postgres.dump",
       "returncode": 0,
       "stderr": "",
       "stdout": "",
@@ -44,7 +44,7 @@
     },
     {
       "module": "civicclerk",
-      "path": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\civicclerk-postgres.dump",
+      "path": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\civicclerk-postgres.dump",
       "returncode": 0,
       "stderr": "",
       "stdout": "",
@@ -52,14 +52,14 @@
     },
     {
       "module": "civiccode",
-      "path": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\civiccode-postgres.dump",
+      "path": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\civiccode-postgres.dump",
       "returncode": 0,
       "stderr": "",
       "stdout": "",
       "step": "postgres_backup_dump"
     },
     {
-      "path": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\backup-manifest.json",
+      "path": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence\\backups\\20260523T174606Z\\backup-manifest.json",
       "status": "passed",
       "step": "write_backup_manifest"
     }

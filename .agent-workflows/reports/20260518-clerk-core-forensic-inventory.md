@@ -78,18 +78,18 @@ certification.
 
 Local implementation worktree:
 
-- Path: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-clerk-core-city-release`
+- Path: `C:\dev\Claude\CivicSuite-clerk-core-city-release`
 - Branch: `chore/clerk-core-city-release`
 - Status: clean at PR head `de3155c1a7752abccd07023f989ce231b55fc301`
 
 Other local CivicSuite clones are not truth sources for this target:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`: dirty generated
+- `C:\dev\Claude\CivicSuite`: dirty generated
   installer artifacts and old branch state.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-main`: detached at
+- `C:\dev\Claude\CivicSuite-live-main`: detached at
   `ebfa28f5665ef3fe35f6f69dcdd34285b6b3dbcd` with dirty generated installer
   artifacts.
-- `C:\Users\scott\OneDrive\Desktop\Claude\civicrecords-ai`: has untracked
+- `C:\dev\Claude\civicrecords-ai`: has untracked
   temporary browser QA folders.
 
 ## Spec Inventory
@@ -176,7 +176,7 @@ Read or inspected in this gate:
 - `installer/modules.json`
 - `installer/README.md`
 - `docs/installer/starter-set-release-contract.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\audit-civicsuite-2026-05-09\sprint-punchlist.md`
+- `C:\dev\Claude\audit-civicsuite-2026-05-09\sprint-punchlist.md`
 
 ## Release Claims Check
 

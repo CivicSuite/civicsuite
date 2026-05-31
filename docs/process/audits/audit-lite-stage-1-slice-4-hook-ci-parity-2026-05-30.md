@@ -19,12 +19,12 @@ No open findings.
 
 ### Closed During Audit - Major: Hook accepted historical audit-lite evidence
 **Dimension:** Correctness / Runtime
-**Evidence:** `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` previously checked `docs/process/audits/audit-lite-*.md`, so a future stage branch could pass using Stage 0 or Stage 1 reports.
+**Evidence:** `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` previously checked `docs/process/audits/audit-lite-*.md`, so a future stage branch could pass using Stage 0 or Stage 1 reports.
 **Why it matters:** The hook would have allowed exactly the drift Stage 1 is meant to prevent: a new stage branch without current-stage audit-lite evidence.
 **Fix path:** Extracted the stage number from the branch name and required `docs/process/audits/audit-lite-stage-<number>-*.md` plus a matching ledger reference.
 
 ## What's Working
-- The hook and `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` now enforce the same stage-specific audit-lite pattern.
+- The hook and `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` now enforce the same stage-specific audit-lite pattern.
 - The actual `git push` will exercise the clean-tree hook path after this report is committed.
 - `python scripts\policy\check_stage_evidence.py --branch stage-1-live-gate-policy-harness-2026-05-30` passed.
 - `git diff --check` passed.

@@ -4,7 +4,7 @@ Status: workflow paused by user.
 
 ## Current Repo State
 
-- Repo: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`
+- Repo: `C:\dev\Claude\CivicSuite`
 - Branch: `main`
 - Local status after cleanup: synced with `origin/main`, with local untracked handoff files only.
 - Current main commit: `52eda008faba60eabd9ed4d9a4d028e6a9da61d3`

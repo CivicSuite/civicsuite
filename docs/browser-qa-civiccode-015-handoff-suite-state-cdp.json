@@ -1,11 +1,11 @@
 {
   "qa_id": "browser-qa-civiccode-015-handoff-suite-state",
-  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html",
+  "url": "file:///C:/dev/Claude/CivicSuite/docs/index.html",
   "checks": [
     {
       "viewport": "desktop",
-      "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html",
-      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-015-handoff-suite-state-desktop.png",
+      "url": "file:///C:/dev/Claude/CivicSuite/docs/index.html",
+      "screenshot": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-015-handoff-suite-state-desktop.png",
       "focused_text_after_tab": "Skip to main content",
       "metrics": {
         "title": "CivicSuite | municipal product suite roadmap",
@@ -24,8 +24,8 @@
     },
     {
       "viewport": "mobile",
-      "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html",
-      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-015-handoff-suite-state-mobile.png",
+      "url": "file:///C:/dev/Claude/CivicSuite/docs/index.html",
+      "screenshot": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-015-handoff-suite-state-mobile.png",
       "focused_text_after_tab": "Skip to main content",
       "metrics": {
         "title": "CivicSuite | municipal product suite roadmap",

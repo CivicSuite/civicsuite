@@ -10,9 +10,9 @@ No open findings.
 
 ## What Works
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` records the complete slice loop and stage closeout loop.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` records Stage 1 scope, changed files, audit-lite reports, checks, and pushed commits with full drive paths.
-- Every audit-lite report for Stage 1 is tracked under `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\`.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` records the complete slice loop and stage closeout loop.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` records Stage 1 scope, changed files, audit-lite reports, checks, and pushed commits with full drive paths.
+- Every audit-lite report for Stage 1 is tracked under `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\`.
 - The workflow-cost ledger is tracked despite `.agent-runs/` normally being ignored, so the CI workflow change has durable evidence.
 
 ## Closed Documentation Issue
@@ -33,9 +33,9 @@ The stage ledger still has final PR, merge, and tag fields pending until the PR 
 
 Stage 1 writes three documentation layers:
 
-1. Process rule: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md`
-2. Stage ledger: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md`
-3. Review evidence: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\`
+1. Process rule: `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md`
+2. Stage ledger: `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md`
+3. Review evidence: `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\`
 
 This split is useful. The process file should remain stable across stages. The stage ledger changes every slice. The audit directory records review results and should not be mixed into the process rule itself.
 
@@ -51,11 +51,11 @@ The Stage 0 recovery baseline already said work proceeds in nine stage branches 
 
 Stage 1 does not change module versions, module pins, installer profile state, public-facing release status, or the suite truth table. Therefore it correctly does not update:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\CivicSuiteUnifiedSpec.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-lockstep\downstream-pins.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\CivicSuiteUnifiedSpec.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-lockstep\downstream-pins.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md`
 
 That is why the release-lockstep gate is not applicable unless the PR is deliberately labeled `release-tag`.
 
@@ -63,8 +63,8 @@ That is why the release-lockstep gate is not applicable unless the PR is deliber
 
 A future session should read the Stage 1 artifacts in this order:
 
-1. `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md`
-2. `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md`
+1. `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md`
+2. `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md`
 3. The relevant audit-lite report for the last slice.
 4. This audit-full executive report.
 

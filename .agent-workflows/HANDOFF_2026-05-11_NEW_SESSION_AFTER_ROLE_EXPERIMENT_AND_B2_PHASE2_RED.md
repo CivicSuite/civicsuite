@@ -11,10 +11,10 @@ Reason: prepare for a new session / context compaction after completing a resear
 The next session should read these in order:
 
 1. This handoff.
-2. `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\.agent-runs\SESSION_MEMORY_2026-05-11_AFTER_ROLE_EXPERIMENT_AND_B2_PHASE2_RED.md`
-3. `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\.agent-workflows\PROJECT_CONTROL_PLANE.md`
-4. `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\.agent-workflows\ACTIVE_WORK_QUEUE.md`
-5. `C:\Users\scott\OneDrive\Desktop\Claude\civicrecords-ai\.agent-runs\b2-phase2-rehearsal.md`
+2. `C:\dev\Claude\CivicSuite\.agent-runs\SESSION_MEMORY_2026-05-11_AFTER_ROLE_EXPERIMENT_AND_B2_PHASE2_RED.md`
+3. `C:\dev\Claude\CivicSuite\.agent-workflows\PROJECT_CONTROL_PLANE.md`
+4. `C:\dev\Claude\CivicSuite\.agent-workflows\ACTIVE_WORK_QUEUE.md`
+5. `C:\dev\Claude\civicrecords-ai\.agent-runs\b2-phase2-rehearsal.md`
 
 Important: skills/plugins remain quarantined for CivicSuite work unless Scott explicitly authorizes the exact skill or plugin in the current message. Use normal shell/file tools directly, and preserve user/previous-agent changes.
 
@@ -32,18 +32,18 @@ No tag push is authorized while Phase 2 is RED.
 
 Scott asked:
 
-> Read the file at `C:\Users\scott\OneDrive\Desktop\Claude\_recon\civicsuite-codex-role-experiment\CODEX_PROMPT.md` and execute it exactly as written. Do not deviate from its role file and manifest. When the artifact is complete, stop.
+> Read the file at `C:\dev\Claude\_recon\civicsuite-codex-role-experiment\CODEX_PROMPT.md` and execute it exactly as written. Do not deviate from its role file and manifest. When the artifact is complete, stop.
 
 Executed exactly as the prompt required:
 
-- Treated `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\` as the umbrella working directory.
+- Treated `C:\dev\Claude\CivicSuite\` as the umbrella working directory.
 - Read only within the manifest's allowed scope:
   - `../civicrecords-ai/`
   - `docs/compatibility/`
   - `specs/`
 - Did not run tests, builds, linters, or mutating scripts.
 - Wrote exactly one research artifact:
-  - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\.agent-runs\2026-05-11-civicrecords-version-pin-research\research.md`
+  - `C:\dev\Claude\CivicSuite\.agent-runs\2026-05-11-civicrecords-version-pin-research\research.md`
 
 Research finding:
 
@@ -85,7 +85,7 @@ Phase 1 scope that landed:
 
 Phase 2 rehearsal artifact:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\civicrecords-ai\.agent-runs\b2-phase2-rehearsal.md`
+- `C:\dev\Claude\civicrecords-ai\.agent-runs\b2-phase2-rehearsal.md`
 - This file is currently untracked in the `civicrecords-ai` repo.
 
 Phase 2 blockers:

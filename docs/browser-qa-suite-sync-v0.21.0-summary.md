@@ -1,7 +1,7 @@
 # Browser QA - CivicSuite v0.21.0 Suite Sync
 
 Date: 2026-05-03
-Target: file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html
+Target: file:///C:/dev/Claude/civicsuite/docs/index.html
 
 ## Evidence
 

@@ -10,11 +10,11 @@ No open findings.
 
 ## What Is Working
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-recovery-baseline-2026-05-30.md` includes absolute drive paths for recovered sources, active workspace, restored memory, preserved temp bundle, and recreated repositories.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md` records the recovery baseline and CivicCode source-pin restoration without claiming a new public release state.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md` states that source pins changed for engagement work and do not mutate already-published module release objects.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md` was regenerated with `python scripts\docs\render_topology.py --write` after the CivicCode source-pin recovery.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-0-recovery-baseline-2026-05-30.md` preserves the slice-level findings and fixes.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-recovery-baseline-2026-05-30.md` includes absolute drive paths for recovered sources, active workspace, restored memory, preserved temp bundle, and recreated repositories.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md` records the recovery baseline and CivicCode source-pin restoration without claiming a new public release state.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md` states that source pins changed for engagement work and do not mutate already-published module release objects.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md` was regenerated with `python scripts\docs\render_topology.py --write` after the CivicCode source-pin recovery.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-0-recovery-baseline-2026-05-30.md` preserves the slice-level findings and fixes.
 
 ## Verification
 

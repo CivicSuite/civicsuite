@@ -69,4 +69,4 @@ The maintainer-level enforcement of §4 is real, not aspirational.
 
 Per `docs/process/` standards (PR #125 added this rule), every push that touches code, docs, or status artifacts runs a hostile 5-lens self-audit on the actual diff: Engineering (grep every claim/path/SHA), UX (read every user-visible string cold; respect the UI/UX prototype), Tests (real assertions not just exercise), Docs (CHANGELOG/HANDOFF/spec moved where they should), QA (cross-file consistency, no forbidden status words). Report format goes in the push body.
 
-This rule is the implementation-side counterpart to the cross-agent verification protocol at `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`.
+This rule is the implementation-side counterpart to the cross-agent verification protocol at `C:\dev\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`.

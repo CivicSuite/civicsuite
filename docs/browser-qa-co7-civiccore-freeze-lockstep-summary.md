@@ -44,5 +44,5 @@ PASS
 The check used Python Playwright from this workspace and opened:
 
 ```text
-file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html
+file:///C:/dev/Claude/CivicSuite/docs/index.html
 ```

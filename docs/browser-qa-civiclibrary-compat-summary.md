@@ -4,7 +4,7 @@ Checked with Playwright/Chromium in this session.
 
 ## Desktop
 
-- URL: `file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html`
+- URL: `file:///C:/dev/Claude/CivicSuite/docs/index.html`
 - Viewport: 1366x900
 - Screenshot: `docs/browser-qa-civiclibrary-compat-desktop.png`
 - Console errors: 0
@@ -13,7 +13,7 @@ Checked with Playwright/Chromium in this session.
 
 ## Mobile
 
-- URL: `file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html`
+- URL: `file:///C:/dev/Claude/CivicSuite/docs/index.html`
 - Viewport: 390x844
 - Screenshot: `docs/browser-qa-civiclibrary-compat-mobile.png`
 - Console errors: 0

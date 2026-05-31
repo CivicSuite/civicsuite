@@ -4,7 +4,7 @@ Status: workflow paused by user.
 
 ## Current Repository State
 
-- Repo: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`
+- Repo: `C:\dev\Claude\CivicSuite`
 - Branch: `main`
 - Local status at pause: clean and synced with `origin/main`
 - Current commit: `48cdb0854c55a455649e4f96af72059e311658ca`

@@ -18,8 +18,8 @@ Ship this slice. The hook now blocks stage branches that lack `docs/process/stag
 No open findings.
 
 ## What's Working
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` keeps the Stage 0 recovery baseline guard and adds generic `stage-<number>-...` branch evidence checks.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` records Slice 1's pushed commit and names Slice 2's audit report before the push.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` keeps the Stage 0 recovery baseline guard and adds generic `stage-<number>-...` branch evidence checks.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` records Slice 1's pushed commit and names Slice 2's audit report before the push.
 - Static evidence checks passed: `git ls-files --error-unmatch docs/process/stages/stage-1-live-gate-policy-harness-2026-05-30.md`, `git ls-files "docs/process/audits/audit-lite-*.md"`, and `Select-String` for `audit-lite-` in the stage ledger.
 - `git diff --check` passed.
 

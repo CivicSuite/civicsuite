@@ -1,5 +1,5 @@
 {
-  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html",
+  "url": "file:///C:/dev/Claude/civicsuite/docs/index.html",
   "capturedAt": "2026-05-04T13:54:20.309195+00:00",
   "results": [
     {
@@ -8,8 +8,8 @@
         "width": 1366,
         "height": 1000
       },
-      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-desktop.png",
-      "htmlPath": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-desktop-dom.html",
+      "screenshot": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-desktop.png",
+      "htmlPath": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-desktop-dom.html",
       "consoleMessages": [],
       "pageErrors": [],
       "metrics": {
@@ -28,8 +28,8 @@
         "width": 390,
         "height": 900
       },
-      "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-mobile.png",
-      "htmlPath": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-mobile-dom.html",
+      "screenshot": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-mobile.png",
+      "htmlPath": "C:\\dev\\Claude\\civicsuite\\docs\\browser-qa-civiccode-013-suite-state-mobile-dom.html",
       "consoleMessages": [],
       "pageErrors": [],
       "metrics": {

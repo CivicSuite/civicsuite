@@ -121,7 +121,7 @@ Output:
 
 ```text
 ==> CivicSuite suite-state verification
-workspace: C:\Users\scott\OneDrive\Desktop\Claude
+workspace: C:\dev\Claude
 repos: 26
 remote release checks: enabled
 local sibling clone checks: disabled

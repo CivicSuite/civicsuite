@@ -1,6 +1,6 @@
 # Browser QA - CivicSuite CivicCode v0.1.15 Suite State
 
-- Target: `file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html`
+- Target: `file:///C:/dev/Claude/CivicSuite/docs/index.html`
 - Desktop screenshot: `docs/browser-qa-civiccode-015-handoff-suite-state-desktop.png`
 - Mobile screenshot: `docs/browser-qa-civiccode-015-handoff-suite-state-mobile.png`
 - Console events: `0`

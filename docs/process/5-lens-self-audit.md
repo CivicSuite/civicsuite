@@ -1,6 +1,6 @@
 # 5-lens self-audit (before every push)
 
-This is the implementation-side counterpart to the verification-side audit protocol at `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`. The verification protocol governs how the auditing agent (Claude) audits work that has already landed. This document governs how the implementing agent (Codex) audits its own work *before* a push, so the verification turn finds less to fix.
+This is the implementation-side counterpart to the verification-side audit protocol at `C:\dev\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`. The verification protocol governs how the auditing agent (Claude) audits work that has already landed. This document governs how the implementing agent (Codex) audits its own work *before* a push, so the verification turn finds less to fix.
 
 Both Codex and Claude read this file. The rule body, the artifact-state checklist, and the report format below are shared. The implementing-agent-side discipline (chat-promise rejection) and the verifier-side discipline (mandatory 10-section output) live in their respective files.
 
@@ -106,8 +106,8 @@ A chat-side promise ("I will keep this in mind") is not a behavior change. The b
 
 ## Cross-references
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_PROTOCOL.md` — the verification-side audit protocol (Claude reads this). The mandatory 10-section output shape and the verifier's evidence-pass rules live there. Section 21 ("Implementation-side rule pointer") and section 22 ("Known drift patterns") pair with this document.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_GATE.md` — the short mandatory gate Claude reads every turn.
+- `C:\dev\Claude\CIVICSUITE_AUDIT_PROTOCOL.md` — the verification-side audit protocol (Claude reads this). The mandatory 10-section output shape and the verifier's evidence-pass rules live there. Section 21 ("Implementation-side rule pointer") and section 22 ("Known drift patterns") pair with this document.
+- `C:\dev\Claude\CIVICSUITE_AUDIT_GATE.md` — the short mandatory gate Claude reads every turn.
 - `docs/process/naming-honesty.md` - the local naming rule for tests and evidence whose filenames claim live, real-wire, or integration coverage.
 - `~/.codex/skills/project-control-plane/SKILL.md` — Codex's skill that points at this file as the before-every-push discipline.
-- `C:\Users\scott\OneDrive\Desktop\Claude\agentic-pipeline\` — the agentic-pipeline plugin. v0.2 governs execution (4-phase module-release). v0.3 governs audit handoff (this document + the protocol + the gate).
+- `C:\dev\Claude\agentic-pipeline\` — the agentic-pipeline plugin. v0.2 governs execution (4-phase module-release). v0.3 governs audit handoff (this document + the protocol + the gate).

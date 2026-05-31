@@ -42,7 +42,7 @@ The D2+B3 sprint (extract `civiccore.auth.staff_key_gate()` + replace bespoke `s
 
 The civicrecords-ai sprint burned 8 hours on cascading discovery of pre-existing release.yml bugs. Designed and shipped the 4-phase `module-release` pipeline to prevent recurrence:
 
-Artifacts (in `C:\Users\scott\OneDrive\Desktop\Claude\agentic-pipeline\`):
+Artifacts (in `C:\dev\Claude\agentic-pipeline\`):
 - `pipelines/module-release.yaml` — pipeline definition (Phase 0/1/2/3/4/5 with human gates)
 - `pipelines/roles/preflight-auditor.md` — Phase 0 role (Check 1-7 sequence)
 - `pipelines/roles/local-rehearsal.md` — Phase 2 role

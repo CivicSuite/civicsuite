@@ -58,7 +58,7 @@ sha256:3ba1c2caea0fcc83ec6b94eb8bb1aadb2e53093a7188523af6e5dd35cbf22f97  release
 
 ```text
 ==> CivicSuite suite-state verification
-workspace: C:\Users\scott\OneDrive\Desktop\Claude
+workspace: C:\dev\Claude
 repos: 26
 remote release checks: enabled
 local sibling clone checks: disabled

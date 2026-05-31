@@ -19,15 +19,15 @@ No open findings.
 
 ### Closed During Audit - Major: Workflow-cost gate failed after touching verify.yml
 **Dimension:** Runtime / CI
-**Evidence:** `python scripts\policy\check_actions_budget.py --run 2026-05-30-stage-1-live-gate-policy-harness --base-ref origin/main` initially failed for `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml` because the workflow lacked concurrency, duplicated PR and push-to-main validation, lacked path filters, and had no cache coverage for expensive installs.
+**Evidence:** `python scripts\policy\check_actions_budget.py --run 2026-05-30-stage-1-live-gate-policy-harness --base-ref origin/main` initially failed for `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml` because the workflow lacked concurrency, duplicated PR and push-to-main validation, lacked path filters, and had no cache coverage for expensive installs.
 **Why it matters:** Stage 1 is specifically about preventing uncontrolled release-work churn. Adding a CI policy step while leaving the workflow-cost gate red would make the harness contradict its own rules.
 **Fix path:** Added the required concurrency block, PR path filters, `actions/setup-node` with npm cache coverage, and removed duplicate push-to-main validation.
 
 ### Closed During Audit - Major: New policy script needed contract coverage
 **Dimension:** Tests
-**Evidence:** `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` is new enforcement code.
+**Evidence:** `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` is new enforcement code.
 **Why it matters:** A policy script that silently skips stage branches would recreate the same disk-only failure mode Stage 1 is meant to prevent.
-**Fix path:** Added `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_stage_evidence_contract.py`.
+**Fix path:** Added `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_stage_evidence_contract.py`.
 
 ## What's Working
 - `python scripts\policy\check_stage_evidence.py --branch stage-1-live-gate-policy-harness-2026-05-30` passed.

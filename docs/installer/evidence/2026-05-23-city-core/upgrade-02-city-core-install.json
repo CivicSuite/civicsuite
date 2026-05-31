@@ -6,7 +6,7 @@
     "civicrecords-ai": "civicsuite-local-clerk-to-city-upgrade-evidence2-records"
   },
   "finished_at": "2026-05-23T17:46:06.302873+00:00",
-  "install_root": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence",
+  "install_root": "C:\\dev\\Claude\\CivicSuite-city-core-caboose-item1\\installer\\runtime\\city-core-upgrade-evidence",
   "isolation_id": "local-clerk-to-city-upgrade-evidence2",
   "mode": "install",
   "mutates_host": true,

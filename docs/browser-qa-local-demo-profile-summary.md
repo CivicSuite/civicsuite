@@ -1,7 +1,7 @@
 # Browser QA - Local Demo Deployment Profile Link
 
 Date: 2026-04-28T05:24:09.248Z
-Target: file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html
+Target: file:///C:/dev/Claude/CivicSuite/docs/index.html
 
 ## Viewports
 - desktop: 1440x1100, screenshot docs/browser-qa-local-demo-profile-desktop.png, body text length 18496

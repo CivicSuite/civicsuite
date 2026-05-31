@@ -14,7 +14,7 @@ No open findings.
 
 Severity when found: Major.
 
-Evidence: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` originally checked `docs/process/audits/audit-lite-*.md`, which could match Stage 0 evidence on a later stage branch.
+Evidence: `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` originally checked `docs/process/audits/audit-lite-*.md`, which could match Stage 0 evidence on a later stage branch.
 
 Fix: The hook now extracts the stage number from `stage-<number>-...` and requires `docs/process/audits/audit-lite-stage-<number>-*.md` plus a matching ledger reference.
 
@@ -24,9 +24,9 @@ Blast radius: Future stage branches now need current-stage audit-lite evidence b
 
 Severity when found: Major.
 
-Evidence: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` adds merge-affecting behavior.
+Evidence: `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` adds merge-affecting behavior.
 
-Fix: Added `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_stage_evidence_contract.py` covering non-stage skip behavior and missing stage evidence failures.
+Fix: Added `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_stage_evidence_contract.py` covering non-stage skip behavior and missing stage evidence failures.
 
 Blast radius: The test is narrow and local to policy enforcement. It does not touch product code.
 
@@ -68,9 +68,9 @@ The branch parser is intentionally narrow. It does not attempt to apply this pol
 
 ## Adjacent Code Considered
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\run_all.py` now includes `check_stage_evidence`, so future pipeline-style policy runs get the same check.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml` runs the policy directly before expensive Node/browser setup.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1` did not require changes; it already installs the tracked hook source.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\run_all.py` now includes `check_stage_evidence`, so future pipeline-style policy runs get the same check.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml` runs the policy directly before expensive Node/browser setup.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1` did not require changes; it already installs the tracked hook source.
 
 ## Security And Data-Safety Notes
 
