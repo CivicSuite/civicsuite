@@ -95,6 +95,29 @@ Local checks:
 
 Pushed commit:
 
+- `4e8017b167ef10a5cf4b178bed5925bf90349762`
+
+### Slice 4 - Hook and CI stage-evidence parity
+
+Status: In progress
+
+Changed files:
+
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1`
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md`
+
+Audit-lite report:
+
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-1-slice-4-hook-ci-parity-2026-05-30.md`
+
+Local checks:
+
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\hooks\pre-push.ps1`
+- `python scripts\policy\check_stage_evidence.py --branch stage-1-live-gate-policy-harness-2026-05-30`
+- `git diff --check`
+
+Pushed commit:
+
 - Recorded after push.
 
 ## Stage Closeout
