@@ -303,15 +303,20 @@ if ($Plan) {
 
 if ($SuiteLauncher) {
     $SuiteLauncherScript = Join-Path $PackageDir "suite-launcher\scripts\serve.mjs"
-    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-        Write-Error "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun with -SuiteLauncher."
-        exit 2
-    }
     if (-not (Test-Path $SuiteLauncherScript)) {
         Write-Error "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher."
         exit 2
     }
-    & node $SuiteLauncherScript --port 18082
+    if (Get-Command node -ErrorAction SilentlyContinue) {
+        & node $SuiteLauncherScript --port 18082
+        exit (Get-CivicSuiteLastExitCode)
+    }
+    Push-Location (Join-Path $PackageDir "suite-launcher")
+    try {
+        python -m http.server 18082 --bind 127.0.0.1
+    } finally {
+        Pop-Location
+    }
     exit (Get-CivicSuiteLastExitCode)
 }
 

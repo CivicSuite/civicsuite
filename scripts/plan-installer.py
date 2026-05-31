@@ -2032,15 +2032,20 @@ if ($Plan) {{
 
 if ($SuiteLauncher) {{
     $SuiteLauncherScript = Join-Path $PackageDir "{SUITE_LAUNCHER_PACKAGE_DIR}\\scripts\\serve.mjs"
-    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {{
-        Write-Error "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun with -SuiteLauncher."
-        exit 2
-    }}
     if (-not (Test-Path $SuiteLauncherScript)) {{
         Write-Error "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher."
         exit 2
     }}
-    & node $SuiteLauncherScript --port {SUITE_LAUNCHER_PORT}
+    if (Get-Command node -ErrorAction SilentlyContinue) {{
+        & node $SuiteLauncherScript --port {SUITE_LAUNCHER_PORT}
+        exit (Get-CivicSuiteLastExitCode)
+    }}
+    Push-Location (Join-Path $PackageDir "{SUITE_LAUNCHER_PACKAGE_DIR}")
+    try {{
+        python -m http.server {SUITE_LAUNCHER_PORT} --bind 127.0.0.1
+    }} finally {{
+        Pop-Location
+    }}
     exit (Get-CivicSuiteLastExitCode)
 }}
 
@@ -2387,15 +2392,15 @@ case "${{MODE}}" in
     ;;
   launcher)
     launcher_script="${{SCRIPT_DIR}}/{SUITE_LAUNCHER_PACKAGE_DIR}/scripts/serve.mjs"
-    if ! command -v node >/dev/null 2>&1; then
-      echo "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun launcher mode." >&2
-      exit 2
-    fi
     if [[ ! -f "$launcher_script" ]]; then
       echo "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher." >&2
       exit 2
     fi
-    node "$launcher_script" --port {SUITE_LAUNCHER_PORT}
+    if command -v node >/dev/null 2>&1; then
+      node "$launcher_script" --port {SUITE_LAUNCHER_PORT}
+    else
+      (cd "${{SCRIPT_DIR}}/{SUITE_LAUNCHER_PACKAGE_DIR}" && python3 -m http.server {SUITE_LAUNCHER_PORT} --bind 127.0.0.1)
+    fi
     ;;
   install)
     python3 "${{LIFECYCLE}}" install "${{LIFECYCLE_MODE_ARGS[@]}}" "${{LIFECYCLE_MODULE_ARGS[@]}}"
@@ -2489,7 +2494,7 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 8 GB RAM and 60 GB free disk for the full city-core
+- The host has at least 8 GB RAM and 25 GB free disk for the full city-core
   stack.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
@@ -4011,6 +4016,8 @@ def main() -> int:
         return 2
 
     print(json.dumps(plan, indent=2, sort_keys=True))
+    if args.show_readiness and plan.get("readiness", {}).get("status") == "blocked":
+        return 1
     if args.run_cleanroom_gate and plan.get("status") != "passed":
         return 1
     return 0

@@ -282,15 +282,15 @@ case "${MODE}" in
     ;;
   launcher)
     launcher_script="${SCRIPT_DIR}/suite-launcher/scripts/serve.mjs"
-    if ! command -v node >/dev/null 2>&1; then
-      echo "Node.js is required to serve the suite launcher. Install Node.js 20+, reopen this terminal, then rerun launcher mode." >&2
-      exit 2
-    fi
     if [[ ! -f "$launcher_script" ]]; then
       echo "Suite launcher files are missing from this package. Regenerate the city-core package before serving the launcher." >&2
       exit 2
     fi
-    node "$launcher_script" --port 18082
+    if command -v node >/dev/null 2>&1; then
+      node "$launcher_script" --port 18082
+    else
+      (cd "${SCRIPT_DIR}/suite-launcher" && python3 -m http.server 18082 --bind 127.0.0.1)
+    fi
     ;;
   install)
     python3 "${LIFECYCLE}" install "${LIFECYCLE_MODE_ARGS[@]}" "${LIFECYCLE_MODULE_ARGS[@]}"

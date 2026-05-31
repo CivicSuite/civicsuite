@@ -30,6 +30,8 @@ DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
 DEFAULT_CODE_PORTS = {"api": 18820}
 DEFAULT_SUITE_LAUNCHER_PORT = 18082
+DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
+DEFAULT_LLM_MODEL = "gemma4:e4b"
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
 SUITE_LAUNCHER_DIR_NAME = "suite-launcher"
 SUITE_SESSION_ENV = "CIVICCORE_SUITE_SESSION_SECRET"
@@ -616,6 +618,7 @@ def write_records_override(target: Path, ports: dict[str, int]) -> Path:
         f"""services:
   api:
     environment:
+      {SUITE_SESSION_ENV}: ${{{SUITE_SESSION_ENV}:-}}
       {SUITE_SESSION_REVOCATION_ENV}: {SUITE_SESSION_REVOCATION_CONTAINER_PATH}
     volumes:
       - {SUITE_SHARED_BIND}
@@ -635,8 +638,15 @@ def write_clerk_handoff_override(target: Path, shared_network: str) -> Path:
     path = target / "docker-compose.civicsuite.override.yml"
     path.write_text(
         f"""services:
+  ollama:
+    networks:
+      default: {{}}
+      citycore_handoff:
+        aliases:
+          - citycore-ollama
   api:
     environment:
+      {SUITE_SESSION_ENV}: ${{{SUITE_SESSION_ENV}:-}}
       {SUITE_SESSION_REVOCATION_ENV}: {SUITE_SESSION_REVOCATION_CONTAINER_PATH}
     volumes:
       - {SUITE_SHARED_BIND}
@@ -660,7 +670,12 @@ def write_code_handoff_override(target: Path, shared_network: str) -> Path:
         f"""services:
   api:
     environment:
+      {SUITE_SESSION_ENV}: ${{{SUITE_SESSION_ENV}:-}}
       {SUITE_SESSION_REVOCATION_ENV}: {SUITE_SESSION_REVOCATION_CONTAINER_PATH}
+      CIVICCODE_OLLAMA_URL: http://citycore-ollama:11434
+      CIVICCODE_OLLAMA_MODEL: {DEFAULT_LLM_MODEL}
+      CIVICCODE_OLLAMA_EMBEDDING_URL: http://citycore-ollama:11434
+      CIVICCODE_OLLAMA_EMBEDDING_MODEL: {DEFAULT_EMBEDDING_MODEL}
     volumes:
       - {SUITE_SHARED_BIND}
     networks:
@@ -688,6 +703,75 @@ def ensure_shared_network(shared_network: str) -> subprocess.CompletedProcess[st
 
 def remove_shared_network(shared_network: str) -> subprocess.CompletedProcess[str]:
     return run([docker_command(), "network", "rm", shared_network], cwd=ROOT, timeout=60)
+
+
+def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
+    modules = ctx["selected_modules"]  # type: ignore[assignment]
+    steps: list[dict[str, object]] = []
+    targets: list[tuple[str, str, Path]] = []
+    if MODULE_RECORDS in modules:
+        targets.append(
+            (
+                MODULE_RECORDS,
+                str(ctx["records_project"]),
+                Path(ctx["records_source"]),  # type: ignore[arg-type]
+            )
+        )
+    if MODULE_CLERK in modules:
+        targets.append(
+            (
+                MODULE_CLERK,
+                str(ctx["clerk_project"]),
+                Path(ctx["clerk_source"]),  # type: ignore[arg-type]
+            )
+        )
+    for module, project, source in targets:
+        for model in (DEFAULT_EMBEDDING_MODEL, DEFAULT_LLM_MODEL):
+            proc = run(
+                compose(project, source, "exec", "-T", "ollama", "ollama", "pull", model),
+                cwd=source,
+                timeout=3600,
+            )
+            steps.append(
+                {
+                    "module": module,
+                    "step": "ollama_pull_model",
+                    "model": model,
+                    "returncode": proc.returncode,
+                    "stdout": proc.stdout[-4000:],
+                    "stderr": proc.stderr[-4000:],
+                }
+            )
+            if proc.returncode != 0:
+                return steps
+        proc = run(
+            compose(
+                project,
+                source,
+                "exec",
+                "-T",
+                "ollama",
+                "ollama",
+                "run",
+                DEFAULT_LLM_MODEL,
+                "Respond with OK.",
+            ),
+            cwd=source,
+            timeout=3600,
+        )
+        steps.append(
+            {
+                "module": module,
+                "step": "ollama_prewarm_model",
+                "model": DEFAULT_LLM_MODEL,
+                "returncode": proc.returncode,
+                "stdout": proc.stdout[-4000:],
+                "stderr": proc.stderr[-4000:],
+            }
+        )
+        if proc.returncode != 0:
+            return steps
+    return steps
 
 
 def normalize_records_compose_ports(target: Path, ports: dict[str, int] | None = None) -> None:
@@ -2020,6 +2104,10 @@ def install(
         steps.append(compose_up_step)
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
+    model_steps = ensure_ollama_models(ctx)
+    steps.extend(model_steps)
+    if any(step.get("returncode") != 0 for step in model_steps):
+        return {"status": "failed", "steps": steps}
     result = verify(
         install_root,
         isolation=isolation,

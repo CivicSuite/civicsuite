@@ -28,7 +28,7 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 8 GB RAM and 60 GB free disk for the full city-core
+- The host has at least 8 GB RAM and 25 GB free disk for the full city-core
   stack.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.

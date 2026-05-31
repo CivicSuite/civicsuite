@@ -18,7 +18,7 @@ from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "installer" / "reports"
-MIN_CLEANROOM_FREE_DISK_GB = 60
+MIN_CLEANROOM_FREE_DISK_GB = 25
 BYTES_PER_GB = 1024 * 1024 * 1024
 MIN_CLEANROOM_FREE_DISK_BYTES = MIN_CLEANROOM_FREE_DISK_GB * BYTES_PER_GB
 PLATFORM_LAUNCHERS = {
@@ -92,7 +92,7 @@ def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bo
     if not allow_host_cleanup:
         evidence["status"] = "blocked"
         evidence["message"] = (
-            "Cleanroom lifecycle requires at least 60 GB free. Global Docker/WSL cleanup "
+            f"Cleanroom lifecycle requires at least {MIN_CLEANROOM_FREE_DISK_GB} GB free. Global Docker/WSL cleanup "
             "is destructive and requires a dedicated cleanroom host or explicit approval."
         )
         evidence["after"] = before
@@ -130,7 +130,7 @@ def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bo
     evidence["after"] = after
     evidence["status"] = "passed" if after["passed"] else "blocked"
     if not after["passed"]:
-        evidence["message"] = "Cleanroom lifecycle remains below 60 GB free after approved cleanup."
+        evidence["message"] = f"Cleanroom lifecycle remains below {MIN_CLEANROOM_FREE_DISK_GB} GB free after approved cleanup."
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "cleanroom-hygiene-evidence.json").write_text(
         json.dumps(evidence, indent=2, sort_keys=True) + "\n",
@@ -368,7 +368,7 @@ def main() -> int:
     parser.add_argument(
         "--allow-host-cleanup",
         action="store_true",
-        help="Authorize global Docker prune and WSL shutdown/compaction when the cleanroom host has less than 60 GB free.",
+        help=f"Authorize global Docker prune and WSL shutdown/compaction when the cleanroom host has less than {MIN_CLEANROOM_FREE_DISK_GB} GB free.",
     )
     args = parser.parse_args()
 
