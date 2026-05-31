@@ -38,6 +38,7 @@ CHECKS: list[tuple[str, list[str]]] = [
     ("check_audit_gate_authority", ["check_audit_gate_authority.py"]),
     ("check_audit_head_consistency", ["check_audit_head_consistency.py"]),
     ("check_audit_artifact_completeness", ["check_audit_artifact_completeness.py"]),
+    ("check_stage_evidence", ["check_stage_evidence.py"]),
     ("check_workflow_cost_ledger", ["check_workflow_cost_ledger.py"]),
     ("check_user_manual_artifacts", ["check_user_manual_artifacts.py"]),
     # v1.2.0: STAGE_DONE markers required through `execute` by policy stage.
