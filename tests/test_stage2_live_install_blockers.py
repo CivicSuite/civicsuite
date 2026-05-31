@@ -51,6 +51,10 @@ def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> 
     clerk_text = (clerk / "docker-compose.civicsuite.override.yml").read_text(encoding="utf-8")
     assert "citycore-ollama" in clerk_text
 
+    runner.write_records_env(records / ".env", {"api": 18000, "web": 18080})
+    records_env = (records / ".env").read_text(encoding="utf-8")
+    assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS=8" in records_env
+
 
 def test_ollama_model_prepare_pulls_and_prewarms_llm() -> None:
     runner = _load_installer_runner()
@@ -70,7 +74,9 @@ def test_records_response_letter_workflow_allows_llm_fallback_timeout() -> None:
     text = Path(runner.__file__).read_text(encoding="utf-8")
 
     assert "RESPONSE_LETTER_TIMEOUT_SECONDS = 180" in text
+    assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8" in text
     assert "timeout_seconds=RESPONSE_LETTER_TIMEOUT_SECONDS" in text
+    assert "JSON POST timed out or failed before the service returned a response" in text
 
 
 def test_civiccode_qa_workflow_allows_deterministic_fallback_timeout() -> None:
@@ -122,6 +128,23 @@ def test_generated_package_readme_uses_25_gb_disk_floor() -> None:
     assert "25 GB free disk" in text
     assert "60 * 1024 * 1024 * 1024" not in text
     assert "60 GB free disk" not in text
+
+
+def test_plan_installer_can_use_module_source_override() -> None:
+    planner = ROOT / "scripts" / "plan-installer.py"
+    text = planner.read_text(encoding="utf-8")
+
+    assert "CIVICSUITE_SOURCE_ROOT_" in text
+    assert 're.sub(r"[^A-Z0-9]+", "_", module_name.upper()).strip("_")' in text
+
+
+def test_verify_starts_suite_launcher_http_probe() -> None:
+    runner = _load_installer_runner()
+    text = Path(runner.__file__).read_text(encoding="utf-8")
+
+    assert "def verify_suite_launcher_serves" in text
+    assert '"suite_launcher_http"' in text
+    assert "python_http_server" in text
 
 
 def test_generated_launcher_has_python_fallback_for_suite_launcher() -> None:

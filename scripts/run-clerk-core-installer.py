@@ -18,6 +18,7 @@ import urllib.parse
 import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from socket import timeout as SocketTimeout
 from uuid import uuid4
 
 
@@ -33,6 +34,7 @@ DEFAULT_SUITE_LAUNCHER_PORT = 18082
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 DEFAULT_LLM_MODEL = "gemma4:e4b"
 RESPONSE_LETTER_TIMEOUT_SECONDS = 180
+RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8
 CODE_QA_TIMEOUT_SECONDS = 60
 CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
@@ -592,6 +594,7 @@ def write_records_env(
         "DATABASE_URL": "postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords",
         "FIRST_ADMIN_EMAIL": os.environ.get("CIVICSUITE_FIRST_ADMIN_EMAIL", "admin@example.gov"),
         "OLLAMA_BASE_URL": "http://ollama:11434",
+        "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS": str(RESPONSE_LETTER_LLM_TIMEOUT_SECONDS),
         "REDIS_URL": "redis://redis:6379/0",
         "AUDIT_RETENTION_DAYS": "1095",
         "CONNECTOR_HOST_ALLOWLIST": "",
@@ -978,6 +981,15 @@ def get_json(
             return response.status, decode_json(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         return exc.code, decode_json(exc.read().decode("utf-8"))
+    except (TimeoutError, SocketTimeout, urllib.error.URLError) as exc:
+        reason = getattr(exc, "reason", exc)
+        return 598, {
+            "detail": {
+                "message": "JSON POST timed out or failed before the service returned a response.",
+                "timeout_seconds": timeout_seconds,
+                "error": str(reason),
+            }
+        }
 
 
 def post_json(
@@ -2236,6 +2248,52 @@ def verify_suite_runtime_wiring(ctx: dict[str, object]) -> list[dict[str, object
     return checks
 
 
+def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
+    launcher_root = Path(ctx["install_root"]) / SUITE_LAUNCHER_DIR_NAME  # type: ignore[arg-type]
+    url = f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
+    if not launcher_root.is_dir():
+        return {
+            "name": "suite_launcher_http",
+            "status": "failed",
+            "url": url,
+            "path": str(launcher_root),
+            "fix_steps": ["Run install or repair so the suite launcher runtime is copied before verification."],
+        }
+
+    already_running = wait_for_url(url, timeout_seconds=3)
+    if already_running["status"] == "passed":
+        return {"name": "suite_launcher_http", "status": "passed", "url": url, "mode": "already_running"}
+
+    proc = subprocess.Popen(  # noqa: S603 - local verification server, no shell.
+        [sys.executable, "-m", "http.server", str(DEFAULT_SUITE_LAUNCHER_PORT), "--bind", "127.0.0.1"],
+        cwd=launcher_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        proof = wait_for_url(url, timeout_seconds=20)
+        return {
+            "name": "suite_launcher_http",
+            "status": proof["status"],
+            "url": url,
+            "mode": "python_http_server",
+            "attempts": proof.get("attempts", []),
+            "fix_steps": [
+                "Confirm localhost port 18082 is free.",
+                "Confirm the packaged suite launcher can be served from the runtime directory.",
+            ]
+            if proof["status"] != "passed"
+            else [],
+        }
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
 def verify(
     install_root: Path,
     *,
@@ -2257,6 +2315,7 @@ def verify(
     code_api_passed = False
     if uses_suite_runtime(modules):
         checks.extend(verify_suite_runtime_wiring(ctx))
+        checks.append(verify_suite_launcher_serves(ctx))
     if MODULE_RECORDS in modules:
         records_api = {"name": "civicrecords_api", "url": f"http://127.0.0.1:{records_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{records_ports['api']}/health", timeout_seconds=180)}
         checks.append(records_api)

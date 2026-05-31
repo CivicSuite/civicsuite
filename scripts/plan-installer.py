@@ -7,7 +7,9 @@ import ctypes
 import gzip
 import hashlib
 import json
+import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -2916,7 +2918,9 @@ def _archive_directory(source: Path, target: Path, *, platform_id: str) -> None:
 
 
 def _copy_bundle_source(module_name: str, target: Path) -> None:
-    source = ROOT / "modules" / module_name
+    env_key = "CIVICSUITE_SOURCE_ROOT_" + re.sub(r"[^A-Z0-9]+", "_", module_name.upper()).strip("_")
+    override = os.environ.get(env_key)
+    source = Path(override) if override else ROOT / "modules" / module_name
     if not source.is_dir():
         source = ROOT.parent / module_name
     if not source.is_dir():

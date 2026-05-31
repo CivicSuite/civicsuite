@@ -110,6 +110,56 @@ Notes:
 
 Commits:
 
+- `e094606a84c8679cdf0d098c1ab29316dc6ac23c` - package lifecycle proof and tester artifacts
+
+### Slice 3 - Close clean-machine response-letter timeout blocker
+
+Status: Implemented, pending Claude clean-machine retest
+
+Changed files:
+
+- `C:\dev\Claude\civicrecords-ai-stage2-response-letter\backend\app\config.py`
+- `C:\dev\Claude\civicrecords-ai-stage2-response-letter\backend\app\requests\router.py`
+- `C:\dev\Claude\civicrecords-ai-stage2-response-letter\backend\tests\test_response_letter.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\plan-installer.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\run-clerk-core-installer.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\tests\test_stage2_live_install_blockers.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-0.1.2-SHA256SUMS.txt`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-0.1.2-release-manifest.json`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-linux-0.1.2.run`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-linux-0.1.2.tar.gz`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-macos-0.1.2.tar.gz`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-windows-0.1.2.cmd`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\dist\CivicSuite-city-core-windows-0.1.2.zip`
+
+Audit-lite report:
+
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-2-slice-3-response-letter-timeout-2026-05-31.md`
+
+Evidence:
+
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\evidence\stage-2-live-install-blockers-2026-05-31\slice-3-response-letter-timeout\windows-lifecycle-response-letter-r1.json`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\evidence\stage-2-live-install-blockers-2026-05-31\slice-3-response-letter-timeout\windows-lifecycle-response-letter-r1-final-uninstall.json`
+
+Local checks:
+
+- `python -m pytest backend/tests/test_response_letter.py -q` from `C:\dev\Claude\civicrecords-ai-stage2-response-letter`
+- `python -m pytest tests/test_stage2_live_install_blockers.py -q`
+- `git diff --check`
+- `$env:CIVICSUITE_SOURCE_ROOT_CIVICRECORDS_AI='C:\dev\Claude\civicrecords-ai-stage2-response-letter'; python scripts/plan-installer.py --profile city-core --generate-release-artifacts --installer-version 0.1.2 --package-platform all`
+- `python scripts/run-installer-package-cleanroom.py --archive installer/dist/CivicSuite-city-core-windows-0.1.2.zip --platform windows --run-id stage2-slice3-windows-lifecycle-response-letter-r1 --staff-mode bearer --workflow-proof`
+- `$env:CIVICSUITE_INSTALLER_INSTALL_ROOT='C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\runtime\clerk-core'; $env:CIVICSUITE_INSTALLER_RUN_ID='clerk-core-install-20260531T155223Z-5ff57d94'; python scripts/run-clerk-core-installer.py uninstall --module civicrecords-ai --module civicclerk --module civiccode --remove-files`
+
+Notes:
+
+- CivicRecords AI source branch `stage-2-response-letter-timeout-2026-05-31` was pushed at `35e014be438b84326ec9eac1f4767d54de5800c7`.
+- The rebuilt city-core artifact vendors that exact source commit.
+- Windows lifecycle `stage2-slice3-windows-lifecycle-response-letter-r1` passed with `draft_response_letter` returning `201` and `suite_launcher_http` returning `passed`.
+- The new Records AI timeout fallback unit test passed; two existing endpoint tests need the test DB hostname `postgres` and errored before reaching this slice's change on this host.
+
+Commits:
+
 - Pending
 
 ## Stage Closeout

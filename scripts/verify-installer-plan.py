@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 import argparse
@@ -166,6 +167,40 @@ def load_manifest() -> dict[str, object]:
     if not isinstance(data, dict):
         raise AssertionError("manifest root must be a JSON object")
     return data
+
+
+def _git_head(path: Path) -> str | None:
+    proc = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "HEAD"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+def configure_source_root_overrides(manifest: dict[str, object]) -> None:
+    modules = manifest.get("modules", [])
+    if not isinstance(modules, list):
+        return
+    for module in modules:
+        if not isinstance(module, dict):
+            continue
+        module_id = str(module.get("id") or "")
+        declared = str(module.get("source_commit") or "")
+        if not module_id or not declared:
+            continue
+        env_key = "CIVICSUITE_SOURCE_ROOT_" + re.sub(r"[^A-Z0-9]+", "_", module_id.upper()).strip("_")
+        if os.environ.get(env_key):
+            continue
+        default_source = ROOT.parent / module_id
+        if default_source.is_dir() and _git_head(default_source) == declared:
+            continue
+        for candidate in sorted(ROOT.parent.glob(f"{module_id}-*")):
+            if candidate.is_dir() and _git_head(candidate) == declared:
+                os.environ[env_key] = str(candidate)
+                break
 
 
 def has_local_civiccore_wheel() -> bool:
@@ -2448,6 +2483,7 @@ def main() -> int:
         else:
             try:
                 manifest = load_manifest()
+                configure_source_root_overrides(manifest)
                 errors.extend(check_manifest(manifest))
                 errors.extend(check_planner(manifest))
                 errors.extend(check_launchers())

@@ -1,0 +1,403 @@
+{
+  "archive": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
+  "bundle_root": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice3-windows-lifecycle-response-letter-r1\\extracted\\CivicSuite-city-core-windows",
+  "certification_scope": "Matching-host install, repair, verify, backup, restore, and uninstall lifecycle evidence.",
+  "civicclerk_staff_mode": "bearer",
+  "cleanroom_hygiene": {
+    "after": {
+      "free_bytes": 125630705664,
+      "passed": true,
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29",
+      "required_free_bytes": 26843545600,
+      "required_free_gb": 25,
+      "total_bytes": 1022115180544,
+      "used_bytes": 896484474880
+    },
+    "before": {
+      "free_bytes": 125630705664,
+      "passed": true,
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29",
+      "required_free_bytes": 26843545600,
+      "required_free_gb": 25,
+      "total_bytes": 1022115180544,
+      "used_bytes": 896484474880
+    },
+    "cleanup_approved": false,
+    "cleanup_steps": [],
+    "minimum_free_disk_bytes": 26843545600,
+    "minimum_free_disk_gb": 25,
+    "status": "passed"
+  },
+  "evidence_classification": "matching_host_lifecycle",
+  "extracted_bundle_retained": false,
+  "host_platform": "win32",
+  "host_platform_matches_target": true,
+  "lifecycle_isolation": {
+    "environment": {
+      "CIVICSUITE_INSTALLER_INSTALL_ROOT": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice3-windows-lifecycle-response-letter-r1\\extracted\\CivicSuite-city-core-windows\\r",
+      "CIVICSUITE_INSTALLER_RUN_ID": "stage2-slice3-windows-lifecycle-response-letter-r1"
+    },
+    "resolved_modes": [
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "preclean",
+        "mutates_host": true,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      },
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "install",
+        "mutates_host": true,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      },
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "repair",
+        "mutates_host": true,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      },
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "verify",
+        "mutates_host": false,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      },
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "backup",
+        "mutates_host": true,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      },
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "restore",
+        "mutates_host": true,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      },
+      {
+        "compose_projects": {
+          "civicclerk": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk",
+          "civiccode": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code",
+          "civicrecords-ai": "civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records"
+        },
+        "isolation_id": "stage2-slice3-windows-lifecycle-respons-8d900950",
+        "mode": "uninstall",
+        "mutates_host": true,
+        "port_offset": 240,
+        "ports": {
+          "civicclerk": {
+            "api": 19016,
+            "web": 18321
+          },
+          "civiccode": {
+            "api": 19060
+          },
+          "civicrecords-ai": {
+            "api": 18240,
+            "web": 18320
+          },
+          "suite-launcher": {
+            "web": 18082
+          }
+        },
+        "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+        "status": "passed"
+      }
+    ],
+    "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1"
+  },
+  "mutates_host": true,
+  "normalized_host_platform": "windows",
+  "platform": "windows",
+  "requested_mutating_lifecycle": true,
+  "retained_lifecycle_evidence": [
+    "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice3-windows-lifecycle-response-letter-r1\\retained-lifecycle-evidence\\installer\\reports\\stage2-slice3-windows-lifecycle-response-letter-r1\\clerk-core-installer-lifecycle.json"
+  ],
+  "run_id": "stage2-slice3-windows-lifecycle-response-letter-r1",
+  "status": "passed",
+  "steps": [
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1"
+      ],
+      "mode": "readiness",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"detection_source\": \"host_read_only\",\n  \"dry_run\": true,\n  \"host\": {\n    \"machine\": \"AMD64\",\n    \"release\": \"11\",\n    \"system\": \"Windows\"\n  },\n  \"menu_style\": {\n    \"description\": \"Step-by-step setup for operators who want recommendations.\",\n    \"id\": \"guided\",\n    \"label\": \"Guided Setup\"\n  },\n  \"mutates_host\": false,\n  \"profile\": \"city-core\",\n  \"readiness\": {\n    \"checks\": [\n      {\n        \"evidence\": {\n          \"docker_path\": \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\resources\\\\bin\\\\docker.EXE\",\n          \"probe\": {\n            \"detail\": \"29.4.0\",\n            \"ok\": true\n          }\n        },\n        \"fix_steps\": [],\n        \"id\": \"container-runtime\",\n        \"message\": \"Container runtime is available for CivicSuite services.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"docker_probe\": {\n            \"detail\": \"29.4.0\",\n            \"ok\": true\n          },\n          \"probe\": {\n            \"detail\": \"Default Distribution: Ubuntu\",\n            \"ok\": true\n          },\n          \"wsl_path\": \"C:\\\\WINDOWS\\\\system32\\\\wsl.exe\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"wsl2\",\n        \"message\": \"WSL 2 support is available for Docker Desktop on Windows.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"free_disk_bytes\": 125599035392,\n          \"memory_bytes\": 31057444864,\n          \"required_free_disk_bytes\": 26843545600,\n          \"required_memory_bytes\": 8589934592\n        },\n        \"fix_steps\": [],\n        \"id\": \"disk-memory\",\n        \"message\": \"Host resources are sufficient for the selected profile.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"ollama_path\": \"C:\\\\Users\\\\scott\\\\AppData\\\\Local\\\\Programs\\\\Ollama\\\\ollama.EXE\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"ollama\",\n        \"message\": \"Ollama is available when local LLM features are selected.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"port\": 18082,\n          \"source\": \"installer\\\\runtime\\\\suite-launcher\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"suite-launcher-runtime\",\n        \"message\": \"Suite launcher runtime files are present for city-core on localhost:18082.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n          \"value_source\": \"generated on first install if missing\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"shared-staff-session-env\",\n        \"message\": \"Shared staff session check is planned through CIVICCORE_SUITE_SESSION_SECRET.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"note\": \"Compatibility is manifest-based in this dry-run slice.\",\n          \"source\": \"installer/modules.json\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"civiccore-compatibility\",\n        \"message\": \"Selected modules are compatible with their recorded CivicCore requirements.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      }\n    ],\n    \"next_action\": \"Continue to dry-run install planning; no host changes have been made.\",\n    \"status\": \"ready\"\n  },\n  \"scenario\": \"nominal\"\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Plan"
+      ],
+      "mode": "plan",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"actions\": [\n    {\n      \"description\": \"Docker Desktop or Docker Engine is installed and running.\",\n      \"id\": \"container-runtime\",\n      \"mode\": \"detect_or_guide\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"WSL 2 and Virtual Machine Platform are enabled when Docker Desktop requires them.\",\n      \"id\": \"wsl2\",\n      \"mode\": \"detect_or_guide\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Host has enough RAM and disk for the selected profile.\",\n      \"id\": \"disk-memory\",\n      \"mode\": \"detect\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Ollama is available when the selected profile enables local LLM features.\",\n      \"id\": \"ollama\",\n      \"mode\": \"optional\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Suite launcher runtime files are packaged and planned for localhost:18082.\",\n      \"id\": \"suite-launcher-runtime\",\n      \"mode\": \"file_and_port_plan\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Shared staff session env var CIVICCORE_SUITE_SESSION_SECRET is created at runtime if missing and shared with selected services.\",\n      \"id\": \"shared-staff-session-env\",\n      \"mode\": \"env_plan\",\n      \"type\": \"check\"\n    },\n    {\n      \"civiccore_requirement\": null,\n      \"display_name\": \"CivicCore\",\n      \"module\": \"civiccore\",\n      \"proof_required\": [\n        \"install\",\n        \"version_check\",\n        \"compatibility_matrix_check\"\n      ],\n      \"repo\": \"CivicSuite/civiccore\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicRecords AI\",\n      \"module\": \"civicrecords-ai\",\n      \"proof_required\": [\n        \"install\",\n        \"health_check\",\n        \"restart\",\n        \"repair\",\n        \"backup\",\n        \"restore\"\n      ],\n      \"repo\": \"CivicSuite/civicrecords-ai\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicClerk\",\n      \"module\": \"civicclerk\",\n      \"proof_required\": [\n        \"install\",\n        \"health_check\",\n        \"restart\",\n        \"repair\",\n        \"backup\",\n        \"restore\"\n      ],\n      \"repo\": \"CivicSuite/civicclerk\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicCode\",\n      \"module\": \"civiccode\",\n      \"proof_required\": [\n        \"module_selection\",\n        \"install_plan\",\n        \"artifact_resolution\",\n        \"health_check\",\n        \"restart\",\n        \"release_artifacts\",\n        \"release_attestation\"\n      ],\n      \"repo\": \"CivicSuite/civiccode\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"component\": \"suite-launcher\",\n      \"modules\": [\n        {\n          \"href\": \"http://127.0.0.1:18080/\",\n          \"id\": \"records\",\n          \"port\": 18080\n        },\n        {\n          \"href\": \"http://127.0.0.1:18081/\",\n          \"id\": \"clerk\",\n          \"port\": 18081\n        },\n        {\n          \"href\": \"http://127.0.0.1:18820/\",\n          \"id\": \"code\",\n          \"port\": 18820\n        }\n      ],\n      \"port\": 18082,\n      \"shared_staff_session\": {\n        \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n        \"persisted_value_in_plan\": false,\n        \"revocation_env_var\": \"CIVICCORE_SUITE_SESSION_REVOCATION_FILE\",\n        \"revocation_file\": \"/civicsuite-shared/civiccore_suite_session_revocations.json\",\n        \"value_source\": \"generated on first install if missing\"\n      },\n      \"source\": \"installer\\\\runtime\\\\suite-launcher\",\n      \"type\": \"configure_runtime\",\n      \"url\": \"http://127.0.0.1:18082/\"\n    },\n    {\n      \"profile\": \"city-core\",\n      \"proof\": [\n        \"health_checks\",\n        \"restart\",\n        \"backup\",\n        \"restore\",\n        \"actionable_failure_copy\",\n        \"suite_launcher_files\",\n        \"suite_launcher_port_config\",\n        \"shared_staff_session_check\"\n      ],\n      \"type\": \"verify_profile\"\n    }\n  ],\n  \"dry_run\": true,\n  \"host\": {\n    \"machine\": \"AMD64\",\n    \"release\": \"11\",\n    \"system\": \"Windows\"\n  },\n  \"menu_style\": {\n    \"description\": \"Step-by-step setup for operators who want recommendations.\",\n    \"id\": \"guided\",\n    \"label\": \"Guided Setup\"\n  },\n  \"modules\": [\n    \"civiccore\",\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"mutates_host\": false,\n  \"profile\": \"city-core\",\n  \"profile_label\": \"City Core\"\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Uninstall"
+      ],
+      "mode": "preclean",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"civicclerk_staff_mode\": \"protected\",\n  \"compose_projects\": {\n    \"civicclerk\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk\",\n    \"civiccode\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code\",\n    \"civicrecords-ai\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records\"\n  },\n  \"finished_at\": \"2026-05-31T16:48:00.454546+00:00\",\n  \"install_root\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r\",\n  \"isolation_id\": \"stage2-slice3-windows-lifecycle-respons-8d900950\",\n  \"mode\": \"uninstall\",\n  \"mutates_host\": true,\n  \"port_offset\": 240,\n  \"ports\": {\n    \"civicclerk\": {\n      \"api\": 19016,\n      \"web\": 18321\n    },\n    \"civiccode\": {\n      \"api\": 19060\n    },\n    \"civicrecords-ai\": {\n      \"api\": 18240,\n      \"web\": 18320\n    },\n    \"suite-launcher\": {\n      \"web\": 18082\n    }\n  },\n  \"run_id\": \"stage2-slice3-windows-lifecycle-response-letter-r1\",\n  \"selected_modules\": [\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"started_at\": \"2026-05-31T16:48:00.403461+00:00\",\n  \"status\": \"passed\",\n  \"steps\": [\n    {\n      \"module\": \"civicrecords-ai\",\n      \"status\": \"skipped_missing_source\",\n      \"step\": \"compose_down\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"status\": \"skipped_missing_source\",\n      \"step\": \"compose_down\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"status\": \"skipped_missing_source\",\n      \"step\": \"compose_down\"\n    },\n    {\n      \"module\": \"city-core\",\n      \"network\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-citycore\",\n      \"returncode\": 1,\n      \"status\": \"skipped_or_in_use\",\n      \"stderr\": \"Error response from daemon: network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-citycore not found\\nexit status 1\\n\",\n      \"stdout\": \"\",\n      \"step\": \"remove_shared_handoff_network\"\n    }\n  ]\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Install",
+        "-StaffMode",
+        "bearer",
+        "-WorkflowProof"
+      ],
+      "mode": "install",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "        \"departments_present\": true,\n              \"file_types_present\": true,\n              \"name\": \"search_records\",\n              \"source_names_present\": true,\n              \"status_code\": 200\n            },\n            {\n              \"name\": \"mark_request_searching\",\n              \"status\": \"searching\",\n              \"status_code\": 200\n            },\n            {\n              \"name\": \"submit_request_review\",\n              \"status\": \"in_review\",\n              \"status_code\": 200\n            },\n            {\n              \"contains_ai_disclaimer\": true,\n              \"human_review_required\": true,\n              \"letter_id_present\": true,\n              \"name\": \"draft_response_letter\",\n              \"status\": \"draft\",\n              \"status_code\": 201\n            },\n            {\n              \"name\": \"mark_ready_for_release\",\n              \"status\": \"ready_for_release\",\n              \"status_code\": 200\n            }\n          ],\n          \"name\": \"civicrecords_workflow\",\n          \"status\": \"passed\"\n        },\n        {\n          \"checks\": [\n            {\n              \"mode\": \"bearer\",\n              \"name\": \"staff_session\",\n              \"roles\": [\n                \"clerk_admin\",\n                \"meeting_editor\"\n              ],\n              \"status_code\": 200,\n              \"token_fingerprint_present\": true\n            },\n            {\n              \"item_id_present\": true,\n              \"name\": \"create_agenda_intake\",\n              \"status_code\": 201,\n              \"title_matches\": true\n            },\n            {\n              \"name\": \"review_agenda_intake\",\n              \"readiness_status\": \"READY\",\n              \"status_code\": 200\n            },\n            {\n              \"agenda_item_id_present\": true,\n              \"name\": \"promote_agenda_intake\",\n              \"next_step\": \"Add the agenda item to the target meeting packet assembly.\",\n              \"status_code\": 201\n            },\n            {\n              \"created_item_listed\": true,\n              \"name\": \"list_agenda_intake\",\n              \"status_code\": 200\n            },\n            {\n              \"meeting_body_id_present\": true,\n              \"name\": \"create_meeting_body\",\n              \"status_code\": 201\n            },\n            {\n              \"meeting_id_present\": true,\n              \"name\": \"create_meeting\",\n              \"status_code\": 201\n            },\n            {\n              \"name\": \"create_packet_assembly\",\n              \"packet_id_present\": true,\n              \"status_code\": 201\n            },\n            {\n              \"name\": \"finalize_packet_assembly\",\n              \"status\": \"FINALIZED\",\n              \"status_code\": 200\n            },\n            {\n              \"compliant\": true,\n              \"name\": \"create_notice_checklist\",\n              \"notice_id_present\": true,\n              \"status_code\": 201\n            },\n            {\n              \"name\": \"attach_notice_posting_proof\",\n              \"posting_proof_present\": true,\n              \"status_code\": 200\n            },\n            {\n              \"motion_id_present\": true,\n              \"name\": \"capture_motion\",\n              \"status_code\": 201\n            },\n            {\n              \"name\": \"capture_vote\",\n              \"status_code\": 201,\n              \"vote_id_present\": true\n            },\n            {\n              \"human_review_required\": false,\n              \"minute_id_present\": true,\n              \"name\": \"create_minutes_draft\",\n              \"status_code\": 201\n            },\n            {\n              \"guardrail_triggered\": true,\n              \"name\": \"reject_auto_minutes_post\",\n              \"payload\": {\n                \"detail\": {\n                  \"fix\": \"Review, cite-check, and adopt minutes through a human approval workflow before public posting.\",\n                  \"message\": \"AI-drafted minutes cannot be posted automatically.\"\n                }\n              },\n              \"status_code\": 409\n            },\n            {\n              \"archive_id_present\": true,\n              \"name\": \"publish_public_archive_record\",\n              \"status_code\": 201\n            },\n            {\n              \"archive_record_listed\": true,\n              \"name\": \"public_meeting_calendar\",\n              \"status_code\": 200\n            },\n            {\n              \"archive_record_found\": true,\n              \"name\": \"public_archive_search\",\n              \"status_code\": 200,\n              \"total_count\": 1\n            }\n          ],\n          \"name\": \"civicclerk_bearer_workflow\",\n          \"status\": \"passed\"\n        },\n        {\n          \"checks\": [\n            {\n              \"name\": \"health\",\n              \"payload\": {\n                \"civiccore\": \"1.2.0\",\n                \"service\": \"civiccode\",\n                \"status\": \"ok\",\n                \"version\": \"1.0.8\"\n              },\n              \"status_code\": 200\n            },\n            {\n              \"name\": \"seeded_section_lookup\",\n              \"status_code\": 200\n            },\n            {\n              \"name\": \"forged_staff_header_boundary\",\n              \"payload\": {\n                \"detail\": {\n                  \"fix\": \"Route CivicCode staff endpoint access requests through a reverse proxy inside CIVICCODE_STAFF_TRUSTED_PROXY_CIDRS and strip client-supplied copies of X-CivicCode-Actor and X-CivicCode-Role before they reach CivicCode.\",\n                  \"message\": \"Trusted staff headers were not received from an approved proxy.\"\n                }\n              },\n              \"status_code\": 403\n            }\n          ],\n          \"name\": \"civiccode_workflow\",\n          \"status\": \"passed\"\n        },\n        {\n          \"checks\": [\n            {\n              \"id_present\": true,\n              \"name\": \"clerk_create_meeting\",\n              \"status_code\": 201\n            },\n            {\n              \"id_present\": true,\n              \"name\": \"clerk_capture_adoption_motion\",\n              \"status_code\": 201\n            },\n            {\n              \"civiccode_event_id_present\": true,\n              \"handoff_last_error\": null,\n              \"handoff_status\": \"EMIT_DELIVERED\",\n              \"name\": \"clerk_emits_to_code\",\n              \"status_code\": 201\n            },\n            {\n              \"name\": \"code_pending_warning_visible\",\n              \"status_code\": 200,\n              \"target_warning_visible\": true,\n              \"warning_count\": 2\n            },\n            {\n              \"name\": \"code_create_codified_version\",\n              \"status_code\": 201,\n              \"version_id\": \"version_city_core_handoff_1780247040\"\n            },\n            {\n              \"handoff_state\": \"codified\",\n              \"name\": \"code_resolve_handoff\",\n              \"status_code\": 200\n            },\n            {\n              \"body_contains_eight_chickens\": true,\n              \"name\": \"code_lookup_after_resolution\",\n              \"status_code\": 200,\n              \"target_warning_cleared\": true,\n              \"warning_count\": 1\n            },\n            {\n              \"answer_mentions_eight\": true,\n              \"citation_count\": 1,\n              \"matched_section_number\": \"13.40.020\",\n              \"name\": \"code_qa_after_handoff\",\n              \"status\": \"ok\",\n              \"status_code\": 200\n            }\n          ],\n          \"name\": \"clerk_to_code_handoff\",\n          \"status\": \"passed\"\n        }\n      ],\n      \"name\": \"starter_set_runtime_workflows\",\n      \"selected_modules\": [\n        \"civicrecords-ai\",\n        \"civicclerk\",\n        \"civiccode\"\n      ],\n      \"status\": \"passed\"\n    },\n    {\n      \"checks\": [\n        {\n          \"name\": \"portal_mode_config\",\n          \"payload\": {\n            \"mode\": \"public\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"public_route_mounts\",\n          \"public_request_path_mounted\": true,\n          \"register_path_mounted\": true,\n          \"status_code\": 200\n        }\n      ],\n      \"expected_mode\": \"public\",\n      \"name\": \"civicrecords_portal_mode\",\n      \"status\": \"passed\"\n    }\n  ]\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Repair",
+        "-StaffMode",
+        "bearer"
+      ],
+      "mode": "repair",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "5-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/suite-launcher\",\n      \"status\": \"passed\"\n    },\n    {\n      \"expected_port\": 18082,\n      \"fix_steps\": [],\n      \"name\": \"suite_launcher_port_config\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/suite-launcher/civicsuite-launcher-config.json\",\n      \"status\": \"passed\"\n    },\n    {\n      \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n      \"fix_steps\": [],\n      \"module_env_checks\": [\n        {\n          \"env_path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/sources/civicrecords-ai/.env\",\n          \"module\": \"civicrecords-ai\",\n          \"present\": true,\n          \"revocation_file_env_present\": true\n        },\n        {\n          \"env_path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/sources/civicclerk/.env\",\n          \"module\": \"civicclerk\",\n          \"present\": true,\n          \"revocation_file_env_present\": true\n        },\n        {\n          \"env_path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/sources/civiccode/.env\",\n          \"module\": \"civiccode\",\n          \"present\": true,\n          \"revocation_file_env_present\": true\n        }\n      ],\n      \"name\": \"shared_staff_session_presence\",\n      \"revocation_env_var\": \"CIVICCORE_SUITE_SESSION_REVOCATION_FILE\",\n      \"revocation_file\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/shared/civiccore_suite_session_revocations.json\",\n      \"status\": \"passed\",\n      \"value_file\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/shared/civiccore_suite_session_value\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 7,\n          \"stderr\": \"curl: (7) Failed to connect to 127.0.0.1 port 18082 after 0 ms: Couldn't connect to server\\n\",\n          \"stdout\": \"\"\n        },\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n    <meta name=\\\"color-scheme\\\" content=\\\"light\\\">\\n    <title>CivicSuite Launcher</title>\\n    <link rel=\\\"stylesheet\\\" href=\\\"./src/styles.css\\\">\\n  </head>\\n  <body>\\n    <div id=\\\"app\\\"></div>\\n    <script src=\\\"./civicsuite-launcher-config.js\\\"></script>\\n    <script type\"\n        }\n      ],\n      \"fix_steps\": [],\n      \"mode\": \"python_http_server\",\n      \"name\": \"suite_launcher_http\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18082/\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"{\\\"status\\\":\\\"ok\\\",\\\"version\\\":\\\"1.7.3\\\"}\"\n        }\n      ],\n      \"name\": \"civicrecords_api\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18240/health\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"UTF-8\\\" />\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\" />\\n    <title>CivicRecords AI \\u2014 Admin</title>\\n    <script type=\\\"module\\\" crossorigin src=\\\"/assets/index-58Kzl4RM.js\\\"></script>\\n    <link rel=\\\"stylesheet\\\" crossorigin href=\\\"/assets/index-CLtiqYqY.css\\\">\\n  </head>\\n  <body>\\n    <div id=\\\"root\\\"></div>\\n  </body>\\n\"\n        }\n      ],\n      \"name\": \"civicrecords_web\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18320/\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"{\\\"status\\\":\\\"ok\\\",\\\"service\\\":\\\"civicclerk\\\",\\\"version\\\":\\\"1.0.3\\\",\\\"civiccore\\\":\\\"1.2.0\\\"}\"\n        }\n      ],\n      \"name\": \"civicclerk_api\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:19016/health\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"UTF-8\\\" />\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\" />\\n    <meta name=\\\"description\\\" content=\\\"CivicClerk staff workspace for meeting lifecycle, agenda, packet, notice, and minutes work.\\\" />\\n    <link rel=\\\"icon\\\" href=\\\"/favicon.svg\\\" type=\\\"image/svg+xml\\\" />\\n    <title>CivicClerk Staff Workspace</title>\\n    <sc\"\n        }\n      ],\n      \"name\": \"civicclerk_web\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18321/\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"{\\\"status\\\":\\\"ok\\\",\\\"service\\\":\\\"civiccode\\\",\\\"version\\\":\\\"1.0.8\\\",\\\"civiccore\\\":\\\"1.2.0\\\"}\"\n        }\n      ],\n      \"name\": \"civiccode_api\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:19060/health\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n  <meta charset=\\\"utf-8\\\" />\\n  <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n  <link rel=\\\"icon\\\" href=\\\"data:,\\\" />\\n  <title>Search results for 13.40.020 - CivicCode</title>\\n  <style>\\n    :root {\\n      --ink: #1b261f;\\n      --paper: #f6f0e6;\\n      --card: #fffaf1;\\n      --line: #22382b;\\n      --moss: #496b50;\\n      --marigold: #d68c17;\\n  \"\n        }\n      ],\n      \"name\": \"civiccode_public_lookup\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:19060/civiccode/search?q=13.40.020\"\n    },\n    {\n      \"checks\": [\n        {\n          \"name\": \"civicrecords_health\",\n          \"payload\": {\n            \"status\": \"ok\",\n            \"version\": \"1.7.3\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"civicclerk_health\",\n          \"payload\": {\n            \"civiccore\": \"1.2.0\",\n            \"service\": \"civicclerk\",\n            \"status\": \"ok\",\n            \"version\": \"1.0.3\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"civiccode_health\",\n          \"payload\": {\n            \"civiccore\": \"1.2.0\",\n            \"service\": \"civiccode\",\n            \"status\": \"ok\",\n            \"version\": \"1.0.8\"\n          },\n          \"status_code\": 200\n        }\n      ],\n      \"expected\": {\n        \"civicclerk\": {\n          \"civiccore\": \"1.2.0\",\n          \"version\": \"1.0.3\"\n        },\n        \"civiccode\": {\n          \"civiccore\": \"1.2.0\",\n          \"version\": \"1.0.8\"\n        },\n        \"civiccore\": {\n          \"role\": \"base dependency installed before selected modules through the installer plan\"\n        },\n        \"civicrecords-ai\": {\n          \"version\": \"1.7.3\"\n        }\n      },\n      \"name\": \"starter_set_civiccore_contract\",\n      \"selected_modules\": [\n        \"civicrecords-ai\",\n        \"civicclerk\",\n        \"civiccode\"\n      ],\n      \"status\": \"passed\"\n    },\n    {\n      \"checks\": [\n        {\n          \"name\": \"portal_mode_config\",\n          \"payload\": {\n            \"mode\": \"public\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"public_route_mounts\",\n          \"public_request_path_mounted\": true,\n          \"register_path_mounted\": true,\n          \"status_code\": 200\n        }\n      ],\n      \"expected_mode\": \"public\",\n      \"name\": \"civicrecords_portal_mode\",\n      \"status\": \"passed\"\n    }\n  ]\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Verify",
+        "-StaffMode",
+        "bearer"
+      ],
+      "mode": "verify",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "indows/r/sources/civicclerk/.env\",\n          \"module\": \"civicclerk\",\n          \"present\": true,\n          \"revocation_file_env_present\": true\n        },\n        {\n          \"env_path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/sources/civiccode/.env\",\n          \"module\": \"civiccode\",\n          \"present\": true,\n          \"revocation_file_env_present\": true\n        }\n      ],\n      \"name\": \"shared_staff_session_presence\",\n      \"revocation_env_var\": \"CIVICCORE_SUITE_SESSION_REVOCATION_FILE\",\n      \"revocation_file\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/shared/civiccore_suite_session_revocations.json\",\n      \"status\": \"passed\",\n      \"value_file\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/shared/civiccore_suite_session_value\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 7,\n          \"stderr\": \"curl: (7) Failed to connect to 127.0.0.1 port 18082 after 0 ms: Couldn't connect to server\\n\",\n          \"stdout\": \"\"\n        },\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"utf-8\\\">\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n    <meta name=\\\"color-scheme\\\" content=\\\"light\\\">\\n    <title>CivicSuite Launcher</title>\\n    <link rel=\\\"stylesheet\\\" href=\\\"./src/styles.css\\\">\\n  </head>\\n  <body>\\n    <div id=\\\"app\\\"></div>\\n    <script src=\\\"./civicsuite-launcher-config.js\\\"></script>\\n    <script type\"\n        }\n      ],\n      \"fix_steps\": [],\n      \"mode\": \"python_http_server\",\n      \"name\": \"suite_launcher_http\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18082/\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"{\\\"status\\\":\\\"ok\\\",\\\"version\\\":\\\"1.7.3\\\"}\"\n        }\n      ],\n      \"name\": \"civicrecords_api\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18240/health\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"UTF-8\\\" />\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\" />\\n    <title>CivicRecords AI \\u2014 Admin</title>\\n    <script type=\\\"module\\\" crossorigin src=\\\"/assets/index-58Kzl4RM.js\\\"></script>\\n    <link rel=\\\"stylesheet\\\" crossorigin href=\\\"/assets/index-CLtiqYqY.css\\\">\\n  </head>\\n  <body>\\n    <div id=\\\"root\\\"></div>\\n  </body>\\n\"\n        }\n      ],\n      \"name\": \"civicrecords_web\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18320/\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"{\\\"status\\\":\\\"ok\\\",\\\"service\\\":\\\"civicclerk\\\",\\\"version\\\":\\\"1.0.3\\\",\\\"civiccore\\\":\\\"1.2.0\\\"}\"\n        }\n      ],\n      \"name\": \"civicclerk_api\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:19016/health\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n  <head>\\n    <meta charset=\\\"UTF-8\\\" />\\n    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\" />\\n    <meta name=\\\"description\\\" content=\\\"CivicClerk staff workspace for meeting lifecycle, agenda, packet, notice, and minutes work.\\\" />\\n    <link rel=\\\"icon\\\" href=\\\"/favicon.svg\\\" type=\\\"image/svg+xml\\\" />\\n    <title>CivicClerk Staff Workspace</title>\\n    <sc\"\n        }\n      ],\n      \"name\": \"civicclerk_web\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:18321/\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"{\\\"status\\\":\\\"ok\\\",\\\"service\\\":\\\"civiccode\\\",\\\"version\\\":\\\"1.0.8\\\",\\\"civiccore\\\":\\\"1.2.0\\\"}\"\n        }\n      ],\n      \"name\": \"civiccode_api\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:19060/health\"\n    },\n    {\n      \"attempts\": [\n        {\n          \"returncode\": 0,\n          \"stderr\": \"\",\n          \"stdout\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n  <meta charset=\\\"utf-8\\\" />\\n  <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\" />\\n  <link rel=\\\"icon\\\" href=\\\"data:,\\\" />\\n  <title>Search results for 13.40.020 - CivicCode</title>\\n  <style>\\n    :root {\\n      --ink: #1b261f;\\n      --paper: #f6f0e6;\\n      --card: #fffaf1;\\n      --line: #22382b;\\n      --moss: #496b50;\\n      --marigold: #d68c17;\\n  \"\n        }\n      ],\n      \"name\": \"civiccode_public_lookup\",\n      \"status\": \"passed\",\n      \"url\": \"http://127.0.0.1:19060/civiccode/search?q=13.40.020\"\n    },\n    {\n      \"checks\": [\n        {\n          \"name\": \"civicrecords_health\",\n          \"payload\": {\n            \"status\": \"ok\",\n            \"version\": \"1.7.3\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"civicclerk_health\",\n          \"payload\": {\n            \"civiccore\": \"1.2.0\",\n            \"service\": \"civicclerk\",\n            \"status\": \"ok\",\n            \"version\": \"1.0.3\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"civiccode_health\",\n          \"payload\": {\n            \"civiccore\": \"1.2.0\",\n            \"service\": \"civiccode\",\n            \"status\": \"ok\",\n            \"version\": \"1.0.8\"\n          },\n          \"status_code\": 200\n        }\n      ],\n      \"expected\": {\n        \"civicclerk\": {\n          \"civiccore\": \"1.2.0\",\n          \"version\": \"1.0.3\"\n        },\n        \"civiccode\": {\n          \"civiccore\": \"1.2.0\",\n          \"version\": \"1.0.8\"\n        },\n        \"civiccore\": {\n          \"role\": \"base dependency installed before selected modules through the installer plan\"\n        },\n        \"civicrecords-ai\": {\n          \"version\": \"1.7.3\"\n        }\n      },\n      \"name\": \"starter_set_civiccore_contract\",\n      \"selected_modules\": [\n        \"civicrecords-ai\",\n        \"civicclerk\",\n        \"civiccode\"\n      ],\n      \"status\": \"passed\"\n    },\n    {\n      \"checks\": [\n        {\n          \"name\": \"portal_mode_config\",\n          \"payload\": {\n            \"mode\": \"public\"\n          },\n          \"status_code\": 200\n        },\n        {\n          \"name\": \"public_route_mounts\",\n          \"public_request_path_mounted\": true,\n          \"register_path_mounted\": true,\n          \"status_code\": 200\n        }\n      ],\n      \"expected_mode\": \"public\",\n      \"name\": \"civicrecords_portal_mode\",\n      \"status\": \"passed\"\n    }\n  ],\n  \"civicclerk_staff_mode\": \"bearer\",\n  \"compose_projects\": {\n    \"civicclerk\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk\",\n    \"civiccode\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code\",\n    \"civicrecords-ai\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records\"\n  },\n  \"finished_at\": \"2026-05-31T17:17:33.199484+00:00\",\n  \"install_root\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r\",\n  \"isolation_id\": \"stage2-slice3-windows-lifecycle-respons-8d900950\",\n  \"mode\": \"verify\",\n  \"mutates_host\": false,\n  \"port_offset\": 240,\n  \"ports\": {\n    \"civicclerk\": {\n      \"api\": 19016,\n      \"web\": 18321\n    },\n    \"civiccode\": {\n      \"api\": 19060\n    },\n    \"civicrecords-ai\": {\n      \"api\": 18240,\n      \"web\": 18320\n    },\n    \"suite-launcher\": {\n      \"web\": 18082\n    }\n  },\n  \"run_id\": \"stage2-slice3-windows-lifecycle-response-letter-r1\",\n  \"selected_modules\": [\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"started_at\": \"2026-05-31T17:17:19.698747+00:00\",\n  \"status\": \"passed\"\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Backup"
+      ],
+      "mode": "backup",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"backup_dir\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z\",\n  \"civicclerk_staff_mode\": \"protected\",\n  \"compose_projects\": {\n    \"civicclerk\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk\",\n    \"civiccode\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code\",\n    \"civicrecords-ai\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records\"\n  },\n  \"finished_at\": \"2026-05-31T17:17:36.347525+00:00\",\n  \"install_root\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r\",\n  \"isolation_id\": \"stage2-slice3-windows-lifecycle-respons-8d900950\",\n  \"mode\": \"backup\",\n  \"mutates_host\": true,\n  \"port_offset\": 240,\n  \"ports\": {\n    \"civicclerk\": {\n      \"api\": 19016,\n      \"web\": 18321\n    },\n    \"civiccode\": {\n      \"api\": 19060\n    },\n    \"civicrecords-ai\": {\n      \"api\": 18240,\n      \"web\": 18320\n    },\n    \"suite-launcher\": {\n      \"web\": 18082\n    }\n  },\n  \"run_id\": \"stage2-slice3-windows-lifecycle-response-letter-r1\",\n  \"selected_modules\": [\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"started_at\": \"2026-05-31T17:17:34.455042+00:00\",\n  \"status\": \"passed\",\n  \"steps\": [\n    {\n      \"module\": \"civicrecords-ai\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/civicrecords-ai-postgres.dump\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"postgres_backup_dump\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/civicclerk-postgres.dump\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"postgres_backup_dump\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/civiccode-postgres.dump\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"postgres_backup_dump\"\n    },\n    {\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/backup-manifest.json\",\n      \"status\": \"passed\",\n      \"step\": \"write_backup_manifest\"\n    },\n    {\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/record-survival-ledger.json\",\n      \"status\": \"passed\",\n      \"step\": \"write_record_survival_ledger\"\n    }\n  ]\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Restore"
+      ],
+      "mode": "restore",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"backup_dir\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z\",\n  \"civicclerk_staff_mode\": \"protected\",\n  \"compose_projects\": {\n    \"civicclerk\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk\",\n    \"civiccode\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code\",\n    \"civicrecords-ai\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records\"\n  },\n  \"finished_at\": \"2026-05-31T17:17:42.194953+00:00\",\n  \"install_root\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r\",\n  \"isolation_id\": \"stage2-slice3-windows-lifecycle-respons-8d900950\",\n  \"mode\": \"restore\",\n  \"mutates_host\": true,\n  \"port_offset\": 240,\n  \"ports\": {\n    \"civicclerk\": {\n      \"api\": 19016,\n      \"web\": 18321\n    },\n    \"civiccode\": {\n      \"api\": 19060\n    },\n    \"civicrecords-ai\": {\n      \"api\": 18240,\n      \"web\": 18320\n    },\n    \"suite-launcher\": {\n      \"web\": 18082\n    }\n  },\n  \"run_id\": \"stage2-slice3-windows-lifecycle-response-letter-r1\",\n  \"selected_modules\": [\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"started_at\": \"2026-05-31T17:17:37.256382+00:00\",\n  \"status\": \"passed\",\n  \"steps\": [\n    {\n      \"module\": \"civicrecords-ai\",\n      \"returncode\": 0,\n      \"stderr\": \"NOTICE:  database \\\"civicrecords_restore_probe\\\" does not exist, skipping\\n\",\n      \"stdout\": \"\",\n      \"step\": \"drop_restore_probe_before\"\n    },\n    {\n      \"module\": \"civicrecords-ai\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"create_restore_probe\"\n    },\n    {\n      \"module\": \"civicrecords-ai\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/civicrecords-ai-postgres.dump\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"restore_probe_pg_restore\"\n    },\n    {\n      \"module\": \"civicrecords-ai\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/record-survival-ledger.json\",\n      \"status\": \"passed\",\n      \"step\": \"record_survival_probe\"\n    },\n    {\n      \"module\": \"civicrecords-ai\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"drop_restore_probe_after\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"returncode\": 0,\n      \"stderr\": \"NOTICE:  database \\\"civicclerk_restore_probe\\\" does not exist, skipping\\n\",\n      \"stdout\": \"\",\n      \"step\": \"drop_restore_probe_before\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"create_restore_probe\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/civicclerk-postgres.dump\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"restore_probe_pg_restore\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/record-survival-ledger.json\",\n      \"status\": \"passed\",\n      \"step\": \"record_survival_probe\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"drop_restore_probe_after\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"returncode\": 0,\n      \"stderr\": \"NOTICE:  database \\\"civiccode_restore_probe\\\" does not exist, skipping\\n\",\n      \"stdout\": \"\",\n      \"step\": \"drop_restore_probe_before\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"create_restore_probe\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/civiccode-postgres.dump\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"restore_probe_pg_restore\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"path\": \"/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice3-windows-lifecycle-response-letter-r1/extracted/CivicSuite-city-core-windows/r/backups/20260531T171734Z/record-survival-ledger.json\",\n      \"status\": \"passed\",\n      \"step\": \"record_survival_probe\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"returncode\": 0,\n      \"stderr\": \"\",\n      \"stdout\": \"\",\n      \"step\": \"drop_restore_probe_after\"\n    }\n  ]\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Uninstall"
+      ],
+      "mode": "uninstall",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "erk\",\n    \"civiccode\"\n  ],\n  \"started_at\": \"2026-05-31T17:17:43.087058+00:00\",\n  \"status\": \"passed\",\n  \"steps\": [\n    {\n      \"module\": \"civicrecords-ai\",\n      \"returncode\": 0,\n      \"stderr\": \" Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-frontend-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-frontend-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-frontend-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-frontend-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-api-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-api-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-api-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-api-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-redis-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-ollama-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-postgres-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-ollama-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-ollama-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-ollama-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-postgres-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-postgres-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-postgres-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-redis-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-redis-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records-redis-1 Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_ollamadata Removing \\n Network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_default Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_uploads Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_redisdata Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_cache Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_pgdata Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_ollamadata Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_uploads Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_redisdata Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_pgdata Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_cache Removed \\n Network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-records_default Removed \\n\",\n      \"stdout\": \"\",\n      \"step\": \"compose_down\"\n    },\n    {\n      \"module\": \"civicclerk\",\n      \"returncode\": 0,\n      \"stderr\": \" Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-frontend-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-frontend-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-frontend-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-frontend-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-api-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-api-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-api-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-api-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-postgres-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-redis-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-ollama-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-postgres-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-postgres-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-postgres-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-redis-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-redis-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-redis-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-ollama-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-ollama-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk-ollama-1 Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_exports Removing \\n Network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_default Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_ollamadata Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_redisdata Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_pgdata Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_exports Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_ollamadata Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_redisdata Removed \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_pgdata Removed \\n Network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-clerk_default Removed \\n\",\n      \"stdout\": \"\",\n      \"step\": \"compose_down\"\n    },\n    {\n      \"module\": \"civiccode\",\n      \"returncode\": 0,\n      \"stderr\": \" Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-api-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-api-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-api-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-api-1 Removed \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-postgres-1 Stopping \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-postgres-1 Stopped \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-postgres-1 Removing \\n Container civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code-postgres-1 Removed \\n Network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code_default Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code_civiccode-postgres-data Removing \\n Volume civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code_civiccode-postgres-data Removed \\n Network civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-code_default Removed \\n\",\n      \"stdout\": \"\",\n      \"step\": \"compose_down\"\n    },\n    {\n      \"module\": \"city-core\",\n      \"network\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-citycore\",\n      \"returncode\": 0,\n      \"status\": \"removed\",\n      \"stderr\": \"\",\n      \"stdout\": \"civicsuite-stage2-slice3-windows-lifecycle-respons-8d900950-citycore\\n\",\n      \"step\": \"remove_shared_handoff_network\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "workflow_proof_modes": [
+    "install"
+  ],
+  "workflow_proof_requested": true
+}
