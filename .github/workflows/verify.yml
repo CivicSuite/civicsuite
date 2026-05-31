@@ -2,9 +2,22 @@ name: verify
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    paths:
+      - ".github/workflows/verify.yml"
+      - "docs/**"
+      - "installer/**"
+      - "scripts/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "pyproject.toml"
+      - "README.md"
+      - "USER-MANUAL.md"
+      - "USER-MANUAL.txt"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
@@ -20,11 +33,20 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
       - name: Verify documentation
         run: bash scripts/verify-docs.sh
 
       - name: Verify no committed secret patterns
         run: python scripts/verify-secret-scan.py
+
+      - name: Verify stage evidence
+        run: python scripts/policy/check_stage_evidence.py
 
       - name: Install Node dependencies
         run: npm ci

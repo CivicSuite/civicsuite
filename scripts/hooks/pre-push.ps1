@@ -45,5 +45,31 @@ if ($branch -like "stage-0-*") {
     }
 }
 
-Write-Output "pre-push gate: passed for $branch at $head"
+if ($branch -match "^stage-(?<stageNumber>\d+)-") {
+    $stageNumber = $Matches["stageNumber"]
+    $ledger = Join-Path $repoRoot "docs\process\stages\$branch.md"
+    if (-not (Test-Path -LiteralPath $ledger)) {
+        Write-Error "pre-push gate: stage branches must carry a tracked stage ledger at $ledger."
+        exit 1
+    }
 
+    $ledgerTracked = git ls-files --error-unmatch "docs/process/stages/$branch.md" 2>$null
+    if (-not $ledgerTracked) {
+        Write-Error "pre-push gate: stage ledger is not tracked by git: $ledger"
+        exit 1
+    }
+
+    $auditReports = git ls-files "docs/process/audits/audit-lite-stage-$stageNumber-*.md"
+    if (-not $auditReports) {
+        Write-Error "pre-push gate: stage branches must carry at least one tracked audit-lite report for stage $stageNumber under docs/process/audits/."
+        exit 1
+    }
+
+    $ledgerText = Get-Content -LiteralPath $ledger -Raw
+    if ($ledgerText -notmatch "audit-lite-stage-$stageNumber-") {
+        Write-Error "pre-push gate: stage ledger must reference at least one audit-lite report for stage $stageNumber."
+        exit 1
+    }
+}
+
+Write-Output "pre-push gate: passed for $branch at $head"
