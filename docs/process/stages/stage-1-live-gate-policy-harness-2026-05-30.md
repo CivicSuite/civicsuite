@@ -43,11 +43,29 @@ Local checks:
 
 Pushed commit:
 
-- Recorded after push.
+- `1107879d55217f5876c31b087786149bfb9afd24`
 
 ### Slice 2 - Pre-push enforcement
 
-Status: Pending
+Status: In progress
+
+Changed files:
+
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1`
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md`
+
+Audit-lite report:
+
+- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-1-slice-2-pre-push-enforcement-2026-05-30.md`
+
+Local checks:
+
+- `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\hooks\pre-push.ps1`
+- `git diff --check`
+
+Pushed commit:
+
+- Recorded after push.
 
 ### Slice 3 - Policy and CI evidence checks
 
