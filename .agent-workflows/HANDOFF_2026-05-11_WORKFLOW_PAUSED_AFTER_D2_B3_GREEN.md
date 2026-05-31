@@ -8,7 +8,7 @@ Reason: prepare for context compaction. The D2/B3 sprint is complete and recorde
 
 ## Current Durable State
 
-- Current repo: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`
+- Current repo: `C:\dev\Claude\CivicSuite`
 - Current branch at pause: `main`
 - `main` is synced with `origin/main` after PR #123 and PR #124.
 - Active queue next target: audit punch-list B2 security-secret handling recovery.
@@ -46,7 +46,7 @@ Output:
 
 ```text
 ==> CivicSuite suite-state verification
-workspace: C:\Users\scott\OneDrive\Desktop\Claude
+workspace: C:\dev\Claude
 repos: 26
 remote release checks: enabled
 local sibling clone checks: disabled

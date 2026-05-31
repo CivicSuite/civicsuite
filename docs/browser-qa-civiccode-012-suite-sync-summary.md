@@ -1,6 +1,6 @@
 # Browser QA - CivicCode v0.1.2 Suite Sync
 
-- Target: file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html
+- Target: file:///C:/dev/Claude/civicsuite/docs/index.html
 - Desktop screenshot: docs/browser-qa-civiccode-012-suite-sync-desktop.png
 - Mobile screenshot: docs/browser-qa-civiccode-012-suite-sync-mobile.png
 - Console events: 0

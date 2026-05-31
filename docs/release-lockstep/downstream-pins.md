@@ -47,7 +47,7 @@ records installer/productization evidence for the already named city-core cars:
 vendored-source Windows/Linux one-click artifacts, Guided/Manual Docker
 prerequisite setup paths, first-run wizard smoke evidence, first-run browser QA, 60 GB cleanroom
 hygiene, and matching-host lifecycle evidence under
-`C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`.
+`C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`.
 
 For the 2026-05-27 P1.2 source-pin bump:
 

@@ -4,7 +4,7 @@ Date: 2026-05-07
 
 ## 1. Executive Audit
 
-Scope: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`, the umbrella documentation, governance, compatibility, and verification repo.
+Scope: `C:\dev\Claude\CivicSuite`, the umbrella documentation, governance, compatibility, and verification repo.
 
 Audit mode: standard recovery audit after an external release-theater audit.
 

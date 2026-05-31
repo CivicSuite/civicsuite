@@ -18,24 +18,24 @@ Purpose: this file records the read-only inventory required before CivicSuite mo
 ## Read-Only Sources Inventoried
 
 - Current handoff:
-  - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\.agent-workflows\HANDOFF_WORKFLOW_PAUSED_2026-05-09_AFTER_PR109.md`
+  - `C:\dev\Claude\CivicSuite\.agent-workflows\HANDOFF_WORKFLOW_PAUSED_2026-05-09_AFTER_PR109.md`
 - Current queue:
-  - `C:\Users\scott\OneDrive\Desktop\Claude\ACTIVE_RELEASE_QUEUE.md`
+  - `C:\dev\Claude\ACTIVE_RELEASE_QUEUE.md`
 - CivicSuite umbrella repo:
-  - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`
+  - `C:\dev\Claude\CivicSuite`
 - Unified spec:
-  - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\docs\CivicSuiteUnifiedSpec.md`
+  - `C:\dev\Claude\CivicSuite\docs\CivicSuiteUnifiedSpec.md`
 - Prior org-state handoff:
-  - `C:\Users\scott\OneDrive\Desktop\Claude\HANDOFF_CIVICSUITE_ORG_STATE_2026-05-08.md`
+  - `C:\dev\Claude\HANDOFF_CIVICSUITE_ORG_STATE_2026-05-08.md`
 - Old audit and handoff files under:
-  - `C:\Users\scott\OneDrive\Desktop\Claude`
-  - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\docs`
-  - `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\installer\reports`
+  - `C:\dev\Claude`
+  - `C:\dev\Claude\CivicSuite\docs`
+  - `C:\dev\Claude\CivicSuite\installer\reports`
 - Available GitHub org state through `gh repo list CivicSuite --limit 100`.
 
 ## Current CivicSuite Umbrella Repo State
 
-- Repo: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`
+- Repo: `C:\dev\Claude\CivicSuite`
 - Remote: `https://github.com/CivicSuite/civicsuite.git`
 - Branch/status observed:
   - `main...origin/main`
@@ -50,7 +50,7 @@ Purpose: this file records the read-only inventory required before CivicSuite mo
 
 ## CivicSuite Umbrella File Inventory
 
-`rg --files C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite` found 331 files.
+`rg --files C:\dev\Claude\CivicSuite` found 331 files.
 
 Important categories present:
 
@@ -88,7 +88,7 @@ Important categories present:
 
 Observed spec path:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\docs\CivicSuiteUnifiedSpec.md`
+- `C:\dev\Claude\CivicSuite\docs\CivicSuiteUnifiedSpec.md`
 
 Top-level spec sections observed:
 
@@ -163,7 +163,7 @@ Observed canonical catalog includes:
 
 ## Local CivicSuite-Family Repo Inventory
 
-Local directories matching `Civic*` / `civic*` were observed under `C:\Users\scott\OneDrive\Desktop\Claude`.
+Local directories matching `Civic*` / `civic*` were observed under `C:\dev\Claude`.
 
 Clean and synced local repos observed:
 
@@ -222,7 +222,7 @@ These local dirty states are not permission to clean, revert, or continue work. 
 
 ## Prior Handoff And Audit Evidence Inventory
 
-Important existing evidence files observed in `C:\Users\scott\OneDrive\Desktop\Claude`:
+Important existing evidence files observed in `C:\dev\Claude`:
 
 - `HANDOFF_CIVICSUITE_ORG_STATE_2026-05-08.md`
 - `HANDOFF_2026-05-07_CIVICSUITE_RELEASE_WORKFLOW_FAILURE_AND_SHUTDOWN.md`
@@ -316,12 +316,12 @@ Still forbidden unless explicitly authorized by the active queue and gates:
 Representative commands:
 
 ```powershell
-git -C C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite status --short --branch
-git -C C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite remote -v
-git -C C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite log --oneline --decorate -10
-rg --files C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite
-rg --files C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite | Measure-Object
-rg -n "^(#|##)" C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite\docs\CivicSuiteUnifiedSpec.md
+git -C C:\dev\Claude\CivicSuite status --short --branch
+git -C C:\dev\Claude\CivicSuite remote -v
+git -C C:\dev\Claude\CivicSuite log --oneline --decorate -10
+rg --files C:\dev\Claude\CivicSuite
+rg --files C:\dev\Claude\CivicSuite | Measure-Object
+rg -n "^(#|##)" C:\dev\Claude\CivicSuite\docs\CivicSuiteUnifiedSpec.md
 gh repo list CivicSuite --limit 100 --json name,url,isPrivate,defaultBranchRef,updatedAt,pushedAt
 gh release list --repo CivicSuite/civicsuite --limit 20
 ```

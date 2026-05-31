@@ -1,7 +1,7 @@
 # Audit Lite - Stage 0 User Manual Topology
 
 **Date:** 2026-05-30
-**Scope:** Documentation fix slice for `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md`, regenerating the suite topology from `installer\modules.json`.
+**Scope:** Documentation fix slice for `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md`, regenerating the suite topology from `installer\modules.json`.
 **Reviewer:** Codex (audit-lite)
 
 ## TL;DR

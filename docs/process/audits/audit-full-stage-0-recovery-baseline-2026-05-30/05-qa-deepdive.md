@@ -14,7 +14,7 @@ No open findings.
 - The suite-state verifier was run after the CivicCode source-pin restoration and passed.
 - The installer-cleanroom workflow ref was aligned after PR #186 exposed a stale CivicCode checkout path.
 - The recovery doc clearly distinguishes surviving failed r2 evidence from a passing live-assembled product proof.
-- The preserved evidence location is outside the fragile OneDrive workspace at `C:\Users\scott\Documents\RECOVERY_civicsuite-live-assembled-np9lgjwm_2026-05-30`.
+- The preserved evidence location is outside the fragile cloud-sync workspace at `C:\Users\scott\Documents\RECOVERY_civicsuite-live-assembled-np9lgjwm_2026-05-30`.
 
 ## Verification
 
@@ -23,7 +23,7 @@ No open findings.
 - Remote branch: `origin/stage-0-recovery-baseline-2026-05-30`
 - Verifier: `VERIFY-SUITE-STATE: PASSED`
 - Hook runtime: `pre-push gate: passed for stage-0-recovery-baseline-2026-05-30 at 96d684ee7b6d3d61108ec307b8c0943b1e7960b0`
-- Workflow-cost ledger: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.agent-runs\2026-05-30-stage-0-recovery-baseline\workflow-cost-ledger.md`
+- Workflow-cost ledger: `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.agent-runs\2026-05-30-stage-0-recovery-baseline\workflow-cost-ledger.md`
 
 ## Limitations
 

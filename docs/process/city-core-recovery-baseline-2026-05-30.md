@@ -2,25 +2,25 @@
 
 ## Purpose
 
-This file records the recovery baseline after `C:\Users\scott\OneDrive\Desktop\Claude` was accidentally deleted during the city-core live-install fix cycle. It is intentionally tracked in Git so the recovery state is available from GitHub and not only from local disk.
+This file records the recovery baseline after `C:\dev\Claude` was accidentally deleted during the city-core live-install fix cycle. It is intentionally tracked in Git so the recovery state is available from GitHub and not only from local disk.
 
 ## Recovered Workspace State
 
 Recovered workspace documents and gates came from:
 
-- `D:\To REview\OneDrive\Desktop\Claude`
+- `D:\To REview\cloud-sync\Desktop\Claude`
 
 The active workspace path is:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude`
+- `C:\dev\Claude`
 
 The CivicSuite gate was restored at:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_GATE.md`
+- `C:\dev\Claude\CIVICSUITE_AUDIT_GATE.md`
 
 The reboot memory was restored at:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\.codex-memory\civicsuite-live-install-fix-reboot-2026-05-29.md`
+- `C:\dev\Claude\.codex-memory\civicsuite-live-install-fix-reboot-2026-05-29.md`
 
 The surviving live-assembled temp bundle was copied to:
 
@@ -30,11 +30,11 @@ The surviving live-assembled temp bundle was copied to:
 
 The following repositories were recloned or recreated after recovery:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29`
-- `C:\Users\scott\OneDrive\Desktop\Claude\civiccore`
-- `C:\Users\scott\OneDrive\Desktop\Claude\civicrecords-ai`
-- `C:\Users\scott\OneDrive\Desktop\Claude\civicclerk`
-- `C:\Users\scott\OneDrive\Desktop\Claude\civiccode`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29`
+- `C:\dev\Claude\civiccore`
+- `C:\dev\Claude\civicrecords-ai`
+- `C:\dev\Claude\civicclerk`
+- `C:\dev\Claude\civiccode`
 
 Observed recovery heads:
 
@@ -48,7 +48,7 @@ Observed recovery heads:
 
 The deleted worktree contained uncommitted local changes under:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29`
 
 The actual edited patch files were not recoverable from `D:\To REview`, Recycle Bin, or the preserved temp bundle. The work remains reconstructable from the recovered reboot memory and surviving live-assembled evidence, but it is not a direct dirty-worktree restore.
 
@@ -85,7 +85,7 @@ The next technical task after recovery is to reconstruct the live-install patch 
 
 ## Restored Lockstep Pin
 
-Stage 0 also restored the CivicCode city-core source pin that was lost with the deleted dirty worktree. `python scripts\verify-suite-state.py --remote-only` initially failed because `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json` still pinned CivicCode to post-PR-#75 head `9284fd1a0704541b3422e5dd0ba47bea3713825a` while `C:\Users\scott\OneDrive\Desktop\Claude\civiccode` and `CivicSuite/civiccode` were at post-PR-#76 head `a960bba0a2249d118b593dd61bee3a65a69a9d77`.
+Stage 0 also restored the CivicCode city-core source pin that was lost with the deleted dirty worktree. `python scripts\verify-suite-state.py --remote-only` initially failed because `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json` still pinned CivicCode to post-PR-#75 head `9284fd1a0704541b3422e5dd0ba47bea3713825a` while `C:\dev\Claude\civiccode` and `CivicSuite/civiccode` were at post-PR-#76 head `a960bba0a2249d118b593dd61bee3a65a69a9d77`.
 
 The Stage 0 recovery branch restores the post-PR-#76 pin across the lockstep truth files without mutating already-published module release objects.
 
@@ -95,11 +95,11 @@ The city-core suite work now proceeds as nine stage branches. Each stage is spli
 
 Each fresh or recovered checkout must install the local pre-push gate before pushing:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1`
 
 The tracked hook source is:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1`
 
 Per slice:
 

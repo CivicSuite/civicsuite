@@ -19,13 +19,13 @@ No open findings.
 
 ### Closed During Audit - Minor: Self-referential slice SHA requirement
 **Dimension:** Docs / Process
-**Evidence:** `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` originally required each slice ledger to record the pushed commit SHA in the same slice.
+**Evidence:** `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` originally required each slice ledger to record the pushed commit SHA in the same slice.
 **Why it matters:** A commit cannot contain its own final SHA unless a second bookkeeping commit follows it. That would either create unnecessary churn or train the process to leave the field stale.
 **Fix path:** Updated the evidence rule to record the pushed SHA in the next slice or in stage closeout.
 
 ## What's Working
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` makes GitHub the recovery source of truth and explicitly bans reliance on untracked `.agent-runs/` artifacts as the only copy of stage-critical facts.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` gives Stage 1 a tracked ledger with full drive paths for changed files and audit evidence.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` makes GitHub the recovery source of truth and explicitly bans reliance on untracked `.agent-runs/` artifacts as the only copy of stage-critical facts.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` gives Stage 1 a tracked ledger with full drive paths for changed files and audit evidence.
 - `git diff --check` passed for the slice.
 
 ## Watch Items

@@ -26,13 +26,13 @@ No open findings.
 
 ## What's Working Well
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-recovery-baseline-2026-05-30.md` names the recovered source locations, recreated repo heads, lost files, surviving temp evidence, and new nine-stage durability rule.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1` installs a tracked pre-push gate source into the untracked `.git\hooks\pre-push` location.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-recovery-baseline-2026-05-30.md` names the recovered source locations, recreated repo heads, lost files, surviving temp evidence, and new nine-stage durability rule.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1` installs a tracked pre-push gate source into the untracked `.git\hooks\pre-push` location.
 - `python scripts\verify-suite-state.py --remote-only` now reports `VERIFY-SUITE-STATE: PASSED` after the CivicCode source pin restoration.
 - The Stage 0 slice is pushed to GitHub at `96d684ee7b6d3d61108ec307b8c0943b1e7960b0`.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml` now checks out the same CivicCode source head as `installer\modules.json`.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` now prints the source-pin recovery note as part of its verifier header.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md` topology now renders CivicCode source prefix `a960bba0a224` from `installer\modules.json`.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml` now checks out the same CivicCode source head as `installer\modules.json`.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` now prints the source-pin recovery note as part of its verifier header.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md` topology now renders CivicCode source prefix `a960bba0a224` from `installer\modules.json`.
 
 ## This-Sprint Punch List
 
@@ -50,16 +50,16 @@ No open findings require blast-radius remediation. The intentional source-pin ch
 
 ## Evidence Read
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_GATE.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-recovery-baseline-2026-05-30.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-0-recovery-baseline-2026-05-30.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\CivicSuiteUnifiedSpec.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-lockstep\downstream-pins.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md`
+- `C:\dev\Claude\CIVICSUITE_AUDIT_GATE.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-recovery-baseline-2026-05-30.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\audits\audit-lite-stage-0-recovery-baseline-2026-05-30.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\install-git-hooks.ps1`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\CivicSuiteUnifiedSpec.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-recovery-status.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\release-lockstep\downstream-pins.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\CHANGELOG.md`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\installer-cleanroom.yml`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\USER-MANUAL.md`

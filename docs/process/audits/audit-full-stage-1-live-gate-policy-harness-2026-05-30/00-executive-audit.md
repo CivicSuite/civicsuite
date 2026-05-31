@@ -28,11 +28,11 @@ Closed during the stage:
 
 ## What's Working Well
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` defines a GitHub-first stage process.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` blocks dirty pushes, default-branch pushes, missing stage ledgers, and missing stage-specific audit-lite evidence.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` gives CI the same stage-evidence invariant.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml` runs the new policy before heavier Node/browser setup.
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.agent-runs\2026-05-30-stage-1-live-gate-policy-harness\workflow-cost-ledger.md` records the workflow-cost decision trail.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\city-core-stage-execution-process.md` defines a GitHub-first stage process.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` blocks dirty pushes, default-branch pushes, missing stage ledgers, and missing stage-specific audit-lite evidence.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\check_stage_evidence.py` gives CI the same stage-evidence invariant.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml` runs the new policy before heavier Node/browser setup.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.agent-runs\2026-05-30-stage-1-live-gate-policy-harness\workflow-cost-ledger.md` records the workflow-cost decision trail.
 
 ## Verification Evidence
 
@@ -60,4 +60,4 @@ No Stage 1 punch-list items remain open.
 
 ## Blast-Radius Notes
 
-The only workflow behavior change is in `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml`: verification now runs on pull requests matching repository-relevant paths, with concurrency cancellation, and no longer duplicates the same validation on every push to `main`. Required PR checks remain the merge-time protection point for Stage 1.
+The only workflow behavior change is in `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\.github\workflows\verify.yml`: verification now runs on pull requests matching repository-relevant paths, with concurrency cancellation, and no longer duplicates the same validation on every push to `main`. Required PR checks remain the merge-time protection point for Stage 1.

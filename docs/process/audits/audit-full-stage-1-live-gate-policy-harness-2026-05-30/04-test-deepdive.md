@@ -10,7 +10,7 @@ No open findings.
 
 ## What Works
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_stage_evidence_contract.py` covers the two most important policy paths: non-stage branches skip stage evidence, and stage branches without durable evidence fail.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_stage_evidence_contract.py` covers the two most important policy paths: non-stage branches skip stage evidence, and stage branches without durable evidence fail.
 - `python -m pytest scripts\policy\test_check_stage_evidence_contract.py` passed: 2 tests.
 - The local pre-push hook was exercised by actual `git push` calls on Stage 1 after each slice.
 - `python scripts\policy\check_actions_budget.py --run 2026-05-30-stage-1-live-gate-policy-harness --base-ref origin/main` passed after the workflow-cost fix.
@@ -35,8 +35,8 @@ The success path with tracked files is harder to fixture without creating a temp
 
 The test file lives beside the policy scripts rather than under a separate top-level test tree because existing policy contract tests in this repository use that pattern:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_audit_gate_authority_contract.py`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_test_naming_honesty_contract.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_audit_gate_authority_contract.py`
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\policy\test_check_test_naming_honesty_contract.py`
 
 ## Commands Run
 

@@ -6,7 +6,7 @@
     "status": 200,
     "title": "CivicRecords AI — Admin",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\records-ai-home-desktop.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\records-ai-home-desktop.png"
   },
   {
     "name": "records-ai-home",
@@ -15,7 +15,7 @@
     "status": 200,
     "title": "CivicRecords AI — Admin",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\records-ai-home-mobile.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\records-ai-home-mobile.png"
   },
   {
     "name": "civicclerk-staff",
@@ -24,7 +24,7 @@
     "status": 200,
     "title": "CivicClerk Staff Workflow Screens",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civicclerk-staff-desktop.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civicclerk-staff-desktop.png"
   },
   {
     "name": "civicclerk-staff",
@@ -33,7 +33,7 @@
     "status": 200,
     "title": "CivicClerk Staff Workflow Screens",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civicclerk-staff-mobile.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civicclerk-staff-mobile.png"
   },
   {
     "name": "civiccode",
@@ -42,7 +42,7 @@
     "status": 200,
     "title": "Read the municipal code - CivicCode",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiccode-desktop.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiccode-desktop.png"
   },
   {
     "name": "civiccode",
@@ -51,7 +51,7 @@
     "status": 200,
     "title": "Read the municipal code - CivicCode",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiccode-mobile.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiccode-mobile.png"
   },
   {
     "name": "civiczone",
@@ -60,7 +60,7 @@
     "status": 200,
     "title": "CivicZone Public Lookup",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiczone-desktop.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiczone-desktop.png"
   },
   {
     "name": "civiczone",
@@ -69,6 +69,6 @@
     "status": 200,
     "title": "CivicZone Public Lookup",
     "errors": [],
-    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiczone-mobile.png"
+    "screenshot": "C:\\dev\\Claude\\CivicSuite\\docs\\deployment\\evidence\\civiczone-mobile.png"
   }
 ]

@@ -18,7 +18,7 @@ Ship this slice. The change is bookkeeping only: it records the pushed Slice 4 S
 No open findings.
 
 ## What's Working
-- `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` now records Slice 4 commit `75d08336856f722eb1272acda45f6c2dc4eb0e62`.
+- `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\docs\process\stages\stage-1-live-gate-policy-harness-2026-05-30.md` now records Slice 4 commit `75d08336856f722eb1272acda45f6c2dc4eb0e62`.
 - The stage closeout section names the planned audit-full package with a full drive path.
 - `git diff --check` passed.
 

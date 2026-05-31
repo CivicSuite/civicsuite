@@ -2,7 +2,7 @@
 
 Date: 2026-04-30
 
-Target: `file:///C:/Users/scott/OneDrive/Desktop/Claude/CivicSuite/docs/index.html`
+Target: `file:///C:/dev/Claude/CivicSuite/docs/index.html`
 
 ## Evidence
 

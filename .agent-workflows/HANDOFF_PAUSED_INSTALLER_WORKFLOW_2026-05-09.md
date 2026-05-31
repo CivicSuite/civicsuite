@@ -4,7 +4,7 @@ Status: workflow paused by user.
 
 ## Current Repository State
 
-- Repo: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite`
+- Repo: `C:\dev\Claude\CivicSuite`
 - Branch: `main`
 - Local status before handoff: clean, synced with `origin/main`
 - Latest commit on main: `cb3ae2e feat(installer): finish clerk-core package lifecycle (#108)`

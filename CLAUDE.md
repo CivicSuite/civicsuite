@@ -48,9 +48,17 @@ CivicSuite work flows: **branch from main → produce a manifest that names the 
 - **AI runtime:** Ollama for LLMs, faster-whisper (CTranslate2) for ASR.
 - **Frontend:** React 18 + Vite + TypeScript + Tailwind + shadcn/ui (per unified spec §5.2).
 - **Documentation rendering:** MkDocs Material (docs site); Pandoc (USER-MANUAL.pdf / .docx).
-- **Commit convention:** Conventional Commits + DCO sign-off (every commit ends with `Signed-off-by: Name <email>`). For release-tag PRs and city-core release engagements, Scott is the primary human author; AI implementers receive credit with a `Co-Authored-By:` trailer.
+- **Commit convention:** Conventional Commits + DCO sign-off (every commit ends with `Signed-off-by: Name <email>`). For CivicSuite commits, Scott Converse is the primary author. The `Signed-off-by:` trailer credits whoever did the work, for example `Signed-off-by: Codex <codex@openai.com>` when Codex implemented. Do not use a `Co-Authored-By:` trailer; it is not the CivicSuite convention.
 - **Pre-commit hooks:** ruff, mypy, trailing-whitespace, end-of-file-fixer, conventional-commit-message check.
 - **License header:** `# SPDX-License-Identifier: Apache-2.0` on every source file; `# Copyright (c) The CivicSuite Authors`.
+
+## Local workspace root
+
+Active CivicSuite work must use a local, non-cloud-synced workspace root. The current Windows root is:
+
+`C:\dev\Claude`
+
+Do not create, clone, write, branch, commit, push, or run CivicSuite product workflows from cloud-synced user-profile folders. If evidence or handoff text points at an older cloud-synced workspace path, repair the reference before relying on it for current work.
 
 ## Non-negotiables
 
@@ -69,4 +77,4 @@ The maintainer-level enforcement of §4 is real, not aspirational.
 
 Per `docs/process/` standards (PR #125 added this rule), every push that touches code, docs, or status artifacts runs a hostile 5-lens self-audit on the actual diff: Engineering (grep every claim/path/SHA), UX (read every user-visible string cold; respect the UI/UX prototype), Tests (real assertions not just exercise), Docs (CHANGELOG/HANDOFF/spec moved where they should), QA (cross-file consistency, no forbidden status words). Report format goes in the push body.
 
-This rule is the implementation-side counterpart to the cross-agent verification protocol at `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`.
+This rule is the implementation-side counterpart to the cross-agent verification protocol at `C:\dev\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`.

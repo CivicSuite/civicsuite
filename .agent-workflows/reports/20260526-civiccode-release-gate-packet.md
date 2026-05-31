@@ -98,20 +98,20 @@ this packet.
 
 Current context:
 
-- CivicCode repo: `C:\Users\scott\OneDrive\Desktop\Claude\civiccode`
+- CivicCode repo: `C:\dev\Claude\civiccode`
 - CivicCode HEAD: `d2eaf13`
 - CivicCode release: `v1.0.8`
 - CivicSuite worktree:
-  `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1`
+  `C:\dev\Claude\CivicSuite-city-core-caboose-item1`
 - Pipeline run: `.agent-runs/2026-05-26-civiccode-finish-release`
 
 Commands to rerun:
 
 ```powershell
-cd C:\Users\scott\OneDrive\Desktop\Claude\civiccode
+cd C:\dev\Claude\civiccode
 bash scripts/verify-release.sh
 
-cd C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1
+cd C:\dev\Claude\CivicSuite-city-core-caboose-item1
 python scripts\verify-suite-state.py --remote-only
 python scripts\policy\run_all.py --run 2026-05-26-civiccode-finish-release
 ```

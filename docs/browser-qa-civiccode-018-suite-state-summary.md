@@ -1,7 +1,7 @@
 # Browser QA - CivicSuite CivicCode v0.1.8 suite state
 
 Date: 2026-05-03
-Target: file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html
+Target: file:///C:/dev/Claude/civicsuite/docs/index.html
 
 ## Evidence
 

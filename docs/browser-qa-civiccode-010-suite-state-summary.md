@@ -1,6 +1,6 @@
 # Browser QA - CivicSuite CivicCode v0.1.10 State
 
-- Target: file:///C:/Users/scott/OneDrive/Desktop/Claude/civicsuite/docs/index.html
+- Target: file:///C:/dev/Claude/civicsuite/docs/index.html
 - Surface: docs/index.html suite landing page
 
 ## desktop

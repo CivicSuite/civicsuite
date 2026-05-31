@@ -46,8 +46,8 @@ Read on resume:
 
 1. `.agent-workflows/PROJECT_CONTROL_PLANE.md`
 2. `.agent-workflows/ACTIVE_WORK_QUEUE.md`
-3. `C:/Users/scott/OneDrive/Desktop/Claude/audit-civicsuite-2026-05-09/sprint-punchlist.md`
-4. `C:/Users/scott/OneDrive/Desktop/Claude/audit-civicsuite-2026-05-09/00-executive-audit.md`
+3. `C:/dev/Claude/audit-civicsuite-2026-05-09/sprint-punchlist.md`
+4. `C:/dev/Claude/audit-civicsuite-2026-05-09/00-executive-audit.md`
 5. `docs/release-recovery-status.md`
 6. `docs/CivicSuiteUnifiedSpec.md`
 

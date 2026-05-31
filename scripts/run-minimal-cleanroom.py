@@ -49,7 +49,7 @@ def prepare_cleanroom(run_root: Path) -> dict[str, Path]:
     install_sh = kit_target / "install-civiccore.sh"
     requirements = kit_target / "requirements.txt"
     plan = kit_target / "civiccore-install-plan.json"
-    old_path = "/mnt/c/Users/scott/OneDrive/Desktop/Claude/civiccore/dist/civiccore-1.0.0-py3-none-any.whl"
+    old_path = "/mnt/c/dev/Claude/civiccore/dist/civiccore-1.0.0-py3-none-any.whl"
     replace_text(install_sh, old_path, container_wheel)
     requirements.write_text(f"{container_wheel}\n", encoding="utf-8", newline="\n")
     plan_data = json.loads(plan.read_text(encoding="utf-8"))

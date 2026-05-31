@@ -20,11 +20,11 @@ release state rather than reopening queued modules.
 
 ## Local State
 
-- CivicCode repo: `C:\Users\scott\OneDrive\Desktop\Claude\civiccode`
+- CivicCode repo: `C:\dev\Claude\civiccode`
 - CivicCode branch: `main...origin/main`
 - CivicCode HEAD: `d2eaf13 Merge pull request #73 from CivicSuite/track-c-workflow-contract-tests`
 - CivicCode working tree before reports: clean
-- CivicSuite umbrella worktree: `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-city-core-caboose-item1`
+- CivicSuite umbrella worktree: `C:\dev\Claude\CivicSuite-city-core-caboose-item1`
 - CivicSuite branch: `track-b-city-core-public-portal-012...origin/main`
 - CivicSuite HEAD: `8b03573 Merge pull request #181 from CivicSuite/track-b-city-core-public-portal-012`
 
@@ -82,9 +82,9 @@ The CivicCode repo contains:
 
 Read or inspected for this inventory:
 
-- `C:\Users\scott\OneDrive\Desktop\Claude\AGENTS.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\ACTIVE_RELEASE_QUEUE.md`
-- `C:\Users\scott\OneDrive\Desktop\Claude\CIVICSUITE_AUDIT_GATE.md`
+- `C:\dev\Claude\AGENTS.md`
+- `C:\dev\Claude\ACTIVE_RELEASE_QUEUE.md`
+- `C:\dev\Claude\CIVICSUITE_AUDIT_GATE.md`
 - `.agent-workflows/PROJECT_CONTROL_PLANE.md`
 - `.agent-workflows/ACTIVE_WORK_QUEUE.md`
 - `README.md`, `STATUS.md`, `CHANGELOG.md`

@@ -11,7 +11,7 @@ No open findings.
 ## What Works
 
 - The developer/operator workflow is clearer: every stage has a visible ledger and every slice names its audit-lite evidence.
-- Error messages in `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` are plain-language and name the missing artifact.
+- Error messages in `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\hooks\pre-push.ps1` are plain-language and name the missing artifact.
 - The process doc tells a future operator exactly where to resume after reboot or checkout loss: the last pushed branch head and tracked stage ledger.
 
 ## UX Non-Applicability

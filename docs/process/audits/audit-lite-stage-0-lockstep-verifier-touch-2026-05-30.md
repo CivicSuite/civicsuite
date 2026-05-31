@@ -1,7 +1,7 @@
 # Audit Lite - Stage 0 Lockstep Verifier Touch
 
 **Date:** 2026-05-30
-**Scope:** Minimal `C:\Users\scott\OneDrive\Desktop\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` update required by release-lockstep-gate after the CivicCode source-pin recovery.
+**Scope:** Minimal `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\scripts\verify-suite-state.py` update required by release-lockstep-gate after the CivicCode source-pin recovery.
 **Reviewer:** Codex (audit-lite)
 
 ## TL;DR
