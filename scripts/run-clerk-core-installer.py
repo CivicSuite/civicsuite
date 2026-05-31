@@ -32,6 +32,9 @@ DEFAULT_CODE_PORTS = {"api": 18820}
 DEFAULT_SUITE_LAUNCHER_PORT = 18082
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 DEFAULT_LLM_MODEL = "gemma4:e4b"
+RESPONSE_LETTER_TIMEOUT_SECONDS = 180
+CODE_QA_TIMEOUT_SECONDS = 60
+CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
 SUITE_LAUNCHER_DIR_NAME = "suite-launcher"
 SUITE_SESSION_ENV = "CIVICCORE_SUITE_SESSION_SECRET"
@@ -676,6 +679,7 @@ def write_code_handoff_override(target: Path, shared_network: str) -> Path:
       CIVICCODE_OLLAMA_MODEL: {DEFAULT_LLM_MODEL}
       CIVICCODE_OLLAMA_EMBEDDING_URL: http://citycore-ollama:11434
       CIVICCODE_OLLAMA_EMBEDDING_MODEL: {DEFAULT_EMBEDDING_MODEL}
+      CIVICCODE_OLLAMA_TIMEOUT_SECONDS: "{CIVICCODE_OLLAMA_TIMEOUT_SECONDS}"
     volumes:
       - {SUITE_SHARED_BIND}
     networks:
@@ -737,6 +741,7 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
                     "module": module,
                     "step": "ollama_pull_model",
                     "model": model,
+                    "required": True,
                     "returncode": proc.returncode,
                     "stdout": proc.stdout[-4000:],
                     "stderr": proc.stderr[-4000:],
@@ -764,13 +769,13 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
                 "module": module,
                 "step": "ollama_prewarm_model",
                 "model": DEFAULT_LLM_MODEL,
+                "required": False,
+                "status": "passed" if proc.returncode == 0 else "warning",
                 "returncode": proc.returncode,
                 "stdout": proc.stdout[-4000:],
                 "stderr": proc.stderr[-4000:],
             }
         )
-        if proc.returncode != 0:
-            return steps
     return steps
 
 
@@ -1364,7 +1369,12 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
     if review_status != 200 or review_body.get("status") != "in_review":
         return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
 
-    letter_status, letter = post_json(f"{base}/requests/{request_id}/response-letter", {}, headers=headers)
+    letter_status, letter = post_json(
+        f"{base}/requests/{request_id}/response-letter",
+        {},
+        headers=headers,
+        timeout_seconds=RESPONSE_LETTER_TIMEOUT_SECONDS,
+    )
     checks.append(
         {
             "name": "draft_response_letter",
@@ -1871,6 +1881,7 @@ def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
         answer_status, answer = post_json(
             f"{code_base}/api/v1/civiccode/questions/answer",
             {"question": "How many backyard chickens can residents keep?", "section_number": "13.40.020"},
+            timeout_seconds=CODE_QA_TIMEOUT_SECONDS,
         )
         answer_text = str(answer.get("answer") or "")
         citations = answer.get("citations") if isinstance(answer.get("citations"), list) else []
@@ -2106,7 +2117,7 @@ def install(
             return {"status": "failed", "steps": steps}
     model_steps = ensure_ollama_models(ctx)
     steps.extend(model_steps)
-    if any(step.get("returncode") != 0 for step in model_steps):
+    if any(step.get("required", True) and step.get("returncode") != 0 for step in model_steps):
         return {"status": "failed", "steps": steps}
     result = verify(
         install_root,

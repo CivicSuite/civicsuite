@@ -1,0 +1,104 @@
+{
+  "archive_hygiene": {
+    "forbidden_markers": [
+      "/.agent-runs/",
+      "/.runtime-proof",
+      "/.venv",
+      "/__pycache__/",
+      "/.pytest_cache/",
+      "/.ruff_cache/",
+      "/node_modules/",
+      "/playwright-report/",
+      "/test-results/",
+      "/installer/reports/"
+    ],
+    "status": "passed"
+  },
+  "archives": [
+    {
+      "bundle_root": "installer\\generated\\bundles\\city-core\\windows\\CivicSuite-city-core-windows",
+      "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
+      "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
+      "platform": "windows",
+      "sha256": "8d2ade26fe5a8dfb62e8021b0ecfd5083993f151a85d4cc6d2e95ae1a0583d7e",
+      "support_status": "supported_package"
+    },
+    {
+      "bundle_root": "installer\\generated\\bundles\\city-core\\macos\\CivicSuite-city-core-macos",
+      "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
+      "path": "installer\\dist\\CivicSuite-city-core-macos-0.1.2.tar.gz",
+      "platform": "macos",
+      "sha256": "5a6851690e9eabc09cc13419b01383071f6dacd03a13eab85aa31620d6d9b52e",
+      "support_status": "beta"
+    },
+    {
+      "bundle_root": "installer\\generated\\bundles\\city-core\\linux\\CivicSuite-city-core-linux",
+      "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
+      "path": "installer\\dist\\CivicSuite-city-core-linux-0.1.2.tar.gz",
+      "platform": "linux",
+      "sha256": "c1bb1c7992cee92fbf04a0324c460f3947239293a10fd5088a60d04ad0d46db5",
+      "support_status": "supported_package"
+    }
+  ],
+  "checksum_file": "installer\\dist\\CivicSuite-city-core-0.1.2-SHA256SUMS.txt",
+  "distribution_status": "unsigned_city_core_beta",
+  "installer_version": "0.1.2",
+  "menu_style": "guided",
+  "modules": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "native_installers_built": false,
+  "native_wrapper_status": "manifests_generated",
+  "next_action": "Publish only after the Linux and Windows lifecycle evidence, SHA256 checksum, and official-source trust path are verified.",
+  "one_click_installers": [
+    {
+      "certification_scope": "Windows one-click wrapper around matching-host package lifecycle",
+      "entrypoint": "double-click .cmd; readiness then install",
+      "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.cmd",
+      "platform": "windows",
+      "sha256": "5dc58fdbb51c4fa450f6e723dd1e6c6901fa42c3a6dfd29b674244ab953b0da4",
+      "source_archive": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
+      "support_status": "supported_one_click"
+    },
+    {
+      "certification_scope": "Linux one-click wrapper around matching-host package lifecycle",
+      "entrypoint": "double-click or run .run; readiness then install",
+      "path": "installer\\dist\\CivicSuite-city-core-linux-0.1.2.run",
+      "platform": "linux",
+      "sha256": "2803013f08830dcc91da6978c078dcfb361e78cf651cd979af656f44c786a385",
+      "source_archive": "installer\\dist\\CivicSuite-city-core-linux-0.1.2.tar.gz",
+      "support_status": "supported_one_click"
+    }
+  ],
+  "one_click_installers_built": true,
+  "platform_support": {
+    "linux": {
+      "certification_scope": "matching-host cleanroom lifecycle required for promotion",
+      "support_status": "supported_package"
+    },
+    "macos": {
+      "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
+      "support_status": "beta"
+    },
+    "windows": {
+      "certification_scope": "matching-host cleanroom lifecycle required for promotion",
+      "support_status": "supported_package"
+    }
+  },
+  "platforms": [
+    "windows",
+    "macos",
+    "linux"
+  ],
+  "profile": "city-core",
+  "schema_version": 1,
+  "signing": {
+    "reason": "CivicSuite city-core is an unsigned beta installer package pending Linux and Windows matching-host lifecycle proof.",
+    "signed": false,
+    "status": "unsigned_city_core_beta",
+    "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package."
+  }
+}

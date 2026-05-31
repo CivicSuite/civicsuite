@@ -1,0 +1,76 @@
+{
+  "archive": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\dist\\CivicSuite-city-core-linux-0.1.2.tar.gz",
+  "bundle_root": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice2-linux-archive-precheck\\extracted\\CivicSuite-city-core-linux",
+  "certification_scope": "Archive extraction, readiness, and dry-run plan only; not lifecycle certification.",
+  "civicclerk_staff_mode": "protected",
+  "cleanroom_hygiene": {
+    "after": {
+      "free_bytes": 155286093824,
+      "passed": true,
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29",
+      "required_free_bytes": 26843545600,
+      "required_free_gb": 25,
+      "total_bytes": 1022115180544,
+      "used_bytes": 866829086720
+    },
+    "before": {
+      "free_bytes": 155286093824,
+      "passed": true,
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29",
+      "required_free_bytes": 26843545600,
+      "required_free_gb": 25,
+      "total_bytes": 1022115180544,
+      "used_bytes": 866829086720
+    },
+    "cleanup_approved": false,
+    "cleanup_steps": [],
+    "minimum_free_disk_bytes": 26843545600,
+    "minimum_free_disk_gb": 25,
+    "status": "passed"
+  },
+  "evidence_classification": "archive_readiness_only",
+  "extracted_bundle_retained": false,
+  "host_platform": "win32",
+  "host_platform_matches_target": false,
+  "lifecycle_isolation": {
+    "environment": {
+      "CIVICSUITE_INSTALLER_INSTALL_ROOT": null,
+      "CIVICSUITE_INSTALLER_RUN_ID": "stage2-slice2-linux-archive-precheck"
+    },
+    "resolved_modes": [],
+    "run_id": "stage2-slice2-linux-archive-precheck"
+  },
+  "mutates_host": false,
+  "normalized_host_platform": "windows",
+  "platform": "linux",
+  "requested_mutating_lifecycle": false,
+  "retained_lifecycle_evidence": [],
+  "run_id": "stage2-slice2-linux-archive-precheck",
+  "status": "passed",
+  "steps": [
+    {
+      "command": [
+        "bash",
+        "installer/generated/packages/city-core/linux/start-civicsuite-installer.sh",
+        "readiness"
+      ],
+      "mode": "readiness",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Your OS may show an unknown developer/publisher warning.\nTrust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"detection_source\": \"host_read_only\",\n  \"dry_run\": true,\n  \"host\": {\n    \"machine\": \"x86_64\",\n    \"release\": \"6.6.87.2-microsoft-standard-WSL2\",\n    \"system\": \"Linux\"\n  },\n  \"menu_style\": {\n    \"description\": \"Step-by-step setup for operators who want recommendations.\",\n    \"id\": \"guided\",\n    \"label\": \"Guided Setup\"\n  },\n  \"mutates_host\": false,\n  \"profile\": \"city-core\",\n  \"readiness\": {\n    \"checks\": [\n      {\n        \"evidence\": {\n          \"docker_path\": \"/usr/bin/docker\",\n          \"probe\": {\n            \"detail\": \"29.4.0\",\n            \"ok\": true\n          }\n        },\n        \"fix_steps\": [],\n        \"id\": \"container-runtime\",\n        \"message\": \"Container runtime is available for CivicSuite services.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"free_disk_bytes\": 155223683072,\n          \"memory_bytes\": 15141634048,\n          \"required_free_disk_bytes\": 26843545600,\n          \"required_memory_bytes\": 8589934592\n        },\n        \"fix_steps\": [],\n        \"id\": \"disk-memory\",\n        \"message\": \"Host resources are sufficient for the selected profile.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"ollama_path\": null\n        },\n        \"fix_steps\": [\n          \"Install Ollama if this profile will use local LLM features.\",\n          \"Start Ollama and confirm models are available.\",\n          \"Continue without Ollama only if local LLM behavior is not required.\"\n        ],\n        \"id\": \"ollama\",\n        \"message\": \"Ollama is not available; local LLM features may be disabled.\",\n        \"severity\": \"warning\",\n        \"status\": \"failed\"\n      },\n      {\n        \"evidence\": {\n          \"port\": 18082,\n          \"source\": \"installer/runtime/suite-launcher\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"suite-launcher-runtime\",\n        \"message\": \"Suite launcher runtime files are present for city-core on localhost:18082.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n          \"value_source\": \"generated on first install if missing\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"shared-staff-session-env\",\n        \"message\": \"Shared staff session check is planned through CIVICCORE_SUITE_SESSION_SECRET.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"note\": \"Compatibility is manifest-based in this dry-run slice.\",\n          \"source\": \"installer/modules.json\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"civiccore-compatibility\",\n        \"message\": \"Selected modules are compatible with their recorded CivicCore requirements.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      }\n    ],\n    \"next_action\": \"Review warning fix steps or continue if the limitation is acceptable.\",\n    \"status\": \"warning\"\n  },\n  \"scenario\": \"nominal\"\n}\n"
+    },
+    {
+      "command": [
+        "bash",
+        "installer/generated/packages/city-core/linux/start-civicsuite-installer.sh",
+        "plan"
+      ],
+      "mode": "plan",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Your OS may show an unknown developer/publisher warning.\nTrust path: verify the SHA256 checksum from installer/dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"actions\": [\n    {\n      \"description\": \"Docker Desktop or Docker Engine is installed and running.\",\n      \"id\": \"container-runtime\",\n      \"mode\": \"detect_or_guide\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Host has enough RAM and disk for the selected profile.\",\n      \"id\": \"disk-memory\",\n      \"mode\": \"detect\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Ollama is available when the selected profile enables local LLM features.\",\n      \"id\": \"ollama\",\n      \"mode\": \"optional\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Suite launcher runtime files are packaged and planned for localhost:18082.\",\n      \"id\": \"suite-launcher-runtime\",\n      \"mode\": \"file_and_port_plan\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Shared staff session env var CIVICCORE_SUITE_SESSION_SECRET is created at runtime if missing and shared with selected services.\",\n      \"id\": \"shared-staff-session-env\",\n      \"mode\": \"env_plan\",\n      \"type\": \"check\"\n    },\n    {\n      \"civiccore_requirement\": null,\n      \"display_name\": \"CivicCore\",\n      \"module\": \"civiccore\",\n      \"proof_required\": [\n        \"install\",\n        \"version_check\",\n        \"compatibility_matrix_check\"\n      ],\n      \"repo\": \"CivicSuite/civiccore\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicRecords AI\",\n      \"module\": \"civicrecords-ai\",\n      \"proof_required\": [\n        \"install\",\n        \"health_check\",\n        \"restart\",\n        \"repair\",\n        \"backup\",\n        \"restore\"\n      ],\n      \"repo\": \"CivicSuite/civicrecords-ai\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicClerk\",\n      \"module\": \"civicclerk\",\n      \"proof_required\": [\n        \"install\",\n        \"health_check\",\n        \"restart\",\n        \"repair\",\n        \"backup\",\n        \"restore\"\n      ],\n      \"repo\": \"CivicSuite/civicclerk\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicCode\",\n      \"module\": \"civiccode\",\n      \"proof_required\": [\n        \"module_selection\",\n        \"install_plan\",\n        \"artifact_resolution\",\n        \"health_check\",\n        \"restart\",\n        \"release_artifacts\",\n        \"release_attestation\"\n      ],\n      \"repo\": \"CivicSuite/civiccode\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"component\": \"suite-launcher\",\n      \"modules\": [\n        {\n          \"href\": \"http://127.0.0.1:18080/\",\n          \"id\": \"records\",\n          \"port\": 18080\n        },\n        {\n          \"href\": \"http://127.0.0.1:18081/\",\n          \"id\": \"clerk\",\n          \"port\": 18081\n        },\n        {\n          \"href\": \"http://127.0.0.1:18820/\",\n          \"id\": \"code\",\n          \"port\": 18820\n        }\n      ],\n      \"port\": 18082,\n      \"shared_staff_session\": {\n        \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n        \"persisted_value_in_plan\": false,\n        \"revocation_env_var\": \"CIVICCORE_SUITE_SESSION_REVOCATION_FILE\",\n        \"revocation_file\": \"/civicsuite-shared/civiccore_suite_session_revocations.json\",\n        \"value_source\": \"generated on first install if missing\"\n      },\n      \"source\": \"installer/runtime/suite-launcher\",\n      \"type\": \"configure_runtime\",\n      \"url\": \"http://127.0.0.1:18082/\"\n    },\n    {\n      \"profile\": \"city-core\",\n      \"proof\": [\n        \"health_checks\",\n        \"restart\",\n        \"backup\",\n        \"restore\",\n        \"actionable_failure_copy\",\n        \"suite_launcher_files\",\n        \"suite_launcher_port_config\",\n        \"shared_staff_session_check\"\n      ],\n      \"type\": \"verify_profile\"\n    }\n  ],\n  \"dry_run\": true,\n  \"host\": {\n    \"machine\": \"x86_64\",\n    \"release\": \"6.6.87.2-microsoft-standard-WSL2\",\n    \"system\": \"Linux\"\n  },\n  \"menu_style\": {\n    \"description\": \"Step-by-step setup for operators who want recommendations.\",\n    \"id\": \"guided\",\n    \"label\": \"Guided Setup\"\n  },\n  \"modules\": [\n    \"civiccore\",\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"mutates_host\": false,\n  \"profile\": \"city-core\",\n  \"profile_label\": \"City Core\"\n}\n"
+    }
+  ],
+  "workflow_proof_modes": [],
+  "workflow_proof_requested": false
+}

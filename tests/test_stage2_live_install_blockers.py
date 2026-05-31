@@ -46,6 +46,7 @@ def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> 
     code_text = (code / "docker-compose.civicsuite.override.yml").read_text(encoding="utf-8")
     assert "CIVICCODE_OLLAMA_MODEL: gemma4:e4b" in code_text
     assert "CIVICCODE_OLLAMA_EMBEDDING_MODEL: nomic-embed-text" in code_text
+    assert 'CIVICCODE_OLLAMA_TIMEOUT_SECONDS: "8"' in code_text
 
     clerk_text = (clerk / "docker-compose.civicsuite.override.yml").read_text(encoding="utf-8")
     assert "citycore-ollama" in clerk_text
@@ -56,9 +57,29 @@ def test_ollama_model_prepare_pulls_and_prewarms_llm() -> None:
     text = Path(runner.__file__).read_text(encoding="utf-8")
 
     assert '"pull", model' in text
+    assert '"required": True' in text
     assert '"run",\n                DEFAULT_LLM_MODEL' in text
     assert "ollama_prewarm_model" in text
+    assert '"required": False' in text
     assert "Respond with OK." in text
+    assert 'step.get("required", True) and step.get("returncode") != 0' in text
+
+
+def test_records_response_letter_workflow_allows_llm_fallback_timeout() -> None:
+    runner = _load_installer_runner()
+    text = Path(runner.__file__).read_text(encoding="utf-8")
+
+    assert "RESPONSE_LETTER_TIMEOUT_SECONDS = 180" in text
+    assert "timeout_seconds=RESPONSE_LETTER_TIMEOUT_SECONDS" in text
+
+
+def test_civiccode_qa_workflow_allows_deterministic_fallback_timeout() -> None:
+    runner = _load_installer_runner()
+    text = Path(runner.__file__).read_text(encoding="utf-8")
+
+    assert "CODE_QA_TIMEOUT_SECONDS = 60" in text
+    assert "CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8" in text
+    assert "timeout_seconds=CODE_QA_TIMEOUT_SECONDS" in text
 
 
 def test_blocked_readiness_exits_nonzero() -> None:
@@ -97,7 +118,9 @@ def test_generated_package_readme_uses_25_gb_disk_floor() -> None:
     planner = ROOT / "scripts" / "plan-installer.py"
     text = planner.read_text(encoding="utf-8")
 
+    assert "MIN_FREE_DISK_GB = 25" in text
     assert "25 GB free disk" in text
+    assert "60 * 1024 * 1024 * 1024" not in text
     assert "60 GB free disk" not in text
 
 

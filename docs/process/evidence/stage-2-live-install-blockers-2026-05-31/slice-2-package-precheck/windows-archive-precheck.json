@@ -1,0 +1,83 @@
+{
+  "archive": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
+  "bundle_root": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice2-windows-archive-precheck\\extracted\\CivicSuite-city-core-windows",
+  "certification_scope": "Archive extraction, readiness, and dry-run plan only; not lifecycle certification.",
+  "civicclerk_staff_mode": "protected",
+  "cleanroom_hygiene": {
+    "after": {
+      "free_bytes": 155286138880,
+      "passed": true,
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29",
+      "required_free_bytes": 26843545600,
+      "required_free_gb": 25,
+      "total_bytes": 1022115180544,
+      "used_bytes": 866829041664
+    },
+    "before": {
+      "free_bytes": 155286138880,
+      "passed": true,
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29",
+      "required_free_bytes": 26843545600,
+      "required_free_gb": 25,
+      "total_bytes": 1022115180544,
+      "used_bytes": 866829041664
+    },
+    "cleanup_approved": false,
+    "cleanup_steps": [],
+    "minimum_free_disk_bytes": 26843545600,
+    "minimum_free_disk_gb": 25,
+    "status": "passed"
+  },
+  "evidence_classification": "archive_readiness_only",
+  "extracted_bundle_retained": false,
+  "host_platform": "win32",
+  "host_platform_matches_target": true,
+  "lifecycle_isolation": {
+    "environment": {
+      "CIVICSUITE_INSTALLER_INSTALL_ROOT": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice2-windows-archive-precheck\\extracted\\CivicSuite-city-core-windows\\r",
+      "CIVICSUITE_INSTALLER_RUN_ID": "stage2-slice2-windows-archive-precheck"
+    },
+    "resolved_modes": [],
+    "run_id": "stage2-slice2-windows-archive-precheck"
+  },
+  "mutates_host": false,
+  "normalized_host_platform": "windows",
+  "platform": "windows",
+  "requested_mutating_lifecycle": false,
+  "retained_lifecycle_evidence": [],
+  "run_id": "stage2-slice2-windows-archive-precheck",
+  "status": "passed",
+  "steps": [
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1"
+      ],
+      "mode": "readiness",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"detection_source\": \"host_read_only\",\n  \"dry_run\": true,\n  \"host\": {\n    \"machine\": \"AMD64\",\n    \"release\": \"11\",\n    \"system\": \"Windows\"\n  },\n  \"menu_style\": {\n    \"description\": \"Step-by-step setup for operators who want recommendations.\",\n    \"id\": \"guided\",\n    \"label\": \"Guided Setup\"\n  },\n  \"mutates_host\": false,\n  \"profile\": \"city-core\",\n  \"readiness\": {\n    \"checks\": [\n      {\n        \"evidence\": {\n          \"docker_path\": \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\resources\\\\bin\\\\docker.EXE\",\n          \"probe\": {\n            \"detail\": \"29.4.0\",\n            \"ok\": true\n          }\n        },\n        \"fix_steps\": [],\n        \"id\": \"container-runtime\",\n        \"message\": \"Container runtime is available for CivicSuite services.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"docker_probe\": {\n            \"detail\": \"29.4.0\",\n            \"ok\": true\n          },\n          \"probe\": {\n            \"detail\": \"Default Distribution: Ubuntu\",\n            \"ok\": true\n          },\n          \"wsl_path\": \"C:\\\\WINDOWS\\\\system32\\\\wsl.exe\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"wsl2\",\n        \"message\": \"WSL 2 support is available for Docker Desktop on Windows.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"free_disk_bytes\": 155223728128,\n          \"memory_bytes\": 31057444864,\n          \"required_free_disk_bytes\": 26843545600,\n          \"required_memory_bytes\": 8589934592\n        },\n        \"fix_steps\": [],\n        \"id\": \"disk-memory\",\n        \"message\": \"Host resources are sufficient for the selected profile.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"ollama_path\": \"C:\\\\Users\\\\scott\\\\AppData\\\\Local\\\\Programs\\\\Ollama\\\\ollama.EXE\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"ollama\",\n        \"message\": \"Ollama is available when local LLM features are selected.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"port\": 18082,\n          \"source\": \"installer\\\\runtime\\\\suite-launcher\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"suite-launcher-runtime\",\n        \"message\": \"Suite launcher runtime files are present for city-core on localhost:18082.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n          \"value_source\": \"generated on first install if missing\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"shared-staff-session-env\",\n        \"message\": \"Shared staff session check is planned through CIVICCORE_SUITE_SESSION_SECRET.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      },\n      {\n        \"evidence\": {\n          \"note\": \"Compatibility is manifest-based in this dry-run slice.\",\n          \"source\": \"installer/modules.json\"\n        },\n        \"fix_steps\": [],\n        \"id\": \"civiccore-compatibility\",\n        \"message\": \"Selected modules are compatible with their recorded CivicCore requirements.\",\n        \"severity\": \"info\",\n        \"status\": \"passed\"\n      }\n    ],\n    \"next_action\": \"Continue to dry-run install planning; no host changes have been made.\",\n    \"status\": \"ready\"\n  },\n  \"scenario\": \"nominal\"\n}\n"
+    },
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1",
+        "-Plan"
+      ],
+      "mode": "plan",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "CivicSuite city-core unsigned beta installer package\nSigning status: unsigned. Windows may show SmartScreen or unknown publisher warnings.\nTrust path: verify the SHA256 checksum from installer\\dist and the official CivicSuite release source before running lifecycle commands.\nProject status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.\n{\n  \"actions\": [\n    {\n      \"description\": \"Docker Desktop or Docker Engine is installed and running.\",\n      \"id\": \"container-runtime\",\n      \"mode\": \"detect_or_guide\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"WSL 2 and Virtual Machine Platform are enabled when Docker Desktop requires them.\",\n      \"id\": \"wsl2\",\n      \"mode\": \"detect_or_guide\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Host has enough RAM and disk for the selected profile.\",\n      \"id\": \"disk-memory\",\n      \"mode\": \"detect\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Ollama is available when the selected profile enables local LLM features.\",\n      \"id\": \"ollama\",\n      \"mode\": \"optional\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Suite launcher runtime files are packaged and planned for localhost:18082.\",\n      \"id\": \"suite-launcher-runtime\",\n      \"mode\": \"file_and_port_plan\",\n      \"type\": \"check\"\n    },\n    {\n      \"description\": \"Shared staff session env var CIVICCORE_SUITE_SESSION_SECRET is created at runtime if missing and shared with selected services.\",\n      \"id\": \"shared-staff-session-env\",\n      \"mode\": \"env_plan\",\n      \"type\": \"check\"\n    },\n    {\n      \"civiccore_requirement\": null,\n      \"display_name\": \"CivicCore\",\n      \"module\": \"civiccore\",\n      \"proof_required\": [\n        \"install\",\n        \"version_check\",\n        \"compatibility_matrix_check\"\n      ],\n      \"repo\": \"CivicSuite/civiccore\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicRecords AI\",\n      \"module\": \"civicrecords-ai\",\n      \"proof_required\": [\n        \"install\",\n        \"health_check\",\n        \"restart\",\n        \"repair\",\n        \"backup\",\n        \"restore\"\n      ],\n      \"repo\": \"CivicSuite/civicrecords-ai\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicClerk\",\n      \"module\": \"civicclerk\",\n      \"proof_required\": [\n        \"install\",\n        \"health_check\",\n        \"restart\",\n        \"repair\",\n        \"backup\",\n        \"restore\"\n      ],\n      \"repo\": \"CivicSuite/civicclerk\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"civiccore_requirement\": \"1.2.0\",\n      \"display_name\": \"CivicCode\",\n      \"module\": \"civiccode\",\n      \"proof_required\": [\n        \"module_selection\",\n        \"install_plan\",\n        \"artifact_resolution\",\n        \"health_check\",\n        \"restart\",\n        \"release_artifacts\",\n        \"release_attestation\"\n      ],\n      \"repo\": \"CivicSuite/civiccode\",\n      \"type\": \"install_module\"\n    },\n    {\n      \"component\": \"suite-launcher\",\n      \"modules\": [\n        {\n          \"href\": \"http://127.0.0.1:18080/\",\n          \"id\": \"records\",\n          \"port\": 18080\n        },\n        {\n          \"href\": \"http://127.0.0.1:18081/\",\n          \"id\": \"clerk\",\n          \"port\": 18081\n        },\n        {\n          \"href\": \"http://127.0.0.1:18820/\",\n          \"id\": \"code\",\n          \"port\": 18820\n        }\n      ],\n      \"port\": 18082,\n      \"shared_staff_session\": {\n        \"env_var\": \"CIVICCORE_SUITE_SESSION_SECRET\",\n        \"persisted_value_in_plan\": false,\n        \"revocation_env_var\": \"CIVICCORE_SUITE_SESSION_REVOCATION_FILE\",\n        \"revocation_file\": \"/civicsuite-shared/civiccore_suite_session_revocations.json\",\n        \"value_source\": \"generated on first install if missing\"\n      },\n      \"source\": \"installer\\\\runtime\\\\suite-launcher\",\n      \"type\": \"configure_runtime\",\n      \"url\": \"http://127.0.0.1:18082/\"\n    },\n    {\n      \"profile\": \"city-core\",\n      \"proof\": [\n        \"health_checks\",\n        \"restart\",\n        \"backup\",\n        \"restore\",\n        \"actionable_failure_copy\",\n        \"suite_launcher_files\",\n        \"suite_launcher_port_config\",\n        \"shared_staff_session_check\"\n      ],\n      \"type\": \"verify_profile\"\n    }\n  ],\n  \"dry_run\": true,\n  \"host\": {\n    \"machine\": \"AMD64\",\n    \"release\": \"11\",\n    \"system\": \"Windows\"\n  },\n  \"menu_style\": {\n    \"description\": \"Step-by-step setup for operators who want recommendations.\",\n    \"id\": \"guided\",\n    \"label\": \"Guided Setup\"\n  },\n  \"modules\": [\n    \"civiccore\",\n    \"civicrecords-ai\",\n    \"civicclerk\",\n    \"civiccode\"\n  ],\n  \"mutates_host\": false,\n  \"profile\": \"city-core\",\n  \"profile_label\": \"City Core\"\n}\n"
+    }
+  ],
+  "workflow_proof_modes": [],
+  "workflow_proof_requested": false
+}
