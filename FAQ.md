@@ -1,6 +1,6 @@
 # CivicSuite FAQ
 
-**Last verified:** 2026-05-27
+**Last verified:** 2026-06-01
 
 This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement officer) evaluating whether CivicSuite is right for them. For engineering-level questions, see [CONTRIBUTING.md](CONTRIBUTING.md). For module-by-module status, see [STATUS.md](STATUS.md).
 
@@ -8,7 +8,7 @@ This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement
 
 ## Can my city rely on CivicSuite for live operations today?
 
-**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, CivicCode v1.0.8, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
+**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, CivicCode v1.0.8, and the suite installer. The current Stage 2 branch is fixing independent audit-team findings in the live installer gate, including local-AI proof, existing-stack provenance, operator failure copy, docs, and clean-VM altitude.
 
 That is still a bounded beta package. It is **not public-use ready, not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess is out of city-core after the 2026-05-23 NEEDS-WORK depth probe and must go through gap closure plus re-probe before inclusion. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
@@ -30,7 +30,7 @@ In practice, use the installer profile that has evidence for your evaluation. Cl
 
 For the modules that have install paths today:
 
-- A machine with **8+ CPU cores, 32 GB RAM, and 60 GB free disk space** for the full city-core lifecycle checks.
+- A machine with **8+ CPU cores, 32 GB RAM, and 50 GB free disk space** for the full city-core lifecycle checks. The installer readiness floor is 12 GB RAM because the local response-letter model is `gemma4:e4b`; Docker Desktop / WSL2 must expose enough memory for Ollama to load that model.
 - **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary runtime proof path. Windows requires WSL 2 and Virtual Machine Platform. macOS remains beta/archive/readiness only until matching-host lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
 - A staff person comfortable running the one-click wrapper or reading the generated bash/PowerShell output.
 - Access to city documents for representative, non-production evaluation.

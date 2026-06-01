@@ -27,7 +27,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
-- The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence. The 2026-05-28 engagement is closing the full independent audit-team finding set before the beta-ready truth-reconciled label is current. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
+- The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, and CI/PR evidence. The current Stage 2 live-installer branch is under fix-now audit-team closure for installer, LLM-proof, docs, and clean-VM altitude findings. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
 - The suite launcher is the local browser front door for staff, resident, and IT-admin orientation over the installed services. The 2026-05-28 engagement is proving the shared browser session across modules; until the independent audit-team rerun clears it, treat that as in-flight city-core beta work rather than a municipal managed-SSO claim.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
@@ -48,7 +48,7 @@ If you want to *try* CivicSuite today, start at the suite launcher. Treat this a
 
 ### Prerequisites
 
-- A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
+- A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**. The local AI response-letter proof uses `gemma4:e4b`; Docker Desktop / WSL2 must expose enough memory for Ollama to load that model. The installer readiness floor is 12 GB RAM, but 32 GB remains the practical evaluation target.
 - **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. The city-core first-run wizard offers a Guided Setup path for supported Linux and Windows hosts, plus a Manual Prerequisite path for IT-managed machines. Linux Guided Setup uses Docker's signed package repositories where supported. macOS remains beta/archive/readiness only.
 - About 30 minutes for first install (model downloads).
 
@@ -72,6 +72,18 @@ bash install.sh
 ```
 
 For city-core, the first-run wizard can guide supported Linux/Windows prerequisite setup, then resumes the install. For IT-managed machines, choose Manual Prerequisite after Docker/WSL is already present. macOS prerequisite bootstrap remains out of scope for this run.
+
+### If the installer fails
+
+The installer writes a machine-readable lifecycle report and streamed logs under `installer/reports/<run-id>/`.
+
+- Full lifecycle JSON: `installer/reports/<run-id>/clerk-core-installer-lifecycle.json`
+- Streamed package logs: `installer/reports/<run-id>/launcher-output/*.log`
+- Suite launcher port: `18082`
+
+If the suite launcher check fails, free port `18082` before retrying. On Windows, run `netstat -ano | findstr :18082`, identify the owning PID, and stop that process from Task Manager or an elevated PowerShell prompt. If Ollama reports a model-load failure, increase Docker Desktop / WSL2 memory or choose a smaller supported model only after the release manifest and docs name that model. A slow Ollama prewarm is a warning; an actual model-load failure blocks the install because the Records AI response-letter proof must be model-generated, not a template fallback.
+
+`--verify-existing-install-root` only verifies stacks with a matching `civicsuite-install-provenance.json`. If that provenance file is missing or its manifest hash/source commits do not match the current package, reinstall or repair from the current package before rerunning verification.
 
 ### Trust path for city-core artifacts
 
@@ -187,7 +199,7 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
 | CivicCore | 1.2.0 | shared platform | none | `9f7e3a5a0156` | `v1_2_0_shared_ingestion_shipped` |
-| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `ae34a499c1e0` | `v1_7_3_city_core_release_car` |
+| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `523e7db431fc` | `v1_7_3_city_core_release_car` |
 | CivicClerk | 1.0.3 | meetings workflow | `civiccore` | `f39d0eeccc68` | `v1_0_3_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
 

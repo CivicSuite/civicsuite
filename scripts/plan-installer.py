@@ -143,7 +143,9 @@ READINESS_SCENARIOS = {
 EXECUTION_TOKEN = "_".join(("I", "UNDERSTAND", "THIS", "MUTATES", "HOST"))
 MIN_FREE_DISK_GB = 25
 MIN_FREE_DISK_BYTES = MIN_FREE_DISK_GB * 1024 * 1024 * 1024
-MIN_MEMORY_BYTES = 8 * 1024 * 1024 * 1024
+DEFAULT_LLM_MODEL = "gemma4:e4b"
+MIN_LLM_MEMORY_GB = 12
+MIN_MEMORY_BYTES = MIN_LLM_MEMORY_GB * 1024 * 1024 * 1024
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 
 EXECUTOR_PHASES = [
@@ -803,6 +805,8 @@ def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, An
             "required_free_disk_bytes": MIN_FREE_DISK_BYTES,
             "memory_bytes": memory_total,
             "required_memory_bytes": MIN_MEMORY_BYTES,
+            "required_memory_gb": MIN_LLM_MEMORY_GB,
+            "selected_llm_model": DEFAULT_LLM_MODEL,
         },
     }
     checks["ollama"] = {
@@ -883,11 +887,12 @@ def _readiness_messages() -> dict[str, dict[str, Any]]:
         },
         "disk-memory": {
             "ok": "Host resources are sufficient for the selected profile.",
-            "fail": "The selected profile may not have enough disk or memory.",
+            "fail": f"The selected profile needs at least {MIN_LLM_MEMORY_GB} GB RAM for local AI model {DEFAULT_LLM_MODEL} plus service containers.",
             "severity": "blocker",
             "fix_steps": [
-                "Free disk space or choose a smaller installer profile.",
-                "Close memory-heavy applications before starting local services.",
+                f"Free disk space and make at least {MIN_LLM_MEMORY_GB} GB RAM available before installing city-core.",
+                "On Windows, increase Docker Desktop / WSL2 memory allocation if Ollama still reports low memory.",
+                "Choose a smaller supported LLM model only if your release manifest and docs name that model.",
                 "Re-run readiness after changing the profile or host resources.",
             ],
         },
@@ -2497,8 +2502,10 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 8 GB RAM and 25 GB free disk for the full city-core
-  stack.
+- The host has at least {MIN_LLM_MEMORY_GB} GB RAM and 25 GB free disk for the
+  full city-core stack. The local AI response-letter model is
+  `{DEFAULT_LLM_MODEL}`, so Docker Desktop / WSL2 must also expose enough
+  memory for Ollama to load that model.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 

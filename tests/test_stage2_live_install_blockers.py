@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import subprocess
 import sys
@@ -15,6 +16,15 @@ ROOT = Path(__file__).resolve().parents[1]
 def _load_installer_runner():
     path = ROOT / "scripts" / "run-clerk-core-installer.py"
     spec = importlib.util.spec_from_file_location("stage2_installer_runner", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_package_cleanroom():
+    path = ROOT / "scripts" / "run-installer-package-cleanroom.py"
+    spec = importlib.util.spec_from_file_location("stage2_package_cleanroom", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -56,30 +66,66 @@ def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> 
     assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS=8" in records_env
 
 
-def test_ollama_model_prepare_pulls_and_prewarms_llm() -> None:
+def test_ollama_model_prepare_pulls_and_prewarm_timeout_is_warning(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
-    text = Path(runner.__file__).read_text(encoding="utf-8")
 
-    assert '"pull", model' in text
-    assert '"required": True' in text
-    assert "OLLAMA_PREWARM_TIMEOUT_SECONDS = 90" in text
-    assert '"run",' in text
-    assert "DEFAULT_LLM_MODEL" in text
-    assert "ollama_prewarm_model" in text
-    assert '"required": False' in text
-    assert "Respond with OK." in text
-    assert "Ollama prewarm exceeded" in text
-    assert 'step.get("required", True) and step.get("returncode") != 0' in text
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        if "run" in command:
+            raise subprocess.TimeoutExpired(command, timeout=runner.OLLAMA_PREWARM_TIMEOUT_SECONDS)
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    ctx = {
+        "selected_modules": [runner.MODULE_RECORDS],
+        "records_project": "records-proj",
+        "records_source": tmp_path,
+    }
+
+    steps = runner.ensure_ollama_models(ctx)
+
+    assert any(step["step"] == "ollama_pull_model" and step["required"] is True for step in steps)
+    prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
+    assert prewarm["status"] == "warning"
+    assert prewarm["required"] is False
+    assert prewarm["returncode"] == 124
+    assert any("Respond with OK." in command for command in calls)
 
 
-def test_records_response_letter_workflow_allows_llm_fallback_timeout() -> None:
+def test_ollama_prewarm_model_load_failure_is_required_failure(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+
+    def fake_run(command, **_kwargs):
+        if "run" in command:
+            return subprocess.CompletedProcess(command, 1, stdout="", stderr="requires more system memory")
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    ctx = {
+        "selected_modules": [runner.MODULE_RECORDS],
+        "records_project": "records-proj",
+        "records_source": tmp_path,
+    }
+
+    steps = runner.ensure_ollama_models(ctx)
+
+    prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
+    assert prewarm["status"] == "failed"
+    assert prewarm["required"] is True
+    assert "Increase Docker Desktop / WSL2 memory" in " ".join(prewarm["fix_steps"])
+
+
+def test_records_response_letter_workflow_requires_model_generation() -> None:
     runner = _load_installer_runner()
     text = Path(runner.__file__).read_text(encoding="utf-8")
 
     assert "RESPONSE_LETTER_TIMEOUT_SECONDS = 180" in text
     assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8" in text
     assert "timeout_seconds=RESPONSE_LETTER_TIMEOUT_SECONDS" in text
-    assert "JSON GET timed out or failed before the service returned a response" in text
+    assert 'letter.get("generation_source") != "ollama"' in text
+    assert 'letter.get("generation_model") != DEFAULT_LLM_MODEL' in text
 
 
 def test_civiccode_qa_workflow_allows_deterministic_fallback_timeout() -> None:
@@ -123,6 +169,50 @@ def test_cleanroom_disk_floor_is_25_gb() -> None:
     assert "60 GB free" not in text
 
 
+def test_run_streaming_timeout_kills_waits_and_returns_124(tmp_path: Path) -> None:
+    cleanroom = _load_package_cleanroom()
+
+    proc = cleanroom.run_streaming(
+        [sys.executable, "-c", "import time; time.sleep(10)"],
+        cwd=ROOT,
+        timeout=1,
+        output_path=tmp_path / "timeout.log",
+    )
+
+    assert proc.returncode == 124
+    assert "TIMEOUT: command exceeded 1 seconds" in proc.stdout
+    assert "combined stdout/stderr streamed to" in proc.stderr
+
+
+def test_run_streaming_unknown_returncode_is_failure(monkeypatch, tmp_path: Path) -> None:
+    cleanroom = _load_package_cleanroom()
+
+    class FakeProcess:
+        returncode = None
+
+        def __init__(self, *_args, **_kwargs):
+            self.poll_count = 0
+
+        def poll(self):
+            self.poll_count += 1
+            return 0
+
+        def kill(self):
+            raise AssertionError("should not kill a completed fake process")
+
+    monkeypatch.setattr(cleanroom.subprocess, "Popen", FakeProcess)
+
+    proc = cleanroom.run_streaming(
+        ["fake"],
+        cwd=ROOT,
+        timeout=30,
+        output_path=tmp_path / "unknown.log",
+    )
+
+    assert proc.returncode == 1
+    assert "unknown exit code" in proc.stdout
+
+
 def test_package_cleanroom_streams_launcher_output_and_supports_existing_stack_proof() -> None:
     runner = ROOT / "scripts" / "run-installer-package-cleanroom.py"
     text = runner.read_text(encoding="utf-8")
@@ -136,11 +226,31 @@ def test_package_cleanroom_streams_launcher_output_and_supports_existing_stack_p
     assert "existing_stack_workflow_proof" in text
 
 
+def test_existing_stack_provenance_binds_to_manifest_hash(tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    modules = [runner.MODULE_RECORDS, runner.MODULE_CLERK]
+
+    path = runner.write_install_provenance(tmp_path, modules)
+    proof = runner.verify_install_provenance(tmp_path, modules)
+
+    assert path.name == runner.INSTALL_PROVENANCE_FILE
+    assert proof["status"] == "passed"
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["manifest_sha256"] = "not-current"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    failed = runner.verify_install_provenance(tmp_path, modules)
+    assert failed["status"] == "failed"
+    assert "manifest_sha256" in failed["mismatches"]
+
+
 def test_generated_package_readme_uses_25_gb_disk_floor() -> None:
     planner = ROOT / "scripts" / "plan-installer.py"
     text = planner.read_text(encoding="utf-8")
 
     assert "MIN_FREE_DISK_GB = 25" in text
+    assert "MIN_LLM_MEMORY_GB = 12" in text
     assert "25 GB free disk" in text
     assert "60 * 1024 * 1024 * 1024" not in text
     assert "60 GB free disk" not in text
@@ -154,24 +264,76 @@ def test_plan_installer_can_use_module_source_override() -> None:
     assert 're.sub(r"[^A-Z0-9]+", "_", module_name.upper()).strip("_")' in text
 
 
-def test_verify_starts_suite_launcher_http_probe() -> None:
+def test_wait_for_url_timeout_records_124_and_fails(monkeypatch) -> None:
     runner = _load_installer_runner()
-    text = Path(runner.__file__).read_text(encoding="utf-8")
 
-    assert "def verify_suite_launcher_serves" in text
-    assert '"suite_launcher_http"' in text
-    assert "python_http_server" in text
-    assert '"curl", "--max-time", "5"' in text
-    assert "curl probe timed out" in text
-    assert "server exited with code" in text
+    clock = {"now": 0.0}
+
+    def fake_time():
+        clock["now"] += 0.6
+        return clock["now"]
+
+    def fake_run(command, **_kwargs):
+        raise subprocess.TimeoutExpired(command, timeout=8)
+
+    monkeypatch.setattr(runner.time, "time", fake_time)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(runner, "run", fake_run)
+
+    proof = runner.wait_for_url("http://127.0.0.1:18082/", timeout_seconds=1)
+
+    assert proof["status"] == "failed"
+    assert proof["attempts"][0]["returncode"] == 124
+    assert "timed out" in proof["attempts"][0]["stderr"]
+
+
+def test_verify_suite_launcher_http_probe_fails_on_early_exit(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "failed", "attempts": []})
+
+    class FakeProcess:
+        returncode = 98
+        stderr = io.StringIO("address already in use")
+
+        def poll(self):
+            return self.returncode
+
+        def terminate(self):
+            pass
+
+        def wait(self, timeout=None):
+            return self.returncode
+
+    monkeypatch.setattr(runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
+
+    proof = runner.verify_suite_launcher_serves({"install_root": tmp_path})
+
+    assert proof["status"] == "failed"
+    assert proof["error"] == "address already in use"
+    assert any("netstat -ano" in step for step in proof["fix_steps"])
 
 
 def test_portal_mode_route_check_retries_slow_openapi_schema() -> None:
     runner = _load_installer_runner()
-    text = Path(runner.__file__).read_text(encoding="utf-8")
 
-    assert 'get_json(f"{base}/openapi.json", timeout_seconds=30)' in text
-    assert '"attempts": openapi_attempts' in text
+    calls = {"count": 0}
+
+    def fake_get_json(url, **_kwargs):
+        if url.endswith("/config/portal-mode"):
+            return 200, {"mode": "public"}
+        calls["count"] += 1
+        return 598, {"detail": {"message": "timeout"}}
+
+    runner.get_json = fake_get_json
+    runner.time.sleep = lambda _seconds: None
+
+    proof = runner.verify_records_portal_mode({"api": 18080}, expected_mode="public")
+
+    assert proof["status"] == "failed"
+    public_routes = [check for check in proof["checks"] if check["name"] == "public_route_mounts"][0]
+    assert calls["count"] == 6
+    assert public_routes["attempts"] == [{"status_code": 598}] * 6
 
 
 def test_generated_launcher_has_python_fallback_for_suite_launcher() -> None:

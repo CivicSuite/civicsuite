@@ -80,13 +80,28 @@ def run_streaming(
             if time.time() - started > timeout:
                 timed_out = True
                 proc.kill()
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    output.write("\nTIMEOUT: process did not exit after kill; continuing with timeout failure\n")
                 output.write(f"\nTIMEOUT: command exceeded {timeout} seconds\n")
                 output.flush()
                 break
             time.sleep(1)
-        returncode = 124 if timed_out else int(proc.returncode or 0)
+        if timed_out:
+            returncode = 124
+        elif proc.returncode is None:
+            returncode = 1
+            output.write("\nERROR: command ended with an unknown exit code; treating as failure\n")
+        else:
+            returncode = int(proc.returncode)
     tail = output_path.read_text(encoding="utf-8", errors="replace")[-12000:]
-    return subprocess.CompletedProcess(command, returncode, stdout=tail, stderr="")
+    return subprocess.CompletedProcess(
+        command,
+        returncode,
+        stdout=tail,
+        stderr=f"combined stdout/stderr streamed to {output_path}",
+    )
 
 
 def disk_snapshot(path: Path = ROOT) -> dict[str, object]:

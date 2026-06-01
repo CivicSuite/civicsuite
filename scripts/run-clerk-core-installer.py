@@ -56,6 +56,7 @@ EXPECTED_RECORDS_VERSION = "1.7.3"
 EXPECTED_CLERK_VERSION = "1.0.3"
 EXPECTED_CODE_VERSION = "1.0.8"
 SELECTED_MODULES_FILE = "selected-modules.json"
+INSTALL_PROVENANCE_FILE = "civicsuite-install-provenance.json"
 BACKUPS_DIR = "backups"
 CLERK_STAFF_MODE_PROTECTED = "protected"
 CLERK_STAFF_MODE_OPEN = "open"
@@ -375,6 +376,70 @@ def persist_selected_modules(install_root: Path, modules: list[str]) -> None:
         json.dumps({"modules": modules}, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def install_provenance_path(install_root: Path) -> Path:
+    return install_root / INSTALL_PROVENANCE_FILE
+
+
+def expected_install_provenance(modules: list[str]) -> dict[str, object]:
+    return {
+        "schema": "civicsuite.install-provenance.v1",
+        "modules": modules,
+        "manifest_path": str(MANIFEST.relative_to(ROOT)),
+        "manifest_sha256": sha256_file(MANIFEST) if MANIFEST.is_file() else None,
+        "module_source_commits": {module: declared_source_commit(module) for module in modules},
+    }
+
+
+def write_install_provenance(install_root: Path, modules: list[str]) -> Path:
+    payload = expected_install_provenance(modules)
+    payload["created_at"] = datetime.now(UTC).isoformat()
+    path = install_provenance_path(install_root)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def verify_install_provenance(install_root: Path, modules: list[str]) -> dict[str, object]:
+    path = install_provenance_path(install_root)
+    if not path.is_file():
+        return {
+            "name": "install_provenance",
+            "status": "failed",
+            "path": str(path),
+            "fix_steps": ["Run install or repair with the current package so the install provenance file is written."],
+        }
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {"name": "install_provenance", "status": "failed", "path": str(path), "error": str(exc)}
+    expected = expected_install_provenance(modules)
+    mismatches = {
+        key: {"expected": expected[key], "actual": payload.get(key)}
+        for key in ("schema", "modules", "manifest_sha256", "module_source_commits")
+        if payload.get(key) != expected[key]
+    }
+    return {
+        "name": "install_provenance",
+        "status": "passed" if not mismatches else "failed",
+        "path": str(path),
+        "expected": expected,
+        "actual": payload,
+        "mismatches": mismatches,
+        "fix_steps": [
+            "This install root was not created from the current package manifest. Reinstall or repair from the current package, then rerun verify."
+        ]
+        if mismatches
+        else [],
+    }
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
@@ -775,18 +840,39 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
         except subprocess.TimeoutExpired as exc:
             returncode = 124
             stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""
-            stderr = f"Ollama prewarm exceeded {OLLAMA_PREWARM_TIMEOUT_SECONDS}s and was skipped; workflow proof will use API fallback paths."
+            stderr = (
+                f"Ollama prewarm exceeded {OLLAMA_PREWARM_TIMEOUT_SECONDS}s. "
+                "This is not an install error by itself; the first AI request may be slower. "
+                "The workflow proof still must generate its response letter with the configured model."
+            )
+            required = False
+            status = "warning"
+            fix_steps = [
+                "Wait for the Ollama model to finish loading, then rerun verify.",
+                "If this repeats, increase Docker Desktop / WSL2 memory or choose a smaller supported LLM model.",
+            ]
+        else:
+            required = returncode != 0
+            status = "passed" if returncode == 0 else "failed"
+            fix_steps = []
+            if returncode != 0:
+                fix_steps = [
+                    f"The selected response-letter model {DEFAULT_LLM_MODEL} did not load successfully.",
+                    "Increase Docker Desktop / WSL2 memory above the model requirement and rerun repair/verify, or select a supported smaller model.",
+                    "Review the Ollama container logs for the exact model-load error.",
+                ]
         steps.append(
             {
                 "module": module,
                 "step": "ollama_prewarm_model",
                 "model": DEFAULT_LLM_MODEL,
-                "required": False,
+                "required": required,
                 "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
-                "status": "passed" if returncode == 0 else "warning",
+                "status": status,
                 "returncode": returncode,
                 "stdout": stdout,
                 "stderr": stderr,
+                "fix_steps": fix_steps,
             }
         )
     return steps
@@ -999,14 +1085,29 @@ def get_json(
     request = urllib.request.Request(url, headers=headers or {}, method="GET")
     try:
         with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            return response.status, decode_json(response.read().decode("utf-8"))
+            body = response.read().decode("utf-8")
+            try:
+                return response.status, decode_json(body)
+            except json.JSONDecodeError as exc:
+                return 599, {
+                    "detail": {
+                        "message": "JSON GET returned a response, but the body was not valid JSON.",
+                        "status_code": response.status,
+                        "error": str(exc),
+                        "body_preview": body[:400],
+                    }
+                }
     except urllib.error.HTTPError as exc:
-        return exc.code, decode_json(exc.read().decode("utf-8"))
+        body = exc.read().decode("utf-8")
+        try:
+            return exc.code, decode_json(body)
+        except json.JSONDecodeError:
+            return exc.code, {"detail": {"message": body[:400]}}
     except (TimeoutError, SocketTimeout, urllib.error.URLError) as exc:
         reason = getattr(exc, "reason", exc)
         return 598, {
             "detail": {
-                "message": "JSON GET timed out or failed before the service returned a response.",
+                "message": "The installer could not get a JSON response before the timeout.",
                 "timeout_seconds": timeout_seconds,
                 "error": str(reason),
             }
@@ -1423,11 +1524,21 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
             "status_code": letter_status,
             "letter_id_present": bool(letter.get("id")),
             "status": letter.get("status"),
+            "generation_source": letter.get("generation_source"),
+            "generation_model": letter.get("generation_model"),
+            "expected_generation_source": "ollama",
+            "expected_generation_model": DEFAULT_LLM_MODEL,
             "human_review_required": letter.get("status") == "draft",
             "contains_ai_disclaimer": "requires human review" in str(letter.get("generated_content", "")).lower(),
         }
     )
-    if letter_status != 201 or not letter.get("id") or letter.get("status") != "draft":
+    if (
+        letter_status != 201
+        or not letter.get("id")
+        or letter.get("status") != "draft"
+        or letter.get("generation_source") != "ollama"
+        or letter.get("generation_model") != DEFAULT_LLM_MODEL
+    ):
         return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
 
     ready_status, ready_body = post_json(f"{base}/requests/{request_id}/ready-for-release", {}, headers=headers)
@@ -2068,6 +2179,7 @@ def prepare_sources(
         )  # type: ignore[operator]
         if civiccode_intake_secret:
             write_code_handoff_override(ctx["code_source"], shared_network)  # type: ignore[arg-type]
+    ctx["install_provenance_path"] = write_install_provenance(install_root, modules)
     if suite_session_path is not None:
         ctx["suite_session_path"] = suite_session_path
     if suite_session_revocation_path is not None:
@@ -2281,13 +2393,21 @@ def verify_suite_runtime_wiring(ctx: dict[str, object]) -> list[dict[str, object
 def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
     launcher_root = Path(ctx["install_root"]) / SUITE_LAUNCHER_DIR_NAME  # type: ignore[arg-type]
     url = f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
+    launcher_fix_steps = [
+        f"Free localhost port {DEFAULT_SUITE_LAUNCHER_PORT}: close the program using it or run `netstat -ano | findstr :{DEFAULT_SUITE_LAUNCHER_PORT}` and stop that PID.",
+        f"Confirm the suite launcher runtime directory exists at {launcher_root}.",
+        "Review the matching lifecycle launcher-output/*.log file; the cleanroom runner prints that path on failure.",
+    ]
     if not launcher_root.is_dir():
         return {
             "name": "suite_launcher_http",
             "status": "failed",
             "url": url,
             "path": str(launcher_root),
-            "fix_steps": ["Run install or repair so the suite launcher runtime is copied before verification."],
+            "fix_steps": [
+                "Run install or repair so the suite launcher runtime is copied before verification.",
+                *launcher_fix_steps,
+            ],
         }
 
     already_running = wait_for_url(url, timeout_seconds=3)
@@ -2311,10 +2431,7 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
                 "url": url,
                 "mode": "python_http_server",
                 "error": stderr or f"server exited with code {proc.returncode}",
-                "fix_steps": [
-                    "Confirm localhost port 18082 is free.",
-                    "Confirm the packaged suite launcher can be served from the runtime directory.",
-                ],
+                "fix_steps": launcher_fix_steps,
             }
         proof = wait_for_url(url, timeout_seconds=20)
         return {
@@ -2323,10 +2440,7 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
             "url": url,
             "mode": "python_http_server",
             "attempts": proof.get("attempts", []),
-            "fix_steps": [
-                "Confirm localhost port 18082 is free.",
-                "Confirm the packaged suite launcher can be served from the runtime directory.",
-            ]
+            "fix_steps": launcher_fix_steps
             if proof["status"] != "passed"
             else [],
         }
@@ -2357,6 +2471,7 @@ def verify(
     records_api_passed = False
     clerk_api_passed = False
     code_api_passed = False
+    checks.append(verify_install_provenance(install_root, modules))
     if uses_suite_runtime(modules):
         checks.extend(verify_suite_runtime_wiring(ctx))
         checks.append(verify_suite_launcher_serves(ctx))
@@ -2703,6 +2818,26 @@ def write_report(report_dir: Path, payload: dict[str, object]) -> None:
     )
 
 
+def print_failure_summary(payload: dict[str, object], report_dir: Path) -> None:
+    if payload.get("status") == "passed":
+        return
+    print("\nCivicSuite installer did not finish successfully.", file=sys.stderr)
+    print(f"Full machine-readable report: {report_dir / 'clerk-core-installer-lifecycle.json'}", file=sys.stderr)
+    print(f"Lifecycle logs, when present: {report_dir / 'launcher-output'}", file=sys.stderr)
+    for key in ("checks", "steps"):
+        items = payload.get(key)
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict) or item.get("status") not in {"failed", "warning"}:
+                continue
+            print(f"- {item.get('name', item.get('step', 'check'))}: {item.get('status')}", file=sys.stderr)
+            fix_steps = item.get("fix_steps")
+            if isinstance(fix_steps, list):
+                for fix in fix_steps:
+                    print(f"  * {fix}", file=sys.stderr)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run CivicSuite clerk-core installer lifecycle.")
     parser.add_argument("mode", choices=("readiness", "install", "verify", "repair", "backup", "restore", "uninstall"))
@@ -2849,6 +2984,7 @@ def main() -> int:
         payload["finished_at"] = datetime.now(UTC).isoformat()
         write_report(report_dir, payload)
         print(json.dumps(payload, indent=2, sort_keys=True))
+        print_failure_summary(payload, report_dir)
     return 0 if payload.get("status") == "passed" else 1
 
 

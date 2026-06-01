@@ -35,3 +35,7 @@ State fixtures are selected only when QA mode is explicit:
 The module links default to the city-core local ports and are overwritten by
 the installer-generated `window.CIVICSUITE_LAUNCHER_CONFIG` before `src/app.js`
 loads.
+
+If the launcher does not start on `http://127.0.0.1:18082/`, see
+`docs/troubleshooting.md` in the umbrella repo for the port-freeing and
+`launcher-output/*.log` checks used by the installer lifecycle.

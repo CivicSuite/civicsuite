@@ -1,6 +1,6 @@
 # CivicSuite Troubleshooting
 
-**Last verified:** 2026-05-27
+**Last verified:** 2026-06-01
 
 This guide covers the umbrella city-core installer and documentation truth path. Module-specific bugs still belong in the relevant module repo.
 
@@ -14,6 +14,37 @@ This guide covers the umbrella city-core installer and documentation truth path.
    - Linux: `bash ./start-civicsuite-installer.sh readiness`
 
 If readiness still fails, keep the generated report and compare it with the active run evidence path in [STATUS.md](../STATUS.md).
+
+## Records AI Response Letter Proof Fails
+
+The city-core workflow proof now requires Records AI to draft the response letter with the configured local model. The proof checks `generation_source=ollama` and `generation_model=gemma4:e4b`. A template fallback is useful for staff continuity, but it does not satisfy the city-core live gate.
+
+If this check fails:
+
+1. Confirm Docker Desktop / WSL2 exposes enough memory for Ollama to load `gemma4:e4b`. The readiness floor is 12 GB RAM, and the practical evaluation target is 32 GB RAM.
+2. Check the Ollama container logs for model-load errors.
+3. Rerun repair or verify after increasing memory.
+4. Do not switch to a smaller model unless `installer/modules.json`, README, USER-MANUAL, and the package READMEs all name that model.
+
+A slow Ollama prewarm is a warning because the first AI request may still succeed after the model finishes loading. A non-zero model-load failure is a failed install/verify condition.
+
+## Suite Launcher Port 18082 Is Busy
+
+The suite launcher is served on `http://127.0.0.1:18082/`.
+
+On Windows:
+
+```powershell
+netstat -ano | findstr :18082
+```
+
+Find the PID in the last column, then stop the owning process from Task Manager or an elevated PowerShell prompt. On Linux/macOS, use `lsof -i :18082` or `ss -ltnp '( sport = :18082 )'` and stop the conflicting process.
+
+After freeing the port, rerun verify. The installer report points at `installer/reports/<run-id>/launcher-output/*.log`; inspect that log when the launcher probe fails.
+
+## Existing Install Root Verify Refuses To Pass
+
+`--verify-existing-install-root` is intentionally tied to a provenance file. The installed root must contain `civicsuite-install-provenance.json` with the current manifest hash and module source commits. If the file is absent or mismatched, rerun install or repair from the current package before verifying the existing stack.
 
 ## Suite Launcher Shows No Module Activity
 
