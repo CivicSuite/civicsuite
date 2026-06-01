@@ -76,7 +76,7 @@ def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> 
     assert "OLLAMA_KEEP_ALIVE=30m" in records_env
 
 
-def test_ollama_model_prepare_pulls_and_prewarm_timeout_is_warning(monkeypatch, tmp_path: Path) -> None:
+def test_ollama_model_prepare_prewarm_timeout_is_required_failure(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
 
     calls: list[list[str]] = []
@@ -98,10 +98,11 @@ def test_ollama_model_prepare_pulls_and_prewarm_timeout_is_warning(monkeypatch, 
 
     assert any(step["step"] == "ollama_pull_model" and step["required"] is True for step in steps)
     prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
-    assert prewarm["status"] == "warning"
-    assert prewarm["required"] is False
+    assert prewarm["status"] == "failed"
+    assert prewarm["required"] is True
     assert prewarm["returncode"] == 124
     assert prewarm["timeout_seconds"] == 300
+    assert "must not run against a cold model" in prewarm["stderr"]
     assert any("Respond with OK." in command for command in calls)
 
 
@@ -126,6 +127,90 @@ def test_ollama_prewarm_model_load_failure_is_required_failure(monkeypatch, tmp_
     assert prewarm["status"] == "failed"
     assert prewarm["required"] is True
     assert "Increase Docker Desktop / WSL2 memory" in " ".join(prewarm["fix_steps"])
+
+
+def test_ollama_prewarm_success_requires_resident_model_check(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+
+    def fake_run(command, **_kwargs):
+        if command[-2:] == ["ollama", "ps"]:
+            return subprocess.CompletedProcess(command, 0, stdout="gemma4:e4b 123 MB 100% 30 minutes\n", stderr="")
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    ctx = {
+        "selected_modules": [runner.MODULE_RECORDS],
+        "records_project": "records-proj",
+        "records_source": tmp_path,
+    }
+
+    steps = runner.ensure_ollama_models(ctx)
+
+    loaded = [step for step in steps if step["step"] == "ollama_loaded_model_check"][0]
+    assert loaded["status"] == "passed"
+    assert loaded["required"] is True
+
+
+def test_install_warms_records_ollama_before_module_stack(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    calls: list[list[str]] = []
+    install_root = tmp_path / "install"
+    records_source = tmp_path / "records"
+    clerk_source = tmp_path / "clerk"
+    code_source = tmp_path / "code"
+    for source in (records_source, clerk_source, code_source):
+        source.mkdir(parents=True)
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "require_command", lambda _command: None)
+    monkeypatch.setattr(
+        runner,
+        "prepare_sources",
+        lambda *_args, **_kwargs: {
+            "selected_modules": [runner.MODULE_RECORDS],
+            "records_project": "records-proj",
+            "records_source": records_source,
+            "clerk_project": "clerk-proj",
+            "clerk_source": clerk_source,
+            "code_project": "code-proj",
+            "code_source": code_source,
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "ensure_ollama_models",
+        lambda _ctx, selected_modules=None: [
+            {
+                "module": runner.MODULE_RECORDS,
+                "step": "ollama_prewarm_model",
+                "required": True,
+                "returncode": 0,
+                "selected_modules": selected_modules,
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        runner,
+        "verify",
+        lambda *_args, **_kwargs: {"status": "passed", "checks": []},
+    )
+
+    result = runner.install(
+        install_root,
+        isolation={"ports": {}, "project_suffix": "test"},
+        report_dir=tmp_path / "reports",
+        selected_modules=[runner.MODULE_RECORDS],
+    )
+
+    assert result["status"] == "passed"
+    command_text = [" ".join(command) for command in calls]
+    warm_first_index = next(index for index, command in enumerate(command_text) if "up -d ollama" in command)
+    records_stack_index = next(index for index, command in enumerate(command_text) if "up -d api frontend" in command)
+    assert warm_first_index < records_stack_index
 
 
 def test_records_response_letter_workflow_requires_model_generation() -> None:

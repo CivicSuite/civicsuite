@@ -782,11 +782,16 @@ def remove_shared_network(shared_network: str) -> subprocess.CompletedProcess[st
     return run([docker_command(), "network", "rm", shared_network], cwd=ROOT, timeout=60)
 
 
-def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
+def ensure_ollama_models(
+    ctx: dict[str, object],
+    *,
+    selected_modules: list[str] | tuple[str, ...] | None = None,
+) -> list[dict[str, object]]:
     modules = ctx["selected_modules"]  # type: ignore[assignment]
+    requested_modules = set(selected_modules or modules)
     steps: list[dict[str, object]] = []
     targets: list[tuple[str, str, Path]] = []
-    if MODULE_RECORDS in modules:
+    if MODULE_RECORDS in modules and MODULE_RECORDS in requested_modules:
         targets.append(
             (
                 MODULE_RECORDS,
@@ -794,7 +799,7 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
                 Path(ctx["records_source"]),  # type: ignore[arg-type]
             )
         )
-    if MODULE_CLERK in modules:
+    if MODULE_CLERK in modules and MODULE_CLERK in requested_modules:
         targets.append(
             (
                 MODULE_CLERK,
@@ -846,13 +851,12 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
             stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""
             stderr = (
                 f"Ollama prewarm exceeded {OLLAMA_PREWARM_TIMEOUT_SECONDS}s. "
-                "This is not an install error by itself; the first AI request may be slower. "
-                "The workflow proof still must generate its response letter with the configured model."
+                "The response-letter workflow proof must not run against a cold model."
             )
-            required = False
-            status = "warning"
+            required = True
+            status = "failed"
             fix_steps = [
-                "Wait for the Ollama model to finish loading, then rerun verify.",
+                "Rerun install or repair when the host is less contended so Ollama can warm the model before the workflow proof.",
                 "If this repeats, increase Docker Desktop / WSL2 memory or choose a smaller supported LLM model.",
             ]
         else:
@@ -879,6 +883,32 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
                 "fix_steps": fix_steps,
             }
         )
+        if returncode == 0:
+            loaded = run(
+                compose(project, source, "exec", "-T", "ollama", "ollama", "ps"),
+                cwd=source,
+                timeout=60,
+            )
+            loaded_stdout = loaded.stdout[-4000:]
+            loaded_ok = loaded.returncode == 0 and DEFAULT_LLM_MODEL in loaded_stdout
+            steps.append(
+                {
+                    "module": module,
+                    "step": "ollama_loaded_model_check",
+                    "model": DEFAULT_LLM_MODEL,
+                    "required": True,
+                    "status": "passed" if loaded_ok else "failed",
+                    "returncode": loaded.returncode if loaded_ok else loaded.returncode or 1,
+                    "stdout": loaded_stdout,
+                    "stderr": loaded.stderr[-4000:],
+                    "fix_steps": []
+                    if loaded_ok
+                    else [
+                        f"Ollama warmed {DEFAULT_LLM_MODEL} but did not report it as resident.",
+                        "Rerun install or repair and confirm OLLAMA_KEEP_ALIVE keeps the model loaded before workflow proof.",
+                    ],
+                }
+            )
     return steps
 
 
@@ -2246,6 +2276,25 @@ def install(
         )
         if network.returncode != 0:
             return {"status": "failed", "steps": steps}
+    if MODULE_RECORDS in modules:
+        records_source = Path(ctx["records_source"])  # type: ignore[arg-type]
+        records_project = str(ctx["records_project"])
+        warm_up = run(compose(records_project, records_source, "up", "-d", "ollama"), cwd=records_source, timeout=900)
+        steps.append(
+            {
+                "module": MODULE_RECORDS,
+                "step": "compose_up_ollama_warm_first",
+                "returncode": warm_up.returncode,
+                "stdout": warm_up.stdout[-4000:],
+                "stderr": warm_up.stderr[-4000:],
+            }
+        )
+        if warm_up.returncode != 0:
+            return {"status": "failed", "selected_modules": modules, "steps": steps}
+        records_model_steps = ensure_ollama_models(ctx, selected_modules=[MODULE_RECORDS])
+        steps.extend(records_model_steps)
+        if any(step.get("required", True) and step.get("returncode") != 0 for step in records_model_steps):
+            return {"status": "failed", "selected_modules": modules, "steps": steps}
     for name, source_key, project_key, services in (
         ("civicrecords-ai", "records_source", "records_project", ("api", "frontend")),
         ("civicclerk", "clerk_source", "clerk_project", ("api", "frontend")),
@@ -2288,7 +2337,7 @@ def install(
         steps.append(compose_up_step)
         if up.returncode != 0:
             return {"status": "failed", "steps": steps}
-    model_steps = ensure_ollama_models(ctx)
+    model_steps = ensure_ollama_models(ctx, selected_modules=[module for module in modules if module != MODULE_RECORDS])
     steps.extend(model_steps)
     if any(step.get("required", True) and step.get("returncode") != 0 for step in model_steps):
         return {"status": "failed", "steps": steps}
