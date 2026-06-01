@@ -314,6 +314,58 @@ def test_verify_suite_launcher_http_probe_fails_on_early_exit(monkeypatch, tmp_p
     assert any("netstat -ano" in step for step in proof["fix_steps"])
 
 
+def test_verify_suite_launcher_http_probe_requires_launcher_content(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()
+    responses = iter(
+        [
+            {"status": "failed", "attempts": []},
+            {"status": "passed", "attempts": [{"returncode": 0, "stdout": "<html>wrong app</html>", "stderr": ""}]},
+        ]
+    )
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: next(responses))
+
+    class FakeProcess:
+        returncode = None
+        stderr = io.StringIO("")
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            pass
+
+        def wait(self, timeout=None):
+            return 0
+
+    monkeypatch.setattr(runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
+
+    proof = runner.verify_suite_launcher_serves({"install_root": tmp_path})
+
+    assert proof["status"] == "failed"
+    assert proof["content_marker_present"] is False
+    assert proof["fix_steps"]
+
+
+def test_warning_steps_bubble_to_top_level_summary() -> None:
+    runner = _load_installer_runner()
+    warnings = runner.collect_status_warnings(
+        [
+            {"step": "ollama_prewarm_model", "module": "civicrecords-ai", "status": "warning", "stderr": "first request slower"},
+            {"step": "compose_up", "module": "civicrecords-ai", "status": "passed"},
+        ]
+    )
+
+    assert warnings == [
+        {
+            "name": "ollama_prewarm_model",
+            "module": "civicrecords-ai",
+            "message": "first request slower",
+            "fix_steps": [],
+        }
+    ]
+
+
 def test_portal_mode_route_check_retries_slow_openapi_schema() -> None:
     runner = _load_installer_runner()
 

@@ -340,6 +340,7 @@ def lifecycle_summary(mode: str, payload: dict[str, object] | None) -> dict[str,
         "port_offset",
         "error",
         "fix_steps",
+        "warnings",
     ):
         if key in payload:
             summary[key] = payload[key]

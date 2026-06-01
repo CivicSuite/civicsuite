@@ -1072,6 +1072,21 @@ def wait_for_url(url: str, *, timeout_seconds: int = 360) -> dict[str, object]:
     return {"status": "failed", "attempts": attempts[-10:]}
 
 
+def collect_status_warnings(items: list[dict[str, object]]) -> list[dict[str, object]]:
+    warnings: list[dict[str, object]] = []
+    for item in items:
+        if item.get("status") == "warning":
+            warnings.append(
+                {
+                    "name": item.get("name", item.get("step", "warning")),
+                    "module": item.get("module"),
+                    "message": item.get("stderr") or item.get("message") or "Installer step completed with a warning.",
+                    "fix_steps": item.get("fix_steps", []),
+                }
+            )
+    return warnings
+
+
 def decode_json(body: str) -> dict[str, object]:
     return json.loads(body) if body else {}
 
@@ -2283,7 +2298,7 @@ def install(
     )  # type: ignore[arg-type]
     steps.extend(result["checks"])  # type: ignore[arg-type]
     status = "passed" if result["status"] == "passed" else "failed"
-    return {"status": status, "selected_modules": modules, "steps": steps}
+    return {"status": status, "selected_modules": modules, "steps": steps, "warnings": collect_status_warnings(steps)}
 
 
 def verify_suite_runtime_wiring(ctx: dict[str, object]) -> list[dict[str, object]]:
@@ -2412,7 +2427,17 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
 
     already_running = wait_for_url(url, timeout_seconds=3)
     if already_running["status"] == "passed":
-        return {"name": "suite_launcher_http", "status": "passed", "url": url, "mode": "already_running"}
+        body = str(already_running.get("attempts", [{}])[-1].get("stdout", ""))
+        marker_ok = "CivicSuite Launcher" in body or "civicsuite-launcher-config" in body
+        return {
+            "name": "suite_launcher_http",
+            "status": "passed" if marker_ok else "failed",
+            "url": url,
+            "mode": "already_running",
+            "content_marker_present": marker_ok,
+            "attempts": already_running.get("attempts", []),
+            "fix_steps": launcher_fix_steps if not marker_ok else [],
+        }
 
     proc = subprocess.Popen(  # noqa: S603 - local verification server, no shell.
         [sys.executable, "-m", "http.server", str(DEFAULT_SUITE_LAUNCHER_PORT), "--bind", "127.0.0.1"],
@@ -2434,14 +2459,18 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
                 "fix_steps": launcher_fix_steps,
             }
         proof = wait_for_url(url, timeout_seconds=20)
+        body = str(proof.get("attempts", [{}])[-1].get("stdout", "")) if proof.get("attempts") else ""
+        marker_ok = "CivicSuite Launcher" in body or "civicsuite-launcher-config" in body
+        status = "passed" if proof["status"] == "passed" and marker_ok else "failed"
         return {
             "name": "suite_launcher_http",
-            "status": proof["status"],
+            "status": status,
             "url": url,
             "mode": "python_http_server",
+            "content_marker_present": marker_ok,
             "attempts": proof.get("attempts", []),
             "fix_steps": launcher_fix_steps
-            if proof["status"] != "passed"
+            if status != "passed"
             else [],
         }
     finally:
@@ -2506,7 +2535,7 @@ def verify(
             )
         )
     status = "passed" if all(check["status"] == "passed" for check in checks) else "failed"
-    return {"status": status, "selected_modules": modules, "checks": checks}
+    return {"status": status, "selected_modules": modules, "checks": checks, "warnings": collect_status_warnings(checks)}
 
 
 def uninstall(
