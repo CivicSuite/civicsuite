@@ -27,7 +27,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
-- The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, and CI/PR evidence. The current Stage 2 live-installer branch is under fix-now audit-team closure for installer, LLM-proof, docs, and clean-VM altitude findings. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
+- The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, and CI/PR evidence. The current Stage 2 live-installer branch is under fix-now audit-team closure for installer, LLM-proof, docs, and clean-VM altitude findings. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a release of the full suite.
 - The suite launcher is the local browser front door for staff, resident, and IT-admin orientation over the installed services. The 2026-05-28 engagement is proving the shared browser session across modules; until the independent audit-team rerun clears it, treat that as in-flight city-core beta work rather than a municipal managed-SSO claim.
 
 A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
@@ -199,7 +199,7 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
 | CivicCore | 1.2.0 | shared platform | none | `9f7e3a5a0156` | `v1_2_0_shared_ingestion_shipped` |
-| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `523e7db431fc` | `v1_7_3_city_core_release_car` |
+| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `cddc4d2be856` | `v1_7_3_city_core_release_car` |
 | CivicClerk | 1.0.3 | meetings workflow | `civiccore` | `f39d0eeccc68` | `v1_0_3_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
 

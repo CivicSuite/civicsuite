@@ -34,8 +34,9 @@ DEFAULT_SUITE_LAUNCHER_PORT = 18082
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 DEFAULT_LLM_MODEL = "gemma4:e4b"
 RESPONSE_LETTER_TIMEOUT_SECONDS = 180
-RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8
-OLLAMA_PREWARM_TIMEOUT_SECONDS = 90
+RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
+OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
+OLLAMA_KEEP_ALIVE = "30m"
 CODE_QA_TIMEOUT_SECONDS = 60
 CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
@@ -660,6 +661,7 @@ def write_records_env(
         "DATABASE_URL": "postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords",
         "FIRST_ADMIN_EMAIL": os.environ.get("CIVICSUITE_FIRST_ADMIN_EMAIL", "admin@example.gov"),
         "OLLAMA_BASE_URL": "http://ollama:11434",
+        "OLLAMA_KEEP_ALIVE": OLLAMA_KEEP_ALIVE,
         "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS": str(RESPONSE_LETTER_LLM_TIMEOUT_SECONDS),
         "REDIS_URL": "redis://redis:6379/0",
         "AUDIT_RETENTION_DAYS": "1095",
@@ -711,6 +713,8 @@ def write_clerk_handoff_override(target: Path, shared_network: str) -> Path:
     path.write_text(
         f"""services:
   ollama:
+    environment:
+      OLLAMA_KEEP_ALIVE: {OLLAMA_KEEP_ALIVE}
     networks:
       default: {{}}
       citycore_handoff:

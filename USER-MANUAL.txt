@@ -1,20 +1,20 @@
-﻿CivicSuite â€” User Manual
+CivicSuite — User Manual
 
 Last verified: 2026-05-28
 
 This is the orientation manual for the CivicSuite umbrella repo. It is
 written in three parts plus a glossary:
 
-1.  For municipal decision-makers â€” non-technical overview.
-2.  For developers and IT staff â€” how the umbrella repo works.
-3.  Architecture reference â€” pointer to ARCHITECTURE.md.
+1.  For municipal decision-makers — non-technical overview.
+2.  For developers and IT staff — how the umbrella repo works.
+3.  Architecture reference — pointer to ARCHITECTURE.md.
 
 For an at-a-glance honest module status, read STATUS.md first. For
 common operator questions, read FAQ.md.
 
 ------------------------------------------------------------------------
 
-Part 1 â€” For municipal decision-makers
+Part 1 — For municipal decision-makers
 
 What is CivicSuite?
 
@@ -26,8 +26,8 @@ and can inspect or modify the source code.
 
 Current honest state
 
-CivicSuite is under release-recovery review. Public â€œshipping,â€
-â€œproduct-ready,â€ and â€œv1.0.0 proves release maturityâ€ claims are frozen
+CivicSuite is under release-recovery review. Public “shipping,”
+“product-ready,” and “v1.0.0 proves release maturity” claims are frozen
 until each repo re-earns that status through the gates in
 docs/release-recovery-status.md.
 
@@ -47,7 +47,7 @@ docs/release-recovery-status.md.
   live-installer branch is under fix-now audit-team closure for
   installer, LLM-proof, docs, and clean-VM altitude findings. It is not
   public-use ready, procurement-ready, production-ready, macOS lifecycle
-  certified, or a full-suite release.
+  certified, or a release of the full suite.
 - The suite launcher is the local browser front door for staff,
   resident, and IT-admin orientation over the installed services. The
   2026-05-28 engagement is proving the shared browser session across
@@ -87,7 +87,7 @@ Prerequisites
   proof path. On Windows, also WSL 2 + Virtual Machine Platform. The
   city-core first-run wizard offers a Guided Setup path for supported
   Linux and Windows hosts, plus a Manual Prerequisite path for
-  IT-managed machines. Linux Guided Setup uses Dockerâ€™s signed package
+  IT-managed machines. Linux Guided Setup uses Docker’s signed package
   repositories where supported. macOS remains beta/archive/readiness
   only.
 - About 30 minutes for first install (model downloads).
@@ -99,9 +99,9 @@ Install (Windows wrapper)
     published.
 2.  Verify the SHA-256 checksum or release manifest from the same
     source.
-3.  Run the installer. Windows SmartScreen can warn â€œUnknown
-    publisherâ€ - this is expected for unsigned beta artifacts. Click
-    â€œMore infoâ€ only when the checksum matches the trusted artifact
+3.  Run the installer. Windows SmartScreen can warn “Unknown
+    publisher” - this is expected for unsigned beta artifacts. Click
+    “More info” only when the checksum matches the trusted artifact
     source.
 4.  Choose Guided Setup if Docker Desktop/WSL2 is missing on Windows or
     Docker Engine is missing on Linux. Choose Manual Prerequisite if IT
@@ -179,12 +179,12 @@ First task: search a small document set
 2.  Sign in with the initial administrator credential file surfaced by
     the installer, rotate it immediately, and store the rotated value in
     your municipal password vault.
-3.  Sources â†’ Add Source â†’ enter a directory path with a few sample
+3.  Sources → Add Source → enter a directory path with a few sample
     PDFs/DOCX files.
 4.  Click Ingest Now. The pipeline parses, chunks, embeds, and indexes
     the documents.
-5.  Search â†’ type a natural-language query (e.g., â€œwhat does the city
-    pay for streetlight maintenance?â€). Results show with source
+5.  Search → type a natural-language query (e.g., “what does the city
+    pay for streetlight maintenance?”). Results show with source
     attribution and relevance scores.
 
 What you should expect
@@ -192,11 +192,11 @@ What you should expect
 - What works. Document ingestion, hybrid search with citations,
   exemption flagging (with required human review), request lifecycle
   from intake to closure, fee tracking, response letter drafting.
-- Whatâ€™s a developer preview. SMTP delivery into status transitions is
+- What’s a developer preview. SMTP delivery into status transitions is
   pending; full third-party accessibility audit is pending; production
   deployments are unverified.
-- Whatâ€™s not in scope. SharePoint and IMAP connectors are roadmap;
-  MIT-style â€œdrop a CSV in this folderâ€ is the most reliable connector
+- What’s not in scope. SharePoint and IMAP connectors are roadmap;
+  MIT-style “drop a CSV in this folder” is the most reliable connector
   path today.
 
 Where to go next
@@ -210,7 +210,7 @@ Where to go next
 
 ------------------------------------------------------------------------
 
-Part 2 â€” For developers and IT staff
+Part 2 — For developers and IT staff
 
 What lives in the umbrella repo?
 
@@ -226,7 +226,7 @@ coordination-first. It contains:
   release path plus the active city-core profile work)
 - verification scripts under scripts/
 
-The umbrella does not contain runtime code for individual products â€”
+The umbrella does not contain runtime code for individual products —
 that lives in the per-module repos.
 
 Module repos
@@ -267,12 +267,12 @@ Modules depend on civiccore. civiccore never depends on modules.
 
 How to evaluate a module
 
-1.  Read the moduleâ€™s README.md.
-2.  Read the moduleâ€™s USER-MANUAL.md.
-3.  Read the moduleâ€™s CHANGELOG.md.
-4.  Follow the moduleâ€™s CONTRIBUTING.md install steps on a clean
+1.  Read the module’s README.md.
+2.  Read the module’s USER-MANUAL.md.
+3.  Read the module’s CHANGELOG.md.
+4.  Follow the module’s CONTRIBUTING.md install steps on a clean
     machine.
-5.  Run the moduleâ€™s verification gates (scripts/verify-release.sh if
+5.  Run the module’s verification gates (scripts/verify-release.sh if
     present).
 6.  Cross-check against STATUS.md and docs/release-recovery-status.md
     before promoting any claim about the module.
@@ -302,7 +302,7 @@ Start with CONTRIBUTING.md and docs/governance/index.md.
 
 ------------------------------------------------------------------------
 
-Part 3 â€” Architecture reference
+Part 3 — Architecture reference
 
 The full suite architecture, dependency graph, data-flow rules, and
 CivicCore extraction phasing live in ARCHITECTURE.md. The text-and-ASCII
@@ -327,7 +327,7 @@ python scripts/docs/render_topology.py --check before publishing docs.
   CivicCore               1.2.0 shared      none           9f7e3a5a0156   v1_2_0_shared_ingestion_shipped
                                 platform
 
-  CivicRecords            1.7.3 records     civiccore      523e7db431fc   v1_7_3_city_core_release_car
+  CivicRecords            1.7.3 records     civiccore      cddc4d2be856   v1_7_3_city_core_release_car
   AI                            workflow
 
   CivicClerk              1.0.3 meetings    civiccore      f39d0eeccc68   v1_0_3_city_core_release_car
@@ -366,40 +366,40 @@ docs/roadmap/index.md.
 
 Glossary
 
-- ADA Title II â€” accessibility compliance requirement for public-sector
+- ADA Title II — accessibility compliance requirement for public-sector
   digital services. Cities >50K must comply by 2027; smaller cities by
   2028.
-- ADR â€” Architecture Decision Record.
-- Air-gap â€” operating without an outbound network connection.
-- CC BY 4.0 â€” Creative Commons Attribution license used for
+- ADR — Architecture Decision Record.
+- Air-gap — operating without an outbound network connection.
+- CC BY 4.0 — Creative Commons Attribution license used for
   documentation.
-- CI â€” continuous integration.
-- Connector â€” module-side adapter that imports data from a city system.
+- CI — continuous integration.
+- Connector — module-side adapter that imports data from a city system.
   Read-first by design.
-- FOIA â€” Freedom of Information Act and related public-records laws.
-- LLM â€” large language model.
-- Local-first â€” software designed to run on infrastructure the city
+- FOIA — Freedom of Information Act and related public-records laws.
+- LLM — large language model.
+- Local-first — software designed to run on infrastructure the city
   controls.
-- Module â€” a single CivicSuite product (e.g., civicclerk,
+- Module — a single CivicSuite product (e.g., civicclerk,
   civicrecords-ai).
-- Open source â€” software available under a license allowing use,
+- Open source — software available under a license allowing use,
   modification, and redistribution.
-- Pinned version â€” a specific exact dependency pairing rather than a
+- Pinned version — a specific exact dependency pairing rather than a
   range.
-- Procurement-ready â€” has passed the recovery gates and can be evaluated
-  against city procurement standards. Distinct from â€œhas a release tag.â€
-- Provisional â€” has a version label but the label is not currently a
+- Procurement-ready — has passed the recovery gates and can be evaluated
+  against city procurement standards. Distinct from “has a release tag.”
+- Provisional — has a version label but the label is not currently a
   promotion claim.
-- Recovery gate â€” one of the ten checks documented in
-  docs/release-recovery-status.md that must pass before a â€œshippingâ€
+- Recovery gate — one of the ten checks documented in
+  docs/release-recovery-status.md that must pass before a “shipping”
   claim can be re-issued.
-- Sovereign deployment â€” software running on infrastructure the city
+- Sovereign deployment — software running on infrastructure the city
   controls.
-- Sigstore / cosign â€” signing tooling used for civiccore release
+- Sigstore / cosign — signing tooling used for civiccore release
   attestations starting v0.22.1.
-- WCAG 2.2 AA â€” Web Content Accessibility Guidelines target for
+- WCAG 2.2 AA — Web Content Accessibility Guidelines target for
   public-facing surfaces.
-- Wheel â€” Python package distribution format.
+- Wheel — Python package distribution format.
 
 ------------------------------------------------------------------------
 
@@ -408,13 +408,13 @@ When something goes wrong
   -----------------------------------------------------------------------
   Symptom                             Where to look
   ----------------------------------- -----------------------------------
-  Module will not install             The module repoâ€™s README.md and
+  Module will not install             The module repo’s README.md and
                                       CONTRIBUTING.md; if you hit a
                                       Docker/WSL prereq, choose Guided
                                       Setup on supported Linux/Windows
                                       hosts or Manual Prerequisite for
                                       IT-managed environments. Linux
-                                      Guided Setup uses Dockerâ€™s signed
+                                      Guided Setup uses Docker’s signed
                                       package repositories where
                                       supported.
 
@@ -435,13 +435,13 @@ When something goes wrong
   civiccore version mismatch          docs/compatibility/index.md is the
                                       canonical pairing source.
 
-  README says â€œshipping,â€ recovery    The recovery doc wins. See
-  doc says â€œfrozenâ€                   docs/release-recovery-status.md.
+  README says “shipping,” recovery    The recovery doc wins. See
+  doc says “frozen”                   docs/release-recovery-status.md.
 
-  Unsure where to file a bug          CONTRIBUTING.md â€” bug-routing
+  Unsure where to file a bug          CONTRIBUTING.md — bug-routing
                                       decision tree.
 
-  Security issue                      SECURITY.md â€” open a private GitHub
+  Security issue                      SECURITY.md — open a private GitHub
                                       Security Advisory.
 
   General support question            SUPPORT.md.

@@ -31,6 +31,15 @@ def _load_package_cleanroom():
     return module
 
 
+def _load_plan_installer():
+    path = ROOT / "scripts" / "plan-installer.py"
+    spec = importlib.util.spec_from_file_location("stage2_plan_installer", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> None:
     runner = _load_installer_runner()
 
@@ -63,7 +72,8 @@ def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> 
 
     runner.write_records_env(records / ".env", {"api": 18000, "web": 18080})
     records_env = (records / ".env").read_text(encoding="utf-8")
-    assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS=8" in records_env
+    assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS=120" in records_env
+    assert "OLLAMA_KEEP_ALIVE=30m" in records_env
 
 
 def test_ollama_model_prepare_pulls_and_prewarm_timeout_is_warning(monkeypatch, tmp_path: Path) -> None:
@@ -91,6 +101,7 @@ def test_ollama_model_prepare_pulls_and_prewarm_timeout_is_warning(monkeypatch, 
     assert prewarm["status"] == "warning"
     assert prewarm["required"] is False
     assert prewarm["returncode"] == 124
+    assert prewarm["timeout_seconds"] == 300
     assert any("Respond with OK." in command for command in calls)
 
 
@@ -122,10 +133,30 @@ def test_records_response_letter_workflow_requires_model_generation() -> None:
     text = Path(runner.__file__).read_text(encoding="utf-8")
 
     assert "RESPONSE_LETTER_TIMEOUT_SECONDS = 180" in text
-    assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8" in text
+    assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120" in text
+    assert 'OLLAMA_KEEP_ALIVE = "30m"' in text
     assert "timeout_seconds=RESPONSE_LETTER_TIMEOUT_SECONDS" in text
     assert 'letter.get("generation_source") != "ollama"' in text
     assert 'letter.get("generation_model") != DEFAULT_LLM_MODEL' in text
+
+
+def test_readiness_fails_closed_when_memory_is_undetectable(monkeypatch) -> None:
+    planner = _load_plan_installer()
+
+    class FakeUsage:
+        free = planner.MIN_FREE_DISK_BYTES + 1
+
+    monkeypatch.setattr(planner.shutil, "disk_usage", lambda _root: FakeUsage())
+    monkeypatch.setattr(planner, "_memory_bytes", lambda: None)
+    monkeypatch.setattr(planner, "_known_command_path", lambda command: f"/usr/bin/{command}")
+    monkeypatch.setattr(planner, "_run_probe", lambda *_args, **_kwargs: {"ok": True})
+
+    deps = planner.detect_host_dependencies({"system": "linux"})
+    disk_memory = deps["checks"]["disk-memory"]
+
+    assert disk_memory["detected"] is False
+    assert disk_memory["evidence"]["memory_bytes"] == 0
+    assert disk_memory["evidence"]["memory_detected"] is False
 
 
 def test_civiccode_qa_workflow_allows_deterministic_fallback_timeout() -> None:

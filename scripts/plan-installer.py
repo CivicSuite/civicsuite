@@ -788,6 +788,8 @@ def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, An
     )
     root_usage = shutil.disk_usage(ROOT)
     memory_total = _memory_bytes()
+    memory_detected = memory_total is not None
+    memory_bytes = memory_total if memory_total is not None else 0
 
     checks: dict[str, dict[str, Any]] = {}
     checks["container-runtime"] = {
@@ -799,11 +801,13 @@ def detect_host_dependencies(host: dict[str, str] | None = None) -> dict[str, An
     }
     checks["disk-memory"] = {
         "detected": root_usage.free >= MIN_FREE_DISK_BYTES
-        and (memory_total is None or memory_total >= MIN_MEMORY_BYTES),
+        and memory_detected
+        and memory_bytes >= MIN_MEMORY_BYTES,
         "evidence": {
             "free_disk_bytes": root_usage.free,
             "required_free_disk_bytes": MIN_FREE_DISK_BYTES,
-            "memory_bytes": memory_total,
+            "memory_bytes": memory_bytes,
+            "memory_detected": memory_detected,
             "required_memory_bytes": MIN_MEMORY_BYTES,
             "required_memory_gb": MIN_LLM_MEMORY_GB,
             "selected_llm_model": DEFAULT_LLM_MODEL,
