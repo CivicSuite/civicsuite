@@ -1,0 +1,151 @@
+$ powershell -NoProfile -ExecutionPolicy Bypass -File installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1 -Restore
+CivicSuite city-core unsigned beta installer package
+Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings.
+Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands.
+Project status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.
+{
+  "backup_dir": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z",
+  "civicclerk_staff_mode": "protected",
+  "compose_projects": {
+    "civicclerk": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk",
+    "civiccode": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code",
+    "civicrecords-ai": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records"
+  },
+  "finished_at": "2026-06-01T03:49:08.579418+00:00",
+  "install_root": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r",
+  "isolation_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "mode": "restore",
+  "mutates_host": true,
+  "port_offset": 727,
+  "ports": {
+    "civicclerk": {
+      "api": 19503,
+      "web": 18808
+    },
+    "civiccode": {
+      "api": 19547
+    },
+    "civicrecords-ai": {
+      "api": 18727,
+      "web": 18807
+    },
+    "suite-launcher": {
+      "web": 18082
+    }
+  },
+  "run_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-06-01T03:49:03.247378+00:00",
+  "status": "passed",
+  "steps": [
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": "NOTICE:  database \"civicrecords_restore_probe\" does not exist, skipping\n",
+      "stdout": "",
+      "step": "drop_restore_probe_before"
+    },
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "create_restore_probe"
+    },
+    {
+      "module": "civicrecords-ai",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/civicrecords-ai-postgres.dump",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "restore_probe_pg_restore"
+    },
+    {
+      "module": "civicrecords-ai",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/record-survival-ledger.json",
+      "status": "passed",
+      "step": "record_survival_probe"
+    },
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "drop_restore_probe_after"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": "NOTICE:  database \"civicclerk_restore_probe\" does not exist, skipping\n",
+      "stdout": "",
+      "step": "drop_restore_probe_before"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "create_restore_probe"
+    },
+    {
+      "module": "civicclerk",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/civicclerk-postgres.dump",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "restore_probe_pg_restore"
+    },
+    {
+      "module": "civicclerk",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/record-survival-ledger.json",
+      "status": "passed",
+      "step": "record_survival_probe"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "drop_restore_probe_after"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": "NOTICE:  database \"civiccode_restore_probe\" does not exist, skipping\n",
+      "stdout": "",
+      "step": "drop_restore_probe_before"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "create_restore_probe"
+    },
+    {
+      "module": "civiccode",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/civiccode-postgres.dump",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "restore_probe_pg_restore"
+    },
+    {
+      "module": "civiccode",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/record-survival-ledger.json",
+      "status": "passed",
+      "step": "record_survival_probe"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "drop_restore_probe_after"
+    }
+  ]
+}

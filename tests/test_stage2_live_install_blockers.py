@@ -62,10 +62,13 @@ def test_ollama_model_prepare_pulls_and_prewarms_llm() -> None:
 
     assert '"pull", model' in text
     assert '"required": True' in text
-    assert '"run",\n                DEFAULT_LLM_MODEL' in text
+    assert "OLLAMA_PREWARM_TIMEOUT_SECONDS = 90" in text
+    assert '"run",' in text
+    assert "DEFAULT_LLM_MODEL" in text
     assert "ollama_prewarm_model" in text
     assert '"required": False' in text
     assert "Respond with OK." in text
+    assert "Ollama prewarm exceeded" in text
     assert 'step.get("required", True) and step.get("returncode") != 0' in text
 
 
@@ -76,7 +79,7 @@ def test_records_response_letter_workflow_allows_llm_fallback_timeout() -> None:
     assert "RESPONSE_LETTER_TIMEOUT_SECONDS = 180" in text
     assert "RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8" in text
     assert "timeout_seconds=RESPONSE_LETTER_TIMEOUT_SECONDS" in text
-    assert "JSON POST timed out or failed before the service returned a response" in text
+    assert "JSON GET timed out or failed before the service returned a response" in text
 
 
 def test_civiccode_qa_workflow_allows_deterministic_fallback_timeout() -> None:
@@ -120,6 +123,19 @@ def test_cleanroom_disk_floor_is_25_gb() -> None:
     assert "60 GB free" not in text
 
 
+def test_package_cleanroom_streams_launcher_output_and_supports_existing_stack_proof() -> None:
+    runner = ROOT / "scripts" / "run-installer-package-cleanroom.py"
+    text = runner.read_text(encoding="utf-8")
+
+    assert "shutil.rmtree(target)" in text
+    assert "Refusing to clear extraction target outside installer reports" in text
+    assert "def run_streaming" in text
+    assert "launcher-output" in text
+    assert "streamed_output" in text
+    assert "--verify-existing-install-root" in text
+    assert "existing_stack_workflow_proof" in text
+
+
 def test_generated_package_readme_uses_25_gb_disk_floor() -> None:
     planner = ROOT / "scripts" / "plan-installer.py"
     text = planner.read_text(encoding="utf-8")
@@ -145,6 +161,17 @@ def test_verify_starts_suite_launcher_http_probe() -> None:
     assert "def verify_suite_launcher_serves" in text
     assert '"suite_launcher_http"' in text
     assert "python_http_server" in text
+    assert '"curl", "--max-time", "5"' in text
+    assert "curl probe timed out" in text
+    assert "server exited with code" in text
+
+
+def test_portal_mode_route_check_retries_slow_openapi_schema() -> None:
+    runner = _load_installer_runner()
+    text = Path(runner.__file__).read_text(encoding="utf-8")
+
+    assert 'get_json(f"{base}/openapi.json", timeout_seconds=30)' in text
+    assert '"attempts": openapi_attempts' in text
 
 
 def test_generated_launcher_has_python_fallback_for_suite_launcher() -> None:

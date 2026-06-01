@@ -52,6 +52,43 @@ def run(command: list[str], *, cwd: Path, timeout: int, env: dict[str, str] | No
     )
 
 
+def run_streaming(
+    command: list[str],
+    *,
+    cwd: Path,
+    timeout: int,
+    output_path: Path,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    started = time.time()
+    with output_path.open("w", encoding="utf-8", errors="replace") as output:
+        output.write(f"$ {' '.join(command)}\n")
+        output.flush()
+        proc = subprocess.Popen(
+            command,
+            cwd=cwd,
+            env=env,
+            stdout=output,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        timed_out = False
+        while proc.poll() is None:
+            if time.time() - started > timeout:
+                timed_out = True
+                proc.kill()
+                output.write(f"\nTIMEOUT: command exceeded {timeout} seconds\n")
+                output.flush()
+                break
+            time.sleep(1)
+        returncode = 124 if timed_out else int(proc.returncode or 0)
+    tail = output_path.read_text(encoding="utf-8", errors="replace")[-12000:]
+    return subprocess.CompletedProcess(command, returncode, stdout=tail, stderr="")
+
+
 def disk_snapshot(path: Path = ROOT) -> dict[str, object]:
     usage = shutil.disk_usage(path)
     return {
@@ -140,6 +177,12 @@ def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bo
 
 
 def extract(archive: Path, target: Path) -> Path:
+    if target.exists():
+        resolved_target = target.resolve()
+        resolved_report_root = REPORT_ROOT.resolve()
+        if resolved_target == resolved_report_root or resolved_report_root not in resolved_target.parents:
+            raise RuntimeError(f"Refusing to clear extraction target outside installer reports: {target}")
+        shutil.rmtree(target)
     target.mkdir(parents=True, exist_ok=True)
     if archive.suffix == ".zip":
         with zipfile.ZipFile(archive) as handle:
@@ -354,6 +397,16 @@ def main() -> int:
     parser.add_argument("--archive", default=str(ROOT / "installer" / "dist" / "CivicSuite-clerk-core-linux-0.1.0.tar.gz"))
     parser.add_argument("--platform", choices=sorted(PLATFORM_LAUNCHERS), default=None)
     parser.add_argument("--run-id", default=None)
+    parser.add_argument(
+        "--verify-existing-install-root",
+        default=None,
+        help="Run workflow proof against an already-running installer root instead of reinstalling the package.",
+    )
+    parser.add_argument(
+        "--verify-existing-run-id",
+        default=None,
+        help="Run id for --verify-existing-install-root; defaults to --run-id.",
+    )
     parser.add_argument("--skip-install", action="store_true", help="Only verify archive extraction, readiness, and plan.")
     parser.add_argument("--gate", action="store_true", help="Run the cleanroom gate after readiness and plan.")
     parser.add_argument("--staff-mode", choices=("protected", "bearer", "open"), default="protected")
@@ -372,13 +425,70 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    run_id = args.run_id or make_run_id()
+    report_dir = REPORT_ROOT / run_id
+    if args.verify_existing_install_root:
+        install_root = Path(args.verify_existing_install_root).resolve()
+        if not install_root.is_dir():
+            print(f"ERROR: existing install root not found: {install_root}", file=sys.stderr)
+            return 2
+        proof_run_id = args.verify_existing_run_id or args.run_id
+        if not proof_run_id:
+            print("ERROR: --verify-existing-install-root requires --run-id or --verify-existing-run-id.", file=sys.stderr)
+            return 2
+        env = os.environ.copy()
+        env["CIVICSUITE_INSTALLER_INSTALL_ROOT"] = str(install_root)
+        env["CIVICSUITE_INSTALLER_RUN_ID"] = proof_run_id
+        command = [
+            sys.executable,
+            str(ROOT / "scripts" / "run-clerk-core-installer.py"),
+            "verify",
+            "--staff-mode",
+            args.staff_mode,
+            "--workflow-proof",
+            "--module",
+            "civicrecords-ai",
+            "--module",
+            "civicclerk",
+            "--module",
+            "civiccode",
+        ]
+        output_path = report_dir / "launcher-output" / "verify-existing-workflow-proof.log"
+        proc = run_streaming(command, cwd=ROOT, timeout=900, env=env, output_path=output_path)
+        parsed_output = parse_json_from_output(proc.stdout)
+        status = "passed" if proc.returncode == 0 and parsed_output and parsed_output.get("status") == "passed" else "failed"
+        proof = {
+            "run_id": run_id,
+            "existing_run_id": proof_run_id,
+            "install_root": str(install_root),
+            "status": status,
+            "evidence_classification": "existing_stack_workflow_proof",
+            "certification_scope": "Workflow proof against an already-running installer stack; not install lifecycle certification.",
+            "steps": [
+                {
+                    "mode": "verify_existing_workflow_proof",
+                    "command": command,
+                    "returncode": proc.returncode,
+                    "stdout": proc.stdout[-8000:],
+                    "stderr": proc.stderr[-8000:],
+                    "streamed_output": str(output_path),
+                }
+            ],
+            "parsed_output": parsed_output,
+        }
+        report_dir.mkdir(parents=True, exist_ok=True)
+        (report_dir / "installer-package-cleanroom.json").write_text(
+            json.dumps(proof, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(json.dumps(proof, indent=2, sort_keys=True))
+        return 0 if status == "passed" else 1
+
     archive = Path(args.archive).resolve()
     if not archive.is_file():
         print(f"ERROR: release archive not found: {archive}", file=sys.stderr)
         return 2
     platform = args.platform or infer_platform(archive)
-    run_id = args.run_id or make_run_id()
-    report_dir = REPORT_ROOT / run_id
     hygiene_ok, hygiene = cleanroom_hygiene(
         report_dir=report_dir,
         allow_host_cleanup=args.allow_host_cleanup
@@ -441,7 +551,14 @@ def main() -> int:
             staff_mode=args.staff_mode,
             workflow_proof=mode_workflow_proof,
         )
-        proc = run(command, cwd=bundle_root, timeout=mode_timeout(launcher_mode), env=launcher_env)
+        output_path = report_dir / "launcher-output" / f"{mode}.log"
+        proc = run_streaming(
+            command,
+            cwd=bundle_root,
+            timeout=mode_timeout(launcher_mode),
+            env=launcher_env,
+            output_path=output_path,
+        )
         parsed_output = parse_json_from_output(proc.stdout)
         summary = lifecycle_summary(mode, parsed_output)
         if summary is not None and "ports" in summary:
@@ -453,13 +570,21 @@ def main() -> int:
                 "returncode": proc.returncode,
                 "stdout": proc.stdout[-8000:],
                 "stderr": proc.stderr[-8000:],
+                "streamed_output": str(output_path),
             }
         )
         if proc.returncode != 0:
             status = "failed"
             if mode in {"install", "repair", "verify", "backup", "restore", "gate"}:
                 cleanup_command = launcher_command(platform, launcher, "uninstall", bundle_root)
-                cleanup = run(cleanup_command, cwd=bundle_root, timeout=900, env=launcher_env)
+                cleanup_output_path = report_dir / "launcher-output" / "cleanup_after_failure.log"
+                cleanup = run_streaming(
+                    cleanup_command,
+                    cwd=bundle_root,
+                    timeout=900,
+                    env=launcher_env,
+                    output_path=cleanup_output_path,
+                )
                 steps.append(
                     {
                         "mode": "cleanup_after_failure",
@@ -467,6 +592,7 @@ def main() -> int:
                         "returncode": cleanup.returncode,
                         "stdout": cleanup.stdout[-8000:],
                         "stderr": cleanup.stderr[-8000:],
+                        "streamed_output": str(cleanup_output_path),
                     }
                 )
             break

@@ -1,0 +1,70 @@
+{
+  "civicclerk_staff_mode": "protected",
+  "compose_projects": {
+    "civicclerk": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk",
+    "civiccode": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code",
+    "civicrecords-ai": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records"
+  },
+  "finished_at": "2026-06-01T03:49:23.170544+00:00",
+  "install_root": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r",
+  "isolation_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "mode": "uninstall",
+  "mutates_host": true,
+  "port_offset": 727,
+  "ports": {
+    "civicclerk": {
+      "api": 19503,
+      "web": 18808
+    },
+    "civiccode": {
+      "api": 19547
+    },
+    "civicrecords-ai": {
+      "api": 18727,
+      "web": 18807
+    },
+    "suite-launcher": {
+      "web": 18082
+    }
+  },
+  "run_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-06-01T03:49:10.830516+00:00",
+  "status": "passed",
+  "steps": [
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": " Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_redisdata Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_ollamadata Removing \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_default Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_pgdata Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_uploads Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_cache Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_redisdata Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_ollamadata Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_pgdata Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_cache Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_uploads Removed \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_default Removed \n",
+      "stdout": "",
+      "step": "compose_down"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": " Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_redisdata Removing \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_default Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_exports Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_pgdata Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_ollamadata Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_redisdata Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_exports Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_pgdata Removed \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_default Removed \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_ollamadata Removed \n",
+      "stdout": "",
+      "step": "compose_down"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": " Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Removed \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Stopping \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Stopped \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Removing \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Removed \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_default Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_civiccode-postgres-data Removing \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_civiccode-postgres-data Removed \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_default Removed \n",
+      "stdout": "",
+      "step": "compose_down"
+    },
+    {
+      "module": "city-core",
+      "network": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-citycore",
+      "returncode": 0,
+      "status": "removed",
+      "stderr": "",
+      "stdout": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-citycore\n",
+      "step": "remove_shared_handoff_network"
+    }
+  ]
+}

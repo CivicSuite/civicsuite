@@ -1,0 +1,116 @@
+$ powershell -NoProfile -ExecutionPolicy Bypass -File installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1
+CivicSuite city-core unsigned beta installer package
+Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings.
+Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands.
+Project status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.
+{
+  "detection_source": "host_read_only",
+  "dry_run": true,
+  "host": {
+    "machine": "AMD64",
+    "release": "11",
+    "system": "Windows"
+  },
+  "menu_style": {
+    "description": "Step-by-step setup for operators who want recommendations.",
+    "id": "guided",
+    "label": "Guided Setup"
+  },
+  "mutates_host": false,
+  "profile": "city-core",
+  "readiness": {
+    "checks": [
+      {
+        "evidence": {
+          "docker_path": "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+          "probe": {
+            "detail": "29.4.0",
+            "ok": true
+          }
+        },
+        "fix_steps": [],
+        "id": "container-runtime",
+        "message": "Container runtime is available for CivicSuite services.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {
+          "docker_probe": {
+            "detail": "29.4.0",
+            "ok": true
+          },
+          "probe": {
+            "detail": "Default Distribution: Ubuntu",
+            "ok": true
+          },
+          "wsl_path": "C:\\WINDOWS\\system32\\wsl.exe"
+        },
+        "fix_steps": [],
+        "id": "wsl2",
+        "message": "WSL 2 support is available for Docker Desktop on Windows.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {
+          "free_disk_bytes": 109561888768,
+          "memory_bytes": 31057444864,
+          "required_free_disk_bytes": 26843545600,
+          "required_memory_bytes": 8589934592
+        },
+        "fix_steps": [],
+        "id": "disk-memory",
+        "message": "Host resources are sufficient for the selected profile.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {
+          "ollama_path": "C:\\Users\\scott\\AppData\\Local\\Programs\\Ollama\\ollama.EXE"
+        },
+        "fix_steps": [],
+        "id": "ollama",
+        "message": "Ollama is available when local LLM features are selected.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {
+          "port": 18082,
+          "source": "installer\\runtime\\suite-launcher"
+        },
+        "fix_steps": [],
+        "id": "suite-launcher-runtime",
+        "message": "Suite launcher runtime files are present for city-core on localhost:18082.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {
+          "env_var": "CIVICCORE_SUITE_SESSION_SECRET",
+          "value_source": "generated on first install if missing"
+        },
+        "fix_steps": [],
+        "id": "shared-staff-session-env",
+        "message": "Shared staff session check is planned through CIVICCORE_SUITE_SESSION_SECRET.",
+        "severity": "info",
+        "status": "passed"
+      },
+      {
+        "evidence": {
+          "note": "Compatibility is manifest-based in this dry-run slice.",
+          "source": "installer/modules.json"
+        },
+        "fix_steps": [],
+        "id": "civiccore-compatibility",
+        "message": "Selected modules are compatible with their recorded CivicCore requirements.",
+        "severity": "info",
+        "status": "passed"
+      }
+    ],
+    "next_action": "Continue to dry-run install planning; no host changes have been made.",
+    "status": "ready"
+  },
+  "scenario": "nominal"
+}

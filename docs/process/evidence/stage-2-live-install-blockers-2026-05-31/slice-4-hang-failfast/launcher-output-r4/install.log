@@ -1,0 +1,636 @@
+$ powershell -NoProfile -ExecutionPolicy Bypass -File installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1 -Install -StaffMode bearer -WorkflowProof
+CivicSuite city-core unsigned beta installer package
+Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings.
+Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands.
+Project status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.
+{
+  "civicclerk_staff_mode": "bearer",
+  "compose_projects": {
+    "civicclerk": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk",
+    "civiccode": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code",
+    "civicrecords-ai": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records"
+  },
+  "finished_at": "2026-06-01T03:35:49.698876+00:00",
+  "install_root": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r",
+  "isolation_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "mode": "install",
+  "mutates_host": true,
+  "port_offset": 727,
+  "ports": {
+    "civicclerk": {
+      "api": 19503,
+      "web": 18808
+    },
+    "civiccode": {
+      "api": 19547
+    },
+    "civicrecords-ai": {
+      "api": 18727,
+      "web": 18807
+    },
+    "suite-launcher": {
+      "web": 18082
+    }
+  },
+  "run_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-06-01T03:20:25.685750+00:00",
+  "status": "passed",
+  "steps": [
+    {
+      "module": "city-core",
+      "network": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-citycore",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "007e01f7fc16bd7e44ad9b4ed0716eaf834d0ee9525a968dc5842bdfebeba0cf\n",
+      "step": "ensure_shared_handoff_network"
+    },
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": " Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api Building \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend Building \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api Built \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend Built \n",
+      "stdout": "ng-inspection, sqlalchemy, rsa, python-docx, python-dateutil, pytest, pytesseract, pydantic-core, prompt-toolkit, pgvector, openpyxl, Mako, httpcore, email-validator, ecdsa, click-plugins, click-didyoumean, cffi, beautifulsoup4, anyio, amqp, watchfiles, starlette, python-jose, pytest-asyncio, pydantic, kombu, httpx, cryptography, croniter, click-repl, argon2-cffi-bindings, alembic, respx, pydantic-settings, pdfminer.six, fastapi, celery, argon2-cffi, pdfplumber, fastapi-users, fastapi-users-db-sqlalchemy, civiccore, civicrecords-ai\n#21 31.70 Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 Pillow-12.2.0 PyJWT-2.13.0 aiofiles-25.1.0 alembic-1.18.4 amqp-5.3.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 asyncpg-0.31.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 billiard-4.2.4 celery-5.6.3 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 civiccore-1.2.0 civicrecords-ai-1.7.3 click-8.4.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 croniter-6.2.2 cryptography-48.0.0 dnspython-2.8.0 ecdsa-0.19.2 email-validator-2.3.0 et-xmlfile-2.0.0 fastapi-0.136.3 fastapi-users-15.0.5 fastapi-users-db-sqlalchemy-7.0.0 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httptools-0.8.0 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 kombu-5.6.2 lxml-6.1.1 makefun-1.16.0 numpy-2.4.6 openpyxl-3.1.5 packaging-26.2 passlib-1.7.4 pdfminer.six-20251230 pdfplumber-0.11.9 pgvector-0.4.2 pluggy-1.6.0 prompt-toolkit-3.0.52 psycopg2-binary-2.9.12 pwdlib-0.3.0 pyasn1-0.6.3 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pygments-2.20.0 pypdfium2-5.8.0 pytesseract-0.3.13 pytest-9.0.3 pytest-asyncio-1.4.0 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-multipart-0.0.30 pyyaml-6.0.3 redis-7.4.0 regex-2026.5.9 respx-0.23.1 rsa-4.9.1 ruff-0.15.15 six-1.17.0 soupsieve-2.8.4 sqlalchemy-2.0.50 starlette-1.2.1 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 tzlocal-5.3.1 uvicorn-0.48.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.2.0 wcwidth-0.7.0 websockets-16.0\n#21 31.70 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n#21 31.77 \n#21 31.77 [notice] A new release of pip is available: 25.0.1 -> 26.1.2\n#21 31.77 [notice] To update, run: pip install --upgrade pip\n#21 DONE 32.5s\n\n#27 [api  6/17] COPY backend/app ./app\n#27 DONE 0.2s\n\n#28 [api  7/17] COPY backend/alembic.ini .\n#28 DONE 0.0s\n\n#29 [api  8/17] COPY backend/alembic ./alembic\n#29 DONE 0.0s\n\n#30 [api  9/17] COPY backend/data ./data\n#30 DONE 0.1s\n\n#31 [api 10/17] COPY backend/compliance_templates ./compliance_templates\n#31 DONE 0.0s\n\n#32 [api 11/17] COPY backend/scripts ./scripts\n#32 DONE 0.0s\n\n#33 [api 12/17] COPY backend/tests ./tests\n#33 DONE 0.0s\n\n#34 [api 13/17] COPY .env.example docker-compose.yml ./\n#34 DONE 0.1s\n\n#35 [api 14/17] COPY scripts/verify-release.sh ./scripts/verify-release.sh\n#35 DONE 0.0s\n\n#36 [api 15/17] RUN mkdir -p docs/ops\n#36 DONE 0.1s\n\n#37 [api 16/17] COPY docs/ops/tier1-retrofit-ledger.json ./docs/ops/tier1-retrofit-ledger.json\n#37 DONE 0.0s\n\n#38 [api 17/17] COPY scripts/check-tier1-ledger.py ./scripts/check-tier1-ledger.py\n#38 DONE 0.0s\n\n#39 [api] exporting to oci image format\n#39 exporting layers\n#39 exporting layers 10.7s done\n#39 exporting manifest sha256:2a47688a273c3bc3d194a599d0962ffb94f74f268fc83edff8056dee04cc958e 0.0s done\n#39 exporting config sha256:a577a9d2f1edee5547a8481c9fe62d7528387534273fe634f091884a5044571f 0.0s done\n#39 sending tarball\n#39 ...\n\n#40 importing to docker\n#40 DONE 0.0s\n\n#39 [api] exporting to oci image format\n#39 sending tarball 11.4s done\n#39 DONE 22.1s\n\n#41 [api] resolving provenance for metadata file\n#41 DONE 0.0s\n",
+      "step": "compose_build"
+    },
+    {
+      "module": "civicrecords-ai",
+      "returncode": 0,
+      "stderr": " Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_default Creating \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_default Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_uploads Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_uploads Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_cache Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_cache Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_pgdata Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_pgdata Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_redisdata Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_redisdata Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_ollamadata Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records_ollamadata Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-redis-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-postgres-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-ollama-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-api-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records-frontend-1 Started \n",
+      "stdout": "",
+      "step": "compose_up"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": " Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api Building \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend Building \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend Built \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api Built \n",
+      "stdout": "cted packages: civicclerk\n#28 12.58   Building wheel for civicclerk (pyproject.toml): started\n#28 12.61   Building wheel for civicclerk (pyproject.toml): finished with status 'done'\n#28 12.61   Created wheel for civicclerk: filename=civicclerk-1.0.3-py3-none-any.whl size=156721 sha256=bf33b8ef886917340b66fa55b581027a64c045f376b1e889a1d3bac331c33cd7\n#28 12.61   Stored in directory: /tmp/pip-ephem-wheel-cache-byy9h9i2/wheels/54/1b/b7/aa63e25c8f14f4f2ae7b04e6097bdecb770e455c5c1ee0a600\n#28 12.61 Successfully built civicclerk\n#28 12.75 Installing collected packages: passlib, makefun, websockets, wcwidth, vine, uvloop, tzlocal, tzdata, typing-extensions, soupsieve, six, regex, redis, pyyaml, python-multipart, python-dotenv, pypdfium2, pyjwt, pycparser, pyasn1, pwdlib, psycopg2-binary, Pillow, packaging, numpy, MarkupSafe, lxml, idna, httptools, h11, greenlet, et-xmlfile, dnspython, click, charset-normalizer, certifi, billiard, bcrypt, asyncpg, annotated-types, annotated-doc, aiofiles, uvicorn, typing-inspection, sqlalchemy, rsa, python-docx, python-dateutil, pytesseract, pydantic-core, prompt-toolkit, pgvector, openpyxl, Mako, httpcore, email-validator, ecdsa, click-plugins, click-didyoumean, cffi, beautifulsoup4, anyio, amqp, watchfiles, starlette, python-jose, pydantic, kombu, httpx, cryptography, croniter, click-repl, argon2-cffi-bindings, alembic, pydantic-settings, pdfminer.six, fastapi, celery, argon2-cffi, pdfplumber, fastapi-users, fastapi-users-db-sqlalchemy, civiccore, civicclerk\n#28 25.43 Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 Pillow-12.2.0 aiofiles-25.1.0 alembic-1.18.4 amqp-5.3.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 asyncpg-0.31.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 billiard-4.2.4 celery-5.6.3 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 civicclerk-1.0.3 civiccore-1.2.0 click-8.4.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 croniter-6.2.2 cryptography-48.0.0 dnspython-2.8.0 ecdsa-0.19.2 email-validator-2.3.0 et-xmlfile-2.0.0 fastapi-0.136.3 fastapi-users-15.0.5 fastapi-users-db-sqlalchemy-7.0.0 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httptools-0.8.0 httpx-0.28.1 idna-3.17 kombu-5.6.2 lxml-6.1.1 makefun-1.16.0 numpy-2.4.6 openpyxl-3.1.5 packaging-26.2 passlib-1.7.4 pdfminer.six-20251230 pdfplumber-0.11.9 pgvector-0.4.2 prompt-toolkit-3.0.52 psycopg2-binary-2.9.12 pwdlib-0.3.0 pyasn1-0.6.3 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pyjwt-2.13.0 pypdfium2-5.8.0 pytesseract-0.3.13 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-multipart-0.0.30 pyyaml-6.0.3 redis-6.4.0 regex-2026.5.9 rsa-4.9.1 six-1.17.0 soupsieve-2.8.4 sqlalchemy-2.0.50 starlette-1.2.1 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 tzlocal-5.3.1 uvicorn-0.48.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.2.0 wcwidth-0.7.0 websockets-16.0\n#28 25.43 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n#28 25.52 \n#28 25.52 [notice] A new release of pip is available: 25.0.1 -> 26.1.2\n#28 25.52 [notice] To update, run: pip install --upgrade pip\n#28 DONE 26.2s\n\n#29 [api] exporting to oci image format\n#29 exporting layers\n#29 exporting layers 11.0s done\n#29 exporting manifest sha256:a0c6e5b53eba38440bece9f1e9952c4c1fc3102b74ddc8efb8ee812e40658b73 0.0s done\n#29 exporting config sha256:f6034eb37e4e49446eb4d3e376bd2f00cc712b7e76f025721556cc7a486e88ea 0.0s done\n#29 sending tarball\n#29 ...\n\n#30 importing to docker\n#30 DONE 0.0s\n\n#29 [api] exporting to oci image format\n#29 sending tarball 9.3s done\n#29 DONE 20.3s\n\n#31 [api] resolving provenance for metadata file\n#31 DONE 0.0s\n",
+      "step": "compose_build"
+    },
+    {
+      "module": "civicclerk",
+      "returncode": 0,
+      "stderr": " Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_default Creating \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_default Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_exports Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_exports Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_pgdata Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_pgdata Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_redisdata Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_redisdata Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_ollamadata Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk_ollamadata Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-redis-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-postgres-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-ollama-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-api-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk-frontend-1 Started \n",
+      "stdout": "",
+      "step": "compose_up"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": " Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api Building \n Image civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api Built \n",
+      "stdout": "cal-5.3.1-py3-none-any.whl (18 kB)\n#11 19.86 Downloading wcwidth-0.7.0-py3-none-any.whl (110 kB)\n#11 19.98 Building wheels for collected packages: civiccode\n#11 19.98   Building wheel for civiccode (pyproject.toml): started\n#11 20.10   Building wheel for civiccode (pyproject.toml): finished with status 'done'\n#11 20.10   Created wheel for civiccode: filename=civiccode-1.0.8-py3-none-any.whl size=194953 sha256=86cbdea3af33ec0a159572ef0b1e41e0928d034e8728bf5220cb44f62b36bdf9\n#11 20.10   Stored in directory: /tmp/pip-ephem-wheel-cache-sxblpxpg/wheels/57/0f/98/bb57b2b57b95807699b822a35c022f139d38a02c27922f27ce\n#11 20.10 Successfully built civiccode\n#11 20.22 Installing collected packages: passlib, makefun, websockets, wcwidth, vine, uvloop, tzlocal, tzdata, typing-extensions, soupsieve, six, regex, redis, pyyaml, python-multipart, python-dotenv, pypdfium2, pymupdf, PyJWT, pycparser, pyasn1, pwdlib, psycopg2-binary, Pillow, packaging, numpy, MarkupSafe, lxml, idna, httptools, h11, greenlet, et-xmlfile, dnspython, click, charset-normalizer, certifi, billiard, bcrypt, asyncpg, annotated-types, annotated-doc, aiofiles, uvicorn, typing-inspection, sqlalchemy, rsa, python-docx, python-dateutil, pytesseract, pydantic-core, prompt-toolkit, pgvector, openpyxl, Mako, httpcore, email-validator, ecdsa, click-plugins, click-didyoumean, cffi, beautifulsoup4, anyio, amqp, watchfiles, starlette, python-jose, pydantic, kombu, httpx, cryptography, croniter, click-repl, argon2-cffi-bindings, alembic, pydantic-settings, pdfminer.six, fastapi, celery, argon2-cffi, pdfplumber, fastapi-users, fastapi-users-db-sqlalchemy, civiccore, civiccode\n#11 29.13 \n#11 29.13 Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 Pillow-12.2.0 PyJWT-2.13.0 aiofiles-25.1.0 alembic-1.18.4 amqp-5.3.1 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 argon2-cffi-25.1.0 argon2-cffi-bindings-25.1.0 asyncpg-0.31.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 billiard-4.2.4 celery-5.6.3 certifi-2026.5.20 cffi-2.0.0 charset-normalizer-3.4.7 civiccode-1.0.8 civiccore-1.2.0 click-8.4.1 click-didyoumean-0.3.1 click-plugins-1.1.1.2 click-repl-0.3.0 croniter-6.2.2 cryptography-48.0.0 dnspython-2.8.0 ecdsa-0.19.2 email-validator-2.3.0 et-xmlfile-2.0.0 fastapi-0.136.3 fastapi-users-15.0.5 fastapi-users-db-sqlalchemy-7.0.0 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httptools-0.8.0 httpx-0.28.1 idna-3.17 kombu-5.6.2 lxml-6.1.1 makefun-1.16.0 numpy-2.4.6 openpyxl-3.1.5 packaging-26.2 passlib-1.7.4 pdfminer.six-20251230 pdfplumber-0.11.9 pgvector-0.4.2 prompt-toolkit-3.0.52 psycopg2-binary-2.9.12 pwdlib-0.3.0 pyasn1-0.6.3 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pymupdf-1.27.2.3 pypdfium2-5.8.0 pytesseract-0.3.13 python-dateutil-2.9.0.post0 python-docx-1.2.0 python-dotenv-1.2.2 python-jose-3.5.0 python-multipart-0.0.30 pyyaml-6.0.3 redis-7.4.0 regex-2026.5.9 rsa-4.9.1 six-1.17.0 soupsieve-2.8.4 sqlalchemy-2.0.50 starlette-1.2.1 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2026.2 tzlocal-5.3.1 uvicorn-0.48.0 uvloop-0.22.1 vine-5.1.0 watchfiles-1.2.0 wcwidth-0.7.0 websockets-16.0\n#11 29.13 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.\n#11 DONE 30.1s\n\n#12 exporting to oci image format\n#12 exporting layers\n#12 exporting layers 13.0s done\n#12 exporting manifest sha256:65c78e1de67c2ecc4b57ad0ed577da33e7cd44ce6405b800e2c140101f26d673 0.0s done\n#12 exporting config sha256:95deb73930eea245ab6666d2578e873e70ee2b1d746ebb9b0efddf38d9ffc3a5 0.0s done\n#12 sending tarball\n#12 ...\n\n#13 importing to docker\n#13 DONE 0.0s\n\n#12 exporting to oci image format\n#12 sending tarball 5.8s done\n#12 DONE 18.8s\n\n#14 resolving provenance for metadata file\n#14 DONE 0.0s\n",
+      "step": "compose_build"
+    },
+    {
+      "module": "civiccode",
+      "returncode": 0,
+      "stderr": " Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_default Creating \n Network civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_default Created \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_civiccode-postgres-data Creating \n Volume civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code_civiccode-postgres-data Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Creating \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Created \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Started \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Waiting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-postgres-1 Healthy \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Starting \n Container civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code-api-1 Started \n",
+      "stdout": "",
+      "step": "compose_up"
+    },
+    {
+      "model": "nomic-embed-text",
+      "module": "civicrecords-ai",
+      "required": true,
+      "returncode": 0,
+      "stderr": "ing 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\nverifying sha256 digest \u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\nverifying sha256 digest \u001b[K\nwriting manifest \u001b[K\nsuccess \u001b[K\u001b[?25h\u001b[?2026l\n",
+      "stdout": "",
+      "step": "ollama_pull_model"
+    },
+    {
+      "model": "gemma4:e4b",
+      "module": "civicrecords-ai",
+      "required": true,
+      "returncode": 0,
+      "stderr": "4: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u001b[K\nwriting manifest \u001b[K\nsuccess \u001b[K\u001b[?25h\u001b[?2026l\n",
+      "stdout": "",
+      "step": "ollama_pull_model"
+    },
+    {
+      "model": "gemma4:e4b",
+      "module": "civicrecords-ai",
+      "required": false,
+      "returncode": 1,
+      "status": "warning",
+      "stderr": "\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?25l\u001b[?2026h\u001b[?25l\u001b[1G\u001b[K\u001b[?25h\u001b[?2026l\u001b[2K\u001b[1G\u001b[?25hError: 500 Internal Server Error: model requires more system memory (9.8 GiB) than is available (9.6 GiB)\n",
+      "stdout": "",
+      "step": "ollama_prewarm_model",
+      "timeout_seconds": 90
+    },
+    {
+      "model": "nomic-embed-text",
+      "module": "civicclerk",
+      "required": true,
+      "returncode": 0,
+      "stderr": "\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\nverifying sha256 digest \u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\nverifying sha256 digest \u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 970aa74c0a90: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 274 MB                         \u001b[K\npulling c71d239df917: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling ce4a164fc046: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   17 B                         \u001b[K\npulling 31df23ea7daa: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  420 B                         \u001b[K\nverifying sha256 digest \u001b[K\nwriting manifest \u001b[K\nsuccess \u001b[K\u001b[?25h\u001b[?2026l\n",
+      "stdout": "",
+      "step": "ollama_pull_model"
+    },
+    {
+      "model": "gemma4:e4b",
+      "module": "civicclerk",
+      "required": true,
+      "returncode": 0,
+      "stderr": "4: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[A\u001b[A\u001b[A\u001b[A\u001b[A\u001b[1Gpulling manifest \u001b[K\npulling 4c27e0f5b5ad: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f 9.6 GB                         \u001b[K\npulling 7339fa418c9a: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  11 KB                         \u001b[K\npulling 56380ca2ab89: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f   42 B                         \u001b[K\npulling f0988ff50a24: 100% \u2595\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u258f  473 B                         \u001b[K\nverifying sha256 digest \u001b[K\nwriting manifest \u001b[K\nsuccess \u001b[K\u001b[?25h\u001b[?2026l\n",
+      "stdout": "",
+      "step": "ollama_pull_model"
+    },
+    {
+      "model": "gemma4:e4b",
+      "module": "civicclerk",
+      "required": false,
+      "returncode": 0,
+      "status": "passed",
+      "stderr": "[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280f \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2819 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2838 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2827 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2807 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u280b \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2839 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u283c \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2834 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?2026h\u001b[?25l\u001b[1G\u2826 \u001b[K\u001b[?25h\u001b[?2026l\u001b[?25l\u001b[?2026h\u001b[?25l\u001b[1G\u001b[K\u001b[?25h\u001b[?2026l\u001b[2K\u001b[1G\u001b[?25h\u001b[?25l\u001b[?25h\u001b[?25l\u001b[?25h",
+      "stdout": "OK\n\n",
+      "step": "ollama_prewarm_model",
+      "timeout_seconds": 90
+    },
+    {
+      "fix_steps": [],
+      "name": "suite_launcher_runtime_files",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/suite-launcher",
+      "status": "passed"
+    },
+    {
+      "expected_port": 18082,
+      "fix_steps": [],
+      "name": "suite_launcher_port_config",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/suite-launcher/civicsuite-launcher-config.json",
+      "status": "passed"
+    },
+    {
+      "env_var": "CIVICCORE_SUITE_SESSION_SECRET",
+      "fix_steps": [],
+      "module_env_checks": [
+        {
+          "env_path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/sources/civicrecords-ai/.env",
+          "module": "civicrecords-ai",
+          "present": true,
+          "revocation_file_env_present": true
+        },
+        {
+          "env_path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/sources/civicclerk/.env",
+          "module": "civicclerk",
+          "present": true,
+          "revocation_file_env_present": true
+        },
+        {
+          "env_path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/sources/civiccode/.env",
+          "module": "civiccode",
+          "present": true,
+          "revocation_file_env_present": true
+        }
+      ],
+      "name": "shared_staff_session_presence",
+      "revocation_env_var": "CIVICCORE_SUITE_SESSION_REVOCATION_FILE",
+      "revocation_file": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/shared/civiccore_suite_session_revocations.json",
+      "status": "passed",
+      "value_file": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/shared/civiccore_suite_session_value"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <meta name=\"color-scheme\" content=\"light\">\n    <title>CivicSuite Launcher</title>\n    <link rel=\"stylesheet\" href=\"./src/styles.css\">\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script src=\"./civicsuite-launcher-config.js\"></script>\n    <script type"
+        }
+      ],
+      "fix_steps": [],
+      "mode": "python_http_server",
+      "name": "suite_launcher_http",
+      "status": "passed",
+      "url": "http://127.0.0.1:18082/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"version\":\"1.7.3\"}"
+        }
+      ],
+      "name": "civicrecords_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:18727/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>CivicRecords AI \u2014 Admin</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-58Kzl4RM.js\"></script>\n    <link rel=\"stylesheet\" crossorigin href=\"/assets/index-CLtiqYqY.css\">\n  </head>\n  <body>\n    <div id=\"root\"></div>\n  </body>\n"
+        }
+      ],
+      "name": "civicrecords_web",
+      "status": "passed",
+      "url": "http://127.0.0.1:18807/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"service\":\"civicclerk\",\"version\":\"1.0.3\",\"civiccore\":\"1.2.0\"}"
+        }
+      ],
+      "name": "civicclerk_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:19503/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"description\" content=\"CivicClerk staff workspace for meeting lifecycle, agenda, packet, notice, and minutes work.\" />\n    <link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\" />\n    <title>CivicClerk Staff Workspace</title>\n    <sc"
+        }
+      ],
+      "name": "civicclerk_web",
+      "status": "passed",
+      "url": "http://127.0.0.1:18808/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"service\":\"civiccode\",\"version\":\"1.0.8\",\"civiccore\":\"1.2.0\"}"
+        }
+      ],
+      "name": "civiccode_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:19547/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <link rel=\"icon\" href=\"data:,\" />\n  <title>Search results for 13.40.020 - CivicCode</title>\n  <style>\n    :root {\n      --ink: #1b261f;\n      --paper: #f6f0e6;\n      --card: #fffaf1;\n      --line: #22382b;\n      --moss: #496b50;\n      --marigold: #d68c17;\n  "
+        }
+      ],
+      "name": "civiccode_public_lookup",
+      "status": "passed",
+      "url": "http://127.0.0.1:19547/civiccode/search?q=13.40.020"
+    },
+    {
+      "checks": [
+        {
+          "name": "civicrecords_health",
+          "payload": {
+            "status": "ok",
+            "version": "1.7.3"
+          },
+          "status_code": 200
+        },
+        {
+          "name": "civicclerk_health",
+          "payload": {
+            "civiccore": "1.2.0",
+            "service": "civicclerk",
+            "status": "ok",
+            "version": "1.0.3"
+          },
+          "status_code": 200
+        },
+        {
+          "name": "civiccode_health",
+          "payload": {
+            "civiccore": "1.2.0",
+            "service": "civiccode",
+            "status": "ok",
+            "version": "1.0.8"
+          },
+          "status_code": 200
+        }
+      ],
+      "expected": {
+        "civicclerk": {
+          "civiccore": "1.2.0",
+          "version": "1.0.3"
+        },
+        "civiccode": {
+          "civiccore": "1.2.0",
+          "version": "1.0.8"
+        },
+        "civiccore": {
+          "role": "base dependency installed before selected modules through the installer plan"
+        },
+        "civicrecords-ai": {
+          "version": "1.7.3"
+        }
+      },
+      "name": "starter_set_civiccore_contract",
+      "selected_modules": [
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode"
+      ],
+      "status": "passed"
+    },
+    {
+      "auth_contract": "CivicRecords uses first-admin JWT login; CivicClerk uses bearer staff auth.",
+      "checks": [
+        {
+          "checks": [
+            {
+              "has_access_token": true,
+              "name": "admin_login",
+              "status_code": 200
+            },
+            {
+              "must_change_password": true,
+              "name": "first_admin_rotation_required",
+              "status_code": 200
+            },
+            {
+              "must_change_password": false,
+              "name": "rotate_first_admin_password",
+              "status_code": 200
+            },
+            {
+              "has_access_token": true,
+              "name": "relogin_after_password_rotation",
+              "status_code": 200
+            },
+            {
+              "name": "create_records_request",
+              "request_id_present": true,
+              "status": "received",
+              "status_code": 201
+            },
+            {
+              "id_matches": true,
+              "name": "fetch_records_request",
+              "status_code": 200
+            },
+            {
+              "departments_present": true,
+              "file_types_present": true,
+              "name": "search_records",
+              "source_names_present": true,
+              "status_code": 200
+            },
+            {
+              "name": "mark_request_searching",
+              "status": "searching",
+              "status_code": 200
+            },
+            {
+              "name": "submit_request_review",
+              "status": "in_review",
+              "status_code": 200
+            },
+            {
+              "contains_ai_disclaimer": true,
+              "human_review_required": true,
+              "letter_id_present": true,
+              "name": "draft_response_letter",
+              "status": "draft",
+              "status_code": 201
+            },
+            {
+              "name": "mark_ready_for_release",
+              "status": "ready_for_release",
+              "status_code": 200
+            }
+          ],
+          "name": "civicrecords_workflow",
+          "status": "passed"
+        },
+        {
+          "checks": [
+            {
+              "mode": "bearer",
+              "name": "staff_session",
+              "roles": [
+                "clerk_admin",
+                "meeting_editor"
+              ],
+              "status_code": 200,
+              "token_fingerprint_present": true
+            },
+            {
+              "item_id_present": true,
+              "name": "create_agenda_intake",
+              "status_code": 201,
+              "title_matches": true
+            },
+            {
+              "name": "review_agenda_intake",
+              "readiness_status": "READY",
+              "status_code": 200
+            },
+            {
+              "agenda_item_id_present": true,
+              "name": "promote_agenda_intake",
+              "next_step": "Add the agenda item to the target meeting packet assembly.",
+              "status_code": 201
+            },
+            {
+              "created_item_listed": true,
+              "name": "list_agenda_intake",
+              "status_code": 200
+            },
+            {
+              "meeting_body_id_present": true,
+              "name": "create_meeting_body",
+              "status_code": 201
+            },
+            {
+              "meeting_id_present": true,
+              "name": "create_meeting",
+              "status_code": 201
+            },
+            {
+              "name": "create_packet_assembly",
+              "packet_id_present": true,
+              "status_code": 201
+            },
+            {
+              "name": "finalize_packet_assembly",
+              "status": "FINALIZED",
+              "status_code": 200
+            },
+            {
+              "compliant": true,
+              "name": "create_notice_checklist",
+              "notice_id_present": true,
+              "status_code": 201
+            },
+            {
+              "name": "attach_notice_posting_proof",
+              "posting_proof_present": true,
+              "status_code": 200
+            },
+            {
+              "motion_id_present": true,
+              "name": "capture_motion",
+              "status_code": 201
+            },
+            {
+              "name": "capture_vote",
+              "status_code": 201,
+              "vote_id_present": true
+            },
+            {
+              "human_review_required": false,
+              "minute_id_present": true,
+              "name": "create_minutes_draft",
+              "status_code": 201
+            },
+            {
+              "guardrail_triggered": true,
+              "name": "reject_auto_minutes_post",
+              "payload": {
+                "detail": {
+                  "fix": "Review, cite-check, and adopt minutes through a human approval workflow before public posting.",
+                  "message": "AI-drafted minutes cannot be posted automatically."
+                }
+              },
+              "status_code": 409
+            },
+            {
+              "archive_id_present": true,
+              "name": "publish_public_archive_record",
+              "status_code": 201
+            },
+            {
+              "archive_record_listed": true,
+              "name": "public_meeting_calendar",
+              "status_code": 200
+            },
+            {
+              "archive_record_found": true,
+              "name": "public_archive_search",
+              "status_code": 200,
+              "total_count": 1
+            }
+          ],
+          "name": "civicclerk_bearer_workflow",
+          "status": "passed"
+        },
+        {
+          "checks": [
+            {
+              "name": "health",
+              "payload": {
+                "civiccore": "1.2.0",
+                "service": "civiccode",
+                "status": "ok",
+                "version": "1.0.8"
+              },
+              "status_code": 200
+            },
+            {
+              "name": "seeded_section_lookup",
+              "status_code": 200
+            },
+            {
+              "name": "forged_staff_header_boundary",
+              "payload": {
+                "detail": {
+                  "fix": "Route CivicCode staff endpoint access requests through a reverse proxy inside CIVICCODE_STAFF_TRUSTED_PROXY_CIDRS and strip client-supplied copies of X-CivicCode-Actor and X-CivicCode-Role before they reach CivicCode.",
+                  "message": "Trusted staff headers were not received from an approved proxy."
+                }
+              },
+              "status_code": 403
+            }
+          ],
+          "name": "civiccode_workflow",
+          "status": "passed"
+        },
+        {
+          "checks": [
+            {
+              "id_present": true,
+              "name": "clerk_create_meeting",
+              "status_code": 201
+            },
+            {
+              "id_present": true,
+              "name": "clerk_capture_adoption_motion",
+              "status_code": 201
+            },
+            {
+              "civiccode_event_id_present": true,
+              "handoff_last_error": null,
+              "handoff_status": "EMIT_DELIVERED",
+              "name": "clerk_emits_to_code",
+              "status_code": 201
+            },
+            {
+              "name": "code_pending_warning_visible",
+              "status_code": 200,
+              "target_warning_visible": true,
+              "warning_count": 2
+            },
+            {
+              "name": "code_create_codified_version",
+              "status_code": 201,
+              "version_id": "version_city_core_handoff_1780284936"
+            },
+            {
+              "handoff_state": "codified",
+              "name": "code_resolve_handoff",
+              "status_code": 200
+            },
+            {
+              "body_contains_eight_chickens": true,
+              "name": "code_lookup_after_resolution",
+              "status_code": 200,
+              "target_warning_cleared": true,
+              "warning_count": 1
+            },
+            {
+              "answer_mentions_eight": true,
+              "citation_count": 1,
+              "matched_section_number": "13.40.020",
+              "name": "code_qa_after_handoff",
+              "status": "ok",
+              "status_code": 200
+            }
+          ],
+          "name": "clerk_to_code_handoff",
+          "status": "passed"
+        }
+      ],
+      "name": "starter_set_runtime_workflows",
+      "selected_modules": [
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode"
+      ],
+      "status": "passed"
+    },
+    {
+      "checks": [
+        {
+          "name": "portal_mode_config",
+          "payload": {
+            "mode": "public"
+          },
+          "status_code": 200
+        },
+        {
+          "attempts": [
+            {
+              "status_code": 200
+            }
+          ],
+          "name": "public_route_mounts",
+          "public_request_path_mounted": true,
+          "register_path_mounted": true,
+          "status_code": 200
+        }
+      ],
+      "expected_mode": "public",
+      "name": "civicrecords_portal_mode",
+      "status": "passed"
+    }
+  ]
+}

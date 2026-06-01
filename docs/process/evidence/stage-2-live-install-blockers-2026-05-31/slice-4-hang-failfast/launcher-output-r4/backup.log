@@ -1,0 +1,80 @@
+$ powershell -NoProfile -ExecutionPolicy Bypass -File installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1 -Backup
+CivicSuite city-core unsigned beta installer package
+Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings.
+Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands.
+Project status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.
+{
+  "backup_dir": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z",
+  "civicclerk_staff_mode": "protected",
+  "compose_projects": {
+    "civicclerk": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk",
+    "civiccode": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code",
+    "civicrecords-ai": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records"
+  },
+  "finished_at": "2026-06-01T03:48:46.965086+00:00",
+  "install_root": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r",
+  "isolation_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "mode": "backup",
+  "mutates_host": true,
+  "port_offset": 727,
+  "ports": {
+    "civicclerk": {
+      "api": 19503,
+      "web": 18808
+    },
+    "civiccode": {
+      "api": 19547
+    },
+    "civicrecords-ai": {
+      "api": 18727,
+      "web": 18807
+    },
+    "suite-launcher": {
+      "web": 18082
+    }
+  },
+  "run_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-06-01T03:48:44.510897+00:00",
+  "status": "passed",
+  "steps": [
+    {
+      "module": "civicrecords-ai",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/civicrecords-ai-postgres.dump",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "postgres_backup_dump"
+    },
+    {
+      "module": "civicclerk",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/civicclerk-postgres.dump",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "postgres_backup_dump"
+    },
+    {
+      "module": "civiccode",
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/civiccode-postgres.dump",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "",
+      "step": "postgres_backup_dump"
+    },
+    {
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/backup-manifest.json",
+      "status": "passed",
+      "step": "write_backup_manifest"
+    },
+    {
+      "path": "/mnt/c/dev/Claude/CivicSuite-live-install-fix-2026-05-29/installer/reports/stage2-slice4-windows-lifecycle-streamed-r4/extracted/CivicSuite-city-core-windows/r/backups/20260601T034844Z/record-survival-ledger.json",
+      "status": "passed",
+      "step": "write_record_survival_ledger"
+    }
+  ]
+}

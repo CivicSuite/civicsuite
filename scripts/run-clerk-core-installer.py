@@ -35,6 +35,7 @@ DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 DEFAULT_LLM_MODEL = "gemma4:e4b"
 RESPONSE_LETTER_TIMEOUT_SECONDS = 180
 RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 8
+OLLAMA_PREWARM_TIMEOUT_SECONDS = 90
 CODE_QA_TIMEOUT_SECONDS = 60
 CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
@@ -752,31 +753,40 @@ def ensure_ollama_models(ctx: dict[str, object]) -> list[dict[str, object]]:
             )
             if proc.returncode != 0:
                 return steps
-        proc = run(
-            compose(
-                project,
-                source,
-                "exec",
-                "-T",
-                "ollama",
-                "ollama",
-                "run",
-                DEFAULT_LLM_MODEL,
-                "Respond with OK.",
-            ),
-            cwd=source,
-            timeout=3600,
-        )
+        try:
+            proc = run(
+                compose(
+                    project,
+                    source,
+                    "exec",
+                    "-T",
+                    "ollama",
+                    "ollama",
+                    "run",
+                    DEFAULT_LLM_MODEL,
+                    "Respond with OK.",
+                ),
+                cwd=source,
+                timeout=OLLAMA_PREWARM_TIMEOUT_SECONDS,
+            )
+            returncode = proc.returncode
+            stdout = proc.stdout[-4000:]
+            stderr = proc.stderr[-4000:]
+        except subprocess.TimeoutExpired as exc:
+            returncode = 124
+            stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""
+            stderr = f"Ollama prewarm exceeded {OLLAMA_PREWARM_TIMEOUT_SECONDS}s and was skipped; workflow proof will use API fallback paths."
         steps.append(
             {
                 "module": module,
                 "step": "ollama_prewarm_model",
                 "model": DEFAULT_LLM_MODEL,
                 "required": False,
-                "status": "passed" if proc.returncode == 0 else "warning",
-                "returncode": proc.returncode,
-                "stdout": proc.stdout[-4000:],
-                "stderr": proc.stderr[-4000:],
+                "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
+                "status": "passed" if returncode == 0 else "warning",
+                "returncode": returncode,
+                "stdout": stdout,
+                "stderr": stderr,
             }
         )
     return steps
@@ -957,8 +967,19 @@ def wait_for_url(url: str, *, timeout_seconds: int = 360) -> dict[str, object]:
     deadline = time.time() + timeout_seconds
     attempts: list[dict[str, object]] = []
     while time.time() < deadline:
-        proc = run(["curl", "-fsS", url], cwd=ROOT, timeout=20)
-        attempts.append({"returncode": proc.returncode, "stdout": proc.stdout[:400], "stderr": proc.stderr[:400]})
+        try:
+            proc = run(["curl", "--max-time", "5", "-fsS", url], cwd=ROOT, timeout=8)
+            attempts.append({"returncode": proc.returncode, "stdout": proc.stdout[:400], "stderr": proc.stderr[:400]})
+        except subprocess.TimeoutExpired as exc:
+            attempts.append(
+                {
+                    "returncode": 124,
+                    "stdout": (exc.stdout or "")[:400] if isinstance(exc.stdout, str) else "",
+                    "stderr": f"curl probe timed out after {exc.timeout} seconds",
+                }
+            )
+            time.sleep(1)
+            continue
         if proc.returncode == 0:
             return {"status": "passed", "attempts": attempts[-5:]}
         time.sleep(5)
@@ -985,7 +1006,7 @@ def get_json(
         reason = getattr(exc, "reason", exc)
         return 598, {
             "detail": {
-                "message": "JSON POST timed out or failed before the service returned a response.",
+                "message": "JSON GET timed out or failed before the service returned a response.",
                 "timeout_seconds": timeout_seconds,
                 "error": str(reason),
             }
@@ -1137,7 +1158,15 @@ def verify_records_portal_mode(ports: dict[str, int], *, expected_mode: str) -> 
     try:
         mode_status, mode_payload = get_json(f"{base}/config/portal-mode")
         checks.append({"name": "portal_mode_config", "status_code": mode_status, "payload": mode_payload})
-        openapi_status, openapi_payload = get_json(f"{base}/openapi.json")
+        openapi_status = 598
+        openapi_payload: dict[str, object] = {}
+        openapi_attempts: list[dict[str, object]] = []
+        for _ in range(6):
+            openapi_status, openapi_payload = get_json(f"{base}/openapi.json", timeout_seconds=30)
+            openapi_attempts.append({"status_code": openapi_status})
+            if openapi_status != 598:
+                break
+            time.sleep(5)
         paths = openapi_payload.get("paths", {}) if isinstance(openapi_payload, dict) else {}
         public_request_path_mounted = "/public/requests" in paths
         register_path_mounted = "/auth/register" in paths
@@ -1145,6 +1174,7 @@ def verify_records_portal_mode(ports: dict[str, int], *, expected_mode: str) -> 
             {
                 "name": "public_route_mounts",
                 "status_code": openapi_status,
+                "attempts": openapi_attempts,
                 "public_request_path_mounted": public_request_path_mounted,
                 "register_path_mounted": register_path_mounted,
             }
@@ -2272,6 +2302,20 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
         text=True,
     )
     try:
+        time.sleep(1)
+        if proc.poll() is not None:
+            stderr = proc.stderr.read()[-1000:] if proc.stderr else ""
+            return {
+                "name": "suite_launcher_http",
+                "status": "failed",
+                "url": url,
+                "mode": "python_http_server",
+                "error": stderr or f"server exited with code {proc.returncode}",
+                "fix_steps": [
+                    "Confirm localhost port 18082 is free.",
+                    "Confirm the packaged suite launcher can be served from the runtime directory.",
+                ],
+            }
         proof = wait_for_url(url, timeout_seconds=20)
         return {
             "name": "suite_launcher_http",

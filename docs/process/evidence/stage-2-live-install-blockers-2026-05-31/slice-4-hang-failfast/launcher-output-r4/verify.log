@@ -1,0 +1,253 @@
+$ powershell -NoProfile -ExecutionPolicy Bypass -File installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1 -Verify -StaffMode bearer
+CivicSuite city-core unsigned beta installer package
+Signing status: unsigned. Windows may show SmartScreen or unknown publisher warnings.
+Trust path: verify the SHA256 checksum from installer\dist and the official CivicSuite release source before running lifecycle commands.
+Project status: city-core beta; Linux and Windows matching-host lifecycle proof is required before promotion.
+{
+  "checks": [
+    {
+      "fix_steps": [],
+      "name": "suite_launcher_runtime_files",
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\suite-launcher",
+      "status": "passed"
+    },
+    {
+      "expected_port": 18082,
+      "fix_steps": [],
+      "name": "suite_launcher_port_config",
+      "path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\suite-launcher\\civicsuite-launcher-config.json",
+      "status": "passed"
+    },
+    {
+      "env_var": "CIVICCORE_SUITE_SESSION_SECRET",
+      "fix_steps": [],
+      "module_env_checks": [
+        {
+          "env_path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\sources\\civicrecords-ai\\.env",
+          "module": "civicrecords-ai",
+          "present": true,
+          "revocation_file_env_present": true
+        },
+        {
+          "env_path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\sources\\civicclerk\\.env",
+          "module": "civicclerk",
+          "present": true,
+          "revocation_file_env_present": true
+        },
+        {
+          "env_path": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\sources\\civiccode\\.env",
+          "module": "civiccode",
+          "present": true,
+          "revocation_file_env_present": true
+        }
+      ],
+      "name": "shared_staff_session_presence",
+      "revocation_env_var": "CIVICCORE_SUITE_SESSION_REVOCATION_FILE",
+      "revocation_file": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\shared\\civiccore_suite_session_revocations.json",
+      "status": "passed",
+      "value_file": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r\\shared\\civiccore_suite_session_value"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <meta name=\"color-scheme\" content=\"light\">\n    <title>CivicSuite Launcher</title>\n    <link rel=\"stylesheet\" href=\"./src/styles.css\">\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script src=\"./civicsuite-launcher-config.js\"></script>\n    <script type"
+        }
+      ],
+      "fix_steps": [],
+      "mode": "python_http_server",
+      "name": "suite_launcher_http",
+      "status": "passed",
+      "url": "http://127.0.0.1:18082/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"version\":\"1.7.3\"}"
+        }
+      ],
+      "name": "civicrecords_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:18727/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>CivicRecords AI \u2014 Admin</title>\n    <script type=\"module\" crossorigin src=\"/assets/index-58Kzl4RM.js\"></script>\n    <link rel=\"stylesheet\" crossorigin href=\"/assets/index-CLtiqYqY.css\">\n  </head>\n  <body>\n    <div id=\"root\"></div>\n  </body>\n"
+        }
+      ],
+      "name": "civicrecords_web",
+      "status": "passed",
+      "url": "http://127.0.0.1:18807/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"service\":\"civicclerk\",\"version\":\"1.0.3\",\"civiccore\":\"1.2.0\"}"
+        }
+      ],
+      "name": "civicclerk_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:19503/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <meta name=\"description\" content=\"CivicClerk staff workspace for meeting lifecycle, agenda, packet, notice, and minutes work.\" />\n    <link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\" />\n    <title>CivicClerk Staff Workspace</title>\n    <sc"
+        }
+      ],
+      "name": "civicclerk_web",
+      "status": "passed",
+      "url": "http://127.0.0.1:18808/"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "{\"status\":\"ok\",\"service\":\"civiccode\",\"version\":\"1.0.8\",\"civiccore\":\"1.2.0\"}"
+        }
+      ],
+      "name": "civiccode_api",
+      "status": "passed",
+      "url": "http://127.0.0.1:19547/health"
+    },
+    {
+      "attempts": [
+        {
+          "returncode": 0,
+          "stderr": "",
+          "stdout": "<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <link rel=\"icon\" href=\"data:,\" />\n  <title>Search results for 13.40.020 - CivicCode</title>\n  <style>\n    :root {\n      --ink: #1b261f;\n      --paper: #f6f0e6;\n      --card: #fffaf1;\n      --line: #22382b;\n      --moss: #496b50;\n      --marigold: #d68c17;\n  "
+        }
+      ],
+      "name": "civiccode_public_lookup",
+      "status": "passed",
+      "url": "http://127.0.0.1:19547/civiccode/search?q=13.40.020"
+    },
+    {
+      "checks": [
+        {
+          "name": "civicrecords_health",
+          "payload": {
+            "status": "ok",
+            "version": "1.7.3"
+          },
+          "status_code": 200
+        },
+        {
+          "name": "civicclerk_health",
+          "payload": {
+            "civiccore": "1.2.0",
+            "service": "civicclerk",
+            "status": "ok",
+            "version": "1.0.3"
+          },
+          "status_code": 200
+        },
+        {
+          "name": "civiccode_health",
+          "payload": {
+            "civiccore": "1.2.0",
+            "service": "civiccode",
+            "status": "ok",
+            "version": "1.0.8"
+          },
+          "status_code": 200
+        }
+      ],
+      "expected": {
+        "civicclerk": {
+          "civiccore": "1.2.0",
+          "version": "1.0.3"
+        },
+        "civiccode": {
+          "civiccore": "1.2.0",
+          "version": "1.0.8"
+        },
+        "civiccore": {
+          "role": "base dependency installed before selected modules through the installer plan"
+        },
+        "civicrecords-ai": {
+          "version": "1.7.3"
+        }
+      },
+      "name": "starter_set_civiccore_contract",
+      "selected_modules": [
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode"
+      ],
+      "status": "passed"
+    },
+    {
+      "checks": [
+        {
+          "name": "portal_mode_config",
+          "payload": {
+            "mode": "public"
+          },
+          "status_code": 200
+        },
+        {
+          "attempts": [
+            {
+              "status_code": 200
+            }
+          ],
+          "name": "public_route_mounts",
+          "public_request_path_mounted": true,
+          "register_path_mounted": true,
+          "status_code": 200
+        }
+      ],
+      "expected_mode": "public",
+      "name": "civicrecords_portal_mode",
+      "status": "passed"
+    }
+  ],
+  "civicclerk_staff_mode": "bearer",
+  "compose_projects": {
+    "civicclerk": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-clerk",
+    "civiccode": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-code",
+    "civicrecords-ai": "civicsuite-stage2-slice4-windows-lifecycle-streamed-r4-records"
+  },
+  "finished_at": "2026-06-01T03:48:36.493145+00:00",
+  "install_root": "C:\\dev\\Claude\\CivicSuite-live-install-fix-2026-05-29\\installer\\reports\\stage2-slice4-windows-lifecycle-streamed-r4\\extracted\\CivicSuite-city-core-windows\\r",
+  "isolation_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "mode": "verify",
+  "mutates_host": false,
+  "port_offset": 727,
+  "ports": {
+    "civicclerk": {
+      "api": 19503,
+      "web": 18808
+    },
+    "civiccode": {
+      "api": 19547
+    },
+    "civicrecords-ai": {
+      "api": 18727,
+      "web": 18807
+    },
+    "suite-launcher": {
+      "web": 18082
+    }
+  },
+  "run_id": "stage2-slice4-windows-lifecycle-streamed-r4",
+  "selected_modules": [
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode"
+  ],
+  "started_at": "2026-06-01T03:48:28.163603+00:00",
+  "status": "passed"
+}
