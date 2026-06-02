@@ -5,8 +5,11 @@ param(
     [string]$HostFactsJson,
     [switch]$PlanOnly,
     [switch]$SkipElevation,
+    [switch]$ResumeRun,
+    [switch]$MockWindowsFeatures,
     [string]$ResumeTaskName = "CivicSuiteBaremetalResume",
     [string]$ResumeCommand,
+    [string]$TaskRegistryPath,
     [string]$DockerSpikePath,
     [string]$OllamaExePath,
     [string]$OllamaInstallerPath,
@@ -14,6 +17,7 @@ param(
     [string]$OllamaInstallerUrl = "https://ollama.com/download/OllamaSetup.exe",
     [string]$PythonPath = "python",
     [string]$InstallRoot,
+    [string]$LifecycleEvidencePath,
     [string]$RunId = "stage3a-baremetal"
 )
 
@@ -173,15 +177,48 @@ function Invoke-Stage0 {
 
 function Invoke-FeatureCommand {
     param([string]$FeatureName)
-    if ($PlanOnly) {
-        Write-BootstrapLog "stage1" "PlanOnly: would enable Windows feature $FeatureName"
-        return [ordered]@{ feature = $FeatureName; status = "planned"; restart_needed = $true }
+    if ($PlanOnly -or $MockWindowsFeatures) {
+        $status = $(if ($PlanOnly) { "planned" } else { "passed" })
+        Write-BootstrapLog "stage1" "$status`: would enable Windows feature $FeatureName"
+        return [ordered]@{ feature = $FeatureName; status = $status; restart_needed = $true }
     }
     $feature = Enable-WindowsOptionalFeature -Online -FeatureName $FeatureName -All -NoRestart
     return [ordered]@{
         feature = $FeatureName
-        status = $feature.RestartNeeded -or $feature.Online
+        status = $(if ($feature.RestartNeeded -or $feature.Online) { "passed" } else { "failed" })
         restart_needed = [bool]$feature.RestartNeeded
+    }
+}
+
+function Unregister-ResumeTask {
+    if ($TaskRegistryPath) {
+        if (Test-Path -LiteralPath $TaskRegistryPath) {
+            Remove-Item -LiteralPath $TaskRegistryPath -Force
+            Write-BootstrapLog "stage1" "Removed simulated resume task registry $TaskRegistryPath"
+        }
+        return [ordered]@{
+            unregistered = $true
+            mechanism = "simulated_registry"
+            task_name = $ResumeTaskName
+            path = $TaskRegistryPath
+        }
+    }
+    if ($PlanOnly) {
+        Write-BootstrapLog "stage1" "PlanOnly: would unregister resume task $ResumeTaskName"
+        return [ordered]@{
+            unregistered = $true
+            mechanism = "scheduled_task"
+            task_name = $ResumeTaskName
+            plan_only = $true
+        }
+    }
+    Unregister-ScheduledTask -TaskName $ResumeTaskName -Confirm:$false -ErrorAction SilentlyContinue
+    Write-BootstrapLog "stage1" "Unregistered resume task $ResumeTaskName"
+    return [ordered]@{
+        unregistered = $true
+        mechanism = "scheduled_task"
+        task_name = $ResumeTaskName
+        plan_only = $false
     }
 }
 
@@ -200,6 +237,17 @@ function Register-Resume {
             plan_only = $true
         }
     }
+    if ($TaskRegistryPath) {
+        Set-Content -LiteralPath $TaskRegistryPath -Value $command -Encoding UTF8
+        Write-BootstrapLog "stage1" "Wrote simulated resume task registry $TaskRegistryPath"
+        return [ordered]@{
+            registered = $true
+            mechanism = "simulated_registry"
+            task_name = $ResumeTaskName
+            command = $command
+            path = $TaskRegistryPath
+        }
+    }
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" -Stage Stage1 -LogRoot `"$LogRoot`""
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     Register-ScheduledTask -TaskName $ResumeTaskName -Action $action -Trigger $trigger -Description "Resume CivicSuite bare-metal bootstrap after WSL2 reboot." -Force | Out-Null
@@ -213,11 +261,15 @@ function Register-Resume {
 }
 
 function Invoke-Stage1 {
+    $resumeCleanup = $null
+    if ($ResumeRun) {
+        $resumeCleanup = Unregister-ResumeTask
+    }
     $features = @()
     $features += Invoke-FeatureCommand "Microsoft-Windows-Subsystem-Linux"
     $features += Invoke-FeatureCommand "VirtualMachinePlatform"
     $wslDefault = [ordered]@{ status = "not_run"; restart_needed_first = $false }
-    if ($PlanOnly) {
+    if ($PlanOnly -or $MockWindowsFeatures) {
         $wslDefault = [ordered]@{ status = "planned"; command = "wsl --set-default-version 2" }
     } else {
         $wslOutput = & wsl --set-default-version 2 2>&1
@@ -225,7 +277,7 @@ function Invoke-Stage1 {
     }
     $restartNeeded = [bool](@($features | Where-Object { $_.restart_needed }).Count -gt 0)
     $resume = $null
-    if ($restartNeeded) {
+    if ($restartNeeded -and -not $ResumeRun) {
         $resume = Register-Resume
     }
     $stage1 = [ordered]@{
@@ -234,9 +286,64 @@ function Invoke-Stage1 {
         wsl_default_version = $wslDefault
         restart_needed = $restartNeeded
         resume = $resume
+        resume_cleanup = $resumeCleanup
     }
     Write-BootstrapLog "stage1" "Stage1 WSL2 feature enablement finished; restart_needed=$restartNeeded"
     return $stage1
+}
+
+function Find-FirstNamedObject {
+    param([object]$Node, [string]$Name)
+    if ($null -eq $Node) {
+        return $null
+    }
+    if ($Node -is [System.Array]) {
+        foreach ($item in $Node) {
+            $found = Find-FirstNamedObject -Node $item -Name $Name
+            if ($null -ne $found) {
+                return $found
+            }
+        }
+        return $null
+    }
+    if ($Node.PSObject -and $Node.PSObject.Properties["name"] -and [string]$Node.name -eq $Name) {
+        return $Node
+    }
+    if ($Node.PSObject) {
+        foreach ($property in $Node.PSObject.Properties) {
+            $value = $property.Value
+            if ($value -is [System.Array] -or ($value -and $value.PSObject -and -not ($value -is [string]))) {
+                $found = Find-FirstNamedObject -Node $value -Name $Name
+                if ($null -ne $found) {
+                    return $found
+                }
+            }
+        }
+    }
+    return $null
+}
+
+function Assert-Stage4Evidence {
+    param([string]$EvidencePath)
+    if (-not (Test-Path -LiteralPath $EvidencePath)) {
+        throw "Stage4 lifecycle evidence was not found at $EvidencePath. Run verify with --workflow-proof or provide LifecycleEvidencePath."
+    }
+    $payload = Get-Content -LiteralPath $EvidencePath -Raw | ConvertFrom-Json
+    $draftCheck = Find-FirstNamedObject -Node $payload -Name "draft_response_letter"
+    if ($null -eq $draftCheck) {
+        throw "Stage4 lifecycle evidence does not contain the CivicRecords draft_response_letter proof."
+    }
+    $source = [string]$draftCheck.generation_source
+    $model = [string]$draftCheck.generation_model
+    $passed = $source -eq "ollama" -and $model -eq "gemma4:e4b"
+    return [ordered]@{
+        status = $(if ($passed) { "passed" } else { "failed" })
+        evidence_path = $EvidencePath
+        generation_source = $source
+        generation_model = $model
+        expected_generation_source = "ollama"
+        expected_generation_model = "gemma4:e4b"
+    }
 }
 
 function Find-Ollama {
@@ -361,9 +468,26 @@ function Invoke-Stage3 {
 
 function Invoke-Stage4 {
     $verify = Invoke-InstallerLifecycle -Mode "verify" -WorkflowProof
+    $evidencePath = $LifecycleEvidencePath
+    if (-not $evidencePath) {
+        $repoRoot = Resolve-Path (Join-Path $scriptRoot "..\..\..")
+        $evidencePath = Join-Path $repoRoot.Path "installer\reports\$RunId\clerk-core-installer-lifecycle.json"
+    }
+    $evidenceAssertion = $null
+    if ($PlanOnly -and -not (Test-Path -LiteralPath $evidencePath)) {
+        $evidenceAssertion = [ordered]@{
+            status = "planned"
+            evidence_path = $evidencePath
+            expected_generation_source = "ollama"
+            expected_generation_model = "gemma4:e4b"
+        }
+    } else {
+        $evidenceAssertion = Assert-Stage4Evidence -EvidencePath $evidencePath
+    }
     $stage4 = [ordered]@{
-        status = $verify.status
+        status = $(if ($verify.status -eq "failed" -or $evidenceAssertion.status -eq "failed") { "failed" } else { $verify.status })
         verify = $verify
+        evidence_assertion = $evidenceAssertion
         required_generation_source = "ollama"
         required_model = "gemma4:e4b"
         launcher_url = "http://127.0.0.1:18082/"
@@ -398,6 +522,10 @@ try {
     }
     if ($Stage -eq "Stage4" -or $Stage -eq "Stage0To4") {
         $result.stage4 = Invoke-Stage4
+        if ($result.stage4.status -ne "passed" -and $result.stage4.status -ne "planned") {
+            Complete-Bootstrap "failed"
+            exit 1
+        }
     }
     Complete-Bootstrap "passed"
     exit 0

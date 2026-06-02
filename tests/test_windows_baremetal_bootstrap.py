@@ -41,27 +41,36 @@ def _write_facts(path: Path, **overrides: object) -> None:
     path.write_text(json.dumps(facts), encoding="utf-8")
 
 
-def _run_bootstrap(tmp_path: Path, stage: str, facts_path: Path) -> tuple[subprocess.CompletedProcess[str], dict]:
+def _run_bootstrap(
+    tmp_path: Path,
+    stage: str,
+    facts_path: Path,
+    extra_args: list[str] | None = None,
+    plan_only: bool = True,
+) -> tuple[subprocess.CompletedProcess[str], dict]:
     log_root = tmp_path / "logs"
+    args = [
+        _powershell(),
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        str(BOOTSTRAP),
+        "-Stage",
+        stage,
+        "-LogRoot",
+        str(log_root),
+        "-HostFactsJson",
+        str(facts_path),
+        "-SkipElevation",
+        "-ResumeCommand",
+        "powershell.exe -File civicsuite-baremetal-bootstrap.ps1 -Stage Stage1",
+    ]
+    if plan_only:
+        args.append("-PlanOnly")
+    args.extend(extra_args or [])
     completed = subprocess.run(
-        [
-            _powershell(),
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            str(BOOTSTRAP),
-            "-Stage",
-            stage,
-            "-LogRoot",
-            str(log_root),
-            "-HostFactsJson",
-            str(facts_path),
-            "-PlanOnly",
-            "-SkipElevation",
-            "-ResumeCommand",
-            "powershell.exe -File civicsuite-baremetal-bootstrap.ps1 -Stage Stage1",
-        ],
+        args,
         cwd=ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -128,9 +137,36 @@ def test_stage1_plan_enables_wsl_features_and_registers_resume(tmp_path: Path) -
         "VirtualMachinePlatform",
     ]
     assert all(feature["status"] == "planned" for feature in result["stage1"]["features"])
+    assert all(isinstance(feature["status"], str) for feature in result["stage1"]["features"])
     assert result["stage1"]["wsl_default_version"]["command"] == "wsl --set-default-version 2"
     assert result["stage1"]["resume"]["registered"] is True
     assert result["stage1"]["resume"]["mechanism"] == "scheduled_task"
+
+
+def test_stage1_resume_run_self_unregisters_resume_task(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    task_registry = tmp_path / "resume-task.txt"
+    task_registry.write_text("registered", encoding="utf-8")
+    _write_facts(facts)
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage1",
+        facts,
+        [
+            "-ResumeRun",
+            "-MockWindowsFeatures",
+            "-TaskRegistryPath",
+            str(task_registry),
+        ],
+        plan_only=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert result["stage1"]["resume_cleanup"]["unregistered"] is True
+    assert result["stage1"]["resume_cleanup"]["mechanism"] == "simulated_registry"
+    assert all(feature["status"] == "passed" for feature in result["stage1"]["features"])
+    assert not task_registry.exists()
 
 
 def test_stage2_plan_orchestrates_docker_spike_and_ollama_without_host_mutation(tmp_path: Path) -> None:
@@ -165,3 +201,72 @@ def test_stage3_and_stage4_plan_chain_to_existing_warm_first_installer(tmp_path:
     assert "run-clerk-core-installer.py verify" in stage4_result["stage4"]["verify"]["command"]
     assert stage4_result["stage4"]["required_generation_source"] == "ollama"
     assert stage4_result["stage4"]["required_model"] == "gemma4:e4b"
+
+
+def _write_lifecycle_evidence(path: Path, source: str, model: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "status": "passed",
+        "checks": [
+            {
+                "name": "starter_set_runtime_workflows",
+                "status": "passed",
+                "checks": [
+                    {
+                        "name": "civicrecords_workflow",
+                        "status": "passed",
+                        "checks": [
+                            {
+                                "name": "draft_response_letter",
+                                "status_code": 201,
+                                "letter_id_present": True,
+                                "status": "draft",
+                                "generation_source": source,
+                                "generation_model": model,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_stage4_fails_template_fallback_lifecycle_evidence(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    evidence = tmp_path / "clerk-core-installer-lifecycle.json"
+    _write_facts(facts)
+    _write_lifecycle_evidence(evidence, source="template", model="")
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage4",
+        facts,
+        ["-LifecycleEvidencePath", str(evidence)],
+    )
+
+    assert completed.returncode == 1
+    assert result["status"] == "failed"
+    assert result["stage4"]["status"] == "failed"
+    assert result["stage4"]["evidence_assertion"]["status"] == "failed"
+    assert result["stage4"]["evidence_assertion"]["generation_source"] == "template"
+
+
+def test_stage4_passes_only_ollama_gemma4_lifecycle_evidence(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    evidence = tmp_path / "clerk-core-installer-lifecycle.json"
+    _write_facts(facts)
+    _write_lifecycle_evidence(evidence, source="ollama", model="gemma4:e4b")
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage4",
+        facts,
+        ["-LifecycleEvidencePath", str(evidence)],
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert result["stage4"]["status"] == "planned"
+    assert result["stage4"]["evidence_assertion"]["status"] == "passed"
+    assert result["stage4"]["evidence_assertion"]["generation_model"] == "gemma4:e4b"

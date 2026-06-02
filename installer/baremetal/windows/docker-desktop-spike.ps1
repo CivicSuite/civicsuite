@@ -179,6 +179,12 @@ function Poll-DockerEngine {
             $output = & $cli info 2>&1
             $exitCode = $LASTEXITCODE
             if ($exitCode -eq 0) {
+                $outputText = $output -join "`n"
+                if ($outputText -notmatch "(?im)^Server:") {
+                    Write-StepLog "engine" "Poll $attempt returned exit 0 but no Docker server section was present"
+                    Start-Sleep -Seconds $PollIntervalSeconds
+                    continue
+                }
                 $result.engine_ready = $true
                 $result.durations.engine_ready_seconds = [math]::Round(((Get-Date) - $pollStarted).TotalSeconds, 3)
                 Write-StepLog "engine" "Docker engine ready after $attempt poll(s)"

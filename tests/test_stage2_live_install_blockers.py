@@ -225,6 +225,56 @@ def test_records_response_letter_workflow_requires_model_generation() -> None:
     assert 'letter.get("generation_model") != DEFAULT_LLM_MODEL' in text
 
 
+def test_records_workflow_rejects_wrong_model_response_behaviorally(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+
+    password_path = tmp_path / "data" / "secrets" / "first_admin_password"
+    password_path.parent.mkdir(parents=True)
+    password_path.write_text("first-admin-password", encoding="utf-8")
+    monkeypatch.setattr(runner, "post_form", lambda _url, _payload: (200, {"access_token": "token"}))
+
+    def fake_get_json(url, **_kwargs):
+        if url.endswith("/users/me"):
+            return 200, {"must_change_password": False}
+        if url.endswith("/requests/1"):
+            return 200, {"id": "1"}
+        if url.endswith("/search/filters"):
+            return 200, {"file_types": [], "source_names": [], "departments": []}
+        return 200, {}
+
+    def fake_patch_json(_url, payload, **_kwargs):
+        return 200, {"status": payload["status"]}
+
+    def fake_post_json(url, _payload, **_kwargs):
+        if url.endswith("/requests/"):
+            return 201, {"id": "1", "status": "submitted"}
+        if url.endswith("/submit-review"):
+            return 200, {"status": "in_review"}
+        if url.endswith("/response-letter"):
+            return 201, {
+                "id": "letter-1",
+                "status": "draft",
+                "generation_source": "ollama",
+                "generation_model": "wrong-model",
+                "generated_content": "Draft requires human review.",
+            }
+        if url.endswith("/ready-for-release"):
+            return 200, {"status": "ready_for_release"}
+        raise AssertionError(f"unexpected POST {url}")
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+    monkeypatch.setattr(runner, "patch_json", fake_patch_json)
+    monkeypatch.setattr(runner, "post_json", fake_post_json)
+
+    result = runner.verify_records_workflow(tmp_path, {"api": 18000})
+
+    assert result["status"] == "failed"
+    letter_check = [check for check in result["checks"] if check["name"] == "draft_response_letter"][0]
+    assert letter_check["generation_source"] == "ollama"
+    assert letter_check["generation_model"] == "wrong-model"
+    assert letter_check["expected_generation_model"] == runner.DEFAULT_LLM_MODEL
+
+
 def test_readiness_fails_closed_when_memory_is_undetectable(monkeypatch) -> None:
     planner = _load_plan_installer()
 

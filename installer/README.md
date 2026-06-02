@@ -46,6 +46,23 @@ The installer must treat these as explicit baseline checks:
 The installer may guide the user to install privileged dependencies when silent
 installation would be unsafe, unsupported, or outside the operator's control.
 
+## Windows Bare-Metal Stage 3A
+
+Stage 3A adds an online Windows 11 Pro/Enterprise bare-metal bootstrapper under
+`installer/baremetal/windows/`. It is scoped to local admin machines with
+hardware virtualization already enabled and internet available. The flow is
+staged: target inspection, WSL2/Virtual Machine Platform with one-shot
+post-reboot resume, Docker Desktop/Ollama prerequisites, reuse of the existing
+warm-first city-core installer, and workflow evidence verification requiring
+`generation_source=ollama` with `generation_model=gemma4:e4b`.
+
+The clerk-facing progress wrapper is `civicsuite-baremetal-progress.ps1`. It
+renders honest phase state from the bootstrap result JSON, names the log path,
+surfaces actionable errors, and shows the local module URLs only after the
+bootstrap result is not failed. The live bare-VM proof is pending a matching
+Windows 11 Pro/Enterprise environment; see
+`docs/installer/windows-baremetal-stage3a-guide.md`.
+
 ## CivicCore First
 
 Every install profile starts with CivicCore. The installer must verify the

@@ -128,6 +128,31 @@ def test_spike_fails_with_actionable_result_when_engine_never_reports_ready(tmp_
     assert "does not uninstall Docker Desktop, WSL, or Ollama" in result["failure"]["actionable_message"]
 
 
+def test_spike_rejects_zero_exit_docker_info_without_server_section(tmp_path: Path) -> None:
+    docker_cli = tmp_path / "docker.ps1"
+    desktop = tmp_path / "Docker Desktop.exe"
+    desktop.write_text("", encoding="utf-8")
+    docker_cli.write_text(
+        "\n".join(
+            [
+                "param([string]$Command)",
+                "if ($Command -ne 'info') { exit 64 }",
+                "Write-Output 'Client: Docker Desktop'",
+                "exit 0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    completed, result = _run_spike(tmp_path, docker_cli)
+
+    assert completed.returncode == 1
+    assert result["status"] == "failed"
+    assert result["engine_ready"] is False
+    log_text = (tmp_path / "logs" / "docker-desktop-spike.log").read_text(encoding="utf-8")
+    assert "no Docker server section" in log_text
+
+
 def test_spike_uses_installer_when_docker_is_absent_without_grep_only_assertions(tmp_path: Path) -> None:
     installer = tmp_path / "installer.ps1"
     docker_cli = tmp_path / "docker.ps1"
