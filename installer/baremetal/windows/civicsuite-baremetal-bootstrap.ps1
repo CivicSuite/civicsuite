@@ -1,12 +1,20 @@
 param(
-    [ValidateSet("Stage0", "Stage1", "Stage0Stage1")]
+    [ValidateSet("Stage0", "Stage1", "Stage2", "Stage3", "Stage4", "Stage0Stage1", "Stage0To4")]
     [string]$Stage = "Stage0Stage1",
     [string]$LogRoot,
     [string]$HostFactsJson,
     [switch]$PlanOnly,
     [switch]$SkipElevation,
     [string]$ResumeTaskName = "CivicSuiteBaremetalResume",
-    [string]$ResumeCommand
+    [string]$ResumeCommand,
+    [string]$DockerSpikePath,
+    [string]$OllamaExePath,
+    [string]$OllamaInstallerPath,
+    [string]$OllamaInstallerSha256,
+    [string]$OllamaInstallerUrl = "https://ollama.com/download/OllamaSetup.exe",
+    [string]$PythonPath = "python",
+    [string]$InstallRoot,
+    [string]$RunId = "stage3a-baremetal"
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,6 +39,9 @@ $result = [ordered]@{
     plan_only = [bool]$PlanOnly
     stage0 = $null
     stage1 = $null
+    stage2 = $null
+    stage3 = $null
+    stage4 = $null
     failure = $null
     log_path = $logPath
 }
@@ -228,6 +239,139 @@ function Invoke-Stage1 {
     return $stage1
 }
 
+function Find-Ollama {
+    if ($OllamaExePath -and (Test-Path -LiteralPath $OllamaExePath)) {
+        return (Resolve-Path -LiteralPath $OllamaExePath).Path
+    }
+    $command = Get-Command ollama -ErrorAction SilentlyContinue
+    if ($command) {
+        return $command.Source
+    }
+    $default = Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama.exe"
+    if (Test-Path -LiteralPath $default) {
+        return $default
+    }
+    return $null
+}
+
+function Install-Ollama {
+    $installer = $OllamaInstallerPath
+    if (-not $installer) {
+        if ($PlanOnly) {
+            return [ordered]@{ status = "planned"; source = $OllamaInstallerUrl; installed = $false }
+        }
+        $installer = Join-Path $LogRoot "OllamaSetup.exe"
+        Write-BootstrapLog "stage2" "Downloading Ollama installer to $installer"
+        Invoke-WebRequest -Uri $OllamaInstallerUrl -OutFile $installer
+    }
+    if (-not (Test-Path -LiteralPath $installer)) {
+        throw "Ollama installer was not found at $installer. Provide a valid OllamaInstallerPath."
+    }
+    if ($OllamaInstallerSha256) {
+        $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installer).Hash.ToLowerInvariant()
+        if ($actualHash -ne $OllamaInstallerSha256.ToLowerInvariant()) {
+            throw "Ollama installer checksum mismatch. Expected $OllamaInstallerSha256 but found $actualHash."
+        }
+    }
+    if ($PlanOnly) {
+        return [ordered]@{ status = "planned"; source = $installer; installed = $false }
+    }
+    Write-BootstrapLog "stage2" "Starting Ollama installer silently"
+    $process = Start-Process -FilePath $installer -ArgumentList @("/S") -Wait -PassThru
+    if ($process.ExitCode -ne 0) {
+        throw "Ollama installer exited with code $($process.ExitCode)."
+    }
+    return [ordered]@{ status = "passed"; source = $installer; installed = $true }
+}
+
+function Invoke-Stage2 {
+    $spike = $DockerSpikePath
+    if (-not $spike) {
+        $spike = Join-Path $scriptRoot "docker-desktop-spike.ps1"
+    }
+    $dockerResult = [ordered]@{ status = "not_run"; result_path = $null }
+    if ($PlanOnly) {
+        $dockerResult = [ordered]@{
+            status = "planned"
+            script = $spike
+            expected_result = "docker_present/installed/wsl_integration/engine_ready JSON"
+        }
+        Write-BootstrapLog "stage2" "PlanOnly: would run Docker Desktop spike at $spike"
+    } else {
+        $dockerLogRoot = Join-Path $LogRoot "docker-desktop"
+        $process = Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $spike, "-LogRoot", $dockerLogRoot) -Wait -PassThru
+        $dockerResultPath = Join-Path $dockerLogRoot "docker-desktop-spike-result.json"
+        $dockerResult = [ordered]@{
+            status = $(if ($process.ExitCode -eq 0) { "passed" } else { "failed" })
+            exit_code = $process.ExitCode
+            result_path = $dockerResultPath
+        }
+        if ($process.ExitCode -ne 0) {
+            throw "Docker Desktop spike failed. Review $dockerResultPath."
+        }
+    }
+
+    $ollama = Find-Ollama
+    $ollamaResult = [ordered]@{ present = [bool]$ollama; path = $ollama; install = $null }
+    if (-not $ollama) {
+        $ollamaResult.install = Install-Ollama
+    }
+    $stage2 = [ordered]@{
+        status = "passed"
+        docker_desktop = $dockerResult
+        ollama = $ollamaResult
+    }
+    Write-BootstrapLog "stage2" "Stage2 prerequisite orchestration finished"
+    return $stage2
+}
+
+function Invoke-InstallerLifecycle {
+    param([string]$Mode, [switch]$WorkflowProof)
+    $runner = Resolve-Path (Join-Path $scriptRoot "..\..\..\scripts\run-clerk-core-installer.py")
+    $root = $InstallRoot
+    if (-not $root) {
+        $root = Join-Path $scriptRoot "..\..\runtime\city-core-baremetal"
+    }
+    $args = @($runner.Path, $Mode, "--install-root", $root, "--run-id", $RunId, "--module", "civicrecords-ai", "--module", "civicclerk", "--module", "civiccode")
+    if ($WorkflowProof) {
+        $args += "--workflow-proof"
+    }
+    if ($PlanOnly) {
+        return [ordered]@{
+            status = "planned"
+            command = "$PythonPath $($args -join ' ')"
+            install_root = $root
+            run_id = $RunId
+        }
+    }
+    $process = Start-Process -FilePath $PythonPath -ArgumentList $args -Wait -PassThru -NoNewWindow
+    return [ordered]@{
+        status = $(if ($process.ExitCode -eq 0) { "passed" } else { "failed" })
+        exit_code = $process.ExitCode
+        install_root = $root
+        run_id = $RunId
+    }
+}
+
+function Invoke-Stage3 {
+    $stage3 = Invoke-InstallerLifecycle -Mode "install" -WorkflowProof
+    Write-BootstrapLog "stage3" "Stage3 warm-first installer handoff status $($stage3.status)"
+    return $stage3
+}
+
+function Invoke-Stage4 {
+    $verify = Invoke-InstallerLifecycle -Mode "verify" -WorkflowProof
+    $stage4 = [ordered]@{
+        status = $verify.status
+        verify = $verify
+        required_generation_source = "ollama"
+        required_model = "gemma4:e4b"
+        launcher_url = "http://127.0.0.1:18082/"
+    }
+    Write-BootstrapLog "stage4" "Stage4 verification shell status $($stage4.status)"
+    return $stage4
+}
+
 try {
     Write-BootstrapLog "start" "Starting CivicSuite bare-metal bootstrap stage $Stage"
     if (Ensure-Elevated) {
@@ -236,15 +380,24 @@ try {
         exit 0
     }
 
-    if ($Stage -eq "Stage0" -or $Stage -eq "Stage0Stage1") {
+    if ($Stage -eq "Stage0" -or $Stage -eq "Stage0Stage1" -or $Stage -eq "Stage0To4") {
         $result.stage0 = Invoke-Stage0
         if ($result.stage0.status -ne "passed") {
             Complete-Bootstrap "failed"
             exit 1
         }
     }
-    if ($Stage -eq "Stage1" -or $Stage -eq "Stage0Stage1") {
+    if ($Stage -eq "Stage1" -or $Stage -eq "Stage0Stage1" -or $Stage -eq "Stage0To4") {
         $result.stage1 = Invoke-Stage1
+    }
+    if ($Stage -eq "Stage2" -or $Stage -eq "Stage0To4") {
+        $result.stage2 = Invoke-Stage2
+    }
+    if ($Stage -eq "Stage3" -or $Stage -eq "Stage0To4") {
+        $result.stage3 = Invoke-Stage3
+    }
+    if ($Stage -eq "Stage4" -or $Stage -eq "Stage0To4") {
+        $result.stage4 = Invoke-Stage4
     }
     Complete-Bootstrap "passed"
     exit 0

@@ -131,3 +131,37 @@ def test_stage1_plan_enables_wsl_features_and_registers_resume(tmp_path: Path) -
     assert result["stage1"]["wsl_default_version"]["command"] == "wsl --set-default-version 2"
     assert result["stage1"]["resume"]["registered"] is True
     assert result["stage1"]["resume"]["mechanism"] == "scheduled_task"
+
+
+def test_stage2_plan_orchestrates_docker_spike_and_ollama_without_host_mutation(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    _write_facts(facts)
+
+    completed, result = _run_bootstrap(tmp_path, "Stage2", facts)
+
+    assert completed.returncode == 0, completed.stderr
+    assert result["status"] == "passed"
+    assert result["stage2"]["docker_desktop"]["status"] == "planned"
+    assert result["stage2"]["docker_desktop"]["expected_result"].startswith("docker_present")
+    assert "docker-desktop-spike.ps1" in result["stage2"]["docker_desktop"]["script"]
+    assert result["stage2"]["ollama"]["present"] in {True, False}
+    if not result["stage2"]["ollama"]["present"]:
+        assert result["stage2"]["ollama"]["install"]["status"] == "planned"
+
+
+def test_stage3_and_stage4_plan_chain_to_existing_warm_first_installer(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    _write_facts(facts)
+
+    stage3_completed, stage3_result = _run_bootstrap(tmp_path, "Stage3", facts)
+    stage4_completed, stage4_result = _run_bootstrap(tmp_path, "Stage4", facts)
+
+    assert stage3_completed.returncode == 0, stage3_completed.stderr
+    assert stage4_completed.returncode == 0, stage4_completed.stderr
+    assert stage3_result["stage3"]["status"] == "planned"
+    assert "run-clerk-core-installer.py install" in stage3_result["stage3"]["command"]
+    assert "--workflow-proof" in stage3_result["stage3"]["command"]
+    assert stage4_result["stage4"]["status"] == "planned"
+    assert "run-clerk-core-installer.py verify" in stage4_result["stage4"]["verify"]["command"]
+    assert stage4_result["stage4"]["required_generation_source"] == "ollama"
+    assert stage4_result["stage4"]["required_model"] == "gemma4:e4b"
