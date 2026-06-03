@@ -1,0 +1,25 @@
+/.gitattributes text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.sha256 text eol=lf
+*.allowed_signers text eol=lf
+*.pem text eol=lf
+Dockerfile* text eol=lf
+*.Dockerfile text eol=lf
+
+*.docx binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.sig binary

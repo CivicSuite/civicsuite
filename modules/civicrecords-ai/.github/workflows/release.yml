@@ -1,0 +1,538 @@
+# CivicRecords AI — release-on-tag workflow (T5E).
+#
+# UNSIGNED BY DESIGN. Scott locked T5E signing posture = α (unsigned)
+# on 2026-04-22. This workflow contains no code-signing steps and
+# references no signing-cert secrets. A future release can add signing
+# without changing the structure.
+#
+# Adapted from patentforgelocal/.github/workflows/release.yml (Inno Setup
+# + choco + bash build driver shape). CivicRecords-specific deltas:
+#   - No Go/Node/Python build steps (CivicRecords runs in Docker; the
+#     installer bundles source, not compiled binaries).
+#   - Windows-only for now; mac/Linux stay on the existing guided-script
+#     install path. Cross-platform parity is documented as follow-on.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Published release tag to rehearse from cold caches"
+        required: true
+        default: "v1.7.3"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  cleanroom-rehearsal:
+    name: cleanroom-rehearsal
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scott-desktop-cleanroom-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python for direct-pip cleanroom
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node for frontend cleanroom
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Cleanroom cache strip (scoped, CivicSuite-only)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import shutil
+
+          runner_temp = os.environ["RUNNER_TEMP"]
+          for rel in (".npm", ".cache/pip"):
+              shutil.rmtree(os.path.join(runner_temp, rel), ignore_errors=True)
+          PY
+          docker builder prune --all --force --filter "label=civicsuite-cleanroom=1" || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+          docker volume ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker volume rm || true
+
+      - name: Install published wheel from release URL
+        shell: bash
+        run: |
+          TAG="${{ inputs.release_tag }}"
+          VERSION="${TAG#v}"
+          WHEEL_URL="https://github.com/CivicSuite/civicrecords-ai/releases/download/${TAG}/civicrecords_ai-${VERSION}-py3-none-any.whl"
+          echo "Cleanroom wheel URL: ${WHEEL_URL}"
+          python -m venv .cleanroom-venv
+          . .cleanroom-venv/bin/activate
+          python -m pip \
+            install --upgrade pip
+          python -m pip \
+            install --no-cache-dir --force-reinstall "${WHEEL_URL}"
+          export TESTING=1
+          python - <<PY
+          from app.config import APP_VERSION
+          from civiccore.ingest import ingest_file
+          from civiccore.llm.providers import OllamaProvider
+
+          expected = "${VERSION}"
+          print(f"app.config.APP_VERSION={APP_VERSION}")
+          if APP_VERSION != expected:
+              raise SystemExit(f"Expected CivicRecords AI {expected}, got {APP_VERSION}")
+          print(f"civiccore dependency import ok: {ingest_file.__name__}, {OllamaProvider.__name__}")
+          PY
+
+      - name: Frontend clean install and build
+        shell: bash
+        working-directory: frontend
+        run: |
+          python - <<'PY'
+          import shutil
+          shutil.rmtree("node_modules", ignore_errors=True)
+          PY
+          npm \
+            ci --prefer-online --no-cache --no-audit --no-fund \
+              --cache "${RUNNER_TEMP}/.npm"
+          npm run build
+
+      - name: Always-run cleanup
+        if: always()
+        shell: bash
+        run: |
+          docker compose -p civicsuite-cleanroom-${{ github.run_id }} down -v --remove-orphans || true
+          docker ps -a --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker container rm --force || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+
+  preflight:
+    name: Preflight release provenance fixtures
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python for release provenance preflight
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install CivicCore release-provenance helper
+        run: python -m pip install https://github.com/CivicSuite/civiccore/releases/download/v1.2.0/civiccore-1.2.0-py3-none-any.whl
+
+      - name: Checkout canonical CivicCore provenance fixtures
+        uses: actions/checkout@v6
+        with:
+          repository: CivicSuite/civiccore
+          ref: v1.2.0
+          path: .tmp-civiccore
+
+      - name: Verify adversarial release provenance fixtures
+        run: python scripts/verify-release-provenance.py --fixtures-dir .tmp-civiccore/tests/fixtures/release_provenance
+
+  verify-release-linux:
+    name: Verify release on Linux (compose + tests)
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, linux, x64]
+    needs: preflight
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python for release verification
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install CivicCore release-provenance helper
+        run: python -m pip install https://github.com/CivicSuite/civiccore/releases/download/v1.2.0/civiccore-1.2.0-py3-none-any.whl
+
+      - name: Synthesize hermetic .env for release verification
+        shell: bash
+        run: |
+          ENCRYPTION_KEY="$(python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')"
+          umask 077
+          mkdir -p data/secrets
+          openssl rand -hex 32 > data/secrets/jwt_secret
+          openssl rand -hex 16 > data/secrets/first_admin_password
+          chmod 0400 data/secrets/jwt_secret data/secrets/first_admin_password
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords
+          ENCRYPTION_KEY=${ENCRYPTION_KEY}
+          FIRST_ADMIN_EMAIL=admin@example.org
+          CIVICRECORDS_SECRET_DIR=./data/secrets
+          OLLAMA_BASE_URL=http://ollama:11434
+          REDIS_URL=redis://redis:6379/0
+          AUDIT_RETENTION_DAYS=1095
+          PORTAL_MODE=private
+          EOF
+
+      - name: Run release verification
+        run: bash scripts/verify-release.sh
+
+  build-windows-installer:
+    name: Build Windows installer (unsigned)
+    if: github.event_name == 'push'
+    runs-on: windows-latest
+    needs: [preflight, verify-release-linux]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ github.ref }}
+
+      - name: Set up Python for release provenance preflight
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install CivicCore release-provenance helper
+        shell: bash
+        run: python -m pip install https://github.com/CivicSuite/civiccore/releases/download/v1.2.0/civiccore-1.2.0-py3-none-any.whl
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Resolve version from git tag
+        id: version
+        shell: bash
+        run: |
+          # Strip leading "v" so "v1.2.0" becomes "1.2.0". The build driver
+          # then passes this through to ISCC via /DMyAppVersion=<semver>.
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: could not derive version from GITHUB_REF_NAME='$TAG'."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved installer version: $VERSION (from tag $TAG)"
+
+      - name: Build Windows installer
+        shell: bash
+        env:
+          # Single source of truth for the installer version. The build
+          # driver prefers this env var over backend/pyproject.toml.
+          CIVICRECORDS_VERSION: ${{ steps.version.outputs.version }}
+        run: bash installer/windows/build-installer.sh
+
+      - name: Locate installer artifact
+        id: locate
+        shell: bash
+        env:
+          CIVICRECORDS_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Expected artifact name derives from the same resolved version
+          # the build driver used. If this file is missing, the build
+          # driver did not produce what the .iss OutputBaseFilename claims,
+          # and that is the defect — not a workflow config issue.
+          ART="build/CivicRecordsAI-${CIVICRECORDS_VERSION}-Setup.exe"
+          if [ ! -f "$ART" ]; then
+            echo "ERROR: expected installer artifact not found: $ART"
+            echo "Contents of build/:"
+            ls -la build/ || true
+            exit 1
+          fi
+          echo "artifact=$ART" >> "$GITHUB_OUTPUT"
+          SIZE=$(du -h "$ART" | cut -f1)
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          SHA256=$(sha256sum "$ART" | awk '{print $1}')
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo ""
+          echo "Built unsigned installer:"
+          echo "  path:    $ART"
+          echo "  size:    $SIZE"
+          echo "  sha256:  $SHA256"
+
+      - name: Write checksum file
+        shell: bash
+        run: |
+          ART="${{ steps.locate.outputs.artifact }}"
+          SHA="${{ steps.locate.outputs.sha256 }}"
+          BASENAME=$(basename "$ART")
+          echo "$SHA  $BASENAME" > "build/${BASENAME}.sha256"
+          cat "build/${BASENAME}.sha256"
+
+      - name: Stage release assets
+        shell: bash
+        run: |
+          ART="${{ steps.locate.outputs.artifact }}"
+          BASENAME=$(basename "$ART")
+          rm -rf release-assets
+          mkdir -p release-assets
+          cp "$ART" "release-assets/$BASENAME"
+          cp "build/${BASENAME}.sha256" "release-assets/${BASENAME}.sha256"
+
+      - name: Package Python artifacts
+        shell: bash
+        run: python scripts/package-release-assets.py release-assets
+
+      - name: Resolve release ref
+        id: release_ref
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ref_json="$(gh api "repos/${{ github.repository }}/git/ref/tags/${{ github.ref_name }}")"
+          tag_ref_type="$(echo "$ref_json" | python -c "import json,sys; print(json.load(sys.stdin)['object']['type'])")"
+          tag_ref_sha="$(echo "$ref_json" | python -c "import json,sys; print(json.load(sys.stdin)['object']['sha'])")"
+          if [ "$tag_ref_type" = "tag" ]; then
+            tag_json="$(gh api "repos/${{ github.repository }}/git/tags/${tag_ref_sha}")"
+            target_commit="$(echo "$tag_json" | python -c "import json,sys; print(json.load(sys.stdin)['object']['sha'])")"
+          else
+            target_commit="$tag_ref_sha"
+          fi
+          target_tree="$(git show -s --format=%T "$target_commit")"
+          echo "tag_ref_type=$tag_ref_type" >> "$GITHUB_OUTPUT"
+          echo "tag_ref_sha=$tag_ref_sha" >> "$GITHUB_OUTPUT"
+          echo "target_commit=$target_commit" >> "$GITHUB_OUTPUT"
+          echo "target_tree=$target_tree" >> "$GITHUB_OUTPUT"
+
+      - name: Build release attestation
+        shell: bash
+        run: |
+          python scripts/build-release-attestation.py \
+            --repo "${{ github.repository }}" \
+            --tag "${{ github.ref_name }}" \
+            --tag-ref-type "${{ steps.release_ref.outputs.tag_ref_type }}" \
+            --tag-ref-sha "${{ steps.release_ref.outputs.tag_ref_sha }}" \
+            --target-commit "${{ steps.release_ref.outputs.target_commit }}" \
+            --target-tree "${{ steps.release_ref.outputs.target_tree }}" \
+            --workflow-run-id "${{ github.run_id }}" \
+            --artifacts-dir release-assets \
+            --output release-attestation.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.1
+
+      - name: Sign release attestation
+        shell: bash
+        run: cosign sign-blob release-attestation.json --bundle release-attestation.json.bundle --yes
+
+      - name: Verify release attestation before publication
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/verify-release-provenance.py "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --attestation release-attestation.json \
+            --bundle release-attestation.json.bundle \
+            --artifacts-dir release-assets \
+            --expected-target "${{ steps.release_ref.outputs.target_commit }}" \
+            --expected-tree "${{ steps.release_ref.outputs.target_tree }}"
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-installer
+          path: |
+            release-assets/*
+            release-attestation.json
+            release-attestation.json.bundle
+
+  create-draft-release:
+    name: Create draft GitHub Release
+    if: github.event_name == 'push'
+    needs: [build-windows-installer]
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts/
+
+      - name: Write release notes with exact provenance command
+        shell: bash
+        run: |
+          export VERSION="${GITHUB_REF_NAME#v}"
+          export REPO="${GITHUB_REPOSITORY}"
+          export TAG="${GITHUB_REF_NAME}"
+          export WORKFLOW_RUN_ID="${GITHUB_RUN_ID}"
+          export WHEEL_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/civicrecords_ai-${VERSION}-py3-none-any.whl"
+          export CLEANROOM_TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          cp .github/release-notes-preamble.md release-notes.md
+          envsubst < .github/release-notes-v15-template.md >> release-notes.md
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            --generate-notes \
+            --title "CivicRecords AI ${{ github.ref_name }}" \
+            --notes-file release-notes.md || \
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            --generate-notes \
+            --title "CivicRecords AI ${{ github.ref_name }}" \
+            --notes-file release-notes.md
+
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # actions/upload-artifact@v7 preserves paths relative to
+          # GITHUB_WORKSPACE, so an artifact uploaded from `build/` lands
+          # back under `artifacts/windows-installer/build/` after
+          # actions/download-artifact@v8, not at the top of the artifact
+          # directory. Locate via `find` so this step is robust to either
+          # layout and produces an actionable error if nothing matches.
+          EXE=$(find artifacts -name 'CivicRecordsAI-*-Setup.exe' -type f | head -1)
+          SHA=$(find artifacts -name 'CivicRecordsAI-*-Setup.exe.sha256' -type f | head -1)
+          WHEEL=$(find artifacts -name 'civicrecords_ai-*-py3-none-any.whl' -type f | head -1)
+          SDIST=$(find artifacts -name 'civicrecords_ai-*.tar.gz' -type f | head -1)
+          SUMS=$(find artifacts -name 'SHA256SUMS.txt' -type f | head -1)
+          if [ -z "$EXE" ] || [ -z "$SHA" ] || [ -z "$WHEEL" ] || [ -z "$SDIST" ] || [ -z "$SUMS" ]; then
+            echo "::error::Could not locate installer, package, and checksum assets in artifacts/"
+            echo "Contents of artifacts/:"
+            find artifacts -type f || true
+            exit 1
+          fi
+          echo "Uploading installer: $EXE"
+          echo "Uploading checksum:  $SHA"
+          echo "Uploading wheel:     $WHEEL"
+          echo "Uploading sdist:     $SDIST"
+          echo "Uploading sums:      $SUMS"
+          ATTEST=$(find artifacts -name 'release-attestation.json' -type f | head -1)
+          BUNDLE=$(find artifacts -name 'release-attestation.json.bundle' -type f | head -1)
+          if [ -z "$ATTEST" ] || [ -z "$BUNDLE" ]; then
+            echo "::error::Could not locate release attestation + bundle in artifacts/"
+            echo "Contents of artifacts/:"
+            find artifacts -type f || true
+            exit 1
+          fi
+          echo "Uploading attestation: $ATTEST"
+          echo "Uploading bundle:      $BUNDLE"
+          gh release upload "${{ github.ref_name }}" "$EXE" "$SHA" "$WHEEL" "$SDIST" "$SUMS" "$ATTEST" "$BUNDLE" --clobber
+
+  release-cleanroom-rehearsal:
+    name: cleanroom-rehearsal (release asset)
+    if: github.event_name == 'push'
+    needs: [create-draft-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: scott-desktop-cleanroom-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python for release-asset cleanroom
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node for frontend cleanroom
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Cleanroom cache strip (scoped, CivicSuite-only)
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os
+          import shutil
+
+          runner_temp = os.environ["RUNNER_TEMP"]
+          for rel in (".npm", ".cache/pip"):
+              shutil.rmtree(os.path.join(runner_temp, rel), ignore_errors=True)
+          PY
+          docker builder prune --all --force --filter "label=civicsuite-cleanroom=1" || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+          docker volume ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker volume rm || true
+
+      - name: Download uploaded wheel from draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          mkdir -p .cleanroom-assets
+          gh release download "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --pattern 'civicrecords_ai-*-py3-none-any.whl' \
+            --dir .cleanroom-assets
+          find .cleanroom-assets -maxdepth 1 -type f -print
+
+      - name: Install uploaded wheel in cleanroom venv
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          WHEEL="$(find .cleanroom-assets -name 'civicrecords_ai-*-py3-none-any.whl' -type f | head -1)"
+          if [ -z "$WHEEL" ]; then
+            echo "::error::No CivicRecords AI wheel downloaded from draft release."
+            exit 1
+          fi
+          echo "Cleanroom wheel asset: ${WHEEL}"
+          python -m venv .cleanroom-venv
+          . .cleanroom-venv/bin/activate
+          python -m pip \
+            install --upgrade pip
+          python -m pip \
+            install --no-cache-dir --force-reinstall "${WHEEL}"
+          export TESTING=1
+          python - <<PY
+          from app.config import APP_VERSION
+          from civiccore.ingest import ingest_file
+          from civiccore.llm.providers import OllamaProvider
+
+          expected = "${VERSION}"
+          print(f"app.config.APP_VERSION={APP_VERSION}")
+          if APP_VERSION != expected:
+              raise SystemExit(f"Expected CivicRecords AI {expected}, got {APP_VERSION}")
+          print(f"civiccore dependency import ok: {ingest_file.__name__}, {OllamaProvider.__name__}")
+          PY
+
+      - name: Frontend clean install and build
+        shell: bash
+        working-directory: frontend
+        run: |
+          python - <<'PY'
+          import shutil
+          shutil.rmtree("node_modules", ignore_errors=True)
+          PY
+          npm \
+            ci --prefer-online --no-cache --no-audit --no-fund \
+              --cache "${RUNNER_TEMP}/.npm"
+          npm run build
+
+      - name: Always-run cleanup
+        if: always()
+        shell: bash
+        run: |
+          docker compose -p civicsuite-cleanroom-${{ github.run_id }} down -v --remove-orphans || true
+          docker ps -a --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker container rm --force || true
+          docker network ls --filter "label=civicsuite-cleanroom=1" -q \
+            | xargs -r docker network rm || true
+
+  publish-release:
+    name: Publish GitHub Release
+    if: github.event_name == 'push'
+    needs: [release-cleanroom-rehearsal]
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: Publish release after cleanroom rehearsal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ github.ref_name }}" --draft=false

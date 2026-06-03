@@ -1,0 +1,309 @@
+# CivicRecords AI — Canonical Spec Reconciliation
+
+**Date:** 2026-04-13
+**Canonical Spec:** docs/UNIFIED-SPEC.md (Unified Design Specification v2.0, April 12, 2026)
+**Codebase Audited:** backend/ and frontend/ directories
+
+## Summary
+
+| Status | Count |
+|--------|-------|
+| Built | 16 |
+| Partial | 0 |
+| Missing | 0 |
+
+## Detailed Findings
+
+### 1. Roles
+
+| Spec Requires | Code Reality | Status |
+|---------------|-------------|--------|
+| admin | `ADMIN = "admin"` | Built |
+| staff | `STAFF = "staff"` | Built |
+| reviewer | `REVIEWER = "reviewer"` | Built |
+| read_only | `READ_ONLY = "read_only"` | Built |
+| liaison | `LIAISON = "liaison"` | Built (2026-04-13) |
+| public | `PUBLIC = "public"` | Built (2026-04-13) |
+
+**Status: Built** (completed 2026-04-13)
+**Files:** `backend/app/models/user.py`, `backend/app/auth/dependencies.py`
+**Tests:** `backend/tests/test_roles.py` (6 tests)
+**Notes:** All 6 roles now in UserRole enum. Role hierarchy updated: admin(6) > reviewer(5) > staff(4) > liaison(3) > read_only(2) > public(1). Liaison is department-scoped via existing `check_department_access()` — can view department resources but cannot create requests or manage exemptions (below STAFF threshold). Public role exists in enum for future Phase 3 portal auth; no public endpoints yet.
+
+---
+
+### 2. Staff Workbench Pages (8 required by spec)
+
+| Spec Requires | Code Reality | Status |
+|---------------|-------------|--------|
+| Dashboard | `frontend/src/pages/Dashboard.tsx` | Built |
+| Search | `frontend/src/pages/Search.tsx` | Built |
+| Requests | `frontend/src/pages/Requests.tsx` | Built |
+| RequestDetail | `frontend/src/pages/RequestDetail.tsx` | Built |
+| Exemptions | `frontend/src/pages/Exemptions.tsx` | Built |
+| Sources | `frontend/src/pages/DataSources.tsx` | Built |
+| Ingestion | `frontend/src/pages/Ingestion.tsx` | Built |
+| Users | `frontend/src/pages/Users.tsx` | Built |
+
+**Status: Built**
+**Notes:** All 8 required pages exist. Additionally, 4 bonus pages beyond spec minimum: `Onboarding.tsx`, `CityProfile.tsx`, `Discovery.tsx`, `Login.tsx`. All are routed in `App.tsx`.
+
+---
+
+### 3. Application Modules
+
+| Module | Spec Requires | Code Reality | Status |
+|--------|--------------|-------------|--------|
+| Auth Module | `app/auth/` | `backend/app/auth/` exists with `router.py`, `dependencies.py` | Built |
+| Search API | `app/search/` | `backend/app/search/router.py` exists | Built |
+| Workflow API | `app/requests/` | `backend/app/requests/router.py` exists with full CRUD, timeline, messages, fees, response letters | Built |
+| Audit Logger | `app/audit/` | `backend/app/audit/` exists, `write_audit_log` used throughout | Built |
+| LLM Abstraction | `app/llm/` | `backend/app/llm/` exists with `context_manager.py` | Built |
+| Exemption Engine | `app/exemptions/` | `backend/app/exemptions/` exists with `engine.py`, `patterns.py`, `llm_reviewer.py`, `router.py`. Dashboard time-period filtering and rule version tracking added 2026-04-13. | Built (updated 2026-04-13) |
+| Context Manager | Token budgeting | `backend/app/llm/context_manager.py` with `TokenBudget` dataclass and `assemble_context()` | Built |
+| Notification Service | `app/notifications/` | Template CRUD, queue service, SMTP delivery via `smtp_delivery.py`, Celery beat task every 60s. Added 2026-04-13. | Built (updated 2026-04-13) |
+| Fee Tracking | Fee endpoints | Fee line item endpoints on requests router + fee schedules CRUD at `/admin/fee-schedules`. Added 2026-04-13. | Built (updated 2026-04-13) |
+| Response Generator | Response letter generation | Full implementation: template-based + Ollama LLM generation, CRUD for letters, approval workflow | Built |
+| Analytics API | `app/analytics/` | `backend/app/analytics/router.py` exists | Built |
+| Federation API | `app/service_accounts/` | `backend/app/service_accounts/` exists with router | Built |
+| Public API | Public-facing endpoints without auth | No unauthenticated endpoints found; no public portal API | Missing |
+
+**Status: Partial (11 Built, 2 Partial, 1 Missing)**
+
+---
+
+### 4. Context Manager (spec says MVP-NOW)
+
+**Status: Built**
+**File:** `backend/app/llm/context_manager.py`
+**Notes:** Fully implemented with:
+- `TokenBudget` dataclass with configurable allocations: system_instruction (500), request_context (500), retrieved_chunks (5000), exemption_rules (500), output_reservation (1500), safety_margin (192)
+- `estimate_tokens()` function (rough 1 token ~ 4 chars)
+- `assemble_context()` function that prioritizes system > request > top-k chunks > exemption rules within budget
+- `ContextBlock` data structure for organized prompt assembly
+
+---
+
+### 5. Database Tables
+
+| Spec Requires | Model File | Status |
+|---------------|-----------|--------|
+| users | `user.py` | Built |
+| departments | `departments.py` | Built |
+| audit_log | `audit.py` | Built |
+| service_accounts | `service_account.py` | Built |
+| data_sources | `document.py` | Built |
+| documents | `document.py` | Built |
+| document_chunks | `document.py` | Built |
+| search_sessions | `search.py` | Built |
+| search_queries | `search.py` | Built |
+| search_results | `search.py` | Built |
+| records_requests | `request.py` | Built |
+| request_documents | `request.py` | Built |
+| request_timeline | `request_workflow.py` | Built |
+| request_messages | `request_workflow.py` | Built |
+| response_letters | `request_workflow.py` | Built |
+| fee_schedules | `fees.py` | Built |
+| fee_line_items | `fees.py` | Built |
+| notification_templates | `notifications.py` | Built |
+| notification_log | `notifications.py` | Built |
+| prompt_templates | `prompts.py` | Built |
+| exemption_rules | `exemption.py` | Built |
+| exemption_flags | `exemption.py` | Built |
+| disclosure_templates | `exemption.py` | Built |
+| model_registry | `document.py` | Built |
+| city_profile | `city_profile.py` | Built |
+| system_catalog | `connectors.py` | Built |
+| connector_templates | `connectors.py` | Built |
+| redaction_ledger (v1.1) | Not found | Missing (expected v1.1) |
+| saved_searches (v1.1) | Not found | Missing (expected v1.1) |
+| discovered_sources (v1.1) | Not found | Missing (expected v1.1) |
+| discovery_runs (v1.1) | Not found | Missing (expected v1.1) |
+| source_health_log (v1.1) | Not found | Missing (expected v1.1) |
+| coverage_gaps (v1.1) | Not found | Missing (expected v1.1) |
+
+**Status: Built (for MVP scope)**
+**Notes:** All 27 MVP tables exist. The 6 v1.1 tables are correctly deferred. One additional table `document_cache` exists in `request.py` beyond spec requirements.
+
+---
+
+### 6. FEE_SCHEDULES Table
+
+**Status: Built** (completed 2026-04-13)
+**Files:** `backend/app/models/fees.py`, `backend/app/admin/router.py`, `backend/app/schemas/fee_schedule.py`
+**Tests:** `backend/tests/test_fee_schedules.py` (5 tests)
+**Notes:** `FeeSchedule` model exists with CRUD endpoints at `GET/POST/PATCH/DELETE /admin/fee-schedules` (admin only, audit-logged). `FeeLineItem` endpoints remain on the requests router. Both models fully accessible via API.
+
+---
+
+### 7. Notification — Actual Email
+
+**Status: Built** (completed 2026-04-13)
+**Files:** `backend/app/notifications/smtp_delivery.py`, `backend/app/notifications/service.py`, `backend/app/ingestion/scheduler.py`
+**Tests:** `backend/tests/test_smtp_delivery.py` (6 tests)
+**Notes:** `send_email()` handles TLS/non-TLS, authenticated/unauthenticated SMTP. `deliver_queued_notifications()` processes all status="queued" entries, marks sent/failed with timestamps. Celery beat task fires every 60 seconds. SMTP settings in config.py (host, port, username, password, from_email, use_tls). NotificationLog model has subject/body fields for rendered content storage.
+
+---
+
+### 8. Prompt Injection Defense
+
+**Status: Built** (completed 2026-04-13)
+**File:** `backend/app/llm/context_manager.py`
+**Tests:** `backend/tests/test_prompt_injection.py` (19 tests)
+**Notes:** `sanitize_for_llm()` function added. Strips three categories of injection patterns before document content enters LLM prompts:
+- Role override phrases ("ignore previous instructions", "you are now", "pretend you are", "disregard", "act as if", "from now on you")
+- Delimiter injection (`<|system|>`, `[INST]`, `<<SYS>>`, `<system>`, `` ```system ``)
+- Excessive repetition (common jailbreak technique — collapsed to single instance)
+
+Applied to all document chunks and exemption rules in `assemble_context()`. System prompts are NOT sanitized (trusted content). Normal document text, legal language, and technical content pass through unchanged. 19 tests verify both filtering and preservation behavior.
+
+---
+
+### 9. Connectors
+
+| Spec Requires (MVP-NOW) | Code Reality | Status |
+|--------------------------|-------------|--------|
+| File System/SMB | `backend/app/connectors/file_system.py` | Built |
+| SMTP/IMAP | `backend/app/connectors/imap_email.py` | Built (2026-04-13) |
+| Manual/Export Drop | `backend/app/connectors/manual_drop.py` | Built (2026-04-13) |
+| Base class | `backend/app/connectors/base.py` | Built |
+
+**Status: Built** (completed 2026-04-13)
+**Files:** `base.py`, `file_system.py`, `imap_email.py`, `manual_drop.py`
+**Tests:** `test_imap_connector.py` (28 tests), `test_manual_drop.py` (19 tests)
+**Notes:** All three MVP-NOW connectors implemented with full connector protocol (authenticate/discover/fetch/health_check). IMAP connector has MIME allowlist, extension blocklist, 50MB size cap, asyncio.to_thread() for non-blocking I/O. Manual drop has extension allowlist, 100MB limit, archive-on-process. Both wired into task_ingest_source dispatch with integration tests. Known gap: embedded macro stripping deferred (item 12).
+
+---
+
+### 9a. Exemption Dashboard Time-Period Filtering
+
+**Status: Built** (completed 2026-04-13)
+**File:** `backend/app/exemptions/router.py`
+**Notes:** `date_from` and `date_to` query parameters added to both `GET /exemptions/dashboard/accuracy` and `GET /exemptions/dashboard/export`. Filters on `ExemptionFlag.created_at`. All three dimensions now supported: category, department, and time period.
+
+---
+
+### 9b. Exemption Rule Version Tracking
+
+**Status: Built** (completed 2026-04-13)
+**Files:** `backend/app/models/exemption.py`, `backend/app/exemptions/router.py`, `backend/app/schemas/exemption.py`
+**Notes:** `version` integer field added to `ExemptionRule` model (default 1). `update_rule()` endpoint increments `rule.version` on every update. `ExemptionRuleRead` schema exposes the version field. Combined with audit log entries, provides both structured versioning and change history.
+
+---
+
+### 9c. scope_assessment Field
+
+**Status: Built** (completed 2026-04-13)
+**Files:** `backend/app/schemas/request.py`, `backend/app/requests/router.py`
+**Notes:** `scope_assessment` added to `RequestCreate` (with regex pattern validation: narrow|moderate|broad), `RequestRead`, and `RequestUpdate`. Router passes it through on both create and update. Also wired `requester_phone`, `requester_type`, and `priority` on create which were in the schema but not passed through.
+
+---
+
+### 10. Tier 1 Redaction
+
+| PII Type (Spec Requires) | Code Reality | Status |
+|---------------------------|-------------|--------|
+| SSN | `SSN_PATTERN` in `UNIVERSAL_PATTERNS` | Built |
+| Credit Cards | `CREDIT_CARD_PATTERN` with Luhn validation | Built |
+| Phone | `PHONE_PATTERN` in `UNIVERSAL_PATTERNS` | Built |
+| Email | `EMAIL_PATTERN` in `UNIVERSAL_PATTERNS` | Built |
+| Bank Accounts | `BANK_ROUTING_PATTERN` + `BANK_ACCOUNT_PATTERN` | Built |
+| Driver's Licenses | `DRIVERS_LICENSE_PATTERNS` (state-specific, keyed by state code) | Built |
+
+**Status: Built**
+**File:** `backend/app/exemptions/patterns.py`
+**Notes:** All 6 required PII types are implemented. Credit card detection includes Luhn algorithm validation for reduced false positives. Driver's license patterns are state-specific (looked up by `state_code` parameter). The `scan_text()` function applies universal patterns plus optional state-specific DL patterns.
+
+---
+
+### 11. WCAG Compliance
+
+**Status: Partial**
+
+| Requirement | Found | Location |
+|-------------|-------|----------|
+| Skip-to-content link | Yes — "Skip to main content" | `app-shell.tsx` |
+| Focus-visible styles | Yes — `focus-visible` classes found in 8 files | UI components, sidebar-nav, app-shell |
+| Aria labels | Yes — `aria-label="Main navigation"`, `aria-current`, `role="navigation"`, `role="main"` | `sidebar-nav.tsx`, `app-shell.tsx` |
+| 44px touch targets | Not verified | No explicit `min-h-[44px]` or `min-w-[44px]` classes found |
+
+**Notes:** Core WCAG elements are present (skip link, focus-visible, aria-labels, semantic roles). Touch target sizing was not explicitly enforced via CSS classes, though button components may achieve this through padding. A full WCAG audit was not performed.
+
+---
+
+### 12. Content Design Rules
+
+**Status: Built**
+
+| Check | Result |
+|-------|--------|
+| "responsive documents" (wrong term) | Not found in frontend code |
+| "records found for release" (correct term) | Not found either, but also not using the wrong term |
+| Error/empty states with what/how/help | `EmptyState` component exists with icon, title, description, and optional action button pattern |
+
+**File:** `frontend/src/components/empty-state.tsx`
+**Notes:** The codebase does not use the problematic "responsive documents" phrasing. The `EmptyState` component provides a structured pattern (icon + title + description + action) that supports the what/how/help error state pattern from the spec.
+
+---
+
+### 13. Frontend Navigation
+
+**Status: Built**
+**Files:** `frontend/src/components/sidebar-nav.tsx`, `frontend/src/components/app-shell.tsx`
+**Notes:** The frontend uses sidebar navigation via `SidebarNav` component rendered inside `AppShell`. The sidebar includes:
+- Grouped navigation sections: Workflow items, Setup items, Admin items
+- `NavLink` component with active state (`aria-current="page"`)
+- Semantic `<nav>` element with `role="navigation"` and `aria-label`
+- Sidebar width controlled via CSS custom property `--sidebar-width`
+
+---
+
+## Critical Gaps (items that block canonical spec compliance)
+
+1. ~~**Prompt Injection Defense (Section 8)** — RESOLVED 2026-04-13. sanitize_for_llm() in context_manager.py.~~
+
+2. **Public API (Section 3)** — No unauthenticated endpoints for citizen-facing portal. Blocks the public records request submission workflow entirely.
+
+3. **Notification Email Delivery (Section 7)** — Notification service is template CRUD + queue logging only. No actual email sending. Blocks all automated stakeholder notifications.
+
+4. ~~**Missing Roles: liaison, public (Section 1)** — RESOLVED 2026-04-13. All 6 roles in enum and hierarchy.~~
+
+5. **SMTP/IMAP Connector (Section 9)** — Email-based document ingestion not implemented. Required for MVP-NOW per spec.
+
+## Reconciliation Backlog (prioritized)
+
+1. ~~**P0 — Prompt Injection Defense:** COMPLETED 2026-04-13. `sanitize_for_llm()` in `context_manager.py`, 19 tests.~~
+
+2. ~~**P0 — Add `liaison` and `public` roles:** COMPLETED 2026-04-13. Both roles in enum, hierarchy updated, 6 tests.~~
+
+3. **P0 — Public API endpoints:** Create unauthenticated API routes for citizen records request submission and status lookup.
+
+4. ~~**P1 — Email delivery (SMTP):** COMPLETED 2026-04-13. smtp_delivery.py + Celery beat task every 60s. 6 tests.~~
+
+5. ~~**P1 — Fee Schedules CRUD:** COMPLETED 2026-04-13. GET/POST/PATCH/DELETE at /admin/fee-schedules, 5 tests.~~
+
+6. ~~**P1 — SMTP/IMAP Connector:** COMPLETED 2026-04-13. ImapEmailConnector (`app/connectors/imap_email.py`) with MIME allowlist, extension blocklist, 50MB size cap, asyncio.to_thread() wrapping for non-blocking I/O, pipeline wiring via task_ingest_source dispatch. 26 tests.~~
+   - **Known gap:** Embedded macro stripping not implemented. DOCX/XLSX files with VBA macros pass the MIME allowlist but macros are not removed before ingestion. Mitigated by: (1) macros don't execute in the ingestion pipeline (text extraction only), (2) downstream `sanitize_for_llm()` strips injection patterns from extracted text. Full macro stripping requires a document-specific parser (e.g., python-docx VBA removal) — deferred.
+
+7. ~~**P1 — Exemption dashboard time-period filtering:** COMPLETED 2026-04-13. date_from/date_to params on accuracy and export endpoints.~~
+
+8. ~~**P1 — Exemption rule version tracking:** COMPLETED 2026-04-13. version field on ExemptionRule, increments on update.~~
+
+9. ~~**P1 — scope_assessment endpoint coverage:** COMPLETED 2026-04-13. Added to RequestCreate (with pattern validation), RequestRead, RequestUpdate. Router wired through on create and update.~~
+
+10. ~~**P2 — Manual/Export Drop Connector:** COMPLETED 2026-04-13. ManualDropConnector (`app/connectors/manual_drop.py`) with extension allowlist, 100MB size limit, archive to _processed/, recursive scan option. 17 tests.~~
+
+11. ~~**P2 — WCAG touch targets:** COMPLETED 2026-04-13. Added `min-height: 44px` to all interactive elements (button, input, select, textarea, [role="button"]) in globals.css. Verified in browser — 0 violations (skip-to-content link is intentionally 1x1px per WCAG pattern).~~
+
+---
+
+## Open Items — Scope Assigned, Not Yet Built
+
+These items were identified during audit and reconciliation but have no milestone assignment. All are P2-class (no workflow blockers, no security risk, quality improvements). Assigned here so they don't get buried when Phase 3 starts.
+
+| # | Item | Source | Scope | Notes |
+|---|------|--------|-------|-------|
+| 12 | **Embedded macro stripping for DOCX/XLSX** | IMAP connector audit (reconciliation item 6 gap note) | **Pre-Phase 3** | DOCX/XLSX files pass the MIME allowlist but VBA macros are not stripped before ingestion. Mitigated by: macros don't execute in text extraction, downstream sanitize_for_llm() handles content injection. Full fix requires python-docx/openpyxl VBA removal. |
+| 13 | **Department UUID-to-name resolution in Users table** | QA audit Finding 3 follow-up | **Pre-Phase 3** | Users page Department column renders UUID fragment ("a3f8c1b2...") instead of department name. Fix: fetch department list on page load, resolve UUID to name in the table cell. |
+| 14 | **WCAG 44px width audit** | WCAG reconciliation item 11 caveat | **Pre-Phase 3** | Current fix enforces min-height: 44px globally. WCAG 2.2 AA requires 44x44px (height AND width). Inline elements, icon-only buttons, and narrow inputs could still be under 44px wide. Requires a targeted audit of icon buttons and compact UI elements. |
+| 15 | **Public API endpoints** | Reconciliation item 3 (P0) | **Phase 3 (v1.1)** | Unauthenticated endpoints for citizen-facing portal: request submission, status lookup, published records search. Deliberately deferred per CC-005. Opening item of Phase 3 build. |

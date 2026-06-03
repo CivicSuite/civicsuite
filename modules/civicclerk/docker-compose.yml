@@ -1,0 +1,159 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: ${CIVICCLERK_POSTGRES_USER:-civicclerk}
+      POSTGRES_PASSWORD: ${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}
+      POSTGRES_DB: ${CIVICCLERK_POSTGRES_DB:-civicclerk}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.2-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollamadata:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment: &civicclerk_env
+      CIVICCLERK_STAFF_AUTH_MODE: ${CIVICCLERK_STAFF_AUTH_MODE:-protected}
+      CIVICCLERK_STAFF_OIDC_PROVIDER: ${CIVICCLERK_STAFF_OIDC_PROVIDER:-}
+      CIVICCLERK_STAFF_OIDC_ISSUER: ${CIVICCLERK_STAFF_OIDC_ISSUER:-}
+      CIVICCLERK_STAFF_OIDC_AUDIENCE: ${CIVICCLERK_STAFF_OIDC_AUDIENCE:-}
+      CIVICCLERK_STAFF_OIDC_JWKS_URL: ${CIVICCLERK_STAFF_OIDC_JWKS_URL:-}
+      CIVICCLERK_STAFF_OIDC_ROLE_CLAIMS: ${CIVICCLERK_STAFF_OIDC_ROLE_CLAIMS:-}
+      CIVICCLERK_STAFF_OIDC_ALGORITHMS: ${CIVICCLERK_STAFF_OIDC_ALGORITHMS:-}
+      CIVICCLERK_STAFF_OIDC_AUTHORIZATION_URL: ${CIVICCLERK_STAFF_OIDC_AUTHORIZATION_URL:-}
+      CIVICCLERK_STAFF_OIDC_TOKEN_URL: ${CIVICCLERK_STAFF_OIDC_TOKEN_URL:-}
+      CIVICCLERK_STAFF_OIDC_CLIENT_ID: ${CIVICCLERK_STAFF_OIDC_CLIENT_ID:-}
+      CIVICCLERK_STAFF_OIDC_CLIENT_SECRET: ${CIVICCLERK_STAFF_OIDC_CLIENT_SECRET:-}
+      CIVICCLERK_STAFF_OIDC_REDIRECT_URI: ${CIVICCLERK_STAFF_OIDC_REDIRECT_URI:-}
+      CIVICCLERK_STAFF_OIDC_SESSION_COOKIE_SECRET: ${CIVICCLERK_STAFF_OIDC_SESSION_COOKIE_SECRET:-}
+      CIVICCLERK_STAFF_AUTH_TOKEN_ROLES: ${CIVICCLERK_STAFF_AUTH_TOKEN_ROLES:-}
+      CIVICCLERK_STAFF_SSO_PRINCIPAL_HEADER: ${CIVICCLERK_STAFF_SSO_PRINCIPAL_HEADER:-}
+      CIVICCLERK_STAFF_SSO_ROLES_HEADER: ${CIVICCLERK_STAFF_SSO_ROLES_HEADER:-}
+      CIVICCLERK_STAFF_SSO_PROVIDER: ${CIVICCLERK_STAFF_SSO_PROVIDER:-}
+      CIVICCLERK_STAFF_SSO_TRUSTED_PROXIES: ${CIVICCLERK_STAFF_SSO_TRUSTED_PROXIES:-}
+      CIVICCLERK_AGENDA_INTAKE_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_AGENDA_ITEM_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_MEETING_BODY_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_MEETING_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_PACKET_ASSEMBLY_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_NOTICE_CHECKLIST_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_VENDOR_SYNC_DB_URL: postgresql+psycopg2://${CIVICCLERK_POSTGRES_USER:-civicclerk}:${CIVICCLERK_POSTGRES_PASSWORD:-civicclerk}@postgres:5432/${CIVICCLERK_POSTGRES_DB:-civicclerk}
+      CIVICCLERK_EXPORT_ROOT: /data/exports
+      CIVICCLERK_REDIS_URL: redis://redis:6379/0
+      CIVICCLERK_OLLAMA_BASE_URL: http://ollama:11434
+      CIVICCORE_LLM_PROVIDER: ollama
+      CIVICCLERK_DEMO_SEED: ${CIVICCLERK_DEMO_SEED:-1}
+      CIVICCLERK_CONNECTOR_SYNC_ENABLED: ${CIVICCLERK_CONNECTOR_SYNC_ENABLED:-false}
+      CIVICCLERK_CONNECTOR_SYNC_PAYLOAD_DIR: /data/connector-imports
+      CIVICCLERK_CONNECTOR_SYNC_LEDGER_PATH: ${CIVICCLERK_CONNECTOR_SYNC_LEDGER_PATH:-/data/exports/connector-import-ledger.json}
+      CIVICCLERK_CONNECTOR_SYNC_CONNECTORS: ${CIVICCLERK_CONNECTOR_SYNC_CONNECTORS:-}
+      CIVICCLERK_CONNECTOR_SYNC_INTERVAL_SECONDS: ${CIVICCLERK_CONNECTOR_SYNC_INTERVAL_SECONDS:-900}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_ENABLED: ${CIVICCLERK_VENDOR_NETWORK_SYNC_ENABLED:-false}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_SCHEDULE_ENABLED: ${CIVICCLERK_VENDOR_NETWORK_SYNC_SCHEDULE_ENABLED:-false}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_SOURCE_IDS: ${CIVICCLERK_VENDOR_NETWORK_SYNC_SOURCE_IDS:-}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_AUTH_SECRET_ENV: ${CIVICCLERK_VENDOR_NETWORK_SYNC_AUTH_SECRET_ENV:-}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_AUTH_SECRET_ENV_PREFIX: ${CIVICCLERK_VENDOR_NETWORK_SYNC_AUTH_SECRET_ENV_PREFIX:-CIVICCLERK_VENDOR_SECRET_}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_SHARED_SECRET: ${CIVICCLERK_VENDOR_NETWORK_SYNC_SHARED_SECRET:-}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_REPORT_DIR: ${CIVICCLERK_VENDOR_NETWORK_SYNC_REPORT_DIR:-/data/exports/vendor-network-sync}
+      CIVICCLERK_VENDOR_NETWORK_SYNC_INTERVAL_SECONDS: ${CIVICCLERK_VENDOR_NETWORK_SYNC_INTERVAL_SECONDS:-900}
+      CIVICCODE_INTAKE_URL: ${CIVICCODE_INTAKE_URL:-}
+      CIVICCODE_INTAKE_SECRET: ${CIVICCODE_INTAKE_SECRET:-}
+      CIVICCODE_INTAKE_ACTOR: ${CIVICCODE_INTAKE_ACTOR:-civicclerk-handoff@citycore.local}
+    ports:
+      - "${CIVICCLERK_API_PORT:-8776}:8776"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - exports:/data/exports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8776/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A civicclerk.worker worker --loglevel=info
+    environment: *civicclerk_env
+    volumes:
+      - exports:/data/exports
+      - ${CIVICCLERK_CONNECTOR_SYNC_PAYLOAD_DIR_HOST:-./connector-imports}:/data/connector-imports:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A civicclerk.worker inspect ping --destination celery@$$(hostname) >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A civicclerk.worker beat --loglevel=info
+    environment: *civicclerk_env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "${CIVICCLERK_WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:
+  ollamadata:
+  exports:

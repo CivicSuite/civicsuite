@@ -1,0 +1,827 @@
+# Changelog
+
+All notable changes to CivicRecords AI will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Security
+- Enforced first-login password rotation for the initial administrator account:
+  the startup-created admin is marked `must_change_password`, staff/admin
+  routes return a plain-language 403 until the password is changed through
+  `/users/me`, and the flag clears after the successful password update.
+
+## [1.7.3] - 2026-05-24
+
+### Changed
+- v1.7.3 — release-asset convention bring-up. Adds wheel and sdist
+  as published assets so direct-pip consumers can install from
+  release URLs. No functional change. City-core installer continues
+  to vendor source as before.
+
+## [1.7.2] - 2026-05-23
+
+### Fixed
+- Repaired the frontend clean-install lockfile by pinning Vitest to `3.2.3`,
+  whose `vite-node` dependency resolves the published `es-module-lexer@1.7.0`
+  package. The v1.7.1 lockfile resolved `es-module-lexer@1.7.1`, which is not
+  published on npm and broke clean Docker installer builds without a warm cache.
+
+## [1.7.1] - 2026-05-23
+
+### Changed
+- Repointed document parsing, chunking, embeddings, and pgvector ingest writes
+  to the shared `civiccore.ingest` pipeline at the published CivicCore v1.2.0 release wheel.
+- Supersedes the failed, unpublished v1.7.0 tag attempt without rewriting the
+  v1.7.0 tag.
+- Removed the duplicated Records-AI parser/chunker/embedder/pipeline modules
+  under `backend/app/ingestion`; the remaining package now contains only
+  Records-specific Celery tasks, scheduling, sync orchestration, and cron
+  compatibility helpers.
+
+### Fixed
+- Fixed the dashboard Recent Activity fetch to use the shipped `/audit/logs`
+  backend route instead of the stale `/admin/audit-log` path, removing a
+  browser-visible 404 after staff sign-in.
+- Made Docker Compose host ports configurable through
+  `CIVICRECORDS_API_PORT` and `CIVICRECORDS_WEB_PORT` while preserving the
+  default `8000` and `8080` bindings.
+- Rebuild the API image during release verification before trusting Compose
+  runtime and backend-test evidence, preventing stale local images from
+  masking current checkout state.
+- Strip Windows carriage returns when the release verifier derives the
+  Compose database name from `.env`, so clean runtime checks create the same
+  database name the API uses.
+
+## [1.6.1] - 2026-05-15
+
+### Fixed
+- Celery+asyncio ingestion worker event-loop reuse regression in
+  `backend/app/ingestion/tasks.py`. The previous code constructed a
+  module-global `AsyncEngine` inside a `worker_process_init` Celery
+  signal, which bound asyncpg connections to the first task's event
+  loop; every later task on the same prefork worker raised
+  `RuntimeError: Event loop is closed` (or `got Future ... attached to a
+  different loop`), retried twice, and gave up. The fix replaces the
+  module globals + signal hook with an `@asynccontextmanager
+  worker_session_scope()` that builds the engine inside each task's
+  per-task coroutine and disposes it before the loop closes, mirroring
+  the canonical pattern already in `backend/app/ingestion/scheduler.py`.
+  Operator-visible symptom that is removed: documents uploaded after the
+  first ingest on a given worker no longer get stuck in `pending`
+  status; every ingest reaches `completed` and produces chunks.
+
+## [1.6.0] - 2026-05-11
+
+### Security
+- Moved `JWT_SECRET` and `FIRST_ADMIN_PASSWORD` out of Docker Compose
+  container environment variables. The runtime now defaults to the Docker
+  secret mount paths at `/run/secrets/jwt_secret` and
+  `/run/secrets/first_admin_password`, and the release gate verifies
+  `docker exec <api> env` exposes no `JWT_SECRET*` or
+  `FIRST_ADMIN_PASSWORD*` names. Addresses audit finding QA-002.
+
+### Changed
+- `install.sh` now writes `./data/secrets/jwt_secret` and
+  `./data/secrets/first_admin_password` with `0400` permissions.
+- `install.ps1` writes the same files under `.\data\secrets\` and restricts
+  access with `icacls` for SYSTEM, Administrators, and the current Docker
+  Desktop operator account.
+- Breaking upgrade note: existing v1.5.x installs that still store
+  `JWT_SECRET=` or `FIRST_ADMIN_PASSWORD=` in `.env` must re-run
+  `install.sh` or `install.ps1` so file-backed secrets are created and `.env`
+  keeps only non-secret operator settings such as `CIVICRECORDS_SECRET_DIR`.
+
+## [1.5.0] - 2026-05-10
+
+### Changed
+- Migrated the CivicCore dependency from v0.22.1 to v1.0.1 so CivicRecords AI
+  shares the same platform baseline as the rest of the active CivicSuite
+  product repos.
+- No source API migrations were required; every CivicCore symbol imported by
+  CivicRecords AI remains public in v1.0.1 with a compatible import surface.
+
+### Security
+- Inherits CivicCore v1.0.1 auth-error-payload hardening: auth error responses
+  no longer expose `token_roles`, `principal`, `principal_roles`,
+  `client_host`, or `trusted_proxy_cidrs`.
+- Closes audit finding ENG-002 from `audit-civicsuite-2026-05-09`.
+
+### Added
+- Added the CO-4 Tier 1 retrofit ledger for `v1.4.10`, marking the release as
+  historical pre-gate/no-attestation/do-not-promote without changing public
+  release notes, tags, or assets.
+
+### Changed
+- Updated the active CivicCore dependency and current install/provenance docs to
+  the first attested CivicCore baseline, `v0.22.1`.
+- Wired the GitHub release workflow to the new CivicCore Sigstore attestation
+  provenance model. Future release builds run the canonical adversarial fixture
+  suite first, build the unsigned Windows installer, generate and cosign
+  `release-attestation.json`, verify it before publication, and upload the
+  attestation plus bundle alongside the installer and checksum. No existing
+  release, tag, or release notes were modified by this change.
+- Release-preflight fixture checks invoke the local provenance wrapper script so
+  Actions logs stay free of Python module re-execution warnings.
+
+## [1.4.10] - 2026-05-03
+
+### Changed
+- Documentation-only release alignment patch. The v1.4.9 CivicCore source-status
+  projection code is unchanged; this tag publishes the audit-corrected
+  631-backend-test evidence in the release source snapshot and docs download
+  surfaces instead of leaving the correction only on `master`.
+
+## [1.4.9] - 2026-05-03
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.22.0 wheel
+  and Records-AI consumes `civiccore.connectors.build_sync_source_status()` for
+  datasource list health, active-failure count, pause, and next-run projection.
+  The API response shape is unchanged; the reusable health/next-run semantics now
+  live in CivicCore for CivicClerk and future modules to share.
+- Added Records-AI consumer coverage proving the new CivicCore source-status
+  projection is importable and preserves the expected degraded/next-run contract.
+
+## [1.4.8] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.21.0 wheel
+  and Records-AI consumes shared CivicCore cron schedule validation and next-run
+  computation helpers instead of carrying module-local scheduling copies.
+- `app.ingestion.cron_utils` is now a compatibility wrapper around
+  `civiccore.scheduling`, preserving the Records-AI import surface while making
+  reusable scheduling behavior available suite-wide.
+
+### Added
+- Added a Records-AI consumer smoke test for the CivicCore v0.21.0 scheduling
+  helpers so future modules can adopt the same cron validation contract.
+
+## [1.4.7] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.20.0 wheel
+  and Records-AI now consumes shared CivicCore startup config validation for
+  JWT secret, Fernet encryption key, first-admin password, and CSV allowlist
+  parsing checks instead of carrying module-local copies.
+
+### Added
+- Added a Records-AI consumer smoke test for the CivicCore v0.20.0 startup
+  config validation helpers so future modules can adopt the same bootstrap
+  hardening surface.
+
+## [1.4.6] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.19.0 wheel so Records-AI can consume shared vendor-delta request planning and reusable mock-city contract suites alongside the previously extracted search, onboarding, connector-security, ingest, persisted audit-log, retry, and circuit-breaker helpers.
+
+### Added
+- Added a Records-AI consumer smoke test for the CivicCore v0.19.0 delta planner and mock-city contract report so future extraction work has a reusable proof point before downstream modules adopt the same shared surfaces.
+
+## [1.4.5] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.18.1 wheel so Records-AI consumes shared live connector retry and circuit-breaker primitives in addition to shared search, onboarding, connector-security, ingest, and persisted audit-log helpers.
+- `app.connectors.retry` is now a compatibility wrapper around `civiccore.connectors.with_http_retry()` and `compute_retry_delay()`, preserving the Records-AI `Retry-After` cap behavior while moving reusable retry policy to CivicCore.
+- `app.ingestion.sync_runner` now applies `civiccore.connectors.apply_sync_run_result()` for the circuit-breaker state transition while keeping Records-AI's ORM tables, run logs, notifications, and cursor handling local.
+
+## [1.4.4] - 2026-05-01
+
+### Added
+- Hybrid search now consumes `civiccore.search.reciprocal_rank_fusion()` so
+  records-ai and other CivicSuite consumers share one weighted fusion contract
+  instead of carrying private copies of the same helper.
+- Onboarding interview orchestration now consumes the shared
+  `civiccore.onboarding` field-order, answer-normalization, completion-state,
+  and skip-aware next-question helpers instead of carrying a private copy of
+  that contract inside the records-ai router.
+- Audit-log hashing and verification now consume
+  `civiccore.audit.compute_persisted_audit_hash()` and
+  `civiccore.audit.verify_persisted_audit_chain()` so records-ai no longer
+  owns reusable persisted audit-chain math.
+
+### Fixed
+- Installer hardening: `install.ps1` now stops immediately when hardware detection fails, so under-spec hosts get a clear prerequisite failure instead of continuing deeper into Docker/bootstrap work. The hardware-detection output also avoids the stale mojibake strings in operator-facing warnings.
+- Config parsing: `CONNECTOR_HOST_ALLOWLIST` now accepts an empty environment value or a comma-separated string during startup without tripping Pydantic's eager JSON decoding path. Regression tests cover both env-driven cases.
+- Frontend dependency security: refreshed the lockfile for `postcss` and
+  transitive `hono` so `npm audit --audit-level=moderate` reports zero known
+  vulnerabilities.
+
+### Changed
+- The development-line `backend/pyproject.toml` dependency now targets the
+  published `civiccore` v0.17.0 wheel so shared search, onboarding,
+  connector-security, ingest, and persisted audit-log helpers are consumed
+  from the shared platform package instead of records-ai-local helper copies.
+
+## [1.4.3] - 2026-04-29
+
+### Added
+- Records-AI connector base contracts now consume the shared
+  `civiccore.ingest` discovery/fetch record dataclasses instead of carrying
+  private copies of that ingest-facing contract inside `app.connectors.base`.
+
+### Changed
+- `backend/pyproject.toml` now targets the `civiccore` v0.13.0 release line.
+- Connector implementations and their tests continue importing
+  `DiscoveredRecord`, `FetchedDocument`, `HealthCheckResult`, and
+  `HealthStatus` from `app.connectors.base`, but that module now
+  compatibility-re-exports the shared CivicCore ingest contract.
+
+## [1.4.1] - 2026-04-28
+
+Patch release aligning CivicRecords AI with the suite-wide `civiccore` v0.3.0 release.
+
+### Changed
+- **civiccore dependency:** the `civiccore` wheel pin advances from v0.2.0 to v0.3.0. The new wheel is published at `https://github.com/CivicSuite/civiccore/releases/download/v0.3.0/civiccore-0.3.0-py3-none-any.whl`. Existing operator deployments should rebuild the API image (`docker compose build api`) so the backend image installs the updated CivicCore wheel.
+- **Release surfaces:** backend, frontend, README, landing page, manuals, and canonical spec now identify the current records-ai release as v1.4.1. No API URL paths, roles, permissions, or records-side database migrations change in this patch.
+
+## [1.4.0] - 2026-04-25
+
+Phase 2 LLM extraction release. Records-AI now consumes `civiccore` v0.2.0 as a versioned dependency. The LLM provider abstraction, prompt-template engine, and model registry have moved to `civiccore.llm`; records-AI keeps thin re-export shims so existing call sites work unchanged.
+
+### Operator upgrade notes (v1.3.0 → v1.4.0)
+
+- **civiccore dependency:** the `civiccore` wheel pin advances from v0.1.0 to v0.2.0. The new wheel is published at `https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl`. Reinstall is automatic on `pip install -e .[dev]` from a fresh clone; existing operator deployments need to rebuild the API image (`docker compose build api`).
+- **Migration:** running `alembic upgrade head` on a v1.3.0 database now applies one new civiccore-side revision (`civiccore_0002_llm`) plus one new records-side revision (`020_phase2_consumer_app_backfill`). The civiccore revision ALTERs `prompt_templates`: renames `name` → `template_name`, adds `consumer_app VARCHAR(100) NOT NULL DEFAULT 'civiccore'`, adds `is_override BOOLEAN NOT NULL DEFAULT false`, replaces `UNIQUE(name)` with `UNIQUE(consumer_app, template_name, version)`. The records-side revision is data-only — it sets `consumer_app='civicrecords-ai'` + `is_override=true` on rows that records-AI shipped (it does not change the schema).
+- **Backwards compatibility:** API URL paths and admin permissions are unchanged. Code that imported `from app.models.prompts import PromptTemplate` or `from app.schemas.model_registry import ...` continues to work — the records-AI modules are now thin re-export shims around `civiccore.llm.{templates,registry}`. Code that read `pt.name` on a `PromptTemplate` instance must update to `pt.template_name`.
+- **Generated artifacts:** `docs/openapi.json` and `frontend/src/generated/api.ts` were regenerated to reflect the admin router's swap to civiccore Pydantic types. Frontend hot-reload will pick this up on rebuild; existing API clients that hard-coded the old `$ref` schema names need to regenerate from the new spec.
+- **Test infrastructure:** Gate 2 fixture (`backend/tests/fixtures/schema_v1_3_0.sql`) replaces the prior v1.2.0 fixture. Operators do not interact with this; it is for CI's migration gate suite.
+
+### Added
+- Phase 2 Step 1: scratch scope worksheet for the `civiccore.llm` extraction at `docs/architecture/phase2-civiccore-llm-scope.md` (records-ai side). Inventories the modules moving to civiccore (model_registry ORM/schemas/router, prompt_templates ORM, Ollama client, context manager, prompt-injection sanitizer), the modules staying in records-ai (FOIA-specific exemption reviewer, multimodal OCR extractor, response-letter pipeline), the override-resolution algorithm for prompt templates (records-ai instance overrides → records-ai code overrides → civiccore defaults; no silent fallback), the `string.Template` engine choice, and the registry-decorator provider-registration mechanism. Feeds ADR-0004 (Step 2) and the Step 3 implementation against civiccore main.
+- ADR-0004 records the Phase 2 civiccore.llm extraction architecture (`docs/adr/0004-phase2-civiccore-llm.md`).
+
+### Changed
+- **Phase 2 Step 5** — pinned `civiccore` to v0.2.0 wheel; rewired records-ai LLM/model/template surface to import from `civiccore.llm` instead of local modules.
+  - `backend/pyproject.toml`: civiccore wheel URL bumped to v0.2.0.
+  - LLM modules (`app/llm/{__init__,client,context_manager}.py`) become thin re-export shims around `civiccore.llm`. `OllamaProvider` is constructed with kwargs (the keyword-only signature) and called with `system_prompt` / `user_content` (civiccore signature, not the legacy `prompt=` kwarg).
+  - ORM swap: `app/models/prompts.py` and `app/schemas/model_registry.py` deleted; replaced by re-exports from `civiccore.llm.templates` and `civiccore.llm.registry`. `app/models/document.py` and `app/admin/router.py` updated to use civiccore types. URL paths and admin permissions unchanged.
+  - Embedder (`app/ingestion/embedder.py`): uses `OllamaProvider.embed`/`.embed_batch`. `check_model_available` kept as direct httpx (no civiccore list-models helper exposed yet).
+  - New data migration `020_phase2_consumer_app_backfill.py` flips records-ai-shipped `prompt_templates` rows from `consumer_app='civiccore'` to `'civicrecords-ai'` with `is_override=true` after `civiccore_0002_llm` ALTERs the table shape.
+  - Test infrastructure: Gate 2 fixture (`backend/tests/fixtures/schema_v1_3_0.sql`) captured from v1.3.0 worktree (1822 lines, 34 tables) with proper `alembic_version` / `alembic_version_civiccore` stamps. Gate 2 test renamed `test_gate2_upgrade_from_v1_2` → `test_gate2_upgrade_from_v1_3`; column-drift assertion now whitelists the expected `prompt_templates` Phase 2 delta (rename `name`→`template_name`, add `consumer_app`, add `is_override`).
+  - Generated artifacts: `docs/openapi.json` and `frontend/src/generated/api.ts` regenerated to match the swapped admin router types.
+- Build/CI: ruff is now a required CI check (`.github/workflows/ci.yml` job `ruff (lint)`); 82 pre-existing violations cleaned up (70 auto-fixed, 6 manually fixed including 4 E402 import-order fixes and 1 F841 unused-variable removal, 4 retained as inline `# noqa: E402` with rule-ID + justification). `scripts/verify-release.sh` gains a step 4 that runs `ruff check` against the api container. Closes #33.
+- Docs: regenerated all binary doc artifacts (`README.{docx,pdf}`, `README-FULL.pdf`, `USER-MANUAL.{docx,pdf}`, `README.txt`, `docs/civicrecords-ai-manual.{docx,pdf}`, `docs/UNIFIED-SPEC.docx`, `docs/CivicRecordsAI-UnifiedSpec-v3.1.docx`) to match the v1.3.0 source state. Both Python (`docs/generate_pdfs.py`, `docs/generate_docx.py`) and Node (`docs/generate-deliverables.js`, `docs/generate-manual-{pdf,docx}.js`, `docs/generate-unified-spec-docx.js`) generator chains were re-run; binaries updated only — no generator-source or markdown-source changes. Closes #31. Hard Rule 0 four-format sync restored.
+
+### Fixed
+- Frontend: belt-and-suspenders for the rare `DataSources.test.tsx` label-association flake observed once on PR #29's CI (issue #30). The test body now uses async `findByLabelText` instead of sync `getByLabelText`, layered on top of the prior `openWizard()` async wait (commit `e898319`). 30/30 filtered + 10/10 full-file pass post-fix. Other tests in the file using sync queries left untouched per scope-lock; if any flake later, file follow-up issues. Closes #30.
+
+## [1.3.0] - 2026-04-25
+
+Phase 1 CivicCore extraction release. Records now consumes `civiccore` v0.1.0 as a versioned dependency, two-layer Alembic migration order is in place, and the release-gate scaffolding (verify-release.sh, ADR-0003 migration gates, .dockerignore build hardening) is wired into CI.
+
+### Added
+- Phase 1 CivicCore extraction landed: `civiccore` v0.1.0 is now a declared dependency (release wheel, not source). Shared models (User, Role, Department, audit_log) and migrations now live in civiccore and are consumed via the shim layer.
+- Two-layer migration order: civiccore migrations run first via `civiccore.migrations.runner.upgrade_to_head()`, then records-side migrations run as before. Fresh installs and upgrades both tested.
+- Migration idempotency guards: 14 records-side migrations carry guards for shared-table ops (create_table, add_column, alter_column, create_index, create_foreign_key, create_unique_constraint, create_check_constraint) so they no-op when civiccore has already created the objects.
+- CI merge bar hardened: 3 ADR-0003 migration gate tests (fresh install, v1.2.x upgrade, civiccore-first install) are standing required-pass checks on every PR.
+- `scripts/verify-release.sh` added: 6-step release gate (pytest, ruff, version lockstep, doc presence, build, fresh-virtualenv wheel install).
+- Build context hardening: `.dockerignore` added at the repo root. Frontend build context dropped from 241.93 MB to 0.88 MB (-99.6%) and now completes on a clean clone (was failing on transient `node_modules/.bin/.<random>` symlinks). Api build context dropped from 2.41 MB to 1.22 MB (-49%). `backend/tests/fixtures/` is intentionally NOT excluded — the v1.2.0 schema fixture lives there and must remain in the api build context. (PR #29, master `fe5d7e3`.)
+
+### Changed
+- `Dockerfile.backend` no longer installs `git`; the backend now resolves `civiccore` from a versioned wheel URL and no longer needs Git at image-build time.
+- 14 records migrations updated to use `civiccore.migrations.guards.idempotent_*` helpers, making them safe to re-apply on databases where the civiccore baseline has already created the shared tables (users, service_accounts, audit_log, data_sources, documents, document_chunks, model_registry, exemption_rules, connector_templates, departments, system_catalog, city_profile, notification_templates, prompt_templates, sync_run_log, sync_failures).
+
+## [1.2.0] - 2026-04-23
+
+Tier 5 installer/onboarding/seeding/model-picker/portal-mode slices and Tier 6 at-rest encryption (ENG-001 closed) tagged together. CI green on `d556904` (run 24853147133). Unsigned Windows `.exe` installer produced on tag push via Inno Setup 6.x.
+
+### Added
+- **T5D — Install-time portal switch, private vs. public (locked scope B4=(b), 2026-04-22):** Adds a single install-time configuration knob — `PORTAL_MODE` — that determines whether a deployment exposes any public-facing surface at all. The default is `private` (staff-only; the login screen is the only externally reachable page). The alternate is `public`, which exposes an exact minimal surface locked by Scott 2026-04-22 under Option A: a public landing page, a resident-registration path, and an authenticated records-request submission form for `UserRole.PUBLIC` users. Anonymous walk-up submission is intentionally **not** supported; published-records search, a full resident dashboard, and a track-my-request suite are explicitly out of scope for this slice.
+  
+  **Config surface.** `backend/app/config.py` adds `portal_mode: Literal["public","private"] = "private"` with a Pydantic `field_validator` that lowercases and strips whitespace before validation — `" PUBLIC "`, `"Public"`, and `"public"` are all accepted; any other value fails fast at startup rather than silently defaulting to private. `.env.example` documents the flag with a comment block explaining both modes and pointing the reader at the relevant docs. The installer scripts (`install.ps1` on Windows, `install.sh` on Linux/macOS) now prompt interactively with `private` as the default; non-interactive runs accept `$CIVICRECORDS_PORTAL_MODE` as a pre-set.
+  
+  **Backend — private mode gating.** `backend/app/auth/router.py` + `backend/app/main.py` conditionally mount `/auth/register` only when `portal_mode == "public"`; in private mode the route returns 404 (not 403 — the route does not exist). `backend/app/schemas/user.py` `UserCreate` now forces `UserRole.PUBLIC` on self-registration (this corrects a pre-existing bug in which `UserCreate` forced `UserRole.STAFF` on self-register, silently escalating any resident signup to staff privileges; flagged and fixed as a pre-existing bug in the blast radius of this change per standards rule 8). Admin-driven user creation (`POST /api/admin/users`) is unchanged and still accepts any role.
+  
+  **Backend — public router.** New `backend/app/public/router.py` exposes `POST /public/requests`, authenticated and `UserRole.PUBLIC`-only. `created_by` FK is populated from the authenticated resident's account. Staff roles (ADMIN, STAFF, REVIEWER, READ_ONLY, LIAISON) get 403 here — they continue to use `/requests/`.
+  
+  **Mode discovery.** `backend/app/main.py` adds an unauthenticated `GET /config/portal-mode` endpoint that is always mounted (regardless of the active mode) so the frontend can discover the active mode on boot and branch its routing before any user-identity lookup.
+  
+  **Frontend — routing branches.** `frontend/src/App.tsx` now fetches `/config/portal-mode` at boot and branches: unauthenticated visitors to a public-mode instance land on `/public/*`; authenticated `UserRole.PUBLIC` users are locked to `/public/*` and cannot reach the staff dashboard; staff roles see the existing workbench. Three new pages — `PublicLanding.tsx`, `PublicRegister.tsx`, `PublicSubmit.tsx` — cover the full state matrix (loading / success / empty / error / partial) with actionable error copy.
+  
+  **Test coverage.** `backend/tests/test_portal_mode.py` adds 15 pytest cases covering config normalization, failure modes, register gating in both modes, public-submit role gating, and mode discovery. `frontend/src/pages/PublicLanding.test.tsx`, `PublicRegister.test.tsx`, and `PublicSubmit.test.tsx` add 12 vitest cases across the three pages.
+  
+  **Docs in the same slice:** top-level `README.md` gains a T5D entry in the post-v1.1.0 hardening block; `docs/UNIFIED-SPEC.md` gains a new §8.9 paralleling §8.8; `USER-MANUAL.md` Section B adds a "Portal Mode" operator section; `docs/index.html` is updated for the T5E-shipped reality and its two broken doc links (USER-MANUAL.pdf, README.md) are pointed at GitHub-served URLs.
+  
+  **Standing caveat (unchanged):** T2B runtime exposure closed; Tier 6 at-rest exposure still open; ENG-001 is not fully closed until Tier 6 lands. T5D does not touch the at-rest surface.
+
+- **T5E — Windows double-click installer (UNSIGNED by design, 2026-04-22):** Implements the Tier 5 full-spectrum installer deliverable for Windows 11 Pro 23H2+ (the locked T5 target profile). Scott locked B3 signing posture = α (unsigned) on 2026-04-22; this release ships unsigned and the operator-facing truth surfaces say so plainly. Toolchain, build pipeline, and release shape are inherited from the verified PatentForgeLocal skeleton: **Inno Setup 6.x** `.iss` script at `installer/windows/civicrecords-ai.iss`, **bash build driver** at `installer/windows/build-installer.sh` (with a fresh correct output-name — the PatentForgeLocal `PatentForgeLocalLocal-` double-"Local" typo was deliberately not carried forward), and a GitHub Actions `windows-latest` release-on-tag workflow at `.github/workflows/release.yml` that installs Inno Setup via `choco install innosetup -y` and produces a single unsigned `.exe` plus a SHA-256 checksum file.
+
+  **Flow split — Start is not Install (2026-04-22 correction pass):** The installer creates two separate shortcuts wired to two separate launcher scripts, so a daily double-click on "Start" never re-runs the installer or re-pulls a model:
+  - **Start CivicRecords AI** → `installer/windows/launch-start.ps1`. Daily start. Runs `docker compose up -d` (idempotent) and opens `http://localhost:8080/`. **Does NOT** run the prereq check. **Does NOT** invoke `install.ps1`. **Does NOT** pull any model. **Does NOT** re-seed data. The optional Desktop shortcut mirrors this daily-start behavior.
+  - **Install or Repair CivicRecords AI** → `installer/windows/launch-install.ps1`. Full install/repair flow: prereq check, then `install.ps1` (Gemma 4 picker + `ollama pull` of the selected model + `ollama pull nomic-embed-text` + T5B baseline seeding). The post-install `[Run]` step of the installer wizard fires this automatically on first-run setup. Use it manually to switch LLMs or repair a broken stack.
+
+  **Version sourcing — no hardcoded drift (2026-04-22 correction pass):** `civicrecords-ai.iss` no longer carries a hardcoded `MyAppVersion`. ISCC is invoked with `/DMyAppVersion=<semver>`; the `.iss` uses `#ifndef MyAppVersion / #error` so a version-less ISCC call fails fast. Resolution order in `build-installer.sh`:
+  1. `$CIVICRECORDS_VERSION` environment variable (set by CI from the git tag with any leading `v` stripped).
+  2. `backend/pyproject.toml` `[project] version = "..."` for local dev builds.
+
+  `release.yml` derives the version from `github.ref_name` and exports `CIVICRECORDS_VERSION` to the build step; the "Locate installer artifact" step then expects exactly `build/CivicRecordsAI-${CIVICRECORDS_VERSION}-Setup.exe`. Local bash build and CI build produce the same filename for the same version. No more `grep` of the `.iss` for the version string, no more `1.2.0-rc.1` drift.
+
+  **CivicRecords-specific adaptations (Docker / Compose runtime, not PFL's portable-binary runtime):**
+  - `installer/windows/prereq-check.ps1` — reports on Docker Desktop, WSL 2 + Virtual Machine Platform, the 32 GB RAM target-profile floor, and host Ollama (preferred over in-container per the locked target profile). Does NOT attempt to install Docker Desktop itself — detects and prints concrete remediation (exact `wsl --install`, `Enable-WindowsOptionalFeature`, Docker Desktop download URL). Exits non-zero on any required-prereq miss; the launcher halts rather than proceeding into a broken install.
+  - `installer/windows/launch-install.ps1` — install/repair orchestrator. Runs prereq-check, invokes the existing top-level `install.ps1`, then opens the admin panel at `http://localhost:8080/`. On Windows SmartScreen blocks, the launcher emits the same "More info → Run anyway" guidance up front. `install.ps1` **auto-pulls `nomic-embed-text`** (embedding model, required for search) **and auto-pulls the Gemma 4 tag the operator selects** in the picker (default `gemma4:e4b`). This is now stated plainly in the installer README, the top-level README, and the launcher banner — the previous "Does not auto-pull the Gemma 4 LLM" line in the installer README contradicted what `install.ps1` actually does and has been removed.
+  - `installer/windows/launch-start.ps1` — daily-start script. Verifies Docker is reachable, runs `docker compose up -d`, opens the admin panel. If Docker is unreachable or the bring-up fails, points the operator at "Install or Repair CivicRecords AI" instead of silently retrying. No install, no model pull, no seed.
+  - `.iss` `[Dirs]` with `uninsneveruninstall` on `{app}\data|logs|config`. `[Code]` `CurUninstallStepChanged` prompts twice and the copy is now truthful: step 1 asks to stop the Compose stack via `docker compose down` (containers only — volumes preserved, because `down` without `-v` never touches volumes); step 2 asks to delete **local app files under the install dir** (`{app}\data`, `{app}\logs`, `{app}\config`) and **explicitly preserves the Postgres database and Ollama models** (both in Docker-managed volumes). The word "database" was removed from the file-system-deletion prompt where it was previously misleading; `docker compose down -v` (full wipe including volumes) is called out in the dialog text as the operator-driven path for a total reset.
+
+  **Unsigned-truth surfaces:**
+  - `installer/windows/README.md` — dedicated operator guide that states the unsigned posture in the first paragraph and walks through the SmartScreen remediation concretely: click "More info", click "Run anyway," confirm UAC. Also documents the SHA-256 verification path (`Get-FileHash` against the checksum published on the release page), the Start-vs-Install flow split, the truthful model-pull behavior, and an uninstall section whose "removes / preserves" table matches the dialog copy one-to-one.
+  - Top-level `README.md` "Install" section rewritten to show two paths (Windows unsigned installer + legacy CLI scripts), call out the SmartScreen behavior plainly, state the model-pull behavior of `install.ps1` truthfully, and explain the two-shortcut flow split.
+  - `docs/UNIFIED-SPEC.md` gains a new §8.8 "Windows Installer (T5E)" describing the Inno Setup skeleton, the Docker-prereq contract, the unsigned posture, the SmartScreen guidance, the Start/Install flow split, and the tag-driven version sourcing.
+
+  **What T5E does NOT do (scope discipline):**
+  - No code signing. No Azure Trusted Signing. No PatentForgeLocal signing backfill. Locked out of scope per B3 = α.
+  - No auto-install of Docker Desktop, no silent WSL feature-enable.
+  - No macOS / Linux native installer binary in this slice — mac/Linux stay on the existing guided-script path. Cross-platform parity is documented as follow-on, not shipped.
+
+  Verification: `release.yml` YAML statically valid; `build-installer.sh` passes `bash -n`; `.iss` balanced and references only files that exist in the repo; `prereq-check.ps1`, `launch-install.ps1`, and `launch-start.ps1` parse cleanly under the Windows PowerShell 5.1 AST parser (with explicit UTF-8 read). The release workflow will produce the first unsigned `.exe` on the next `v*` tag push.
+
+- **GitHub Actions CI workflow (PR 0 of 2026-04-19 remediation plan):** `.github/workflows/ci.yml` runs pytest via `docker compose` (matching AGENTS.md Hard Rule 1a auditor commands exactly) and the frontend vitest suite + production build on every push and pull request to `master`. Includes a collected-vs-passed cross-check that catches the specific failure mode documented in CLAUDE.md Hard Rule 1e ("423 tests claimed, 278 actual") by failing the job on any test skip, xfail, error, or silent early exit. Workflow is hermetic — `.env` is synthesized per-run with `openssl rand -hex 32` for `JWT_SECRET`; no secrets live in the workflow or in Actions secrets. Ollama is skipped via `--no-deps` because tests mock it. See `.github/workflows/README.md` for the full rationale and local reproduction recipe.
+
+### Fixed
+- **T4 post-audit — UX-001: Source Type radiogroup now actually keyboard-operable (2026-04-21):** The committed T4C change exposed the Source Type chooser as a `role="radiogroup"` with `role="radio"` children and roving `tabindex`, and the accompanying user-manual copy told operators to "Tab into the group, then arrow keys to choose." The audit caught that no `onKeyDown` handler was wired — a keyboard user could Tab to the group but couldn't change the selection with arrow keys. Fix: hoisted `SOURCE_TYPES` to module scope, added per-radio stable ids (`ds-type-file_system`, `ds-type-manual_drop`, `ds-type-rest_api`, `ds-type-odbc`), and attached a keyboard handler implementing the WAI-ARIA radiogroup pattern — ArrowRight/ArrowDown advance, ArrowLeft/ArrowUp retreat (both wrap at boundaries), Home jumps to first, End jumps to last; the handler updates selection **and** moves focus to the newly-selected radio so activation follows focus for screen readers; non-navigation keys are ignored (no state change). Two new tests in `DataSources.test.tsx` drive `fireEvent.keyDown` on the selected radio and assert that `aria-checked` and the roving `tabindex="0"` both move to the next radio, that `ArrowLeft` wraps from first to last, that `Home`/`End` jump correctly, that `ArrowUp`/`ArrowDown` behave like Left/Right, and that unrelated keys (`"a"`) leave state untouched.
+
+- **T4 post-audit — QA-001: Settings page no longer invents operational truth from missing backend fields (2026-04-21):** The audit found `Settings.tsx` rendering four rows whose values were derived from fields the `/admin/status` endpoint never returns — `smtp_configured`, `audit_retention_days`, `data_sovereignty`, and `llm_model`. These produced operator-facing labels like "SMTP Configuration: Not configured", "Audit Retention: Default", "Data Sovereignty: Verified", and "Current Model: Not configured" based on `undefined`, presenting guessed state as if it were sourced compliance fact. On an admin truth surface this is a material defect.
+
+  **Fix:** removed the intersection-type extension `& { smtp_configured?, audit_retention_days?, llm_model?, data_sovereignty? }` — `SystemStatus` is now exactly `components["schemas"]["SystemStatus"]`. Removed three entire cards (`Email & Notifications`, `Audit & Compliance`, `AI / LLM Configuration`) and their rows. The Settings page now renders a single `System Info` card with four rows — Version (from `/health`), Database, Ollama, Redis (all from `/admin/status` flat strings) — every row backed by a real backend field. Pruned unused imports (`Mail`, `Clock`, `ShieldCheck`, `Badge`). A new test file `Settings.test.tsx` (3 tests) pins this: (a) the four legitimate rows render with verbatim backend values, (b) none of the removed labels or synthesized strings (`/smtp configuration/i`, `/audit retention/i`, `/data sovereignty/i`, `/current model/i`, `/not configured/i`, `/^verified$/i`, `/not verified/i`) appear anywhere on the page, (c) exactly one `CardTitle` renders and it is "System Info". If those surfaces are wanted on Settings later, the backend contract must be extended first.
+
+- **T4B — Dashboard and Settings service-health indicators always showed red despite healthy services (2026-04-21):** `Dashboard.tsx` and `Settings.tsx` both declared a hand-maintained `SystemStatus` interface with nested `{status: string}` objects per service and read `status.database?.status`, `status.ollama?.status`, `status.redis?.status`. The backend `/api/admin/status` endpoint — and the generated `components["schemas"]["SystemStatus"]` in `frontend/src/generated/api.ts` — returns flat strings: `{database: "connected", ollama: "connected", redis: "connected"}`. Result: `status.database?.status` was always `undefined`, so every row on the Dashboard SERVICES card and every row on the Settings "System Info" card rendered with the destructive `XCircle` icon regardless of actual container state. Operators inspecting a fully healthy stack saw three red X's.
+
+  **Fix:** replaced the hand-maintained nested interface with `type SystemStatus = components["schemas"]["SystemStatus"]` in both pages; updated service-indicator reads to `status.database`/`status.ollama`/`status.redis`; extracted an `isServiceHealthy(status: string | undefined)` helper in `Settings.tsx` so the healthy check is shared between row color and detail text. Backend unchanged.
+
+  **Regression test (`frontend/src/pages/Dashboard.test.tsx`, 3 tests):** vitest + Testing Library renders `Dashboard` with a stubbed `/admin/status` response and asserts that (a) when all three services return `"connected"`, all three rows render with the lucide `lucide-circle-check-big` class; (b) when `ollama` errors and `redis` disconnects, those rows switch to `lucide-circle-x` while `database` stays green; (c) a hostile stub that injects the *old* nested `{status: "connected"}` object flows as non-connected through the current flat-string code — pinning any future refactor that silently re-accepts nested shapes.
+
+  **Browser QA (this PR):** logged into `http://localhost:8080/dashboard` against the live Docker stack, scrolled to SERVICES. Pre-fix screenshot (captured during the T4 verification pass) showed three red `lucide-circle-x` icons despite all containers `(healthy)`. Post-fix screenshot shows three green `lucide-circle-check-big` icons with identical container state. App console clean of errors.
+
+- **Button component `forwardRef` migration (in-scope cleanup for T4A/T4C, 2026-04-21):** The project-wide React warning `Function components cannot be given refs. Attempts to access this ref will fail.` fires whenever Base UI's `DialogTrigger` or `DialogClose` renders via `render={<Button ... />}`, because Base UI clone-forwards a ref to the rendered element and the shadcn `Button` wrapper was a plain function component. The T3A PR flagged this as pre-existing and deferred it. T4A wires a new `DialogPrimitive.Close` on the mobile drawer and T4C reuses the existing wizard dialog trigger, so the warning now fires from surfaces this PR introduces — closing it is in direct blast radius, not separate polish.
+
+  **Fix:** wrapped `Button` in `React.forwardRef<HTMLButtonElement, ButtonProps>` and passed `ref` through to the underlying `ButtonPrimitive`. `displayName = "Button"` for DevTools clarity. Zero behavior change; props and variants surface unchanged. Verified by re-running the full frontend suite (`npx vitest run`) and grepping stderr for `"Function components cannot"` — zero hits after the fix.
+
+- **`/api/` prefix missing in `useSyncNow` and `FailedRecordsPanel` (`f24a3a7`, 2026-04-18):** Both hooks called `fetch('/datasources/...')` without the `/api/` prefix, routing to nginx's static handler instead of the backend — causing 405 errors on Sync Now trigger and all FailedRecordsPanel actions in production Docker. Migrated to `apiFetch` (with JWT token) and correct `/api/datasources/...` paths. Verified against live Docker: `POST /api/datasources/{id}/ingest` resolves to backend. 5/5 frontend tests passing.
+
+### Changed
+- **T5B — First-boot baseline seeding, idempotent and visibly logged (2026-04-22):** Before T5B the three baseline datasets CivicRecords AI needs to be usable on a fresh install — 175 state-scoped exemption rules across 50 states + DC, 5 compliance disclosure templates, and 12 notification event templates — existed only as manual CLI scripts (`python -m scripts.seed_rules`, `seed_templates`, `seed_notification_templates`). A fresh `docker compose up` would finish "green" and the admin would log in to a system with zero rules in `exemption_rules`, zero rows in `disclosure_templates`, and zero rows in `notification_templates`. Operators had to know about and run the scripts by hand; nothing in the docs made the dependency obvious.
+
+  **Fix:** new `app/seed/first_boot.py` module, called from `app/main.lifespan` immediately after the first admin user is created. Seeds all three datasets in a stable order with `skip-if-exists` semantics on each row's natural key (`(state_code, category)` for rules, `template_type` for disclosure templates, `event_type` for notification templates). Emits INFO log lines for start, per-dataset counts, and completion totals; also prints one summary line to stdout so operators watching Docker logs see `created/skipped` counts even if `LOG_LEVEL` filters INFO.
+
+  **Upsert policy — skip-if-exists, Scott-approved 2026-04-22.** An admin who disables an exemption rule, flips a notification template's channel, or edits a disclosure template's body text keeps their change across Docker restarts. The seeder only writes rows whose natural key is not yet present. Re-running the lifespan is idempotent; the second and every subsequent run reports `created=0, skipped=N`.
+
+  **Universal PII rules deferred.** `scripts/seed_rules.py::UNIVERSAL_PII_RULES` (5 regex rules — SSN, phone, email, credit card, DOB) are intentionally not seeded by this slice because `ExemptionRule.state_code` is `VARCHAR(2)` and the `"ALL"` sentinel those rules use cannot fit the column. A follow-on slice that expands the column (or introduces nullable semantics for "universal") will close that gap. Documented in the seeder source and in `docs/UNIFIED-SPEC.md` §8.7.
+
+  **Tests added (`backend/tests/test_first_boot_seeding.py`, 3 tests):**
+  - `test_first_boot_seeds_baseline_dataset` — fresh DB + admin user → all 50 states + DC covered in exemption rules, every `NOTIFICATION_TEMPLATES` event_type represented, disclosure-template accounting balances (created + skipped + missing_files = total TEMPLATES entries).
+  - `test_rerunning_startup_does_not_duplicate` — two back-to-back seeder runs produce identical row counts; second run reports `created=0` and `skipped=<first-run-created>` across every dataset.
+  - `test_existing_customized_rows_are_preserved` — admin disables a rule and flips a notification template's channel; re-running the seeder leaves both changes intact.
+
+  **Docs in the same slice:** `docs/UNIFIED-SPEC.md` gains a new §8.7 "First-Boot Seeding" describing the upsert policy, logging behavior, and the universal-PII-deferred note.
+
+- **T5A — Onboarding interview actually persists what it claims to collect (2026-04-22):** Before this change the `POST /onboarding/interview` endpoint was pure-generation; persistence was deferred to the frontend calling a separate `PATCH /city-profile`. That split had three compounding failures: (1) no CityProfile row existed on first install, so the frontend PATCH returned 404 — swallowed silently by a `try/catch` in `Onboarding.tsx`, so the operator's first answer was lost with no visible error; (2) `has_dedicated_it` was a real Boolean column on `CityProfile` but was missing from the interview's `_PROFILE_FIELDS` walk list, so the interview never asked it and the column sat null; (3) `onboarding_status` (model values `not_started`/`in_progress`/`complete`) was never transitioned by the interview path — rows created via interview stayed `not_started` forever even once every field was populated.
+
+  **Fix:** the interview endpoint now performs the persistence itself. On each call, if `last_answer` + `last_field` are supplied and `last_field` is a real tracked CityProfile field, the endpoint upserts the singleton row (creating it on the first answer — `city_name` per walk order, then subsequent answers update), normalizes yes/no → `bool` for `has_dedicated_it`, and recomputes `onboarding_status` from the populated-field count. The response now includes `onboarding_status` so the UI can display the lifecycle state without a second round-trip.
+
+  **`_PROFILE_FIELDS` extended** with `("has_dedicated_it", "Does your municipality have a dedicated IT department? (yes or no)")` between `email_platform` and `monthly_request_volume`, mirroring the form-mode layout.
+
+  **Model change:** `city_profile.state` made nullable (migration `018_city_profile_state_nullable.py`) so the first-answer create (with only `city_name` populated) is a valid in-progress row instead of requiring a placeholder state value. `CityProfileCreate.state` and `CityProfileRead.state` adjusted to `str | None`. Form-mode POST still sends `state` because the FE validates it; no form-path regression.
+
+  **Frontend (`Onboarding.tsx`):** `sendAnswer` removed the separate PATCH round-trip (interview endpoint now owns persistence); `chatError` surfaces persistence / fetch failures in a visible `role="alert"` block instead of the prior silent `try/catch` swallow; `chatStatus` binds to a lifecycle badge ("Onboarding: not started / in progress / complete") so operators see where they are in the walk.
+
+  **Skip-truth (2026-04-22):** the Skip button previously lied — it posted `last_answer=null` and the server's walk, finding the same field still empty, re-asked the exact same question. The fix: both sides learned a `skipped_fields` contract. The client tracks skipped fields in a `useState`, sends them on every turn, and drops a field out of the set once the operator answers it. The server's walk honors that list (does NOT offer skipped fields as `target_field`), and when every non-skipped field is populated but skipped entries remain empty it returns `target_field=null` with `all_complete=false` and a closure message that names the skipped set so onboarding is not falsely declared done. DB truth is unchanged — skipped columns stay null and `onboarding_status` stays `in_progress` until the skipped fields are answered via the Manual Form or a fresh interview pass. A new "Revisit skipped fields" button in the chat closure restarts the interview with an empty skip list.
+
+  **Tests added (`backend/tests/test_onboarding_interview.py`, +4 tests):**
+  - `test_first_time_onboarding_creates_profile` — no profile row exists → first answer creates it with `onboarding_status=in_progress` and the answered field persisted.
+  - `test_partial_progress_persists_across_rounds` — 3 consecutive answers each persist and survive into the next call without overriding each other; status stays `in_progress`.
+  - `test_has_dedicated_it_string_to_bool` — "yes" → `True`, "no" → `False` on the Boolean column.
+  - `test_onboarding_status_transitions` — starts `not_started` with no profile; transitions through `in_progress` for each partial answer; lands `complete` once every `_PROFILE_FIELDS` entry is populated.
+  - `test_skip_advances_past_field_without_persisting` — regressions the Skip-lie: after answering `city_name`, sending `skipped_fields=["state"]` must return `target_field="county"` (not `"state"`) and must leave the DB's `state` column null.
+  - `test_skip_closure_when_only_skipped_fields_remain` — when every non-skipped field is populated but a skipped field is still empty, the walk returns `target_field=null` with `all_complete=false` and the closure message names the skipped field.
+
+  All 10 tests in `test_onboarding_interview.py` pass.
+
+  **Docs in the same slice:** `docs/UNIFIED-SPEC.md` §2.5, §4.1, §5.2, and §8.6 updated to accurately describe the two onboarding modes (3-phase form wizard AND single-phase adaptive interview), the in-endpoint persistence, and the `onboarding_status` lifecycle — prior copy conflated the two modes and overstated the interview's coverage. Model and schema comment annotations reference T5A.
+
+- **T5C — Gemma 4 model install strategy: purge fake tags, single `gemma4:e4b` default, 4-model installer picker (2026-04-21):** The repo shipped three fake Ollama tags (`gemma4:12b` in the installer `RECOMMENDED_MODEL`, `gemma4:27b` as an "alternative"; Scott-verified against the Ollama registry as non-existent) and a runtime default of `gemma4:26b` in `backend/app/config.py` that was real-but-wrong-for-the-32 GB target-profile baseline. A fresh install suggested `ollama pull gemma4:12b`, which would 404 at the registry; onboarding interview, exemption review, and search synthesis all defaulted to a model the target machine could not support.
+
+  **Fix:** purged every `gemma4:12b` and `gemma4:27b` reference and replaced stale `gemma4:26b` defaults with the locked truth `gemma4:e4b` across: `backend/app/config.py` (`chat_model`, `vision_model`), `backend/app/exemptions/llm_reviewer.py` (`DEFAULT_MODEL`), `backend/tests/test_model_registry.py` (test fixtures), `install.sh` L160+L186, `install.ps1` L158+L208, `scripts/detect_hardware.sh` L159–L161, `scripts/detect_hardware.ps1` L69, `backend/scripts/generate_pdf.py` (tech-stack + step-6 copy), `docs/generate-manual-docx.js` (model bullets + troubleshooting table), `docs/admin-manual-it.html` (performance callout, `CHAT_MODEL`/`VISION_MODEL` defaults, `.env.hardware` example, full recommended-models table, pull-commands, model-registry JSON example, switching-model env example, resource-requirements table, `ollama list` transcript), `USER-MANUAL.md` (model registry table + pull commands + troubleshooting), `docs/UNIFIED-SPEC.md` §5.1 service 6, `docs/github-discussions-seed.md` (Q&A model table), `docs/superpowers/specs/2026-04-12-phase2-implementation-plan.md` (test examples + `parameter_count`), `docs/superpowers/plans/2026-04-11-ingestion-pipeline.md` `MULTIMODAL_MODEL`.
+
+  **Installer 4-model picker (locked per Tier 5 Blocker 1 resolution 2026-04-21):** `install.sh` and `install.ps1` now, after pulling the required `nomic-embed-text` embedder, (1) probe `ollama list` for any of the four supported Gemma 4 tags and skip the LLM pull if a supported model is already present, (2) otherwise present the four supported tags (`gemma4:e2b`, `gemma4:e4b` [DEFAULT], `gemma4:26b`, `gemma4:31b`) with class, parameter count, disk footprint, advisory RAM floor, and a clean `[supportable]`/`[not supportable at 32 GB baseline]` label against the locked target profile (Windows 11 Pro 23H2+ / 32 GB min / 64 GB rec / GPU optional / CPU-only supportable), (3) prompt for a selection with `gemma4:e4b` pre-selected, (4) gate `gemma4:26b` and `gemma4:31b` behind an explicit `yes` confirmation because they require stronger hardware, (5) fall back to the default non-interactively (piped stdin / CI) unless `CIVICRECORDS_SELECTED_MODEL=<tag>` is set, and (6) execute the selected pull and report success/retry guidance. The hardware-detect scripts now emit `CIVICRECORDS_RECOMMENDED_MODEL=gemma4:e4b` unconditionally — the per-RAM branching that produced fake tags is gone.
+
+  **RAM values in picker UI are advisory** (the locked T5C decision): installer displays derived RAM floors for operator planning; empirical re-verification against the actual host machine is the authoritative supportability gate and happens at install time, not at planning time.
+
+- **T4C — Add Data Source wizard: accessible labels, actionable validation (2026-04-21):** The three-step "Add Source" dialog in `DataSources.tsx` had two classes of UX bugs that compounded each other.
+
+  **(1) No programmatic label → input associations.** Every `<label>` was a bare `className="text-sm font-medium"` element with no `htmlFor`, and the matching `<Input>` had no `id`. Screen readers announced each input as "edit blank" with no context; Testing Library's `getByLabelText` couldn't find any field; clicking a label didn't focus its input. The source-type button group had no `role="radiogroup"`, no roving `tabindex`, and no `aria-checked` — it looked selectable but announced as plain buttons. The sync-schedule `<select>` had no `id`, `aria-label`, or `aria-labelledby` at all.
+
+  **(2) Silent failure on empty required fields.** Step 1's Next button was `disabled={!formData.name.trim()}` with no explanation. Step 2 had no validation, so a user with an empty Directory Path (file_system) or empty Base URL (rest_api) or empty Connection String (odbc) could click Next, silently advance to Step 3, click Create Source, and only then see a generic backend 422 response. The operator was never told what was wrong or how to fix it.
+
+  **Fix:**
+  - Every input gained a stable `id` (`ds-name`, `ds-path`, `ds-base-url`, `ds-api-key`, `ds-bearer-token`, `ds-client-id`, `ds-client-secret`, `ds-token-url`, `ds-basic-username`, `ds-basic-password`, `ds-conn-string`, `ds-table-name`, `ds-pk-column`, `ds-modified-column`, `ds-batch-size`, `ds-max-records`, `ds-endpoint-path`, `ds-auth-method`, `ds-key-location`, `ds-key-header`, `ds-pagination-style`, `ds-schedule-enabled`, `ds-schedule-preset`, `ds-sync-schedule`). A small `FieldLabel` helper renders `<label htmlFor={...}>` with an optional red-asterisk required indicator plus `sr-only` "(required)" text for screen readers.
+  - Hint text under Directory Path and Connection String received `id="…-hint"` and is linked via `aria-describedby`.
+  - A `validateStep(step, data)` function centralizes required-field logic with copy that names the field and gives a concrete example: `"Enter the full directory path where documents live (for example, /mnt/records)."`; `"Base URL must start with http:// or https://."`; `"Primary key column is required — needed to track which records have been ingested."`; etc. URL fields additionally validate the `http(s)://` prefix; custom cron expressions are re-parsed through `cron-parser`.
+  - `tryAdvance(toStep)` replaces direct `setWizardStep` calls for Next and Submit. On validation failure it sets `fieldErrors` and stays on the current step; the per-field error renders as `<p role="alert" id="…-error">` below the input, and the input flips to `aria-invalid="true"` with `aria-describedby` covering both the hint (if any) and the error. Errors clear field-by-field as soon as the user edits that field, so they don't have to click Next again just to clear red.
+  - The four source-type buttons became `role="radio"` with `aria-checked` inside a `role="radiogroup" aria-labelledby="ds-type-label"` wrapper and use roving `tabindex` (selected=0, others=-1). Keyboard users Tab once into the group and use arrow keys inside.
+  - The `testResult` display and a new `submitError` block both render `role="alert"` so screen readers announce backend failures immediately instead of silently leaving the operator to wonder why Create did nothing.
+
+  **Tests added (`frontend/src/pages/DataSources.test.tsx`, +5 tests):**
+  - `getByLabelText(/source name/i)` returns the `ds-name` input — pins the label↔input association.
+  - Source Type renders as a `role="radiogroup"` with 4 `role="radio"` children with correct `aria-checked`.
+  - Clicking Next on empty Step 1 surfaces a `role="alert"` whose text contains both "enter a name" and "identify it later" (not a silent no-op); the input becomes `aria-invalid="true"`.
+  - Typing into the name input after an error was shown clears the `role="alert"` and removes `aria-invalid`.
+  - Step 2 empty Directory Path blocks Next and produces an alert mentioning `/mnt/records`; `aria-describedby` on the input contains both `ds-path-hint` and `ds-path-error` (pin: hint and error coexist; hint is not replaced when validation fails).
+
+  **Browser QA (this PR):** opened the wizard at 1280px, clicked Next on empty Source Name, confirmed the red inline alert "Enter a name for this source — this is how you will identify it later." appears below the input with `aria-invalid="true"` and `aria-describedby="ds-name-error"`; typed a name, confirmed the alert cleared immediately; advanced to Step 2 and clicked Next on empty Directory Path, confirmed "Enter the full directory path where documents live (for example, /mnt/records)." alert appears alongside the hint. Runtime DOM audit confirmed: `<label htmlFor="ds-name">` ↔ `<input id="ds-name">`, radiogroup `aria-labelledby="ds-type-label"`, 4 radios with correct `aria-checked` and roving `tabindex`.
+
+- **T4A — Responsive AppShell: mobile drawer via hamburger below 768px (2026-04-21):** `components/app-shell.tsx` previously rendered a fixed-width `<aside>` with `style={{ width: "var(--sidebar-width)" }}` and `overflow-hidden` on the parent, with zero responsive breakpoints anywhere in the stylesheet. On viewports narrower than ~768px the sidebar consumed 25–40% of the screen with no way to dismiss it; content overflowed; header touch targets compressed behind the sidebar; there was no usable path for a mobile user on a city-desk iPad or phone.
+
+  **Fix:**
+  - Extracted the sidebar contents (logo, Separator, `SidebarNav`, footer with user email + Sign out) into a shared `SidebarContents` component. Rendered twice: inside a desktop `<aside class="hidden md:flex" aria-label="Primary navigation">` at `md:` (768px) and above, and inside a mobile Base UI Dialog that slides in from the left below the breakpoint. One source of truth for nav contents — no two-sidebar drift.
+  - The mobile drawer is a `DialogPrimitive.Root` with a custom `DialogPrimitive.Backdrop` (black/40 overlay, `md:hidden`) and `DialogPrimitive.Popup` positioned `fixed inset-y-0 left-0 w-[280px] max-w-[85vw]`. Base UI's `FloatingFocusManager` provides focus trap, ESC-to-close, and outside-click-to-close for free. A `DialogPrimitive.Title` with `className="sr-only"` satisfies the dialog a11y contract without visual duplication.
+  - The header gains a hamburger `<Button size="icon-sm">` visible only `md:hidden`, with `aria-label="Open navigation"`, `aria-expanded` bound to the `mobileNavOpen` state, and `aria-controls="app-mobile-nav"` targeting the drawer's `id`. A compact "CR CivicRecords AI" logo renders next to the hamburger on mobile only (the full logo lives inside the drawer).
+  - A `useEffect` on `location.pathname` closes the drawer on route change — otherwise clicking a nav link would leave the drawer covering the page the user just asked to see.
+  - `Help` button text collapses to icon-only below `sm:` via `<span className="hidden sm:inline">Help</span>`. Footer audit-log link collapses the same way. Main content padding goes from `p-6` → `p-4 md:p-6` to use the full narrow width.
+
+  **Tests added (`frontend/src/components/app-shell.test.tsx`, 4 tests):**
+  - Hamburger button renders with accessible name "Open navigation", `aria-controls="app-mobile-nav"`, and initial `aria-expanded="false"`.
+  - Clicking the hamburger flips `aria-expanded` to `"true"` and mounts a `role="dialog"` with `aria-label="Primary navigation"`.
+  - Clicking the close button (`aria-label="Close navigation"`) dismisses the dialog and flips `aria-expanded` back to `"false"`.
+  - The desktop sidebar renders as `role="complementary"` with the same "Primary navigation" label — ATs announce the navigation landmark correctly on both viewports.
+
+  **Browser QA (this PR):** viewport resized to 480×900: sidebar hidden, hamburger visible, compact logo visible, Help icon collapses to icon, footer compacts, no horizontal overflow. Clicking hamburger slides in the drawer with full nav + semi-transparent overlay; clicking Sources in the drawer navigates *and* auto-closes the drawer. Resized back to 1280×900: desktop sidebar visible exactly as before, hamburger hidden, no visual regression.
+
+- **CHANGELOG, UNIFIED-SPEC, installer button URLs (`ad44a86`, 2026-04-18):** CHANGELOG entries added for commits `301c4f3`/`c433beb`/`9c1d98b`/`23f0655` and moved into `[1.1.0]` where they belong. Stale "30s ceiling" corrected to "600s ceiling (D-FAIL-12)". UNIFIED-SPEC §17 test count updated to 432; priority 9 entry (Rule 9 deliverables) added; D-PROC-1 decision record added; §18 process criteria added; §19 Verification Log added at position 0. All 4 installer buttons in `docs/index.html` corrected from `/raw/master/` to `/releases/download/v1.1.0/`.
+
+- **T3D — OpenAPI typegen: frontend types generated from backend schema (2026-04-21):** Three frontend surfaces were using hand-maintained TypeScript interfaces that drifted from the backend Pydantic schemas — `source_type: string` instead of the 4-value union, `role: string` instead of the 6-value `UserRole` enum, and a stale `imap_email` reference in `SourceCard.tsx` that survived the T3B connector taxonomy cleanup.
+
+  **What was added:**
+  - `backend/scripts/generate_openapi.py` — imports the FastAPI app at import time (no live DB) and emits the OpenAPI schema to stdout. Supports `-o <path>` for Windows (avoids BOM from PowerShell redirect). Run via Docker: `docker compose run --rm --no-deps api python scripts/generate_openapi.py > docs/openapi.json`.
+  - `docs/openapi.json` — committed generated artifact. Regenerate whenever backend schemas or routes change.
+  - `frontend/src/generated/api.ts` — committed generated artifact from `openapi-typescript`. Contains the full type surface including `DataSourceRead`, `UserRead`, `UserRole`, `SourceType`, and all other schemas.
+  - `"generate:types"` npm script in `frontend/package.json` — runs `openapi-typescript ../docs/openapi.json -o src/generated/api.ts`. One command to resync after any backend change.
+
+  **Migrations (hand-maintained interfaces replaced):**
+  - `SourceCard.tsx`: `export interface DataSource { source_type: string; ... }` replaced with `export type DataSource = components["schemas"]["DataSourceRead"]`. `source_type` is now `"file_system" | "manual_drop" | "rest_api" | "odbc"`. Six previously missing fields (`created_by`, `created_at`, `last_ingestion_at`, `last_error_message`, `connector_type`, `updated_at`) are now present in the type. Stale `source.source_type === "imap_email"` branch in the icon switch removed.
+  - `Users.tsx`: `interface User { role: string; ... }` replaced with `type User = components["schemas"]["UserRead"]`. `role` is now `"admin" | "staff" | "reviewer" | "read_only" | "liaison" | "public"`.
+  - `DataSources.tsx`: inherits the correct `DataSource` type via its existing import from `SourceCard` — no direct change needed.
+
+  **CI stale-artifact enforcement (two new steps):**
+  - Backend job: after `docker compose build api`, regenerates `docs/openapi.json` inside the container and diffs against the committed version. Fails with an actionable message listing the two commands to run if the schema has drifted.
+  - Frontend job: after `npm ci`, re-runs `npm run generate:types` and diffs `src/generated/api.ts` against HEAD. Fails with an actionable message if the types are stale.
+
+  **TypeScript:** `tsc --noEmit` passes clean. `DataSourceCard.test.tsx` updated to use typed `DataSource` mock with required generated fields.
+
+### Fixed
+- **T3B+T3C — Connector taxonomy unified and test-connection made actionable (2026-04-21):** Five connectors had drifted to three or more different names across four layers (PostgreSQL enum, Python registry, ingestion dispatch, React UI). The divergence caused 422 validation errors when creating `manual_drop` or `file_system` sources (enum values didn't match the strings the UI submitted), and made `imap_email` appear to be a shipping connector when it was never fully implemented.
+
+  **T3B — Canonical vocabulary enforced end-to-end:**
+  - Alembic migration `017_rename_connector_enum_values`: renames PostgreSQL enum values `upload → manual_drop` and `directory → file_system` in-place via `ALTER TYPE source_type RENAME VALUE`. Runs in a transaction, downgrade reverses both renames. No data loss, no column rebuild.
+  - `SourceType` enum in `document.py` updated to exactly four canonical values: `file_system`, `manual_drop`, `rest_api`, `odbc`.
+  - Connector registry (`connectors/__init__.py`) reduced to the four shipping types. `ImapEmailConnector` class remains on disk as roadmap groundwork but is not imported into `_REGISTRY` and cannot be reached from any dispatch path.
+  - Ingestion dispatch (`ingestion/tasks.py`): removed dead `email` dispatch branch and `_ingest_email_source` function; added explicit `file_system` case using `ingest_directory()`; replaced silent fallback with explicit error return for unknown source types.
+  - Frontend chooser (`DataSources.tsx`): reduced from 5 buttons to 4 (`file_system`, `manual_drop`, `rest_api`, `odbc`); imap button and imap form block removed; default source type set to `file_system`.
+
+  **T3C — test-connection and form submission made type-correct:**
+  - `handleTestConnection` rewritten to send type-specific payloads: `rest_api_config` dict (with all auth/pagination fields) for REST API, `odbc_config` dict for ODBC, `path` for file_system and manual_drop. Previously sent only generic fields, causing rest_api and odbc test-connections to always fail with "requires a config object."
+  - `handleSubmit` rewritten to persist type-correct `connection_config`: `{ path }` for file_system, `{ drop_path }` for manual_drop (matching `ManualDropConnector`'s config key), full auth+pagination config for rest_api, full connection string + table fields for odbc. Previously all types saved only `path/host/port/username`, making rest_api and odbc connectors unrunnable after save.
+  - `test_connection` router: removed imap case; renamed `file_share` → `file_system`; all error messages now name the bad path explicitly (`Path does not exist: /foo/bar`) rather than returning vague messages.
+  - `TestConnectionRequest` schema updated with canonical type comment.
+
+  **Tests added (`backend/tests/test_connector_taxonomy.py`):**
+  - `TestCanonicalVocabulary` (5 tests): enum has exactly the 4 canonical values; legacy `upload`/`directory`/`imap_email` values absent; registry has exactly 4 entries; imap class importable but not in registry.
+  - `TestConnectionActionableErrors` (9 async tests): all 4 connector types plus unknown type return human-readable, actionable error messages from test-connection; missing path, nonexistent path (with path named in message), valid path success, missing config for rest_api/odbc.
+
+  **Docs updated:** README connector framework list, `docs/index.html` connector card, UNIFIED-SPEC §2.5/§6.2/§11.1/§11.4 — all stale references to imap as [IMPLEMENTED] corrected to [PLANNED].
+
+  **Standing caveat:** `data_sources.connection_config` stored as plaintext JSONB. Runtime exposure closed at T2B. At-rest encryption (ENG-001) remains open until Tier 6.
+
+- **T3A — Admin user creation path pointed at the real admin-create endpoint (2026-04-20):** The Users page create-user form was POSTing to `/api/auth/register`, the public self-service registration endpoint. Two consequences: (1) the form bypassed admin-only audit and validation paths, and (2) `UserCreate.force_staff_role` (in `backend/app/schemas/user.py`) silently downgraded any submitted role to `STAFF` — so an admin who picked `admin` or `reviewer` in the role dropdown got back a `staff` user with no error. Visible UX bug, not just code drift. Switched the create call to `POST /api/admin/users` (the admin-only endpoint that already accepts the same payload shape and honors the role faithfully via `AdminUserCreateRequest`). One-line change in `frontend/src/pages/Users.tsx`.
+
+  **Accessibility fix in the same file (in-scope cleanup, found while writing the component test):** the three create-form labels (`Full Name`, `Email`, `Password`) were bare `<label>` elements with no `htmlFor` attribute and not wrapping their `<Input>`. Screen readers and keyboard users couldn't activate inputs via the label, and Testing Library's `getByLabelText` couldn't find the association at all. Added `htmlFor`/`id` pairs (`create-user-fullname`, `create-user-email`, `create-user-password`). Browser-verified: clicking each label now focuses the corresponding input. The edit-form labels have the same pre-existing gap; left for a follow-up to keep this PR scoped to T3A.
+
+  **Tests added:**
+  - `frontend/src/pages/Users.test.tsx` — vitest + Testing Library component tests that open the create dialog, fill the form, submit, and assert via a stubbed `window.fetch` that the request URL is `/admin/users` (and explicitly NOT `/auth/register`). The role-preservation test pins the actual T3A regression by **selecting `Admin` from the role dropdown** (not the default `read_only`) before submitting and asserting the captured request body carries `role: "admin"` — directly exercising the path that previously got silently downgraded to `staff` through `/auth/register`.
+
+  **Browser QA (this PR):** desktop (1440x900) and mobile (375x812) viewports of the empty state, the create dialog, and the error state captured. Form submit captured the literal request URL `/api/admin/users` with the correct payload. Error path shows the backend `detail` in the dialog alert with the form preserved for retry. Console-warning class noted: pre-existing React `forwardRef` warnings on `Button` inside Dialog primitives — fires project-wide, not introduced or worsened by this change. Out-of-T3A-scope items flagged: SelectValue placeholder display, sidebar collapse on mobile, button-component `forwardRef` migration, edit-form label associations.
+
+  **Out of T3A scope (deliberate, deferred to follow-up):** public `/api/auth/register` is still exposed without rate limiting; that's a separate security hardening item, not part of "fix admin user creation path."
+
+### Security
+- **Tier 6 / ENG-001 — At-rest encryption for `data_sources.connection_config` (2026-04-23, closes ENG-001):** T2B closed the runtime API-response exposure of connector credentials in an earlier sprint; this slice closes the remaining at-rest exposure. Until now `data_sources.connection_config` sat in PostgreSQL as plaintext JSONB — visible to any DB superuser, present in `pg_dump` output, and present in any restored backup. As of this commit the column is stored as a versioned Fernet envelope (`{"v": 1, "ct": "<fernet-token>"}`, AES-128-CBC for confidentiality + HMAC-SHA256 for integrity). `pg_dump` output and raw backups contain ciphertext only; decryption happens transparently at the ORM layer. **ENG-001 is now fully closed.**
+
+  **Scott-locked design decisions:** one key, no rotation program in v1 (the `"v": 1` envelope tag leaves rotation as a future slice, not a deferred Tier 6 item); reversible + idempotent migration; concise operator docs — no KMS/vault integration, no rotation runbook; at-rest encryption of this column is the entire ENG-001 closure criterion (no audit-log scrub side quest).
+
+  **Helper module (`backend/app/security/at_rest.py`).** Exposes `encrypt_json(obj, key)`, `decrypt_json(envelope, key)`, `is_encrypted(value)`, and `AtRestDecryptionError`. Version dispatch on the `"v"` field so a future rotation can dual-read old and new envelopes without a flag-day migration.
+
+  **ORM integration (`backend/app/models/document.py`).** New `EncryptedJSONB(TypeDecorator)` class — transparent to callers. `DataSource.connection_config` now uses `EncryptedJSONB`; every existing caller still sees a plain dict. No admin UI change, no API change, no generated-TypeScript change — which is why `docs/openapi.json` and `frontend/src/generated/api.ts` do not move in this slice (T3D stale-check gate is satisfied with zero semantic delta).
+
+  **Config (`backend/app/config.py`).** New `encryption_key: str` setting (env: `ENCRYPTION_KEY`) with a `check_encryption_key` validator that rejects insecure defaults (the `.env.example` placeholder, empty strings, obvious placeholders) and calls `Fernet(key)` at startup to catch malformed keys early. Short-circuits in `testing=True` mode so the unit test suite does not need a real key.
+
+  **Migration (`backend/alembic/versions/019_encrypt_connection_config.py`).** Reversible and idempotent:
+  - `up` — for each row where `connection_config` is not envelope-shaped, encrypt and overwrite. Rows already in envelope shape are skipped. Requires the key.
+  - `down` — for each envelope-shaped row, decrypt and overwrite with plaintext. Rows already in plaintext are skipped. Requires the key.
+  - Re-running either direction is safe. Operators who need to roll back have a real path, not a one-way door.
+
+  **Installer integration.** `install.ps1` and `install.sh` both generate a Fernet-shape key on fresh install (PowerShell: .NET `RandomNumberGenerator` + URL-safe base64 substitution; bash: `openssl rand -base64 32 | tr '+/' '-_'`) and print a loud red "BACK THIS UP SEPARATELY FROM YOUR DATABASE" banner so the operator sees the backup responsibility before the stack comes up. `.env.example` documents `ENCRYPTION_KEY=CHANGE-ME-generate-with-fernet-generate-key` with a comment explaining the manual generation recipe (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`) and the backup responsibility.
+
+  **Operator verification script (`backend/scripts/verify_at_rest.py`).** Post-deploy sanity check: scans every `data_sources.connection_config` row and exits `0` if every row is envelope-shaped (encrypted) or `1` if any row is still plaintext. Run via `docker compose run --rm --no-deps api python scripts/verify_at_rest.py` after the migration.
+
+  **Test coverage (`backend/tests/test_at_rest_encryption.py`).** Covers: helper round-trip (encrypt → decrypt returns original dict), envelope shape validation, tampered-ciphertext rejection (HMAC failure raises `AtRestDecryptionError` instead of returning corrupt JSON), version dispatch (unknown `"v"` raises a specific error rather than silently mis-decoding), startup validator behavior (insecure-default rejection, malformed-key rejection, testing-mode short-circuit), end-to-end admin create → raw DB row is envelope-shaped → admin GET decrypts back to the original dict, and migration idempotency on both `up` and `down`. Fixture support: new `build_data_source` helper in `backend/tests/conftest.py` plus conversion of 12 test files' raw `INSERT INTO data_sources` calls to ORM writes so their seed rows survive the TypeDecorator layer.
+
+  **Operator-facing docs in the same slice:**
+  - `README.md` — security-hardening block updated to show ENG-001 closed and replaces the standing caveat with a historical-closure note pointing at §8.10 and the USER-MANUAL operator section.
+  - `USER-MANUAL.md` — new B.3.2 "Encryption Key for Connector Credentials" operator section: what the key protects, back it up separately from the database, how to generate one manually, how to verify post-deploy, explicit "no rotation procedure in this release" callout.
+  - `docs/UNIFIED-SPEC.md` — new §8.10 describing the envelope, the TypeDecorator, the migration, and the closure note; §11.5 and §12 at-rest text flipped from "plaintext, tracked as ENG-001" to "encrypted via Fernet envelope"; §5 `data_sources` table note updated; §18 acceptance criterion updated from "AES-256 at rest" to the actual Fernet cipher suite; capability matrix gains an `[IMPLEMENTED — Tier 6 / ENG-001, 2026-04-23]` row; Appendix B "What remains" entry flipped to CLOSED with a historical note for reconciliation with prior sprint/memory files.
+
+  **Scope discipline — explicitly NOT in this slice:**
+  - No key rotation. One key per deployment, for the lifetime of that deployment in v1.
+  - No KMS / HSM / Vault integration.
+  - No encryption of other columns (audit log, documents, search indexes, request body). Those surfaces are not part of ENG-001.
+  - No API-surface, admin-UI, or generated-type changes — encryption is transparent at the ORM layer.
+
+  **Standing caveat update:** the long-running phrase "T2B runtime exposure closed; Tier 6 at-rest exposure still open; ENG-001 not fully closed until Tier 6 lands" is now historical. T2B + Tier 6 together close ENG-001 in full. The phrase is preserved in historical changelog entries and in the UNIFIED-SPEC Appendix B "What remains" entry for traceability with prior sprint notes and memory/state files, but it no longer describes the live system.
+
+- **T2C — Bootstrap and connector surface hardening (2026-04-20):** Two distinct hardening passes that ride together because the plan grouped them.
+
+  **(1) `FIRST_ADMIN_PASSWORD` startup validation.** The app previously had `JWT_SECRET` startup validation but no equivalent for `FIRST_ADMIN_PASSWORD`. A user who copied `.env.example` to `.env` and started the stack would create the first admin account with the literal placeholder string `CHANGE-ME-on-first-login` — operational, deployable, and trivially compromisable. New `Settings.check_first_admin_password` model-validator in `backend/app/config.py` rejects: the `.env.example` placeholder, the default `"CHANGE-ME"`, an empty value, anything shorter than 12 characters, and a small embedded blocklist of common defaults (`admin`, `admin123`, `password`, `letmein`, `Welcome1`, etc.). Behaves like the existing JWT validator: bypassed only when `testing=True`. Both `install.sh` (Linux/macOS) and `install.ps1` (Windows) now generate a 32-hex-char admin password on fresh install and substitute it into `.env`, then print it once for the operator to capture; this avoids both the placeholder failure mode and the shell/.env metacharacter hazards of mixed-symbol generators. `.env.example` updated with explicit instructions and a manual `openssl rand -base64 24` recipe.
+
+  **(2) SSRF/target-validator for connector URLs.** New module `backend/app/security/host_validator.py` rejects admin-supplied connector destinations that point at sensitive internal ranges. Wired into `RestApiConfig.base_url` and `RestApiConfig.token_url` (REST connector) and `ODBCConfig.connection_string` (ODBC connector) as Pydantic field validators — rejection happens at schema-validation time, before any HTTP client or pyodbc dial.
+
+  **Blocked targets (reject by default):**
+  - `127.0.0.0/8` — loopback IPv4
+  - `169.254.0.0/16` — link-local / cloud IMDS endpoints
+  - `::1/128` — loopback IPv6
+  - `0.0.0.0` — wildcard
+  - `localhost` — case-insensitive hostname
+  - `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16` — RFC1918
+
+  **Override:** new `CONNECTOR_HOST_ALLOWLIST` setting (CSV in env, list in code) — exact-match hostnames or IPs only. No wildcards, no "disable all" flag. Auditor instruction: keep this narrow.
+
+  **ODBC fail-closed behavior:** the parser extracts the host from `Server=`, `Host=`, or `Data Source=` (case-insensitive, supports `host,port` / `host:port` / `{braced}` forms). If no parseable host field is found, validation **raises** rather than silently passing — explicit auditor instruction. This means DSN-only connection strings (`DSN=name`) are rejected. Operators who need DSN-based connections must refactor to `Server=...` form or rely on a future enhancement (out of scope for T2C).
+
+  **Unit tests added:**
+  - `backend/tests/test_host_validator.py` — parametrized coverage of every blocked range, boundary-adjacent public ranges (so the masks aren't accidentally widened), hostname case-insensitivity, ODBC parser variants (SQL Server `host,port` style, PostgreSQL `host:port`, braced values, `Data Source` alias), allowlist exact-match and case-insensitivity, allowlist rejection of wildcard literals, and fail-closed on empty/ambiguous input.
+  - `backend/tests/test_config_validation.py` — placeholder, blocklist, length, and valid-strong-password cases for `FIRST_ADMIN_PASSWORD`; testing-mode bypass; CSV parsing of `CONNECTOR_HOST_ALLOWLIST` (native list, CSV string, whitespace and empty-entry handling); a tripwire test (`test_env_example_placeholder_value_is_in_blocklist_inline`) that fails red if the `.env.example` placeholder string drifts out of sync with the validator blocklist.
+
+  **Integration tests added (the T2C plan item #4 merge gate):**
+  - `backend/tests/test_bootstrap_integration.py` — spawns a fresh Python subprocess with the `.env.example` placeholder for `FIRST_ADMIN_PASSWORD` and asserts the same import-time `Settings()` path that runs when `docker compose up` boots the api container exits non-zero with `FIRST_ADMIN_PASSWORD` in the error. Includes a control test that the same subprocess path with a strong password exits 0 (so a broken Python install can't make the failure test pass for the wrong reason), plus a length-check case and a blocklist case.
+  - `.github/workflows/ci.yml` — new `bootstrap-failure` CI job that runs the literal `docker compose run --rm --no-deps api python -c "from app.config import Settings; Settings()"` against the real api image with the `.env.example` placeholder password, and asserts non-zero exit + `FIRST_ADMIN_PASSWORD` in stderr. A second step inside the same job verifies the same path succeeds with a strong password (control). This is the closest possible mirror of the plan's "fresh `docker compose up` fails to start" requirement that fits inside the existing CI architecture.
+
+  **Existing-test cleanup (in scope, follows directly from the new validator):** four existing test files used `connection_string="DSN=test"` as schema-fixture data. With the new ODBC fail-closed rule those instances would raise. Updated to `connection_string="Server=db.example.gov;Database=test"` — functionally equivalent for unit-test purposes (real ODBC connection is mocked via `pyodbc` patching) and keeps the test intent intact. Files: `test_connector_schemas.py`, `test_odbc_connector.py`. The `_scrub_error` test in `test_datasources_router_tc.py` uses a DSN-shaped string as test input to a sanitizer and was left unchanged (not an ODBCConfig instance).
+
+- **T2B — `DataSourceRead.connection_config` credential exposure closed (2026-04-20):** `GET /datasources/` was accessible to all STAFF-and-above users and returned the full `DataSourceRead` schema, which included `connection_config: dict`. That JSONB blob contains every credential stored for the data source — REST API keys, bearer tokens, OAuth `client_secret`, ODBC `connection_string`, IMAP passwords — all readable by any authenticated staff member, not just admins who manage the sources.
+
+  **The fix:** `connection_config` removed from `DataSourceRead`. A new `DataSourceAdminRead` subclass adds it back; `DataSourceAdminRead` is used only by `POST /datasources/` and `PATCH /datasources/{id}`, both of which are already gated at `require_role(UserRole.ADMIN)`. `GET /datasources/` continues to use `DataSourceRead` (redacted) for all callers including admins.
+
+  **Schema audit checklist:** `docs/T2B-SCHEMA-AUDIT-2026-04-20.md` — every response schema in `backend/app/schemas/` swept for credentials, connection strings, tokens, OAuth client secrets, internal-only fields. One additional finding (`ServiceAccountCreated.api_key`) confirmed as intentional show-once pattern (admin-only POST, DB stores hash only, never returned on GET). Connector config schemas (`RestApiConfig`, `ODBCConfig`) confirmed as input-only; their credential fields are transitively covered by the `DataSourceRead` redaction.
+
+  **Tests added** in `backend/tests/test_datasources.py` (4 new, zero skips):
+  - `test_staff_list_datasources_no_connection_config` — STAFF GET `/datasources/` → all sensitive fields absent from every item in the response
+  - `test_admin_list_datasources_no_connection_config` — ADMIN GET `/datasources/` → `connection_config` absent (redacted shape applies to all callers on list)
+  - `test_admin_create_datasource_returns_connection_config` — ADMIN POST `/datasources/` → `connection_config` present and matches submitted config
+  - `test_admin_update_datasource_returns_connection_config` — ADMIN PATCH `/datasources/{id}` → `connection_config` present and matches updated config
+
+  **Scope limit (T2B closure note):** Runtime exposure of `connection_config` to non-admin users: **CLOSED**. Storage exposure (plaintext in DB, accessible via pg_dump, snapshots, Postgres superuser): **OPEN — tracked in Tier 6 of the remediation plan**. ENG-001 must not be marked fully closed until Tier 6 (at-rest encryption) lands.
+
+- **Info-leak follow-up — 404-vs-403 status code disclosure closed across the dept-scoped surface (2026-04-20):** Started as a narrow fix for the two child-before-parent handlers filed in `docs/FINDING-2026-04-19-info-leak-child-before-parent.md`. During the fix a codebase-wide audit surfaced the **same 404-vs-403 disclosure at the parent level** — every handler that loads a RecordsRequest or Document by path-param ID and then raises 403 via `require_department_scope` had the identical status-code side channel. Scope was expanded to cover all of it. Owner directive 2026-04-20: "wrong move" to leave the broader pattern for a future PR.
+
+  **The pattern:** fake `request_id` → 404 "Request not found"; real `request_id` in another dept → 403. An authenticated cross-department caller could distinguish a leaked/guessed UUID's status via the difference. Same shape for documents, letters, flags.
+
+  **The fix — `require_department_or_404` helper** added in `backend/app/auth/dependencies.py`. Same fail-closed rules as `require_department_scope` but raises **404** (not 403) on denial, with a configurable detail string. The external response is identical to "resource does not exist", closing the status-code side channel.
+
+  **Coverage after this PR (404-unified via `require_department_or_404`):**
+  - `backend/app/requests/router.py` — 17 call sites (GET/PATCH `/{id}`, attached documents, workflow verbs, fees, response-letter, timeline, messages, fee-waiver review)
+  - `backend/app/documents/router.py` — 2 call sites (GET `/{id}`, GET `/{id}/chunks`)
+  - `backend/app/exemptions/router.py` — 2 call sites (POST `/scan/{request_id}`, GET `/flags/{request_id}`)
+  - `backend/app/exemptions/router.py::review_flag` — 404-unified inline via `has_department_access` (because the flag must load first — no call site to swap)
+
+  **The two original child-before-parent cases** remain fixed as filed:
+  - `update_response_letter` — reorder (parent-load + dept-check before letter lookup), now using `require_department_or_404`
+  - `review_flag` — inline 404-unification with `has_department_access`; also closes a separate pre-existing fail-open where the old code guarded the dept check behind `if req:` and silently skipped it if the flag referenced a missing parent
+
+  **Intentionally left at 403** (semantic denial, no info-leak):
+  - List endpoints (`GET /documents/`, `GET /analytics/operational`, request list filters) — no specific ID in path; null-user-dept still raises 403 inline
+  - `/city-profile` — intentionally global singleton per T2A design decision, admin-write only
+  - Role-gate 403s from `require_role(...)` — unrelated to dept scoping
+
+  **New helpers in `backend/app/auth/dependencies.py`:**
+  - `has_department_access(user, resource_department_id) -> bool` — non-raising variant, same rules
+  - `require_department_or_404(user, resource_department_id, detail) -> None` — fail-closed with 404 disclosure-closed denial
+
+  **Tests — cross-dept assertions flipped 403 → 404 where appropriate:**
+  - `backend/tests/test_info_leak_hardening.py` (new, 6 tests, zero skips): placeholder letter_id cross-dept → 404, real letter_id cross-dept → 404, admin bypass on letter PATCH → 200, placeholder flag_id → 404, real flag cross-dept → 404 with body "Flag not found", admin bypass on flag → 200
+  - `backend/tests/test_tier2a_hardening.py`: parameterized enforcement test now asserts 404 (was 403) across 25 cases; individual documents/timeline/messages cross-dept tests flipped; list-endpoint null-user-dept tests stay 403 (unchanged)
+  - `backend/tests/test_department_scoping.py`: `test_staff_gets_request_in_other_department_404` (renamed from `_403`); `test_reviewer_cannot_approve_other_department` assertion flipped to 404
+
+  **`docs/FINDING-2026-04-19-info-leak-child-before-parent.md`** rewritten to document the expanded scope and the two fix patterns (`require_department_or_404` for swap-compatible sites, inline `has_department_access` for `review_flag`).
+
+  **UX tradeoff:** same-tenant users who mistype a UUID now see "Not found" for both "does not exist" and "exists in another dept." Correct from a security standpoint (GitHub, Google Drive, Dropbox all unify on 404 for authz-sensitive resources). Acceptable because cross-dept access was never a supported user path.
+
+  **Second scope expansion — Pattern D list-endpoint fail-open, auditor-flagged 2026-04-20:** The first pass of this PR claimed "list endpoints intentionally left at 403" — that claim was false for 4 routes. `GET /requests/`, `GET /requests/stats`, `POST /search/query`, and `GET /search/export` all had the shape `if user.role != UserRole.ADMIN and user.department_id is not None:` — which silently skipped the dept filter for a null-dept non-admin, returning unscoped results. A codebase-wide sweep for this pattern (grepping `user.department_id is not None` in router handlers without a matching fail-closed branch) found exactly these 4. New helper `require_department_filter(user)` added in `backend/app/auth/dependencies.py` — returns None for admin, raises 403 for non-admin + null dept, returns `user.department_id` otherwise. All 4 call sites converted. One adjacent reorder: `execute_search` now runs the dept check BEFORE `session.add(SearchSession(...))` so a 403 does not leave an orphan SearchSession row. 4 new regression tests added (`test_list_requests_denies_non_admin_with_null_department`, `test_request_stats_denies_non_admin_with_null_department`, `test_search_query_denies_non_admin_with_null_department`, `test_search_export_denies_non_admin_with_null_department`). The "list endpoints at 403" wording in the first pass was wrong for these 4 routes; corrected here.
+
+- **Partial Tier 2A auth/authz hardening (remediation plan §T2A — first slice, not full closure):** Covers four of the nine items in the agreed T2A scope. Explicitly **NOT closed**: apply `require_department_scope` to analytics / messages / timeline / city-profile routers, and add the parameterized cross-endpoint enforcement test. Those are tracked as follow-up PRs to complete T2A.
+  - **Blocker (`ENG-002`) — role self-escalation via `PATCH /users/me` closed.** Introduced `UserSelfUpdate` schema in `backend/app/schemas/user.py`. It inherits `fastapi_users.schemas.BaseUserUpdate` but adds a `@model_validator(mode="before")` that rejects any payload containing `role` or `department_id` with HTTP 422. `backend/app/auth/router.py` now wires `fastapi_users.get_users_router(UserRead, UserSelfUpdate)` — the `/users/me` path no longer accepts privileged fields. Admin role and department changes continue to go through `/admin/users/{id}`.
+  - **Blocker (`ENG-003`) — unscoped `/documents/` router closed.** `backend/app/documents/router.py` now applies department scoping on list (WHERE clause) and on GET + chunks (after-load check via the new helper). Admin bypass preserved.
+  - **Critical (`ENG-006`) — fail-closed department scope helper added for `/documents/` only.** New `require_department_scope(user, resource_department_id)` in `backend/app/auth/dependencies.py`. Denies when user has no department, denies when resource has no department, denies on cross-department access. Admin bypass. Applied only to `/documents/` in this change; existing `check_department_access` (used by requests, search, analytics, messages, timeline, city-profile routers) is left unchanged to keep this PR's blast radius contained, with a deprecation note. Migration of other callers and the parameterized cross-endpoint test are the remaining items of T2A.
+  - **Tests added** in `backend/tests/test_tier2a_hardening.py` (10 tests): role-escalation rejection with `{"role": "admin"}` → 422, department-id rejection with `{"department_id": uuid}` → 422, mixed payload `{"full_name": "Sneaky", "role": "admin"}` → 422, full_name-only PATCH → 200, cross-department deny for list + get + chunks, null-department user deny on list, null-department resource deny for non-admin, admin bypass.
+
+- **Tier 2A completion (remediation plan §T2A — completes the rollout started in the prior partial PR):**
+  - **Analytics:** `backend/app/analytics/router.py` — `GET /analytics/operational` now applies a fail-closed `RecordsRequest.department_id == user.department_id` predicate to every aggregate query for non-admin users. Admin bypass preserved. Non-admin with no department → 403. The by-department map is still empty pending T3.
+  - **Messages + timeline:** `backend/app/requests/router.py` — the four GET/POST handlers for `/{request_id}/timeline` and `/{request_id}/messages` migrated from `check_department_access` (fail-open on null resource dept) to `require_department_scope` (fail-closed). The other four `check_department_access` call sites in this file (on the core request endpoints) are intentionally unchanged — they are outside T2A scope and tracked as a separate follow-up.
+  - **City-profile:** `backend/app/city_profile/router.py` — design documented in a module docstring. Intentionally NOT department-scoped: city-profile is a per-install singleton, not department-owned data. Access model unchanged (STAFF read, ADMIN write). This closes T2A's city-profile item by decision, not by code change.
+  - **Parameterized cross-endpoint enforcement test** added to `backend/tests/test_tier2a_hardening.py`: iterates 7 T2A-scoped routes (documents get/chunks, requests get/timeline/messages — both read and write) and asserts a dept-A token receives 403 on every one. Reports all failing routes in a single assertion message so new regressions surface together.
+  - **Additional tests (9 new, 19 total in the file):** analytics dept filter for non-admin, analytics admin-sees-all, analytics null-dept deny, timeline/messages cross-dept deny (4 tests for GET+POST × timeline+messages), null-user-dept deny on timeline and messages, and the parameterized test.
+  - **What T2A closes with this PR:** ENG-002 (role self-escalation), ENG-003 (documents scoping), ENG-006 (fail-closed helper) for the five routers named in the plan + the enforcement test. **Not closed:** migration of the four remaining `check_department_access` call sites in `requests/router.py` (core request endpoints); explicitly a follow-up, not part of T2A as scoped in the plan.
+
+- **T2A-cleanup — remaining fail-open helper migration (follow-up beyond T2A-as-scoped):**
+  - **Correction to prior entries.** The two T2A entries above state "four remaining `check_department_access` callers" and "other four call sites in this file." Both counts were wrong. Grep against the repo at that time showed **16 remaining callers in `backend/app/requests/router.py`** plus **3 additional callers in `backend/app/exemptions/router.py`** (19 total), not 4. The earlier numbers came from a truncated grep. This PR migrates all 19 and removes the helper entirely.
+  - **`backend/app/requests/router.py`:** all 16 `check_department_access(user, req.department_id)` call sites swapped to `require_department_scope(user, req.department_id)`. Covers GET/PATCH `/requests/{id}`, attached-documents (POST/GET/DELETE), workflow (submit-review / ready-for-release / approve / reject), fees (GET/POST + estimate-fees + fee-waiver), and response-letter (POST/GET/PATCH). Import updated accordingly.
+  - **`backend/app/exemptions/router.py`:** all 3 call sites swapped. Covers POST `/exemptions/scan/{request_id}`, GET `/exemptions/flags/{request_id}`, and PATCH `/exemptions/flags/{flag_id}`.
+  - **`backend/app/auth/dependencies.py`:** `check_department_access` function **removed**. Grep-confirmed zero callers remain in `backend/app/`.
+  - **Auditor follow-up — additional gap found and fixed in the same PR.** The original parameterized enforcement test missed `PATCH /requests/{id}/fee-waiver/{waiver_id}` (`review_fee_waiver`). That handler never called `check_department_access` in the first place, so the helper migration didn't touch it — but it also never had any dept-scope check, meaning a cross-department reviewer could approve/deny a fee waiver and flip `req.fee_status`. Auditor caught this on review before merge. Fix: added `require_department_scope(user, req.department_id)` in `review_fee_waiver` at `requests/router.py:860` (right after the parent request load, before the waiver load). A repo-wide grep for handlers that load `RecordsRequest` and never call `require_department_scope` is now clean (24 scoped, 0 unscoped).
+  - **Parameterized cross-endpoint enforcement test** extended from 7 cases to **25 cases** in `backend/tests/test_tier2a_hardening.py`, covering every dept-scoped route including the newly-added `review_fee_waiver` PATCH. Real dept-B fee-waiver seeded via POST so the PATCH case exercises the dept check against a live waiver record, not a placeholder. One exception: PATCH `/exemptions/flags/{flag_id}` is not in the parameterized list because it requires a seeded exemption flag in dept B (the handler loads the flag before the parent request); covered by a follow-up targeted test if added. Caller token upgraded to `reviewer_token_dept_a` so workflow routes gated at REVIEWER pass the role check and reach the dept check (where 403 is the test's target).
+  - **What this closes:** every `@router.*` handler in `backend/app/` that loads `RecordsRequest` now calls `require_department_scope` before any mutation or response. Grep-verified: 24/24 handlers scoped, 0/24 unscoped. The prior phrasing — "all fail-open semantics on department-scoped paths closed" — was incorrect on the first pass because `review_fee_waiver` had no scope at all, not just a fail-open one; it wasn't in the migration list and wasn't caught by the first parameterized test. Corrected here.
+  - **What is NOT in scope (and is not closed by this PR):** everything in Tiers 2B, 2C, 3, 4, 5 of the remediation plan. T2A-as-scoped-in-the-plan was already complete at PR #17; this PR is strictly the helper-migration cleanup plus the fee-waiver review route the auditor flagged.
+
+### Added
+- **Department Scoping:** Department model with CRUD API, department assignment on users and data sources, department-based access control on requests
+- **50-State Exemption Rules:** 180 exemption rules across 51 jurisdictions (50 states + DC), seeded from canonical state public records law database
+- **Compliance Templates:** 5 seeded compliance documents (AI use disclosure, response letter disclosure, CAIA impact assessment, AI governance policy, data residency attestation)
+- **Model Registry:** Admin-managed Ollama model registry with context window tracking, active model selection, and automatic budget scaling in context manager
+- **Central LLM Client:** All LLM generation calls route through `app/llm/client.py` — enforces context manager budgeting, prompt injection sanitization, and model-registry context window scaling on every call. Refactored exemptions reviewer, search synthesizer, and ingestion extractor to use it
+- **Notification System:** 12 notification templates aligned with all router-dispatched event types, city_name sourced from city profile for email templates, queue_notification wired into 5 status transitions
+- **Users Edit/Deactivate:** PATCH /admin/users/{id} endpoint with self-demotion lockout and self-deactivation guard. Frontend edit dialog and deactivate button with confirmation
+- **Search Department Filter:** Department filtering on both semantic and keyword search engines via document-source-department join chain. Department dropdown in search UI
+- **Search CSV Export:** GET /search/export endpoint with authenticated download. Export button in search results
+- **Fee Estimation:** POST /requests/{id}/estimate-fees — staff enters page count, system calculates from fee schedule rates
+- **Fee Waivers:** FeeWaiver model with Alembic migration, create/approve/deny workflow, automatic fee_status update on approval. Waiver types: indigency, public interest, media, government, other
+- **Exemption Audit History:** GET /exemptions/rules/{id}/history returns audit log entries for any rule. Timeline UI in Exemptions page
+- **Exemption Rule Test Modal:** POST /exemptions/rules/{id}/test — tests regex or keyword rules against sample text with match positions. ReDoS protection via `regex` library with 2-second timeout. LLM-type rules rejected with 400
+- **Sources 3-Step Wizard:** Replaced single-step add dialog with guided wizard (source type selection, connection config per type, review + test connection). POST /datasources/test-connection validates connectivity without persisting credentials
+- **Dashboard Coverage Gaps:** GET /admin/coverage-gaps identifies jurisdictions without exemption rules, departments without assigned staff, and exemption categories without active rules. Warning card on dashboard when gaps > 0
+- **Search Citation Rendering:** AI summary panel renders [Doc: filename, Page: N] citations as styled inline badges instead of plain text
+- **Request Priority Indicators:** Priority column with colored badges (urgent/expedited/normal/low) on Requests table
+- **Ingestion Retry:** POST /datasources/documents/{id}/re-ingest retries failed documents (resets to pending, queues Celery task). Progress indicator for processing items, auto-refresh while active
+- **Rich Text Editor:** TipTap editor replaces plain textarea for response letter editing. Toolbar with bold, italic, underline, bullet list, ordered list. Content stored as HTML in edited_content field
+- **Onboarding LLM Interview:** POST /onboarding/interview generates adaptive setup questions based on incomplete city profile fields. Chat-style UI with skip button, profile updates via PATCH /city-profile. Falls back to default questions when LLM unavailable
+- **DOCX/XLSX Macro Stripping:** Parsers strip VBA macros at ZIP level before text extraction. Supports .docm and .xlsm. Stripping logged in metadata for audit
+- **WCAG 44x44px Touch Targets:** min-width: 44px added alongside min-height for all interactive elements. All icon button variants enforce minimum touch target
+- **P7 — Sync failures, circuit breaker, UI polish (`32ceb9c`, 2026-04-17):** Per-record failure tracking via `sync_failures` table (status: retrying/permanently_failed/dismissed/tombstone). Two-layer retry: task-level (3 retries, 30s→90s→270s, 10-min cap) + record-level (5 retries OR 7 days, N=100/T=90s per-run cap). Circuit breaker: 5 consecutive full-run failures → `sync_paused=true`; unpause sets grace threshold=2 for faster admin feedback. `health_status` computed at response time via single LEFT JOIN (circuit_open > degraded > healthy — no stored field). `sync_run_log` one row per sync run (start, end, counts). Option B SourceCard layout: colored health dot, failure counts, schedule state (manual/paused/next-run), Sync Now button, "View failures" toggle. `FailedRecordsPanel`: 5 states (loading/empty/populated/error + circuit-open banner), bulk retry-all/dismiss-all, per-row Retry/Dismiss. Sync Now polling: exponential backoff 5s→10s→20s→30s cap, 15-min timeout, elapsed time display. `useSyncNow` hook with refs for timer management. 429/Retry-After honored at `RestApiConnector` layer (capped 600s, D-FAIL-12). `IntegrityError` → `permanently_failed` without task retry (D-FAIL-10). `formatNextRun()` in wizard Step 3: `cron-parser` v4 with UTC + local time display, `data-testid=cron-preview`. Shadcn `Checkbox` replaces native input in schedule toggle. `conftest` migrated from `Base.metadata.create_all()` to `DROP SCHEMA public CASCADE` + `alembic upgrade head` subprocess (true migration parity; eliminates model/migration schema drift). 423 backend tests passing (+28 new vs. P6b); 5 frontend tests passing.
+- **P6b — Cron scheduler rewrite (`c670ef1`, 2026-04-17):** `sync_schedule` (5-field cron, croniter Apache 2.0) replaces drift-prone `schedule_minutes` interval. `schedule_enabled` boolean toggle preserves the expression on pause. Scheduler trigger logic corrected to `croniter.get_next(datetime) <= now` in UTC (original `get_prev() > anchor` inverted logic would never fire). Cron validation via Pydantic `@field_validator` at API boundary rejects invalid expressions with 422 and rejects adversarial patterns (e.g. `*/1 0 * * *`) via rolling 7-day sampling (2016 ticks) with a 5-minute floor. Wizard Step 3 adds 8 schedule presets + Manual + "Schedule enabled" toggle; GET `/datasources/` computes `next_sync_at` at response time. Migration 015 adds `schedule_enabled` (default true), a `chk_sync_schedule_nonempty` constraint, 8 P7 stub columns (`consecutive_failure_count`, `last_error_message`, `last_error_at`, `sync_paused`, `sync_paused_at`, `sync_paused_reason`, `retry_batch_size`, `retry_time_limit_seconds`), and converts legacy `schedule_minutes` via a 13-entry allowlist (5→`*/5 * * * *` through 1440→`0 2 * * *`); non-allowlist values are nulled and recorded in `_migration_015_report`. 395/397 tests passing (+13 new). D-SCHED-5 three-state card display deferred to P7.
+- **P6a — Idempotency contract split (`e462c7e`, 2026-04-16):** Dedup contract split by connector type. Binary connectors (UPLOAD, DIRECTORY) continue to dedup by `(source_id, file_hash)`. Structured connectors (REST_API, ODBC) now dedup by `(source_id, source_path)` — file_hash becomes a change detector rather than identity. Canonical JSON serialization (`sort_keys=True`, UTF-8, newline-separated) is applied at serialization time so field-order rotation no longer causes false "new document" inserts. `POST /datasources/test-connection` performs a double-fetch 500ms apart and warns on hash mismatch with differing key list — envelope pollution surfaces at config time, not three weeks post-GA. `ingest_structured_record` wraps the compare-hash / update path in `SELECT … FOR UPDATE` so two concurrent workers can't race to produce non-deterministic chunk counts. On content UPDATE, old Chunk rows and pgvector embeddings are atomically DELETE-then-re-generate in the same transaction — no stale search results. `documents.connector_type` + `updated_at` columns added; partial UNIQUE indexes `uq_documents_binary_hash` (binary) and `uq_documents_structured_path` (structured). Migration 014 includes dedup DELETE of pre-existing duplicates by `MAX(ingested_at)`. 382+19 tests passing.
+- `RestApiConnector`: generic REST connector supporting API key, Bearer, OAuth2 (client credentials), and Basic auth. Configurable pagination (page/offset/cursor/none), response formats (JSON/XML/CSV), max_records cap, 50MB per-fetch size guard, and `since_field` incremental sync.
+- `OdbcConnector`: tabular data source connector via pyodbc. Row-as-document (JSON), SQL injection guard on all identifier fields, DSN component error scrubbing, 10MB per-row size guard, incremental sync via `modified_column`.
+- `connectors/retry.py`: shared HTTP retry utility — exponential backoff with ±20% jitter, Retry-After header support, 600s ceiling (D-FAIL-12), per-request 30s timeout. Test-connection path bypasses retry for fast admin feedback.
+- Migration 013: adds `last_sync_cursor` column and `rest_api`/`odbc` to `source_type` enum.
+- `POST /datasources/test-connection` extended for `rest_api` and `odbc` source types (10s timeout, credential scrubbing).
+- Frontend wizard: Step 2 now branches on `rest_api` and `odbc` source types with full config forms and credential masking.
+- **Deadline notifications (§17 priority 3):** Celery beat now fires `request_deadline_approaching` (requests due within 3 days) and `request_deadline_overdue` (past-deadline requests) notifications daily. Core logic in `backend/app/requests/deadline_check.py`; beat tasks wired in `backend/app/ingestion/scheduler.py`. Recipient is the assigned staff user; requests with no `assigned_to` are skipped. Deduplication prevents re-firing within 23 hours. Templates were already seeded (§8.4). 9 new tests (278→287).
+- **Focus visibility (Session A of accessibility audit):** Global `:focus-visible` outline fallback in `frontend/src/globals.css @layer base` targeting `a`, `[role="link"]`, and `[tabindex]:not([tabindex="-1"]):not([data-slot])`. Uses 2px outline in brand `--ring` (#1F5A84) with 2px offset. Excludes `[data-slot]` so it does not double-stack with the Tailwind `focus-visible:ring-3 focus-visible:ring-ring/50` that shadcn Button, Input, and SelectTrigger already ship. Closes spec §13 "Focus visibility" requirement; spec §17 priority #1 sub-item 1a.
+- **`request_received` notification dispatch:** `create_request` now calls `queue_notification("request_received", ...)` when `requester_email` is present. Pattern mirrors `update_request`'s PATCH-dynamic dispatch. Closes the last router-side gap in the §8.3 dispatch matrix. Two new regression tests in `test_notification_dispatch.py` (positive + negative), passing fail-before / pass-after sanity check. Test suite 274 → 276.
+- **Rule 9 Mandatory Deliverables (`c433beb`, 2026-04-16):** UML architecture diagrams (class, component, sequence, deployment, activity) added to `docs/`. README in `.txt`, `.docx`, and `.pdf` formats with UML embedded. USER-MANUAL scaffolded in `.md`, `.docx`, `.pdf`. `docs/index.html` updated with all four required action buttons (Repo, Download Installer, User Manual, README). GitHub Discussions seeded with starter posts across all enabled categories.
+- **USER-MANUAL Complete (`9c1d98b`, 2026-04-16):** Three-section user manual completed in `.md`, `.docx`, and `.pdf` — Section A (End-User, plain-language walkthroughs of every feature), Section B (Technical, full configuration and API reference), Section C (Architectural, UML diagrams with written explanations of every major subsystem).
+
+### Changed
+- **Department Names on Users Page:** UUID column replaced with human-readable department names via /departments/ API lookup
+- **Legacy .xls Blocklisted:** Removed .xls from XlsxParser supported extensions — BIFF8 binary format cannot be macro-stripped with ZIP approach
+- **Dead CSS Selector Removed:** `a.nav-link` in globals.css was unreachable (WCAG 44px applied via Tailwind inline on sidebar NavLinks)
+- **Version Alignment:** config.py, pyproject.toml, package.json, and CHANGELOG all at 1.1.0
+- **Canonical spec imported at v3.1:** `docs/UNIFIED-SPEC.md` replaced with the v3.1 repo-verified canonical (was v2.0). Source `.docx` preserved at `docs/CivicRecordsAI-UnifiedSpec-v3.1.docx`. Eleven corrections applied during import: §8.3 rewritten with the audited notification dispatch matrix; status count "11 statuses" → "10 statuses" in 4 places; §6.6 `notification_log` and §6.7 `exemption_rules` column lists corrected; §17 priority #5 marked DONE inline; §14 documentation suite row updated; Appendix B footer updated. See commit `1b4795d`.
+- **Spec post-Session A hotfix:** §1 test suite line and §2 summary line now read 276 tests. §7.2 typography note rewritten to explain the pre-`2663836` mis-wire and current state. §13 accessibility table focus-visibility row marked Met (post-v1.1.0 in `2663836`) with the full selector and token explanation — **this claim is corrected below by Session B**. §15 release history adds an `_unreleased_` row for post-v1.1.0 work. §16 capability summary test row updated to 276; a11y audit row split into "focus visibility implemented" vs. "keyboard nav / form errors / screen reader audit pending." §17 priorities restructured: accessibility audit broken into sub-items (1a done, 1b–1d pending); deadline notifications promoted to item 3; CHANGELOG font correction marked done.
+- **CLAUDE.md context-mode section:** Rewritten from a short "Context Mode (MANDATORY)" note into the full 4-Stage Context-Mode Protocol (GATHER → FOLLOW-UP → PROCESS → WRITE), with forbidden/allowed Bash verb lists, a refusal template, the `context-mode-gate.sh` PreToolUse hook reference, and the `"override hard rule 10"` bypass phrase. Commit `2685f00`. Process/tooling only, no code.
+- **Session B accessibility audit — 14-page keyboard navigation walk.** Four pages walked live via Chrome MCP with injected JS reading computed styles after a real Tab keystroke (Login, Dashboard, Requests, RequestDetail); ten pages audited via static source read (Search, Exemptions, DataSources, Ingestion, Users, Onboarding, CityProfile, Discovery, Settings, AuditLog). Findings dropped into spec §13.2 (requirements summary), §13.3 (per-page scoring table), §13.4 (F1–F7 details), and §13.5 (remediation sequencing). Seven findings:
+  - **F1 — Tailwind v4 `ring-3` utility silently missing** on every shadcn primitive (Button, Input, SelectTrigger). The v3 alias was removed in Tailwind v4; the CSS bundle contains zero rules matching `.focus-visible\:ring-3:focus-visible`, and computed `--tw-ring-shadow` is `0 0 #0000` on a genuinely keyboard-focused primitive. Only `focus-visible:border-ring` renders, producing a 1px border color swap that likely fails WCAG 2.2 AA 1.4.11 Non-text Contrast.
+  - **F2 — `data-table.tsx` row onClick without keyboard handler** — WCAG 2.1.1 hard fail on the Requests page. A keyboard-only staff member cannot open a records request from the list. Blast radius is one page (sole `onRowClick` consumer) but the bug is in the shared component. Most user-visible accessibility bug in the audit.
+  - **F3 — base-ui Select hidden form-input leaks into tab order** (every page using `<Select>`; live-confirmed on Requests filter bar which registers 10 tab stops for 6 visible controls).
+  - **F4 — SelectTrigger missing `aria-label`** on all Requests filter dropdowns; inferred system-wide.
+  - **F5 — data-loading pages lack `aria-live` / `aria-busy` regions** (every page with async data; confirmed live on Dashboard and Requests).
+  - **F6 — RequestDetail heading hierarchy is flat** (`<h1>=1, <h2>=0` for a 5-section page).
+  - **F7 — non-WCAG observation:** sidebar nav order buries Dashboard 9th.
+- **Self-correction to the Session A `Added` entry above.** The "Focus visibility (Session A of accessibility audit)" bullet claimed the shadcn primitives ship a 3px focus ring. That claim is accurate at the **CSS class-presence level** but **not at the render level** — Session B's live walkthrough proved the `ring-3` utility is silently absent from the compiled CSS. The global `:focus-visible` outline fallback added to `globals.css` still renders correctly on bare `<a>`, `[role="link"]`, and non-primitive `[tabindex]` elements (that part of the Session A entry is accurate). **What is wrong is the shadcn primitive half of the claim.** Spec §13 focus-visibility row has been corrected from Met to Partial. Phase 1 hotfix commit `b6627db` made the original misstatement based on class-presence inspection, not computed-style verification — that error is owned and documented here on the permanent record. Remediation is queued as **Session B.1 = F2 + F1** (F2 first because its severity is orders of magnitude higher).
+
+### Fixed
+- **Notification Event-Type Mismatch:** Aligned 12 seed templates with router dispatch strings — all 5 dispatch paths now deliver notifications instead of silently no-oping on 3 of 5
+- **Notification Seed Production Run:** Confirmed execution against production DB (5 created, 7 skipped)
+- **Audit Log CSV Export:** Frontend export button now uses authenticated fetch with ?format=csv and blob download instead of bare anchor tag (was returning 401)
+- **Dockerfile:** Added compliance_templates/, scripts/, and tests/ to COPY directives — compliance template test was failing on clean builds
+- **city_name in Notifications:** All 5 queue_notification call sites now include city_name from CityProfile — 8 templates were silently failing at render time due to missing template variable
+- **GitHub Pages Build:** Added .nojekyll to docs/ — Jekyll was failing on spec markdown files, causing 59 consecutive failed pages-build-deployment runs
+- **Geist Variable font actually wired:** `frontend/src/main.tsx` now imports `@fontsource-variable/geist`, so Vite bundles and serves the font (three woff2 variants). Previously it was listed as a dependency but never imported — the rendered font was falling back to the system sans stack. `frontend/src/globals.css` body `font-family` and `frontend/tailwind.config.js` `fontFamily.sans` both updated from "Inter" to "Geist Variable". The v1.0.0 entry below (which had claimed "Inter typography scale") is also corrected to "Geist Variable typography scale" since that was always the intent.
+- **Mark Fulfilled button 404 (from the April 13/14 session):** `RequestDetail.tsx` was posting to `POST /requests/{id}/sent`, a route that does not exist. Changed the action from `"sent"` to `"fulfilled"` and extended `handleAction` to route `"fulfilled"` through PATCH alongside `"searching"`. Removed the `sent` display alias from `status-badge.tsx`.
+- **Legacy `RequestStatus.SENT` enum value removed:** Migration `010_remove_sent_status.py` performs a defensive UPDATE → drop column default → rename-recreate dance → restore default → drop old enum type. `VALID_TRANSITIONS`, `/stats` active filters, and analytics `closed_statuses` all updated. 11 statuses → 10. Downgrade is intentional no-op (matches migration 008's pattern).
+- **Schema drift repaired:** Migration `011_fix_schema_drift.py` adds three columns that existed in SQLAlchemy models but were missing from Alembic migrations — `notification_log.subject` (VARCHAR 500 nullable), `notification_log.body` (TEXT nullable), `exemption_rules.version` (INTEGER NOT NULL DEFAULT 1). Integration tests had been masking the drift by using `create_all()` instead of walking migrations.
+- **Session B.1 accessibility fixes — F2 + F1:**
+  - **F2 resolved (WCAG 2.1.1):** `data-table.tsx` TableRow now has `tabIndex={0}`, `role="button"`, and `onKeyDown` handling Enter/Space (with `e.preventDefault()`). Keyboard-only staff can now open records requests from the Requests list. Post-fix verification: `focusVisible: true` on focused `<tr role="button">`, Enter and Space both navigated to `/requests/<uuid>`. Sequenced first because this was a functional blocker on the core workflow — highest user-visible severity in the entire audit.
+  - **F1 resolved (WCAG 1.4.11):** `ring-3` → `ring-[3px]` on `button.tsx:7`, `input.tsx:12`, `select.tsx:44`. The Tailwind v4 `ring-3` utility was silently missing (v3 alias removed); the arbitrary-value replacement emits correctly. Post-rebuild computed-style verification: `--tw-ring-shadow` = `0 0 0 calc(3px + 0px) hsl(207 62% 32% / .5)`, `box-shadow` = `rgba(31, 87, 132, 0.5) 0px 0px 0px 3px` on keyboard-focused Button (Dashboard), Input (Onboarding "City Name"), and SelectTrigger (Requests filter bar). `focusVisible: true` on all three.
+- **Session B.2/C accessibility fixes — F3–F6 (this commit):**
+  - **F3 resolved (no code change):** DOM inspection confirmed base-ui v1.3.0 already sets `tabindex="-1"` on its hidden form input. Requests filter bar: 4 tab stops for 4 visible controls (was 10 for 6). No upstream fix or CSS selector needed.
+  - **F4 resolved (WCAG 1.3.1):** `aria-label` added to all 15 SelectTriggers across 5 pages — `Exemptions.tsx` (1: "Exemption category"), `Onboarding.tsx` (5: "State", "Population band", "Email platform", "Dedicated IT department", "Monthly records request volume"), `Requests.tsx` (4: "Status filter", "Department filter", "Priority filter", "Assigned to filter"), `Search.tsx` (2: "File type filter", "Department filter"), `Users.tsx` (3: "User role" ×2, "Department"). All 4 Requests filter triggers show non-null `aria-label` attributes in DOM.
+  - **F5 resolved (partial):** Created `frontend/src/components/loading-region.tsx` — `<div aria-live="polite" aria-busy={loading}>` wrapper. Applied to DataTable in Requests, AuditLog, Users, Exemptions; to results block in Search. `role="status"` + `aria-label` added to early-return loading `<div>` in Dashboard ("Loading dashboard data") and DataSources ("Loading data sources"). Remaining pages (RequestDetail, Ingestion, CityProfile, Onboarding) carry forward to Session C.
+  - **F6 resolved:** Added polymorphic `as?: React.ElementType` prop to `CardTitle` in `frontend/src/components/ui/card.tsx` (defaults to `"div"`; note: `@radix-ui/react-slot` not installed — project uses base-ui). Applied `as="h2"` to 7 sections in `RequestDetail.tsx`: Request Details, Attached Documents, Timeline, Messages, Fees, Response Letter, Workflow. `<h1>=1, <h2>=7` post-edit.
+  - **`<tr role="button">` SR proxy:** Row has `role="button"`, `tabIndex=0`. Cell content is in child `<td>` elements with standard table semantics — accessible name computed from cell text by AT row-traversal. Enter and Space key activation verified in Session B.1.
+  - **Dialog focus trap:** Verified on Exemptions new-exemption modal. `focusInsideDialog=true` on open; Tab cycles within dialog. Escape is a pre-existing controlled-dialog behavior (`showForm` state managed by `Exemptions.tsx`); not introduced by our changes.
+  - **Form error handling (1d) — NOT MET:** Login "Login failed" error is `<p class="text-destructive">` with no `role="alert"`, no `aria-live`, no `aria-describedby`. Visual-only — screen readers will not announce it. Flagged for Session C.
+- **Liaison scoping (§17 priority 2):** LIAISON-role users can now access department-scoped Requests and Search. Backend: `require_role` minimum lowered from STAFF to LIAISON on `GET /requests/`, `GET /requests/stats`, `GET /requests/{id}`, and `POST /search/query`; `execute_search` injects `department_id` into search filters automatically for all non-admin users with a department (audit log integrity preserved — `SearchQuery` stores original `req.filters`); Alembic migration 012 adds LIAISON and PUBLIC enum values; search engine dept filter corrected to `d.department_id` on documents table (276→278 tests). Frontend: `App.tsx` fetches `/api/users/me` for role; `SidebarNav` hides Users, Audit Log, and Onboarding items for LIAISON; `LiaisonGuard` redirects direct navigation to hidden routes.
+- **Session C accessibility fixes — form error ARIA + F5 completion + Search live region:**
+  - **Form error ARIA (1d) resolved (WCAG 4.1.3):** `role="alert"` added to every form-error container across 8 locations in 6 pages — `Login.tsx` (1: page-level error `<div>`), `Users.tsx` (3: create-dialog formError, page-level error, edit-dialog editError), `Exemptions.tsx` (1: page-level error `<Card>`), `DataSources.tsx` (1: page-level error `<Card>`), `Onboarding.tsx` (1: submit error `<p>`), `Requests.tsx` (1: page-level error `<Card>`). `role="alert"` carries implicit `aria-live="assertive"` + `aria-atomic="true"` — screen readers announce the error immediately when it mounts. `setError("")` / `setFormError("")` called before each submit ensures the container unmounts/remounts on each error, guaranteeing re-announcement. Commits: `226453c` (Login), `98791d6` (Users), `47b92a3` (Exemptions, DataSources, Onboarding, Requests).
+  - **F5 completed (WCAG 4.1.3):** `role="status"` + `aria-label` added to the early-return loading skeleton `<div>` in `RequestDetail.tsx` ("Loading request details"), `Ingestion.tsx` ("Loading ingestion dashboard"), and `CityProfile.tsx` ("Loading city profile"). Completes F5 across all 7 affected pages (Dashboard and DataSources were done in B.2/C). Commit: `b8d60ae`.
+  - **Search `aria-live` restructured:** Replaced the `LoadingRegion` wrapper (which was placed inside the `{results && !loading}` conditional — `aria-busy` was always `false` when mounted) with a persistent `<div aria-live="polite" aria-busy={loading} aria-label="Search results">` gated on `(loading || hasSearched)`. `aria-busy` now correctly transitions `true → false` when results arrive, triggering screen-reader announcement. Removed unused `LoadingRegion` import. TypeScript build: EXIT:0. Commit: `bdfc230`.
+- **Retry-After crash fix + grace period activation (`301c4f3`, 2026-04-17):** `RestApiConnector` was crashing on non-integer Retry-After header values (e.g., HTTP-date format); now robustly parsed — integers used directly, HTTP-date strings converted via `email.utils.parsedate_to_datetime`, all values capped at 600s (D-FAIL-12). Grace period bug fixed: circuit breaker was resetting the consecutive-failure threshold from 2 back to 5 immediately after unpause; now holds at 2 until the first successful sync run clears it. Two new integration tests: `test_grace_period_trips_circuit_at_2_failures_not_5` and `test_grace_period_clears_on_success`.
+- **Landing page User Manual link (`23f0655`, 2026-04-16):** "User Manual" action button in `docs/index.html` was pointing to a non-existent GitHub Pages path. Corrected to the deployed PDF URL.
+
+### Security
+- **ReDoS Protection:** Exemption rule test endpoint uses `regex` library with timeout=2s for admin-entered patterns — prevents catastrophic backtracking
+- **Test-Connection Credential Safety:** POST /datasources/test-connection uses dedicated schema, never persists credentials, never logs connection strings, never returns credentials in response
+- **Self-Demotion Guard:** Admins cannot change their own role or deactivate their own account via the PATCH endpoint
+- **Macro Stripping:** VBA macros stripped from DOCX/XLSX before ingestion — defense-in-depth for document pipeline security
+
+### Tests
+- 430 total tests (425 backend + 5 frontend) — up from 80 in v0.1.0, 104 at v1.0.0, 274 at v1.1.0-pre-P7
+- +28 backend tests in P7 (sync failures, circuit breaker, retry logic, health status, unpause, Sync Now)
+- +2 grace period integration tests: `test_grace_period_trips_circuit_at_2_failures_not_5` and `test_grace_period_clears_on_success`
+- +13 backend tests in P6b (cron scheduler, schedule validation, adversarial pattern rejection)
+- +19 backend tests in P6a (idempotency contract, hash collision, race condition)
+- +9 backend tests for deadline notifications (due-in-3-days, overdue, deduplication)
+- 5 frontend tests: `useSyncNow` polling lifecycle (stays disabled until completion, shows elapsed time)
+- Template render mismatch test catches any notification template referencing variables not provided by the router
+- Seed coverage test ensures every router-dispatched event_type has a matching template
+- `.xls` blocklist test prevents accidental re-addition of legacy format
+
+## [1.0.0] - 2026-04-12
+
+### Added
+- **Design System:** shadcn/ui component library with civic design tokens (#1F5A84 primary), Geist Variable typography scale, sidebar layout shell
+- **Sidebar Navigation:** Grouped navigation (Workflow / Setup / Administration) replacing top nav bar, 44px touch targets, active page indicator
+- **11 Pages:** Dashboard, Search, Requests, Request Detail, Exemptions, Sources, Ingestion, Users, Onboarding Interview, City Profile, Discovery Dashboard
+- **Onboarding Interview:** 3-phase wizard (City Profile, System Identification, Gap Map) for first-time city deployment
+- **City Profile API:** GET/POST/PATCH /city-profile for persistent city configuration with gap map
+- **Municipal Systems Catalog:** 12 functional domains, 25+ vendor systems in bundled JSON with auto-loader on startup
+- **Request Timeline:** Event history on every request with automatic logging on status transitions
+- **Request Messages:** Internal/external messaging thread on each request
+- **Fee Tracking:** Fee line items per request with automatic total calculation
+- **Response Letter Generation:** LLM-assisted draft letters with template fallback, labeled as AI-generated draft
+- **Notification Service:** Template-based notification system with queue_notification() helper, template CRUD API
+- **Operational Analytics:** GET /analytics/operational with response time, deadline compliance, overdue count, status breakdown
+- **Connector Framework:** Universal connector protocol (authenticate/discover/fetch/health_check) with file system implementation
+- **Tier 1 PII Expansion:** Credit card (Luhn-validated), bank routing/account numbers, state-specific driver's license patterns (CO, CA, TX, NY, FL)
+- **Context Manager:** Token budgeting for local LLM calls with priority-based context assembly
+- **11 Request Statuses:** received, clarification_needed, assigned, searching, in_review, ready_for_release, drafted, approved, fulfilled, closed
+- **StatusBadge Component:** Color+icon mapping for all statuses across request, document, and exemption domains (colorblind accessible)
+- **StatCard, PageHeader, EmptyState, DataTable:** Reusable design system components with loading, empty, and error states
+- **Skip-to-content Link:** Screen reader accessibility (WCAG 2.4.1)
+- **Discovery Dashboard Shell:** v1.1 preview page with feature explanation
+
+### Changed
+- **UI Redesign:** All pages migrated from raw Tailwind to shadcn/ui design system with civic color tokens
+- **Ingestion Filenames:** UUID prefixes stripped from display — original filenames shown
+- **Timestamps:** Relative display ("3 hours ago") alongside absolute dates
+- **Search Scores:** RRF scores normalized to 0-100% with visual progress bar
+- **Empty States:** Smart contextual guidance instead of blank screens ("No flags reviewed yet" instead of "0.0%")
+- **Request Forms:** Collapsible inline forms replaced with Dialog modals
+- **Status Badges:** Color-only badges replaced with icon+color badges for accessibility
+- **Navigation:** Top nav bar replaced with sidebar layout (240px fixed, 56px header)
+
+### Fixed
+- **Dockerfile.backend:** Added missing `data/` directory copy for systems catalog
+- **Catalog Loader:** Graceful handling when systems_catalog.json not found (no crash on startup)
+- **Sidebar Footer:** Shows user email instead of UUID (via /users/me endpoint)
+
+### Security
+- All new endpoints require role-based authentication
+- All mutations audit-logged
+- Notification credentials never logged or displayed after entry
+- Response letters labeled as "AI-GENERATED DRAFT — REQUIRES HUMAN REVIEW"
+- CJIS compliance gate designed for public safety connectors (Section 12)
+
+## [0.1.0] - 2026-04-12
+
+### Added
+- **Foundation:** Docker Compose stack with PostgreSQL+pgvector, Redis 7.2, Ollama, FastAPI, Celery, React frontend
+- **Authentication:** JWT-based auth with 4 roles (Admin, Staff, Reviewer, Read-Only) via fastapi-users
+- **Service Accounts:** API key generation for federation between CivicRecords AI instances
+- **Audit Logging:** Hash-chained, append-only audit log with CSV/JSON export and chain verification
+- **Document Ingestion:** Two-track pipeline — 7 file type parsers (PDF, DOCX, XLSX, CSV, email, HTML, text) + Gemma 4 multimodal OCR with Tesseract fallback
+- **Chunking:** Sentence-aware text chunking with configurable overlap
+- **Embeddings:** nomic-embed-text via Ollama with batch support, stored in pgvector
+- **Hybrid Search:** pgvector semantic similarity + PostgreSQL full-text search combined via Reciprocal Rank Fusion
+- **LLM Synthesis:** Optional AI-generated answer summaries from search results (labeled as AI draft)
+- **Search Sessions:** Query history tracking with iterative refinement
+- **Request Tracking:** Records request lifecycle management with status workflow (received → searching → in_review → drafted → approved → sent)
+- **Document Attachment:** Link search results to requests with automatic document caching for legal defensibility
+- **Deadline Management:** Approaching deadline and overdue alerts on request dashboard
+- **Exemption Detection:** Rules-primary engine with built-in PII patterns (SSN, phone, email, credit card, DOB) + per-state keyword rules
+- **LLM Exemption Suggestions:** Optional secondary exemption detection via Ollama, confidence capped at 0.7
+- **Colorado CORA Pilot:** Pre-configured exemption rules for Colorado Open Records Act categories
+- **Exemption Review Workflow:** Accept/reject flags with audit trail and acceptance rate dashboard
+- **Disclosure Templates:** Configurable compliance document templates (AI disclosure, response letters)
+- **Model Transparency:** Admin panel showing Ollama model info (name, size, details)
+- **Data Sovereignty:** Verification script confirming no outbound data transmission
+- **Cross-Platform:** Windows (Docker Desktop), macOS, and Linux support with platform-specific install scripts
+- **React Admin Panel:** 8 pages — Login, Dashboard, Search, Requests, Request Detail, Exemptions, Data Sources, Ingestion, Users
+- **80 automated tests** covering auth, audit, search, requests, exemptions, parsers, chunking, embeddings
+
+### Security
+- All audit logs hash-chained with SHA-256 for tamper evidence
+- Human-in-the-loop enforced at API layer (no auto-redaction, no auto-approval)
+- All LLM outputs labeled as AI-generated drafts
+- No telemetry, analytics, or outbound data transmission
+- JWT secrets from environment configuration (not hardcoded)
+- API keys hashed before storage (SHA-256)

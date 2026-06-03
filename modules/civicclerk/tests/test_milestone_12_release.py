@@ -1,0 +1,453 @@
+"""Milestone 12+ v1.0.3 release contract."""
+
+from __future__ import annotations
+
+import tomllib
+from pathlib import Path
+
+from httpx import ASGITransport, AsyncClient
+
+from civicclerk import __version__
+from civicclerk.main import app
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _bash_service_unavailable(output: str) -> bool:
+    return "Bash/Service/" in output.replace("\x00", "")
+
+
+def test_version_surfaces_are_synchronized_to_v101() -> None:
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    current_docs = "\n".join(
+        [
+            (ROOT / "README.md").read_text(encoding="utf-8"),
+            (ROOT / "README.txt").read_text(encoding="utf-8"),
+            (ROOT / "USER-MANUAL.md").read_text(encoding="utf-8"),
+            (ROOT / "USER-MANUAL.txt").read_text(encoding="utf-8"),
+            (ROOT / "docs" / "index.html").read_text(encoding="utf-8"),
+        ]
+    )
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    assert pyproject["project"]["version"] == "1.0.3"
+    assert __version__ == "1.0.3"
+    assert "Current version: `1.0.3`" in current_docs
+    assert "Version: `1.0.3`" in current_docs
+    assert "v1.0.3" in current_docs
+    assert "0.1.0.dev0" not in current_docs
+    assert "## [1.0.3] - 2026-05-23" in changelog
+    assert "## [1.0.0] - 2026-05-06" in changelog
+
+
+async def test_health_endpoint_reports_release_version() -> None:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["version"] == "1.0.3"
+
+
+def test_verify_release_script_exists_and_mentions_all_release_gates() -> None:
+    script = ROOT / "scripts" / "verify-release.sh"
+    text = script.read_text(encoding="utf-8")
+
+    assert script.exists()
+    for gate in [
+        "-m pytest",
+        "bash scripts/verify-docs.sh",
+        "scripts/check-civiccore-placeholder-imports.py",
+        "scripts/verify-browser-qa.py",
+        "scripts/run-prompt-evals.py",
+        "-m build",
+        "SHA256SUMS.txt",
+    ]:
+        assert gate in text
+
+def test_release_workflow_and_docs_reference_v101_release() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+    docs = "\n".join(
+        [
+            (ROOT / "README.md").read_text(encoding="utf-8"),
+            (ROOT / "README.txt").read_text(encoding="utf-8"),
+            (ROOT / "USER-MANUAL.md").read_text(encoding="utf-8"),
+            (ROOT / "USER-MANUAL.txt").read_text(encoding="utf-8"),
+            (ROOT / "docs" / "index.html").read_text(encoding="utf-8"),
+            (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"),
+        ]
+    ).lower()
+
+    assert "v*" in workflow
+    assert "bash scripts/verify-release.sh" in workflow
+    assert "bash scripts/build_release_handoff_bundle.sh" in workflow
+    assert workflow.index("bash scripts/verify-release.sh") < workflow.index(
+        "bash scripts/build_release_handoff_bundle.sh"
+    )
+    assert workflow.index("bash scripts/build_release_handoff_bundle.sh") < workflow.index(
+        "python scripts/build-release-attestation.py"
+    )
+    assert "contents: write" in workflow
+    assert "gh release create" in workflow
+    assert "dist/*" in workflow
+    assert "civiccore/releases/download/v1.2.0/civiccore-1.2.0-py3-none-any.whl" in workflow
+    assert "civicclerk v1.0.3" in docs
+    assert "published `civiccore` 1.2.0 wheel from the `v1.2.0` release asset" in docs
+
+
+def test_docs_include_fresh_machine_install_and_smoke_check_contract() -> None:
+    docs = "\n".join(
+        [
+            (ROOT / "README.md").read_text(encoding="utf-8"),
+            (ROOT / "README.txt").read_text(encoding="utf-8"),
+            (ROOT / "USER-MANUAL.md").read_text(encoding="utf-8"),
+            (ROOT / "USER-MANUAL.txt").read_text(encoding="utf-8"),
+            (ROOT / "docs" / "index.html").read_text(encoding="utf-8"),
+            (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"),
+        ]
+    )
+
+    for expected in [
+        "python -m venv .venv",
+        ".\\.venv\\Scripts\\Activate.ps1",
+        "python -m pip install dist/civicclerk-1.0.3-py3-none-any.whl",
+        "python -m uvicorn civicclerk.main:app --host 127.0.0.1 --port 8776",
+        "http://127.0.0.1:8776/health",
+        "/staff/auth-readiness",
+        '$env:CIVICCLERK_STAFF_AUTH_MODE="protected"',
+        "scripts/start_fresh_install_rehearsal.ps1",
+        "scripts/start_fresh_install_rehearsal.sh",
+        ".fresh-install-rehearsal",
+        "docs/examples/trusted-header-nginx.conf",
+        "reverse_proxy_reference",
+        "scripts/start_protected_demo_rehearsal.ps1",
+        "-PrintOnly",
+        "scripts/start_protected_demo_rehearsal.sh",
+        "--print-only",
+        "scripts/build_release_handoff_bundle.ps1",
+        "scripts/build_release_handoff_bundle.sh",
+        "scripts/check_deployment_readiness.py",
+        "docs/examples/deployment.env.example",
+        "python scripts/check_deployment_readiness.py --env-file",
+        "scripts/check_protected_deployment_smoke.py",
+        "python scripts/check_protected_deployment_smoke.py --env-file",
+        "scripts/check_backup_restore_rehearsal.py",
+        "scripts/start_backup_restore_rehearsal.ps1",
+        "scripts/start_backup_restore_rehearsal.sh",
+        ".backup-restore-rehearsal",
+        "civicclerk-backup-manifest.json",
+        "127.0.0.1:8877",
+        "127.0.0.1:8878",
+    ]:
+        assert expected in docs
+
+
+def test_protected_demo_rehearsal_script_prints_expected_plan() -> None:
+    import subprocess
+    import shutil
+
+    import pytest
+
+    script = ROOT / "scripts" / "start_protected_demo_rehearsal.ps1"
+    assert script.exists()
+    shell = shutil.which("pwsh") or shutil.which("powershell")
+    if shell is None:
+        pytest.skip("PowerShell runtime is not available in this environment.")
+
+    result = subprocess.run(
+        [
+            shell,
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script),
+            "-PrintOnly",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout
+    for expected in [
+        "Protected demo rehearsal profile",
+        "CIVICCLERK_STAFF_AUTH_MODE=trusted_header",
+        "CIVICCLERK_STAFF_SSO_TRUSTED_PROXIES=127.0.0.1/32",
+        "CIVICCLERK_LOCAL_PROXY_UPSTREAM=http://127.0.0.1:8877",
+        "App command: python -m uvicorn civicclerk.main:app --host 127.0.0.1 --port 8877",
+        "Proxy command: python scripts/local_trusted_header_proxy.py",
+        "Smoke check: GET http://127.0.0.1:8877/health",
+        "Readiness check: GET http://127.0.0.1:8877/staff/auth-readiness",
+        "Browser check: open http://127.0.0.1:8878/staff",
+    ]:
+        assert expected in output
+
+
+def test_fresh_install_rehearsal_script_prints_expected_plan() -> None:
+    import subprocess
+    import shutil
+
+    import pytest
+
+    script = ROOT / "scripts" / "start_fresh_install_rehearsal.ps1"
+    assert script.exists()
+    shell = shutil.which("pwsh") or shutil.which("powershell")
+    if shell is None:
+        pytest.skip("PowerShell runtime is not available in this environment.")
+
+    result = subprocess.run(
+        [
+            shell,
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script),
+            "-PrintOnly",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout
+    for expected in [
+        "Fresh install rehearsal profile",
+        "Wheel path:",
+        "Rehearsal root:",
+        ".fresh-install-rehearsal",
+        "Create venv: python -m venv",
+        "Upgrade pip:",
+        "Install wheel:",
+        "Set CIVICCLERK_STAFF_AUTH_MODE=protected",
+        "App command:",
+        "python.exe -m uvicorn civicclerk.main:app --host 127.0.0.1 --port 8776",
+        "Smoke check: GET http://127.0.0.1:8776/health",
+        "Readiness check: GET http://127.0.0.1:8776/staff/auth-readiness",
+        "Browser check: open http://127.0.0.1:8776/staff",
+        "Expected health: {\"status\":\"ok\",\"service\":\"civicclerk\",\"version\":\"1.0.3\",\"civiccore\":\"1.2.0\"}",
+        "If the wheel is missing, build it first with: python -m build",
+        "If port 8776 is already in use, stop the existing process or rerun with -AppPort set to an available port.",
+        "pass -KeepServer to keep it running",
+    ]:
+        assert expected in output
+
+
+def test_fresh_install_rehearsal_bash_script_prints_expected_plan() -> None:
+    import shutil
+    import subprocess
+
+    import pytest
+
+    script = ROOT / "scripts" / "start_fresh_install_rehearsal.sh"
+    relative_script = (Path("scripts") / "start_fresh_install_rehearsal.sh").as_posix()
+    assert script.exists()
+    shell = shutil.which("bash")
+    if shell is None:
+        pytest.skip("Bash runtime is not available in this environment.")
+
+    result = subprocess.run(
+        [
+            shell,
+            relative_script,
+            "--print-only",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0 and _bash_service_unavailable(result.stdout + result.stderr):
+        pytest.skip("Bash exists but the WSL/Bash service is unavailable in this environment.")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout
+    for expected in [
+        "Fresh install rehearsal profile",
+        "Wheel path:",
+        "Rehearsal root:",
+        ".fresh-install-rehearsal",
+        "Host Python:",
+        "Create venv:",
+        "Upgrade pip:",
+        "Install wheel:",
+        "Export CIVICCLERK_STAFF_AUTH_MODE=protected",
+        "App command:",
+        ".fresh-install-rehearsal/.venv/",
+        " -m uvicorn civicclerk.main:app --host 127.0.0.1 --port 8776",
+        "Smoke check: GET http://127.0.0.1:8776/health",
+        "Readiness check: GET http://127.0.0.1:8776/staff/auth-readiness",
+        "Browser check: open http://127.0.0.1:8776/staff",
+        "Expected health: {\"status\":\"ok\",\"service\":\"civicclerk\",\"version\":\"1.0.3\",\"civiccore\":\"1.2.0\"}",
+        "If the wheel is missing, build it first with: python -m build",
+        "If port 8776 is already in use, stop the existing process or rerun with --app-port set to an available port.",
+        "pass --keep-server to keep it running",
+    ]:
+        assert expected in output
+
+
+def test_release_handoff_bundle_script_prints_expected_plan() -> None:
+    import shutil
+    import subprocess
+
+    import pytest
+
+    script = ROOT / "scripts" / "build_release_handoff_bundle.ps1"
+    assert script.exists()
+    powershell = shutil.which("powershell") or shutil.which("pwsh")
+    if powershell is None:
+        pytest.skip("PowerShell runtime is not available in this environment.")
+
+    result = subprocess.run(
+        [
+            powershell,
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script),
+            "-PrintOnly",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout
+    for expected in [
+        "CivicClerk release handoff bundle",
+        "Version: 1.0.3",
+        "civicclerk-1.0.3-release-handoff.zip",
+        "dist/civicclerk-1.0.3-py3-none-any.whl",
+        "dist/civicclerk-1.0.3.tar.gz",
+        "dist/SHA256SUMS.txt",
+        "scripts/check_installer_readiness.py",
+        "scripts/check_enterprise_installer_signing.py",
+        "scripts/check_connector_sync_readiness.py",
+        "scripts/run_mock_city_environment_suite.py",
+        "scripts/check_vendor_live_sync_readiness.py",
+        "scripts/run_connector_import_sync.py",
+        "scripts/run_vendor_live_sync.py",
+        "scripts/start_fresh_install_rehearsal.ps1",
+        "scripts/start_fresh_install_rehearsal.sh",
+        "scripts/check_backup_restore_rehearsal.py",
+        "scripts/check_protected_deployment_smoke.py",
+        "scripts/start_backup_restore_rehearsal.ps1",
+        "scripts/start_backup_restore_rehearsal.sh",
+        "scripts/start_protected_demo_rehearsal.ps1",
+        "scripts/start_protected_demo_rehearsal.sh",
+        "docs/examples/trusted-header-nginx.conf",
+        "docs/examples/deployment.env.example",
+        "Not an installer",
+        "Build release artifacts first with: bash scripts/verify-release.sh",
+    ]:
+        assert expected in output
+
+
+def test_release_handoff_bundle_bash_script_prints_expected_plan() -> None:
+    import shutil
+    import subprocess
+
+    import pytest
+
+    script = ROOT / "scripts" / "build_release_handoff_bundle.sh"
+    relative_script = (Path("scripts") / "build_release_handoff_bundle.sh").as_posix()
+    assert script.exists()
+    shell = shutil.which("bash")
+    if shell is None:
+        pytest.skip("Bash runtime is not available in this environment.")
+
+    result = subprocess.run(
+        [
+            shell,
+            relative_script,
+            "--print-only",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0 and _bash_service_unavailable(result.stdout + result.stderr):
+        pytest.skip("Bash exists but the WSL/Bash service is unavailable in this environment.")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout
+    for expected in [
+        "CivicClerk release handoff bundle",
+        "Version: 1.0.3",
+        "civicclerk-1.0.3-release-handoff.zip",
+        "dist/civicclerk-1.0.3-py3-none-any.whl",
+        "dist/civicclerk-1.0.3.tar.gz",
+        "dist/SHA256SUMS.txt",
+        "scripts/check_installer_readiness.py",
+        "scripts/check_enterprise_installer_signing.py",
+        "scripts/check_connector_sync_readiness.py",
+        "scripts/run_mock_city_environment_suite.py",
+        "scripts/check_vendor_live_sync_readiness.py",
+        "scripts/run_connector_import_sync.py",
+        "scripts/run_vendor_live_sync.py",
+        "scripts/start_fresh_install_rehearsal.ps1",
+        "scripts/start_fresh_install_rehearsal.sh",
+        "scripts/check_backup_restore_rehearsal.py",
+        "scripts/check_protected_deployment_smoke.py",
+        "scripts/start_backup_restore_rehearsal.ps1",
+        "scripts/start_backup_restore_rehearsal.sh",
+        "scripts/start_protected_demo_rehearsal.ps1",
+        "scripts/start_protected_demo_rehearsal.sh",
+        "docs/examples/trusted-header-nginx.conf",
+        "docs/examples/deployment.env.example",
+        "Not an installer",
+        "Build release artifacts first with: bash scripts/verify-release.sh",
+    ]:
+        assert expected in output
+
+
+def test_protected_demo_rehearsal_bash_script_prints_expected_plan() -> None:
+    import shutil
+    import subprocess
+
+    import pytest
+
+    script = ROOT / "scripts" / "start_protected_demo_rehearsal.sh"
+    relative_script = (Path("scripts") / "start_protected_demo_rehearsal.sh").as_posix()
+    assert script.exists()
+    shell = shutil.which("bash")
+    if shell is None:
+        pytest.skip("Bash runtime is not available in this environment.")
+
+    result = subprocess.run(
+        [
+            shell,
+            relative_script,
+            "--print-only",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0 and _bash_service_unavailable(result.stdout + result.stderr):
+        pytest.skip("Bash exists but the WSL/Bash service is unavailable in this environment.")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    output = result.stdout
+    for expected in [
+        "Protected demo rehearsal profile",
+        "Export CIVICCLERK_STAFF_AUTH_MODE=trusted_header",
+        "Export CIVICCLERK_STAFF_SSO_TRUSTED_PROXIES=127.0.0.1/32",
+        "Export CIVICCLERK_LOCAL_PROXY_UPSTREAM=http://127.0.0.1:8877",
+        "App command: python -m uvicorn civicclerk.main:app --host 127.0.0.1 --port 8877",
+        "Proxy command: python scripts/local_trusted_header_proxy.py",
+        "Smoke check: GET http://127.0.0.1:8877/health",
+        "Readiness check: GET http://127.0.0.1:8877/staff/auth-readiness",
+        "Browser check: open http://127.0.0.1:8878/staff",
+    ]:
+        assert expected in output

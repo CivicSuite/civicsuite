@@ -2,3 +2,7 @@
 *.pdf binary
 *.png binary
 *.sh text eol=lf
+
+# Bundled module sources (Stage 3A self-contained payload): store exact bytes, no EOL
+# conversion, so shell scripts / Dockerfiles keep LF for the Linux containers that build them.
+modules/** -text

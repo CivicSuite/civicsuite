@@ -1,0 +1,451 @@
+name: CI
+
+# PR 0 of the 2026-04-19 remediation plan (docs/REMEDIATION-PLAN-2026-04-19.md).
+# This is the ratchet. Until this workflow exists and is a required check on master,
+# every downstream fix is silently reversible. No other fix PR lands before this one
+# is merged and branch protection is enabled.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/ci.yml"
+      - "Dockerfile.*"
+      - "docker-compose.yml"
+      - "backend/**"
+      - "frontend/**"
+      - "docs/openapi.json"
+      - "scripts/**"
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/ci.yml"
+      - "Dockerfile.*"
+      - "docker-compose.yml"
+      - "backend/**"
+      - "frontend/**"
+      - "docs/openapi.json"
+      - "scripts/**"
+  workflow_dispatch: {}
+
+# Cancel outdated runs on the same branch so the queue stays fresh.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# The workflow has no secrets. Everything sensitive (JWT_SECRET, admin password) is
+# generated per-run with openssl and discarded when the runner is torn down.
+permissions:
+  contents: read
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Backend — docker-compose parity with AGENTS.md Hard Rule 1a auditor protocol.
+  # The auditor runs:
+  #   docker compose run --rm api python -m pytest tests --collect-only -q
+  #   docker compose run --rm api python -m pytest tests -q
+  # CI runs the same commands so that "CI green" and "auditor green" mean the
+  # same thing. Ollama is skipped via --no-deps because tests mock it per
+  # CLAUDE.md ("mocked external services (Ollama)"); pulling the image on every
+  # run would add ~2 minutes for zero test coverage.
+  # -------------------------------------------------------------------------
+  backend:
+    name: Backend (pytest via docker compose)
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Generate hermetic .env for the compose stack
+        # docker-compose.yml reads env_file: .env. We synthesize a minimal,
+        # per-run .env with a real JWT_SECRET (config.py rejects insecure
+        # defaults at startup, so a placeholder value would fail).
+        #   - DATABASE_URL points at the isolated civicrecords_test database
+        #   - JWT_SECRET is 64 hex chars, generated per-run
+        #   - FIRST_ADMIN_PASSWORD is also random per-run
+        # Nothing here is secret across runs; the file is thrown away with the
+        # runner and never committed.
+        run: |
+          umask 077
+          mkdir -p data/secrets
+          openssl rand -hex 32 > data/secrets/jwt_secret
+          openssl rand -hex 16 > data/secrets/first_admin_password
+          chmod 0400 data/secrets/jwt_secret data/secrets/first_admin_password
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords_test
+          FIRST_ADMIN_EMAIL=admin@example.org
+          JWT_SECRET_FILE=/run/secrets/jwt_secret
+          FIRST_ADMIN_PASSWORD_FILE=/run/secrets/first_admin_password
+          CIVICRECORDS_SECRET_DIR=./data/secrets
+          OLLAMA_BASE_URL=http://ollama:11434
+          REDIS_URL=redis://redis:6379/0
+          AUDIT_RETENTION_DAYS=1095
+          TESTING=1
+          EOF
+
+      - name: Start dependencies (postgres + redis) and wait for healthy
+        # --wait blocks until the named services report healthy per their
+        # compose-defined healthchecks. Default timeout is 120s.
+        run: docker compose up -d --wait postgres redis
+
+      - name: Create isolated test database
+        # Tests run against civicrecords_test, not the default civicrecords DB,
+        # so a future integration test that touches data never contaminates
+        # a hypothetical dev DB that shares the same volume. Self-hosted
+        # runners can retain a database from an interrupted prior run, so drop
+        # the isolated test DB before recreating it.
+        run: |
+          docker compose exec -T postgres \
+            dropdb -U civicrecords --if-exists civicrecords_test
+          docker compose exec -T postgres \
+            createdb -U civicrecords civicrecords_test
+
+      - name: Build api image
+        run: docker compose build api
+
+      - name: Verify docs/openapi.json not stale (T3D)
+        # Regenerate the OpenAPI schema inside the already-built api container
+        # (no live DB needed — FastAPI introspects at import time) and compare
+        # against the committed docs/openapi.json. Fails with an actionable
+        # message if the backend schema changed without a schema re-generation.
+        run: |
+          docker compose run --rm --no-deps api \
+            python scripts/generate_openapi.py > /tmp/openapi_fresh.json
+          python3 - <<'EOF'
+          import json, sys
+          committed = json.load(open("docs/openapi.json"))
+          fresh = json.load(open("/tmp/openapi_fresh.json"))
+          if committed != fresh:
+              sys.stderr.write("::error::docs/openapi.json is stale.\n")
+              sys.stderr.write("::error::Regenerate: cd backend && python scripts/generate_openapi.py -o ../docs/openapi.json\n")
+              sys.stderr.write("::error::Then rebuild types: cd frontend && npm run generate:types\n")
+              sys.stderr.write("::error::Commit both docs/openapi.json and frontend/src/generated/api.ts.\n")
+              sys.exit(1)
+          print("docs/openapi.json is current.")
+          EOF
+
+      - name: pytest --collect-only — catches CLAUDE.md Hard Rule 1e failure mode
+        # The previous auditor accepted "423 tests passing" from a dev report;
+        # actual collection was 278. pytest exits nonzero on any collection
+        # error (import failures, syntax errors, missing fixtures). This step
+        # is the single most important gate: if it fails, the entire suite is
+        # lying about what it covers.
+        id: collect
+        run: |
+          set -o pipefail
+          docker compose run --rm --no-deps \
+            -e CIVICRECORDS_REPO_ROOT=/repo \
+            -v "$PWD:/repo:ro" \
+            api \
+            python -m pytest tests --collect-only -q \
+            2>&1 | tee collect.log
+          collected=$(grep -oE '[0-9]+ tests? collected' collect.log \
+            | head -1 | grep -oE '[0-9]+')
+          if [ -z "$collected" ]; then
+            echo "::error::Could not parse a collection count from pytest output."
+            exit 1
+          fi
+          echo "count=${collected}" >> "$GITHUB_OUTPUT"
+          echo "Collected ${collected} tests."
+
+      - name: pytest — full backend suite
+        id: run
+        run: |
+          set -o pipefail
+          docker compose run --rm --no-deps \
+            -e CIVICRECORDS_REPO_ROOT=/repo \
+            -v "$PWD:/repo:ro" \
+            api \
+            python -m pytest tests -q \
+            2>&1 | tee run.log
+
+      - name: Verify collected == passed (no silent test loss)
+        # Catches skips, xfails, errors, and tests that exit without running.
+        # feedback_never_skip_tests.md says no pytest.skip ever; this check
+        # enforces it mechanically. If collected > passed, the delta is
+        # either lying tests or swallowed failures.
+        run: |
+          collected="${{ steps.collect.outputs.count }}"
+          passed=$(grep -oE '[0-9]+ passed' run.log | tail -1 \
+            | grep -oE '[0-9]+')
+          echo "collected=${collected}"
+          echo "passed=${passed}"
+          if [ -z "$passed" ]; then
+            echo "::error::Could not parse a passed count from pytest output."
+            exit 1
+          fi
+          if [ "$collected" != "$passed" ]; then
+            echo "::error::Collection/run mismatch: collected=${collected} passed=${passed}."
+            echo "::error::This is the exact Hard Rule 1e failure mode."
+            echo "::error::Investigate: skipped tests, xfails, errors, or tests that exited early."
+            exit 1
+          fi
+
+      - name: Capture compose logs for diagnostics
+        if: always()
+        run: docker compose logs --no-color > compose.log 2>&1 || true
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            collect.log
+            run.log
+            compose.log
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v --remove-orphans
+
+  # -------------------------------------------------------------------------
+  # T2C bootstrap-failure smoke test — proves the literal `docker compose`
+  # path fails fatally when FIRST_ADMIN_PASSWORD is left at the .env.example
+  # placeholder. This is the integration-test arm of T2C plan item #4: a
+  # fresh container start with the placeholder password must die at import
+  # time, before uvicorn ever binds a port. Complemented by the
+  # subprocess-level integration tests in test_bootstrap_integration.py
+  # which run inside the regular pytest job.
+  # -------------------------------------------------------------------------
+  bootstrap-failure:
+    name: T2C bootstrap-failure smoke test
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Synthesize a placeholder-password .env (the failure-mode env)
+        # Set FIRST_ADMIN_PASSWORD to the exact .env.example value. JWT_SECRET
+        # and ENCRYPTION_KEY get real values so we are isolating the password
+        # validator failure — without a valid ENCRYPTION_KEY the T6 startup
+        # check would fire first and this job would fail for the wrong reason.
+        # TESTING is intentionally NOT set; we want the validator to fire.
+        run: |
+          ENCRYPTION_KEY="$(python3 -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
+          umask 077
+          mkdir -p data/secrets
+          openssl rand -hex 32 > data/secrets/jwt_secret
+          printf '%s\n' 'CHANGE-ME-on-first-login' > data/secrets/first_admin_password
+          chmod 0400 data/secrets/jwt_secret data/secrets/first_admin_password
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords
+          ENCRYPTION_KEY=${ENCRYPTION_KEY}
+          FIRST_ADMIN_EMAIL=admin@example.org
+          JWT_SECRET_FILE=/run/secrets/jwt_secret
+          FIRST_ADMIN_PASSWORD_FILE=/run/secrets/first_admin_password
+          CIVICRECORDS_SECRET_DIR=./data/secrets
+          OLLAMA_BASE_URL=http://ollama:11434
+          REDIS_URL=redis://redis:6379/0
+          AUDIT_RETENTION_DAYS=1095
+          EOF
+
+      - name: Build api image
+        run: docker compose build api
+
+      - name: docker compose run with placeholder password must exit non-zero
+        # Run a one-shot container that imports app.config — exactly what the
+        # api container does at startup. Capture stdout+stderr; assert the
+        # exit code is non-zero AND the error mentions FIRST_ADMIN_PASSWORD.
+        # `--no-deps` keeps the test focused on the import-time failure
+        # without spinning up postgres/redis (the validator fires before any
+        # DB connection is attempted).
+        run: |
+          set +e
+          docker compose run --rm --no-deps \
+            api python -c "from app.config import Settings; Settings()" \
+            > bootstrap.out 2> bootstrap.err
+          rc=$?
+          set -e
+          echo "exit=${rc}"
+          echo "--- stdout ---"; cat bootstrap.out
+          echo "--- stderr ---"; cat bootstrap.err
+          if [ "${rc}" = "0" ]; then
+            echo "::error::Bootstrap should have failed with placeholder password but exited 0."
+            exit 1
+          fi
+          if ! grep -q "FIRST_ADMIN_PASSWORD" bootstrap.out bootstrap.err; then
+            echo "::error::Bootstrap failed but did not mention FIRST_ADMIN_PASSWORD."
+            echo "::error::Check that the validator surfaced the right error."
+            exit 1
+          fi
+          echo "OK — placeholder password is fatal at startup."
+
+      - name: Sanity — strong password lets bootstrap exit 0
+        # Control: same path with a valid password must succeed. Without this
+        # control, a Python import error elsewhere would also "fail" and pass
+        # the test for the wrong reason.
+        run: |
+          chmod u+w data/secrets/first_admin_password
+          openssl rand -hex 16 > data/secrets/first_admin_password
+          chmod 0400 data/secrets/first_admin_password
+          set +e
+          docker compose run --rm --no-deps \
+            api python -c "from app.config import Settings; Settings()" \
+            > bootstrap-ok.out 2> bootstrap-ok.err
+          rc=$?
+          set -e
+          echo "exit=${rc}"
+          if [ "${rc}" != "0" ]; then
+            echo "::error::Bootstrap with a strong password should succeed but exited ${rc}."
+            echo "--- stdout ---"; cat bootstrap-ok.out
+            echo "--- stderr ---"; cat bootstrap-ok.err
+            exit 1
+          fi
+
+      - name: Upload bootstrap logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bootstrap-failure-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            bootstrap.out
+            bootstrap.err
+            bootstrap-ok.out
+            bootstrap-ok.err
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v --remove-orphans
+
+  # -------------------------------------------------------------------------
+  # Frontend — vitest and production build on native Node.
+  # Vite 6 requires Node 20+. No engines field is declared in package.json,
+  # so the version is pinned here to match local-dev expectations.
+  # -------------------------------------------------------------------------
+  frontend:
+    name: Frontend (vitest + build)
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node 22
+        # Matches the declared prerequisite in CONTRIBUTING.md ("Node.js 22+").
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (frozen lockfile)
+        run: npm ci
+
+      - name: Dependency security audit
+        run: |
+          for attempt in 1 2 3; do
+            npm audit --audit-level=moderate && break
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            sleep 10
+          done
+
+      - name: Verify src/generated/api.ts not stale (T3D)
+        # Re-run openapi-typescript against the committed docs/openapi.json and
+        # check that the committed src/generated/api.ts matches. Fails if the
+        # schema was updated without regenerating the frontend types.
+        run: |
+          npm run generate:types
+          if ! git diff --exit-code src/generated/api.ts; then
+            echo "::error::frontend/src/generated/api.ts is stale."
+            echo "::error::Run 'npm run generate:types' from the frontend/ directory and commit the result."
+            exit 1
+          fi
+
+      - name: Run vitest suite
+        # package.json "test" is already `vitest run`, so no -- --run needed.
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Accessibility gate (axe critical/serious)
+        run: npm run a11y:ci
+
+      - name: Playwright user-flow tests
+        run: npm run test:e2e
+
+  recovery-gates:
+    name: Release recovery gates
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Recovery claim/source gates
+        run: python scripts/verify-recovery-gates.py
+
+      - name: Tracked-file secret scan
+        run: python scripts/verify-secret-scan.py
+
+  # -------------------------------------------------------------------------
+  # ruff (lint) — added 2026-04-25 per issue #33. Gates Python lint on every
+  # PR and push to master. No live DB needed; --no-deps keeps it fast.
+  # Mirror the docker-compose-via-image pattern used by the bootstrap-failure
+  # job so CI lint and local lint produce the same result.
+  #
+  # NOTE: making this a REQUIRED check on master needs a separate
+  # branch-protection setting (Settings -> Branches -> master ->
+  # Require status checks -> add `ruff (lint)`). The workflow change here
+  # makes the job RUN; the protection setting makes it BLOCK merges.
+  # -------------------------------------------------------------------------
+  ruff:
+    name: ruff (lint)
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: "Synthesize minimal .env (compose env_file: directive requires it to exist)"
+        # ruff check doesn't need any of these values, but docker-compose.yml's
+        # service-level `env_file: .env` directive requires the file to exist
+        # or `docker compose run` errors out before the container even starts.
+        # Match the per-job .env synthesis pattern used by `backend` and
+        # `bootstrap-failure`. Values are placeholders; ruff never reads them.
+        run: |
+          umask 077
+          mkdir -p data/secrets
+          openssl rand -hex 32 > data/secrets/jwt_secret
+          openssl rand -hex 16 > data/secrets/first_admin_password
+          chmod 0400 data/secrets/jwt_secret data/secrets/first_admin_password
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords_test
+          FIRST_ADMIN_EMAIL=admin@example.org
+          JWT_SECRET_FILE=/run/secrets/jwt_secret
+          FIRST_ADMIN_PASSWORD_FILE=/run/secrets/first_admin_password
+          CIVICRECORDS_SECRET_DIR=./data/secrets
+          OLLAMA_BASE_URL=http://ollama:11434
+          REDIS_URL=redis://redis:6379/0
+          AUDIT_RETENTION_DAYS=1095
+          TESTING=1
+          EOF
+
+      - name: Build api image
+        run: docker compose build api
+
+      - name: ruff check
+        run: docker compose run --rm --no-deps api ruff check .

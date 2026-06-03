@@ -1,0 +1,146 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:wght@600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --paper: #f8f3e8;
+    --paper-2: #fffaf0;
+    --rule: #d8cdb8;
+    --navy: #1e3a5f;
+    --navy-soft: #dbe6f1;
+    --gold: #c58a1d;
+    --gold-soft: #f4dfac;
+    --ink-1: #172033;
+    --ink-2: #344154;
+    --ink-3: #4b5a6d;
+    --error: #9f2f2f;
+    --success-token: #2f6f4f;
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-serif: "Source Serif 4", Georgia, serif;
+    --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --background: var(--paper);
+    --foreground: var(--ink-1);
+    --card: var(--paper-2);
+    --card-foreground: var(--ink-1);
+    --popover: var(--paper-2);
+    --popover-foreground: var(--ink-1);
+    --primary: var(--navy);
+    --primary-foreground: #ffffff;
+    --secondary: var(--navy-soft);
+    --secondary-foreground: var(--navy);
+    --muted: #eee6d7;
+    --muted-foreground: var(--ink-3);
+    --accent: var(--gold-soft);
+    --accent-foreground: var(--ink-1);
+    --destructive: var(--error);
+    --destructive-foreground: #ffffff;
+    --success: var(--success-token);
+    --success-foreground: #ffffff;
+    --success-light: #e6f2ea;
+    --warning: #8a5a00;
+    --warning-foreground: #ffffff;
+    --warning-light: #f7ead0;
+    --danger: var(--error);
+    --danger-light: #f8e6e6;
+    --info: var(--navy);
+    --info-light: var(--navy-soft);
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--gold);
+    --radius: 0.5rem;
+    --sidebar-width: 240px;
+    --header-height: 56px;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  /* WCAG 2.2 AA: 44×44px minimum touch target for interactive elements */
+  button,
+  [role="button"],
+  input:not([type="hidden"]),
+  select,
+  textarea,
+  [tabindex]:not([tabindex="-1"]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  input:not([type="hidden"]),
+  select,
+  textarea {
+    @apply py-2;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  code,
+  kbd,
+  pre,
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+    font-family: var(--font-serif);
+  }
+
+  /* WCAG 2.2 AA: visible focus indicator for elements that bypass shadcn
+     primitives (bare <a> links, [role="link"], elements with tabindex).
+     shadcn Button/Input/SelectTrigger already ship their own focus-visible
+     ring via Tailwind utilities — this only fills the gap for everything
+     else. Uses outline (not box-shadow ring) so it stacks cleanly with any
+     Tailwind ring utilities a component may add later. */
+  a:focus-visible,
+  [role="link"]:focus-visible,
+  [tabindex]:not([tabindex="-1"]):not([data-slot]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .badge-success {
+    background-color: var(--success-light);
+    color: var(--success);
+  }
+  .badge-warning {
+    background-color: var(--warning-light);
+    color: var(--warning);
+  }
+  .badge-danger {
+    background-color: var(--danger-light);
+    color: var(--danger);
+  }
+  .badge-info {
+    background-color: var(--info-light);
+    color: var(--info);
+  }
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-600;
+  }
+
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+}

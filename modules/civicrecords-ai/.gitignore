@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/test-results/
+docs/playwright-report/
+
+# Environment
+.env
+*.local
+data/secrets/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Superpowers
+.superpowers/
+.~lock.*
+
+# Temp files
+temp_*.tsx
+.tmp-browser-qa-*/
+
+# Hardware detection output
+.env.hardware
+
+# Claude Code
+.claude/
+.pipeline-cw/
+
+.agent-runs/

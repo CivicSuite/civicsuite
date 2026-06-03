@@ -1,0 +1,80 @@
+---
+title: CivicRecords AI — System Component Diagram (v1.2+)
+---
+graph TB
+    subgraph Browser["🖥 Staff Browser Client — React 18 · shadcn/ui · Tailwind CSS"]
+        direction LR
+        UI_Search["Search UI"]
+        UI_Requests["Request Tracker"]
+        UI_Sources["Data Sources"]
+        UI_Admin["Admin Panel"]
+        UI_Exempt["Exemption Review"]
+        UI_Audit["Audit Log"]
+    end
+
+    subgraph PublicBrowser["🌐 Public Browser (optional — PORTAL_MODE=public only, T5D)"]
+        direction LR
+        UI_PubLand["Public Landing"]
+        UI_PubReg["Resident Registration"]
+        UI_PubSubmit["Records Request\nSubmission (authenticated)"]
+    end
+
+    subgraph API["⚙ Application Server — FastAPI · Python 3.12"]
+        direction TB
+        Auth["JWT Auth\n(fastapi-users)"]
+        Dept["Department\nScoping"]
+        PortalMode["Portal Mode Config\n/config/portal-mode\n(always mounted)"]
+        SearchAPI["Search API\n/search/query\n/search/export"]
+        RequestAPI["Request Workflow\n/requests/**"]
+        PublicAPI["Public Router\n/public/requests\n(only in PORTAL_MODE=public)"]
+        SourceAPI["Data Sources\n/datasources/**\n(connection_config\nat-rest encrypted — T6)"]
+        ExemptAPI["Exemption Engine\n/exemptions/**"]
+        AdminAPI["Admin API\n/admin/**"]
+        NotifAPI["Notifications\n/notifications/**"]
+        AuditAPI["Audit Log\n/audit/**"]
+        LLMClient["LLM Client\n(context budgeting)"]
+        SyncRunner["Sync Runner\n(circuit breaker)"]
+    end
+
+    subgraph Workers["🔄 Async Workers — Celery · Redis broker"]
+        CeleryW["Celery Worker\n(ingest / embed / notify)"]
+        CeleryB["Celery Beat\n(scheduler / deadline checks)"]
+    end
+
+    subgraph Data["🗄 Data Layer"]
+        PG["PostgreSQL 17\n+ pgvector\n29 tables"]
+        Redis["Redis 7.2\ntask queue / cache"]
+    end
+
+    subgraph AI["🤖 AI Layer — Local Only"]
+        Ollama["Ollama\n(Gemma 4 / Mistral)\nembeddings + synthesis"]
+        Tesseract["Tesseract OCR\n(scanned PDF fallback)"]
+    end
+
+    subgraph Sources["📂 City Data Sources"]
+        FS["File System\n(directories)"]
+        Upload["Direct Upload\n(PDF / DOCX / CSV)"]
+        REST["REST API\n(municipal systems)"]
+        ODBC["ODBC / SQL\n(databases)"]
+    end
+
+    Browser -->|"HTTPS REST/JSON"| API
+    PublicBrowser -.->|"HTTPS REST/JSON\n(optional: public mode only)"| API
+    API --> Auth
+    API --> Dept
+    API --> PortalMode
+    API --> SearchAPI
+    API --> SourceAPI
+    API --> RequestAPI
+    API --> PublicAPI
+    API --> ExemptAPI
+    API --> AdminAPI
+    SyncRunner -->|"discover / fetch"| Sources
+    SyncRunner -->|"enqueue tasks"| Redis
+    Workers -->|"reads tasks"| Redis
+    Workers -->|"reads/writes"| PG
+    Workers -->|"embeddings"| Ollama
+    LLMClient -->|"inference"| Ollama
+    API -->|"reads/writes"| PG
+    CeleryB -->|"triggers"| CeleryW
+    ExemptAPI -->|"OCR fallback"| Tesseract

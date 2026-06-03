@@ -1,0 +1,17 @@
+.ruff_cache/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.venv/
+.venv-wsl/
+dist/
+build/
+*.egg-info/
+node_modules/
+.DS_Store
+.env
+.docker-backup-restore-rehearsal/
+.tmp-chrome-cdp-*/
+docs/browser-qa-*-dom.html
+tests/fixtures/release_provenance/.generated/
+.agent-runs/

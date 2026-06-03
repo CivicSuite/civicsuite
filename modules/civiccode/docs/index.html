@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CivicCode - CivicSuite municipal code module</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #586575;
+      --paper: #fbf7ef;
+      --card: #ffffff;
+      --line: #d8c8ad;
+      --accent: #8f4d24;
+      --good: #236044;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(143, 77, 36, .14), transparent 30rem),
+        linear-gradient(135deg, #fffaf1, var(--paper));
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 4rem 1.25rem;
+      overflow-wrap: anywhere;
+    }
+    .skip-link {
+      position: absolute;
+      left: 1rem;
+      top: -4rem;
+      z-index: 10;
+      padding: .7rem 1rem;
+      border-radius: .6rem;
+      background: var(--ink);
+      color: white;
+      font-weight: 700;
+    }
+    .skip-link:focus {
+      top: 1rem;
+    }
+    a:focus-visible,
+    button:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 4px;
+    }
+    .eyebrow {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: .82rem;
+    }
+    h1 {
+      font-size: clamp(2.6rem, 7vw, 5.8rem);
+      line-height: .92;
+      margin: .4rem 0 1rem;
+    }
+    .lead {
+      color: var(--muted);
+      font-size: 1.25rem;
+      max-width: 48rem;
+    }
+    .status {
+      display: inline-block;
+      margin: 1.5rem 0;
+      padding: .45rem .75rem;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--good);
+      font-weight: 700;
+      white-space: normal;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    section {
+      min-width: 0;
+      background: rgba(255,255,255,.82);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      padding: 1.25rem;
+      box-shadow: 0 18px 50px rgba(82, 58, 32, .08);
+    }
+    h2 { margin-top: 0; }
+    li { margin: .45rem 0; }
+    code { background: #f2e6d4; padding: .08rem .25rem; border-radius: .25rem; }
+    @media (max-width: 520px) {
+      main {
+        padding: 2.75rem 1rem;
+      }
+      .lead {
+        font-size: 1.08rem;
+      }
+      .status {
+        border-radius: 1rem;
+      }
+      ul {
+        padding-left: 1.15rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to CivicCode content</a>
+<main id="content">
+  <div class="eyebrow">CivicSuite module planning lane</div>
+  <h1>CivicCode</h1>
+  <p class="lead">Municipal code and ordinance access, designed to answer code questions with exact citations while keeping legal interpretation with city staff.</p>
+  <p class="status">Durable code, discovery, staff-note, plain-language summary, CivicClerk handoff, local import-job, codifier sync-state, and operational retry/replay/cursor runtime online on the Docker/PostgreSQL path, alongside configured Ollama embedding retrieval with PostgreSQL pgvector ranking, local Ollama source-bounded answer support, a React/Vite resident app, related-section navigation aids, mock-city codifier contracts, staff code lifecycle workspace, staff workbench foundation, staff source registry, records-ready export and accessibility hardening, local import, public lookup, CivicClerk handoff warnings, citation-grounded Q&amp;A, citation contract, search and permalink, database-backed source registry, runtime foundation, and canonical schema foundations - legal determinations, bundled vendor credentials, CivicAccess runtime dependency, and automatic ordinance codification not available</p>
+
+  <div class="grid">
+    <section>
+      <h2>What CivicCode does</h2>
+      <ul>
+        <li>Import authoritative municipal code sources from local fixtures and file drops.</li>
+        <li>Verify source-attributed real municipal code fixtures through the same local import, search, and cited-answer path.</li>
+        <li>Preserve section versions and effective dates.</li>
+        <li>Export records-ready section packages with citations and source provenance.</li>
+        <li>Answer routine code questions with citations.</li>
+        <li>Resolve adopted section context for downstream CivicSuite modules.</li>
+        <li>Label summaries as non-authoritative.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>What it will not do</h2>
+      <ul>
+        <li>Replace the official codifier.</li>
+        <li>Give legal advice.</li>
+        <li>Automatically codify ordinances.</li>
+        <li>Start CivicZone runtime work.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>What ships today</h2>
+      <ul>
+        <li>Installable Python package.</li>
+        <li>FastAPI runtime foundation with <code>/</code> and <code>/health</code>.</li>
+        <li>CivicCore shared-ingestion dependency at the published CivicCore v1.2.0 release wheel.</li>
+        <li>Staff-header-protected source registry mutations and staff source reads.</li>
+        <li>Staff source registry workspace at <code>/staff/sources</code> with empty, active, stale, failed, and access-required states.</li>
+        <li>Staff code lifecycle workspace at <code>/staff/code</code> with access-required, empty, readiness-snapshot, section-card, draft-summary, and pending-codification states.</li>
+        <li>Canonical SQLAlchemy metadata and Alembic migrations for ten <code>civiccode.*</code> tables.</li>
+        <li>Official source registry API for codifier/source metadata, provenance, source-state checks, and optional persistence through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code>.</li>
+        <li>Section/version lifecycle APIs for adopted, historical, and pending text boundaries.</li>
+        <li>Durable title, chapter, section, and section-version storage through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code> for Docker/PostgreSQL demos.</li>
+        <li>Public-safe search and stable section permalink APIs with configured Ollama embedding retrieval and PostgreSQL pgvector ranking proof.</li>
+        <li>React/Vite resident app at <code>/civiccode/app</code> wired to live search and cited-answer APIs.</li>
+        <li>Staff-approved popular questions that link only to cited adopted code.</li>
+        <li>Durable popular-question storage through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code> for Docker/PostgreSQL demos.</li>
+        <li>Related materials from explicit public cross-references, labeled as navigation aids and not legal determinations.</li>
+        <li>Deterministic citation/refusal objects with section, version, source, and effective-date fields.</li>
+        <li>Citation-grounded Q&amp;A harness for questions that resolve to one adopted section and active source.</li>
+        <li>Resident-facing cited-answer page at <code>/civiccode/answer</code>.</li>
+        <li>Downstream section-resolution contract for CivicZone, CivicLegal, CivicAccess, and CivicComms.</li>
+        <li>Staff interpretation notes, staff Q&amp;A context, and staff workbench audit events.</li>
+        <li>Durable staff-note and staff-workbench audit event storage through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code> for Docker/PostgreSQL demos.</li>
+        <li>Staff-approved plain-language summaries labeled non-authoritative with <code>non_authoritative_explanation</code>.</li>
+        <li>Durable plain-language summary and summary audit event storage through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code> for Docker/PostgreSQL demos.</li>
+        <li>Authoritative code text remains visible beside approved summaries.</li>
+        <li>CivicClerk handoff intake with pending codification warnings and likely conflict signals.</li>
+        <li>Staff handoff resolution after codified adopted text is created.</li>
+        <li>Durable CivicClerk handoff and handoff audit event storage through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code> for Docker/PostgreSQL demos.</li>
+        <li>Resident-facing public code lookup surface under <code>/civiccode</code> for the "Read code" workflow.</li>
+        <li>Search, empty, legal-advice refusal, stale-source warning, and section detail states.</li>
+        <li>Staff-only local import jobs for CSV/file-drop bundles and official HTML extract fixtures.</li>
+        <li>Source-attributed Portland Title 13 fixture proof for two official chapter sources, five adopted sections, local import, public search, and cited-answer behavior.</li>
+        <li>Staff import provenance ledger at <code>/staff/imports</code> with access-required, empty, populated, failed-job, and actionable recovery states.</li>
+        <li>Durable import job status, counts, provenance, actionable failure details, and completion timestamps through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code> for Docker/PostgreSQL demos.</li>
+        <li>Import retry, visible failure records, imported-tree verification, and provenance report endpoints.</li>
+        <li>No outbound network dependency, Redis/Celery worker, or vendor credentials required for local import.</li>
+        <li>Staff-controlled codifier sync readiness endpoints with schedule validation, SSRF-safe host checks, and supported connector validation.</li>
+        <li>Staff codifier sync health page at <code>/staff/sync</code> with access-required, empty, configured-source, circuit-health, host-validation, and local-payload states.</li>
+        <li>Durable codifier sync source configuration, host-validation result, next-run cursor, last-run state, circuit-breaker state, and delta-plan history through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code>.</li>
+        <li>Durable operational retry queue, replay, and delta-cursor records for CivicClerk handoffs, local imports, and codifier sync runs through <code>CIVICCODE_SOURCE_REGISTRY_DB_URL</code>.</li>
+        <li>Staff operational-state API at <code>/api/v1/civiccode/staff/operational-state</code> summarizing handoff, import, and sync readiness from existing records without external deployment proof or outbound network.</li>
+        <li>Delta request planning for Municode, American Legal Publishing, Code Publishing Company, and General Code.</li>
+        <li>Local codifier payload runs through the import path with CivicCore circuit-breaker health, shared source-list health projection, and actionable operator copy.</li>
+        <li>Active-branch Longmont proof ingests the full Code of Ordinances PDF through CivicCore shared ingestion, persists 768-dimensional embeddings in shared document chunks, structures CivicCode sections, and returns cited local-Ollama Q&amp;A.</li>
+        <li>Reusable mock-city codifier contracts for Municode, American Legal Publishing, Code Publishing Company, and General Code.</li>
+        <li>Mock-city report reuses CivicCore municipal IdP and backup-retention contracts and writes a secret-free JSON report.</li>
+        <li>Records-ready export API and accessible HTML export page for adopted sections.</li>
+        <li>Docker Compose product path with PostgreSQL 17 plus pgvector, loopback-bound API port, migration startup, and Portland Title 13 seeded demo data enabled by <code>CIVICCODE_DEMO_SEED=1</code>.</li>
+        <li>Local Docker smoke checks public lookup and verifies forged staff headers on the published demo port fail with HTTP 403; shared deployments must use a header-stripping staff-shell proxy and must not trust the Docker bridge CIDR on a published API port.</li>
+        <li>Docker/PostgreSQL backup-restore rehearsal with <code>pg_dump</code>, <code>pg_restore</code>, restored-table verification, <code>civiccode-docker-backup-manifest.json</code>, and Windows/Bash launchers.</li>
+        <li>Semantic headings, labels, focus styling, and print-friendly export output.</li>
+        <li>CivicAccess integration notes without a shipped CivicAccess runtime dependency.</li>
+        <li>Pending ordinance language is not adopted law and does not replace codified text.</li>
+        <li>Staff context is marked <code>staff_only_do_not_publish</code>; public answers stay <code>citation_grounded</code>.</li>
+        <li>No legal advice or automatic ordinance codification. Local Ollama answers are source-bounded, cited, non-authoritative, and staff-review-required.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Release status</h2>
+      <p>CivicCode v1.0.8 supersedes the earlier v1.0.0 municipal-code module release after PR #61 re-audit #5 cleared head <code>bfaffc01</code> with 0 Blocker, 0 Critical, and 0 Major findings. CivicCode has a real backend, database migrations, substantial municipal-code workflow logic, local AI integration, React frontend work, real embedding retrieval proof, installed-stack proof, suite module-selection proof, source-attributed Portland Title 13 municipal data fixture proof, and full Longmont PDF shared-ingestion proof. Existing v0.1.17, v0.1.18, v0.5.0, and the mistaken 2026-05-21 v1.0.0 posture are historical evidence only.</p>
+      <p>The service is intentionally honest: code-answer behavior remains citation-grounded; refusals keep <code>not_available</code>, and local AI answers are marked <code>ai_review_required</code>.</p>
+    </section>
+  </div>
+</main>
+</body>
+</html>
