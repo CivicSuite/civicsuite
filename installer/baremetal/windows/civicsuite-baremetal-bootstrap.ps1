@@ -17,6 +17,7 @@ param(
     [string]$OllamaInstallerSha256,
     [string]$OllamaInstallerUrl = "https://ollama.com/download/OllamaSetup.exe",
     [string]$PythonPath = "python",
+    [string]$PythonInstallerUrl = "https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe",
     [string]$InstallRoot,
     [string]$LifecycleEvidencePath,
     [string]$RunId = "stage3a-baremetal"
@@ -486,6 +487,73 @@ function Install-Ollama {
     return [ordered]@{ status = "passed"; source = $installer; installed = $true; ollama_path = $ollamaPath }
 }
 
+function Test-RealPython {
+    param([string]$Exe)
+    # Returns the genuine interpreter path if $Exe is a real Python, else $null. A fresh
+    # Windows 11 box exposes only the Microsoft Store app-execution alias at
+    # ...\WindowsApps\python.exe, which is a non-functional stub: it prints "Python was not
+    # found" and exits non-zero. Probe sys.executable and reject the WindowsApps stub.
+    if ([string]::IsNullOrWhiteSpace($Exe)) { return $null }
+    $probe = Invoke-NativeCommand -FilePath $Exe -Arguments @("-c", "import sys; print(sys.executable)")
+    if ($probe.exit_code -ne 0) { return $null }
+    $resolved = ($probe.stdout -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Select-Object -Last 1)
+    if ([string]::IsNullOrWhiteSpace($resolved)) { return $null }
+    if ($resolved -match '\\WindowsApps\\') { return $null }
+    if (-not (Test-Path -LiteralPath $resolved)) { return $null }
+    return $resolved
+}
+
+function Ensure-Python {
+    if ($PlanOnly) {
+        return [ordered]@{ status = "planned"; would_install_from = $PythonInstallerUrl }
+    }
+    # 1. Use an existing real Python if present (the configured path, then python/py).
+    foreach ($candidate in @($PythonPath, "python", "py")) {
+        $real = Test-RealPython -Exe $candidate
+        if ($real) {
+            Write-BootstrapLog "stage2" "Using existing Python at $real"
+            return [ordered]@{ status = "present"; path = $real }
+        }
+    }
+    # 2. None usable (fresh Windows has only the Store alias). Install Python 3.12 silently.
+    $pyInstaller = Join-Path $LogRoot "python-installer.exe"
+    Write-BootstrapLog "stage2" "Downloading Python installer to $pyInstaller"
+    Invoke-WebRequest -Uri $PythonInstallerUrl -OutFile $pyInstaller
+    Write-BootstrapLog "stage2" "Installing Python silently (all users)"
+    $proc = Start-Process -FilePath $pyInstaller -ArgumentList @("/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1", "Include_pip=1", "Include_test=0") -Wait -PassThru
+    if ($proc.ExitCode -ne 0) {
+        throw "Python installer exited with code $($proc.ExitCode)."
+    }
+    # 3. Resolve the installed interpreter by FULL PATH (the Store alias may still shadow
+    #    'python' in this process's PATH; a new process is needed to pick up PrependPath).
+    $candidates = @((Join-Path $env:ProgramFiles "Python312\python.exe"),
+                    (Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\python.exe"))
+    if (${env:ProgramFiles(x86)}) {
+        $candidates += (Join-Path ${env:ProgramFiles(x86)} "Python312\python.exe")
+    }
+    foreach ($candidate in $candidates) {
+        $real = Test-RealPython -Exe $candidate
+        if ($real) {
+            Write-BootstrapLog "stage2" "Python installed at $real"
+            return [ordered]@{ status = "installed"; path = $real; source = $PythonInstallerUrl }
+        }
+    }
+    # 4. Fallback: search common install roots for a real python.exe.
+    foreach ($root in @($env:ProgramFiles, (Join-Path $env:LOCALAPPDATA "Programs\Python"))) {
+        if ($root -and (Test-Path -LiteralPath $root)) {
+            $found = Get-ChildItem -LiteralPath $root -Filter "python.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) {
+                $real = Test-RealPython -Exe $found.FullName
+                if ($real) {
+                    Write-BootstrapLog "stage2" "Python installed at $real"
+                    return [ordered]@{ status = "installed"; path = $real; source = $PythonInstallerUrl }
+                }
+            }
+        }
+    }
+    throw "Python installer ran but no usable python.exe was found under Program Files or LocalAppData."
+}
+
 function Invoke-Stage2 {
     $spike = $DockerSpikePath
     if (-not $spike) {
@@ -518,10 +586,18 @@ function Invoke-Stage2 {
     if (-not $ollama) {
         $ollamaResult.install = Install-Ollama
     }
+    # Stage3/Stage4 run the city-core lifecycle runner with $PythonPath. A fresh Windows box
+    # has no real Python (only the Store alias), so provision one and pin the resolved full
+    # path for the later stages (don't rely on 'python' in PATH).
+    $pythonResult = Ensure-Python
+    if ($pythonResult.path) {
+        $script:PythonPath = $pythonResult.path
+    }
     $stage2 = [ordered]@{
         status = "passed"
         docker_desktop = $dockerResult
         ollama = $ollamaResult
+        python = $pythonResult
     }
     Write-BootstrapLog "stage2" "Stage2 prerequisite orchestration finished"
     return $stage2
