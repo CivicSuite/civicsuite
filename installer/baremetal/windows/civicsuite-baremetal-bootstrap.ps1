@@ -463,11 +463,19 @@ function Install-Ollama {
         return [ordered]@{ status = "planned"; source = $installer; installed = $false }
     }
     Write-BootstrapLog "stage2" "Starting Ollama installer silently"
-    $process = Start-Process -FilePath $installer -ArgumentList @("/S") -Wait -PassThru
+    # OllamaSetup.exe is an Inno Setup installer; its silent switches are
+    # /VERYSILENT /SUPPRESSMSGBOXES /NORESTART. The NSIS-style /S is ignored, so the
+    # installer opens an interactive window and hangs forever under -Wait (observed on
+    # the bare-metal test box: a "Setup - Ollama" window, no ollama.exe, never returned).
+    $process = Start-Process -FilePath $installer -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") -Wait -PassThru
     if ($process.ExitCode -ne 0) {
         throw "Ollama installer exited with code $($process.ExitCode)."
     }
-    return [ordered]@{ status = "passed"; source = $installer; installed = $true }
+    $ollamaPath = Find-Ollama
+    if (-not $ollamaPath) {
+        throw "Ollama installer exited 0 but ollama.exe was not found under `$env:LOCALAPPDATA\Programs\Ollama. The silent install did not complete."
+    }
+    return [ordered]@{ status = "passed"; source = $installer; installed = $true; ollama_path = $ollamaPath }
 }
 
 function Invoke-Stage2 {

@@ -176,8 +176,19 @@ function Poll-DockerEngine {
         if ($cli) {
             $result.docker_present = $true
             Write-StepLog "engine" "Poll $attempt using $cli"
-            $output = & $cli info 2>&1
-            $exitCode = $LASTEXITCODE
+            # docker info fails (with stderr) while the engine is still starting — the
+            # whole point of this poll loop. Scope ErrorActionPreference to Continue so the
+            # stderr from a failed `docker info` is NOT turned into a terminating
+            # NativeCommandError under the script-wide Stop preference (which would abort the
+            # poll instead of retrying). Capture exit code and merged output, then decide.
+            $eapPrevious = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            try {
+                $output = & $cli info 2>&1
+                $exitCode = $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $eapPrevious
+            }
             if ($exitCode -eq 0) {
                 $outputText = $output -join "`n"
                 if ($outputText -notmatch "(?im)^Server:") {
