@@ -463,18 +463,26 @@ function Install-Ollama {
         return [ordered]@{ status = "planned"; source = $installer; installed = $false }
     }
     Write-BootstrapLog "stage2" "Starting Ollama installer silently"
-    # OllamaSetup.exe is an Inno Setup installer; its silent switches are
-    # /VERYSILENT /SUPPRESSMSGBOXES /NORESTART. The NSIS-style /S is ignored, so the
-    # installer opens an interactive window and hangs forever under -Wait (observed on
-    # the bare-metal test box: a "Setup - Ollama" window, no ollama.exe, never returned).
-    $process = Start-Process -FilePath $installer -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") -Wait -PassThru
-    if ($process.ExitCode -ne 0) {
-        throw "Ollama installer exited with code $($process.ExitCode)."
+    # OllamaSetup.exe is an Inno Setup installer; silent switches are
+    # /VERYSILENT /SUPPRESSMSGBOXES /NORESTART. Do NOT -Wait on it: after installing, the
+    # Inno Setup [Run] step launches the Ollama app/service and the installer process tree
+    # does not exit, so -Wait hangs forever (observed on the bare-metal test box: bootstrap
+    # stuck at Stage2 with ollama.exe already present). Start it detached and poll for
+    # ollama.exe (the real success signal) with a bound. The launched Ollama server is left
+    # running on purpose — Stage3/Stage4 need it.
+    $ollamaInstallTimeoutSeconds = 300
+    Start-Process -FilePath $installer -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") | Out-Null
+    $ollamaDeadline = (Get-Date).AddSeconds($ollamaInstallTimeoutSeconds)
+    $ollamaPath = $null
+    while ((Get-Date) -lt $ollamaDeadline) {
+        $ollamaPath = Find-Ollama
+        if ($ollamaPath) { break }
+        Start-Sleep -Seconds 3
     }
-    $ollamaPath = Find-Ollama
     if (-not $ollamaPath) {
-        throw "Ollama installer exited 0 but ollama.exe was not found under `$env:LOCALAPPDATA\Programs\Ollama. The silent install did not complete."
+        throw "Ollama installer did not produce ollama.exe under `$env:LOCALAPPDATA\Programs\Ollama within $ollamaInstallTimeoutSeconds seconds."
     }
+    Write-BootstrapLog "stage2" "Ollama installed; ollama.exe at $ollamaPath"
     return [ordered]@{ status = "passed"; source = $installer; installed = $true; ollama_path = $ollamaPath }
 }
 
