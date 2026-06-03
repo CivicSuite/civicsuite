@@ -37,6 +37,12 @@ RESPONSE_LETTER_TIMEOUT_SECONDS = 180
 RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
 OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
 OLLAMA_KEEP_ALIVE = "30m"
+# Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
+# docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
+# routes api/worker to host.docker.internal) instead of the containerized CPU Ollama.
+# Set from --host-ollama / --ollama-exe in main(). Default off: other install paths unchanged.
+USE_HOST_OLLAMA = False
+HOST_OLLAMA_EXE = "ollama"
 CODE_QA_TIMEOUT_SECONDS = 60
 CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
@@ -810,7 +816,7 @@ def ensure_ollama_models(
     for module, project, source in targets:
         for model in (DEFAULT_EMBEDDING_MODEL, DEFAULT_LLM_MODEL):
             proc = run(
-                compose(project, source, "exec", "-T", "ollama", "ollama", "pull", model),
+                ollama_command(project, source, "pull", model),
                 cwd=source,
                 timeout=3600,
             )
@@ -829,17 +835,7 @@ def ensure_ollama_models(
                 return steps
         try:
             proc = run(
-                compose(
-                    project,
-                    source,
-                    "exec",
-                    "-T",
-                    "ollama",
-                    "ollama",
-                    "run",
-                    DEFAULT_LLM_MODEL,
-                    "Respond with OK.",
-                ),
+                ollama_command(project, source, "run", DEFAULT_LLM_MODEL, "Respond with OK."),
                 cwd=source,
                 timeout=OLLAMA_PREWARM_TIMEOUT_SECONDS,
             )
@@ -885,7 +881,7 @@ def ensure_ollama_models(
         )
         if returncode == 0:
             loaded = run(
-                compose(project, source, "exec", "-T", "ollama", "ollama", "ps"),
+                ollama_command(project, source, "ps"),
                 cwd=source,
                 timeout=60,
             )
@@ -1068,8 +1064,24 @@ def compose(project: str, source: Path, *args: str) -> list[str]:
     override = source / "docker-compose.civicsuite.override.yml"
     if override.is_file():
         command.extend(["-f", override.name])
+    # Host-Ollama mode: layer the module's host-ollama variant LAST so its api/worker
+    # environment (OLLAMA_BASE_URL=host.docker.internal) wins and the in-container Ollama
+    # service is disabled.
+    if USE_HOST_OLLAMA:
+        host_ollama = source / "docker-compose.host-ollama.yml"
+        if host_ollama.is_file():
+            command.extend(["-f", host_ollama.name])
     command.extend(args)
     return command
+
+
+def ollama_command(project: str, source: Path, *ollama_args: str) -> list[str]:
+    # In host-Ollama mode the in-container Ollama is disabled, so model pull/run/ps must
+    # target the host's native (GPU) Ollama directly — which also means subprocess timeouts
+    # reliably terminate it (no lingering `docker compose exec` pipe).
+    if USE_HOST_OLLAMA:
+        return [HOST_OLLAMA_EXE, *ollama_args]
+    return compose(project, source, "exec", "-T", "ollama", "ollama", *ollama_args)
 
 
 def remove_tree_allowing_readonly(path: Path) -> None:
@@ -2279,18 +2291,21 @@ def install(
     if MODULE_RECORDS in modules:
         records_source = Path(ctx["records_source"])  # type: ignore[arg-type]
         records_project = str(ctx["records_project"])
-        warm_up = run(compose(records_project, records_source, "up", "-d", "ollama"), cwd=records_source, timeout=900)
-        steps.append(
-            {
-                "module": MODULE_RECORDS,
-                "step": "compose_up_ollama_warm_first",
-                "returncode": warm_up.returncode,
-                "stdout": warm_up.stdout[-4000:],
-                "stderr": warm_up.stderr[-4000:],
-            }
-        )
-        if warm_up.returncode != 0:
-            return {"status": "failed", "selected_modules": modules, "steps": steps}
+        # Warm-first only applies to the in-container Ollama. In host-Ollama mode the host's
+        # native Ollama is already serving, so skip bringing up the (disabled) container service.
+        if not USE_HOST_OLLAMA:
+            warm_up = run(compose(records_project, records_source, "up", "-d", "ollama"), cwd=records_source, timeout=900)
+            steps.append(
+                {
+                    "module": MODULE_RECORDS,
+                    "step": "compose_up_ollama_warm_first",
+                    "returncode": warm_up.returncode,
+                    "stdout": warm_up.stdout[-4000:],
+                    "stderr": warm_up.stderr[-4000:],
+                }
+            )
+            if warm_up.returncode != 0:
+                return {"status": "failed", "selected_modules": modules, "steps": steps}
         records_model_steps = ensure_ollama_models(ctx, selected_modules=[MODULE_RECORDS])
         steps.extend(records_model_steps)
         if any(step.get("required", True) and step.get("returncode") != 0 for step in records_model_steps):
@@ -2951,7 +2966,21 @@ def main() -> int:
         action="store_true",
         help="Run mutating starter-set workflow proof checks after health/version verification.",
     )
+    parser.add_argument(
+        "--host-ollama",
+        action="store_true",
+        help="Use the host's native (GPU) Ollama and the per-module docker-compose.host-ollama.yml variant instead of the in-container CPU Ollama.",
+    )
+    parser.add_argument(
+        "--ollama-exe",
+        default="ollama",
+        help="Path to the host Ollama executable (used with --host-ollama).",
+    )
     args = parser.parse_args()
+    global USE_HOST_OLLAMA, HOST_OLLAMA_EXE
+    USE_HOST_OLLAMA = bool(args.host_ollama)
+    if args.ollama_exe:
+        HOST_OLLAMA_EXE = args.ollama_exe
     if args.staff_mode == CLERK_STAFF_MODE_OPEN:
         print(CLERK_OPEN_MODE_WARNING, file=sys.stderr)
 

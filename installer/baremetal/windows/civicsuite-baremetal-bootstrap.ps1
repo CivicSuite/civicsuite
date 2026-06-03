@@ -586,6 +586,10 @@ function Invoke-Stage2 {
     if (-not $ollama) {
         $ollamaResult.install = Install-Ollama
     }
+    # Pin the resolved host Ollama path so Stage3/4 route the stack to the host's native (GPU)
+    # Ollama via the host-ollama compose variant (Invoke-InstallerLifecycle passes it through).
+    $script:ResolvedOllamaExe = Find-Ollama
+    $ollamaResult.resolved_exe = $script:ResolvedOllamaExe
     # Stage3/Stage4 run the city-core lifecycle runner with $PythonPath. A fresh Windows box
     # has no real Python (only the Store alias), so provision one and pin the resolved full
     # path for the later stages (don't rely on 'python' in PATH).
@@ -613,6 +617,12 @@ function Invoke-InstallerLifecycle {
     $args = @($runner.Path, $Mode, "--install-root", $root, "--run-id", $RunId, "--module", "civicrecords-ai", "--module", "civicclerk", "--module", "civiccode")
     if ($WorkflowProof) {
         $args += "--workflow-proof"
+    }
+    # Route the stack to the host's native (GPU) Ollama: the bootstrapper installs Ollama on
+    # the Windows host (GPU-accelerated), so use it + the host-ollama compose variant rather
+    # than a CPU-only in-container Ollama on a RAM-tight box.
+    if ($script:ResolvedOllamaExe) {
+        $args += @("--host-ollama", "--ollama-exe", $script:ResolvedOllamaExe)
     }
     if ($PlanOnly) {
         return [ordered]@{
