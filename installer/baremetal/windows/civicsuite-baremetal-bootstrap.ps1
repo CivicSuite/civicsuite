@@ -554,6 +554,44 @@ function Ensure-Python {
     throw "Python installer ran but no usable python.exe was found under Program Files or LocalAppData."
 }
 
+function Set-HostOllamaBindAddress {
+    param([string]$OllamaExe)
+    # The city-core containers reach the host Ollama via host.docker.internal, but Ollama on
+    # Windows binds 127.0.0.1 by default -> container traffic is refused and the response-letter
+    # generation never runs. Bind 0.0.0.0, open the port, and restart the server so it rebinds.
+    $result = [ordered]@{ ollama_host = "0.0.0.0"; firewall = $false; restarted = $false; ready = $false }
+    [Environment]::SetEnvironmentVariable("OLLAMA_HOST", "0.0.0.0", "Machine")
+    $env:OLLAMA_HOST = "0.0.0.0"
+    try {
+        if (-not (Get-NetFirewallRule -DisplayName "CivicSuite Ollama 11434" -ErrorAction SilentlyContinue)) {
+            New-NetFirewallRule -DisplayName "CivicSuite Ollama 11434" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 11434 -Profile Any -ErrorAction Stop | Out-Null
+        }
+        $result.firewall = $true
+    } catch {
+        Write-BootstrapLog "stage2" "Ollama firewall rule could not be added: $($_.Exception.Message)"
+    }
+    # Restart the Ollama server so it picks up OLLAMA_HOST=0.0.0.0.
+    Get-Process -Name "ollama app", "ollama", "ollama_llama_server" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+    $ollamaApp = Join-Path (Split-Path -Parent $OllamaExe) "ollama app.exe"
+    if (Test-Path -LiteralPath $ollamaApp) {
+        Start-Process -FilePath $ollamaApp | Out-Null
+    } else {
+        Start-Process -FilePath $OllamaExe -ArgumentList @("serve") | Out-Null
+    }
+    $result.restarted = $true
+    $deadline = (Get-Date).AddSeconds(60)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $probe = Invoke-WebRequest -Uri "http://127.0.0.1:11434/api/tags" -UseBasicParsing -TimeoutSec 3
+            if ($probe.StatusCode -eq 200) { $result.ready = $true; break }
+        } catch { }
+        Start-Sleep -Seconds 2
+    }
+    Write-BootstrapLog "stage2" "Host Ollama rebind to 0.0.0.0: restarted=$($result.restarted) firewall=$($result.firewall) ready=$($result.ready)"
+    return $result
+}
+
 function Invoke-Stage2 {
     $spike = $DockerSpikePath
     if (-not $spike) {
@@ -590,6 +628,9 @@ function Invoke-Stage2 {
     # Ollama via the host-ollama compose variant (Invoke-InstallerLifecycle passes it through).
     $script:ResolvedOllamaExe = Find-Ollama
     $ollamaResult.resolved_exe = $script:ResolvedOllamaExe
+    if ($script:ResolvedOllamaExe -and -not $PlanOnly) {
+        $ollamaResult.bind = Set-HostOllamaBindAddress -OllamaExe $script:ResolvedOllamaExe
+    }
     # Stage3/Stage4 run the city-core lifecycle runner with $PythonPath. A fresh Windows box
     # has no real Python (only the Store alias), so provision one and pin the resolved full
     # path for the later stages (don't rely on 'python' in PATH).
