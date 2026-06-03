@@ -41,6 +41,40 @@ def _write_facts(path: Path, **overrides: object) -> None:
     path.write_text(json.dumps(facts), encoding="utf-8")
 
 
+def _write_mock_wsl(path: Path, log_path: Path, status_exit: int = 50, set_default_exit: int = 0) -> None:
+    status_lines = [
+        "  echo The Windows Subsystem for Linux is not installed 1>&2",
+        f"  exit /b {status_exit}",
+    ]
+    if status_exit == 0:
+        status_lines = [
+            "  echo Default Version: 2",
+            "  exit /b 0",
+        ]
+    path.write_text(
+        "\n".join(
+            [
+                "@echo off",
+                f'>> "{log_path}" echo %*',
+                'if "%1"=="--status" (',
+                *status_lines,
+                ")",
+                'if "%1"=="--install" (',
+                "  echo Installing WSL",
+                "  exit /b 0",
+                ")",
+                'if "%1"=="--set-default-version" (',
+                "  echo set default version failed 1>&2",
+                f"  exit /b {set_default_exit}",
+                ")",
+                "exit /b 0",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def _run_bootstrap(
     tmp_path: Path,
     stage: str,
@@ -165,8 +199,11 @@ def test_stage1_plan_enables_wsl_features_and_registers_resume(tmp_path: Path) -
 def test_stage1_resume_run_self_unregisters_resume_task(tmp_path: Path) -> None:
     facts = tmp_path / "facts.json"
     task_registry = tmp_path / "resume-task.txt"
+    wsl_log = tmp_path / "wsl.log"
+    wsl_exe = tmp_path / "wsl.cmd"
     task_registry.write_text("registered", encoding="utf-8")
     _write_facts(facts)
+    _write_mock_wsl(wsl_exe, wsl_log, status_exit=0)
 
     completed, result = _run_bootstrap(
         tmp_path,
@@ -177,6 +214,8 @@ def test_stage1_resume_run_self_unregisters_resume_task(tmp_path: Path) -> None:
             "-MockWindowsFeatures",
             "-TaskRegistryPath",
             str(task_registry),
+            "-WslExePath",
+            str(wsl_exe),
         ],
         plan_only=False,
     )
@@ -186,6 +225,75 @@ def test_stage1_resume_run_self_unregisters_resume_task(tmp_path: Path) -> None:
     assert result["stage1"]["resume_cleanup"]["mechanism"] == "simulated_registry"
     assert all(feature["status"] == "passed" for feature in result["stage1"]["features"])
     assert not task_registry.exists()
+
+
+def test_stage1_installs_wsl_when_absent_and_tolerates_default_version_failure(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    task_registry = tmp_path / "resume-task.txt"
+    wsl_log = tmp_path / "wsl.log"
+    wsl_exe = tmp_path / "wsl.cmd"
+    _write_facts(facts)
+    _write_mock_wsl(wsl_exe, wsl_log, set_default_exit=50)
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage1",
+        facts,
+        [
+            "-MockWindowsFeatures",
+            "-TaskRegistryPath",
+            str(task_registry),
+            "-WslExePath",
+            str(wsl_exe),
+        ],
+        plan_only=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert result["status"] == "restart_required"
+    assert result["stage1"]["status"] == "passed"
+    assert result["stage1"]["wsl_status"]["status"] == "failed"
+    assert result["stage1"]["wsl_status"]["exit_code"] == 50
+    assert result["stage1"]["wsl_install"]["status"] == "passed"
+    assert result["stage1"]["wsl_install"]["command"].endswith("--install --no-distribution")
+    assert result["stage1"]["wsl_default_version"]["status"] == "failed"
+    assert result["stage1"]["wsl_default_version"]["exit_code"] == 50
+    assert result["stage1"]["resume"]["registered"] is True
+    assert "--status" in wsl_log.read_text(encoding="utf-8")
+    assert "--install --no-distribution" in wsl_log.read_text(encoding="utf-8")
+    assert "--set-default-version 2" in wsl_log.read_text(encoding="utf-8")
+
+
+def test_stage0_to_4_stops_before_stage2_when_stage1_needs_restart(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    task_registry = tmp_path / "resume-task.txt"
+    wsl_log = tmp_path / "wsl.log"
+    wsl_exe = tmp_path / "wsl.cmd"
+    _write_facts(facts)
+    _write_mock_wsl(wsl_exe, wsl_log)
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage0To4",
+        facts,
+        [
+            "-MockWindowsFeatures",
+            "-TaskRegistryPath",
+            str(task_registry),
+            "-WslExePath",
+            str(wsl_exe),
+        ],
+        plan_only=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert result["status"] == "restart_required"
+    assert result["stage0"]["status"] == "passed"
+    assert result["stage1"]["restart_needed"] is True
+    assert result["stage1"]["resume"]["registered"] is True
+    assert result["stage2"] is None
+    assert result["stage3"] is None
+    assert result["stage4"] is None
 
 
 def test_stage2_plan_orchestrates_docker_spike_and_ollama_without_host_mutation(tmp_path: Path) -> None:

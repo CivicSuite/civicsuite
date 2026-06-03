@@ -10,6 +10,7 @@ param(
     [string]$ResumeTaskName = "CivicSuiteBaremetalResume",
     [string]$ResumeCommand,
     [string]$TaskRegistryPath,
+    [string]$WslExePath = "wsl",
     [string]$DockerSpikePath,
     [string]$OllamaExePath,
     [string]$OllamaInstallerPath,
@@ -198,6 +199,57 @@ function Invoke-FeatureCommand {
     }
 }
 
+function Invoke-NativeCommand {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments
+    )
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $nativeArguments = ($Arguments | ForEach-Object {
+            if ($_ -match '[\s"]') {
+                '"' + ($_ -replace '"', '\"') + '"'
+            } else {
+                $_
+            }
+        }) -join " "
+        $psi = [System.Diagnostics.ProcessStartInfo]::new()
+        if ($FilePath -match '\.(cmd|bat)$') {
+            $commandPath = '"' + $FilePath + '"'
+            $psi.FileName = $(if ($env:ComSpec) { $env:ComSpec } else { "cmd.exe" })
+            $psi.Arguments = "/d /c $commandPath $nativeArguments"
+        } else {
+            $psi.FileName = $FilePath
+            $psi.Arguments = $nativeArguments
+        }
+        $psi.UseShellExecute = $false
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $psi.CreateNoWindow = $true
+
+        $process = [System.Diagnostics.Process]::Start($psi)
+        $stdout = $process.StandardOutput.ReadToEnd()
+        $stderr = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        return [ordered]@{
+            command = "$FilePath $($Arguments -join ' ')"
+            exit_code = [int]$process.ExitCode
+            stdout = $stdout.Trim()
+            stderr = $stderr.Trim()
+        }
+    } catch {
+        return [ordered]@{
+            command = "$FilePath $($Arguments -join ' ')"
+            exit_code = 127
+            stdout = ""
+            stderr = $_.Exception.Message
+        }
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
 function Unregister-ResumeTask {
     if ($TaskRegistryPath) {
         if (Test-Path -LiteralPath $TaskRegistryPath) {
@@ -276,21 +328,40 @@ function Invoke-Stage1 {
     $features = @()
     $features += Invoke-FeatureCommand "Microsoft-Windows-Subsystem-Linux"
     $features += Invoke-FeatureCommand "VirtualMachinePlatform"
+    $wslStatus = [ordered]@{ status = "not_run" }
+    $wslInstall = [ordered]@{ status = "not_run" }
     $wslDefault = [ordered]@{ status = "not_run"; restart_needed_first = $false }
-    if ($PlanOnly -or $MockWindowsFeatures) {
-        $wslDefault = [ordered]@{ status = "planned"; command = "wsl --set-default-version 2" }
+    if ($PlanOnly) {
+        $wslStatus = [ordered]@{ status = "planned"; command = "$WslExePath --status" }
+        $wslInstall = [ordered]@{ status = "planned"; command = "$WslExePath --install --no-distribution" }
+        $wslDefault = [ordered]@{ status = "planned"; command = "$WslExePath --set-default-version 2" }
     } else {
-        $wslOutput = & wsl --set-default-version 2 2>&1
-        $wslDefault = [ordered]@{ status = $(if ($LASTEXITCODE -eq 0) { "passed" } else { "failed" }); output = ($wslOutput -join "`n") }
+        $wslStatus = Invoke-NativeCommand -FilePath $WslExePath -Arguments @("--status")
+        $wslStatus["status"] = $(if ($wslStatus.exit_code -eq 0) { "passed" } else { "failed" })
+        if ($wslStatus.exit_code -ne 0) {
+            $wslInstall = Invoke-NativeCommand -FilePath $WslExePath -Arguments @("--install", "--no-distribution")
+            $wslInstall["status"] = $(if ($wslInstall.exit_code -eq 0) { "passed" } else { "failed" })
+        }
+        $wslDefault = Invoke-NativeCommand -FilePath $WslExePath -Arguments @("--set-default-version", "2")
+        $wslDefault["status"] = $(if ($wslDefault.exit_code -eq 0) { "passed" } else { "failed" })
     }
     $restartNeeded = [bool](@($features | Where-Object { $_.restart_needed }).Count -gt 0)
     $resume = $null
     if ($restartNeeded -and -not $ResumeRun) {
         $resume = Register-Resume
     }
+    $stage1Status = "passed"
+    if ($wslInstall["status"] -eq "failed") {
+        $stage1Status = "failed"
+    }
+    if ($ResumeRun -and -not $PlanOnly -and ($wslStatus["status"] -ne "passed" -or $wslDefault["status"] -ne "passed")) {
+        $stage1Status = "failed"
+    }
     $stage1 = [ordered]@{
-        status = "passed"
+        status = $stage1Status
         features = $features
+        wsl_status = $wslStatus
+        wsl_install = $wslInstall
         wsl_default_version = $wslDefault
         restart_needed = $restartNeeded
         resume = $resume
@@ -521,6 +592,14 @@ try {
     }
     if ($Stage -eq "Stage1" -or $Stage -eq "Stage0Stage1" -or $Stage -eq "Stage0To4") {
         $result.stage1 = Invoke-Stage1
+        if ($result.stage1.status -ne "passed") {
+            Complete-Bootstrap "failed"
+            exit 1
+        }
+        if ($result.stage1.restart_needed -and -not $ResumeRun -and -not $PlanOnly) {
+            Complete-Bootstrap "restart_required"
+            exit 0
+        }
     }
     if ($Stage -eq "Stage2" -or $Stage -eq "Stage0To4") {
         $result.stage2 = Invoke-Stage2
