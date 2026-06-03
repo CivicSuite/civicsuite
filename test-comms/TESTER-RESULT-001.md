@@ -1,32 +1,36 @@
 # Tester Result 001 - CivicSuite Stage 3A bare-machine live gate
-**Tester machine:** Windows reported as `Windows 10 Pro` by `Get-ComputerInfo`; RAM/CPU unavailable because local system inventory calls returned `Access denied`; Docker/Ollama not found on PATH, `wsl.exe` present.
-**Date/time (UTC):** 2026-06-03T03:10:45.7515206Z
-**Bootstrapper exit code:** not run - blocked before installer start
+**Tester machine:** Microsoft Windows 11 Pro 10.0.26200 build 26200; 16,629,244 KB visible RAM; Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz, 6 cores / 12 logical processors. `wsl.exe` was present; `docker` and `ollama` were not found on PATH before install.
+**Date/time (UTC):** 2026-06-03T04:43:10.1005610Z
+**Bootstrapper result status:** elevation_requested-then-failed - the first medium-integrity invocation requested elevation and exited 0; the elevated child ran Stage0 and failed because hardware virtualization is disabled in firmware.
 
-## Phase results
-- Stage0 (inspect): failed - Codex session was not elevated; directive says to stop if not running as administrator.
-- Stage1 (WSL2 enable + reboot): skipped - installer was not run.
-- Stage2 (Docker + Ollama install): skipped - installer was not run.
-- Stage3 (city-core stack): skipped - installer was not run.
-- Stage4 (verify): skipped - installer was not run.
+## Phase results (from the elevated run)
+- Stage0 (inspect): failed - Windows-version check passed on build 26200; Windows edition, local-admin, and internet checks passed; hardware-virtualization check failed with `virtualization_firmware_enabled: false`.
+- Stage1 (WSL2 enable + reboot): skipped - Stage0 failed before WSL2 enable; no reboot occurred.
+- Stage2 (Docker + Ollama install): skipped - Stage0 failed before install.
+- Stage3 (city-core stack): skipped - Stage0 failed before stack startup.
+- Stage4 (verify): skipped - Stage0 failed before verification.
 
 ## THE CRITICAL CHECK
 - generation_source: null
 - generation_model: null
-- VERDICT: FAIL - no AI letter was generated because the required elevated run mode was missing.
+- VERDICT: FAIL - no response-letter proof was generated because the installer stopped at Stage0 before Ollama/model/stack setup.
 
 ## Suite launcher
 - http://localhost:18082 serving: no
-- Module URLs: none printed; installer was not run.
+- Module URLs: none printed; installer stopped at Stage0.
 
 ## Evidence path
-No bootstrap result JSON was created because execution stopped before running `installer/baremetal/windows/civicsuite-baremetal-bootstrap.ps1`.
+Bootstrap result JSON:
+`C:\Users\insty\Documents\Codex\2026-06-02\you-re-the-civicsuite-tester-on\civicsuite\installer\baremetal\windows\logs\civicsuite-baremetal-bootstrap-result.json`
 
-Key evidence:
-- Elevation check command: `([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)`
-- Elevation check result: `False`
-- System inventory attempts using `Get-CimInstance` and `systeminfo` returned `Access denied`.
-- Tool discovery: `wsl.exe` present; `docker` and `ollama` not found on PATH.
+Lifecycle evidence JSON:
+`C:\Users\insty\Documents\Codex\2026-06-02\you-re-the-civicsuite-tester-on\civicsuite\installer\reports\stage3a-baremetal\clerk-core-installer-lifecycle.json` was missing.
+
+Key log excerpts:
+- `2026-06-03T04:42:14.1969349Z [stage0] Requesting UAC elevation for CivicSuite bare-metal bootstrap`
+- `2026-06-03T04:42:14.9175031Z [start] Starting CivicSuite bare-metal bootstrap stage Stage0Stage1`
+- `2026-06-03T04:42:19.2492382Z [stage0] Stage0 target inspection finished with status failed`
+- Result JSON Stage0 failed check: `hardware-virtualization`, message `Hardware virtualization must already be enabled for WSL2/Docker Desktop.`, action `Enable virtualization in firmware/BIOS before rerunning.`
 
 ## Honest notes
-The directive explicitly says: "If you find you are NOT elevated, stop and have the app relaunched as administrator - do not try to push past it." I therefore did not run the bare-metal installer.
+The revised directive was correct: the non-elevated Codex worker successfully launched an elevated child via `Start-Process -Verb RunAs`. The elevated child detected local admin rights and Windows 11 Pro build 26200, then stopped honestly because firmware virtualization is disabled. No reboot happened, no Docker/Ollama install started, and no CivicSuite containers were launched.
