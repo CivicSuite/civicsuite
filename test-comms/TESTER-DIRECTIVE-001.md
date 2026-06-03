@@ -1,38 +1,31 @@
 # Tester Directive 001 — CivicSuite Stage 3A bare-machine live gate
-**From:** Claude (dev machine) · **To:** Codex (test machine) · **Date:** 2026-06-02 · **Status:** AWAITING EXECUTION
+**From:** Claude (dev machine, Cowork) · **To:** Codex (test machine, app) · **Date:** 2026-06-02 · **Status:** AWAITING EXECUTION
 
 ## Goal
-On THIS fresh Windows 11 machine (full admin, no prior CivicSuite/dev work), run the CivicSuite city-core **bare-metal installer** end to end and PROVE the AI response-letter generates live. Your single deliverable is a committed + pushed `test-comms/TESTER-RESULT-001.md` containing the real evidence. This is a release gate — report honestly; optimism is failure.
+On this fresh Windows 11 machine (full admin, no prior CivicSuite or dev work), install CivicSuite city-core with the **bare-metal installer** and prove the AI response-letter generates live. Your single deliverable is a committed + pushed `test-comms/TESTER-RESULT-001.md` with the real evidence. This is a release gate — report honestly; an optimistic result is a failed result.
 
-## Run requirements (these gate the whole task — confirm before starting)
-- **Network access is REQUIRED.** This clones a repo and downloads Docker Desktop, Ollama, a 9.6 GB model, and container images. In a default workspace-write / network-off sandbox these WILL halt at the boundary. This task must run with network granted (full-access run mode).
-- **Admin/elevation is REQUIRED.** Run from an ALREADY-ELEVATED shell so the bootstrapper's self-elevation check passes without an interactive UAC prompt it can't answer headless.
-- **A reboot WILL happen** mid-install (when WSL2 is enabled). The bootstrapper registers a self-terminating resume task that continues after the reboot. After the machine returns, re-invoke (or `check repo`) so it finishes and you can capture the result.
+## What you need on this machine (these gate the whole task)
+- **Administrator rights.** The install enables Windows features (WSL2), installs Docker Desktop + Ollama, and stands up a container stack — all of which need admin. The installer self-elevates; if your session isn't already elevated it will raise a UAC consent that has to be accepted.
+- **Internet.** It pulls the repo, Docker Desktop, Ollama, a 9.6 GB model, and container images.
+- **A reboot will happen** partway through (when WSL2 is enabled). The installer registers a self-removing resume task that continues automatically after the machine comes back. After the reboot, let it finish (or `check repo` to pick back up), then capture the result.
 
-## Steps
-1. Clone (or pull) the repo + branch:
-   `git clone https://github.com/CivicSuite/civicsuite.git --branch stage-3a-baremetal-windows --single-branch civicsuite-gate`
-   `cd civicsuite-gate`  (if it already exists, `git -C civicsuite-gate fetch && git -C civicsuite-gate reset --hard origin/stage-3a-baremetal-windows`)
-2. From the elevated shell, run the bare-metal bootstrapper:
-   `powershell -ExecutionPolicy Bypass -File installer\baremetal\windows\civicsuite-baremetal-bootstrap.ps1`
-   It runs Stage0 inspect → Stage1 WSL2 enable (+reboot) → Stage2 Docker+Ollama install → Stage3 city-core stack → Stage4 verify. Let it complete (resume after the reboot).
-3. Capture — from the bootstrapper's own output and its result JSON (it prints/writes the path; look under `installer\baremetal\windows\logs\` or wherever its output says):
+## What to do
+1. Pull this repo branch — `github.com/CivicSuite/civicsuite`, branch `stage-3a-baremetal-windows` — into a fresh working folder (if you already have it, reset it hard to `origin/stage-3a-baremetal-windows` so you're testing exactly what's published).
+2. Run the bare-metal installer as-is: `installer/baremetal/windows/civicsuite-baremetal-bootstrap.ps1`. It runs Stage0 inspect → Stage1 WSL2 enable (+reboot) → Stage2 Docker + Ollama install → Stage3 city-core stack → Stage4 verify. Let it run all the way through, resuming after the reboot. Don't edit it — run what's published and report what actually happens.
+3. From the installer's own output and the result JSON it writes (it prints the path; also look under `installer/baremetal/windows/logs/`), capture:
    - bootstrapper exit code
    - per-phase status (Stage0–4)
-   - **THE CRITICAL CHECK** — the response-letter proof's `generation_source` and `generation_model`. PASS only if `generation_source == "ollama"` AND `generation_model == "gemma4:e4b"` (a real AI-generated letter). Anything else (`local-template`, `null`, wrong model) = FAIL.
-   - suite launcher `http://localhost:18082` serving? + the module URLs it prints.
-4. Write `test-comms/TESTER-RESULT-001.md` (template below), then commit + push:
-   `git add test-comms/TESTER-RESULT-001.md`
-   `git commit -m "test: Stage 3A bare-machine live gate result"`
-   `git push origin stage-3a-baremetal-windows`
+   - **THE CRITICAL CHECK** — the response-letter proof's `generation_source` and `generation_model`. PASS only if `generation_source == "ollama"` AND `generation_model == "gemma4:e4b"` (a real AI-generated letter). `local-template`, `null`, or any other model = FAIL.
+   - suite launcher at `http://localhost:18082` serving? + the module URLs it prints.
+4. Write `test-comms/TESTER-RESULT-001.md` (template below) and push it to `stage-3a-baremetal-windows`.
 
-## Done-when (do not stop before this)
-`test-comms/TESTER-RESULT-001.md` is committed AND pushed to `stage-3a-baremetal-windows`, filled with the actual `generation_source`/`generation_model` values and per-phase results. **Do not reply with a summary of this directive — your only acknowledgment is the pushed result file.** If you hit a hard blocker (no network grant, can't elevate, bootstrapper crashes unrecoverably), write what you got plus the blocker into the result file and push THAT — a pushed honest failure is the deliverable, silence is not.
+## Done-when (don't stop before this)
+`test-comms/TESTER-RESULT-001.md` is committed AND pushed to `stage-3a-baremetal-windows`, filled with the actual `generation_source`/`generation_model` values and per-phase results. **Your only acknowledgment is the pushed result file — not a summary of this directive.** If you hit a hard blocker (no internet, can't get admin, installer crashes unrecoverably), write what you got plus the blocker into the result file and push THAT. A pushed honest failure is the deliverable; silence is not.
 
 ## Result template — copy into `test-comms/TESTER-RESULT-001.md` and fill in
 ```markdown
 # Tester Result 001 — CivicSuite Stage 3A bare-machine live gate
-**Tester machine:** [Win11 edition, RAM, CPU; was Docker/WSL/Ollama pre-installed?]
+**Tester machine:** [Win11 edition, RAM, CPU; were Docker/WSL/Ollama pre-installed?]
 **Date/time (UTC):** [...]
 **Bootstrapper exit code:** [0=pass, nonzero=fail]
 
@@ -60,4 +53,4 @@ On THIS fresh Windows 11 machine (full admin, no prior CivicSuite/dev work), run
 ```
 
 ## Hard limits
-No merge to main, no tags, no `modules.json`/status changes, no source edits (run the installer AS-IS — report what happens). Push only to `stage-3a-baremetal-windows`. Never touch OneDrive paths.
+Run the installer exactly as published — no source edits. No merge to main, no tags, no `modules.json`/status changes. Push only to `stage-3a-baremetal-windows`. Never touch any OneDrive path.
