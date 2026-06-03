@@ -1088,6 +1088,23 @@ def ollama_command(project: str, source: Path, *ollama_args: str) -> list[str]:
     return compose(project, source, "exec", "-T", "ollama", "ollama", *ollama_args)
 
 
+def harden_host_ollama_overrides(runtime_source: Path) -> None:
+    # A module's docker-compose.host-ollama.yml disables the in-container `ollama` service
+    # and tries to drop it from api/worker depends_on -- but Docker Compose MERGES depends_on
+    # across -f files (it does not replace), so the base's `ollama` dependency survives and,
+    # with the service disabled, the project becomes invalid ("depends on undefined service
+    # ollama"). Patch the runtime working copy so the variant's depends_on uses the Compose
+    # Spec `!override` merge tag (replace, not merge). Runtime copy only -- the bundled/pinned
+    # module source is untouched; the same fix is tracked as a finding for the module repo.
+    host_override = runtime_source / "docker-compose.host-ollama.yml"
+    if not host_override.is_file():
+        return
+    text = host_override.read_text(encoding="utf-8")
+    patched = text.replace("    depends_on:\n", "    depends_on: !override\n")
+    if patched != text:
+        host_override.write_text(patched, encoding="utf-8", newline="\n")
+
+
 def remove_tree_allowing_readonly(path: Path) -> None:
     def _on_error(function, target, exc_info):  # type: ignore[no-untyped-def]
         try:
@@ -2213,6 +2230,8 @@ def prepare_sources(
         launcher_target = copy_suite_launcher_runtime(install_root)
     if MODULE_RECORDS in modules:
         copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
+        if USE_HOST_OLLAMA:
+            harden_host_ollama_overrides(ctx["records_source"])  # type: ignore[arg-type]
         normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
         normalize_records_frontend_dockerfile(ctx["records_source"])  # type: ignore[arg-type]
         write_records_env(
@@ -2224,6 +2243,8 @@ def prepare_sources(
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
         copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
+        if USE_HOST_OLLAMA:
+            harden_host_ollama_overrides(ctx["clerk_source"])  # type: ignore[arg-type]
         write_clerk_env(
             ctx["clerk_source"] / ".env",
             staff_mode=staff_mode,
@@ -2236,6 +2257,8 @@ def prepare_sources(
             write_clerk_handoff_override(ctx["clerk_source"], shared_network)  # type: ignore[arg-type]
     if MODULE_CODE in modules:
         copy_source(source_root(MODULE_CODE), ctx["code_source"])  # type: ignore[arg-type]
+        if USE_HOST_OLLAMA:
+            harden_host_ollama_overrides(ctx["code_source"])  # type: ignore[arg-type]
         write_code_env(
             ctx["code_source"] / ".env",
             code_ports,  # type: ignore[arg-type]
