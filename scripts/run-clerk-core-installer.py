@@ -588,8 +588,6 @@ def load_selected_modules(install_root: Path, selected_modules: list[str] | tupl
 
 
 def copy_source(source: Path, target: Path) -> None:
-    if target.exists():
-        return
     ignore = shutil.ignore_patterns(
         ".git",
         ".env",
@@ -616,7 +614,13 @@ def copy_source(source: Path, target: Path) -> None:
         "backend/.venv",
         "backend/.venv*",
     )
-    shutil.copytree(source, target, ignore=ignore)
+    # Always materialize the module source into the runtime dir. Merge into any existing
+    # (possibly stale/partial) dir from a prior run rather than skipping on existence: a
+    # leftover dir holding only generated files (.env / override / data) must still receive
+    # docker-compose.yml + Dockerfiles + app source, or compose_build fails "file not found".
+    # dirs_exist_ok merges — it does not delete runtime data/ or the generated files (which
+    # are written after this call), and re-copied pristine source is re-normalized idempotently.
+    shutil.copytree(source, target, ignore=ignore, dirs_exist_ok=True)
     ledger = source / "docs" / "ops" / "tier1-retrofit-ledger.json"
     if ledger.is_file():
         ledger_target = target / "docs" / "ops" / "tier1-retrofit-ledger.json"
