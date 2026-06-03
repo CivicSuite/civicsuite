@@ -7,7 +7,12 @@ How the **DEV-machine Claude** (Cowork app — writes directives, renders the of
 - `TESTER-RESULT-NNN.md` — written by TESTER Codex. The findings for directive NNN.
 
 ## The `check repo` trigger (symmetric)
-- **On the TESTER machine (Codex):** `check repo` = pull this branch → read the newest `TESTER-DIRECTIVE-*.md` you haven't completed → run it exactly as written → write the matching `TESTER-RESULT-NNN.md` → push it. Your only acknowledgment is the pushed result file, never a summary.
+- **On the TESTER machine (Codex) — STANDING re-run procedure (no new directive needed each cycle):** `check repo` =
+  1. Pull and hard-reset your clone to `origin/stage-3a-baremetal-windows` (test exactly what's published — the installer is being fixed gap-by-gap, so always take the latest).
+  2. Confirm `(Get-CimInstance Win32_ComputerSystem).HypervisorPresent` is `True` (VT-x is genuinely on; the installer's own check is a not-yet-fixed false-negative).
+  3. Run the bootstrapper end-to-end with the corrected `-HostFactsJson` (real host facts, `virtualization_firmware_enabled=true`) so Stage0 passes; let it self-elevate, install, and **reboot** as many times as needed. After each reboot, re-launch and `check repo` to continue.
+  4. When it reaches a terminal point — the AI-letter proof, OR a blocker it can't pass — write the **next-numbered** `TESTER-RESULT-NNN.md` (diagnosis, per-stage results, the critical `generation_source`/`generation_model` check, evidence paths, honest notes) and push it. Your only acknowledgment is the pushed result file, never a summary.
+  - A `TESTER-DIRECTIVE-NNN.md` is only written for a SPECIAL one-off test; absent a newer one, the standing procedure above is what `check repo` runs. (Directives 001–003 are history; the procedure here supersedes them.)
 - **On the DEV machine (Claude):** `check repo` = pull this branch → read the newest `TESTER-RESULT-*.md` not yet verdicted → render the independent verdict from the reported evidence.
 
 ## How the Codex app runs on the tester (operator sets these, not the prompt)
