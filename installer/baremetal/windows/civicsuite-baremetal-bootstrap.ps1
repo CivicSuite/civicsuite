@@ -150,15 +150,23 @@ function Add-Check {
 function Invoke-Stage0 {
     $facts = Get-HostFacts
     $checks = New-Object System.Collections.ArrayList
-    $caption = [string]$facts.os_caption
+    $versionText = [string]$facts.os_version
     $edition = [string]$facts.edition
-    $isWindows11 = $caption -match "Windows 11"
+    $build = -1
+    try {
+        if (-not [string]::IsNullOrWhiteSpace($versionText)) {
+            $build = [int]([version]$versionText).Build
+        }
+    } catch {
+        $build = -1
+    }
+    $isWindows11 = $build -ge 22000
     $supportedEdition = $edition -match "Pro|Enterprise"
     $isAdmin = [bool]$facts.is_admin
     $virtualization = [bool]$facts.virtualization_firmware_enabled
     $internet = [bool]$facts.internet_available
 
-    Add-Check $checks "windows-version" $isWindows11 "Stage 3A target is Windows 11 Pro/Enterprise." "Use a Windows 11 Pro or Enterprise machine for Stage 3A."
+    Add-Check $checks "windows-version" $isWindows11 "Stage 3A target is Windows 11 build >= 22000; the marketing name string is unreliable." "Use a Windows 11 Pro or Enterprise machine for Stage 3A; Windows 11 is build >= 22000."
     Add-Check $checks "windows-edition" $supportedEdition "Stage 3A supports Pro/Enterprise editions." "Use Windows 11 Pro or Enterprise; Home/managed-machine discovery is Stage 3B+ scope."
     Add-Check $checks "local-admin" $isAdmin "Local administrator rights are required for Windows features and Docker Desktop installation." "Sign in as a local admin or rerun from an elevated shell."
     Add-Check $checks "hardware-virtualization" $virtualization "Hardware virtualization must already be enabled for WSL2/Docker Desktop." "Enable virtualization in firmware/BIOS before rerunning."

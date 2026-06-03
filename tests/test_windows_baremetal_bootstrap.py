@@ -101,6 +101,25 @@ def test_stage0_passes_only_when_defined_stage3a_target_is_met(tmp_path: Path) -
     }
 
 
+def test_stage0_uses_windows_build_number_not_caption_for_version_gate(tmp_path: Path) -> None:
+    cases = [
+        ("Microsoft Windows 10 Pro", "10.0.26200", "passed", 0),
+        ("Microsoft Windows 11 Pro", "10.0.22000", "passed", 0),
+        ("Microsoft Windows 10 Pro", "10.0.19045", "failed", 1),
+    ]
+    for caption, version, expected_status, expected_returncode in cases:
+        case_dir = tmp_path / version.replace(".", "_")
+        case_dir.mkdir()
+        facts = case_dir / "facts.json"
+        _write_facts(facts, os_caption=caption, os_version=version)
+
+        completed, result = _run_bootstrap(case_dir, "Stage0", facts)
+
+        check_statuses = {check["id"]: check["status"] for check in result["stage0"]["checks"]}
+        assert completed.returncode == expected_returncode, completed.stderr
+        assert check_statuses["windows-version"] == expected_status
+
+
 def test_stage0_fails_with_actionable_checks_for_unsupported_host(tmp_path: Path) -> None:
     facts = tmp_path / "facts.json"
     _write_facts(
