@@ -473,6 +473,31 @@ def ensure_env_value(path: Path, name: str, value: str) -> None:
         handle.write(f"{line_prefix}{name}={value}\n")
 
 
+def set_env_value(path: Path, name: str, value: str) -> None:
+    """Update-or-add an env var in a KEY=VALUE file.
+
+    Unlike ensure_env_value (which only adds when the key is absent), this rewrites
+    an existing key to the new value. Used to upgrade a stale .env from a prior run
+    (e.g. a CivicClerk .env written in the default protected mode before a workflow
+    proof requested bearer) instead of silently keeping the old value.
+    """
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    out: list[str] = []
+    found = False
+    for raw in lines:
+        stripped = raw.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            if stripped.split("=", 1)[0].strip() == name:
+                out.append(f"{name}={value}")
+                found = True
+                continue
+        out.append(raw)
+    if not found:
+        out.append(f"{name}={value}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
 def suite_session_value_path(install_root: Path) -> Path:
     return install_root / "shared" / SUITE_SESSION_FILE_NAME
 
@@ -977,6 +1002,20 @@ NGINX
     )
 
 
+def resolve_staff_mode(requested_mode: str, *, workflow_proof: bool) -> str:
+    """Resolve the effective CivicClerk staff-auth mode for a lifecycle run.
+
+    The starter-set workflow proof authenticates CivicClerk via the bearer staff
+    token (verify_clerk_bearer_workflow / clerk_to_code_handoff), so --workflow-proof
+    REQUIRES bearer mode. Force it on over the default protected so the install and
+    verify passes agree; otherwise clerk installs protected and every bearer proof
+    call 401s at /staff/session. A non-proof run keeps the requested mode.
+    """
+    if workflow_proof and requested_mode != CLERK_STAFF_MODE_BEARER:
+        return CLERK_STAFF_MODE_BEARER
+    return requested_mode
+
+
 def write_clerk_env(
     target: Path,
     *,
@@ -987,7 +1026,19 @@ def write_clerk_env(
     suite_session_value: str | None = None,
 ) -> None:
     resolved_ports = ports or DEFAULT_CLERK_PORTS
+    bearer_token_roles = json.dumps(
+        {CLERK_WORKFLOW_PROOF_BEARER: ["clerk_admin", "meeting_editor"]},
+        separators=(",", ":"),
+    )
     if target.is_file():
+        # A .env from a prior run persists (teardown clears Docker state, not the
+        # host runtime dir). Still ENFORCE the staff-auth contract so a stale file —
+        # e.g. written in the default protected mode before a workflow proof asked
+        # for bearer — is upgraded, not silently kept (ensure_env_value only adds
+        # when missing, so use set_env_value to overwrite the existing value).
+        set_env_value(target, "CIVICCLERK_STAFF_AUTH_MODE", staff_mode)
+        if staff_mode == CLERK_STAFF_MODE_BEARER:
+            set_env_value(target, "CIVICCLERK_STAFF_AUTH_TOKEN_ROLES", bearer_token_roles)
         if suite_session_value:
             ensure_env_value(target, SUITE_SESSION_ENV, suite_session_value)
             ensure_env_value(target, SUITE_SESSION_REVOCATION_ENV, SUITE_SESSION_REVOCATION_CONTAINER_PATH)
@@ -1021,10 +1072,7 @@ def write_clerk_env(
         values[SUITE_SESSION_ENV] = suite_session_value
         values[SUITE_SESSION_REVOCATION_ENV] = SUITE_SESSION_REVOCATION_CONTAINER_PATH
     if staff_mode == CLERK_STAFF_MODE_BEARER:
-        values["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"] = json.dumps(
-            {CLERK_WORKFLOW_PROOF_BEARER: ["clerk_admin", "meeting_editor"]},
-            separators=(",", ":"),
-        )
+        values["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"] = bearer_token_roles
     target.write_text("\n".join(f"{key}={value}" for key, value in values.items()) + "\n", encoding="utf-8")
 
 
@@ -3029,6 +3077,11 @@ def main() -> int:
     if args.staff_mode == CLERK_STAFF_MODE_OPEN:
         print(CLERK_OPEN_MODE_WARNING, file=sys.stderr)
 
+    # --workflow-proof authenticates CivicClerk via the bearer staff token, so it
+    # requires bearer mode (see resolve_staff_mode). Resolve once and use for the
+    # install, verify, and repair passes so they all agree.
+    staff_mode = resolve_staff_mode(args.staff_mode, workflow_proof=args.workflow_proof)
+
     run_id = args.run_id or os.environ.get("CIVICSUITE_INSTALLER_RUN_ID") or make_run_id()
     report_dir = REPORT_ROOT / run_id
     install_root = Path(args.install_root).resolve()
@@ -3073,7 +3126,7 @@ def main() -> int:
                     isolation=isolation,
                     report_dir=report_dir,
                     selected_modules=selected_modules,
-                    staff_mode=args.staff_mode,
+                    staff_mode=staff_mode,
                     workflow_proof=args.workflow_proof,
                 )
             )
@@ -3084,7 +3137,7 @@ def main() -> int:
                     isolation=isolation,
                     report_dir=report_dir,
                     selected_modules=selected_modules,
-                    staff_mode=args.staff_mode,
+                    staff_mode=staff_mode,
                     workflow_proof=args.workflow_proof,
                 )
             )
@@ -3095,7 +3148,7 @@ def main() -> int:
                     isolation=isolation,
                     report_dir=report_dir,
                     selected_modules=selected_modules,
-                    staff_mode=args.staff_mode,
+                    staff_mode=staff_mode,
                     workflow_proof=args.workflow_proof,
                 )
             )

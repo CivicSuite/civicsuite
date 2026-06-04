@@ -642,3 +642,74 @@ def test_generated_launcher_has_python_fallback_for_suite_launcher() -> None:
 
     assert "python -m http.server {SUITE_LAUNCHER_PORT} --bind 127.0.0.1" in text
     assert "python3 -m http.server {SUITE_LAUNCHER_PORT} --bind 127.0.0.1" in text
+
+
+def test_resolve_staff_mode_forces_bearer_for_workflow_proof() -> None:
+    """--workflow-proof authenticates CivicClerk via the bearer staff token, so the
+    proof requires bearer mode. Without this the clerk install stays protected and
+    the bearer workflow proof 401s at /staff/session (live-install blocker found in
+    TESTER-RESULT-015: civicclerk_bearer_workflow + clerk_to_code_handoff 401)."""
+    runner = _load_installer_runner()
+
+    # A proof run forces bearer regardless of the requested default.
+    assert runner.resolve_staff_mode(runner.CLERK_STAFF_MODE_PROTECTED, workflow_proof=True) == runner.CLERK_STAFF_MODE_BEARER
+    assert runner.resolve_staff_mode(runner.CLERK_STAFF_MODE_OPEN, workflow_proof=True) == runner.CLERK_STAFF_MODE_BEARER
+    assert runner.resolve_staff_mode(runner.CLERK_STAFF_MODE_BEARER, workflow_proof=True) == runner.CLERK_STAFF_MODE_BEARER
+    # A non-proof run keeps the requested mode untouched.
+    assert runner.resolve_staff_mode(runner.CLERK_STAFF_MODE_PROTECTED, workflow_proof=False) == runner.CLERK_STAFF_MODE_PROTECTED
+    assert runner.resolve_staff_mode(runner.CLERK_STAFF_MODE_OPEN, workflow_proof=False) == runner.CLERK_STAFF_MODE_OPEN
+
+
+def test_set_env_value_updates_existing_and_adds_missing(tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    env = tmp_path / ".env"
+    env.write_text("A=1\nCIVICCLERK_STAFF_AUTH_MODE=protected\nB=2\n", encoding="utf-8")
+
+    runner.set_env_value(env, "CIVICCLERK_STAFF_AUTH_MODE", "bearer")  # update existing
+    runner.set_env_value(env, "C", "3")  # add missing
+
+    parsed = runner.parse_env_file(env)
+    assert parsed["CIVICCLERK_STAFF_AUTH_MODE"] == "bearer"
+    assert parsed["A"] == "1"  # untouched
+    assert parsed["B"] == "2"  # untouched
+    assert parsed["C"] == "3"  # added
+    # No duplicate key left behind.
+    mode_lines = [ln for ln in env.read_text(encoding="utf-8").splitlines() if ln.startswith("CIVICCLERK_STAFF_AUTH_MODE=")]
+    assert mode_lines == ["CIVICCLERK_STAFF_AUTH_MODE=bearer"]
+
+
+def test_write_clerk_env_upgrades_stale_protected_env_to_bearer(tmp_path: Path) -> None:
+    """A CivicClerk .env from a prior run persists (teardown clears Docker state, not
+    the host runtime dir). write_clerk_env must UPGRADE a stale protected .env to the
+    requested bearer mode + token-role allowlist, not silently keep the old value —
+    otherwise the bearer workflow proof keeps 401ing on a box that has run before."""
+    runner = _load_installer_runner()
+    env = tmp_path / ".env"
+    # Stale file from a prior protected-mode run: bearer mode + token roles absent.
+    env.write_text(
+        "CIVICCLERK_POSTGRES_USER=civicclerk\nCIVICCLERK_STAFF_AUTH_MODE=protected\n",
+        encoding="utf-8",
+    )
+
+    runner.write_clerk_env(env, staff_mode=runner.CLERK_STAFF_MODE_BEARER)
+
+    parsed = runner.parse_env_file(env)
+    assert parsed["CIVICCLERK_STAFF_AUTH_MODE"] == runner.CLERK_STAFF_MODE_BEARER
+    # The proof bearer token must be in the role allowlist or /staff/session 401s.
+    roles = json.loads(parsed["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"])
+    assert runner.CLERK_WORKFLOW_PROOF_BEARER in roles
+    assert roles[runner.CLERK_WORKFLOW_PROOF_BEARER] == ["clerk_admin", "meeting_editor"]
+    # Pre-existing unrelated values preserved.
+    assert parsed["CIVICCLERK_POSTGRES_USER"] == "civicclerk"
+
+
+def test_write_clerk_env_fresh_bearer_writes_token_roles(tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    env = tmp_path / ".env"  # does not exist yet
+
+    runner.write_clerk_env(env, staff_mode=runner.CLERK_STAFF_MODE_BEARER)
+
+    parsed = runner.parse_env_file(env)
+    assert parsed["CIVICCLERK_STAFF_AUTH_MODE"] == runner.CLERK_STAFF_MODE_BEARER
+    roles = json.loads(parsed["CIVICCLERK_STAFF_AUTH_TOKEN_ROLES"])
+    assert roles[runner.CLERK_WORKFLOW_PROOF_BEARER] == ["clerk_admin", "meeting_editor"]
