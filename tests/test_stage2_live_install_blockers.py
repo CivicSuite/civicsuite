@@ -275,6 +275,88 @@ def test_records_workflow_rejects_wrong_model_response_behaviorally(monkeypatch,
     assert letter_check["expected_generation_model"] == runner.DEFAULT_LLM_MODEL
 
 
+def test_records_workflow_admin_login_is_reentrant_after_rotation(monkeypatch, tmp_path: Path) -> None:
+    """The bootstrapper runs the workflow proof twice (install mode, then verify
+    mode). The first pass rotates the forced-first-login admin password, so the
+    SECOND pass can no longer authenticate with the seeded secret (fastapi-users
+    returns 400). The proof must re-derive the deterministic rotated password and
+    still reach the draft_response_letter proof — otherwise the gate's verify-mode
+    evidence (what Stage4 reads) is permanently missing the letter. This is the
+    live-install blocker found in TESTER-RESULT-013/014 (must_change_password=f
+    + admin_login 400 on a fresh stack)."""
+    runner = _load_installer_runner()
+
+    password = "first-admin-password"
+    password_path = tmp_path / "data" / "secrets" / "first_admin_password"
+    password_path.parent.mkdir(parents=True)
+    password_path.write_text(password, encoding="utf-8")
+
+    # Deterministic rotation target — must match the runner's derivation exactly.
+    expected_rotated = f"Rotated-{password}-A1!"
+
+    seen_logins: list[str] = []
+
+    def fake_post_form(_url, payload):
+        seen_logins.append(payload["password"])
+        # The seeded secret no longer authenticates (a prior pass rotated it).
+        if payload["password"] == password:
+            return 400, {"detail": "LOGIN_BAD_CREDENTIALS"}
+        # The deterministic rotated password DOES authenticate on re-entry.
+        if payload["password"] == expected_rotated:
+            return 200, {"access_token": "token"}
+        return 400, {"detail": "LOGIN_BAD_CREDENTIALS"}
+
+    def fake_get_json(url, **_kwargs):
+        if url.endswith("/users/me"):
+            # Already rotated by the prior pass — no re-rotation required.
+            return 200, {"must_change_password": False}
+        if url.endswith("/requests/1"):
+            return 200, {"id": "1"}
+        if url.endswith("/search/filters"):
+            return 200, {"file_types": [], "source_names": [], "departments": []}
+        return 200, {}
+
+    def fake_patch_json(_url, payload, **_kwargs):
+        return 200, {"status": payload["status"]}
+
+    def fake_post_json(url, _payload, **_kwargs):
+        if url.endswith("/requests/"):
+            return 201, {"id": "1", "status": "submitted"}
+        if url.endswith("/submit-review"):
+            return 200, {"status": "in_review"}
+        if url.endswith("/response-letter"):
+            return 201, {
+                "id": "letter-1",
+                "status": "draft",
+                "generation_source": "ollama",
+                "generation_model": runner.DEFAULT_LLM_MODEL,
+                "generated_content": "Draft requires human review.",
+            }
+        if url.endswith("/ready-for-release"):
+            return 200, {"status": "ready_for_release"}
+        raise AssertionError(f"unexpected POST {url}")
+
+    monkeypatch.setattr(runner, "post_form", fake_post_form)
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+    monkeypatch.setattr(runner, "patch_json", fake_patch_json)
+    monkeypatch.setattr(runner, "post_json", fake_post_json)
+
+    result = runner.verify_records_workflow(tmp_path, {"api": 18000})
+
+    # The seeded secret was tried first and 400'd, then the deterministic rotated
+    # password was tried and succeeded — proving the re-entry fallback fired.
+    assert seen_logins[0] == password
+    assert expected_rotated in seen_logins
+    admin_login = [c for c in result["checks"] if c["name"] == "admin_login"][0]
+    assert admin_login["status_code"] == 200
+    assert admin_login["has_access_token"] is True
+    # The whole proof completes through the letter despite the stale seed.
+    letter_check = [c for c in result["checks"] if c["name"] == "draft_response_letter"][0]
+    assert letter_check["generation_source"] == "ollama"
+    assert letter_check["generation_model"] == runner.DEFAULT_LLM_MODEL
+    assert result["status"] == "passed"
+
+
 def test_readiness_fails_closed_when_memory_is_undetectable(monkeypatch) -> None:
     planner = _load_plan_installer()
 

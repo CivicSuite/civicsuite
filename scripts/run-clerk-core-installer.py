@@ -1460,10 +1460,29 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
     except OSError as exc:
         return {"name": "civicrecords_workflow", "status": "failed", "error": str(exc), "checks": checks}
 
+    # The forced first-login rotation is one-way: the first proof pass (install
+    # mode) logs in with the seeded secret, rotates the admin password, and clears
+    # must_change_password. The bootstrapper then runs the proof AGAIN in verify
+    # mode, so the second pass can no longer authenticate with the now-stale seed
+    # (fastapi-users returns 400 LOGIN_BAD_CREDENTIALS). Derive the rotation target
+    # deterministically from the stable seeded secret so any later pass can
+    # re-derive it and authenticate without persisted state — making the proof
+    # idempotent / re-runnable (also the real-world re-install/re-verify case).
+    rotated_password = f"Rotated-{password}-A1!"
+
     login_status, login_body = post_form(
         f"{base}/auth/jwt/login",
         {"username": first_admin_email, "password": password},
     )
+    if login_status != 200 or not login_body.get("access_token"):
+        # Re-entry: a prior pass already rotated the seeded password, so the seed
+        # no longer authenticates. Fall back to the deterministic rotated value.
+        reentry_status, reentry_body = post_form(
+            f"{base}/auth/jwt/login",
+            {"username": first_admin_email, "password": rotated_password},
+        )
+        if reentry_status == 200 and reentry_body.get("access_token"):
+            login_status, login_body = reentry_status, reentry_body
     checks.append(
         {
             "name": "admin_login",
@@ -1488,7 +1507,6 @@ def verify_records_workflow(records_source: Path, ports: dict[str, int]) -> dict
     if me_status != 200:
         return {"name": "civicrecords_workflow", "status": "failed", "checks": checks}
     if must_rotate:
-        rotated_password = f"Rotated-{uuid4().hex}-A1!"
         rotate_status, rotate_body = patch_json(
             f"{base}/users/me",
             {"password": rotated_password},
