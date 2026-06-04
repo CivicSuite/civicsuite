@@ -1,9 +1,9 @@
-# CivicSuite Stage 3A — stack teardown
+# CivicSuite Stage 3A - stack teardown
 #
 # Removes the city-core Docker STACK state (containers, volumes, networks) so a re-install
 # starts from a clean stack. Does NOT uninstall Docker Desktop, WSL2, Ollama, or Python, and
-# does NOT remove the pulled Ollama models (those live in the host Ollama, not a Docker volume)
-# -- so re-provisioning (incl. the 9.6 GB model) is not repeated.
+# does NOT remove the pulled Ollama models (those live in the host Ollama, not a Docker volume),
+# so re-provisioning (incl. the 9.6 GB model) is not repeated.
 #
 # Why: Postgres sets its password only on the FIRST init of an empty data volume. A persisted
 # volume from a prior run rejects freshly generated credentials ("password authentication
@@ -42,4 +42,4 @@ $networks = @(& docker network ls --format "{{.Name}}" 2>$null | Where-Object { 
 foreach ($n in $networks) { & docker network rm $n 2>&1 | Out-Null }
 if ($networks.Count -gt 0) { Write-Output "removed networks: $($networks.Count)" } else { Write-Output "no civicsuite networks" }
 
-Write-Output "=== teardown complete — stack state cleared; prerequisites preserved ==="
+Write-Output "=== teardown complete - stack state cleared; prerequisites preserved ==="
