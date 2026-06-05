@@ -665,6 +665,22 @@ def test_test_comms_standing_run_uses_customer_artifact_and_real_host_facts() ->
     assert "corrected `-HostFactsJson`" not in readme
 
 
+def test_stage3a_truth_docs_name_current_red_gate_and_pending_artifact_regate() -> None:
+    guide = (ROOT / "docs" / "installer" / "windows-baremetal-stage3a-guide.md").read_text(encoding="utf-8")
+    status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    for text in (guide, status, changelog):
+        assert "tester result 017" in text.lower()
+        assert "tester result 018" in text.lower()
+        assert "019" in text
+        assert "No merge, tag, status promotion" in text or "not a promoted installer release" in text or "candidate-only" in text
+
+    assert "current red gate" in status.lower()
+    assert "artifact-path re-gate" in guide
+    assert "public-use/procurement/production claim" in changelog
+
+
 def test_wait_for_url_timeout_records_124_and_fails(monkeypatch) -> None:
     runner = _load_installer_runner()
 

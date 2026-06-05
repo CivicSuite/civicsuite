@@ -34,9 +34,25 @@ URLs when the proof is green.
 
 ## Evidence
 
-Current committed evidence is scaffold and plan-mode evidence only. The live
-bare-VM evidence is still pending a Windows 11 Pro/Enterprise VM supplied for
-the gate. The live gate must show:
+Current committed evidence is not a release promotion. It is:
+
+- Tester result 017 (`test-comms/TESTER-RESULT-017.md`): green repo-local bootstrapper run with
+  corrected host-facts injection; it reached `generation_source=ollama`,
+  `generation_model=gemma4:e4b`, all starter-set workflows, and the suite
+  launcher.
+- Tester result 018 (`test-comms/TESTER-RESULT-018.md`): red follow-up run; Stage3 failed during
+  CivicCode image build with Docker Desktop EOF/500 transport errors, and the
+  final bootstrap result JSON remained stale at `elevation_requested`.
+- Current branch fixes after 018: the customer Windows `.cmd` artifact now
+  extracts and launches the Stage 3A bare-metal progress wrapper, Stage3
+  lifecycle failure writes a terminal failed bootstrap result, and Docker
+  compose build runs with reduced parallelism plus one bounded retry for known
+  transient Docker Desktop transport failures.
+- `test-comms/TESTER-DIRECTIVE-019.md`: pending re-gate against the regenerated
+  customer artifact with no `-HostFactsJson` injection; Stage0 must live-prove
+  `Get-HostFacts`.
+
+The pending live gate must show:
 
 - one bootstrapper starts from a bare Stage 3A Windows VM
 - the WSL2 reboot path resumes once and self-terminates
@@ -46,5 +62,5 @@ the gate. The live gate must show:
 - lifecycle evidence records `generation_model=gemma4:e4b`
 - the suite launcher serves at `http://127.0.0.1:18082/`
 
-Until that VM run is captured, this branch is a Stage 3A scaffold and UX
-candidate, not a promoted installer release.
+Until directive 019 or a later equivalent artifact-path re-gate VM run is
+green, this branch is a Stage 3A candidate, not a promoted installer release.

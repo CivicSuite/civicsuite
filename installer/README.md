@@ -59,9 +59,14 @@ warm-first city-core installer, and workflow evidence verification requiring
 The clerk-facing progress wrapper is `civicsuite-baremetal-progress.ps1`. It
 renders honest phase state from the bootstrap result JSON, names the log path,
 surfaces actionable errors, and shows the local module URLs only after the
-bootstrap result is not failed. The live bare-VM proof is pending a matching
-Windows 11 Pro/Enterprise environment; see
-`docs/installer/windows-baremetal-stage3a-guide.md`.
+bootstrap result is not failed. Current evidence is mixed and not a promotion:
+tester result 017 proved the repo-local bootstrapper could reach
+`generation_source=ollama` with `generation_model=gemma4:e4b`, while tester
+result 018 failed during a CivicCode Docker build and exposed stale final-result
+JSON on failure. The regenerated 0.1.2 Windows customer artifact now launches
+the Stage 3A progress wrapper and carries the bounded Docker build retry; tester
+directive 019 is the pending artifact-path re-gate on a matching Windows 11
+Pro/Enterprise machine. See `docs/installer/windows-baremetal-stage3a-guide.md`.
 
 ## CivicCore First
 
