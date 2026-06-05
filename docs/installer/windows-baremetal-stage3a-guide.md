@@ -54,9 +54,12 @@ Current committed evidence is not a release promotion. It is:
   through Stage4 passed, Stage4 asserted `generation_source=ollama` and
   `generation_model=gemma4:e4b`, and the launcher served at
   `http://127.0.0.1:18082/`.
-- Tester directive 022 (`test-comms/TESTER-DIRECTIVE-022.md`): pending
-  re-gate for the later `a53bad3` artifact refresh that embeds phase-aware
-  failure guidance into the downloadable Windows artifact.
+- Tester result 022 (`test-comms/TESTER-RESULT-022.md`): green re-gate for
+  the later `a53bad3` artifact refresh that embeds phase-aware failure guidance
+  into the downloadable Windows artifact. The tester verified the expected
+  Windows zip and one-click hashes, then passed Stage0 through Stage4 with
+  `generation_source=ollama`, `generation_model=gemma4:e4b`, and the launcher
+  serving at `http://127.0.0.1:18082/`.
 
 The green Stage 3A live gate showed:
 
@@ -68,8 +71,7 @@ The green Stage 3A live gate showed:
 - lifecycle evidence records `generation_model=gemma4:e4b`
 - the suite launcher serves at `http://127.0.0.1:18082/`
 
-Tester result 021 closes the prior Stage 3A Windows artifact-path gate for this
-branch, and tester directive 022 is pending for the later `a53bad3` artifact
-refresh. This does not merge, tag, status-promote, or claim public-use
-readiness, city-ready status, procurement readiness, production readiness,
-macOS lifecycle certification, airgap readiness, or full-suite release.
+Tester result 022 closes the Stage 3A Windows artifact-refresh gate for this
+branch. This does not merge, tag, status-promote, or claim public-use readiness,
+city-ready status, procurement readiness, production readiness, macOS lifecycle
+certification, airgap readiness, or full-suite release.

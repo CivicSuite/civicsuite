@@ -6,14 +6,14 @@
 
 ## Status
 
-The branch is clean and pushed. Stage 3A is paused on the external Windows tester re-gate for the refreshed customer artifact.
+The branch was clean and pushed before reboot. After resume, `TESTER-RESULT-022.md` arrived and passed the external Windows tester re-gate for the refreshed customer artifact.
 
 ## Source Of Truth
 
 Use only the repo TESTER channel:
 
 - `test-comms/TESTER-DIRECTIVE-022.md`
-- expected next result: `test-comms/TESTER-RESULT-022.md`
+- `test-comms/TESTER-RESULT-022.md`
 
 Do not use the old bridge for TESTER communication.
 
@@ -25,7 +25,7 @@ Do not use the old bridge for TESTER communication.
 - `generation_model=gemma4:e4b`
 - launcher serving at `http://127.0.0.1:18082/`
 
-After that, the Windows artifact was regenerated at `a53bad3452cda2b75e284e8dea3250d6365fa151` to embed phase-aware failure guidance. Because the artifact bytes changed, Stage 3A cannot close until result 022 proves the refreshed artifact.
+After that, the Windows artifact was regenerated at `a53bad3452cda2b75e284e8dea3250d6365fa151` to embed phase-aware failure guidance. Result 022 proved the refreshed artifact after reboot.
 
 ## Recent Pushed Commits
 
@@ -48,10 +48,9 @@ After that, the Windows artifact was regenerated at `a53bad3452cda2b75e284e8dea3
 - Confirm no OneDrive/cloud-sync paths are used.
 - Confirm local branch is clean.
 - Fetch `origin/stage-3a-baremetal-windows`.
-- Check whether `test-comms/TESTER-RESULT-022.md` exists.
-- If result 022 is absent, keep polling the repo channel.
-- If result 022 is green, update current truth surfaces from "022 pending" to the tested head/evidence, rerun focused Stage 3A tests, commit/push.
-- If result 022 is red, fix the failure as builder, audit-lite/fix/re-audit, regenerate artifacts if artifact-affecting, push, and create the next repo TESTER directive.
+- Confirm `test-comms/TESTER-RESULT-022.md` remains present.
+- Confirm truth surfaces name result 022 as green refreshed-artifact evidence.
+- Continue the approved 7-stage program as builder; do not re-enter passive polling unless a new external test directive is issued.
 
 ## Do Not Do
 

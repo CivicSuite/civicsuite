@@ -21,6 +21,6 @@ None.
 - `tests/test_windows_baremetal_progress.py::test_progress_wrapper_surfaces_actionable_failure_without_ready_urls`
 - `test-comms/TESTER-RESULT-021.md` records the launcher serving at `http://127.0.0.1:18082/`.
 
-## Remaining Product Dependency
+## External Evidence
 
-The true end-user UX still requires tester result 022 against the refreshed artifact. This is an external gate dependency, not a current UX finding in the audited code.
+Tester result 022 passed the refreshed artifact and reported the launcher URL at `http://127.0.0.1:18082/`.

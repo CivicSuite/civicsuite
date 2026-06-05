@@ -665,7 +665,7 @@ def test_test_comms_standing_run_uses_customer_artifact_and_real_host_facts() ->
     assert "corrected `-HostFactsJson`" not in readme
 
 
-def test_stage3a_truth_docs_name_green_artifact_gate_and_refresh_regate_without_promotion() -> None:
+def test_stage3a_truth_docs_name_green_artifact_refresh_gate_without_promotion() -> None:
     guide = (ROOT / "docs" / "installer" / "windows-baremetal-stage3a-guide.md").read_text(encoding="utf-8")
     status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -675,7 +675,7 @@ def test_stage3a_truth_docs_name_green_artifact_gate_and_refresh_regate_without_
         assert "tester result 017" in normalized
         assert "tester result 018" in normalized
         assert "tester result 021" in normalized
-        assert "tester directive 022" in normalized
+        assert "tester result 022" in normalized
         assert "generation_source=ollama" in text
         assert "generation_model=gemma4:e4b" in text
         assert (
@@ -684,9 +684,10 @@ def test_stage3a_truth_docs_name_green_artifact_gate_and_refresh_regate_without_
             or "does not merge, tag, status-promote" in text
         )
 
-    assert "artifact-path gate was green" in status
-    assert "tester directive 022 is pending" in status
-    assert "tester directive 022 is pending" in guide
+    assert "artifact-refresh gate is green as of tester result" in status
+    assert "Tester result 022 closes the Stage 3A Windows artifact-refresh gate" in guide
+    assert "tester directive 022 is pending" not in status
+    assert "tester directive 022 is pending" not in guide
     assert "public-use/procurement/production/full-suite claim" in changelog
 
 

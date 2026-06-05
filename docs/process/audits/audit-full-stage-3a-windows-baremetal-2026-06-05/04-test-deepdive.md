@@ -22,4 +22,4 @@ None.
 
 ## Coverage Boundary
 
-Local tests do not replace the bare Windows tester run. Tester directive 022 is required because artifact bytes changed after tester result 021.
+Local tests do not replace bare Windows tester runs for future artifact changes. Tester result 022 now supplies that evidence for the refreshed `a53bad3` artifact.

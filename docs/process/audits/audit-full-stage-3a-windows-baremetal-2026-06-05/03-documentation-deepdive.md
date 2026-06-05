@@ -11,7 +11,7 @@ None.
 ## What Is Working
 
 - Current truth surfaces state that CivicSuite is not procurement-ready and do not imply merge, tag, status promotion, public-use readiness, production readiness, macOS lifecycle readiness, airgap readiness, or full-suite release.
-- Docs now name tester result 021 as prior green customer-artifact evidence and tester directive 022 as the pending refresh re-gate for the later artifact bytes.
+- Docs now name tester result 022 as the green customer-artifact refresh re-gate for the later artifact bytes.
 - The Stage 3A guide describes the supported target honestly: Windows 11 Pro/Enterprise, local admin, virtualization available, internet available, and enough RAM/disk for the city-core stack.
 - Installer docs name the same core invariant as source and tests: `generation_source=ollama` with `generation_model=gemma4:e4b`.
 
@@ -22,4 +22,4 @@ None.
 
 ## Watch Point
 
-When tester result 022 arrives, update truth docs again in the same commit family so result 021 does not remain the freshest customer-artifact claim.
+When any future regenerated artifact changes the Windows zip or one-click hashes, update truth docs and request a fresh tester result before claiming that artifact as current.

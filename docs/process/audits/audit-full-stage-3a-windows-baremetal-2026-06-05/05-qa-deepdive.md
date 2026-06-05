@@ -12,7 +12,7 @@ None.
 
 - Tester result 021 proves the prior regenerated customer artifact completed Stage0 through Stage4 on Windows 11 Pro with real host facts, Docker engine readiness, Ollama readiness, local `generation_source=ollama`, `generation_model=gemma4:e4b`, and launcher URL evidence.
 - The current artifact refresh has local smoke, hash, and zip-content verification.
-- Tester directive 022 is correctly scoped to re-run the refreshed artifact instead of assuming result 021 covers new bytes.
+- Tester result 022 re-ran the refreshed artifact instead of assuming result 021 covered new bytes.
 
 ## Runtime Evidence
 
@@ -22,4 +22,4 @@ None.
 
 ## QA Boundary
 
-QA cannot close Stage 3A until `TESTER-RESULT-022.md` exists and passes against the refreshed artifact. No local substitute was treated as equivalent.
+Tester result 022 exists and passes against the refreshed artifact. No local substitute was treated as equivalent.

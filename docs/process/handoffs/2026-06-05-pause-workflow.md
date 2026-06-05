@@ -20,7 +20,8 @@ Before pausing:
 - Branch: `stage-3a-baremetal-windows`
 - Head: `28c81b292e1e29c1cf9e5e432a3ae0f0946f0feb`
 - Local status: clean before this handoff commit
-- External gate: `test-comms/TESTER-RESULT-022.md`
+- External gate at pause time: `test-comms/TESTER-RESULT-022.md`
+- Post-resume result: `test-comms/TESTER-RESULT-022.md` passed
 - Watchdog: `civicsuite-test-comms-watchdog`, every 10 minutes, repo `test-comms` only
 
 ## Resume Rules
@@ -34,4 +35,4 @@ Resume from the repo, not memory alone:
 
 ## Stage Program Reminder
 
-The 7-stage program is not complete. Stage 3A is still gated on tester result 022. After Stage 3A closes, continue the remaining module stages in the approved slice/audit/test pattern.
+The 7-stage program is not complete. Stage 3A result 022 passed after resume; continue the remaining module stages in the approved slice/audit/test pattern, subject to Scott's merge/tag/status-promotion constraints.

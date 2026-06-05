@@ -6,7 +6,7 @@ The Stage 3A installer interface is wired as an installer/progress UX rather tha
 
 ## Methodology
 
-Reviewed source, generated bundle, docs, tests, artifact hashes, tester result 021, and tester directive 022. Ran the Stage 3A focused test suite and one-click wrapper smoke. Inspected the generated Windows zip to confirm the shipped artifact contains the audited bootstrapper/progress wrapper and not a stale source copy.
+Reviewed source, generated bundle, docs, tests, artifact hashes, tester results 021 and 022. Ran the Stage 3A focused test suite and one-click wrapper smoke. Inspected the generated Windows zip to confirm the shipped artifact contains the audited bootstrapper/progress wrapper and not a stale source copy.
 
 ## Project Gestalt
 
@@ -39,12 +39,12 @@ None found after the phase-aware failure-message fix. Stage2 failures now point 
 
 ## Test Assessment
 
-The current tests prove the installer wrapper wiring, bootstrap failure/success result behavior, Stage1 resume cleanup, Stage4 evidence parsing, Docker spike behavior, and truth-doc claims. External tester result 022 remains required to prove the refreshed artifact on the separate Windows machine.
+The current tests prove the installer wrapper wiring, bootstrap failure/success result behavior, Stage1 resume cleanup, Stage4 evidence parsing, Docker spike behavior, and truth-doc claims. External tester result 022 proves the refreshed artifact on the separate Windows machine.
 
 ## Recommended Repair Plan
 
-No repairs are recommended from this walkthrough. Continue with tester result 022 and then update truth docs according to that evidence.
+No repairs are recommended from this walkthrough.
 
 ## Confidence And Gaps
 
-High confidence in source, generated artifact composition, local smoke, and focused behavioral tests. The live refreshed-artifact Windows run is still pending in the repo TESTER channel.
+High confidence in source, generated artifact composition, local smoke, focused behavioral tests, and the live refreshed-artifact Windows run recorded in the repo TESTER channel.

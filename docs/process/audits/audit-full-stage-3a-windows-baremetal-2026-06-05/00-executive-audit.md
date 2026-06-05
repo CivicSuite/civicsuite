@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-No Blocker, Critical, Major, Minor, or Nit findings remain in the audited Stage 3A Windows bare-metal installer slice. The earlier truth-drift found during this audit was fixed before this package was finalized: current docs now state that tester result 021 is prior green customer-artifact evidence and tester directive 022 is pending for the later `a53bad3` artifact refresh. Source, generated bundle, release hashes, tests, and docs now align around the same claim: the installer requires real `generation_source=ollama` and `generation_model=gemma4:e4b` evidence, surfaces phase-specific failure guidance, and does not promote, merge, tag, or claim procurement readiness. Stage closeout still depends on `TESTER-RESULT-022.md` because the downloadable Windows artifact changed after result 021.
+No Blocker, Critical, Major, Minor, or Nit findings remain in the audited Stage 3A Windows bare-metal installer slice. The earlier truth-drift found during this audit was fixed before this package was finalized, and tester result 022 has now passed the refreshed `a53bad3` customer artifact with matching hashes. Source, generated bundle, release hashes, tests, docs, and external tester evidence now align around the same claim: the installer requires real `generation_source=ollama` and `generation_model=gemma4:e4b` evidence, surfaces phase-specific failure guidance, and does not promote, merge, tag, or claim procurement readiness.
 
 ## Severity Roll-Up
 
@@ -26,7 +26,7 @@ None.
 - Stage4 independently parses lifecycle evidence and checks `generation_source=ollama` plus `generation_model=gemma4:e4b`; it does not trust static required-value literals alone.
 - The generated Windows bundle and zip contain the phase-aware Stage2 failure guidance and independent Stage4 assertion logic.
 - `civicsuite-baremetal-progress.ps1` renders stage statuses, log paths, actionable failures, and final local URLs only after the bootstrap result is not failed.
-- Docs and tests now distinguish prior green evidence from the current pending artifact refresh re-gate.
+- Docs and tests now name tester result 022 as the green refreshed-artifact re-gate.
 
 ## Verification
 
@@ -37,7 +37,7 @@ None.
 
 ## Gate Status
 
-Audit status is green with 0/0/0/0/0 findings. Stage 3A is not ready to close until the external tester writes `test-comms/TESTER-RESULT-022.md` for the `a53bad3` artifact refresh and it passes.
+Audit status is green with 0/0/0/0/0 findings. Tester result 022 passed the refreshed artifact on the external Windows tester with matching hashes, Stage0 through Stage4 green, Docker engine readiness, `generation_source=ollama`, `generation_model=gemma4:e4b`, and launcher URL evidence.
 
 ## Cross-Role Reports
 
