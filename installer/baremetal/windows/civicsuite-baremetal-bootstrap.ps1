@@ -754,6 +754,10 @@ try {
     }
     if ($Stage -eq "Stage3" -or $Stage -eq "Stage0To4") {
         $result.stage3 = Invoke-Stage3
+        if ($result.stage3.status -ne "passed" -and $result.stage3.status -ne "planned") {
+            Complete-Bootstrap "failed"
+            exit 1
+        }
     }
     if ($Stage -eq "Stage4" -or $Stage -eq "Stage0To4") {
         $result.stage4 = Invoke-Stage4

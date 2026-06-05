@@ -364,6 +364,37 @@ def test_stage3_and_stage4_plan_chain_to_existing_warm_first_installer(tmp_path:
     assert stage4_result["stage4"]["required_model"] == "gemma4:e4b"
 
 
+def test_stage3_failure_writes_terminal_failed_result_json(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    fake_python = tmp_path / "fake-python.cmd"
+    _write_facts(facts)
+    fake_python.write_text(
+        "\n".join(
+            [
+                "@echo off",
+                "echo simulated lifecycle failure 1>&2",
+                "exit /b 7",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage3",
+        facts,
+        ["-PythonPath", str(fake_python)],
+        plan_only=False,
+    )
+
+    assert completed.returncode == 1
+    assert result["status"] == "failed"
+    assert result["stage3"]["status"] == "failed"
+    assert result["stage3"]["exit_code"] == 7
+    assert result["completed_at"]
+
+
 def _write_lifecycle_evidence(path: Path, source: str, model: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
