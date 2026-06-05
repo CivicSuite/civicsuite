@@ -20,7 +20,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
       "platform": "windows",
-      "sha256": "afb7db814ec167d0b23ac0b2937f7eb3c6ce3820f97d4b6e97d152d4a1fca5c2",
+      "sha256": "108e3429344f75638ec707b391316598a4fdf784577014515226f919dbdd92fc",
       "support_status": "supported_package"
     },
     {
@@ -59,7 +59,7 @@
       "entrypoint": "double-click .cmd; Stage 3A bare-metal progress wrapper",
       "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.cmd",
       "platform": "windows",
-      "sha256": "fb228a2b07c7408ead8e7c7b73a49fb28989905287bcfbacd49dc523e8431157",
+      "sha256": "7d6ea3d9ac8f32c7c484fd352addcd08acc614d15336a4ba84f9e3c81c222d2f",
       "source_archive": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
       "support_status": "supported_one_click"
     },

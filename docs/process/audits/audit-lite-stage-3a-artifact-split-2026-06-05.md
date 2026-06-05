@@ -30,7 +30,7 @@ None.
 - Actual one-click artifact smoke: `CivicSuite bare-metal wrapper smoke check passed.`
 - Archive inspection confirmed these entries exist in `installer/dist/CivicSuite-city-core-windows-0.1.2.zip`: `civicsuite-baremetal-bootstrap.ps1`, `civicsuite-baremetal-progress.ps1`, `civicsuite-stack-teardown.ps1`, and `docker-desktop-spike.ps1`.
 - Root bundle README inside the zip says `Start here: installer/baremetal/windows/civicsuite-baremetal-progress.ps1`.
-- Regenerated checksums after the later Docker-retry artifact refresh: Windows zip `afb7db814ec167d0b23ac0b2937f7eb3c6ce3820f97d4b6e97d152d4a1fca5c2`; Windows `.cmd` `fb228a2b07c7408ead8e7c7b73a49fb28989905287bcfbacd49dc523e8431157`.
+- Regenerated checksums after the later phase-aware failure-message artifact refresh: Windows zip `108e3429344f75638ec707b391316598a4fdf784577014515226f919dbdd92fc`; Windows `.cmd` `7d6ea3d9ac8f32c7c484fd352addcd08acc614d15336a4ba84f9e3c81c222d2f`.
 
 ## Escalation Recommendation
-No escalation needed for this slice. Full Stage 3A gate still requires the separate clean Windows tester run against the regenerated customer artifact, with no host-facts injection, before city-core can be called shippable.
+No escalation needed for this slice. Later tester result 021 supplied the separate clean Windows tester run against the regenerated customer artifact, with no host-facts injection, and passed Stage0 through Stage4.
