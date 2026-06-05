@@ -176,6 +176,40 @@ def test_stage0_fails_with_actionable_checks_for_unsupported_host(tmp_path: Path
     assert failed["internet"]["action"].startswith("Connect to the internet")
 
 
+def test_stage0_accepts_running_hypervisor_when_firmware_flag_is_false(tmp_path: Path) -> None:
+    # Win32_Processor.VirtualizationFirmwareEnabled is a known false-negative once a hypervisor
+    # (Hyper-V / WSL2 VM Platform) is already running. A real, capable city machine in that
+    # state must NOT be rejected: HypervisorPresent=True satisfies the requirement.
+    facts = tmp_path / "facts.json"
+    _write_facts(
+        facts,
+        virtualization_firmware_enabled=False,
+        hypervisor_present=True,
+    )
+
+    completed, result = _run_bootstrap(tmp_path, "Stage0", facts)
+
+    assert completed.returncode == 0, completed.stderr
+    assert result["status"] == "passed"
+    statuses = {check["id"]: check["status"] for check in result["stage0"]["checks"]}
+    assert statuses["hardware-virtualization"] == "passed"
+
+
+def test_stage0_rejects_virtualization_when_firmware_and_hypervisor_both_absent(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    _write_facts(
+        facts,
+        virtualization_firmware_enabled=False,
+        hypervisor_present=False,
+    )
+
+    completed, result = _run_bootstrap(tmp_path, "Stage0", facts)
+
+    assert completed.returncode == 1
+    failed = {check["id"]: check for check in result["stage0"]["checks"] if check["status"] == "failed"}
+    assert "hardware-virtualization" in failed
+
+
 def test_stage1_plan_enables_wsl_features_and_registers_resume(tmp_path: Path) -> None:
     facts = tmp_path / "facts.json"
     _write_facts(facts)

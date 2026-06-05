@@ -114,6 +114,7 @@ function Get-HostFacts {
 
     $os = Get-CimInstance Win32_OperatingSystem
     $processor = Get-CimInstance Win32_Processor | Select-Object -First 1
+    $computerSystem = Get-CimInstance Win32_ComputerSystem
     $edition = $os.Caption
     $internetAvailable = $false
     try {
@@ -128,6 +129,7 @@ function Get-HostFacts {
         edition = $edition
         is_admin = Test-IsAdmin
         virtualization_firmware_enabled = [bool]$processor.VirtualizationFirmwareEnabled
+        hypervisor_present = [bool]$computerSystem.HypervisorPresent
         internet_available = $internetAvailable
         total_memory_bytes = [int64]$os.TotalVisibleMemorySize * 1024
     }
@@ -165,13 +167,16 @@ function Invoke-Stage0 {
     $isWindows11 = $build -ge 22000
     $supportedEdition = $edition -match "Pro|Enterprise"
     $isAdmin = [bool]$facts.is_admin
-    $virtualization = [bool]$facts.virtualization_firmware_enabled
+    # VirtualizationFirmwareEnabled is a known false-negative once a hypervisor (Hyper-V /
+    # WSL2 VM Platform) is already running, which falsely rejects capable machines. Accept a
+    # running hypervisor (HypervisorPresent) as satisfying the requirement too.
+    $virtualization = ([bool]$facts.virtualization_firmware_enabled) -or ([bool]$facts.hypervisor_present)
     $internet = [bool]$facts.internet_available
 
     Add-Check $checks "windows-version" $isWindows11 "Stage 3A target is Windows 11 build >= 22000; the marketing name string is unreliable." "Use a Windows 11 Pro or Enterprise machine for Stage 3A; Windows 11 is build >= 22000."
     Add-Check $checks "windows-edition" $supportedEdition "Stage 3A supports Pro/Enterprise editions." "Use Windows 11 Pro or Enterprise; Home/managed-machine discovery is Stage 3B+ scope."
     Add-Check $checks "local-admin" $isAdmin "Local administrator rights are required for Windows features and Docker Desktop installation." "Sign in as a local admin or rerun from an elevated shell."
-    Add-Check $checks "hardware-virtualization" $virtualization "Hardware virtualization must already be enabled for WSL2/Docker Desktop." "Enable virtualization in firmware/BIOS before rerunning."
+    Add-Check $checks "hardware-virtualization" $virtualization "Hardware virtualization must be available for WSL2/Docker Desktop (firmware flag enabled, or a hypervisor already running)." "Enable virtualization in firmware/BIOS before rerunning (a running hypervisor such as Hyper-V/WSL2 also satisfies this)."
     Add-Check $checks "internet" $internet "Stage 3A online installer requires internet access." "Connect to the internet or wait for Stage 3B air-gap bundle mode."
 
     $failed = @($checks | Where-Object { $_.status -ne "passed" })
