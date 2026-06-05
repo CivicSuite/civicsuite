@@ -11,16 +11,21 @@ The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk
 
 The operator path uses live regenerated artifacts. Verify the generated `SHA256SUMS` or release manifest from the active run evidence, confirm the `installer/modules.json` `source_commit` pins for the four city-core repos, and use published module hashes/attestations where applicable. Do not treat old committed `installer/dist` files as canonical unless Scott explicitly confirms artifact restoration. The suite launcher is the local browser front door for city-core; its shared browser session is local runtime state, not a completed municipal SSO or managed cloud-session claim.
 
-Stage 3A Windows bare-metal status is candidate-only. Tester result 017 proved
-the repo-local bootstrapper could complete live Ollama response-letter evidence
-with corrected host facts. Tester result 018 is the current red gate: Stage3
-failed during a CivicCode Docker build and exposed stale final-result JSON on
-failure. Current branch work routes the regenerated Windows 0.1.2 customer
-artifact to the Stage 3A progress wrapper, writes terminal failed result JSON
-for Stage3 handoff failures, and adds bounded Docker Desktop transport retry
-evidence. Tester directive 019 is pending and must pass from the customer
-artifact with real `Get-HostFacts` before this Windows bare-metal path can be
-treated as shippable.
+Stage 3A Windows bare-metal artifact-path gate is green as of tester result
+021. Tester result 017 first proved the repo-local bootstrapper could complete
+live Ollama response-letter evidence with corrected host facts. Tester result
+018 then exposed the real blocker chain: the customer artifact did not yet route
+through the bare-metal path, Stage3 failures could leave stale final-result
+JSON, and Docker Desktop could return transient EOF/500 build failures. The
+current branch fixes route the regenerated Windows 0.1.2 customer artifact to
+the Stage 3A progress wrapper, write terminal failed result JSON for Stage3
+handoff failures, and add bounded Docker Desktop transport retry evidence.
+Tester result 021 re-ran the customer artifact with real `Get-HostFacts` and
+passed Stage0 through Stage4 with `generation_source=ollama`,
+`generation_model=gemma4:e4b`, and the launcher serving at
+`http://127.0.0.1:18082/`. This is not a merge, tag, status promotion,
+public-use, procurement, production, macOS lifecycle, airgap, or full-suite
+release claim.
 
 CivicAccess is explicitly OUT of city-core for this sprint after the 2026-05-23 depth probe on branch `probe/civicaccess-depth-2026-05-23` recorded `PROBE-PROGRESS.md` with a NEEDS-WORK verdict. CivicAccess requires gap closure and a fresh re-probe before it can be added to the city-core profile.
 
@@ -60,7 +65,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicrecords-ai` v1.7.3 remains developer preview, consumes CivicCore v1.2.0 shared ingestion, and keeps the city-core installer on the vendored-source path.
 - `civicclerk` v1.0.3 is the current meeting workflow release car for city-core.
 - `civiccode` v1.0.8 is the current municipal-code release car for city-core.
-- The suite-level `city-core` installer evidence for PR #183 records predecessor Windows and Linux one-click wrapper smoke, Guided/Manual Docker prerequisite setup paths, Linux Docker signed-repository bootstrap behavior where supported, first-run wizard smoke, 60 GB cleanroom hygiene, local matching-host install/repair/verify/backup/restore/uninstall lifecycle evidence, first-run browser QA evidence, green PR CI, and audit-full evidence under `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. The active Stage 3A Windows bare-metal gate is still pending artifact-path proof after tester result 018. This is beta-ready truth-reconciled predecessor evidence, not public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or full-suite release.
+- The suite-level `city-core` installer evidence for PR #183 records predecessor Windows and Linux one-click wrapper smoke, Guided/Manual Docker prerequisite setup paths, Linux Docker signed-repository bootstrap behavior where supported, first-run wizard smoke, 60 GB cleanroom hygiene, local matching-host install/repair/verify/backup/restore/uninstall lifecycle evidence, first-run browser QA evidence, green PR CI, and audit-full evidence under `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. The active Stage 3A Windows bare-metal artifact-path gate passed in tester result 021 using the regenerated customer artifact and real host facts. This is beta-ready truth-reconciled predecessor evidence plus a green Stage 3A Windows gate, not public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, airgap readiness, or full-suite release.
 - The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
 - CivicAccess is OUT of city-core pending gap closure and re-probe.
 - CivicZone, CivicPlan, CivicPermit, and CivicInspect are at v0.2.2 demotion-truth state, not public-use release state.

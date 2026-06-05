@@ -665,20 +665,27 @@ def test_test_comms_standing_run_uses_customer_artifact_and_real_host_facts() ->
     assert "corrected `-HostFactsJson`" not in readme
 
 
-def test_stage3a_truth_docs_name_current_red_gate_and_pending_artifact_regate() -> None:
+def test_stage3a_truth_docs_name_green_artifact_gate_without_promotion() -> None:
     guide = (ROOT / "docs" / "installer" / "windows-baremetal-stage3a-guide.md").read_text(encoding="utf-8")
     status = (ROOT / "STATUS.md").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
     for text in (guide, status, changelog):
-        assert "tester result 017" in text.lower()
-        assert "tester result 018" in text.lower()
-        assert "019" in text
-        assert "No merge, tag, status promotion" in text or "not a promoted installer release" in text or "candidate-only" in text
+        normalized = " ".join(text.lower().split())
+        assert "tester result 017" in normalized
+        assert "tester result 018" in normalized
+        assert "tester result 021" in normalized
+        assert "generation_source=ollama" in text
+        assert "generation_model=gemma4:e4b" in text
+        assert (
+            "No merge, tag, status promotion" in text
+            or "not a merge, tag, status promotion" in text
+            or "does not merge, tag, status-promote" in text
+        )
 
-    assert "current red gate" in status.lower()
-    assert "artifact-path re-gate" in guide
-    assert "public-use/procurement/production claim" in changelog
+    assert "artifact-path gate is green" in status
+    assert "closes the Stage 3A Windows artifact-path gate" in guide
+    assert "public-use/procurement/production/full-suite claim" in changelog
 
 
 def test_wait_for_url_timeout_records_124_and_fails(monkeypatch) -> None:

@@ -48,11 +48,14 @@ Current committed evidence is not a release promotion. It is:
   lifecycle failure writes a terminal failed bootstrap result, and Docker
   compose build runs with reduced parallelism plus one bounded retry for known
   transient Docker Desktop transport failures.
-- `test-comms/TESTER-DIRECTIVE-019.md`: pending re-gate against the regenerated
-  customer artifact with no `-HostFactsJson` injection; Stage0 must live-prove
-  `Get-HostFacts`.
+- Tester result 021 (`test-comms/TESTER-RESULT-021.md`): green artifact-path
+  re-gate against the regenerated customer artifact with no `-HostFactsJson`
+  injection. Stage0 live-proved `Get-HostFacts`, Stage0 through Stage4 passed,
+  Stage4 asserted `generation_source=ollama` and
+  `generation_model=gemma4:e4b`, and the launcher served at
+  `http://127.0.0.1:18082/`.
 
-The pending live gate must show:
+The green Stage 3A live gate showed:
 
 - one bootstrapper starts from a bare Stage 3A Windows VM
 - the WSL2 reboot path resumes once and self-terminates
@@ -62,5 +65,7 @@ The pending live gate must show:
 - lifecycle evidence records `generation_model=gemma4:e4b`
 - the suite launcher serves at `http://127.0.0.1:18082/`
 
-Until directive 019 or a later equivalent artifact-path re-gate VM run is
-green, this branch is a Stage 3A candidate, not a promoted installer release.
+Tester result 021 closes the Stage 3A Windows artifact-path gate for this
+branch. It does not merge, tag, status-promote, or claim public-use readiness,
+city-ready status, procurement readiness, production readiness, macOS lifecycle
+certification, airgap readiness, or full-suite release.
