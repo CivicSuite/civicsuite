@@ -7,6 +7,7 @@ import io
 import json
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -510,6 +511,99 @@ def test_plan_installer_can_use_module_source_override() -> None:
 
     assert "CIVICSUITE_SOURCE_ROOT_" in text
     assert 're.sub(r"[^A-Z0-9]+", "_", module_name.upper()).strip("_")' in text
+
+
+def test_city_core_windows_release_bundle_contains_baremetal_installer(monkeypatch, tmp_path: Path) -> None:
+    planner = _load_plan_installer()
+
+    package_dir = tmp_path / "packages" / "city-core" / "windows"
+    package_dir.mkdir(parents=True)
+    (package_dir / "start-civicsuite-installer.ps1").write_text("# legacy launcher\n", encoding="utf-8")
+    (package_dir / "install-plan.json").write_text(
+        json.dumps({"modules": ["civiccore"]}) + "\n",
+        encoding="utf-8",
+    )
+
+    bundle_root = tmp_path / "bundles"
+    launcher_source = tmp_path / "suite-launcher-source"
+    (launcher_source / "scripts").mkdir(parents=True)
+    (launcher_source / "index.html").write_text("<main>CivicSuite</main>\n", encoding="utf-8")
+    (launcher_source / "scripts" / "serve.mjs").write_text("console.log('serve')\n", encoding="utf-8")
+
+    monkeypatch.setattr(planner, "BUNDLE_ROOT", bundle_root)
+    monkeypatch.setattr(planner, "SUITE_LAUNCHER_SOURCE", launcher_source)
+
+    bundle_dir = planner._stage_release_bundle(
+        profile_id="city-core",
+        platform_id="windows",
+        package_dir=package_dir,
+    )
+
+    baremetal_root = bundle_dir / "installer" / "baremetal" / "windows"
+    assert (baremetal_root / "civicsuite-baremetal-progress.ps1").is_file()
+    assert (baremetal_root / "civicsuite-baremetal-bootstrap.ps1").is_file()
+    assert (baremetal_root / "docker-desktop-spike.ps1").is_file()
+    assert not (baremetal_root / "logs").exists()
+    bundle_readme = (bundle_dir / "README.md").read_text(encoding="utf-8")
+    assert "installer/baremetal/windows/civicsuite-baremetal-progress.ps1" in bundle_readme
+    assert "installer/generated/packages/city-core/windows/start-civicsuite-installer.ps1" not in bundle_readme
+
+
+def test_city_core_windows_one_click_launches_baremetal_progress_wrapper(tmp_path: Path) -> None:
+    planner = _load_plan_installer()
+
+    archive_path = tmp_path / "payload.zip"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr(
+            "CivicSuite-city-core-windows/installer/baremetal/windows/civicsuite-baremetal-progress.ps1",
+            "# progress\n",
+        )
+    target_path = tmp_path / "CivicSuite-city-core-windows-0.1.2.cmd"
+
+    planner._write_windows_one_click_installer(
+        archive_path=archive_path,
+        target_path=target_path,
+        profile_id="city-core",
+        version="0.1.2",
+    )
+
+    script = target_path.read_bytes().rsplit(b"\r\n__CIVICSUITE_ZIP_PAYLOAD_BELOW__\r\n", 1)[0].decode(
+        "utf-8",
+        errors="replace",
+    )
+    assert "civicsuite-baremetal-progress.ps1" in script
+    assert "civicsuite-baremetal-bootstrap.ps1" in script
+    assert "installer\\baremetal\\windows" in script
+    assert "CivicSuite bare-metal wrapper smoke check passed." in script
+    assert "PSParser" in script
+    assert "-PlanOnly" not in script
+    assert "-FirstRun" not in script
+
+
+def test_city_core_windows_package_readme_points_to_baremetal_progress_wrapper() -> None:
+    planner = _load_plan_installer()
+
+    readme = planner._package_readme_text(
+        profile_id="city-core",
+        menu_style="guided",
+        platform_id="windows",
+        plan={"modules": ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"]},
+    )
+
+    assert "civicsuite-baremetal-progress.ps1" in readme
+    assert "self-elevating Stage 3A bootstrapper" in readme
+    assert "generation_source=ollama" in readme
+    assert "start from the Stage 3A progress wrapper" in readme
+    assert ".\\start-civicsuite-installer.ps1 -FirstRun" not in readme
+
+
+def test_test_comms_standing_run_uses_customer_artifact_and_real_host_facts() -> None:
+    readme = (ROOT / "test-comms" / "README.md").read_text(encoding="utf-8")
+
+    assert "CivicSuite-city-core-windows-0.1.2.cmd" in readme
+    assert "not the repo-local bootstrapper" in readme
+    assert "Stage0 must live-prove `Get-HostFacts`" in readme
+    assert "corrected `-HostFactsJson`" not in readme
 
 
 def test_wait_for_url_timeout_records_124_and_fails(monkeypatch) -> None:

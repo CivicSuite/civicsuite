@@ -35,29 +35,26 @@ again from the project release source.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 
-This package is the operator-facing installer entrypoint for the selected
-platform. First-run mode offers Guided Setup for missing Docker/WSL
-prerequisites where this run supports it, or Manual Prerequisite mode for
-IT-managed machines. After prerequisites are present, it checks readiness,
-renders the selected install plan, installs the city-core runtime from the
-bundled module sources, verifies live service health, repairs by
-rebuilding/restarting the stack, backs up/restores data, and uninstalls Docker
-resources for the profile.
+This package contains the legacy warm-first lifecycle controls for
+readiness, plan, manual install, verify, repair, backup, restore, uninstall,
+and suite-launcher serving. For the Windows city-core bare-metal customer path,
+start from the Stage 3A progress wrapper described below; it installs Windows
+prerequisites before handing off to the warm-first lifecycle.
 
 ## First Run
 
-1. For the non-technical operator path, run first-run:
+1. For the Windows bare-metal operator path, run the progress wrapper from the extracted bundle:
 
    ```text
-   .\start-civicsuite-installer.ps1 -FirstRun
+   .\..\..\..\..\baremetal\windows\civicsuite-baremetal-progress.ps1
    ```
 
-   The wizard asks for setup path, operator name, organization name, admin
-   email, time zone, license acceptance, and then performs the smoke/readiness
-    check before installing. After install, it prints staff dashboard URLs and
-    the local credential-file path for the generated first administrator login.
-    Open that file once, sign in, rotate the credential immediately, then store
-    the rotated value in the municipal vault.
+   The wrapper launches the self-elevating Stage 3A bootstrapper under
+    `installer\baremetal\windows`, enables WSL2/Virtual Machine Platform,
+    resumes after reboot, installs or starts Docker Desktop and Ollama, runs the
+    warm-first city-core installer, verifies `generation_source=ollama` and
+    `generation_model=gemma4:e4b`, and prints the local service URLs
+    when Stage4 passes.
 
     City-core packages include the suite launcher runtime under
     `suite-launcher` and plan it for

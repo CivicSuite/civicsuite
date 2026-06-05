@@ -34,6 +34,7 @@ DIST_ROOT = ROOT / "installer" / "dist"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
 INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
+BAREMETAL_WINDOWS_SOURCE = ROOT / "installer" / "baremetal" / "windows"
 SUITE_LAUNCHER_PACKAGE_DIR = "suite-launcher"
 SUITE_LAUNCHER_PORT = 18082
 SUITE_SESSION_ENV = "CIVICCORE_SUITE_SESSION_SECRET"
@@ -2452,6 +2453,28 @@ def _package_readme_text(
     lifecycle_modules = [module_id for module_id in plan["modules"] if module_id != "civiccore"]
     lifecycle_module_args_ps = " ".join(f"-Module {module_id}" for module_id in lifecycle_modules)
     lifecycle_module_args_sh = " ".join(f"--module {module_id}" for module_id in lifecycle_modules)
+    if profile_id == "city-core" and platform_id == "windows":
+        first_run_command = ".\\..\\..\\..\\..\\baremetal\\windows\\civicsuite-baremetal-progress.ps1"
+        first_run_intro = "For the Windows bare-metal operator path, run the progress wrapper from the extracted bundle:"
+        first_run_detail = f"""The wrapper launches the self-elevating Stage 3A bootstrapper under
+    `installer\\baremetal\\windows`, enables WSL2/Virtual Machine Platform,
+    resumes after reboot, installs or starts Docker Desktop and Ollama, runs the
+    warm-first city-core installer, verifies `generation_source=ollama` and
+    `generation_model={DEFAULT_LLM_MODEL}`, and prints the local service URLs
+    when Stage4 passes."""
+    else:
+        first_run_command = (
+            "." + "\\" + launcher + " -FirstRun"
+            if platform_id == "windows"
+            else "bash ./" + launcher + " first-run"
+        )
+        first_run_intro = "For the non-technical operator path, run first-run:"
+        first_run_detail = """The wizard asks for setup path, operator name, organization name, admin
+   email, time zone, license acceptance, and then performs the smoke/readiness
+    check before installing. After install, it prints staff dashboard URLs and
+    the local credential-file path for the generated first administrator login.
+    Open that file once, sign in, rotate the credential immediately, then store
+    the rotated value in the municipal vault."""
     if platform_id == "windows":
         readiness = f".\\{launcher} -Readiness"
         plan_command = f".\\{launcher} -Plan"
@@ -2476,6 +2499,22 @@ def _package_readme_text(
             f"bash ./{launcher} install --staff-mode bearer --workflow-proof"
         )
         suite_launcher_command = f"bash ./{launcher} launcher"
+    operator_summary = (
+        f"""This package contains the legacy warm-first lifecycle controls for
+readiness, plan, manual install, verify, repair, backup, restore, uninstall,
+and suite-launcher serving. For the Windows city-core bare-metal customer path,
+start from the Stage 3A progress wrapper described below; it installs Windows
+prerequisites before handing off to the warm-first lifecycle."""
+        if profile_id == "city-core" and platform_id == "windows"
+        else f"""This package is the operator-facing installer entrypoint for the selected
+platform. First-run mode offers Guided Setup for missing Docker/WSL
+prerequisites where this run supports it, or Manual Prerequisite mode for
+IT-managed machines. After prerequisites are present, it checks readiness,
+renders the selected install plan, installs the {profile_id} runtime from the
+bundled module sources, verifies live service health, repairs by
+rebuilding/restarting the stack, backs up/restores data, and uninstalls Docker
+resources for the profile."""
+    )
     return f"""# CivicSuite Installer Package - {platform_id}
 
 Profile: `{profile_id}`
@@ -2513,29 +2552,17 @@ again from the project release source.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 
-This package is the operator-facing installer entrypoint for the selected
-platform. First-run mode offers Guided Setup for missing Docker/WSL
-prerequisites where this run supports it, or Manual Prerequisite mode for
-IT-managed machines. After prerequisites are present, it checks readiness,
-renders the selected install plan, installs the {profile_id} runtime from the
-bundled module sources, verifies live service health, repairs by
-rebuilding/restarting the stack, backs up/restores data, and uninstalls Docker
-resources for the profile.
+{operator_summary}
 
 ## First Run
 
-1. For the non-technical operator path, run first-run:
+1. {first_run_intro}
 
    ```text
-   {"." + "\\" + launcher + " -FirstRun" if platform_id == "windows" else "bash ./" + launcher + " first-run"}
+   {first_run_command}
    ```
 
-   The wizard asks for setup path, operator name, organization name, admin
-   email, time zone, license acceptance, and then performs the smoke/readiness
-    check before installing. After install, it prints staff dashboard URLs and
-    the local credential-file path for the generated first administrator login.
-    Open that file once, sign in, rotate the credential immediately, then store
-    the rotated value in the municipal vault.
+   {first_run_detail}
 
     City-core packages include the suite launcher runtime under
     `{SUITE_LAUNCHER_PACKAGE_DIR}` and plan it for
@@ -3070,6 +3097,26 @@ def _stage_release_bundle(
                 ".DS_Store",
             ),
         )
+    if profile_id == "city-core" and platform_id == "windows":
+        if not BAREMETAL_WINDOWS_SOURCE.is_dir():
+            raise PlannerError(
+                f"Windows bare-metal installer source is missing: {BAREMETAL_WINDOWS_SOURCE}"
+            )
+        baremetal_target = bundle_dir / "installer" / "baremetal" / "windows"
+        baremetal_target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            BAREMETAL_WINDOWS_SOURCE,
+            baremetal_target,
+            ignore=shutil.ignore_patterns(
+                "logs",
+                "*.log",
+                "*-result.json",
+                "host-facts-*.json",
+                "Docker Desktop Installer.exe",
+                "OllamaSetup.exe",
+                "python-installer.exe",
+            ),
+        )
     modules_root = bundle_dir / "modules"
     modules_root.mkdir(parents=True, exist_ok=True)
     bundled_modules = ["civicrecords-ai", "civicclerk"]
@@ -3081,6 +3128,15 @@ def _stage_release_bundle(
         ]
     for module_name in bundled_modules:
         _copy_bundle_source(module_name, modules_root / module_name)
+    if profile_id == "city-core" and platform_id == "windows":
+        start_here = "installer/baremetal/windows/civicsuite-baremetal-progress.ps1"
+        start_note = (
+            "The Windows one-click .cmd also extracts this bundle and launches "
+            "that same Stage 3A progress wrapper."
+        )
+    else:
+        start_here = f"installer/generated/packages/{profile_id}/{platform_id}/{_package_launcher_name(platform_id)}"
+        start_note = "Run the selected platform launcher from the generated package."
     (bundle_dir / "README.md").write_text(
         f"""# CivicSuite {profile_id} Installer Bundle
 
@@ -3092,8 +3148,10 @@ CivicSuite modules with Docker.
 Start here:
 
 ```text
-installer/generated/packages/{profile_id}/{platform_id}/{_package_launcher_name(platform_id)}
+{start_here}
 ```
+
+{start_note}
 
 Verify the release SHA256 checksum before running install.
 """,
@@ -3120,6 +3178,10 @@ def _write_windows_one_click_installer(
 ) -> None:
     marker = b"\r\n__CIVICSUITE_ZIP_PAYLOAD_BELOW__\r\n"
     target_path.parent.mkdir(parents=True, exist_ok=True)
+    if profile_id == "city-core":
+        launch_script = "$launcher = Get-ChildItem -LiteralPath $env:EXTRACTED -Recurse -Filter civicsuite-baremetal-progress.ps1 | Where-Object { $_.FullName -like '*\\installer\\baremetal\\windows\\*' } | Select-Object -First 1; if (-not $launcher) { Write-Error 'CivicSuite Windows bare-metal progress wrapper was not found after extraction.'; exit 1 }; $bootstrap = Get-ChildItem -LiteralPath $env:EXTRACTED -Recurse -Filter civicsuite-baremetal-bootstrap.ps1 | Where-Object { $_.FullName -like '*\\installer\\baremetal\\windows\\*' } | Select-Object -First 1; if (-not $bootstrap) { Write-Error 'CivicSuite Windows bare-metal bootstrapper was not found after extraction.'; exit 1 }; if ($env:CIVICSUITE_ONE_CLICK_SMOKE_ONLY -eq '1') { foreach ($scriptPath in @($launcher.FullName, $bootstrap.FullName)) { $errors = $null; $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content -LiteralPath $scriptPath -Raw), [ref]$errors); if ($errors -and $errors.Count -gt 0) { Write-Error \"PowerShell syntax validation failed for $scriptPath\"; exit 1 } }; Write-Host 'CivicSuite bare-metal wrapper smoke check passed.'; exit 0 }; & $launcher.FullName"
+    else:
+        launch_script = "$launcher = Get-ChildItem -LiteralPath $env:EXTRACTED -Recurse -Filter start-civicsuite-installer.ps1 | Where-Object { $_.FullName -like '*\\installer\\generated\\packages\\*\\windows\\*' } | Select-Object -First 1; if (-not $launcher) { Write-Error 'CivicSuite Windows launcher was not found after extraction.'; exit 1 }; if ($env:CIVICSUITE_ONE_CLICK_SMOKE_ONLY -eq '1') { & $launcher.FullName -Readiness; exit $LASTEXITCODE }; & $launcher.FullName -FirstRun"
     script = f"""@echo off
 setlocal EnableExtensions
 title CivicSuite {profile_id} installer {version}
@@ -3128,7 +3190,7 @@ mkdir "%RUNROOT%" >nul 2>nul
 set "ARCHIVE=%RUNROOT%\\payload.zip"
 set "EXTRACTED=%RUNROOT%\\bundle"
 set "CIVICSUITE_SELF=%~f0"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$self=$env:CIVICSUITE_SELF; $bytes=[IO.File]::ReadAllBytes($self); $markerText=([string][char]13)+([string][char]10)+'__CIVICSUITE_ZIP_PAYLOAD_BELOW__'+([string][char]13)+([string][char]10); $marker=[Text.Encoding]::ASCII.GetBytes($markerText); $start=-1; for($i=0; $i -le $bytes.Length-$marker.Length; $i++) {{ $ok=$true; for($j=0; $j -lt $marker.Length; $j++) {{ if($bytes[$i+$j] -ne $marker[$j]) {{ $ok=$false; break }} }} if($ok) {{ $start=$i+$marker.Length; break }} }} if($start -lt 0) {{ Write-Error 'Could not find the embedded CivicSuite installer payload. Fix: verify the downloaded file is complete, then run it again.'; exit 1 }} $payload=New-Object byte[] ($bytes.Length-$start); [Array]::Copy($bytes,$start,$payload,0,$payload.Length); [IO.File]::WriteAllBytes($env:ARCHIVE,$payload); Expand-Archive -LiteralPath $env:ARCHIVE -DestinationPath $env:EXTRACTED -Force; $launcher = Get-ChildItem -LiteralPath $env:EXTRACTED -Recurse -Filter start-civicsuite-installer.ps1 | Where-Object {{ $_.FullName -like '*\\installer\\generated\\packages\\*\\windows\\*' }} | Select-Object -First 1; if (-not $launcher) {{ Write-Error 'CivicSuite Windows launcher was not found after extraction.'; exit 1 }}; if ($env:CIVICSUITE_ONE_CLICK_SMOKE_ONLY -eq '1') {{ & $launcher.FullName -Readiness; exit $LASTEXITCODE }}; & $launcher.FullName -FirstRun"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$self=$env:CIVICSUITE_SELF; $bytes=[IO.File]::ReadAllBytes($self); $markerText=([string][char]13)+([string][char]10)+'__CIVICSUITE_ZIP_PAYLOAD_BELOW__'+([string][char]13)+([string][char]10); $marker=[Text.Encoding]::ASCII.GetBytes($markerText); $start=-1; for($i=0; $i -le $bytes.Length-$marker.Length; $i++) {{ $ok=$true; for($j=0; $j -lt $marker.Length; $j++) {{ if($bytes[$i+$j] -ne $marker[$j]) {{ $ok=$false; break }} }} if($ok) {{ $start=$i+$marker.Length; break }} }} if($start -lt 0) {{ Write-Error 'Could not find the embedded CivicSuite installer payload. Fix: verify the downloaded file is complete, then run it again.'; exit 1 }} $payload=New-Object byte[] ($bytes.Length-$start); [Array]::Copy($bytes,$start,$payload,0,$payload.Length); [IO.File]::WriteAllBytes($env:ARCHIVE,$payload); Expand-Archive -LiteralPath $env:ARCHIVE -DestinationPath $env:EXTRACTED -Force; {launch_script}"
 set "STATUS=%ERRORLEVEL%"
 if not "%STATUS%"=="0" (
   echo CivicSuite installation did not pass.
@@ -3280,9 +3342,17 @@ def generate_release_artifacts(
                     "path": str(installer_path.relative_to(ROOT)),
                     "sha256": _sha256(installer_path),
                     "source_archive": str(archive_path.relative_to(ROOT)),
-                    "entrypoint": "double-click .cmd; readiness then install",
+                    "entrypoint": (
+                        "double-click .cmd; Stage 3A bare-metal progress wrapper"
+                        if profile_id == "city-core"
+                        else "double-click .cmd; readiness then install"
+                    ),
                     "support_status": "supported_one_click",
-                    "certification_scope": "Windows one-click wrapper around matching-host package lifecycle",
+                    "certification_scope": (
+                        "Windows one-click wrapper around Stage 3A bare-metal bootstrapper"
+                        if profile_id == "city-core"
+                        else "Windows one-click wrapper around matching-host package lifecycle"
+                    ),
                 }
             )
         elif target_platform == "linux":
