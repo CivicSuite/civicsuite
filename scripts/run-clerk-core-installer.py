@@ -70,6 +70,15 @@ CLERK_STAFF_MODE_OPEN = "open"
 CLERK_STAFF_MODE_BEARER = "bearer"
 CLERK_WORKFLOW_PROOF_BEARER = "clerk-core-workflow-proof"
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
+COMPOSE_BUILD_RETRY_ATTEMPTS = 2
+COMPOSE_BUILD_RETRY_DELAY_SECONDS = 15
+TRANSIENT_DOCKER_BUILD_PATTERNS = (
+    "failed to receive status",
+    "rpc error: code = unavailable",
+    "error reading from server: eof",
+    "dockerdesktoplinuxengine",
+    "500 internal server error",
+)
 CLERK_OPEN_MODE_WARNING = (
     "WARNING: --staff-mode open allows anonymous writes to civicclerk endpoints.\n"
     "WARNING: Use ONLY for local rehearsal. Never on a network-reachable host.\n"
@@ -176,6 +185,44 @@ def run(command: list[str], *, cwd: Path, timeout: int = 900) -> subprocess.Comp
     )
 
 
+def is_transient_docker_build_failure(proc: subprocess.CompletedProcess[str]) -> bool:
+    if proc.returncode == 0:
+        return False
+    output = f"{proc.stdout}\n{proc.stderr}".lower()
+    return any(pattern in output for pattern in TRANSIENT_DOCKER_BUILD_PATTERNS)
+
+
+def run_compose_build_with_retry(
+    project: str,
+    source: Path,
+    *services: str,
+) -> tuple[subprocess.CompletedProcess[str], list[dict[str, object]]]:
+    attempts: list[dict[str, object]] = []
+    final = subprocess.CompletedProcess([], 1, stdout="", stderr="compose build did not run")
+    for attempt in range(1, COMPOSE_BUILD_RETRY_ATTEMPTS + 1):
+        final = run(
+            compose(project, source, "build", "--pull", "--no-cache", *services),
+            cwd=source,
+            timeout=2400,
+        )
+        retryable = is_transient_docker_build_failure(final)
+        attempt_record: dict[str, object] = {
+            "attempt": attempt,
+            "returncode": final.returncode,
+            "stdout": final.stdout[-4000:],
+            "stderr": final.stderr[-4000:],
+            "transient_retryable": retryable,
+        }
+        attempts.append(attempt_record)
+        if final.returncode == 0:
+            break
+        if not retryable or attempt == COMPOSE_BUILD_RETRY_ATTEMPTS:
+            break
+        attempt_record["retry_after_seconds"] = COMPOSE_BUILD_RETRY_DELAY_SECONDS
+        time.sleep(COMPOSE_BUILD_RETRY_DELAY_SECONDS)
+    return final, attempts
+
+
 def compose_logs(project: str, source: Path, *services: str) -> dict[str, object]:
     proc = run(
         compose(project, source, "logs", "--no-color", "--tail", "200", *services),
@@ -260,6 +307,7 @@ def known_command_path(name: str) -> str | None:
 
 def installer_subprocess_env() -> dict[str, str]:
     env = os.environ.copy()
+    env.setdefault("COMPOSE_PARALLEL_LIMIT", "1")
     if sys.platform.startswith("win") and WINDOWS_DOCKER_DESKTOP_BIN.is_dir():
         docker_bin = str(WINDOWS_DOCKER_DESKTOP_BIN)
         current_path = env.get("PATH", "")
@@ -2413,8 +2461,19 @@ def install(
             continue
         source = ctx[source_key]  # type: ignore[index]
         project = str(ctx[project_key])
-        build = run(compose(project, source, "build", "--pull", "--no-cache", *services), cwd=source, timeout=2400)  # type: ignore[arg-type]
-        steps.append({"module": name, "step": "compose_build", "returncode": build.returncode, "stdout": build.stdout[-4000:], "stderr": build.stderr[-4000:]})
+        build, build_attempts = run_compose_build_with_retry(project, source, *services)  # type: ignore[arg-type]
+        build_step: dict[str, object] = {
+            "module": name,
+            "step": "compose_build",
+            "returncode": build.returncode,
+            "stdout": build.stdout[-4000:],
+            "stderr": build.stderr[-4000:],
+            "compose_parallel_limit": installer_subprocess_env().get("COMPOSE_PARALLEL_LIMIT"),
+        }
+        if len(build_attempts) > 1:
+            build_step["attempts"] = build_attempts
+            build_step["retry_policy"] = "transient_docker_desktop_transport_failure"
+        steps.append(build_step)
         if build.returncode != 0:
             return {"status": "failed", "steps": steps}
         up = run(compose(project, source, "up", "-d", *services), cwd=source, timeout=900)  # type: ignore[arg-type]

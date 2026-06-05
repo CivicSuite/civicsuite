@@ -513,6 +513,65 @@ def test_plan_installer_can_use_module_source_override() -> None:
     assert 're.sub(r"[^A-Z0-9]+", "_", module_name.upper()).strip("_")' in text
 
 
+def test_compose_build_retries_transient_docker_desktop_transport_failure(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    calls: list[list[str]] = []
+
+    responses = iter(
+        [
+            subprocess.CompletedProcess(
+                ["docker"],
+                1,
+                stdout="",
+                stderr="failed to receive status: rpc error: code = Unavailable desc = error reading from server: EOF",
+            ),
+            subprocess.CompletedProcess(["docker"], 0, stdout="built", stderr=""),
+        ]
+    )
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return next(responses)
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    proc, attempts = runner.run_compose_build_with_retry("proj", tmp_path, "api")
+
+    assert proc.returncode == 0
+    assert len(attempts) == 2
+    assert attempts[0]["transient_retryable"] is True
+    assert attempts[0]["retry_after_seconds"] == runner.COMPOSE_BUILD_RETRY_DELAY_SECONDS
+    assert all("build" in command for command in calls)
+
+
+def test_compose_build_does_not_retry_deterministic_build_failure(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 1, stdout="", stderr="Dockerfile: no such file")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+
+    proc, attempts = runner.run_compose_build_with_retry("proj", tmp_path, "api")
+
+    assert proc.returncode == 1
+    assert len(attempts) == 1
+    assert attempts[0]["transient_retryable"] is False
+    assert len(calls) == 1
+
+
+def test_installer_subprocess_env_reduces_compose_parallelism(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.delenv("COMPOSE_PARALLEL_LIMIT", raising=False)
+
+    env = runner.installer_subprocess_env()
+
+    assert env["COMPOSE_PARALLEL_LIMIT"] == "1"
+
+
 def test_city_core_windows_release_bundle_contains_baremetal_installer(monkeypatch, tmp_path: Path) -> None:
     planner = _load_plan_installer()
 
