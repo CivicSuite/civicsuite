@@ -63,10 +63,11 @@ bootstrap result is not failed. Tester result 017 proved the repo-local
 bootstrapper could reach `generation_source=ollama` with
 `generation_model=gemma4:e4b`. Tester result 018 exposed the customer-artifact,
 stale-result-JSON, and transient Docker Desktop build blocker chain. Tester
-result 021 then passed the regenerated 0.1.2 Windows customer artifact on the
-matching Windows 11 Pro tester from Stage0 through Stage4 with real
+result 021 then passed the prior regenerated 0.1.2 Windows customer artifact on
+the matching Windows 11 Pro tester from Stage0 through Stage4 with real
 `Get-HostFacts`, `generation_source=ollama`, `generation_model=gemma4:e4b`,
-and launcher evidence. This is not a merge, tag, status promotion, or
+and launcher evidence. Tester directive 022 requests the re-gate for the later
+`a53bad3` artifact refresh. This is not a merge, tag, status promotion, or
 public-use/procurement/production/full-suite claim. See
 `docs/installer/windows-baremetal-stage3a-guide.md`.
 
