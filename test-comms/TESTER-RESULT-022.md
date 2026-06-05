@@ -1,7 +1,7 @@
 # Tester Result 022 - regenerated artifact Stage 3A re-gate
 
 **Tester machine:** Microsoft Windows 11 Pro 10.0.26200 build 26200; Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz.
-**Branch head tested:** `28c81b292e1e29c1cf9e5e432a3ae0f0946f0feb docs(audit): add stage3a full audit and walkthrough`
+**Branch head tested:** `68ab408b54d032eadd690ce1b3daf28c6cf8a954 docs(process): add stage3a reboot handoff`
 **Minimum directive head satisfied:** `a53bad3452cda2b75e284e8dea3250d6365fa151 build(installer): refresh stage3a customer artifact after guidance fix`
 **Date/time (UTC):** 2026-06-05T19:30:13Z
 
@@ -181,4 +181,4 @@ generation_model=gemma4:e4b
 
 Directive 022 regenerated customer-artifact Stage 3A re-gate: **passed**.
 
-The run came from the regenerated customer one-click artifact on branch head `28c81b292e1e29c1cf9e5e432a3ae0f0946f0feb`, which is after required minimum head `a53bad3452cda2b75e284e8dea3250d6365fa151`. Stage0 through Stage4 all passed. Docker Desktop engine readiness passed. Stage4 verified the local AI-letter proof with `generation_source=ollama` and `generation_model=gemma4:e4b`, and the launcher URL was reported as `http://127.0.0.1:18082/`.
+The run came from the regenerated customer one-click artifact on branch head `68ab408b54d032eadd690ce1b3daf28c6cf8a954`, which is after required minimum head `a53bad3452cda2b75e284e8dea3250d6365fa151`. The only commits after the artifact/audit head were docs/process handoff commits, and the verified artifact hashes still matched the directive. Stage0 through Stage4 all passed. Docker Desktop engine readiness passed. Stage4 verified the local AI-letter proof with `generation_source=ollama` and `generation_model=gemma4:e4b`, and the launcher URL was reported as `http://127.0.0.1:18082/`.
