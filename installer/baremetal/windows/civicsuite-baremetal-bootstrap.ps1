@@ -74,6 +74,28 @@ function Complete-Bootstrap {
     Write-BootstrapLog "result" "Wrote structured result to $resultPath"
 }
 
+function Get-FailureActionableMessage {
+    if ($result.stage4 -and $result.stage4.status -ne "passed" -and $result.stage4.status -ne "planned") {
+        return "Fix the named Stage4 verification issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+    }
+    if ($result.stage3 -and $result.stage3.status -ne "passed" -and $result.stage3.status -ne "planned") {
+        return "Fix the named Stage3 CivicSuite install issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+    }
+    if (($Stage -eq "Stage2" -or $Stage -eq "Stage0To4") -and -not $result.stage2) {
+        return "Fix the named Stage2 Docker/Ollama prerequisite issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+    }
+    if ($result.stage2 -and $result.stage2.status -ne "passed" -and $result.stage2.status -ne "planned") {
+        return "Fix the named Stage2 Docker/Ollama prerequisite issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+    }
+    if (($Stage -eq "Stage1" -or $Stage -eq "Stage0Stage1" -or $Stage -eq "Stage0To4") -and -not $result.stage1) {
+        return "Fix the named Stage1 WSL2/reboot-resume issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+    }
+    if ($result.stage1 -and $result.stage1.status -ne "passed") {
+        return "Fix the named Stage1 WSL2/reboot-resume issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+    }
+    return "Fix the named Stage0 target-check issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+}
+
 function Test-IsAdmin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = [Security.Principal.WindowsPrincipal]::new($identity)
@@ -771,7 +793,7 @@ try {
 } catch {
     $result.failure = [ordered]@{
         message = $_.Exception.Message
-        actionable_message = "Fix the named Stage0/Stage1 prerequisite issue, then rerun the idempotent bootstrapper. CivicSuite only owns its logs and resume task."
+        actionable_message = Get-FailureActionableMessage
     }
     Write-BootstrapLog "failure" $_.Exception.Message
     Complete-Bootstrap "failed"

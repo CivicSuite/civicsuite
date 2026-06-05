@@ -346,6 +346,38 @@ def test_stage2_plan_orchestrates_docker_spike_and_ollama_without_host_mutation(
         assert result["stage2"]["ollama"]["install"]["status"] == "planned"
 
 
+def test_stage2_failure_uses_stage2_actionable_message(tmp_path: Path) -> None:
+    facts = tmp_path / "facts.json"
+    fake_spike = tmp_path / "fake-docker-spike.ps1"
+    _write_facts(facts)
+    fake_spike.write_text(
+        "\n".join(
+            [
+                "param([string]$LogRoot)",
+                "New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null",
+                "$result = @{ status = 'failed'; engine_ready = $false } | ConvertTo-Json",
+                "[IO.File]::WriteAllText((Join-Path $LogRoot 'docker-desktop-spike-result.json'), $result)",
+                "exit 1",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    completed, result = _run_bootstrap(
+        tmp_path,
+        "Stage2",
+        facts,
+        ["-DockerSpikePath", str(fake_spike)],
+        plan_only=False,
+    )
+
+    assert completed.returncode == 1
+    assert result["status"] == "failed"
+    assert "Stage2 Docker/Ollama prerequisite issue" in result["failure"]["actionable_message"]
+    assert "Stage0/Stage1" not in result["failure"]["actionable_message"]
+
+
 def test_stage3_and_stage4_plan_chain_to_existing_warm_first_installer(tmp_path: Path) -> None:
     facts = tmp_path / "facts.json"
     _write_facts(facts)
