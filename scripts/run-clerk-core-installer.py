@@ -1504,6 +1504,56 @@ def run_python_service_step(
     )
 
 
+TRANSIENT_PIP_INSTALL_MARKERS = (
+    "http error 500",
+    "http error 502",
+    "http error 503",
+    "http error 504",
+    "gateway time-out",
+    "gateway timeout",
+    "connection reset",
+    "connection aborted",
+    "read timed out",
+    "temporarily unavailable",
+)
+PYTHON_SERVICE_INSTALL_RETRIES = 3
+
+
+def python_service_install_is_transient_failure(result: subprocess.CompletedProcess[str]) -> bool:
+    output = f"{result.stdout}\n{result.stderr}".lower()
+    return any(marker in output for marker in TRANSIENT_PIP_INSTALL_MARKERS)
+
+
+def run_python_service_step_with_transient_retry(
+    command: list[str | Path],
+    *,
+    cwd: Path,
+    timeout: int,
+    attempts: int,
+    retry_delay_seconds: float = 5.0,
+) -> tuple[subprocess.CompletedProcess[str], list[dict[str, object]]]:
+    attempt_results: list[dict[str, object]] = []
+    last_result: subprocess.CompletedProcess[str] | None = None
+    for attempt in range(1, attempts + 1):
+        result = run_python_service_step(command, cwd=cwd, timeout=timeout)
+        last_result = result
+        transient = result.returncode != 0 and python_service_install_is_transient_failure(result)
+        attempt_results.append(
+            {
+                "attempt": attempt,
+                "returncode": result.returncode,
+                "transient_failure": transient,
+                "stdout": result.stdout[-2000:],
+                "stderr": result.stderr[-2000:],
+            }
+        )
+        if result.returncode == 0 or not transient or attempt == attempts:
+            return result, attempt_results
+        time.sleep(retry_delay_seconds)
+    assert last_result is not None
+    return last_result, attempt_results
+
+
 def install_python_service_dependencies(
     install_root: Path, module_name: str, source: Path
 ) -> list[dict[str, object]]:
@@ -1544,10 +1594,11 @@ def install_python_service_dependencies(
     )
     if upgrade.returncode != 0:
         return steps
-    install_pkg = run_python_service_step(
+    install_pkg, install_attempts = run_python_service_step_with_transient_retry(
         [python_path, "-m", "pip", "install", "-e", str(source)],
         cwd=source,
         timeout=900,
+        attempts=PYTHON_SERVICE_INSTALL_RETRIES,
     )
     steps.append(
         {
@@ -1556,6 +1607,7 @@ def install_python_service_dependencies(
             "returncode": install_pkg.returncode,
             "stdout": install_pkg.stdout[-4000:],
             "stderr": install_pkg.stderr[-4000:],
+            "attempts": install_attempts,
         }
     )
     return steps

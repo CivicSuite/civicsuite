@@ -1762,6 +1762,62 @@ def test_wait_for_url_timeout_records_124_and_fails(monkeypatch) -> None:
     assert "timed out" in proof["attempts"][0]["stderr"]
 
 
+def test_python_service_install_retries_transient_504(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    calls: list[list[str | Path]] = []
+    results = iter(
+        [
+            subprocess.CompletedProcess(
+                ["pip"],
+                1,
+                stdout="",
+                stderr="ERROR: HTTP error 504 while getting civiccore wheel",
+            ),
+            subprocess.CompletedProcess(["pip"], 0, stdout="installed", stderr=""),
+        ]
+    )
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return next(results)
+
+    monkeypatch.setattr(runner, "run_python_service_step", fake_run)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    result, attempts = runner.run_python_service_step_with_transient_retry(
+        ["python", "-m", "pip", "install", "-e", tmp_path],
+        cwd=tmp_path,
+        timeout=900,
+        attempts=3,
+    )
+
+    assert result.returncode == 0
+    assert len(calls) == 2
+    assert [attempt["transient_failure"] for attempt in attempts] == [True, False]
+
+
+def test_python_service_install_does_not_retry_non_transient_failure(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    calls: list[list[str | Path]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(["pip"], 1, stdout="", stderr="No matching distribution found")
+
+    monkeypatch.setattr(runner, "run_python_service_step", fake_run)
+
+    result, attempts = runner.run_python_service_step_with_transient_retry(
+        ["python", "-m", "pip", "install", "-e", tmp_path],
+        cwd=tmp_path,
+        timeout=900,
+        attempts=3,
+    )
+
+    assert result.returncode == 1
+    assert len(calls) == 1
+    assert attempts[0]["transient_failure"] is False
+
+
 def test_verify_suite_launcher_requires_persistent_listener(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()
