@@ -54,6 +54,10 @@ RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
 OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
 OLLAMA_KEEP_ALIVE = "30m"
 HOST_OLLAMA_NUM_CTX = 1024
+HOST_OLLAMA_PROBE_PROFILES = (
+    {"name": "gpu_bounded", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX}},
+    {"name": "cpu_bounded", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "num_gpu": 0}},
+)
 # Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
 # docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
 # routes api/worker to host.docker.internal) instead of the containerized CPU Ollama.
@@ -466,11 +470,15 @@ def model_resource_readiness_check(docker_info_stdout: str) -> dict[str, object]
 
 
 def host_ollama_model_load_readiness_check() -> dict[str, object]:
+    attempts: list[dict[str, object]] = []
+    selected_profile: object = None
     try:
-        result = host_ollama_generate("Respond with OK.")
+        result = host_ollama_generate_with_fallback("Respond with OK.")
         returncode = int(result["returncode"])
         stdout = str(result["stdout"])[-4000:]
         stderr = str(result["stderr"])[-4000:]
+        attempts = list(result.get("attempts", []))  # type: ignore[arg-type]
+        selected_profile = result.get("selected_profile") if returncode == 0 else None
     except subprocess.TimeoutExpired as exc:
         returncode = 124
         stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""
@@ -485,6 +493,8 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
         "num_ctx": HOST_OLLAMA_NUM_CTX,
         "keep_alive": OLLAMA_KEEP_ALIVE,
+        "selected_profile": selected_profile,
+        "attempts": attempts,
         "returncode": returncode,
         "stdout": stdout,
         "stderr": stderr,
@@ -493,18 +503,20 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         else [
             f"Host Ollama did not load {DEFAULT_LLM_MODEL} successfully.",
             "Confirm the model runs in host Ollama on this machine, then rerun readiness before install.",
-            "If the error mentions CUDA_Host or allocation failure, close memory-heavy apps or reduce other GPU/CPU memory pressure before retrying.",
+            "If both GPU and CPU fallback probes fail, close memory-heavy apps or reduce other CPU memory pressure before retrying.",
         ],
     }
 
 
-def host_ollama_generate(prompt: str) -> dict[str, object]:
+def host_ollama_generate(prompt: str, profile: dict[str, object] | None = None) -> dict[str, object]:
+    selected_profile = profile or HOST_OLLAMA_PROBE_PROFILES[0]
+    options = dict(selected_profile["options"])  # type: ignore[arg-type]
     payload = {
         "model": DEFAULT_LLM_MODEL,
         "prompt": prompt,
         "stream": False,
         "keep_alive": OLLAMA_KEEP_ALIVE,
-        "options": {"num_ctx": HOST_OLLAMA_NUM_CTX},
+        "options": options,
     }
     request = urllib.request.Request(
         "http://127.0.0.1:11434/api/generate",
@@ -521,6 +533,7 @@ def host_ollama_generate(prompt: str) -> dict[str, object]:
             "returncode": 1,
             "stdout": "",
             "stderr": f"HTTP {exc.code}: {body}",
+            "profile": selected_profile["name"],
             "request": payload,
         }
     except urllib.error.URLError as exc:
@@ -528,18 +541,50 @@ def host_ollama_generate(prompt: str) -> dict[str, object]:
             "returncode": 1,
             "stdout": "",
             "stderr": str(exc),
+            "profile": selected_profile["name"],
             "request": payload,
         }
     try:
         data = json.loads(body)
     except json.JSONDecodeError:
-        return {"returncode": 1, "stdout": body, "stderr": "Invalid JSON response from Ollama.", "request": payload}
+        return {
+            "returncode": 1,
+            "stdout": body,
+            "stderr": "Invalid JSON response from Ollama.",
+            "profile": selected_profile["name"],
+            "request": payload,
+        }
     return {
         "returncode": 0,
         "stdout": str(data.get("response", "")),
         "stderr": "",
+        "profile": selected_profile["name"],
         "request": payload,
     }
+
+
+def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
+    attempts: list[dict[str, object]] = []
+    last_result: dict[str, object] | None = None
+    for profile in HOST_OLLAMA_PROBE_PROFILES:
+        result = host_ollama_generate(prompt, profile)
+        last_result = result
+        attempts.append(
+            {
+                "profile": profile["name"],
+                "options": dict(profile["options"]),  # type: ignore[arg-type]
+                "returncode": int(result["returncode"]),
+                "stderr": str(result["stderr"])[-2000:],
+            }
+        )
+        if int(result["returncode"]) == 0:
+            result["attempts"] = attempts
+            result["selected_profile"] = profile["name"]
+            return result
+    assert last_result is not None
+    last_result["attempts"] = attempts
+    last_result["selected_profile"] = None
+    return last_result
 
 
 def source_root(module_name: str) -> Path:
@@ -1421,11 +1466,15 @@ def ensure_ollama_models(
             if proc.returncode != 0:
                 return steps
         try:
+            selected_profile = None
+            attempts: list[dict[str, object]] = []
             if USE_HOST_OLLAMA:
-                prewarm = host_ollama_generate("Respond with OK.")
+                prewarm = host_ollama_generate_with_fallback("Respond with OK.")
                 returncode = int(prewarm["returncode"])
                 stdout = str(prewarm["stdout"])[-4000:]
                 stderr = str(prewarm["stderr"])[-4000:]
+                selected_profile = prewarm.get("selected_profile") if returncode == 0 else None
+                attempts = list(prewarm.get("attempts", []))  # type: ignore[arg-type]
             else:
                 proc = run(
                     ollama_command(project, source, "run", DEFAULT_LLM_MODEL, "Respond with OK."),
@@ -1469,6 +1518,8 @@ def ensure_ollama_models(
                 "returncode": returncode,
                 "stdout": stdout,
                 "stderr": stderr,
+                "selected_profile": selected_profile,
+                "attempts": attempts,
                 "fix_steps": fix_steps,
             }
         )

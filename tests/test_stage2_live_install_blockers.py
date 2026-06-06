@@ -171,7 +171,13 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
 
     def fake_host_ollama_generate(prompt: str):
         probes.append(prompt)
-        return {"returncode": 0, "stdout": "OK\n", "stderr": ""}
+        return {
+            "returncode": 0,
+            "stdout": "OK\n",
+            "stderr": "",
+            "selected_profile": "cpu_bounded",
+            "attempts": [{"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 0, "stderr": ""}],
+        }
 
     def fail_install(*_args, **_kwargs):
         raise AssertionError("readiness must not enter install")
@@ -181,7 +187,7 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     monkeypatch.setattr(runner, "docker_command", lambda: "docker")
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
     monkeypatch.setattr(runner, "run", fake_run)
-    monkeypatch.setattr(runner, "host_ollama_generate", fake_host_ollama_generate)
+    monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
     monkeypatch.setattr(runner, "install", fail_install)
     monkeypatch.setattr(
         sys,
@@ -210,6 +216,8 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     assert resource_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
     assert model_check["status"] == "passed"
     assert model_check["num_ctx"] == runner.HOST_OLLAMA_NUM_CTX
+    assert model_check["selected_profile"] == "cpu_bounded"
+    assert model_check["attempts"][0]["options"]["num_gpu"] == 0
     assert probes == ["Respond with OK."]
 
 
@@ -224,14 +232,23 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
         raise AssertionError(f"unexpected command: {command}")
 
     def fake_host_ollama_generate(_prompt: str):
-        return {"returncode": 1, "stdout": "", "stderr": "unable to allocate CUDA_Host buffer"}
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "unable to allocate CUDA_Host buffer",
+            "selected_profile": None,
+            "attempts": [
+                {"profile": "gpu_bounded", "options": {"num_ctx": 1024}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 1, "stderr": "OOM"},
+            ],
+        }
 
     monkeypatch.setattr(runner, "REPORT_ROOT", tmp_path / "reports")
     monkeypatch.setattr(runner, "require_command", lambda name: name)
     monkeypatch.setattr(runner, "docker_command", lambda: "docker")
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
     monkeypatch.setattr(runner, "run", fake_run)
-    monkeypatch.setattr(runner, "host_ollama_generate", fake_host_ollama_generate)
+    monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -256,6 +273,8 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
     model_check = [check for check in report["checks"] if check["name"] == "host_ollama_model_load"][0]
     assert model_check["status"] == "failed"
     assert "CUDA_Host" in model_check["stderr"]
+    assert model_check["selected_profile"] is None
+    assert [attempt["profile"] for attempt in model_check["attempts"]] == ["gpu_bounded", "cpu_bounded"]
 
 
 def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
@@ -292,6 +311,42 @@ def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
     }
 
 
+def test_host_ollama_generate_falls_back_to_cpu_after_cuda_host_failure(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    payloads: list[dict[str, object]] = []
+
+    class FakeResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    def fake_urlopen(request, timeout: int):
+        payload = json.loads(request.data.decode("utf-8"))
+        payloads.append(payload)
+        if len(payloads) == 1:
+            raise runner.urllib.error.HTTPError(
+                request.full_url,
+                500,
+                "Internal Server Error",
+                {},
+                io.BytesIO(b'{"error":"unable to allocate CUDA_Host buffer"}'),
+            )
+        return FakeResponse(b'{"response":"OK"}')
+
+    monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+
+    result = runner.host_ollama_generate_with_fallback("Respond with OK.")
+
+    assert result["returncode"] == 0
+    assert result["selected_profile"] == "cpu_bounded"
+    assert payloads[0]["options"] == {"num_ctx": 1024}
+    assert payloads[1]["options"] == {"num_ctx": 1024, "num_gpu": 0}
+    assert [attempt["profile"] for attempt in result["attempts"]] == ["gpu_bounded", "cpu_bounded"]
+    assert "CUDA_Host" in result["attempts"][0]["stderr"]
+
+
 def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
@@ -304,10 +359,19 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
 
     def fake_host_ollama_generate(prompt: str):
         probes.append(prompt)
-        return {"returncode": 0, "stdout": "OK", "stderr": ""}
+        return {
+            "returncode": 0,
+            "stdout": "OK",
+            "stderr": "",
+            "selected_profile": "cpu_bounded",
+            "attempts": [
+                {"profile": "gpu_bounded", "options": {"num_ctx": 1024}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 0, "stderr": ""},
+            ],
+        }
 
     monkeypatch.setattr(runner, "run", fake_run)
-    monkeypatch.setattr(runner, "host_ollama_generate", fake_host_ollama_generate)
+    monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
     ctx = {
         "selected_modules": [runner.MODULE_RECORDS],
         "records_project": "records-proj",
@@ -318,6 +382,8 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
 
     prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
     assert prewarm["status"] == "passed"
+    assert prewarm["selected_profile"] == "cpu_bounded"
+    assert prewarm["attempts"][1]["options"]["num_gpu"] == 0
     assert probes == ["Respond with OK."]
 
 
