@@ -602,6 +602,9 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
             f"Host Ollama model readiness probe exceeded {OLLAMA_PREWARM_TIMEOUT_SECONDS}s."
         )
     status = "passed" if returncode == 0 else "failed"
+    release_after_probe: object = None
+    if status == "passed":
+        release_after_probe = host_ollama_unload()
     return {
         "name": "host_ollama_model_load",
         "status": status,
@@ -616,6 +619,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "keep_alive": OLLAMA_KEEP_ALIVE,
         "selected_profile": selected_profile,
         "initial_cleanup": initial_cleanup,
+        "release_after_probe": release_after_probe,
         "attempts": attempts,
         "returncode": returncode,
         "stdout": stdout,
@@ -1694,7 +1698,17 @@ def ensure_ollama_models(
         try:
             selected_profile = None
             attempts: list[dict[str, object]] = []
-            if USE_HOST_OLLAMA:
+            reused_prewarm = False
+            if USE_HOST_OLLAMA and ctx.get("host_ollama_prewarm_proven") is True:
+                reused_prewarm = True
+                returncode = 0
+                stdout = "reused prior host-Ollama prewarm proof"
+                stderr = ""
+                selected_profile = ctx.get("host_ollama_prewarm_selected_profile")
+                server = ctx.get("host_ollama_prewarm_server")
+                attempts = []
+                initial_cleanup = None
+            elif USE_HOST_OLLAMA:
                 prewarm = host_ollama_generate_with_fallback("Respond with OK.")
                 returncode = int(prewarm["returncode"])
                 stdout = str(prewarm["stdout"])[-4000:]
@@ -1752,10 +1766,11 @@ def ensure_ollama_models(
                 "server": server,
                 "initial_cleanup": initial_cleanup,
                 "attempts": attempts,
+                "reused_prior_host_ollama_prewarm": reused_prewarm,
                 "fix_steps": fix_steps,
             }
         )
-        if returncode == 0:
+        if returncode == 0 and not reused_prewarm:
             loaded = run(
                 ollama_command(project, source, "ps"),
                 cwd=source,
@@ -1782,6 +1797,9 @@ def ensure_ollama_models(
                 }
             )
             if USE_HOST_OLLAMA and loaded_ok:
+                ctx["host_ollama_prewarm_proven"] = True
+                ctx["host_ollama_prewarm_selected_profile"] = selected_profile
+                ctx["host_ollama_prewarm_server"] = server
                 release = host_ollama_unload()
                 release_ok = int(release["returncode"]) == 0
                 steps.append(

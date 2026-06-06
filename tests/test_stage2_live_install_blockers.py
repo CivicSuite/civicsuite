@@ -168,6 +168,7 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
         raise AssertionError(f"unexpected command: {command}")
 
     probes: list[str] = []
+    unloads: list[str] = []
 
     def fake_host_ollama_generate(prompt: str):
         probes.append(prompt)
@@ -195,6 +196,11 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
     monkeypatch.setattr(runner, "run", fake_run)
     monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_unload",
+        lambda: unloads.append("unload") or {"returncode": 0, "stdout": '{"done_reason":"unload"}', "stderr": ""},
+    )
     monkeypatch.setattr(runner, "install", fail_install)
     monkeypatch.setattr(
         sys,
@@ -225,7 +231,9 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     assert model_check["num_ctx"] == runner.HOST_OLLAMA_NUM_CTX
     assert model_check["selected_profile"] == "cpu_tiny_batch"
     assert model_check["attempts"][0]["options"]["num_gpu"] == 0
+    assert model_check["release_after_probe"]["returncode"] == 0
     assert probes == ["Respond with OK."]
+    assert unloads == ["unload"]
 
 
 def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
@@ -776,6 +784,63 @@ def test_host_ollama_prewarm_records_nonfatal_release_warning(monkeypatch, tmp_p
     assert release["required"] is False
     assert release["returncode"] == 1
     assert "MemoryError" in " ".join(release["fix_steps"])
+
+
+def test_host_ollama_prewarm_reuses_prior_proof_for_second_module(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
+    probes: list[str] = []
+    unloads: list[str] = []
+
+    def fake_run(command, **_kwargs):
+        if command == ["ollama", "ps"]:
+            return subprocess.CompletedProcess(command, 0, stdout="gemma4:e4b 123 MB 100% 30 minutes\n", stderr="")
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    def fake_host_ollama_generate(prompt: str):
+        probes.append(prompt)
+        return {
+            "returncode": 0,
+            "stdout": "OK",
+            "stderr": "",
+            "selected_profile": "cpu_mmap_default",
+            "server": {"status": "passed", "port": 11435},
+            "attempts": [
+                {"profile": "native_default", "options": None, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "cpu_mmap_default", "options": {"num_gpu": 0, "use_mmap": True, "use_mlock": False}, "returncode": 0, "stderr": ""},
+            ],
+        }
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_unload",
+        lambda: unloads.append("unload") or {"returncode": 0, "stdout": '{"done_reason":"unload"}', "stderr": ""},
+    )
+    ctx = {
+        "selected_modules": [runner.MODULE_RECORDS, runner.MODULE_CLERK],
+        "records_project": "records-proj",
+        "records_source": tmp_path / "records",
+        "clerk_project": "clerk-proj",
+        "clerk_source": tmp_path / "clerk",
+    }
+
+    steps = runner.ensure_ollama_models(ctx)
+
+    prewarms = [step for step in steps if step["step"] == "ollama_prewarm_model"]
+    loaded_checks = [step for step in steps if step["step"] == "ollama_loaded_model_check"]
+    releases = [step for step in steps if step["step"] == "host_ollama_release_model_after_prewarm"]
+    assert [step["module"] for step in prewarms] == [runner.MODULE_RECORDS, runner.MODULE_CLERK]
+    assert prewarms[0]["selected_profile"] == "cpu_mmap_default"
+    assert prewarms[0]["reused_prior_host_ollama_prewarm"] is False
+    assert prewarms[1]["selected_profile"] == "cpu_mmap_default"
+    assert prewarms[1]["reused_prior_host_ollama_prewarm"] is True
+    assert prewarms[1]["stdout"] == "reused prior host-Ollama prewarm proof"
+    assert [step["module"] for step in loaded_checks] == [runner.MODULE_RECORDS]
+    assert [step["module"] for step in releases] == [runner.MODULE_RECORDS]
+    assert probes == ["Respond with OK."]
+    assert unloads == ["unload"]
 
 
 def test_ollama_prewarm_success_requires_resident_model_check(monkeypatch, tmp_path: Path) -> None:
