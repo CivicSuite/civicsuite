@@ -49,7 +49,7 @@ MIN_LLM_HOST_MEMORY_GB = 16
 MIN_LLM_HOST_MEMORY_BYTES = MIN_LLM_HOST_MEMORY_GB * 1000 * 1000 * 1000
 MIN_DOCKER_MEMORY_GB = 8
 MIN_DOCKER_MEMORY_BYTES = MIN_DOCKER_MEMORY_GB * 1000 * 1000 * 1000
-MIN_HOST_OLLAMA_FREE_MEMORY_GB = 6
+MIN_HOST_OLLAMA_FREE_MEMORY_GB = 4
 MIN_HOST_OLLAMA_FREE_MEMORY_BYTES = MIN_HOST_OLLAMA_FREE_MEMORY_GB * 1000 * 1000 * 1000
 RESPONSE_LETTER_TIMEOUT_SECONDS = 180
 RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
@@ -644,7 +644,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
             "stderr": (
                 f"Host has only {free_memory} bytes of available RAM before model load; "
                 f"{DEFAULT_LLM_MODEL} host-Ollama readiness requires at least "
-                f"{MIN_HOST_OLLAMA_FREE_MEMORY_BYTES} bytes free on this supported 16 GB profile."
+                f"{MIN_HOST_OLLAMA_FREE_MEMORY_BYTES} bytes free on this supported 16 GB CPU mmap profile."
             ),
             "detected_available_memory_bytes": free_memory,
             "required_available_memory_bytes": MIN_HOST_OLLAMA_FREE_MEMORY_BYTES,

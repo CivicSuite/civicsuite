@@ -358,6 +358,69 @@ def test_lifecycle_readiness_fails_fast_when_available_memory_is_too_low(
     assert "available RAM" in model_check["stderr"]
 
 
+def test_lifecycle_readiness_probes_on_reported_tester_memory_floor(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+
+    def fake_run(command, **_kwargs):
+        if command == ["docker", "info"]:
+            return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
+        raise AssertionError(f"unexpected command: {command}")
+
+    probes: list[str] = []
+
+    def fake_host_ollama_generate(prompt: str):
+        probes.append(prompt)
+        return {
+            "returncode": 0,
+            "stdout": "OK\n",
+            "stderr": "",
+            "selected_profile": "cpu_mmap_default",
+            "attempts": [{"profile": "cpu_mmap_default", "options": {"num_gpu": 0}, "returncode": 0, "stderr": ""}],
+            "server": {"status": "passed", "port": 11435},
+            "initial_cleanup": {"status": "passed"},
+        }
+
+    monkeypatch.setattr(runner, "REPORT_ROOT", tmp_path / "reports")
+    monkeypatch.setattr(runner, "require_command", lambda name: name)
+    monkeypatch.setattr(runner, "docker_command", lambda: "docker")
+    monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+    monkeypatch.setattr(runner, "host_available_memory_bytes", lambda: 4_868_968_448)
+    monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_unload",
+        lambda: {"returncode": 0, "stdout": '{"done_reason":"unload"}', "stderr": ""},
+    )
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run-clerk-core-installer.py",
+            "readiness",
+            "--run-id",
+            "tester-memory-floor",
+            "--install-root",
+            str(tmp_path / "install"),
+            "--host-ollama",
+        ],
+    )
+
+    assert runner.main() == 0
+    report = json.loads(
+        (tmp_path / "reports" / "tester-memory-floor" / "clerk-core-installer-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    model_check = [check for check in report["checks"] if check["name"] == "host_ollama_model_load"][0]
+    assert report["status"] == "passed"
+    assert model_check["status"] == "passed"
+    assert model_check["selected_profile"] == "cpu_mmap_default"
+    assert probes == ["Respond with OK."]
+
+
 def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
     runner = _load_installer_runner()
     seen: dict[str, object] = {}
