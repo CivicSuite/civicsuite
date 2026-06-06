@@ -1732,6 +1732,11 @@ def python_service_environment(install_root: Path, module_name: str) -> dict[str
         data_dir = install_root / "data" / "civicaccess"
         data_dir.mkdir(parents=True, exist_ok=True)
         env.setdefault("CIVICACCESS_DATA_DIR", str(data_dir))
+    if module_name == "civicinspect":
+        data_dir = install_root / "data" / "civicinspect"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        env.setdefault("CIVICINSPECT_DATA_DIR", str(data_dir))
+        env.setdefault("CIVICINSPECT_STAFF_API_KEY", "civicsuite-local-staff-key")
     return env
 
 
@@ -3886,6 +3891,46 @@ def verify_civicaccess_integration_contracts(module_ports: dict[str, int]) -> di
     }
 
 
+def verify_civicinspect_integration_contracts(module_ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{module_ports['api']}"
+    readiness_status, readiness = get_json(f"{base}/api/v1/civicinspect/readiness", timeout_seconds=20)
+    contracts_status, contracts = get_json(f"{base}/api/v1/civicinspect/integration-contracts", timeout_seconds=20)
+    provided_contracts = {
+        str(item.get("contract"))
+        for item in contracts.get("provides", [])
+        if isinstance(item, dict)
+    }
+    downstream_ready = contracts.get("downstream_ready_for", [])
+    passed = (
+        readiness_status == 200
+        and readiness.get("ready") is True
+        and readiness.get("schema_ready") is True
+        and contracts_status == 200
+        and "civicinspect.inspection_report_draft.v1" in provided_contracts
+        and "civicinspect.staff_review_queue.v1" in provided_contracts
+        and "civicinspect.records_export_checklist.v1" in provided_contracts
+        and isinstance(downstream_ready, list)
+        and "civicpermit inspection prerequisites" in downstream_ready
+        and "civicaccess public notice accessibility review" in downstream_ready
+        and "civicrecords-ai inspection case retention" in downstream_ready
+    )
+    return {
+        "name": "civicinspect_integration_contracts",
+        "status": "passed" if passed else "failed",
+        "readiness_status_code": readiness_status,
+        "readiness": readiness,
+        "contracts_status_code": contracts_status,
+        "contracts": contracts,
+        "fix_steps": []
+        if passed
+        else [
+            "Confirm CivicInspect is pinned to the local-first staff workspace source commit.",
+            "Confirm /api/v1/civicinspect/readiness reports ready=true and schema_ready=true.",
+            "Confirm /api/v1/civicinspect/integration-contracts includes inspection_report_draft, staff_review_queue, and records_export_checklist contracts.",
+        ],
+    }
+
+
 def start_suite_launcher(install_root: Path, report_dir: Path) -> dict[str, object]:
     launcher_root = install_root / SUITE_LAUNCHER_DIR_NAME
     url = f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
@@ -4031,6 +4076,8 @@ def verify(
             )
         if module_name == "civicaccess":
             checks.append(verify_civicaccess_integration_contracts(module_ports))  # type: ignore[arg-type]
+        if module_name == "civicinspect":
+            checks.append(verify_civicinspect_integration_contracts(module_ports))  # type: ignore[arg-type]
     if clerk_api_passed and not workflow_proof and staff_mode == CLERK_STAFF_MODE_PROTECTED:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     if records_api_passed or clerk_api_passed:
