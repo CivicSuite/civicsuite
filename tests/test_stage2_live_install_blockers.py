@@ -175,8 +175,15 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
             "returncode": 0,
             "stdout": "OK\n",
             "stderr": "",
-            "selected_profile": "cpu_bounded",
-            "attempts": [{"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 0, "stderr": ""}],
+            "selected_profile": "cpu_small_context",
+            "attempts": [
+                {
+                    "profile": "cpu_small_context",
+                    "options": {"num_ctx": 512, "num_gpu": 0},
+                    "returncode": 0,
+                    "stderr": "",
+                }
+            ],
         }
 
     def fail_install(*_args, **_kwargs):
@@ -216,7 +223,7 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     assert resource_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
     assert model_check["status"] == "passed"
     assert model_check["num_ctx"] == runner.HOST_OLLAMA_NUM_CTX
-    assert model_check["selected_profile"] == "cpu_bounded"
+    assert model_check["selected_profile"] == "cpu_small_context"
     assert model_check["attempts"][0]["options"]["num_gpu"] == 0
     assert probes == ["Respond with OK."]
 
@@ -239,7 +246,9 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
             "selected_profile": None,
             "attempts": [
                 {"profile": "gpu_bounded", "options": {"num_ctx": 1024}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_low_vram", "options": {"num_ctx": 1024, "low_vram": True}, "returncode": 1, "stderr": "CUDA_Host"},
                 {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 1, "stderr": "OOM"},
+                {"profile": "cpu_small_context", "options": {"num_ctx": 512, "num_gpu": 0}, "returncode": 1, "stderr": "OOM"},
             ],
         }
 
@@ -274,7 +283,12 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
     assert model_check["status"] == "failed"
     assert "CUDA_Host" in model_check["stderr"]
     assert model_check["selected_profile"] is None
-    assert [attempt["profile"] for attempt in model_check["attempts"]] == ["gpu_bounded", "cpu_bounded"]
+    assert [attempt["profile"] for attempt in model_check["attempts"]] == [
+        "gpu_bounded",
+        "gpu_low_vram",
+        "cpu_bounded",
+        "cpu_small_context",
+    ]
 
 
 def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
@@ -311,7 +325,7 @@ def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
     }
 
 
-def test_host_ollama_generate_falls_back_to_cpu_after_cuda_host_failure(monkeypatch) -> None:
+def test_host_ollama_generate_tries_low_vram_then_cpu_small_context_after_cuda_host_failure(monkeypatch) -> None:
     runner = _load_installer_runner()
     payloads: list[dict[str, object]] = []
 
@@ -325,7 +339,9 @@ def test_host_ollama_generate_falls_back_to_cpu_after_cuda_host_failure(monkeypa
     def fake_urlopen(request, timeout: int):
         payload = json.loads(request.data.decode("utf-8"))
         payloads.append(payload)
-        if len(payloads) == 1:
+        if payload.get("keep_alive") == 0:
+            return FakeResponse(b'{"done":true}')
+        if payload["options"] != {"num_ctx": 512, "num_gpu": 0}:
             raise runner.urllib.error.HTTPError(
                 request.full_url,
                 500,
@@ -340,10 +356,18 @@ def test_host_ollama_generate_falls_back_to_cpu_after_cuda_host_failure(monkeypa
     result = runner.host_ollama_generate_with_fallback("Respond with OK.")
 
     assert result["returncode"] == 0
-    assert result["selected_profile"] == "cpu_bounded"
+    assert result["selected_profile"] == "cpu_small_context"
     assert payloads[0]["options"] == {"num_ctx": 1024}
-    assert payloads[1]["options"] == {"num_ctx": 1024, "num_gpu": 0}
-    assert [attempt["profile"] for attempt in result["attempts"]] == ["gpu_bounded", "cpu_bounded"]
+    assert payloads[2]["options"] == {"num_ctx": 1024, "low_vram": True}
+    assert payloads[4]["options"] == {"num_ctx": 1024, "num_gpu": 0}
+    assert payloads[6]["options"] == {"num_ctx": 512, "num_gpu": 0}
+    assert [attempt["profile"] for attempt in result["attempts"]] == [
+        "gpu_bounded",
+        "gpu_low_vram",
+        "cpu_bounded",
+        "cpu_small_context",
+    ]
+    assert [payload.get("keep_alive") for payload in payloads[1::2]] == [0, 0, 0]
     assert "CUDA_Host" in result["attempts"][0]["stderr"]
 
 
@@ -363,10 +387,12 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
             "returncode": 0,
             "stdout": "OK",
             "stderr": "",
-            "selected_profile": "cpu_bounded",
+            "selected_profile": "cpu_small_context",
             "attempts": [
                 {"profile": "gpu_bounded", "options": {"num_ctx": 1024}, "returncode": 1, "stderr": "CUDA_Host"},
-                {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 0, "stderr": ""},
+                {"profile": "gpu_low_vram", "options": {"num_ctx": 1024, "low_vram": True}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 1, "stderr": "CPU_REPACK"},
+                {"profile": "cpu_small_context", "options": {"num_ctx": 512, "num_gpu": 0}, "returncode": 0, "stderr": ""},
             ],
         }
 
@@ -382,8 +408,9 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
 
     prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
     assert prewarm["status"] == "passed"
-    assert prewarm["selected_profile"] == "cpu_bounded"
-    assert prewarm["attempts"][1]["options"]["num_gpu"] == 0
+    assert prewarm["selected_profile"] == "cpu_small_context"
+    assert prewarm["attempts"][3]["options"]["num_gpu"] == 0
+    assert prewarm["attempts"][3]["options"]["num_ctx"] == 512
     assert probes == ["Respond with OK."]
 
 

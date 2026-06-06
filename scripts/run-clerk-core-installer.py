@@ -54,9 +54,12 @@ RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
 OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
 OLLAMA_KEEP_ALIVE = "30m"
 HOST_OLLAMA_NUM_CTX = 1024
+HOST_OLLAMA_SMALL_NUM_CTX = 512
 HOST_OLLAMA_PROBE_PROFILES = (
     {"name": "gpu_bounded", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX}},
+    {"name": "gpu_low_vram", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "low_vram": True}},
     {"name": "cpu_bounded", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "num_gpu": 0}},
+    {"name": "cpu_small_context", "options": {"num_ctx": HOST_OLLAMA_SMALL_NUM_CTX, "num_gpu": 0}},
 )
 # Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
 # docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
@@ -492,6 +495,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "model": DEFAULT_LLM_MODEL,
         "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
         "num_ctx": HOST_OLLAMA_NUM_CTX,
+        "small_num_ctx": HOST_OLLAMA_SMALL_NUM_CTX,
         "keep_alive": OLLAMA_KEEP_ALIVE,
         "selected_profile": selected_profile,
         "attempts": attempts,
@@ -563,6 +567,30 @@ def host_ollama_generate(prompt: str, profile: dict[str, object] | None = None) 
     }
 
 
+def host_ollama_unload() -> dict[str, object]:
+    payload = {
+        "model": DEFAULT_LLM_MODEL,
+        "prompt": "",
+        "stream": False,
+        "keep_alive": 0,
+    }
+    request = urllib.request.Request(
+        "http://127.0.0.1:11434/api/generate",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            body = response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        return {"returncode": 1, "stdout": "", "stderr": f"HTTP {exc.code}: {body}", "request": payload}
+    except urllib.error.URLError as exc:
+        return {"returncode": 1, "stdout": "", "stderr": str(exc), "request": payload}
+    return {"returncode": 0, "stdout": body[-2000:], "stderr": "", "request": payload}
+
+
 def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     last_result: dict[str, object] | None = None
@@ -581,6 +609,9 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
             result["attempts"] = attempts
             result["selected_profile"] = profile["name"]
             return result
+        unload = host_ollama_unload()
+        attempts[-1]["unload_returncode"] = int(unload["returncode"])
+        attempts[-1]["unload_stderr"] = str(unload["stderr"])[-1000:]
     assert last_result is not None
     last_result["attempts"] = attempts
     last_result["selected_profile"] = None
