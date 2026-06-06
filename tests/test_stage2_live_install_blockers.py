@@ -1611,6 +1611,70 @@ def test_civicinspect_verify_fails_without_staff_queue_contract(monkeypatch) -> 
     assert any("staff_review_queue" in step for step in proof["fix_steps"])
 
 
+def test_civicgrants_verify_requires_ready_contracts(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    calls: list[str] = []
+
+    def fake_get_json(url: str, **_kwargs):
+        calls.append(url)
+        if url.endswith("/api/v1/civicgrants/readiness"):
+            return 200, {"ready": True, "schema_ready": True}
+        if url.endswith("/api/v1/civicgrants/integration-contracts"):
+            return 200, {
+                "contracts": [
+                    {"name": "civicgrants.opportunity_triage.v1"},
+                    {"name": "civicgrants.application_outline.v1"},
+                    {"name": "civicgrants.staff_review_queue.v1"},
+                    {"name": "civicgrants.audit_file_export.v1"},
+                ],
+                "downstream_ready_for": [
+                    "civicaccess public opportunity notices",
+                    "civicprocure grant-funded procurement packages",
+                    "civicrecords-ai grant file retention",
+                ],
+            }
+        return 404, {}
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+
+    proof = runner.verify_civicgrants_integration_contracts({"api": 18862})
+
+    assert proof["status"] == "passed"
+    assert calls == [
+        "http://127.0.0.1:18862/api/v1/civicgrants/readiness",
+        "http://127.0.0.1:18862/api/v1/civicgrants/integration-contracts",
+    ]
+
+
+def test_civicgrants_verify_fails_without_audit_file_export_contract(monkeypatch) -> None:
+    runner = _load_installer_runner()
+
+    def fake_get_json(url: str, **_kwargs):
+        if url.endswith("/api/v1/civicgrants/readiness"):
+            return 200, {"ready": True, "schema_ready": True}
+        if url.endswith("/api/v1/civicgrants/integration-contracts"):
+            return 200, {
+                "contracts": [
+                    {"name": "civicgrants.opportunity_triage.v1"},
+                    {"name": "civicgrants.application_outline.v1"},
+                    {"name": "civicgrants.staff_review_queue.v1"},
+                ],
+                "downstream_ready_for": [
+                    "civicaccess public opportunity notices",
+                    "civicprocure grant-funded procurement packages",
+                    "civicrecords-ai grant file retention",
+                ],
+            }
+        return 404, {}
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+
+    proof = runner.verify_civicgrants_integration_contracts({"api": 18862})
+
+    assert proof["status"] == "failed"
+    assert any("audit_file_export" in step for step in proof["fix_steps"])
+
+
 def test_remote_suite_state_accepts_github_resolvable_staged_source_pin(monkeypatch) -> None:
     verifier = _load_suite_state_verifier()
     declared = "cddc4d2be856badfbc7c6bdd26917a34ef535677"
@@ -2015,6 +2079,35 @@ def test_start_civicinspect_service_sets_local_data_dir_and_staff_key(monkeypatc
     assert captured["env"]["CIVICINSPECT_DATA_DIR"] == str(tmp_path / "data" / "civicinspect")
     assert captured["env"]["CIVICINSPECT_STAFF_API_KEY"] == "civicsuite-local-staff-key"
     assert (tmp_path / "data" / "civicinspect").is_dir()
+
+
+def test_start_civicgrants_service_sets_local_data_dir_and_staff_key(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    source = tmp_path / "source"
+    source.mkdir()
+    captured: dict[str, object] = {}
+
+    class FakeProcess:
+        pid = 7474
+
+        def poll(self):
+            return None
+
+    def fake_popen(_command, **kwargs):
+        captured["env"] = kwargs["env"]
+        return FakeProcess()
+
+    monkeypatch.setattr(runner, "stop_python_service", lambda *_args, **_kwargs: {"status": "skipped_no_pid"})
+    monkeypatch.setattr(runner, "stop_localhost_port_listener", lambda port: {"status": "no_listener", "port": port})
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "passed"})
+
+    proof = runner.start_python_service(tmp_path, "civicgrants", source, port=23862)
+
+    assert proof["status"] == "passed"
+    assert captured["env"]["CIVICGRANTS_DATA_DIR"] == str(tmp_path / "data" / "civicgrants")
+    assert captured["env"]["CIVICGRANTS_STAFF_API_KEY"] == "civicsuite-local-staff-key"
+    assert (tmp_path / "data" / "civicgrants").is_dir()
 
 
 def test_verify_suite_launcher_requires_persistent_listener(monkeypatch, tmp_path: Path) -> None:

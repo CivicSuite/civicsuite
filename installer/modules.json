@@ -412,7 +412,7 @@
                                                "version_label_matches_recovery_status"
                                            ],
                         "current_version":  "0.2.0",
-                        "source_commit":  "05804d589bf7c58b4d5b8d88745772a8e910f34b"
+                        "source_commit":  "fcfbe34c7b921dad44d5329397e058614c7d9ed4"
                     },
                     {
                         "id":  "civicprocure",
