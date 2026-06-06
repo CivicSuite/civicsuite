@@ -3455,6 +3455,11 @@ def install(
         steps.append(start_step)
         if start_step.get("status") != "passed":
             return {"status": "failed", "selected_modules": modules, "steps": steps}
+    if uses_suite_runtime(modules):
+        launcher_step = start_suite_launcher(install_root, report_dir)
+        steps.append(launcher_step)
+        if launcher_step.get("status") != "passed":
+            return {"status": "failed", "selected_modules": modules, "steps": steps}
     result = verify(
         install_root,
         isolation=isolation,
@@ -3600,52 +3605,105 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
             "name": "suite_launcher_http",
             "status": "passed" if marker_ok else "failed",
             "url": url,
-            "mode": "already_running",
+            "mode": "persistent_launcher",
             "content_marker_present": marker_ok,
             "attempts": already_running.get("attempts", []),
             "fix_steps": launcher_fix_steps if not marker_ok else [],
         }
+    return {
+        "name": "suite_launcher_http",
+        "status": "failed",
+        "url": url,
+        "mode": "persistent_launcher_required",
+        "attempts": already_running.get("attempts", []),
+        "fix_steps": [
+            "Run install or repair so the suite launcher is started as a persistent local process.",
+            *launcher_fix_steps,
+        ],
+    }
 
-    proc = subprocess.Popen(  # noqa: S603 - local verification server, no shell.
-        [sys.executable, "-m", "http.server", str(DEFAULT_SUITE_LAUNCHER_PORT), "--bind", "127.0.0.1"],
-        cwd=launcher_root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    try:
-        time.sleep(1)
-        if proc.poll() is not None:
-            stderr = proc.stderr.read()[-1000:] if proc.stderr else ""
-            return {
-                "name": "suite_launcher_http",
-                "status": "failed",
-                "url": url,
-                "mode": "python_http_server",
-                "error": stderr or f"server exited with code {proc.returncode}",
-                "fix_steps": launcher_fix_steps,
-            }
-        proof = wait_for_url(url, timeout_seconds=20)
-        body = str(proof.get("attempts", [{}])[-1].get("stdout", "")) if proof.get("attempts") else ""
-        marker_ok = "CivicSuite Launcher" in body or "civicsuite-launcher-config" in body
-        status = "passed" if proof["status"] == "passed" and marker_ok else "failed"
+
+def start_suite_launcher(install_root: Path, report_dir: Path) -> dict[str, object]:
+    launcher_root = install_root / SUITE_LAUNCHER_DIR_NAME
+    url = f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
+    if not launcher_root.is_dir():
         return {
-            "name": "suite_launcher_http",
-            "status": status,
-            "url": url,
-            "mode": "python_http_server",
-            "content_marker_present": marker_ok,
-            "attempts": proof.get("attempts", []),
-            "fix_steps": launcher_fix_steps
-            if status != "passed"
-            else [],
+            "module": "city-core",
+            "step": "suite_launcher_start",
+            "status": "failed",
+            "path": str(launcher_root),
+            "returncode": 1,
+            "stderr": "Suite launcher runtime directory is missing.",
         }
+    already_running = wait_for_url(url, timeout_seconds=3)
+    if already_running["status"] == "passed":
+        body = str(already_running.get("attempts", [{}])[-1].get("stdout", ""))
+        marker_ok = "CivicSuite Launcher" in body or "civicsuite-launcher-config" in body
+        return {
+            "module": "city-core",
+            "step": "suite_launcher_start",
+            "status": "passed" if marker_ok else "failed",
+            "mode": "already_running",
+            "url": url,
+            "returncode": 0 if marker_ok else 1,
+            "content_marker_present": marker_ok,
+            "attempts": already_running.get("attempts", []),
+        }
+    log_dir = report_dir / "launcher-output"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    stdout_path = log_dir / "suite-launcher.stdout.log"
+    stderr_path = log_dir / "suite-launcher.stderr.log"
+    stdout_file = stdout_path.open("a", encoding="utf-8")
+    stderr_file = stderr_path.open("a", encoding="utf-8")
+    popen_kwargs: dict[str, object] = {
+        "cwd": launcher_root,
+        "stdout": stdout_file,
+        "stderr": stderr_file,
+        "text": True,
+    }
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    if creationflags:
+        popen_kwargs["creationflags"] = creationflags
+    try:
+        proc = subprocess.Popen(  # noqa: S603 - starts the local installed launcher, no shell.
+            [sys.executable, "-m", "http.server", str(DEFAULT_SUITE_LAUNCHER_PORT), "--bind", "127.0.0.1"],
+            **popen_kwargs,
+        )
     finally:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+        stdout_file.close()
+        stderr_file.close()
+    time.sleep(1)
+    if proc.poll() is not None:
+        stderr_tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-1000:] if stderr_path.is_file() else ""
+        return {
+            "module": "city-core",
+            "step": "suite_launcher_start",
+            "status": "failed",
+            "mode": "python_http_server",
+            "url": url,
+            "pid": proc.pid,
+            "returncode": proc.returncode,
+            "stdout_log": str(stdout_path),
+            "stderr_log": str(stderr_path),
+            "stderr": stderr_tail,
+        }
+    proof = wait_for_url(url, timeout_seconds=20)
+    body = str(proof.get("attempts", [{}])[-1].get("stdout", "")) if proof.get("attempts") else ""
+    marker_ok = "CivicSuite Launcher" in body or "civicsuite-launcher-config" in body
+    status = "passed" if proof["status"] == "passed" and marker_ok else "failed"
+    return {
+        "module": "city-core",
+        "step": "suite_launcher_start",
+        "status": status,
+        "mode": "python_http_server",
+        "url": url,
+        "pid": proc.pid,
+        "returncode": 0 if status == "passed" else 1,
+        "content_marker_present": marker_ok,
+        "attempts": proof.get("attempts", []),
+        "stdout_log": str(stdout_path),
+        "stderr_log": str(stderr_path),
+    }
 
 
 def verify(

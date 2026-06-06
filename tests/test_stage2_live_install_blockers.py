@@ -1587,64 +1587,70 @@ def test_wait_for_url_timeout_records_124_and_fails(monkeypatch) -> None:
     assert "timed out" in proof["attempts"][0]["stderr"]
 
 
-def test_verify_suite_launcher_http_probe_fails_on_early_exit(monkeypatch, tmp_path: Path) -> None:
+def test_verify_suite_launcher_requires_persistent_listener(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()
     monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "failed", "attempts": []})
 
-    class FakeProcess:
-        returncode = 98
-        stderr = io.StringIO("address already in use")
-
-        def poll(self):
-            return self.returncode
-
-        def terminate(self):
-            pass
-
-        def wait(self, timeout=None):
-            return self.returncode
-
-    monkeypatch.setattr(runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
-
     proof = runner.verify_suite_launcher_serves({"install_root": tmp_path})
 
     assert proof["status"] == "failed"
-    assert proof["error"] == "address already in use"
+    assert proof["mode"] == "persistent_launcher_required"
     assert any("netstat -ano" in step for step in proof["fix_steps"])
 
 
-def test_verify_suite_launcher_http_probe_requires_launcher_content(monkeypatch, tmp_path: Path) -> None:
+def test_verify_suite_launcher_persistent_listener_requires_launcher_content(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()
-    responses = iter(
-        [
-            {"status": "failed", "attempts": []},
-            {"status": "passed", "attempts": [{"returncode": 0, "stdout": "<html>wrong app</html>", "stderr": ""}]},
-        ]
+    monkeypatch.setattr(
+        runner,
+        "wait_for_url",
+        lambda *_args, **_kwargs: {"status": "passed", "attempts": [{"returncode": 0, "stdout": "<html>wrong app</html>", "stderr": ""}]},
     )
-    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: next(responses))
-
-    class FakeProcess:
-        returncode = None
-        stderr = io.StringIO("")
-
-        def poll(self):
-            return None
-
-        def terminate(self):
-            pass
-
-        def wait(self, timeout=None):
-            return 0
-
-    monkeypatch.setattr(runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
 
     proof = runner.verify_suite_launcher_serves({"install_root": tmp_path})
 
     assert proof["status"] == "failed"
     assert proof["content_marker_present"] is False
     assert proof["fix_steps"]
+
+
+def test_start_suite_launcher_starts_persistent_python_server(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    launcher_root = tmp_path / runner.SUITE_LAUNCHER_DIR_NAME
+    launcher_root.mkdir()
+    calls: list[list[str]] = []
+    responses = iter(
+        [
+            {"status": "failed", "attempts": []},
+            {"status": "passed", "attempts": [{"returncode": 0, "stdout": "<html>CivicSuite Launcher</html>", "stderr": ""}]},
+        ]
+    )
+
+    class FakeProcess:
+        pid = 4242
+        returncode = None
+
+        def poll(self):
+            return self.returncode
+
+    def fake_popen(command, **kwargs):
+        calls.append(command)
+        assert kwargs["cwd"] == launcher_root
+        assert kwargs["stdout"].name.endswith("suite-launcher.stdout.log")
+        assert kwargs["stderr"].name.endswith("suite-launcher.stderr.log")
+        return FakeProcess()
+
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: next(responses))
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    proof = runner.start_suite_launcher(tmp_path, tmp_path / "reports")
+
+    assert proof["status"] == "passed"
+    assert proof["pid"] == 4242
+    assert proof["mode"] == "python_http_server"
+    assert calls == [[sys.executable, "-m", "http.server", "18082", "--bind", "127.0.0.1"]]
 
 
 def test_warning_steps_bubble_to_top_level_summary() -> None:
