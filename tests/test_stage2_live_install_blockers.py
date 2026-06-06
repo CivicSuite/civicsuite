@@ -618,6 +618,68 @@ def test_host_ollama_generate_tries_cpu_mmap_before_forced_gpu_profiles(monkeypa
     assert cleanup_calls == ["cleanup"] * 2
 
 
+def test_host_ollama_generate_recovers_from_windows_llama_worker_crash(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    server_calls: list[str] = []
+    cleanup_calls: list[str] = []
+    stop_calls: list[str] = []
+    payloads: list[dict[str, object]] = []
+
+    class FakeResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    def fake_urlopen(request, timeout: int):
+        payload = json.loads(request.data.decode("utf-8"))
+        payloads.append(payload)
+        if payload.get("keep_alive") == 0:
+            return FakeResponse(b'{"done":true}')
+        if len(payloads) == 1:
+            raise runner.urllib.error.HTTPError(
+                request.full_url,
+                500,
+                "Internal Server Error",
+                {},
+                io.BytesIO(
+                    b'{"error":"llama-server process has terminated: exit status 0xc0000409"}'
+                ),
+            )
+        return FakeResponse(b'{"response":"OK"}')
+
+    monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        runner,
+        "ensure_host_ollama_server",
+        lambda: server_calls.append("server") or {"status": "passed", "mode": "started", "port": 11435},
+    )
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_cleanup_runtime",
+        lambda: cleanup_calls.append("cleanup") or {"unload": {"returncode": 0, "stderr": ""}, "stop_orphan_servers": {"returncode": 0}},
+    )
+    monkeypatch.setattr(
+        runner,
+        "stop_managed_host_ollama_server",
+        lambda: stop_calls.append("stop") or {"status": "stopped", "pid": 1234, "returncode": 0},
+    )
+
+    result = runner.host_ollama_generate_with_fallback("Respond with OK.")
+
+    assert result["returncode"] == 0
+    assert result["selected_profile"] == "cpu_mmap_default"
+    assert [attempt["profile"] for attempt in result["attempts"]] == ["native_default", "cpu_mmap_default"]
+    assert result["attempts"][0]["crash_detected"] is True
+    assert "server_after_crash_restart" in result["attempts"][0]
+    assert server_calls == ["server", "server"]
+    assert cleanup_calls == ["cleanup", "cleanup"]
+    assert stop_calls == ["stop"]
+    assert "options" not in payloads[0]
+    assert payloads[1]["options"] == {"num_gpu": 0, "use_mmap": True, "use_mlock": False}
+
+
 def test_host_ollama_stop_orphan_servers_terminates_windows_llama_processes(monkeypatch) -> None:
     runner = _load_installer_runner()
     commands: list[list[str]] = []

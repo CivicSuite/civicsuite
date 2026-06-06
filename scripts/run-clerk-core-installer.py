@@ -825,6 +825,56 @@ def host_ollama_cleanup_access_denied(cleanup: dict[str, object]) -> bool:
     return False
 
 
+def host_ollama_worker_crashed(result: dict[str, object]) -> bool:
+    stderr = str(result.get("stderr", "")).lower()
+    crash_markers = (
+        "llama-server process has terminated",
+        "0xc0000409",
+        "stack-based buffer",
+        "ollama_llama_server",
+    )
+    return any(marker in stderr for marker in crash_markers)
+
+
+def stop_managed_host_ollama_server() -> dict[str, object]:
+    global HOST_OLLAMA_SERVER_PROCESS
+    proc = HOST_OLLAMA_SERVER_PROCESS
+    if proc is None:
+        return {"status": "skipped_no_managed_server"}
+    pid = proc.pid
+    if proc.poll() is not None:
+        HOST_OLLAMA_SERVER_PROCESS = None
+        return {"status": "already_exited", "pid": pid, "returncode": proc.returncode}
+    if os.name == "nt":
+        result = subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        HOST_OLLAMA_SERVER_PROCESS = None
+        return {
+            "status": "stopped" if result.returncode == 0 else "stop_failed",
+            "pid": pid,
+            "returncode": result.returncode,
+            "stdout": result.stdout[-2000:],
+            "stderr": result.stderr[-2000:],
+        }
+    try:
+        proc.terminate()
+        proc.wait(timeout=30)
+        status = "stopped"
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=30)
+        status = "killed"
+    finally:
+        HOST_OLLAMA_SERVER_PROCESS = None
+    return {"status": status, "pid": pid, "returncode": proc.returncode}
+
+
 def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     last_result: dict[str, object] | None = None
@@ -871,6 +921,20 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
             result["server"] = server
             result["initial_cleanup"] = initial_cleanup
             return result
+        if host_ollama_worker_crashed(result):
+            crash_cleanup = host_ollama_cleanup_runtime()
+            attempts[-1]["crash_detected"] = True
+            attempts[-1]["crash_cleanup"] = crash_cleanup
+            attempts[-1]["managed_server_stop"] = stop_managed_host_ollama_server()
+            server = ensure_host_ollama_server()
+            attempts[-1]["server_after_crash_restart"] = server
+            if server["status"] != "passed":
+                result["attempts"] = attempts
+                result["selected_profile"] = None
+                result["server"] = server
+                result["initial_cleanup"] = initial_cleanup
+                return result
+            continue
         cleanup = host_ollama_cleanup_runtime()
         unload = cleanup["unload"]  # type: ignore[index]
         stop = cleanup["stop_orphan_servers"]  # type: ignore[index]
@@ -957,8 +1021,6 @@ def source_root_for_install(module_name: str, install_root: Path) -> Path:
     try:
         return source_root(module_name)
     except InstallerError as exc:
-        bundled = ROOT / "modules" / module_name
-        sibling = ROOT.parent / module_name
         cache = install_root / "source-cache" / module_name
         try:
             return fetch_source_archive(module_name, cache)
