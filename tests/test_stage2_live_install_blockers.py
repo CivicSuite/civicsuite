@@ -1675,6 +1675,72 @@ def test_civicgrants_verify_fails_without_audit_file_export_contract(monkeypatch
     assert any("audit_file_export" in step for step in proof["fix_steps"])
 
 
+def test_civicprocure_verify_requires_ready_contracts(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    calls: list[str] = []
+
+    def fake_get_json(url: str, **_kwargs):
+        calls.append(url)
+        if url.endswith("/api/v1/civicprocure/readiness"):
+            return 200, {"ready": True, "schema_ready": True}
+        if url.endswith("/api/v1/civicprocure/integration-contracts"):
+            return 200, {
+                "contracts": [
+                    {"name": "civicprocure.rfp_draft.v1"},
+                    {"name": "civicprocure.staff_review_queue.v1"},
+                    {"name": "civicprocure.award_packet.v1"},
+                    {"name": "civicprocure.procurement_context.v1"},
+                ],
+                "downstream_ready_for": [
+                    "civicgrants grant-funded procurement packages",
+                    "civiccontracts contract drafting",
+                    "civicclerk agenda award memos",
+                    "civicrecords-ai procurement file retention",
+                ],
+            }
+        return 404, {}
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+
+    proof = runner.verify_civicprocure_integration_contracts({"api": 18863})
+
+    assert proof["status"] == "passed"
+    assert calls == [
+        "http://127.0.0.1:18863/api/v1/civicprocure/readiness",
+        "http://127.0.0.1:18863/api/v1/civicprocure/integration-contracts",
+    ]
+
+
+def test_civicprocure_verify_fails_without_award_packet_contract(monkeypatch) -> None:
+    runner = _load_installer_runner()
+
+    def fake_get_json(url: str, **_kwargs):
+        if url.endswith("/api/v1/civicprocure/readiness"):
+            return 200, {"ready": True, "schema_ready": True}
+        if url.endswith("/api/v1/civicprocure/integration-contracts"):
+            return 200, {
+                "contracts": [
+                    {"name": "civicprocure.rfp_draft.v1"},
+                    {"name": "civicprocure.staff_review_queue.v1"},
+                    {"name": "civicprocure.procurement_context.v1"},
+                ],
+                "downstream_ready_for": [
+                    "civicgrants grant-funded procurement packages",
+                    "civiccontracts contract drafting",
+                    "civicclerk agenda award memos",
+                    "civicrecords-ai procurement file retention",
+                ],
+            }
+        return 404, {}
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+
+    proof = runner.verify_civicprocure_integration_contracts({"api": 18863})
+
+    assert proof["status"] == "failed"
+    assert any("award_packet" in step for step in proof["fix_steps"])
+
+
 def test_remote_suite_state_accepts_github_resolvable_staged_source_pin(monkeypatch) -> None:
     verifier = _load_suite_state_verifier()
     declared = "cddc4d2be856badfbc7c6bdd26917a34ef535677"
@@ -2108,6 +2174,35 @@ def test_start_civicgrants_service_sets_local_data_dir_and_staff_key(monkeypatch
     assert captured["env"]["CIVICGRANTS_DATA_DIR"] == str(tmp_path / "data" / "civicgrants")
     assert captured["env"]["CIVICGRANTS_STAFF_API_KEY"] == "civicsuite-local-staff-key"
     assert (tmp_path / "data" / "civicgrants").is_dir()
+
+
+def test_start_civicprocure_service_sets_local_data_dir_and_staff_key(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    source = tmp_path / "source"
+    source.mkdir()
+    captured: dict[str, object] = {}
+
+    class FakeProcess:
+        pid = 7575
+
+        def poll(self):
+            return None
+
+    def fake_popen(_command, **kwargs):
+        captured["env"] = kwargs["env"]
+        return FakeProcess()
+
+    monkeypatch.setattr(runner, "stop_python_service", lambda *_args, **_kwargs: {"status": "skipped_no_pid"})
+    monkeypatch.setattr(runner, "stop_localhost_port_listener", lambda port: {"status": "no_listener", "port": port})
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "passed"})
+
+    proof = runner.start_python_service(tmp_path, "civicprocure", source, port=23863)
+
+    assert proof["status"] == "passed"
+    assert captured["env"]["CIVICPROCURE_DATA_DIR"] == str(tmp_path / "data" / "civicprocure")
+    assert captured["env"]["CIVICPROCURE_STAFF_API_KEY"] == "civicsuite-local-staff-key"
+    assert (tmp_path / "data" / "civicprocure").is_dir()
 
 
 def test_verify_suite_launcher_requires_persistent_listener(monkeypatch, tmp_path: Path) -> None:

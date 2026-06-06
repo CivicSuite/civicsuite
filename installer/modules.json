@@ -437,7 +437,7 @@
                                                "version_label_matches_recovery_status"
                                            ],
                         "current_version":  "0.2.0",
-                        "source_commit":  "0aa998feab3736db071920e3869462598758c23d"
+                        "source_commit":  "1a6f44a09d85fdd7e8153455b16c5ec4baa63311"
                     },
                     {
                         "id":  "civiccontracts",
