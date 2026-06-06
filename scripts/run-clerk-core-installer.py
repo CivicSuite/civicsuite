@@ -85,7 +85,15 @@ HOST_OLLAMA_PROBE_PROFILES = (
     },
 )
 HOST_OLLAMA_NATIVE_DEFAULT_PROFILE = {"name": "native_default", "options": None}
-HOST_OLLAMA_MODEL_LOAD_PROFILES = (HOST_OLLAMA_NATIVE_DEFAULT_PROFILE, *HOST_OLLAMA_PROBE_PROFILES)
+HOST_OLLAMA_CPU_MMAP_DEFAULT_PROFILE = {
+    "name": "cpu_mmap_default",
+    "options": {"num_gpu": 0, "use_mmap": True, "use_mlock": False},
+}
+HOST_OLLAMA_MODEL_LOAD_PROFILES = (
+    HOST_OLLAMA_NATIVE_DEFAULT_PROFILE,
+    HOST_OLLAMA_CPU_MMAP_DEFAULT_PROFILE,
+    *HOST_OLLAMA_PROBE_PROFILES,
+)
 # Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
 # docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
 # routes api/worker to host.docker.internal) instead of the containerized CPU Ollama.
