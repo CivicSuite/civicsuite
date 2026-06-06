@@ -49,6 +49,8 @@ MIN_LLM_HOST_MEMORY_GB = 16
 MIN_LLM_HOST_MEMORY_BYTES = MIN_LLM_HOST_MEMORY_GB * 1000 * 1000 * 1000
 MIN_DOCKER_MEMORY_GB = 8
 MIN_DOCKER_MEMORY_BYTES = MIN_DOCKER_MEMORY_GB * 1000 * 1000 * 1000
+MIN_HOST_OLLAMA_FREE_MEMORY_GB = 6
+MIN_HOST_OLLAMA_FREE_MEMORY_BYTES = MIN_HOST_OLLAMA_FREE_MEMORY_GB * 1000 * 1000 * 1000
 RESPONSE_LETTER_TIMEOUT_SECONDS = 180
 RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
 OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
@@ -438,6 +440,39 @@ def host_memory_bytes() -> int | None:
     return None
 
 
+def host_available_memory_bytes() -> int | None:
+    system = platform.system().lower()
+    if system == "windows":
+        class MemoryStatusEx(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = MemoryStatusEx()
+        status.dwLength = ctypes.sizeof(MemoryStatusEx)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            return int(status.ullAvailPhys)
+        return None
+    if system == "linux":
+        try:
+            for line in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines():
+                if line.startswith("MemAvailable:"):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        return int(parts[1]) * 1024
+        except (OSError, ValueError):
+            return None
+    return None
+
+
 def parse_memory_size_bytes(value: str) -> int | None:
     match = re.search(r"(?P<number>\d+(?:\.\d+)?)\s*(?P<unit>[kmgt]?i?b|bytes?)", value, re.IGNORECASE)
     if not match:
@@ -586,6 +621,39 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
     selected_profile: object = None
     initial_cleanup: object = None
     server: object = None
+    free_memory = host_available_memory_bytes()
+    if free_memory is not None and free_memory < MIN_HOST_OLLAMA_FREE_MEMORY_BYTES:
+        return {
+            "name": "host_ollama_model_load",
+            "status": "failed",
+            "model": DEFAULT_LLM_MODEL,
+            "base_url": host_ollama_local_base_url(),
+            "container_base_url": host_ollama_container_base_url(),
+            "server": None,
+            "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
+            "num_ctx": HOST_OLLAMA_NUM_CTX,
+            "small_num_ctx": HOST_OLLAMA_SMALL_NUM_CTX,
+            "tiny_num_ctx": HOST_OLLAMA_TINY_NUM_CTX,
+            "keep_alive": OLLAMA_KEEP_ALIVE,
+            "selected_profile": None,
+            "initial_cleanup": None,
+            "release_after_probe": None,
+            "attempts": [],
+            "returncode": 1,
+            "stdout": "",
+            "stderr": (
+                f"Host has only {free_memory} bytes of available RAM before model load; "
+                f"{DEFAULT_LLM_MODEL} host-Ollama readiness requires at least "
+                f"{MIN_HOST_OLLAMA_FREE_MEMORY_BYTES} bytes free on this supported 16 GB profile."
+            ),
+            "detected_available_memory_bytes": free_memory,
+            "required_available_memory_bytes": MIN_HOST_OLLAMA_FREE_MEMORY_BYTES,
+            "required_available_memory_gb": MIN_HOST_OLLAMA_FREE_MEMORY_GB,
+            "fix_steps": [
+                "Close memory-heavy applications and stop stale Ollama workers, then rerun readiness.",
+                "Rerun the clean-machine gate immediately after teardown/reboot so gemma4:e4b can load before Docker and Python installs contend for RAM.",
+            ],
+        }
     try:
         result = host_ollama_generate_with_fallback("Respond with OK.")
         returncode = int(result["returncode"])

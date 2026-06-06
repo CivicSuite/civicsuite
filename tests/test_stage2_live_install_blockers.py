@@ -194,6 +194,7 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     monkeypatch.setattr(runner, "require_command", lambda name: name)
     monkeypatch.setattr(runner, "docker_command", lambda: "docker")
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+    monkeypatch.setattr(runner, "host_available_memory_bytes", lambda: 8 * 1000 * 1000 * 1000)
     monkeypatch.setattr(runner, "run", fake_run)
     monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
     monkeypatch.setattr(
@@ -268,6 +269,7 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
     monkeypatch.setattr(runner, "require_command", lambda name: name)
     monkeypatch.setattr(runner, "docker_command", lambda: "docker")
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+    monkeypatch.setattr(runner, "host_available_memory_bytes", lambda: 8 * 1000 * 1000 * 1000)
     monkeypatch.setattr(runner, "run", fake_run)
     monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
     monkeypatch.setattr(
@@ -305,6 +307,55 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
         "cpu_small_context",
         "cpu_tiny_batch",
     ]
+
+
+def test_lifecycle_readiness_fails_fast_when_available_memory_is_too_low(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+
+    def fake_run(command, **_kwargs):
+        if command == ["docker", "info"]:
+            return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
+        raise AssertionError(f"unexpected command: {command}")
+
+    def fail_probe(*_args, **_kwargs):
+        raise AssertionError("readiness must not start Ollama when available RAM is below the floor")
+
+    monkeypatch.setattr(runner, "REPORT_ROOT", tmp_path / "reports")
+    monkeypatch.setattr(runner, "require_command", lambda name: name)
+    monkeypatch.setattr(runner, "docker_command", lambda: "docker")
+    monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+    monkeypatch.setattr(runner, "host_available_memory_bytes", lambda: 3_643_864 * 1024)
+    monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fail_probe)
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run-clerk-core-installer.py",
+            "readiness",
+            "--run-id",
+            "available-memory-low",
+            "--install-root",
+            str(tmp_path / "install"),
+            "--host-ollama",
+        ],
+    )
+
+    assert runner.main() == 1
+    report = json.loads(
+        (tmp_path / "reports" / "available-memory-low" / "clerk-core-installer-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    model_check = [check for check in report["checks"] if check["name"] == "host_ollama_model_load"][0]
+    assert report["status"] == "failed"
+    assert model_check["status"] == "failed"
+    assert model_check["attempts"] == []
+    assert model_check["detected_available_memory_bytes"] == 3_643_864 * 1024
+    assert model_check["required_available_memory_bytes"] == runner.MIN_HOST_OLLAMA_FREE_MEMORY_BYTES
+    assert "available RAM" in model_check["stderr"]
 
 
 def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:

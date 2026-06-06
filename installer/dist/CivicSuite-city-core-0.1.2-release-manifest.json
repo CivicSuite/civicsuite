@@ -20,7 +20,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
       "platform": "windows",
-      "sha256": "9ebdc64af74b6db556248a5722f1b14103e104b5d238a81e812e1d62010a4fc1",
+      "sha256": "69b44c6528b468ae0be0c39f55a57c13956eb451c742f17966436a345f7648c6",
       "support_status": "supported_package"
     },
     {
@@ -28,7 +28,7 @@
       "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
       "path": "installer\\dist\\CivicSuite-city-core-macos-0.1.2.tar.gz",
       "platform": "macos",
-      "sha256": "5b43650e9467cfb5c7794f2e61a923a57a5ff2401a00d9229d6fb9b082558606",
+      "sha256": "46d430d27c59c0dd693a8df58e33dc3544a71465f1dd37277cf20ef47872bdd9",
       "support_status": "beta"
     },
     {
@@ -36,7 +36,7 @@
       "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
       "path": "installer\\dist\\CivicSuite-city-core-linux-0.1.2.tar.gz",
       "platform": "linux",
-      "sha256": "f26c0b4233f705921ac66f8b5a4a09844cd16dd9117a2fc0f209bd5cc8a50f4d",
+      "sha256": "1c0a97887659336bd5bfad1e604915cafb8e7e37ed45a0e2bf808332c333ba30",
       "support_status": "supported_package"
     }
   ],
@@ -59,7 +59,7 @@
       "entrypoint": "double-click .cmd; Stage 3A bare-metal progress wrapper",
       "path": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.cmd",
       "platform": "windows",
-      "sha256": "e526418ec1c8edc43391fc1558947b13b0dc8bf4afc91c44362c1945851b332b",
+      "sha256": "d3060c2cfa43b5a892b17792b0e1161dfa56bce92eab30e3eb86da31a45519b7",
       "source_archive": "installer\\dist\\CivicSuite-city-core-windows-0.1.2.zip",
       "support_status": "supported_one_click"
     },
@@ -68,7 +68,7 @@
       "entrypoint": "double-click or run .run; readiness then install",
       "path": "installer\\dist\\CivicSuite-city-core-linux-0.1.2.run",
       "platform": "linux",
-      "sha256": "fce0d61584414a209b3ec45ebc5b29bf29c5127d196f83f8be31934468e1cdca",
+      "sha256": "c36eb68c81035cafb527ecec70c1fd75e62644a08eb745edc860462e797bada3",
       "source_archive": "installer\\dist\\CivicSuite-city-core-linux-0.1.2.tar.gz",
       "support_status": "supported_one_click"
     }
