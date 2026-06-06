@@ -1,0 +1,66 @@
+{
+  "component": "suite-launcher",
+  "modules": [
+    {
+      "href": "http://127.0.0.1:18080/",
+      "id": "records",
+      "port": 18080
+    },
+    {
+      "href": "http://127.0.0.1:18081/",
+      "id": "clerk",
+      "port": 18081
+    },
+    {
+      "href": "http://127.0.0.1:18820/civiccode",
+      "id": "code",
+      "port": 18820
+    },
+    {
+      "href": "http://127.0.0.1:18830/civiczone",
+      "id": "zone",
+      "port": 18830
+    },
+    {
+      "href": "http://127.0.0.1:18840/civicplan",
+      "id": "plan",
+      "port": 18840
+    },
+    {
+      "href": "http://127.0.0.1:18850/civicpermit",
+      "id": "permit",
+      "port": 18850
+    },
+    {
+      "href": "http://127.0.0.1:18860/civicaccess",
+      "id": "access",
+      "port": 18860
+    },
+    {
+      "href": "http://127.0.0.1:18861/civicinspect",
+      "id": "inspect",
+      "port": 18861
+    },
+    {
+      "href": "http://127.0.0.1:18862/civicgrants",
+      "id": "grants",
+      "port": 18862
+    },
+    {
+      "href": "http://127.0.0.1:18863/civicprocure",
+      "id": "procure",
+      "port": 18863
+    }
+  ],
+  "package_path": "suite-launcher",
+  "port": 18082,
+  "shared_staff_session": {
+    "env_var": "CIVICCORE_SUITE_SESSION_SECRET",
+    "persisted_value_in_plan": false,
+    "revocation_env_var": "CIVICCORE_SUITE_SESSION_REVOCATION_FILE",
+    "revocation_file": "/civicsuite-shared/civiccore_suite_session_revocations.json",
+    "value_source": "generated on first install if missing"
+  },
+  "source": "installer\\runtime\\suite-launcher",
+  "url": "http://127.0.0.1:18082/"
+}

@@ -1,0 +1,2 @@
+pkgbuild --root "installer/generated/packages/proven-suite/macos" --identifier gov.civicsuite.proven-suite --version 0.1.0 CivicSuite-proven-suite.pkg
+productbuild --distribution distribution.xml --package-path . CivicSuite-proven-suite-0.1.0.pkg

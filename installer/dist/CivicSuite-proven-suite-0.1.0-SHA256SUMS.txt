@@ -1,0 +1,5 @@
+4d96fa7a77e6e867d19a87451b276497d56ed418ac8ed605a985cb94205509a4  CivicSuite-proven-suite-windows-0.1.0.zip
+80933c7982dba870404138f554afb0b478b9e728b928f58a2900907e9adecfe3  CivicSuite-proven-suite-macos-0.1.0.tar.gz
+3e466bec2af6ac717e21388809450c438c105b17516bc3cb0a0db5cc56bb68d1  CivicSuite-proven-suite-linux-0.1.0.tar.gz
+b014381040c1aa5300a43d409a83cb0f46c0ac7f530b1619a1dd44f3c4ad2b14  CivicSuite-proven-suite-windows-0.1.0.cmd
+3a7e33e6c6183eec1da0548fbb630e56e8800b3c3eb1c3e48e3654e689167b65  CivicSuite-proven-suite-linux-0.1.0.run

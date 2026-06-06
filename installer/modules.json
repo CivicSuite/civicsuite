@@ -89,7 +89,7 @@
                      {
                          "id":  "proven-suite",
                          "label":  "Proven Suite",
-                         "description":  "Install city-core plus the seven source-pinned readiness modules proven on 2026-06-05.",
+                         "description":  "Install city-core plus the source-pinned readiness modules proven through the Stage 3A local-first gates.",
                          "modules":  [
                                          "civiccore",
                                          "civicrecords-ai",
@@ -102,7 +102,8 @@
                                          "civicinspect",
                                          "civicgrants",
                                          "civicprocure",
-                                         "civiccontracts"
+                                         "civiccontracts",
+                                         "civicboards"
                                      ],
                          "status":  "local_integration_green_pending_clean_machine_suite_gate"
                      },
@@ -474,18 +475,23 @@
                         "role":  "boards and commissions workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "0.3.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicclerk"
                                          ],
                         "default_port":  8065,
-                        "installer_status":  "tracked_suite_module_needs_installer_proof",
+                        "installer_status":  "stage_ready_source_pinned_pending_clean_machine_suite_gate",
                         "proof_required":  [
+                                               "module_selection",
+                                               "install_plan",
+                                               "artifact_resolution",
                                                "install",
                                                "health_check",
                                                "restart"
-                                           ]
+                                           ],
+                        "current_version":  "0.1.1",
+                        "source_commit":  "cdc6bf1b2e8012151d3767e04cd0e378638798c9"
                     },
                     {
                         "id":  "civicnotice",

@@ -1,0 +1,113 @@
+{
+  "archive_hygiene": {
+    "forbidden_markers": [
+      "/.agent-runs/",
+      "/.runtime-proof",
+      "/.venv",
+      "/__pycache__/",
+      "/.pytest_cache/",
+      "/.ruff_cache/",
+      "/node_modules/",
+      "/playwright-report/",
+      "/test-results/",
+      "/installer/reports/"
+    ],
+    "status": "passed"
+  },
+  "archives": [
+    {
+      "bundle_root": "installer\\generated\\bundles\\proven-suite\\windows\\CivicSuite-proven-suite-windows",
+      "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
+      "path": "installer\\dist\\CivicSuite-proven-suite-windows-0.1.0.zip",
+      "platform": "windows",
+      "sha256": "4d96fa7a77e6e867d19a87451b276497d56ed418ac8ed605a985cb94205509a4",
+      "support_status": "supported_package"
+    },
+    {
+      "bundle_root": "installer\\generated\\bundles\\proven-suite\\macos\\CivicSuite-proven-suite-macos",
+      "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
+      "path": "installer\\dist\\CivicSuite-proven-suite-macos-0.1.0.tar.gz",
+      "platform": "macos",
+      "sha256": "80933c7982dba870404138f554afb0b478b9e728b928f58a2900907e9adecfe3",
+      "support_status": "beta"
+    },
+    {
+      "bundle_root": "installer\\generated\\bundles\\proven-suite\\linux\\CivicSuite-proven-suite-linux",
+      "certification_scope": "package archive generated for matching-host cleanroom lifecycle",
+      "path": "installer\\dist\\CivicSuite-proven-suite-linux-0.1.0.tar.gz",
+      "platform": "linux",
+      "sha256": "3e466bec2af6ac717e21388809450c438c105b17516bc3cb0a0db5cc56bb68d1",
+      "support_status": "supported_package"
+    }
+  ],
+  "checksum_file": "installer\\dist\\CivicSuite-proven-suite-0.1.0-SHA256SUMS.txt",
+  "distribution_status": "unsigned_public_use_starter",
+  "installer_version": "0.1.0",
+  "menu_style": "guided",
+  "modules": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode",
+    "civiczone",
+    "civicplan",
+    "civicpermit",
+    "civicaccess",
+    "civicinspect",
+    "civicgrants",
+    "civicprocure",
+    "civiccontracts",
+    "civicboards"
+  ],
+  "native_installers_built": false,
+  "native_wrapper_status": "manifests_generated",
+  "next_action": "Publish verified unsigned public-use starter archives only through the SHA256 and official-source trust path.",
+  "one_click_installers": [
+    {
+      "certification_scope": "Windows one-click wrapper around matching-host package lifecycle",
+      "entrypoint": "double-click .cmd; readiness then install",
+      "path": "installer\\dist\\CivicSuite-proven-suite-windows-0.1.0.cmd",
+      "platform": "windows",
+      "sha256": "b014381040c1aa5300a43d409a83cb0f46c0ac7f530b1619a1dd44f3c4ad2b14",
+      "source_archive": "installer\\dist\\CivicSuite-proven-suite-windows-0.1.0.zip",
+      "support_status": "supported_one_click"
+    },
+    {
+      "certification_scope": "Linux one-click wrapper around matching-host package lifecycle",
+      "entrypoint": "double-click or run .run; readiness then install",
+      "path": "installer\\dist\\CivicSuite-proven-suite-linux-0.1.0.run",
+      "platform": "linux",
+      "sha256": "3a7e33e6c6183eec1da0548fbb630e56e8800b3c3eb1c3e48e3654e689167b65",
+      "source_archive": "installer\\dist\\CivicSuite-proven-suite-linux-0.1.0.tar.gz",
+      "support_status": "supported_one_click"
+    }
+  ],
+  "one_click_installers_built": true,
+  "platform_support": {
+    "linux": {
+      "certification_scope": "matching-host cleanroom lifecycle required for promotion",
+      "support_status": "supported_package"
+    },
+    "macos": {
+      "certification_scope": "macOS archive/readiness beta; not matching-host lifecycle certification",
+      "support_status": "beta"
+    },
+    "windows": {
+      "certification_scope": "matching-host cleanroom lifecycle required for promotion",
+      "support_status": "supported_package"
+    }
+  },
+  "platforms": [
+    "windows",
+    "macos",
+    "linux"
+  ],
+  "profile": "proven-suite",
+  "schema_version": 1,
+  "signing": {
+    "reason": "CivicSuite is an open-source public-use starter release and the installer is intentionally unsigned.",
+    "signed": false,
+    "status": "unsigned_public_use_starter",
+    "trust_path": "Verify the release SHA256 checksum and official CivicSuite release source before running the installer package."
+  }
+}

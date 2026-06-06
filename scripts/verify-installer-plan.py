@@ -848,6 +848,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicgrants",
             "civicprocure",
             "civiccontracts",
+            "civicboards",
         ],
     }
     for profile, expected_modules in scenarios.items():
@@ -1209,6 +1210,64 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 errors.append(
                     fail(
                         f"CivicContracts install action missing proof requirement {proof}"
+                    )
+                )
+
+    civicboards_selector = [
+        item
+        for item in selectable
+        if isinstance(item, dict) and item.get("id") == "civicboards"
+    ]
+    if not civicboards_selector:
+        errors.append(
+            fail("menu model must expose CivicBoards as a selectable module")
+        )
+    elif civicboards_selector[0].get("civiccore_requirement") != "1.2.0":
+        errors.append(fail("CivicBoards selector must require CivicCore 1.2.0"))
+
+    civicboards_plan = module.build_install_plan(
+        manifest=data,
+        profile_id="custom",
+        selected_modules=["civicboards"],
+        menu_style="guided",
+        host={"system": "Windows", "release": "test", "machine": "x86_64"},
+    )
+    if "civicboards" not in civicboards_plan.get("modules", []):
+        errors.append(fail("custom CivicBoards plan must include civicboards"))
+    for required_dependency in ("civiccore", "civicclerk"):
+        if required_dependency not in civicboards_plan.get("modules", []):
+            errors.append(
+                fail(
+                    f"custom CivicBoards plan missing dependency {required_dependency}"
+                )
+            )
+    civicboards_actions = [
+        action
+        for action in civicboards_plan.get("actions", [])
+        if isinstance(action, dict) and action.get("module") == "civicboards"
+    ]
+    if not civicboards_actions:
+        errors.append(
+            fail("custom CivicBoards plan must include a CivicBoards install action")
+        )
+    else:
+        action = civicboards_actions[0]
+        if action.get("civiccore_requirement") != "1.2.0":
+            errors.append(
+                fail("CivicBoards install action must require CivicCore 1.2.0")
+            )
+        proof_required = action.get("proof_required", [])
+        for proof in (
+            "module_selection",
+            "install_plan",
+            "artifact_resolution",
+            "health_check",
+            "restart",
+        ):
+            if proof not in proof_required:
+                errors.append(
+                    fail(
+                        f"CivicBoards install action missing proof requirement {proof}"
                     )
                 )
 

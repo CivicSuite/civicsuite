@@ -1,0 +1,10 @@
+Package: civicsuite-proven-suite
+Version: 0.1.0
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: CivicSuite <support@civicsuite.local>
+Depends: python3
+Description: CivicSuite proven-suite installer package
+ Operator-facing CivicSuite installer package with readiness, plan, verify,
+ repair, uninstall, and cleanroom gate entrypoints.
