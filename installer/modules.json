@@ -101,7 +101,8 @@
                                          "civicaccess",
                                          "civicinspect",
                                          "civicgrants",
-                                         "civicprocure"
+                                         "civicprocure",
+                                         "civiccontracts"
                                      ],
                          "status":  "local_integration_green_pending_clean_machine_suite_gate"
                      },
@@ -447,18 +448,23 @@
                         "role":  "contract workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "0.3.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicprocure"
                                          ],
                         "default_port":  8064,
-                        "installer_status":  "tracked_suite_module_needs_installer_proof",
+                        "installer_status":  "stage_ready_source_pinned_pending_clean_machine_suite_gate",
                         "proof_required":  [
+                                               "module_selection",
+                                               "install_plan",
+                                               "artifact_resolution",
                                                "install",
                                                "health_check",
                                                "restart"
-                                           ]
+                                           ],
+                        "current_version":  "0.1.1",
+                        "source_commit":  "65b711571cdabd61974aa741f40d0e6e9f9c6567"
                     },
                     {
                         "id":  "civicboards",

@@ -41,6 +41,7 @@ DEFAULT_PYTHON_MODULE_PORTS = {
     "civicinspect": 18861,
     "civicgrants": 18862,
     "civicprocure": 18863,
+    "civiccontracts": 18864,
 }
 DEFAULT_SUITE_LAUNCHER_PORT = 18082
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
@@ -125,6 +126,7 @@ PYTHON_SERVICE_MODULES = (
     "civicinspect",
     "civicgrants",
     "civicprocure",
+    "civiccontracts",
 )
 SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE, *PYTHON_SERVICE_MODULES)
 DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
@@ -1338,6 +1340,7 @@ def copy_suite_launcher_runtime(
         "civicinspect": ("inspect", "CivicInspect", "Draft inspection support work", "Check inspection support status"),
         "civicgrants": ("grants", "CivicGrants", "Triage grant opportunities", "Check grant opportunity support"),
         "civicprocure": ("procure", "CivicProcure", "Draft procurement workpapers", "Review procurement support"),
+        "civiccontracts": ("contracts", "CivicContracts", "Review contract drafts", "Check contract record support"),
     }
     for module_name, (launcher_id, display_name, staff_action, resident_action) in module_copy.items():
         if module_name not in modules:
@@ -1747,6 +1750,11 @@ def python_service_environment(install_root: Path, module_name: str) -> dict[str
         data_dir.mkdir(parents=True, exist_ok=True)
         env.setdefault("CIVICPROCURE_DATA_DIR", str(data_dir))
         env.setdefault("CIVICPROCURE_STAFF_API_KEY", "civicsuite-local-staff-key")
+    if module_name == "civiccontracts":
+        data_dir = install_root / "data" / "civiccontracts"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        env.setdefault("CIVICCONTRACTS_DATA_DIR", str(data_dir))
+        env.setdefault("CIVICCONTRACTS_STAFF_API_KEY", "civicsuite-local-staff-key")
     return env
 
 
@@ -4026,6 +4034,49 @@ def verify_civicprocure_integration_contracts(module_ports: dict[str, int]) -> d
     }
 
 
+def verify_civiccontracts_integration_contracts(module_ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{module_ports['api']}"
+    readiness_status, readiness = get_json(f"{base}/api/v1/civiccontracts/readiness", timeout_seconds=20)
+    contracts_status, contracts = get_json(f"{base}/api/v1/civiccontracts/integration-contracts", timeout_seconds=20)
+    contract_items = contracts.get("contracts", contracts.get("provides", []))
+    provided_contracts = {
+        str(item.get("name") or item.get("contract"))
+        for item in contract_items
+        if isinstance(item, dict)
+    }
+    downstream_ready = contracts.get("downstream_ready_for", [])
+    passed = (
+        readiness_status == 200
+        and readiness.get("ready") is True
+        and readiness.get("schema_ready") is True
+        and contracts_status == 200
+        and "civiccontracts.contract_draft.v1" in provided_contracts
+        and "civiccontracts.staff_review_queue.v1" in provided_contracts
+        and "civiccontracts.procurement_handoff.v1" in provided_contracts
+        and "civiccontracts.records_export.v1" in provided_contracts
+        and isinstance(downstream_ready, list)
+        and "civicprocure award packet contract routing" in downstream_ready
+        and "civicclerk agenda contract approvals" in downstream_ready
+        and "civicrecords-ai contract file retention" in downstream_ready
+        and "civiclegal counsel review queue" in downstream_ready
+    )
+    return {
+        "name": "civiccontracts_integration_contracts",
+        "status": "passed" if passed else "failed",
+        "readiness_status_code": readiness_status,
+        "readiness": readiness,
+        "contracts_status_code": contracts_status,
+        "contracts": contracts,
+        "fix_steps": []
+        if passed
+        else [
+            "Confirm CivicContracts is pinned to the local-first staff workspace source commit.",
+            "Confirm /api/v1/civiccontracts/readiness reports ready=true and schema_ready=true.",
+            "Confirm /api/v1/civiccontracts/integration-contracts includes contract_draft, staff_review_queue, procurement_handoff, and records_export contracts.",
+        ],
+    }
+
+
 def start_suite_launcher(install_root: Path, report_dir: Path) -> dict[str, object]:
     launcher_root = install_root / SUITE_LAUNCHER_DIR_NAME
     url = f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
@@ -4177,6 +4228,8 @@ def verify(
             checks.append(verify_civicgrants_integration_contracts(module_ports))  # type: ignore[arg-type]
         if module_name == "civicprocure":
             checks.append(verify_civicprocure_integration_contracts(module_ports))  # type: ignore[arg-type]
+        if module_name == "civiccontracts":
+            checks.append(verify_civiccontracts_integration_contracts(module_ports))  # type: ignore[arg-type]
     if clerk_api_passed and not workflow_proof and staff_mode == CLERK_STAFF_MODE_PROTECTED:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     if records_api_passed or clerk_api_passed:

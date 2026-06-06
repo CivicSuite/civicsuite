@@ -847,6 +847,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicinspect",
             "civicgrants",
             "civicprocure",
+            "civiccontracts",
         ],
     }
     for profile, expected_modules in scenarios.items():
@@ -1150,6 +1151,64 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 errors.append(
                     fail(
                         f"CivicProcure install action missing proof requirement {proof}"
+                    )
+                )
+
+    civiccontracts_selector = [
+        item
+        for item in selectable
+        if isinstance(item, dict) and item.get("id") == "civiccontracts"
+    ]
+    if not civiccontracts_selector:
+        errors.append(
+            fail("menu model must expose CivicContracts as a selectable module")
+        )
+    elif civiccontracts_selector[0].get("civiccore_requirement") != "1.2.0":
+        errors.append(fail("CivicContracts selector must require CivicCore 1.2.0"))
+
+    civiccontracts_plan = module.build_install_plan(
+        manifest=data,
+        profile_id="custom",
+        selected_modules=["civiccontracts"],
+        menu_style="guided",
+        host={"system": "Windows", "release": "test", "machine": "x86_64"},
+    )
+    if "civiccontracts" not in civiccontracts_plan.get("modules", []):
+        errors.append(fail("custom CivicContracts plan must include civiccontracts"))
+    for required_dependency in ("civiccore", "civicprocure"):
+        if required_dependency not in civiccontracts_plan.get("modules", []):
+            errors.append(
+                fail(
+                    f"custom CivicContracts plan missing dependency {required_dependency}"
+                )
+            )
+    civiccontracts_actions = [
+        action
+        for action in civiccontracts_plan.get("actions", [])
+        if isinstance(action, dict) and action.get("module") == "civiccontracts"
+    ]
+    if not civiccontracts_actions:
+        errors.append(
+            fail("custom CivicContracts plan must include a CivicContracts install action")
+        )
+    else:
+        action = civiccontracts_actions[0]
+        if action.get("civiccore_requirement") != "1.2.0":
+            errors.append(
+                fail("CivicContracts install action must require CivicCore 1.2.0")
+            )
+        proof_required = action.get("proof_required", [])
+        for proof in (
+            "module_selection",
+            "install_plan",
+            "artifact_resolution",
+            "health_check",
+            "restart",
+        ):
+            if proof not in proof_required:
+                errors.append(
+                    fail(
+                        f"CivicContracts install action missing proof requirement {proof}"
                     )
                 )
 
