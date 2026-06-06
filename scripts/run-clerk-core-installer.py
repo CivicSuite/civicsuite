@@ -55,11 +55,34 @@ OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
 OLLAMA_KEEP_ALIVE = "30m"
 HOST_OLLAMA_NUM_CTX = 1024
 HOST_OLLAMA_SMALL_NUM_CTX = 512
+HOST_OLLAMA_TINY_NUM_CTX = 256
 HOST_OLLAMA_PROBE_PROFILES = (
     {"name": "gpu_bounded", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX}},
     {"name": "gpu_low_vram", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "low_vram": True}},
+    {
+        "name": "gpu_8_layers_low_batch",
+        "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "num_gpu": 8, "low_vram": True, "num_batch": 64},
+    },
+    {
+        "name": "gpu_4_layers_low_batch",
+        "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "num_gpu": 4, "low_vram": True, "num_batch": 32},
+    },
+    {
+        "name": "gpu_1_layer_tiny_batch",
+        "options": {"num_ctx": HOST_OLLAMA_SMALL_NUM_CTX, "num_gpu": 1, "low_vram": True, "num_batch": 16},
+    },
     {"name": "cpu_bounded", "options": {"num_ctx": HOST_OLLAMA_NUM_CTX, "num_gpu": 0}},
     {"name": "cpu_small_context", "options": {"num_ctx": HOST_OLLAMA_SMALL_NUM_CTX, "num_gpu": 0}},
+    {
+        "name": "cpu_tiny_batch",
+        "options": {
+            "num_ctx": HOST_OLLAMA_TINY_NUM_CTX,
+            "num_gpu": 0,
+            "num_batch": 1,
+            "use_mmap": True,
+            "use_mlock": False,
+        },
+    },
 )
 # Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
 # docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
@@ -496,6 +519,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
         "num_ctx": HOST_OLLAMA_NUM_CTX,
         "small_num_ctx": HOST_OLLAMA_SMALL_NUM_CTX,
+        "tiny_num_ctx": HOST_OLLAMA_TINY_NUM_CTX,
         "keep_alive": OLLAMA_KEEP_ALIVE,
         "selected_profile": selected_profile,
         "attempts": attempts,

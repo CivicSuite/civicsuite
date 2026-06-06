@@ -175,11 +175,11 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
             "returncode": 0,
             "stdout": "OK\n",
             "stderr": "",
-            "selected_profile": "cpu_small_context",
+            "selected_profile": "cpu_tiny_batch",
             "attempts": [
                 {
-                    "profile": "cpu_small_context",
-                    "options": {"num_ctx": 512, "num_gpu": 0},
+                    "profile": "cpu_tiny_batch",
+                    "options": {"num_ctx": 256, "num_gpu": 0, "num_batch": 1, "use_mmap": True, "use_mlock": False},
                     "returncode": 0,
                     "stderr": "",
                 }
@@ -223,7 +223,7 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     assert resource_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
     assert model_check["status"] == "passed"
     assert model_check["num_ctx"] == runner.HOST_OLLAMA_NUM_CTX
-    assert model_check["selected_profile"] == "cpu_small_context"
+    assert model_check["selected_profile"] == "cpu_tiny_batch"
     assert model_check["attempts"][0]["options"]["num_gpu"] == 0
     assert probes == ["Respond with OK."]
 
@@ -247,8 +247,12 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
             "attempts": [
                 {"profile": "gpu_bounded", "options": {"num_ctx": 1024}, "returncode": 1, "stderr": "CUDA_Host"},
                 {"profile": "gpu_low_vram", "options": {"num_ctx": 1024, "low_vram": True}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_8_layers_low_batch", "options": {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_4_layers_low_batch", "options": {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_1_layer_tiny_batch", "options": {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}, "returncode": 1, "stderr": "CUDA_Host"},
                 {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 1, "stderr": "OOM"},
                 {"profile": "cpu_small_context", "options": {"num_ctx": 512, "num_gpu": 0}, "returncode": 1, "stderr": "OOM"},
+                {"profile": "cpu_tiny_batch", "options": {"num_ctx": 256, "num_gpu": 0, "num_batch": 1, "use_mmap": True, "use_mlock": False}, "returncode": 1, "stderr": "OOM"},
             ],
         }
 
@@ -286,8 +290,12 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
     assert [attempt["profile"] for attempt in model_check["attempts"]] == [
         "gpu_bounded",
         "gpu_low_vram",
+        "gpu_8_layers_low_batch",
+        "gpu_4_layers_low_batch",
+        "gpu_1_layer_tiny_batch",
         "cpu_bounded",
         "cpu_small_context",
+        "cpu_tiny_batch",
     ]
 
 
@@ -325,7 +333,7 @@ def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
     }
 
 
-def test_host_ollama_generate_tries_low_vram_then_cpu_small_context_after_cuda_host_failure(monkeypatch) -> None:
+def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_memory_failure(monkeypatch) -> None:
     runner = _load_installer_runner()
     payloads: list[dict[str, object]] = []
 
@@ -341,7 +349,13 @@ def test_host_ollama_generate_tries_low_vram_then_cpu_small_context_after_cuda_h
         payloads.append(payload)
         if payload.get("keep_alive") == 0:
             return FakeResponse(b'{"done":true}')
-        if payload["options"] != {"num_ctx": 512, "num_gpu": 0}:
+        if payload["options"] != {
+            "num_ctx": 256,
+            "num_gpu": 0,
+            "num_batch": 1,
+            "use_mmap": True,
+            "use_mlock": False,
+        }:
             raise runner.urllib.error.HTTPError(
                 request.full_url,
                 500,
@@ -356,18 +370,32 @@ def test_host_ollama_generate_tries_low_vram_then_cpu_small_context_after_cuda_h
     result = runner.host_ollama_generate_with_fallback("Respond with OK.")
 
     assert result["returncode"] == 0
-    assert result["selected_profile"] == "cpu_small_context"
+    assert result["selected_profile"] == "cpu_tiny_batch"
     assert payloads[0]["options"] == {"num_ctx": 1024}
     assert payloads[2]["options"] == {"num_ctx": 1024, "low_vram": True}
-    assert payloads[4]["options"] == {"num_ctx": 1024, "num_gpu": 0}
-    assert payloads[6]["options"] == {"num_ctx": 512, "num_gpu": 0}
+    assert payloads[4]["options"] == {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}
+    assert payloads[6]["options"] == {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}
+    assert payloads[8]["options"] == {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}
+    assert payloads[10]["options"] == {"num_ctx": 1024, "num_gpu": 0}
+    assert payloads[12]["options"] == {"num_ctx": 512, "num_gpu": 0}
+    assert payloads[14]["options"] == {
+        "num_ctx": 256,
+        "num_gpu": 0,
+        "num_batch": 1,
+        "use_mmap": True,
+        "use_mlock": False,
+    }
     assert [attempt["profile"] for attempt in result["attempts"]] == [
         "gpu_bounded",
         "gpu_low_vram",
+        "gpu_8_layers_low_batch",
+        "gpu_4_layers_low_batch",
+        "gpu_1_layer_tiny_batch",
         "cpu_bounded",
         "cpu_small_context",
+        "cpu_tiny_batch",
     ]
-    assert [payload.get("keep_alive") for payload in payloads[1::2]] == [0, 0, 0]
+    assert [payload.get("keep_alive") for payload in payloads[1::2]] == [0, 0, 0, 0, 0, 0, 0]
     assert "CUDA_Host" in result["attempts"][0]["stderr"]
 
 
@@ -387,12 +415,16 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
             "returncode": 0,
             "stdout": "OK",
             "stderr": "",
-            "selected_profile": "cpu_small_context",
+            "selected_profile": "cpu_tiny_batch",
             "attempts": [
                 {"profile": "gpu_bounded", "options": {"num_ctx": 1024}, "returncode": 1, "stderr": "CUDA_Host"},
                 {"profile": "gpu_low_vram", "options": {"num_ctx": 1024, "low_vram": True}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_8_layers_low_batch", "options": {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_4_layers_low_batch", "options": {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}, "returncode": 1, "stderr": "CUDA_Host"},
+                {"profile": "gpu_1_layer_tiny_batch", "options": {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}, "returncode": 1, "stderr": "CUDA_Host"},
                 {"profile": "cpu_bounded", "options": {"num_ctx": 1024, "num_gpu": 0}, "returncode": 1, "stderr": "CPU_REPACK"},
-                {"profile": "cpu_small_context", "options": {"num_ctx": 512, "num_gpu": 0}, "returncode": 0, "stderr": ""},
+                {"profile": "cpu_small_context", "options": {"num_ctx": 512, "num_gpu": 0}, "returncode": 1, "stderr": "CPU_REPACK"},
+                {"profile": "cpu_tiny_batch", "options": {"num_ctx": 256, "num_gpu": 0, "num_batch": 1, "use_mmap": True, "use_mlock": False}, "returncode": 0, "stderr": ""},
             ],
         }
 
@@ -408,9 +440,10 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
 
     prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
     assert prewarm["status"] == "passed"
-    assert prewarm["selected_profile"] == "cpu_small_context"
-    assert prewarm["attempts"][3]["options"]["num_gpu"] == 0
-    assert prewarm["attempts"][3]["options"]["num_ctx"] == 512
+    assert prewarm["selected_profile"] == "cpu_tiny_batch"
+    assert prewarm["attempts"][7]["options"]["num_gpu"] == 0
+    assert prewarm["attempts"][7]["options"]["num_ctx"] == 256
+    assert prewarm["attempts"][7]["options"]["num_batch"] == 1
     assert probes == ["Respond with OK."]
 
 
