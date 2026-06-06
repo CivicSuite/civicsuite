@@ -649,6 +649,46 @@ def test_remote_suite_state_accepts_github_resolvable_staged_source_pin(monkeypa
     assert errors == []
 
 
+def test_install_source_resolution_fetches_missing_source_pin_into_install_cache(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+    declared = "8ffa001b22138a526684153448100fadd7de5fd7"
+    archive_bytes = io.BytesIO()
+    with zipfile.ZipFile(archive_bytes, "w") as archive:
+        archive.writestr(f"civiczone-{declared}/pyproject.toml", "[project]\nname='civiczone'\n")
+        archive.writestr(f"civiczone-{declared}/civiczone/__init__.py", "")
+
+    class FakeResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    requested_urls: list[str] = []
+
+    def fake_urlopen(url: str, timeout: int):
+        requested_urls.append(url)
+        assert timeout == 120
+        return FakeResponse(archive_bytes.getvalue())
+
+    def fake_source_root(module_name: str):
+        raise runner.InstallerError(f"Missing source for {module_name}.")
+
+    monkeypatch.setattr(runner, "source_root", fake_source_root)
+    monkeypatch.setattr(runner, "declared_source_commit", lambda module_name: declared)
+    monkeypatch.setattr(runner, "module_repo", lambda module_name: "CivicSuite/civiczone")
+    monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+
+    source = runner.source_root_for_install("civiczone", tmp_path)
+
+    assert source == tmp_path / "source-cache" / "civiczone"
+    assert (source / "SOURCE_COMMIT.txt").read_text(encoding="utf-8").strip() == declared
+    assert (source / "pyproject.toml").is_file()
+    assert requested_urls == [f"https://github.com/CivicSuite/civiczone/archive/{declared}.zip"]
+
+
 def test_city_core_windows_release_bundle_contains_baremetal_installer(monkeypatch, tmp_path: Path) -> None:
     planner = _load_plan_installer()
 

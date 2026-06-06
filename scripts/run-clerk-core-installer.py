@@ -16,6 +16,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from socket import timeout as SocketTimeout
@@ -364,6 +365,77 @@ def source_root(module_name: str) -> Path:
     raise InstallerError(
         f"Missing source for {module_name}. Expected bundled source at {bundled} or local checkout at {sibling}."
     )
+
+
+def module_repo(module_name: str) -> str | None:
+    if not MANIFEST.is_file():
+        return None
+    try:
+        payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise InstallerError(f"Invalid installer manifest: {MANIFEST}") from exc
+    modules = payload.get("modules", []) if isinstance(payload, dict) else []
+    if not isinstance(modules, list):
+        raise InstallerError("Installer manifest modules must be a list.")
+    for module in modules:
+        if isinstance(module, dict) and module.get("id") == module_name:
+            repo = module.get("repo")
+            return str(repo) if repo else None
+    return None
+
+
+def fetch_source_archive(module_name: str, target: Path) -> Path:
+    declared = declared_source_commit(module_name)
+    repo = module_repo(module_name)
+    if not declared or not repo:
+        raise InstallerError(
+            f"Cannot fetch source for {module_name}: installer/modules.json must declare repo and source_commit."
+        )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.is_dir():
+        return enforce_source_commit(module_name, target)
+    archive_url = f"https://github.com/{repo}/archive/{urllib.parse.quote(declared)}.zip"
+    archive_path = target.parent / f"{module_name}-{declared}.zip"
+    extract_root = target.parent / f".{module_name}-{declared}-extract"
+    if extract_root.exists():
+        shutil.rmtree(extract_root)
+    try:
+        with urllib.request.urlopen(archive_url, timeout=120) as response:
+            archive_path.write_bytes(response.read())
+        with zipfile.ZipFile(archive_path) as archive:
+            archive.extractall(extract_root)
+    except (urllib.error.URLError, zipfile.BadZipFile, OSError) as exc:
+        raise InstallerError(
+            f"Failed to fetch source for {module_name} from {archive_url}: {exc}"
+        ) from exc
+    extracted_dirs = [path for path in extract_root.iterdir() if path.is_dir()]
+    if len(extracted_dirs) != 1:
+        raise InstallerError(
+            f"Unexpected source archive layout for {module_name}: expected one root directory, found {len(extracted_dirs)}."
+        )
+    shutil.move(str(extracted_dirs[0]), str(target))
+    (target / "SOURCE_COMMIT.txt").write_text(declared + "\n", encoding="utf-8")
+    shutil.rmtree(extract_root, ignore_errors=True)
+    try:
+        archive_path.unlink()
+    except OSError:
+        pass
+    return enforce_source_commit(module_name, target)
+
+
+def source_root_for_install(module_name: str, install_root: Path) -> Path:
+    try:
+        return source_root(module_name)
+    except InstallerError as exc:
+        bundled = ROOT / "modules" / module_name
+        sibling = ROOT.parent / module_name
+        cache = install_root / "source-cache" / module_name
+        try:
+            return fetch_source_archive(module_name, cache)
+        except InstallerError as fetch_exc:
+            raise InstallerError(
+                f"{exc} Also failed to fetch source into install cache at {cache}: {fetch_exc}"
+            ) from fetch_exc
 
 
 def declared_source_commit(module_name: str) -> str | None:
@@ -2599,7 +2671,7 @@ def prepare_sources(
         suite_session_revocation_path = ensure_suite_session_revocation_file(install_root)
         launcher_target = copy_suite_launcher_runtime(install_root, modules, ports)
     if MODULE_RECORDS in modules:
-        copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
+        copy_source(source_root_for_install(MODULE_RECORDS, install_root), ctx["records_source"])  # type: ignore[arg-type]
         if USE_HOST_OLLAMA:
             harden_host_ollama_overrides(ctx["records_source"])  # type: ignore[arg-type]
         normalize_records_compose_ports(ctx["records_source"], records_ports)  # type: ignore[arg-type]
@@ -2612,7 +2684,7 @@ def prepare_sources(
         )  # type: ignore[operator]
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
-        copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
+        copy_source(source_root_for_install(MODULE_CLERK, install_root), ctx["clerk_source"])  # type: ignore[arg-type]
         if USE_HOST_OLLAMA:
             harden_host_ollama_overrides(ctx["clerk_source"])  # type: ignore[arg-type]
         write_clerk_env(
@@ -2626,7 +2698,7 @@ def prepare_sources(
         if civiccode_intake_secret:
             write_clerk_handoff_override(ctx["clerk_source"], shared_network)  # type: ignore[arg-type]
     if MODULE_CODE in modules:
-        copy_source(source_root(MODULE_CODE), ctx["code_source"])  # type: ignore[arg-type]
+        copy_source(source_root_for_install(MODULE_CODE, install_root), ctx["code_source"])  # type: ignore[arg-type]
         if USE_HOST_OLLAMA:
             harden_host_ollama_overrides(ctx["code_source"])  # type: ignore[arg-type]
         write_code_env(
@@ -2641,7 +2713,7 @@ def prepare_sources(
         if module_name not in modules:
             continue
         copy_source(
-            source_root(module_name),
+            source_root_for_install(module_name, install_root),
             ctx[python_service_source_key(module_name)],  # type: ignore[arg-type]
         )
     ctx["install_provenance_path"] = write_install_provenance(install_root, modules)
