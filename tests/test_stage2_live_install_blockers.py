@@ -351,7 +351,7 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
         payloads.append(payload)
         if payload.get("keep_alive") == 0:
             return FakeResponse(b'{"done":true}')
-        if payload["options"] != {
+        if payload.get("options") != {
             "num_ctx": 256,
             "num_gpu": 0,
             "num_batch": 1,
@@ -379,14 +379,15 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
 
     assert result["returncode"] == 0
     assert result["selected_profile"] == "cpu_tiny_batch"
-    assert payloads[0]["options"] == {"num_ctx": 1024}
-    assert payloads[1]["options"] == {"num_ctx": 1024, "low_vram": True}
-    assert payloads[2]["options"] == {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}
-    assert payloads[3]["options"] == {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}
-    assert payloads[4]["options"] == {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}
-    assert payloads[5]["options"] == {"num_ctx": 1024, "num_gpu": 0}
-    assert payloads[6]["options"] == {"num_ctx": 512, "num_gpu": 0}
-    assert payloads[7]["options"] == {
+    assert "options" not in payloads[0]
+    assert payloads[1]["options"] == {"num_ctx": 1024}
+    assert payloads[2]["options"] == {"num_ctx": 1024, "low_vram": True}
+    assert payloads[3]["options"] == {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}
+    assert payloads[4]["options"] == {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}
+    assert payloads[5]["options"] == {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}
+    assert payloads[6]["options"] == {"num_ctx": 1024, "num_gpu": 0}
+    assert payloads[7]["options"] == {"num_ctx": 512, "num_gpu": 0}
+    assert payloads[8]["options"] == {
         "num_ctx": 256,
         "num_gpu": 0,
         "num_batch": 1,
@@ -394,6 +395,7 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
         "use_mlock": False,
     }
     assert [attempt["profile"] for attempt in result["attempts"]] == [
+        "native_default",
         "gpu_bounded",
         "gpu_low_vram",
         "gpu_8_layers_low_batch",
@@ -403,13 +405,14 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
         "cpu_small_context",
         "cpu_tiny_batch",
     ]
-    assert cleanup_calls == ["cleanup"] * 8
+    assert cleanup_calls == ["cleanup"] * 9
     assert result["initial_cleanup"]["stop_orphan_servers"]["returncode"] == 0
+    assert result["attempts"][0]["options"] is None
     assert result["attempts"][0]["stop_orphan_servers"]["returncode"] == 0
     assert "CUDA_Host" in result["attempts"][0]["stderr"]
 
 
-def test_host_ollama_generate_falls_back_to_native_options_after_forced_profiles_fail(monkeypatch) -> None:
+def test_host_ollama_generate_tries_native_options_before_forced_profiles(monkeypatch) -> None:
     runner = _load_installer_runner()
     payloads: list[dict[str, object]] = []
     cleanup_calls: list[str] = []
@@ -426,14 +429,6 @@ def test_host_ollama_generate_falls_back_to_native_options_after_forced_profiles
         payloads.append(payload)
         if payload.get("keep_alive") == 0:
             return FakeResponse(b'{"done":true}')
-        if "options" in payload:
-            raise runner.urllib.error.HTTPError(
-                request.full_url,
-                500,
-                "Internal Server Error",
-                {},
-                io.BytesIO(b'{"error":"CPU_REPACK allocation failed"}'),
-            )
         return FakeResponse(b'{"response":"OK"}')
 
     monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
@@ -448,10 +443,10 @@ def test_host_ollama_generate_falls_back_to_native_options_after_forced_profiles
 
     assert result["returncode"] == 0
     assert result["selected_profile"] == "native_default"
-    assert "options" not in payloads[-1]
-    assert result["attempts"][-1]["profile"] == "native_default"
-    assert result["attempts"][-1]["options"] is None
-    assert cleanup_calls == ["cleanup"] * 9
+    assert len(payloads) == 1
+    assert "options" not in payloads[0]
+    assert result["attempts"] == [{"profile": "native_default", "options": None, "returncode": 0, "stderr": ""}]
+    assert cleanup_calls == ["cleanup"]
 
 
 def test_host_ollama_stop_orphan_servers_terminates_windows_llama_processes(monkeypatch) -> None:
@@ -541,8 +536,8 @@ def test_isolated_host_ollama_port_records_access_denied_cleanup_but_still_probe
     result = runner.host_ollama_generate_with_fallback("Respond with OK.")
 
     assert result["returncode"] == 0
-    assert result["selected_profile"] == "gpu_bounded"
-    assert probes == ["gpu_bounded"]
+    assert result["selected_profile"] == "native_default"
+    assert probes == ["native_default"]
     assert result["initial_cleanup"]["stop_orphan_servers"]["returncode"] == 1
 
 
