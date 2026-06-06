@@ -498,6 +498,7 @@ def model_resource_readiness_check(docker_info_stdout: str) -> dict[str, object]
 def host_ollama_model_load_readiness_check() -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     selected_profile: object = None
+    initial_cleanup: object = None
     try:
         result = host_ollama_generate_with_fallback("Respond with OK.")
         returncode = int(result["returncode"])
@@ -505,6 +506,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         stderr = str(result["stderr"])[-4000:]
         attempts = list(result.get("attempts", []))  # type: ignore[arg-type]
         selected_profile = result.get("selected_profile") if returncode == 0 else None
+        initial_cleanup = result.get("initial_cleanup")
     except subprocess.TimeoutExpired as exc:
         returncode = 124
         stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""
@@ -522,6 +524,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "tiny_num_ctx": HOST_OLLAMA_TINY_NUM_CTX,
         "keep_alive": OLLAMA_KEEP_ALIVE,
         "selected_profile": selected_profile,
+        "initial_cleanup": initial_cleanup,
         "attempts": attempts,
         "returncode": returncode,
         "stdout": stdout,
@@ -615,9 +618,41 @@ def host_ollama_unload() -> dict[str, object]:
     return {"returncode": 0, "stdout": body[-2000:], "stderr": "", "request": payload}
 
 
+def host_ollama_stop_orphan_servers() -> dict[str, object]:
+    if os.name == "nt":
+        commands = [
+            ["taskkill", "/F", "/IM", "llama-server.exe"],
+            ["taskkill", "/F", "/IM", "ollama_llama_server.exe"],
+        ]
+    else:
+        commands = [
+            ["pkill", "-f", "llama-server"],
+            ["pkill", "-f", "ollama_llama_server"],
+        ]
+    results: list[dict[str, object]] = []
+    for command in commands:
+        proc = subprocess.run(command, capture_output=True, text=True, timeout=30)
+        results.append(
+            {
+                "command": command,
+                "returncode": proc.returncode,
+                "stdout": proc.stdout[-2000:],
+                "stderr": proc.stderr[-2000:],
+            }
+        )
+    return {"returncode": 0 if any(int(result["returncode"]) == 0 for result in results) else 1, "results": results}
+
+
+def host_ollama_cleanup_runtime() -> dict[str, object]:
+    unload = host_ollama_unload()
+    stop = host_ollama_stop_orphan_servers()
+    return {"unload": unload, "stop_orphan_servers": stop}
+
+
 def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     last_result: dict[str, object] | None = None
+    initial_cleanup = host_ollama_cleanup_runtime()
     for profile in HOST_OLLAMA_PROBE_PROFILES:
         result = host_ollama_generate(prompt, profile)
         last_result = result
@@ -632,13 +667,18 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
         if int(result["returncode"]) == 0:
             result["attempts"] = attempts
             result["selected_profile"] = profile["name"]
+            result["initial_cleanup"] = initial_cleanup
             return result
-        unload = host_ollama_unload()
-        attempts[-1]["unload_returncode"] = int(unload["returncode"])
-        attempts[-1]["unload_stderr"] = str(unload["stderr"])[-1000:]
+        cleanup = host_ollama_cleanup_runtime()
+        unload = cleanup["unload"]  # type: ignore[index]
+        stop = cleanup["stop_orphan_servers"]  # type: ignore[index]
+        attempts[-1]["unload_returncode"] = int(unload["returncode"])  # type: ignore[index]
+        attempts[-1]["unload_stderr"] = str(unload["stderr"])[-1000:]  # type: ignore[index]
+        attempts[-1]["stop_orphan_servers"] = stop
     assert last_result is not None
     last_result["attempts"] = attempts
     last_result["selected_profile"] = None
+    last_result["initial_cleanup"] = initial_cleanup
     return last_result
 
 
@@ -1530,7 +1570,9 @@ def ensure_ollama_models(
                 stderr = str(prewarm["stderr"])[-4000:]
                 selected_profile = prewarm.get("selected_profile") if returncode == 0 else None
                 attempts = list(prewarm.get("attempts", []))  # type: ignore[arg-type]
+                initial_cleanup = prewarm.get("initial_cleanup")
             else:
+                initial_cleanup = None
                 proc = run(
                     ollama_command(project, source, "run", DEFAULT_LLM_MODEL, "Respond with OK."),
                     cwd=source,
@@ -1574,6 +1616,7 @@ def ensure_ollama_models(
                 "stdout": stdout,
                 "stderr": stderr,
                 "selected_profile": selected_profile,
+                "initial_cleanup": initial_cleanup,
                 "attempts": attempts,
                 "fix_steps": fix_steps,
             }

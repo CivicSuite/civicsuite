@@ -336,6 +336,7 @@ def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
 def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_memory_failure(monkeypatch) -> None:
     runner = _load_installer_runner()
     payloads: list[dict[str, object]] = []
+    cleanup_calls: list[str] = []
 
     class FakeResponse(io.BytesIO):
         def __enter__(self):
@@ -366,19 +367,24 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
         return FakeResponse(b'{"response":"OK"}')
 
     monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_cleanup_runtime",
+        lambda: cleanup_calls.append("cleanup") or {"unload": {"returncode": 0, "stderr": ""}, "stop_orphan_servers": {"returncode": 0}},
+    )
 
     result = runner.host_ollama_generate_with_fallback("Respond with OK.")
 
     assert result["returncode"] == 0
     assert result["selected_profile"] == "cpu_tiny_batch"
     assert payloads[0]["options"] == {"num_ctx": 1024}
-    assert payloads[2]["options"] == {"num_ctx": 1024, "low_vram": True}
-    assert payloads[4]["options"] == {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}
-    assert payloads[6]["options"] == {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}
-    assert payloads[8]["options"] == {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}
-    assert payloads[10]["options"] == {"num_ctx": 1024, "num_gpu": 0}
-    assert payloads[12]["options"] == {"num_ctx": 512, "num_gpu": 0}
-    assert payloads[14]["options"] == {
+    assert payloads[1]["options"] == {"num_ctx": 1024, "low_vram": True}
+    assert payloads[2]["options"] == {"num_ctx": 1024, "num_gpu": 8, "low_vram": True, "num_batch": 64}
+    assert payloads[3]["options"] == {"num_ctx": 1024, "num_gpu": 4, "low_vram": True, "num_batch": 32}
+    assert payloads[4]["options"] == {"num_ctx": 512, "num_gpu": 1, "low_vram": True, "num_batch": 16}
+    assert payloads[5]["options"] == {"num_ctx": 1024, "num_gpu": 0}
+    assert payloads[6]["options"] == {"num_ctx": 512, "num_gpu": 0}
+    assert payloads[7]["options"] == {
         "num_ctx": 256,
         "num_gpu": 0,
         "num_batch": 1,
@@ -395,8 +401,33 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
         "cpu_small_context",
         "cpu_tiny_batch",
     ]
-    assert [payload.get("keep_alive") for payload in payloads[1::2]] == [0, 0, 0, 0, 0, 0, 0]
+    assert cleanup_calls == ["cleanup"] * 8
+    assert result["initial_cleanup"]["stop_orphan_servers"]["returncode"] == 0
+    assert result["attempts"][0]["stop_orphan_servers"]["returncode"] == 0
     assert "CUDA_Host" in result["attempts"][0]["stderr"]
+
+
+def test_host_ollama_stop_orphan_servers_terminates_windows_llama_processes(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    commands: list[list[str]] = []
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        assert kwargs["capture_output"] is True
+        assert kwargs["text"] is True
+        assert kwargs["timeout"] == 30
+        return subprocess.CompletedProcess(command, 0, stdout="SUCCESS", stderr="")
+
+    monkeypatch.setattr(runner.os, "name", "nt")
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+
+    result = runner.host_ollama_stop_orphan_servers()
+
+    assert result["returncode"] == 0
+    assert commands == [
+        ["taskkill", "/F", "/IM", "llama-server.exe"],
+        ["taskkill", "/F", "/IM", "ollama_llama_server.exe"],
+    ]
 
 
 def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_path: Path) -> None:
