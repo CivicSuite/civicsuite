@@ -90,6 +90,8 @@ HOST_OLLAMA_PROBE_PROFILES = (
 # Set from --host-ollama / --ollama-exe in main(). Default off: other install paths unchanged.
 USE_HOST_OLLAMA = False
 HOST_OLLAMA_EXE = "ollama"
+HOST_OLLAMA_PORT = 11434
+HOST_OLLAMA_SERVER_PROCESS: subprocess.Popen[bytes] | None = None
 CODE_QA_TIMEOUT_SECONDS = 60
 CIVICCODE_OLLAMA_TIMEOUT_SECONDS = 8
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
@@ -369,6 +371,8 @@ def known_command_path(name: str) -> str | None:
 def installer_subprocess_env() -> dict[str, str]:
     env = os.environ.copy()
     env.setdefault("COMPOSE_PARALLEL_LIMIT", "1")
+    if USE_HOST_OLLAMA:
+        env["OLLAMA_HOST"] = host_ollama_local_host()
     if sys.platform.startswith("win") and WINDOWS_DOCKER_DESKTOP_BIN.is_dir():
         docker_bin = str(WINDOWS_DOCKER_DESKTOP_BIN)
         current_path = env.get("PATH", "")
@@ -495,10 +499,81 @@ def model_resource_readiness_check(docker_info_stdout: str) -> dict[str, object]
     }
 
 
+def host_ollama_local_host() -> str:
+    return f"127.0.0.1:{HOST_OLLAMA_PORT}"
+
+
+def host_ollama_local_base_url() -> str:
+    return f"http://{host_ollama_local_host()}"
+
+
+def host_ollama_container_base_url() -> str:
+    return f"http://host.docker.internal:{HOST_OLLAMA_PORT}"
+
+
+def host_ollama_tags_check() -> dict[str, object]:
+    url = f"{host_ollama_local_base_url()}/api/tags"
+    request = urllib.request.Request(url, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=3) as response:
+            body = response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        return {"status": "failed", "url": url, "returncode": 1, "stderr": f"HTTP {exc.code}: {body}"}
+    except urllib.error.URLError as exc:
+        return {"status": "failed", "url": url, "returncode": 1, "stderr": str(exc)}
+    return {"status": "passed", "url": url, "returncode": 0, "stdout": body[-2000:]}
+
+
+def ensure_host_ollama_server() -> dict[str, object]:
+    global HOST_OLLAMA_SERVER_PROCESS
+    first_check = host_ollama_tags_check()
+    if first_check["status"] == "passed":
+        return {"status": "passed", "mode": "already_running", "port": HOST_OLLAMA_PORT, "check": first_check}
+    env = installer_subprocess_env()
+    env["OLLAMA_HOST"] = host_ollama_local_host()
+    try:
+        proc = subprocess.Popen(
+            [HOST_OLLAMA_EXE, "serve"],
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+        )
+    except OSError as exc:
+        return {"status": "failed", "mode": "start_failed", "port": HOST_OLLAMA_PORT, "stderr": str(exc)}
+    HOST_OLLAMA_SERVER_PROCESS = proc
+    deadline = time.time() + 60
+    checks: list[dict[str, object]] = [first_check]
+    while time.time() < deadline:
+        check = host_ollama_tags_check()
+        checks.append(check)
+        if check["status"] == "passed":
+            return {
+                "status": "passed",
+                "mode": "started",
+                "port": HOST_OLLAMA_PORT,
+                "pid": proc.pid,
+                "checks": checks[-5:],
+            }
+        if proc.poll() is not None:
+            return {
+                "status": "failed",
+                "mode": "exited",
+                "port": HOST_OLLAMA_PORT,
+                "pid": proc.pid,
+                "returncode": proc.returncode,
+                "checks": checks[-5:],
+            }
+        time.sleep(1)
+    return {"status": "failed", "mode": "timeout", "port": HOST_OLLAMA_PORT, "pid": proc.pid, "checks": checks[-5:]}
+
+
 def host_ollama_model_load_readiness_check() -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     selected_profile: object = None
     initial_cleanup: object = None
+    server: object = None
     try:
         result = host_ollama_generate_with_fallback("Respond with OK.")
         returncode = int(result["returncode"])
@@ -506,6 +581,7 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         stderr = str(result["stderr"])[-4000:]
         attempts = list(result.get("attempts", []))  # type: ignore[arg-type]
         selected_profile = result.get("selected_profile") if returncode == 0 else None
+        server = result.get("server")
         initial_cleanup = result.get("initial_cleanup")
     except subprocess.TimeoutExpired as exc:
         returncode = 124
@@ -518,6 +594,9 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "name": "host_ollama_model_load",
         "status": status,
         "model": DEFAULT_LLM_MODEL,
+        "base_url": host_ollama_local_base_url(),
+        "container_base_url": host_ollama_container_base_url(),
+        "server": server,
         "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
         "num_ctx": HOST_OLLAMA_NUM_CTX,
         "small_num_ctx": HOST_OLLAMA_SMALL_NUM_CTX,
@@ -550,7 +629,7 @@ def host_ollama_generate(prompt: str, profile: dict[str, object] | None = None) 
         "options": options,
     }
     request = urllib.request.Request(
-        "http://127.0.0.1:11434/api/generate",
+        f"{host_ollama_local_base_url()}/api/generate",
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -602,7 +681,7 @@ def host_ollama_unload() -> dict[str, object]:
         "keep_alive": 0,
     }
     request = urllib.request.Request(
-        "http://127.0.0.1:11434/api/generate",
+        f"{host_ollama_local_base_url()}/api/generate",
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -665,6 +744,16 @@ def host_ollama_cleanup_access_denied(cleanup: dict[str, object]) -> bool:
 def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     last_result: dict[str, object] | None = None
+    server = ensure_host_ollama_server()
+    if server["status"] != "passed":
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "Host Ollama server did not become ready on the configured endpoint.",
+            "attempts": attempts,
+            "selected_profile": None,
+            "server": server,
+        }
     initial_cleanup = host_ollama_cleanup_runtime()
     if host_ollama_cleanup_access_denied(initial_cleanup):
         return {
@@ -676,6 +765,7 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
             ),
             "attempts": attempts,
             "selected_profile": None,
+            "server": server,
             "initial_cleanup": initial_cleanup,
             "cleanup_failed": True,
         }
@@ -693,6 +783,7 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
         if int(result["returncode"]) == 0:
             result["attempts"] = attempts
             result["selected_profile"] = profile["name"]
+            result["server"] = server
             result["initial_cleanup"] = initial_cleanup
             return result
         cleanup = host_ollama_cleanup_runtime()
@@ -704,6 +795,7 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
     assert last_result is not None
     last_result["attempts"] = attempts
     last_result["selected_profile"] = None
+    last_result["server"] = server
     last_result["initial_cleanup"] = initial_cleanup
     return last_result
 
@@ -1595,9 +1687,11 @@ def ensure_ollama_models(
                 stdout = str(prewarm["stdout"])[-4000:]
                 stderr = str(prewarm["stderr"])[-4000:]
                 selected_profile = prewarm.get("selected_profile") if returncode == 0 else None
+                server = prewarm.get("server")
                 attempts = list(prewarm.get("attempts", []))  # type: ignore[arg-type]
                 initial_cleanup = prewarm.get("initial_cleanup")
             else:
+                server = None
                 initial_cleanup = None
                 proc = run(
                     ollama_command(project, source, "run", DEFAULT_LLM_MODEL, "Respond with OK."),
@@ -1642,6 +1736,7 @@ def ensure_ollama_models(
                 "stdout": stdout,
                 "stderr": stderr,
                 "selected_profile": selected_profile,
+                "server": server,
                 "initial_cleanup": initial_cleanup,
                 "attempts": attempts,
                 "fix_steps": fix_steps,
@@ -1888,6 +1983,7 @@ def harden_host_ollama_overrides(runtime_source: Path) -> None:
         return
     text = host_override.read_text(encoding="utf-8")
     patched = text.replace("    depends_on:\n", "    depends_on: !override\n")
+    patched = patched.replace("http://host.docker.internal:11434", host_ollama_container_base_url())
     if patched != text:
         host_override.write_text(patched, encoding="utf-8", newline="\n")
 
@@ -3892,11 +3988,20 @@ def main() -> int:
         default="ollama",
         help="Path to the host Ollama executable (used with --host-ollama).",
     )
+    parser.add_argument(
+        "--host-ollama-port",
+        type=int,
+        default=11434,
+        help="Host Ollama TCP port used by readiness and host-ollama compose overrides.",
+    )
     args = parser.parse_args()
-    global USE_HOST_OLLAMA, HOST_OLLAMA_EXE
+    global USE_HOST_OLLAMA, HOST_OLLAMA_EXE, HOST_OLLAMA_PORT
     USE_HOST_OLLAMA = bool(args.host_ollama)
     if args.ollama_exe:
         HOST_OLLAMA_EXE = args.ollama_exe
+    if args.host_ollama_port < 1 or args.host_ollama_port > 65535:
+        raise InstallerError("--host-ollama-port must be between 1 and 65535.")
+    HOST_OLLAMA_PORT = int(args.host_ollama_port)
     if args.staff_mode == CLERK_STAFF_MODE_OPEN:
         print(CLERK_OPEN_MODE_WARNING, file=sys.stderr)
 

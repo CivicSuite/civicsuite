@@ -302,6 +302,7 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
 def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
     runner = _load_installer_runner()
     seen: dict[str, object] = {}
+    monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11435)
 
     class FakeResponse(io.BytesIO):
         def __enter__(self):
@@ -322,7 +323,7 @@ def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
 
     assert result["returncode"] == 0
     assert result["stdout"] == "OK"
-    assert seen["url"] == "http://127.0.0.1:11434/api/generate"
+    assert seen["url"] == "http://127.0.0.1:11435/api/generate"
     assert seen["timeout"] == runner.OLLAMA_PREWARM_TIMEOUT_SECONDS
     assert seen["payload"] == {
         "model": "gemma4:e4b",
@@ -367,6 +368,7 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
         return FakeResponse(b'{"response":"OK"}')
 
     monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(runner, "ensure_host_ollama_server", lambda: {"status": "passed", "mode": "already_running", "port": 11434})
     monkeypatch.setattr(
         runner,
         "host_ollama_cleanup_runtime",
@@ -437,6 +439,7 @@ def test_host_ollama_probe_fails_fast_when_initial_cleanup_access_denied(monkeyp
         raise AssertionError("host Ollama must not probe through inaccessible stale workers")
 
     monkeypatch.setattr(runner, "host_ollama_generate", fail_generate)
+    monkeypatch.setattr(runner, "ensure_host_ollama_server", lambda: {"status": "passed", "mode": "already_running", "port": 11434})
     monkeypatch.setattr(
         runner,
         "host_ollama_cleanup_runtime",
@@ -463,6 +466,57 @@ def test_host_ollama_probe_fails_fast_when_initial_cleanup_access_denied(monkeyp
     assert result["cleanup_failed"] is True
     assert "access denied" in result["stderr"].lower()
     assert "elevated Windows bootstrapper" in result["stderr"]
+
+
+def test_host_ollama_server_start_uses_configured_isolated_port(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
+    monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11435)
+    checks = iter(
+        [
+            {"status": "failed", "url": "http://127.0.0.1:11435/api/tags", "returncode": 1, "stderr": "refused"},
+            {"status": "passed", "url": "http://127.0.0.1:11435/api/tags", "returncode": 0, "stdout": "{}"},
+        ]
+    )
+    started: dict[str, object] = {}
+
+    class FakeProcess:
+        pid = 1234
+        returncode = None
+
+        def poll(self):
+            return None
+
+    def fake_popen(command, **kwargs):
+        started["command"] = command
+        started["env"] = kwargs["env"]
+        return FakeProcess()
+
+    monkeypatch.setattr(runner, "host_ollama_tags_check", lambda: next(checks))
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+
+    result = runner.ensure_host_ollama_server()
+
+    assert result["status"] == "passed"
+    assert result["mode"] == "started"
+    assert started["command"] == ["ollama", "serve"]
+    assert started["env"]["OLLAMA_HOST"] == "127.0.0.1:11435"
+
+
+def test_harden_host_ollama_overrides_rewrites_configured_host_port(tmp_path: Path, monkeypatch) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11435)
+    compose = tmp_path / "docker-compose.host-ollama.yml"
+    compose.write_text(
+        "services:\n  api:\n    environment:\n      - OLLAMA_BASE_URL=http://host.docker.internal:11434\n    depends_on:\n      postgres:\n        condition: service_healthy\n",
+        encoding="utf-8",
+    )
+
+    runner.harden_host_ollama_overrides(tmp_path)
+
+    text = compose.read_text(encoding="utf-8")
+    assert "OLLAMA_BASE_URL=http://host.docker.internal:11435" in text
+    assert "depends_on: !override" in text
 
 
 def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_path: Path) -> None:
