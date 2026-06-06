@@ -522,6 +522,8 @@ def host_ollama_tags_check() -> dict[str, object]:
         return {"status": "failed", "url": url, "returncode": 1, "stderr": f"HTTP {exc.code}: {body}"}
     except urllib.error.URLError as exc:
         return {"status": "failed", "url": url, "returncode": 1, "stderr": str(exc)}
+    except (TimeoutError, SocketTimeout) as exc:
+        return {"status": "failed", "url": url, "returncode": 124, "stderr": f"Host Ollama tags probe timed out: {exc}"}
     return {"status": "passed", "url": url, "returncode": 0, "stdout": body[-2000:]}
 
 

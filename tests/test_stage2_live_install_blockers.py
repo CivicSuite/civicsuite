@@ -503,6 +503,52 @@ def test_host_ollama_server_start_uses_configured_isolated_port(monkeypatch) -> 
     assert started["env"]["OLLAMA_HOST"] == "127.0.0.1:11435"
 
 
+def test_host_ollama_tags_check_captures_timeout(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11435)
+
+    def fake_urlopen(_request, timeout: int):
+        assert timeout == 3
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+
+    result = runner.host_ollama_tags_check()
+
+    assert result["status"] == "failed"
+    assert result["returncode"] == 124
+    assert result["url"] == "http://127.0.0.1:11435/api/tags"
+    assert "timed out" in result["stderr"]
+
+
+def test_host_ollama_server_start_retries_after_tags_timeout(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    checks = iter(
+        [
+            {"status": "failed", "returncode": 124, "stderr": "timed out"},
+            {"status": "failed", "returncode": 124, "stderr": "timed out"},
+            {"status": "passed", "returncode": 0, "stdout": "{}"},
+        ]
+    )
+
+    class FakeProcess:
+        pid = 2345
+        returncode = None
+
+        def poll(self):
+            return None
+
+    monkeypatch.setattr(runner, "host_ollama_tags_check", lambda: next(checks))
+    monkeypatch.setattr(runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
+
+    result = runner.ensure_host_ollama_server()
+
+    assert result["status"] == "passed"
+    assert result["mode"] == "started"
+    assert result["pid"] == 2345
+    assert result["checks"][-1]["status"] == "passed"
+
+
 def test_harden_host_ollama_overrides_rewrites_configured_host_port(tmp_path: Path, monkeypatch) -> None:
     runner = _load_installer_runner()
     monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11435)
