@@ -564,13 +564,15 @@ def test_existing_stack_provenance_binds_to_manifest_hash(tmp_path: Path) -> Non
     assert "manifest_sha256" in failed["mismatches"]
 
 
-def test_generated_package_readme_uses_25_gb_disk_floor() -> None:
+def test_generated_package_readme_uses_current_gemma_memory_and_disk_floor() -> None:
     planner = ROOT / "scripts" / "plan-installer.py"
     text = planner.read_text(encoding="utf-8")
 
     assert "MIN_FREE_DISK_GB = 25" in text
-    assert "MIN_LLM_MEMORY_GB = 12" in text
+    assert "MIN_LLM_MEMORY_GB = 24" in text
+    assert "MIN_DOCKER_MEMORY_GB = 12" in text
     assert "25 GB free disk" in text
+    assert "Docker Desktop / WSL2 must expose at least" in text
     assert "60 * 1024 * 1024 * 1024" not in text
     assert "60 GB free disk" not in text
 

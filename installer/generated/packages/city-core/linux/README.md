@@ -28,10 +28,10 @@ again from the project release source.
 - Required ports are free. If a port is occupied, rerun after closing the
   conflicting service or use the documented port-offset flags from the lifecycle
   runner.
-- The host has at least 12 GB RAM and 25 GB free disk for the
+- The host has at least 24 GB RAM and 25 GB free disk for the
   full city-core stack. The local AI response-letter model is
-  `gemma4:e4b`, so Docker Desktop / WSL2 must also expose enough
-  memory for Ollama to load that model.
+  `gemma4:e4b`, and Windows Docker Desktop / WSL2 must expose at least
+  12 GB memory before install starts.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 

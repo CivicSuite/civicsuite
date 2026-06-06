@@ -22,7 +22,8 @@ full-suite release.
 
 Have these ready:
 - Docker Desktop on Windows or macOS, or Docker Engine on Linux
-- Enough memory and disk for the services and databases
+- At least 24 GB host RAM and 25 GB free disk for the `gemma4:e4b` local AI path
+- On Windows, Docker Desktop / WSL2 configured with at least 12 GB memory
 - On Windows, WSL2 enabled for Docker Desktop
 - A local browser
 
@@ -110,7 +111,8 @@ If a port is occupied:
 - Close the application using the port, or rerun with a port offset from the advanced launcher options.
 
 If memory or disk is low:
-- Close other applications or free disk space.
+- Use a host with at least 24 GB RAM for `gemma4:e4b`, configure Docker Desktop
+  / WSL2 with at least 12 GB memory on Windows, or free disk space.
 - Rerun readiness before install.
 
 If Windows reports missing WSL2:

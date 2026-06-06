@@ -6,7 +6,9 @@ Stage 3A targets a conservative online Windows install path:
 - local administrator account
 - hardware virtualization already enabled
 - internet available
-- enough RAM and disk for `gemma4:e4b` and the city-core container stack
+- at least 24 GB host RAM and 25 GB free disk for `gemma4:e4b` and the
+  city-core container stack
+- Docker Desktop / WSL2 configured with at least 12 GB memory on Windows
 
 This guide does not claim support for Windows Home, locked-down managed devices,
 virtualization-off machines, or air-gapped installs. Those are discovery and
@@ -60,6 +62,15 @@ Current committed evidence is not a release promotion. It is:
   Windows zip and one-click hashes, then passed Stage0 through Stage4 with
   `generation_source=ollama`, `generation_model=gemma4:e4b`, and the launcher
   serving at `http://127.0.0.1:18082/`.
+- Tester result 028 (`test-comms/TESTER-RESULT-028.md`): green low-memory
+  fail-clean gate. A 16 GB Windows tester with Docker Desktop reporting about
+  7.68 GiB now fails readiness before install with `ollama_model_memory`,
+  clear 24 GB host / 12 GB Docker-WSL memory requirements, and no host-mutating
+  install attempt.
+- Tester result 029 (`test-comms/TESTER-RESULT-029.md`): full proven-suite
+  clean-machine install/verify remains blocked because no qualifying Windows
+  host was available. The available tester was again a 16 GB class machine
+  below the required memory floor.
 
 The green Stage 3A live gate showed:
 
@@ -72,6 +83,9 @@ The green Stage 3A live gate showed:
 - the suite launcher serves at `http://127.0.0.1:18082/`
 
 Tester result 022 closes the Stage 3A Windows artifact-refresh gate for this
-branch. This does not merge, tag, status-promote, or claim public-use readiness,
+branch. Tester results 028 and 029 keep the proven-suite clean-machine gate
+honest: low-memory fail-clean behavior is proven, but the full proven-suite
+install/verify/launcher route proof still requires a qualifying Windows host.
+This does not merge, tag, status-promote, or claim public-use readiness,
 city-ready status, procurement readiness, production readiness, macOS lifecycle
 certification, airgap readiness, or full-suite release.
