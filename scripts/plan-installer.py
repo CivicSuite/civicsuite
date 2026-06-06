@@ -388,11 +388,18 @@ def git_head(path: Path) -> str:
     return proc.stdout.strip()
 
 
+def source_commit(path: Path) -> str:
+    marker = path / "SOURCE_COMMIT.txt"
+    if marker.is_file():
+        return marker.read_text(encoding="utf-8").strip()
+    return git_head(path)
+
+
 def enforce_source_commit(module_name: str, source: Path) -> str | None:
     declared = declared_source_commit(module_name)
     if not declared:
         return None
-    actual = git_head(source)
+    actual = source_commit(source)
     if actual != declared:
         raise PlannerError(
             f"Source commit mismatch for {module_name}: modules.json declares {declared}, "
@@ -1348,6 +1355,7 @@ def build_profile_config(
                 "health_endpoint": f"http://localhost:{SUITE_LAUNCHER_PORT}/",
                 "configuration_status": "planned_static_runtime",
                 "runtime_config": _suite_launcher_config(
+                    module_ids=plan["modules"],
                     package_relative_path=SUITE_LAUNCHER_PACKAGE_DIR
                 ),
             }
@@ -1705,17 +1713,48 @@ def _uses_suite_launcher(profile_id: str, module_ids: list[str]) -> bool:
     )
 
 
-def _suite_launcher_config(*, package_relative_path: str | None = None) -> dict[str, Any]:
+def _suite_launcher_modules(module_ids: list[str] | tuple[str, ...]) -> list[dict[str, Any]]:
+    modules: list[dict[str, Any]] = []
+    if "civicrecords-ai" in module_ids:
+        modules.append({"id": "records", "port": 18080, "href": "http://127.0.0.1:18080/"})
+    if "civicclerk" in module_ids:
+        modules.append({"id": "clerk", "port": 18081, "href": "http://127.0.0.1:18081/"})
+    if "civiccode" in module_ids:
+        modules.append({"id": "code", "port": 18820, "href": "http://127.0.0.1:18820/civiccode"})
+    for module_id, launcher_id, port in (
+        ("civiczone", "zone", 18830),
+        ("civicplan", "plan", 18840),
+        ("civicpermit", "permit", 18850),
+        ("civicaccess", "access", 18860),
+        ("civicinspect", "inspect", 18861),
+        ("civicgrants", "grants", 18862),
+        ("civicprocure", "procure", 18863),
+    ):
+        if module_id in module_ids:
+            modules.append(
+                {
+                    "id": launcher_id,
+                    "port": port,
+                    "href": f"http://127.0.0.1:{port}/{module_id}",
+                }
+            )
+    return modules
+
+
+def _suite_launcher_config(
+    *, module_ids: list[str] | tuple[str, ...] = (), package_relative_path: str | None = None
+) -> dict[str, Any]:
+    configured_modules = list(module_ids) or [
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode",
+    ]
     config: dict[str, Any] = {
         "component": "suite-launcher",
         "source": str(SUITE_LAUNCHER_SOURCE.relative_to(ROOT)),
         "port": SUITE_LAUNCHER_PORT,
         "url": f"http://127.0.0.1:{SUITE_LAUNCHER_PORT}/",
-        "modules": [
-            {"id": "records", "port": 18080, "href": "http://127.0.0.1:18080/"},
-            {"id": "clerk", "port": 18081, "href": "http://127.0.0.1:18081/"},
-            {"id": "code", "port": 18820, "href": "http://127.0.0.1:18820/"},
-        ],
+        "modules": _suite_launcher_modules(configured_modules),
         "shared_staff_session": {
             "env_var": SUITE_SESSION_ENV,
             "revocation_env_var": SUITE_SESSION_REVOCATION_ENV,
@@ -2659,7 +2698,7 @@ inside the distributable archive.
 """
 
 
-def _copy_suite_launcher_package(package_dir: Path) -> list[str]:
+def _copy_suite_launcher_package(package_dir: Path, module_ids: list[str]) -> list[str]:
     if not SUITE_LAUNCHER_SOURCE.is_dir():
         raise PlannerError(
             f"Suite launcher runtime source is missing: {SUITE_LAUNCHER_SOURCE}"
@@ -2680,7 +2719,10 @@ def _copy_suite_launcher_package(package_dir: Path) -> list[str]:
     config_path = target / "civicsuite-launcher-config.json"
     config_path.write_text(
         json.dumps(
-            _suite_launcher_config(package_relative_path=SUITE_LAUNCHER_PACKAGE_DIR),
+            _suite_launcher_config(
+                module_ids=module_ids,
+                package_relative_path=SUITE_LAUNCHER_PACKAGE_DIR,
+            ),
             indent=2,
             sort_keys=True,
         )
@@ -2752,7 +2794,7 @@ def generate_profile_package(
             path.write_text(content, encoding="utf-8", newline="\n")
             written.append(str(path.relative_to(ROOT)))
         if _uses_suite_launcher(profile_id, plan["modules"]):
-            written.extend(_copy_suite_launcher_package(package_dir))
+            written.extend(_copy_suite_launcher_package(package_dir, plan["modules"]))
         launcher = package_dir / _package_launcher_name(target_platform)
         try:
             launcher.chmod(0o755)
@@ -3791,7 +3833,7 @@ def build_install_plan(
         actions.append(
             {
                 "type": "configure_runtime",
-                **_suite_launcher_config(),
+                **_suite_launcher_config(module_ids=ordered_ids),
             }
         )
     actions.append(

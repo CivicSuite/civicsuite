@@ -74,17 +74,36 @@
                      {
                          "id":  "land-use",
                          "label":  "Land Use",
-                         "description":  "Queued Tier 2 profile; disabled until CivicZone, CivicPlan, CivicPermit, and CivicInspect complete real release turns.",
+                         "description":  "Install the proven land-use profile: code, zoning, planning, permit intake, and inspection support on CivicCore.",
                          "modules":  [
                                          "civiccore",
+                                         "civicclerk",
                                          "civiccode",
                                          "civiczone",
                                          "civicplan",
                                          "civicpermit",
                                          "civicinspect"
                                      ],
-                         "disabled":  true,
-                         "disabled_reason":  "queued - depends on Tier 2 module work after city-core ships"
+                         "status":  "stage_ready_source_pinned_pending_clean_machine_suite_gate"
+                     },
+                     {
+                         "id":  "proven-suite",
+                         "label":  "Proven Suite",
+                         "description":  "Install city-core plus the seven source-pinned readiness modules proven on 2026-06-05.",
+                         "modules":  [
+                                         "civiccore",
+                                         "civicrecords-ai",
+                                         "civicclerk",
+                                         "civiccode",
+                                         "civiczone",
+                                         "civicplan",
+                                         "civicpermit",
+                                         "civicaccess",
+                                         "civicinspect",
+                                         "civicgrants",
+                                         "civicprocure"
+                                     ],
+                         "status":  "local_integration_green_pending_clean_machine_suite_gate"
                      },
                      {
                          "id":  "full-suite",
@@ -239,7 +258,7 @@
                         "role":  "zoning and land use",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode"
@@ -255,7 +274,8 @@
                                                "release_artifacts",
                                                "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "0.2.2"
+                        "current_version":  "0.2.2",
+                        "source_commit":  "8ffa001b22138a526684153448100fadd7de5fd7"
                     },
                     {
                         "id":  "civicplan",
@@ -265,7 +285,7 @@
                         "role":  "planning policy lookup",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiczone",
@@ -282,7 +302,8 @@
                                                "release_artifacts",
                                                "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "0.2.2"
+                        "current_version":  "0.2.2",
+                        "source_commit":  "ceae24c4ab187d0c8f4f81088c5f741c1b59e0ab"
                     },
                     {
                         "id":  "civicpermit",
@@ -292,7 +313,7 @@
                         "role":  "permit intake readiness",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode",
@@ -309,7 +330,8 @@
                                                "release_artifacts",
                                                "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "0.2.2"
+                        "current_version":  "0.2.2",
+                        "source_commit":  "877a13642d82afaca276f7b7107e7ec6ddbab7d1"
                     },
                     {
                         "id":  "civicaccess",
@@ -319,7 +341,7 @@
                         "role":  "accessibility and public access workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
@@ -335,7 +357,8 @@
                                                "re_probe",
                                                "public_use_gate"
                                            ],
-                        "current_version":  "0.2.0"
+                        "current_version":  "0.2.0",
+                        "source_commit":  "d9c1a7cf55a905d8c46cffd43d831d874e198ede"
                     },
                     {
                         "id":  "civicinspect",
@@ -345,7 +368,7 @@
                         "role":  "inspection workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civiccode",
@@ -362,7 +385,8 @@
                                                "release_artifacts",
                                                "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "0.2.2"
+                        "current_version":  "0.2.2",
+                        "source_commit":  "d8af9fb3972592637e1622318afbc474eb3aa491"
                     },
                     {
                         "id":  "civicgrants",
@@ -372,7 +396,7 @@
                         "role":  "grants workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicrecords-ai"
@@ -387,7 +411,8 @@
                                                "restart",
                                                "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "0.2.0"
+                        "current_version":  "0.2.0",
+                        "source_commit":  "05804d589bf7c58b4d5b8d88745772a8e910f34b"
                     },
                     {
                         "id":  "civicprocure",
@@ -397,7 +422,7 @@
                         "role":  "procurement workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
@@ -411,7 +436,8 @@
                                                "restart",
                                                "version_label_matches_recovery_status"
                                            ],
-                        "current_version":  "0.2.0"
+                        "current_version":  "0.2.0",
+                        "source_commit":  "0aa998feab3736db071920e3869462598758c23d"
                     },
                     {
                         "id":  "civiccontracts",

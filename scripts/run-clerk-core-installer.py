@@ -30,6 +30,15 @@ DEFAULT_INSTALL_ROOT = Path(os.environ.get("CIVICSUITE_INSTALLER_INSTALL_ROOT", 
 DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
 DEFAULT_CODE_PORTS = {"api": 18820}
+DEFAULT_PYTHON_MODULE_PORTS = {
+    "civiczone": 18830,
+    "civicplan": 18840,
+    "civicpermit": 18850,
+    "civicaccess": 18860,
+    "civicinspect": 18861,
+    "civicgrants": 18862,
+    "civicprocure": 18863,
+}
 DEFAULT_SUITE_LAUNCHER_PORT = 18082
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 DEFAULT_LLM_MODEL = "gemma4:e4b"
@@ -56,7 +65,16 @@ SUITE_SHARED_BIND = "../../shared:/civicsuite-shared"
 MODULE_RECORDS = "civicrecords-ai"
 MODULE_CLERK = "civicclerk"
 MODULE_CODE = "civiccode"
-SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE)
+PYTHON_SERVICE_MODULES = (
+    "civiczone",
+    "civicplan",
+    "civicpermit",
+    "civicaccess",
+    "civicinspect",
+    "civicgrants",
+    "civicprocure",
+)
+SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE, *PYTHON_SERVICE_MODULES)
 DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 EXPECTED_CIVICCORE_VERSION = "1.2.0"
 EXPECTED_RECORDS_VERSION = "1.7.3"
@@ -142,6 +160,10 @@ def resolve_isolation(
     code_ports = {
         "api": DEFAULT_CODE_PORTS["api"] + resolved_offset,
     }
+    python_module_ports = {
+        module: {"api": port + resolved_offset}
+        for module, port in DEFAULT_PYTHON_MODULE_PORTS.items()
+    }
     launcher_ports = {
         "web": DEFAULT_SUITE_LAUNCHER_PORT,
     }
@@ -152,6 +174,7 @@ def resolve_isolation(
             "civicrecords-ai": records_ports,
             "civicclerk": clerk_ports,
             "civiccode": code_ports,
+            **python_module_ports,
             "suite-launcher": launcher_ports,
         },
         "compose_projects": {
@@ -582,7 +605,11 @@ def ensure_suite_session_revocation_file(install_root: Path) -> Path:
     return path
 
 
-def copy_suite_launcher_runtime(install_root: Path) -> Path:
+def copy_suite_launcher_runtime(
+    install_root: Path,
+    modules: list[str] | tuple[str, ...],
+    ports: dict[str, dict[str, int]] | None = None,
+) -> Path:
     if not SUITE_LAUNCHER_SOURCE.is_dir():
         raise InstallerError(f"Suite launcher runtime source missing: {SUITE_LAUNCHER_SOURCE}")
     target = install_root / SUITE_LAUNCHER_DIR_NAME
@@ -592,39 +619,82 @@ def copy_suite_launcher_runtime(install_root: Path) -> Path:
         dirs_exist_ok=True,
         ignore=shutil.ignore_patterns("node_modules", "playwright-report", "test-results"),
     )
+    effective_ports = ports or {}
+
+    def module_port(module_name: str, port_name: str, fallback: int) -> int:
+        module_ports = effective_ports.get(module_name, {})
+        value = module_ports.get(port_name, fallback)
+        return int(value)
+
+    launcher_modules = []
+    if MODULE_RECORDS in modules:
+        records_web_port = module_port(MODULE_RECORDS, "web", DEFAULT_RECORDS_PORTS["web"])
+        launcher_modules.append(
+            {
+                "id": "records",
+                "name": "CivicRecords AI",
+                "port": records_web_port,
+                "href": f"http://127.0.0.1:{records_web_port}/",
+                "staffAction": "Review requests",
+                "residentAction": "Submit or track records requests",
+                "adminAction": "Check index and queue health",
+            }
+        )
+    if MODULE_CLERK in modules:
+        clerk_web_port = module_port(MODULE_CLERK, "web", DEFAULT_CLERK_PORTS["web"])
+        launcher_modules.append(
+            {
+                "id": "clerk",
+                "name": "CivicClerk",
+                "port": clerk_web_port,
+                "href": f"http://127.0.0.1:{clerk_web_port}/",
+                "staffAction": "Prepare agendas and minutes",
+                "residentAction": "View meetings and notices",
+                "adminAction": "Check meeting service health",
+            }
+        )
+    if MODULE_CODE in modules:
+        code_api_port = module_port(MODULE_CODE, "api", DEFAULT_CODE_PORTS["api"])
+        launcher_modules.append(
+            {
+                "id": "code",
+                "name": "CivicCode",
+                "port": code_api_port,
+                "href": f"http://127.0.0.1:{code_api_port}/civiccode",
+                "staffAction": "Codify adopted ordinances",
+                "residentAction": "Search municipal code",
+                "adminAction": "Check code search service health",
+            }
+        )
+    module_copy = {
+        "civiczone": ("zone", "CivicZone", "Answer zoning and parcel questions", "Lookup zoning guidance"),
+        "civicplan": ("plan", "CivicPlan", "Review planning policy context", "Lookup adopted plan policy"),
+        "civicpermit": ("permit", "CivicPermit", "Review permit intake readiness", "Check permit requirements"),
+        "civicaccess": ("access", "CivicAccess", "Review accessibility/plain-language work", "Request accessible public information"),
+        "civicinspect": ("inspect", "CivicInspect", "Draft inspection support work", "Check inspection support status"),
+        "civicgrants": ("grants", "CivicGrants", "Triage grant opportunities", "Check grant opportunity support"),
+        "civicprocure": ("procure", "CivicProcure", "Draft procurement workpapers", "Review procurement support"),
+    }
+    for module_name, (launcher_id, display_name, staff_action, resident_action) in module_copy.items():
+        if module_name not in modules:
+            continue
+        port = module_port(module_name, "api", DEFAULT_PYTHON_MODULE_PORTS[module_name])
+        launcher_modules.append(
+            {
+                "id": launcher_id,
+                "name": display_name,
+                "port": port,
+                "href": f"http://127.0.0.1:{port}/{module_name}",
+                "staffAction": staff_action,
+                "residentAction": resident_action,
+                "adminAction": f"Check {display_name} service health",
+            }
+        )
     config = {
         "component": "suite-launcher",
         "port": DEFAULT_SUITE_LAUNCHER_PORT,
         "url": f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/",
-        "modules": [
-            {
-                "id": "records",
-                "name": "CivicRecords AI",
-                "port": DEFAULT_RECORDS_PORTS["web"],
-                "href": f"http://127.0.0.1:{DEFAULT_RECORDS_PORTS['web']}/",
-                "staffAction": "Review requests",
-                "residentAction": "Submit or track records requests",
-                "adminAction": "Check index and queue health",
-            },
-            {
-                "id": "clerk",
-                "name": "CivicClerk",
-                "port": DEFAULT_CLERK_PORTS["web"],
-                "href": f"http://127.0.0.1:{DEFAULT_CLERK_PORTS['web']}/",
-                "staffAction": "Prepare agendas and minutes",
-                "residentAction": "View meetings and notices",
-                "adminAction": "Check meeting service health",
-            },
-            {
-                "id": "code",
-                "name": "CivicCode",
-                "port": DEFAULT_CODE_PORTS["api"],
-                "href": f"http://127.0.0.1:{DEFAULT_CODE_PORTS['api']}/",
-                "staffAction": "Codify adopted ordinances",
-                "residentAction": "Search municipal code",
-                "adminAction": "Check code search service health",
-            },
-        ],
+        "modules": launcher_modules,
         "shared_staff_session": {
             "env_var": SUITE_SESSION_ENV,
             "value_source": "installer runtime generated value",
@@ -728,6 +798,187 @@ def uses_suite_runtime(modules: list[str] | tuple[str, ...]) -> bool:
         and MODULE_CLERK in modules
         and MODULE_CODE in modules
     )
+
+
+def python_service_source_key(module_name: str) -> str:
+    return f"{module_name.replace('-', '_')}_source"
+
+
+def python_service_dir(install_root: Path, module_name: str) -> Path:
+    return install_root / "python-services" / module_name
+
+
+def python_service_pid_path(install_root: Path, module_name: str) -> Path:
+    return python_service_dir(install_root, module_name) / "service.pid"
+
+
+def python_service_log_path(install_root: Path, module_name: str) -> Path:
+    return python_service_dir(install_root, module_name) / "service.log"
+
+
+def python_service_python(install_root: Path, module_name: str) -> Path:
+    service_dir = python_service_dir(install_root, module_name)
+    if os.name == "nt":
+        return service_dir / ".venv" / "Scripts" / "python.exe"
+    return service_dir / ".venv" / "bin" / "python"
+
+
+def run_python_service_step(
+    command: list[str | Path],
+    *,
+    cwd: Path,
+    timeout: int,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [str(item) for item in command],
+        cwd=cwd,
+        timeout=timeout,
+        text=True,
+        capture_output=True,
+        check=False,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+    )
+
+
+def install_python_service_dependencies(
+    install_root: Path, module_name: str, source: Path
+) -> list[dict[str, object]]:
+    service_dir = python_service_dir(install_root, module_name)
+    service_dir.mkdir(parents=True, exist_ok=True)
+    python_path = python_service_python(install_root, module_name)
+    steps: list[dict[str, object]] = []
+    if not python_path.is_file():
+        venv = run_python_service_step(
+            [sys.executable, "-m", "venv", service_dir / ".venv"],
+            cwd=source,
+            timeout=180,
+        )
+        steps.append(
+            {
+                "module": module_name,
+                "step": "python_service_create_venv",
+                "returncode": venv.returncode,
+                "stdout": venv.stdout[-4000:],
+                "stderr": venv.stderr[-4000:],
+            }
+        )
+        if venv.returncode != 0:
+            return steps
+    upgrade = run_python_service_step(
+        [python_path, "-m", "pip", "install", "--upgrade", "pip"],
+        cwd=source,
+        timeout=300,
+    )
+    steps.append(
+        {
+            "module": module_name,
+            "step": "python_service_pip_upgrade",
+            "returncode": upgrade.returncode,
+            "stdout": upgrade.stdout[-4000:],
+            "stderr": upgrade.stderr[-4000:],
+        }
+    )
+    if upgrade.returncode != 0:
+        return steps
+    install_pkg = run_python_service_step(
+        [python_path, "-m", "pip", "install", "-e", str(source)],
+        cwd=source,
+        timeout=900,
+    )
+    steps.append(
+        {
+            "module": module_name,
+            "step": "python_service_install_editable",
+            "returncode": install_pkg.returncode,
+            "stdout": install_pkg.stdout[-4000:],
+            "stderr": install_pkg.stderr[-4000:],
+        }
+    )
+    return steps
+
+
+def stop_python_service(install_root: Path, module_name: str) -> dict[str, object]:
+    pid_path = python_service_pid_path(install_root, module_name)
+    if not pid_path.is_file():
+        return {"module": module_name, "step": "python_service_stop", "status": "skipped_no_pid"}
+    try:
+        pid = int(pid_path.read_text(encoding="utf-8").strip())
+    except ValueError:
+        pid_path.unlink(missing_ok=True)
+        return {"module": module_name, "step": "python_service_stop", "status": "removed_invalid_pid"}
+    if os.name == "nt":
+        result = subprocess.run(
+            ["taskkill", "/PID", str(pid), "/T", "/F"],
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        pid_path.unlink(missing_ok=True)
+        return {
+            "module": module_name,
+            "step": "python_service_stop",
+            "returncode": result.returncode,
+            "stdout": result.stdout[-4000:],
+            "stderr": result.stderr[-4000:],
+            "status": "stopped" if result.returncode == 0 else "not_running_or_stopped",
+        }
+    try:
+        os.kill(pid, 15)
+    except ProcessLookupError:
+        status = "not_running"
+    else:
+        status = "stopped"
+    pid_path.unlink(missing_ok=True)
+    return {"module": module_name, "step": "python_service_stop", "status": status, "pid": pid}
+
+
+def start_python_service(
+    install_root: Path,
+    module_name: str,
+    source: Path,
+    *,
+    port: int,
+) -> dict[str, object]:
+    stop_step = stop_python_service(install_root, module_name)
+    service_dir = python_service_dir(install_root, module_name)
+    service_dir.mkdir(parents=True, exist_ok=True)
+    log_path = python_service_log_path(install_root, module_name)
+    python_path = python_service_python(install_root, module_name)
+    log_handle = log_path.open("ab")
+    try:
+        proc = subprocess.Popen(
+            [
+                str(python_path),
+                "-m",
+                "uvicorn",
+                f"{module_name.replace('-', '_')}.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(port),
+            ],
+            cwd=source,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+        )
+    finally:
+        log_handle.close()
+    python_service_pid_path(install_root, module_name).write_text(
+        f"{proc.pid}\n", encoding="utf-8"
+    )
+    health = wait_for_url(f"http://127.0.0.1:{port}/health", timeout_seconds=120)
+    return {
+        "module": module_name,
+        "step": "python_service_start",
+        "pid": proc.pid,
+        "port": port,
+        "log": str(log_path),
+        "pre_stop": stop_step,
+        "status": health["status"],
+        "health": health,
+    }
 
 
 def write_records_env(
@@ -2295,7 +2546,7 @@ def lifecycle_context(
     if not isinstance(ports, dict) or not isinstance(compose_projects, dict):
         raise InstallerError("Invalid isolation model.")
     modules = load_selected_modules(install_root, selected_modules)
-    return {
+    context = {
         "install_root": install_root,
         "selected_modules": modules,
         "records_source": install_root / "sources" / "civicrecords-ai",
@@ -2310,6 +2561,11 @@ def lifecycle_context(
         "port_offset": isolation["port_offset"],
         "shared_network": isolation["shared_network"],
     }
+    for module_name in PYTHON_SERVICE_MODULES:
+        context[python_service_source_key(module_name)] = (
+            install_root / "sources" / module_name
+        )
+    return context
 
 
 def prepare_sources(
@@ -2341,7 +2597,7 @@ def prepare_sources(
     if uses_suite_runtime(modules):
         suite_session_path, suite_session_value = ensure_suite_session_value(install_root)
         suite_session_revocation_path = ensure_suite_session_revocation_file(install_root)
-        launcher_target = copy_suite_launcher_runtime(install_root)
+        launcher_target = copy_suite_launcher_runtime(install_root, modules, ports)
     if MODULE_RECORDS in modules:
         copy_source(source_root(MODULE_RECORDS), ctx["records_source"])  # type: ignore[arg-type]
         if USE_HOST_OLLAMA:
@@ -2381,6 +2637,13 @@ def prepare_sources(
         )  # type: ignore[operator]
         if civiccode_intake_secret:
             write_code_handoff_override(ctx["code_source"], shared_network)  # type: ignore[arg-type]
+    for module_name in PYTHON_SERVICE_MODULES:
+        if module_name not in modules:
+            continue
+        copy_source(
+            source_root(module_name),
+            ctx[python_service_source_key(module_name)],  # type: ignore[arg-type]
+        )
     ctx["install_provenance_path"] = write_install_provenance(install_root, modules)
     if suite_session_path is not None:
         ctx["suite_session_path"] = suite_session_path
@@ -2508,6 +2771,34 @@ def install(
     steps.extend(model_steps)
     if any(step.get("required", True) and step.get("returncode") != 0 for step in model_steps):
         return {"status": "failed", "steps": steps}
+    ports = ctx.get("ports", {})  # type: ignore[assignment]
+    for module_name in PYTHON_SERVICE_MODULES:
+        if module_name not in modules:
+            steps.append(
+                {
+                    "module": module_name,
+                    "step": "python_service_install",
+                    "status": "skipped_not_selected",
+                }
+            )
+            continue
+        source = Path(ctx[python_service_source_key(module_name)])  # type: ignore[arg-type]
+        dependency_steps = install_python_service_dependencies(
+            install_root, module_name, source
+        )
+        steps.extend(dependency_steps)
+        if any(step.get("returncode") not in (None, 0) for step in dependency_steps):
+            return {"status": "failed", "selected_modules": modules, "steps": steps}
+        port = ports[module_name]["api"]  # type: ignore[index]
+        start_step = start_python_service(
+            install_root,
+            module_name,
+            source,
+            port=int(port),
+        )
+        steps.append(start_step)
+        if start_step.get("status") != "passed":
+            return {"status": "failed", "selected_modules": modules, "steps": steps}
     result = verify(
         install_root,
         isolation=isolation,
@@ -2739,6 +3030,28 @@ def verify(
         checks.append(code_api)
         checks.append({"name": "civiccode_public_lookup", "url": f"http://127.0.0.1:{code_ports['api']}/civiccode/search?q=13.40.020", **wait_for_url(f"http://127.0.0.1:{code_ports['api']}/civiccode/search?q=13.40.020", timeout_seconds=120)})
         code_api_passed = code_api["status"] == "passed"
+    for module_name in PYTHON_SERVICE_MODULES:
+        if module_name not in modules:
+            continue
+        module_ports = ports[module_name]  # type: ignore[index]
+        health_url = f"http://127.0.0.1:{module_ports['api']}/health"
+        health = wait_for_url(health_url, timeout_seconds=120)
+        checks.append(
+            {
+                "name": f"{module_name}_api",
+                "url": health_url,
+                **health,
+            }
+        )
+        ready_url = f"http://127.0.0.1:{module_ports['api']}/ready"
+        if module_name != "civiczone":
+            checks.append(
+                {
+                    "name": f"{module_name}_readiness",
+                    "url": ready_url,
+                    **wait_for_url(ready_url, timeout_seconds=60),
+                }
+            )
     if clerk_api_passed and not workflow_proof and staff_mode == CLERK_STAFF_MODE_PROTECTED:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     if records_api_passed or clerk_api_passed:
@@ -2788,6 +3101,17 @@ def uninstall(
         steps.append({"module": name, "step": "compose_down", "returncode": down.returncode, "stdout": down.stdout[-4000:], "stderr": down.stderr[-4000:]})
         if down.returncode != 0:
             return {"status": "failed", "steps": steps}
+    for module_name in PYTHON_SERVICE_MODULES:
+        if module_name not in modules:
+            steps.append(
+                {
+                    "module": module_name,
+                    "step": "python_service_stop",
+                    "status": "skipped_not_selected",
+                }
+            )
+            continue
+        steps.append(stop_python_service(install_root, module_name))
     if MODULE_CLERK in modules and MODULE_CODE in modules:
         network = remove_shared_network(str(ctx["shared_network"]))
         steps.append(

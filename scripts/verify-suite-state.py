@@ -49,7 +49,7 @@ RESTORE_PRECONDITION = (
     / "2026-05-20-clerk-core-restore-precondition.md"
 )
 CURRENT_PLATFORM_CIVICCORE = "1.2.0"
-DEMOTION_CIVICCORE = "1.1.0"
+DEMOTION_CIVICCORE = CURRENT_PLATFORM_CIVICCORE
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
@@ -428,8 +428,8 @@ def check_city_core_profile_truth() -> list[str]:
             fail("city-core profile must explicitly exclude CivicAccess with NEEDS-WORK probe reason")
         )
     land_use = profiles.get("land-use")
-    if not isinstance(land_use, dict) or land_use.get("disabled") is not True:
-        errors.append(fail("land-use profile must remain disabled until Tier 2 work"))
+    if not isinstance(land_use, dict) or land_use.get("disabled") is True:
+        errors.append(fail("land-use profile must be enabled after Tier 2 source-pinned readiness work"))
     full_suite = profiles.get("full-suite")
     if not isinstance(full_suite, dict) or full_suite.get("disabled") is not True:
         errors.append(fail("full-suite profile must remain disabled until coherent suite proof"))
@@ -759,9 +759,10 @@ def installer_source_commits() -> dict[str, str]:
 def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
     """Confirm installer source pins match the checkout mode being verified.
 
-    Local engagement branches may pin PR heads before the corresponding module
-    default branch has moved; remote-only verification stays tied to default
-    branches after merge.
+    Local engagement branches may pin staged heads before the corresponding
+    module default branch has moved. Remote-only verification accepts the
+    declared pin when GitHub can resolve that commit in the module repo; after a
+    merge, this naturally collapses back to the default-branch head.
     """
     city_core_modules = {"civiccore", "civicrecords-ai", "civicclerk", "civiccode"}
     if spec.name not in city_core_modules:
@@ -791,7 +792,7 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
             return [fail(f"cannot read local source HEAD for {spec.name}: {output}")]
         actual = output
 
-    if actual != declared and remote_only and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+    if actual != declared and remote_only:
         code, data, message = run_json(
             [
                 "gh",
@@ -805,7 +806,7 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
             fail(
                 f"installer/modules.json source_commit for {spec.name} is {declared}, "
                 f"which is not {spec.default_branch} head {actual} and could not be read "
-                f"as a pull-request branch commit: {message}"
+                f"as a GitHub-resolvable source pin: {message}"
             )
         ]
 

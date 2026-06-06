@@ -1016,13 +1016,13 @@ The suite launcher currently records local browser/runtime session state for ins
 | civicrecords-ai | 1.7.3 | 1.2.0 | ae34a499c1e0794d3322146369f798f19bd0a146 | Developer-preview records release car consuming CivicCore shared ingestion; the post-PR-#101 default branch accepts shared suite sessions, refreshed OpenAPI output, and includes prototype-shell UX fixes without changing the published v1.7.3 release object. |
 | civicclerk | 1.0.3 | 1.2.0 | f39d0eeccc6804b86c542b4cdffe4fab0665d503 | Real meeting workflow release car with protected staff auth defaults retained, post-PR-#171 bearer handoff/session contracts, and a retry-hardened frontend dependency-audit gate. |
 | civiccode | 1.0.8 | 1.2.0 | a960bba0a2249d118b593dd61bee3a65a69a9d77 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and post-PR-#76 uses `gemma4:e4b` as the suite installer default local model. |
-| civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
-| civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicplan | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicpermit | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicinspect | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
-| civicgrants | 0.2.0 | 1.1.0 | n/a | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
-| civicprocure | 0.2.0 | 1.1.0 | n/a | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
+| civicaccess | 0.2.0 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; remains OUT of city-core until product decision/re-probe and is only in proven-suite integration gate. |
+| civiczone | 0.2.2 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; included in land-use/proven-suite integration pending clean-machine suite gate. |
+| civicplan | 0.2.2 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; included in land-use/proven-suite integration pending clean-machine suite gate. |
+| civicpermit | 0.2.2 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; included in land-use/proven-suite integration pending clean-machine suite gate. |
+| civicinspect | 0.2.2 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; included in land-use/proven-suite integration pending clean-machine suite gate. |
+| civicgrants | 0.2.0 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; included in proven-suite integration pending clean-machine suite gate. |
+| civicprocure | 0.2.0 | 1.2.0 | n/a | Source-pinned readiness branch passed module gate; included in proven-suite integration pending clean-machine suite gate. |
 
 A municipality cannot today run end-to-end on this suite. The immediate work is release-integrity recovery, security-default repair, install-path correction, and then module productization one module at a time.
 ## 19. Post-Foundation Build Sequence

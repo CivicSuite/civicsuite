@@ -12,6 +12,12 @@ The city-core package installs:
 
 CivicAccess is not included in this package.
 
+Stage 3A also includes a separate `proven-suite` local integration profile for
+city-core plus CivicZone, CivicPlan, CivicPermit, CivicAccess, CivicInspect,
+CivicGrants, and CivicProcure. That profile is for local and clean-machine
+re-gating only. It is not a public-use, procurement-ready, production, or
+full-suite release.
+
 ## Before You Start
 
 Have these ready:
@@ -52,6 +58,10 @@ After install, run the verify option from the same launcher menu. It checks:
 - CivicRecords AI public portal mode and public request route mount
 - CivicClerk health and public/staff web shell
 - CivicCode health and public code search
+- In the `proven-suite` profile only: CivicZone health; CivicPlan, CivicPermit,
+  CivicAccess, CivicInspect, CivicGrants, and CivicProcure health plus bounded
+  readiness blocker responses when their local municipal databases are not
+  configured
 - CivicCore version contract for all selected modules
 
 ## Smoke Test

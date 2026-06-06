@@ -826,6 +826,28 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicclerk",
             "civiccode",
         ],
+        "land-use": [
+            "civiccore",
+            "civicclerk",
+            "civiccode",
+            "civiczone",
+            "civicplan",
+            "civicpermit",
+            "civicinspect",
+        ],
+        "proven-suite": [
+            "civiccore",
+            "civicrecords-ai",
+            "civicclerk",
+            "civiccode",
+            "civiczone",
+            "civicplan",
+            "civicpermit",
+            "civicaccess",
+            "civicinspect",
+            "civicgrants",
+            "civicprocure",
+        ],
     }
     for profile, expected_modules in scenarios.items():
         plan = module.build_install_plan(
@@ -933,20 +955,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         ),
         {},
     )
-    if land_use_profile.get("disabled") is not True:
-        errors.append(fail("land-use profile must be disabled until Tier 2 work"))
-    try:
-        module.build_install_plan(
-            manifest=data,
-            profile_id="land-use",
-            menu_style="guided",
-            host={"system": "Windows", "release": "test", "machine": "x86_64"},
-        )
-    except Exception as exc:
-        if "Profile land-use is disabled" not in str(exc):
-            errors.append(fail(f"land-use disabled profile failed with wrong error: {exc}"))
-    else:
-        errors.append(fail("land-use profile should be blocked while disabled"))
+    if land_use_profile.get("disabled") is True:
+        errors.append(fail("land-use profile must be enabled after source-pinned Tier 2 readiness work"))
 
     menu_model = module.build_menu_model(manifest=data, menu_style="department")
     if menu_model.get("mutates_host") is not False:
@@ -980,8 +990,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(
             fail("menu model must expose CivicInspect as a selectable module")
         )
-    elif civicinspect_selector[0].get("civiccore_requirement") != "1.1.0":
-        errors.append(fail("CivicInspect selector must require CivicCore 1.1.0"))
+    elif civicinspect_selector[0].get("civiccore_requirement") != "1.2.0":
+        errors.append(fail("CivicInspect selector must require CivicCore 1.2.0"))
 
     civicinspect_plan = module.build_install_plan(
         manifest=data,
@@ -1010,9 +1020,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
         )
     else:
         action = civicinspect_actions[0]
-        if action.get("civiccore_requirement") != "1.1.0":
+        if action.get("civiccore_requirement") != "1.2.0":
             errors.append(
-                fail("CivicInspect install action must require CivicCore 1.1.0")
+                fail("CivicInspect install action must require CivicCore 1.2.0")
             )
         proof_required = action.get("proof_required", [])
         for proof in (
@@ -1036,8 +1046,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
     ]
     if not civicgrants_selector:
         errors.append(fail("menu model must expose CivicGrants as a selectable module"))
-    elif civicgrants_selector[0].get("civiccore_requirement") != "1.1.0":
-        errors.append(fail("CivicGrants selector must require CivicCore 1.1.0"))
+    elif civicgrants_selector[0].get("civiccore_requirement") != "1.2.0":
+        errors.append(fail("CivicGrants selector must require CivicCore 1.2.0"))
 
     civicgrants_plan = module.build_install_plan(
         manifest=data,
@@ -1066,9 +1076,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
         )
     else:
         action = civicgrants_actions[0]
-        if action.get("civiccore_requirement") != "1.1.0":
+        if action.get("civiccore_requirement") != "1.2.0":
             errors.append(
-                fail("CivicGrants install action must require CivicCore 1.1.0")
+                fail("CivicGrants install action must require CivicCore 1.2.0")
             )
         proof_required = action.get("proof_required", [])
         for proof in (
@@ -1094,8 +1104,8 @@ def check_planner(data: dict[str, object]) -> list[str]:
         errors.append(
             fail("menu model must expose CivicProcure as a selectable module")
         )
-    elif civicprocure_selector[0].get("civiccore_requirement") != "1.1.0":
-        errors.append(fail("CivicProcure selector must require CivicCore 1.1.0"))
+    elif civicprocure_selector[0].get("civiccore_requirement") != "1.2.0":
+        errors.append(fail("CivicProcure selector must require CivicCore 1.2.0"))
 
     civicprocure_plan = module.build_install_plan(
         manifest=data,
@@ -1124,9 +1134,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
         )
     else:
         action = civicprocure_actions[0]
-        if action.get("civiccore_requirement") != "1.1.0":
+        if action.get("civiccore_requirement") != "1.2.0":
             errors.append(
-                fail("CivicProcure install action must require CivicCore 1.1.0")
+                fail("CivicProcure install action must require CivicCore 1.2.0")
             )
         proof_required = action.get("proof_required", [])
         for proof in (

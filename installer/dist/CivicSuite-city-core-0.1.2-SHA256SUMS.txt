@@ -1,5 +1,5 @@
-108e3429344f75638ec707b391316598a4fdf784577014515226f919dbdd92fc  CivicSuite-city-core-windows-0.1.2.zip
-fff3287461cd6141653d0dbf17ca0245c3ead7520d158b777d10a523d71cd262  CivicSuite-city-core-macos-0.1.2.tar.gz
-9396c6a69864491a2e79106ffed8213d1bb6762514d73245072754e272f2ab43  CivicSuite-city-core-linux-0.1.2.tar.gz
-7d6ea3d9ac8f32c7c484fd352addcd08acc614d15336a4ba84f9e3c81c222d2f  CivicSuite-city-core-windows-0.1.2.cmd
-a31ec67575d6419080c45fb22648b98282c2a78387f279e4f718773a1bbebbba  CivicSuite-city-core-linux-0.1.2.run
+9bfbe61520c741757d7d8282686b919b48e20f950e6f98f467e7ba19f5ce1cbd  CivicSuite-city-core-windows-0.1.2.zip
+d4e44eb16f58a9868b31d4c0b724d1fbbdfa0b6f4572a4957bc2b0d5d6959f12  CivicSuite-city-core-macos-0.1.2.tar.gz
+4ab002bdc2b4b0416d39a94983b310034fc7199ee91413b0335d7fa658f705ad  CivicSuite-city-core-linux-0.1.2.tar.gz
+8f37dade7e58b3901d721da774b15c848943db52ed3ee143f48dc71611a9cbb9  CivicSuite-city-core-windows-0.1.2.cmd
+08f3b697fe19ba63acedf82486a93302a8773b3b3f436da5c375b08eb20fcd61  CivicSuite-city-core-linux-0.1.2.run

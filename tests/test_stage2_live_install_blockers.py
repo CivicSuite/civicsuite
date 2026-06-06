@@ -41,6 +41,16 @@ def _load_plan_installer():
     return module
 
 
+def _load_suite_state_verifier():
+    path = ROOT / "scripts" / "verify-suite-state.py"
+    spec = importlib.util.spec_from_file_location("stage2_suite_state_verifier", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def test_suite_session_secret_is_injected_into_api_overrides(tmp_path: Path) -> None:
     runner = _load_installer_runner()
 
@@ -570,6 +580,73 @@ def test_installer_subprocess_env_reduces_compose_parallelism(monkeypatch) -> No
     env = runner.installer_subprocess_env()
 
     assert env["COMPOSE_PARALLEL_LIMIT"] == "1"
+
+
+def test_lifecycle_runner_accepts_source_pinned_python_service_modules(tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+
+    modules = runner.normalize_selected_modules(["civicinspect", "civicgrants", "civicprocure"])
+    isolation = runner.resolve_isolation(run_id="python-service-modules", port_offset=0)
+
+    assert modules == ["civicinspect", "civicgrants", "civicprocure"]
+    assert isolation["ports"]["civicinspect"]["api"] == 18861
+    assert isolation["ports"]["civicgrants"]["api"] == 18862
+    assert isolation["ports"]["civicprocure"]["api"] == 18863
+
+    launcher_root = runner.copy_suite_launcher_runtime(
+        tmp_path,
+        ["civicrecords-ai", "civicclerk", "civiccode", "civicinspect", "civicgrants", "civicprocure"],
+        isolation["ports"],
+    )
+    config = json.loads((launcher_root / "civicsuite-launcher-config.json").read_text(encoding="utf-8"))
+    launcher_ids = [module["id"] for module in config["modules"]]
+
+    assert launcher_ids == ["records", "clerk", "code", "inspect", "grants", "procure"]
+    assert "http://127.0.0.1:18820/civiccode" in json.dumps(config)
+    assert "http://127.0.0.1:18861/civicinspect" in json.dumps(config)
+
+    isolated_launcher_root = runner.copy_suite_launcher_runtime(
+        tmp_path / "isolated",
+        ["civicrecords-ai", "civicclerk", "civiccode", "civicinspect", "civicgrants", "civicprocure"],
+        runner.resolve_isolation(run_id="python-service-modules-isolated", port_offset=4200)["ports"],
+    )
+    isolated_config = json.loads(
+        (isolated_launcher_root / "civicsuite-launcher-config.json").read_text(encoding="utf-8")
+    )
+    assert "http://127.0.0.1:23061/civicinspect" in json.dumps(isolated_config)
+    assert "http://127.0.0.1:22280/" in json.dumps(isolated_config)
+    assert "http://127.0.0.1:23020/civiccode" in json.dumps(isolated_config)
+
+
+def test_remote_suite_state_accepts_github_resolvable_staged_source_pin(monkeypatch) -> None:
+    verifier = _load_suite_state_verifier()
+    declared = "cddc4d2be856badfbc7c6bdd26917a34ef535677"
+    default_head = "538766523ad90ee7553b0ffa75b626d3d4850b17"
+
+    monkeypatch.setattr(verifier, "installer_source_commits", lambda: {"civicrecords-ai": declared})
+
+    def fake_run_json(command: list[str]):
+        endpoint = command[-1]
+        if endpoint.endswith("/branches/main"):
+            return 0, {"commit": {"sha": default_head}}, ""
+        if endpoint.endswith(f"/commits/{declared}"):
+            return 0, {"sha": declared}, ""
+        return 1, None, "unexpected endpoint"
+
+    monkeypatch.setattr(verifier, "run_json", fake_run_json)
+
+    errors = verifier.check_source_commit_pin(
+        verifier.RepoSpec(
+            "civicrecords-ai",
+            "CivicSuite/civicrecords-ai",
+            "civicrecords-ai",
+            "1.7.3",
+            civiccore_required="1.2.0",
+        ),
+        remote_only=True,
+    )
+
+    assert errors == []
 
 
 def test_city_core_windows_release_bundle_contains_baremetal_installer(monkeypatch, tmp_path: Path) -> None:

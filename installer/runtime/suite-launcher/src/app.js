@@ -24,10 +24,73 @@ const DEFAULT_CONFIG = {
       id: "code",
       name: "CivicCode",
       port: 18820,
-      href: "http://127.0.0.1:18820/",
+      href: "http://127.0.0.1:18820/civiccode",
       staffAction: "Codify adopted ordinances",
       residentAction: "Search municipal code",
       adminAction: "Check code search service health"
+    },
+    {
+      id: "zone",
+      name: "CivicZone",
+      port: 18830,
+      href: "http://127.0.0.1:18830/civiczone",
+      staffAction: "Answer zoning and parcel questions",
+      residentAction: "Lookup zoning guidance",
+      adminAction: "Check CivicZone service health"
+    },
+    {
+      id: "plan",
+      name: "CivicPlan",
+      port: 18840,
+      href: "http://127.0.0.1:18840/civicplan",
+      staffAction: "Review planning policy context",
+      residentAction: "Lookup adopted plan policy",
+      adminAction: "Check CivicPlan service health"
+    },
+    {
+      id: "permit",
+      name: "CivicPermit",
+      port: 18850,
+      href: "http://127.0.0.1:18850/civicpermit",
+      staffAction: "Review permit intake readiness",
+      residentAction: "Check permit requirements",
+      adminAction: "Check CivicPermit service health"
+    },
+    {
+      id: "access",
+      name: "CivicAccess",
+      port: 18860,
+      href: "http://127.0.0.1:18860/civicaccess",
+      staffAction: "Review accessibility/plain-language work",
+      residentAction: "Request accessible public information",
+      adminAction: "Check CivicAccess service health"
+    },
+    {
+      id: "inspect",
+      name: "CivicInspect",
+      port: 18861,
+      href: "http://127.0.0.1:18861/civicinspect",
+      staffAction: "Draft inspection support work",
+      residentAction: "Check inspection support status",
+      adminAction: "Check CivicInspect service health"
+    },
+    {
+      id: "grants",
+      name: "CivicGrants",
+      port: 18862,
+      href: "http://127.0.0.1:18862/civicgrants",
+      staffAction: "Triage grant opportunities",
+      residentAction: "Check grant opportunity support",
+      adminAction: "Check CivicGrants service health"
+    },
+    {
+      id: "procure",
+      name: "CivicProcure",
+      port: 18863,
+      href: "http://127.0.0.1:18863/civicprocure",
+      staffAction: "Draft procurement workpapers",
+      residentAction: "Review procurement support",
+      adminAction: "Check CivicProcure service health"
     }
   ]
 };
@@ -141,9 +204,33 @@ function moduleAction(module) {
 }
 
 function moduleMeta(module) {
-  if (activeSurface === "resident") return module.id === "records" ? "Request intake" : module.id === "clerk" ? "Meetings and notices" : "Code search";
+  if (activeSurface === "resident") {
+    return {
+      records: "Request intake",
+      clerk: "Meetings and notices",
+      code: "Code search",
+      zone: "Zoning lookup",
+      plan: "Planning policy",
+      permit: "Permit guidance",
+      access: "Accessible records",
+      inspect: "Inspection support",
+      grants: "Grant support",
+      procure: "Procurement support"
+    }[module.id] || "Resident service";
+  }
   if (activeSurface === "admin") return new URL(module.href).host;
-  return module.id === "records" ? "FOIA and public records" : module.id === "clerk" ? "Agendas, packets, minutes" : "Municipal code";
+  return {
+    records: "FOIA and public records",
+    clerk: "Agendas, packets, minutes",
+    code: "Municipal code",
+    zone: "Land use and zoning",
+    plan: "Policy lookup",
+    permit: "Permit intake",
+    access: "Accessibility review",
+    inspect: "Inspection workflow",
+    grants: "Grant workflow",
+    procure: "Procurement workflow"
+  }[module.id] || "CivicSuite module";
 }
 
 function icon(name) {
@@ -151,6 +238,13 @@ function icon(name) {
     records: "M4 7h16v12H4z M7 7V5h10v2 M8 11h8 M8 15h5",
     clerk: "M6 5h12v14H6z M8 9h8 M8 13h8 M8 17h5 M9 3v4 M15 3v4",
     code: "M5 5h10a4 4 0 0 1 4 4v10H9a4 4 0 0 1-4-4z M9 5v14 M12 9h4 M12 13h4",
+    zone: "M4 19V7l8-3l8 3v12l-8-3z M12 4v12 M7 9l10 4",
+    plan: "M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h5",
+    permit: "M7 4h10l3 3v13H7z M17 4v4h4 M10 12h7 M10 16h5",
+    access: "M12 4a2 2 0 1 0 0 4a2 2 0 0 0 0-4z M5 10h14 M12 10v10 M8 20l4-7l4 7",
+    inspect: "M9 11l2 2l4-5 M5 5h14v14H5z",
+    grants: "M12 3l3 6l6 1l-4.5 4l1.5 6l-6-3l-6 3l1.5-6L3 10l6-1z",
+    procure: "M6 6h15l-2 8H8z M6 6L5 3H2 M9 20a1 1 0 1 0 0-2a1 1 0 0 0 0 2z M18 20a1 1 0 1 0 0-2a1 1 0 0 0 0 2z",
     audit: "M12 4v8l5 3 M4 12a8 8 0 1 0 2.3-5.7",
     search: "M10 5a5 5 0 1 0 0 10a5 5 0 0 0 0-10z M14 14l5 5",
     close: "M6 6l12 12M18 6L6 18",
@@ -248,6 +342,7 @@ function render() {
 }
 
 function moduleTile(module, status) {
+  status = status || "ready";
   const disabled = status === "checking";
   const linkLabel = disabled ? "Waiting for health" : status === "error" ? "Open recovery target" : "Open module";
   return `
@@ -345,10 +440,9 @@ function auditDrawer(state) {
 }
 
 function commandPalette(state) {
+  const moduleCommands = config.modules.map((module) => [`Open ${module.name}`, module.id]);
   const commands = [
-    ["Open CivicRecords AI", "records"],
-    ["Open CivicClerk", "clerk"],
-    ["Open CivicCode", "code"],
+    ...moduleCommands,
     ["Switch to Staff", "staff"],
     ["Switch to Resident", "resident"],
     ["Switch to IT-Admin", "admin"],
