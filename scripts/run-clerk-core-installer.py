@@ -53,6 +53,7 @@ RESPONSE_LETTER_TIMEOUT_SECONDS = 180
 RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
 OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
 OLLAMA_KEEP_ALIVE = "30m"
+HOST_OLLAMA_NUM_CTX = 1024
 # Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
 # docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
 # routes api/worker to host.docker.internal) instead of the containerized CPU Ollama.
@@ -466,14 +467,10 @@ def model_resource_readiness_check(docker_info_stdout: str) -> dict[str, object]
 
 def host_ollama_model_load_readiness_check() -> dict[str, object]:
     try:
-        proc = run(
-            [HOST_OLLAMA_EXE, "run", DEFAULT_LLM_MODEL, "Respond with OK."],
-            cwd=ROOT,
-            timeout=OLLAMA_PREWARM_TIMEOUT_SECONDS,
-        )
-        returncode = proc.returncode
-        stdout = proc.stdout[-4000:]
-        stderr = proc.stderr[-4000:]
+        result = host_ollama_generate("Respond with OK.")
+        returncode = int(result["returncode"])
+        stdout = str(result["stdout"])[-4000:]
+        stderr = str(result["stderr"])[-4000:]
     except subprocess.TimeoutExpired as exc:
         returncode = 124
         stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""
@@ -486,6 +483,8 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
         "status": status,
         "model": DEFAULT_LLM_MODEL,
         "timeout_seconds": OLLAMA_PREWARM_TIMEOUT_SECONDS,
+        "num_ctx": HOST_OLLAMA_NUM_CTX,
+        "keep_alive": OLLAMA_KEEP_ALIVE,
         "returncode": returncode,
         "stdout": stdout,
         "stderr": stderr,
@@ -496,6 +495,50 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
             "Confirm the model runs in host Ollama on this machine, then rerun readiness before install.",
             "If the error mentions CUDA_Host or allocation failure, close memory-heavy apps or reduce other GPU/CPU memory pressure before retrying.",
         ],
+    }
+
+
+def host_ollama_generate(prompt: str) -> dict[str, object]:
+    payload = {
+        "model": DEFAULT_LLM_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "keep_alive": OLLAMA_KEEP_ALIVE,
+        "options": {"num_ctx": HOST_OLLAMA_NUM_CTX},
+    }
+    request = urllib.request.Request(
+        "http://127.0.0.1:11434/api/generate",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=OLLAMA_PREWARM_TIMEOUT_SECONDS) as response:
+            body = response.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": f"HTTP {exc.code}: {body}",
+            "request": payload,
+        }
+    except urllib.error.URLError as exc:
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": str(exc),
+            "request": payload,
+        }
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return {"returncode": 1, "stdout": body, "stderr": "Invalid JSON response from Ollama.", "request": payload}
+    return {
+        "returncode": 0,
+        "stdout": str(data.get("response", "")),
+        "stderr": "",
+        "request": payload,
     }
 
 
@@ -1378,14 +1421,20 @@ def ensure_ollama_models(
             if proc.returncode != 0:
                 return steps
         try:
-            proc = run(
-                ollama_command(project, source, "run", DEFAULT_LLM_MODEL, "Respond with OK."),
-                cwd=source,
-                timeout=OLLAMA_PREWARM_TIMEOUT_SECONDS,
-            )
-            returncode = proc.returncode
-            stdout = proc.stdout[-4000:]
-            stderr = proc.stderr[-4000:]
+            if USE_HOST_OLLAMA:
+                prewarm = host_ollama_generate("Respond with OK.")
+                returncode = int(prewarm["returncode"])
+                stdout = str(prewarm["stdout"])[-4000:]
+                stderr = str(prewarm["stderr"])[-4000:]
+            else:
+                proc = run(
+                    ollama_command(project, source, "run", DEFAULT_LLM_MODEL, "Respond with OK."),
+                    cwd=source,
+                    timeout=OLLAMA_PREWARM_TIMEOUT_SECONDS,
+                )
+                returncode = proc.returncode
+                stdout = proc.stdout[-4000:]
+                stderr = proc.stderr[-4000:]
         except subprocess.TimeoutExpired as exc:
             returncode = 124
             stdout = (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else ""

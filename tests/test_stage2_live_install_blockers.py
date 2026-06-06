@@ -161,15 +161,17 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     monkeypatch, tmp_path: Path
 ) -> None:
     runner = _load_installer_runner()
-    calls: list[list[str]] = []
 
     def fake_run(command, **_kwargs):
-        calls.append(command)
         if command == ["docker", "info"]:
             return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
-        if command == ["ollama", "run", "gemma4:e4b", "Respond with OK."]:
-            return subprocess.CompletedProcess(command, 0, stdout="OK\n", stderr="")
         raise AssertionError(f"unexpected command: {command}")
+
+    probes: list[str] = []
+
+    def fake_host_ollama_generate(prompt: str):
+        probes.append(prompt)
+        return {"returncode": 0, "stdout": "OK\n", "stderr": ""}
 
     def fail_install(*_args, **_kwargs):
         raise AssertionError("readiness must not enter install")
@@ -179,6 +181,7 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     monkeypatch.setattr(runner, "docker_command", lambda: "docker")
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
     monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "host_ollama_generate", fake_host_ollama_generate)
     monkeypatch.setattr(runner, "install", fail_install)
     monkeypatch.setattr(
         sys,
@@ -206,7 +209,8 @@ def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     assert resource_check["status"] == "passed"
     assert resource_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
     assert model_check["status"] == "passed"
-    assert ["ollama", "run", "gemma4:e4b", "Respond with OK."] in calls
+    assert model_check["num_ctx"] == runner.HOST_OLLAMA_NUM_CTX
+    assert probes == ["Respond with OK."]
 
 
 def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
@@ -217,15 +221,17 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
     def fake_run(command, **_kwargs):
         if command == ["docker", "info"]:
             return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
-        if command == ["ollama", "run", "gemma4:e4b", "Respond with OK."]:
-            return subprocess.CompletedProcess(command, 1, stdout="", stderr="unable to allocate CUDA_Host buffer")
         raise AssertionError(f"unexpected command: {command}")
+
+    def fake_host_ollama_generate(_prompt: str):
+        return {"returncode": 1, "stdout": "", "stderr": "unable to allocate CUDA_Host buffer"}
 
     monkeypatch.setattr(runner, "REPORT_ROOT", tmp_path / "reports")
     monkeypatch.setattr(runner, "require_command", lambda name: name)
     monkeypatch.setattr(runner, "docker_command", lambda: "docker")
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
     monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "host_ollama_generate", fake_host_ollama_generate)
     monkeypatch.setattr(
         sys,
         "argv",
@@ -250,6 +256,69 @@ def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
     model_check = [check for check in report["checks"] if check["name"] == "host_ollama_model_load"][0]
     assert model_check["status"] == "failed"
     assert "CUDA_Host" in model_check["stderr"]
+
+
+def test_host_ollama_generate_uses_bounded_http_context(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    seen: dict[str, object] = {}
+
+    class FakeResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    def fake_urlopen(request, timeout: int):
+        seen["url"] = request.full_url
+        seen["timeout"] = timeout
+        seen["payload"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse(b'{"response":"OK"}')
+
+    monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+
+    result = runner.host_ollama_generate("Respond with OK.")
+
+    assert result["returncode"] == 0
+    assert result["stdout"] == "OK"
+    assert seen["url"] == "http://127.0.0.1:11434/api/generate"
+    assert seen["timeout"] == runner.OLLAMA_PREWARM_TIMEOUT_SECONDS
+    assert seen["payload"] == {
+        "model": "gemma4:e4b",
+        "prompt": "Respond with OK.",
+        "stream": False,
+        "keep_alive": "30m",
+        "options": {"num_ctx": 1024},
+    }
+
+
+def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
+    probes: list[str] = []
+
+    def fake_run(command, **_kwargs):
+        if command == ["ollama", "ps"]:
+            return subprocess.CompletedProcess(command, 0, stdout="gemma4:e4b 123 MB 100% 30 minutes\n", stderr="")
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    def fake_host_ollama_generate(prompt: str):
+        probes.append(prompt)
+        return {"returncode": 0, "stdout": "OK", "stderr": ""}
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "host_ollama_generate", fake_host_ollama_generate)
+    ctx = {
+        "selected_modules": [runner.MODULE_RECORDS],
+        "records_project": "records-proj",
+        "records_source": tmp_path,
+    }
+
+    steps = runner.ensure_ollama_models(ctx)
+
+    prewarm = [step for step in steps if step["step"] == "ollama_prewarm_model"][0]
+    assert prewarm["status"] == "passed"
+    assert probes == ["Respond with OK."]
 
 
 def test_ollama_prewarm_success_requires_resident_model_check(monkeypatch, tmp_path: Path) -> None:
