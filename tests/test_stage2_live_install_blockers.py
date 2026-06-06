@@ -1818,6 +1818,114 @@ def test_python_service_install_does_not_retry_non_transient_failure(monkeypatch
     assert attempts[0]["transient_failure"] is False
 
 
+def test_start_python_service_rejects_stale_listener_when_spawned_process_exits(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+    source = tmp_path / "source"
+    source.mkdir()
+    captured: dict[str, object] = {}
+
+    class FakeProcess:
+        pid = 5252
+
+        def poll(self):
+            return 1
+
+    def fake_popen(command, **kwargs):
+        captured["command"] = command
+        captured["cwd"] = kwargs["cwd"]
+        captured["env"] = kwargs["env"]
+        return FakeProcess()
+
+    monkeypatch.setattr(
+        runner,
+        "stop_python_service",
+        lambda *_args, **_kwargs: {"status": "skipped_no_pid"},
+    )
+    monkeypatch.setattr(
+        runner,
+        "stop_localhost_port_listener",
+        lambda port: {"status": "no_listener", "port": port},
+    )
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(
+        runner,
+        "wait_for_url",
+        lambda *_args, **_kwargs: {"status": "passed", "attempts": [{"stdout": "old service"}]},
+    )
+
+    proof = runner.start_python_service(tmp_path, "civicaccess", source, port=23860)
+
+    assert proof["status"] == "failed"
+    assert proof["failure"] == "process_exited_after_start"
+    assert proof["health"]["status"] == "passed"
+    assert proof["process_returncode"] == 1
+    assert captured["command"][-2:] == ["--port", "23860"]
+
+
+def test_start_python_service_stops_existing_port_listener_before_launch(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+    source = tmp_path / "source"
+    source.mkdir()
+    stopped_ports: list[int] = []
+
+    class FakeProcess:
+        pid = 6262
+
+        def poll(self):
+            return None
+
+    monkeypatch.setattr(
+        runner,
+        "stop_python_service",
+        lambda *_args, **_kwargs: {"status": "skipped_no_pid"},
+    )
+    monkeypatch.setattr(
+        runner,
+        "stop_localhost_port_listener",
+        lambda port: stopped_ports.append(port) or {"status": "stopped", "port": port},
+    )
+    monkeypatch.setattr(runner.subprocess, "Popen", lambda *_args, **_kwargs: FakeProcess())
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "passed"})
+
+    proof = runner.start_python_service(tmp_path, "civiczone", source, port=23830)
+
+    assert proof["status"] == "passed"
+    assert stopped_ports == [23830]
+    assert proof["pre_port_stop"]["status"] == "stopped"
+
+
+def test_start_civicaccess_service_sets_local_data_dir(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    source = tmp_path / "source"
+    source.mkdir()
+    captured: dict[str, object] = {}
+
+    class FakeProcess:
+        pid = 7272
+
+        def poll(self):
+            return None
+
+    def fake_popen(_command, **kwargs):
+        captured["env"] = kwargs["env"]
+        return FakeProcess()
+
+    monkeypatch.setattr(runner, "stop_python_service", lambda *_args, **_kwargs: {"status": "skipped_no_pid"})
+    monkeypatch.setattr(runner, "stop_localhost_port_listener", lambda port: {"status": "no_listener", "port": port})
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "passed"})
+
+    proof = runner.start_python_service(tmp_path, "civicaccess", source, port=23860)
+
+    assert proof["status"] == "passed"
+    assert captured["env"]["CIVICACCESS_DATA_DIR"] == str(tmp_path / "data" / "civicaccess")
+    assert (tmp_path / "data" / "civicaccess").is_dir()
+
+
 def test_verify_suite_launcher_requires_persistent_listener(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()

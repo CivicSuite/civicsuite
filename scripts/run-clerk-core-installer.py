@@ -1649,6 +1649,98 @@ def stop_python_service(install_root: Path, module_name: str) -> dict[str, objec
     return {"module": module_name, "step": "python_service_stop", "status": status, "pid": pid}
 
 
+def stop_localhost_port_listener(port: int) -> dict[str, object]:
+    if os.name == "nt":
+        result = subprocess.run(
+            ["netstat", "-ano", "-p", "tcp"],
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        if result.returncode != 0:
+            return {
+                "step": "localhost_port_listener_stop",
+                "port": port,
+                "status": "failed_netstat",
+                "returncode": result.returncode,
+                "stdout": result.stdout[-4000:],
+                "stderr": result.stderr[-4000:],
+            }
+        pids: set[str] = set()
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) < 5 or parts[0].upper() != "TCP":
+                continue
+            local_address = parts[1]
+            state = parts[3].upper()
+            pid = parts[4]
+            if state == "LISTENING" and local_address.rsplit(":", 1)[-1] == str(port):
+                pids.add(pid)
+        if not pids:
+            return {"step": "localhost_port_listener_stop", "port": port, "status": "no_listener"}
+        stops: list[dict[str, object]] = []
+        for pid in sorted(pids, key=int):
+            kill = subprocess.run(
+                ["taskkill", "/PID", pid, "/T", "/F"],
+                capture_output=True,
+                text=True,
+                check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+            stops.append(
+                {
+                    "pid": int(pid),
+                    "returncode": kill.returncode,
+                    "stdout": kill.stdout[-1000:],
+                    "stderr": kill.stderr[-1000:],
+                    "status": "stopped" if kill.returncode == 0 else "failed",
+                }
+            )
+        return {
+            "step": "localhost_port_listener_stop",
+            "port": port,
+            "status": "stopped" if all(stop["returncode"] == 0 for stop in stops) else "failed",
+            "stops": stops,
+        }
+    lsof = shutil.which("lsof")
+    if not lsof:
+        return {"step": "localhost_port_listener_stop", "port": port, "status": "unsupported_no_lsof"}
+    probe = subprocess.run(
+        [lsof, "-ti", f"tcp:{port}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    pids = [pid.strip() for pid in probe.stdout.splitlines() if pid.strip().isdigit()]
+    if not pids:
+        return {"step": "localhost_port_listener_stop", "port": port, "status": "no_listener"}
+    stops = []
+    for pid in pids:
+        try:
+            os.kill(int(pid), 15)
+        except ProcessLookupError:
+            stops.append({"pid": int(pid), "status": "not_running"})
+        else:
+            stops.append({"pid": int(pid), "status": "stopped"})
+    return {"step": "localhost_port_listener_stop", "port": port, "status": "stopped", "stops": stops}
+
+
+def python_service_environment(install_root: Path, module_name: str) -> dict[str, str]:
+    env = os.environ.copy()
+    if module_name == "civicaccess":
+        data_dir = install_root / "data" / "civicaccess"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        env.setdefault("CIVICACCESS_DATA_DIR", str(data_dir))
+    return env
+
+
+def read_tail(path: Path, limit: int = 4000) -> str:
+    if not path.is_file():
+        return ""
+    return path.read_text(encoding="utf-8", errors="replace")[-limit:]
+
+
 def start_python_service(
     install_root: Path,
     module_name: str,
@@ -1657,10 +1749,12 @@ def start_python_service(
     port: int,
 ) -> dict[str, object]:
     stop_step = stop_python_service(install_root, module_name)
+    port_stop_step = stop_localhost_port_listener(port)
     service_dir = python_service_dir(install_root, module_name)
     service_dir.mkdir(parents=True, exist_ok=True)
     log_path = python_service_log_path(install_root, module_name)
     python_path = python_service_python(install_root, module_name)
+    env = python_service_environment(install_root, module_name)
     log_handle = log_path.open("ab")
     try:
         proc = subprocess.Popen(
@@ -1675,6 +1769,7 @@ def start_python_service(
                 str(port),
             ],
             cwd=source,
+            env=env,
             stdout=log_handle,
             stderr=subprocess.STDOUT,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
@@ -1685,6 +1780,22 @@ def start_python_service(
         f"{proc.pid}\n", encoding="utf-8"
     )
     health = wait_for_url(f"http://127.0.0.1:{port}/health", timeout_seconds=120)
+    process_returncode = proc.poll()
+    if process_returncode is not None:
+        return {
+            "module": module_name,
+            "step": "python_service_start",
+            "pid": proc.pid,
+            "port": port,
+            "log": str(log_path),
+            "pre_stop": stop_step,
+            "pre_port_stop": port_stop_step,
+            "status": "failed",
+            "failure": "process_exited_after_start",
+            "process_returncode": process_returncode,
+            "health": health,
+            "log_tail": read_tail(log_path),
+        }
     return {
         "module": module_name,
         "step": "python_service_start",
@@ -1692,6 +1803,7 @@ def start_python_service(
         "port": port,
         "log": str(log_path),
         "pre_stop": stop_step,
+        "pre_port_stop": port_stop_step,
         "status": health["status"],
         "health": health,
     }
