@@ -757,7 +757,7 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
             "server": server,
         }
     initial_cleanup = host_ollama_cleanup_runtime()
-    if host_ollama_cleanup_access_denied(initial_cleanup):
+    if HOST_OLLAMA_PORT == 11434 and host_ollama_cleanup_access_denied(initial_cleanup):
         return {
             "returncode": 1,
             "stdout": "",

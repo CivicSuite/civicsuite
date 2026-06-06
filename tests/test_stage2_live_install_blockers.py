@@ -434,6 +434,7 @@ def test_host_ollama_stop_orphan_servers_terminates_windows_llama_processes(monk
 
 def test_host_ollama_probe_fails_fast_when_initial_cleanup_access_denied(monkeypatch) -> None:
     runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11434)
 
     def fail_generate(*_args, **_kwargs):
         raise AssertionError("host Ollama must not probe through inaccessible stale workers")
@@ -466,6 +467,38 @@ def test_host_ollama_probe_fails_fast_when_initial_cleanup_access_denied(monkeyp
     assert result["cleanup_failed"] is True
     assert "access denied" in result["stderr"].lower()
     assert "elevated Windows bootstrapper" in result["stderr"]
+
+
+def test_isolated_host_ollama_port_records_access_denied_cleanup_but_still_probes(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "HOST_OLLAMA_PORT", 11435)
+    probes: list[str] = []
+
+    monkeypatch.setattr(runner, "ensure_host_ollama_server", lambda: {"status": "passed", "mode": "started", "port": 11435})
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_cleanup_runtime",
+        lambda: {
+            "unload": {"returncode": 0, "stderr": ""},
+            "stop_orphan_servers": {
+                "returncode": 1,
+                "results": [{"stderr": "Reason: Access is denied."}],
+            },
+        },
+    )
+
+    def fake_generate(_prompt, profile):
+        probes.append(str(profile["name"]))
+        return {"returncode": 0, "stdout": "OK", "stderr": "", "profile": profile["name"]}
+
+    monkeypatch.setattr(runner, "host_ollama_generate", fake_generate)
+
+    result = runner.host_ollama_generate_with_fallback("Respond with OK.")
+
+    assert result["returncode"] == 0
+    assert result["selected_profile"] == "gpu_bounded"
+    assert probes == ["gpu_bounded"]
+    assert result["initial_cleanup"]["stop_orphan_servers"]["returncode"] == 1
 
 
 def test_host_ollama_server_start_uses_configured_isolated_port(monkeypatch) -> None:
