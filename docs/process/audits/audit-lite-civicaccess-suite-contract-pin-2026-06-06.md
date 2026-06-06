@@ -14,7 +14,7 @@ Open questions: 0
 
 ## Findings Closed
 
-- `installer/modules.json` now pins CivicAccess to `9576dd5eaa17c5c7b4dbbe1cefa1f94fd82f8fd3`.
+- `installer/modules.json` now pins CivicAccess to `9576dd579575fe6555f92590912c7686e3521b9f`.
 - Installer verify now checks CivicAccess JSON readiness instead of only route health.
 - Installer verify now requires CivicAccess to publish `civicaccess.publication_accessibility_review.v1` and `civicaccess.records_export.v1`, including downstream readiness for permit applicant forms.
 - Behavioral tests prove the contract check passes when both contracts exist and fails when the records-export contract is missing.
