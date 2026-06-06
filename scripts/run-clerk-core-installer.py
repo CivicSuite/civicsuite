@@ -1781,6 +1781,27 @@ def ensure_ollama_models(
                     ],
                 }
             )
+            if USE_HOST_OLLAMA and loaded_ok:
+                release = host_ollama_unload()
+                release_ok = int(release["returncode"]) == 0
+                steps.append(
+                    {
+                        "module": module,
+                        "step": "host_ollama_release_model_after_prewarm",
+                        "model": DEFAULT_LLM_MODEL,
+                        "required": False,
+                        "status": "passed" if release_ok else "warning",
+                        "returncode": release["returncode"],
+                        "stdout": str(release["stdout"])[-4000:],
+                        "stderr": str(release["stderr"])[-4000:],
+                        "fix_steps": []
+                        if release_ok
+                        else [
+                            f"Host Ollama warmed {DEFAULT_LLM_MODEL}, but the installer could not unload it before memory-heavy install steps.",
+                            "If a later install step reports MemoryError, stop host Ollama or close memory-heavy apps before rerunning repair.",
+                        ],
+                    }
+                )
     return steps
 
 

@@ -689,6 +689,7 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
     runner = _load_installer_runner()
     monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
     probes: list[str] = []
+    unloads: list[str] = []
 
     def fake_run(command, **_kwargs):
         if command == ["ollama", "ps"]:
@@ -716,6 +717,11 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
 
     monkeypatch.setattr(runner, "run", fake_run)
     monkeypatch.setattr(runner, "host_ollama_generate_with_fallback", fake_host_ollama_generate)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_unload",
+        lambda: unloads.append("unload") or {"returncode": 0, "stdout": '{"done":true}', "stderr": ""},
+    )
     ctx = {
         "selected_modules": [runner.MODULE_RECORDS],
         "records_project": "records-proj",
@@ -730,7 +736,46 @@ def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_pa
     assert prewarm["attempts"][7]["options"]["num_gpu"] == 0
     assert prewarm["attempts"][7]["options"]["num_ctx"] == 256
     assert prewarm["attempts"][7]["options"]["num_batch"] == 1
+    release = [step for step in steps if step["step"] == "host_ollama_release_model_after_prewarm"][0]
+    assert release["status"] == "passed"
+    assert release["required"] is False
+    assert unloads == ["unload"]
     assert probes == ["Respond with OK."]
+
+
+def test_host_ollama_prewarm_records_nonfatal_release_warning(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
+
+    def fake_run(command, **_kwargs):
+        if command == ["ollama", "ps"]:
+            return subprocess.CompletedProcess(command, 0, stdout="gemma4:e4b 123 MB 100% 30 minutes\n", stderr="")
+        return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_generate_with_fallback",
+        lambda _prompt: {"returncode": 0, "stdout": "OK", "stderr": "", "selected_profile": "cpu_mmap_default", "attempts": []},
+    )
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_unload",
+        lambda: {"returncode": 1, "stdout": "", "stderr": "HTTP 500: unload failed"},
+    )
+    ctx = {
+        "selected_modules": [runner.MODULE_RECORDS],
+        "records_project": "records-proj",
+        "records_source": tmp_path,
+    }
+
+    steps = runner.ensure_ollama_models(ctx)
+
+    release = [step for step in steps if step["step"] == "host_ollama_release_model_after_prewarm"][0]
+    assert release["status"] == "warning"
+    assert release["required"] is False
+    assert release["returncode"] == 1
+    assert "MemoryError" in " ".join(release["fix_steps"])
 
 
 def test_ollama_prewarm_success_requires_resident_model_check(monkeypatch, tmp_path: Path) -> None:
