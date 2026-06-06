@@ -145,9 +145,9 @@ EXECUTION_TOKEN = "_".join(("I", "UNDERSTAND", "THIS", "MUTATES", "HOST"))
 MIN_FREE_DISK_GB = 25
 MIN_FREE_DISK_BYTES = MIN_FREE_DISK_GB * 1024 * 1024 * 1024
 DEFAULT_LLM_MODEL = "gemma4:e4b"
-MIN_LLM_MEMORY_GB = 24
-MIN_MEMORY_BYTES = MIN_LLM_MEMORY_GB * 1024 * 1024 * 1024
-MIN_DOCKER_MEMORY_GB = 12
+MIN_LLM_MEMORY_GB = 16
+MIN_MEMORY_BYTES = MIN_LLM_MEMORY_GB * 1000 * 1000 * 1000
+MIN_DOCKER_MEMORY_GB = 8
 WINDOWS_DOCKER_DESKTOP_BIN = Path("C:/Program Files/Docker/Docker/resources/bin")
 
 EXECUTOR_PHASES = [
@@ -2587,8 +2587,9 @@ again from the project release source.
   runner.
 - The host has at least {MIN_LLM_MEMORY_GB} GB RAM and 25 GB free disk for the
   full city-core stack. The local AI response-letter model is
-  `{DEFAULT_LLM_MODEL}`, and Windows Docker Desktop / WSL2 must expose at least
-  {MIN_DOCKER_MEMORY_GB} GB memory before install starts.
+  `{DEFAULT_LLM_MODEL}`. In host-Ollama mode, readiness proves the actual model
+  load before install; Windows Docker Desktop / WSL2 should expose at least
+  {MIN_DOCKER_MEMORY_GB} GB memory for the service containers.
 - Windows hosts need WSL2 and Docker Desktop. macOS hosts need Docker Desktop
   or a compatible Docker Engine and permission to run an unsigned local archive.
 

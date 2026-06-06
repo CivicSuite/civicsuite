@@ -38,10 +38,11 @@ The installer must treat these as explicit baseline checks:
 
 - Docker Engine on Linux, or Docker Desktop on Windows/macOS wrapper platforms.
 - WSL 2 and Virtual Machine Platform on Windows when Docker Desktop requires it.
-- At least 24 GB host RAM and 25 GB free disk for profiles that use
-  `gemma4:e4b`.
-- On Windows, Docker Desktop / WSL2 must expose at least 12 GB memory before
-  `gemma4:e4b` install/verify can run.
+- At least 16 GB host RAM and 25 GB free disk for profiles that use
+  `gemma4:e4b` through host Ollama.
+- On Windows, Docker Desktop / WSL2 should expose at least 8 GB memory for the
+  service containers; host-Ollama readiness proves the actual `gemma4:e4b`
+  model load before install starts.
 - Local container runtime availability.
 - Optional Ollama availability for local LLM profiles.
 - Network access only when fetching release artifacts or optional models.

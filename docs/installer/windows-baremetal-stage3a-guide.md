@@ -6,9 +6,11 @@ Stage 3A targets a conservative online Windows install path:
 - local administrator account
 - hardware virtualization already enabled
 - internet available
-- at least 24 GB host RAM and 25 GB free disk for `gemma4:e4b` and the
+- at least 16 GB host RAM and 25 GB free disk for `gemma4:e4b` and the
   city-core container stack
-- Docker Desktop / WSL2 configured with at least 12 GB memory on Windows
+- Docker Desktop / WSL2 configured with about 8 GB memory on Windows
+- host Ollama must pass the actual bounded `gemma4:e4b` model-load readiness
+  probe before install starts
 
 This guide does not claim support for Windows Home, locked-down managed devices,
 virtualization-off machines, or air-gapped installs. Those are discovery and
@@ -62,15 +64,15 @@ Current committed evidence is not a release promotion. It is:
   Windows zip and one-click hashes, then passed Stage0 through Stage4 with
   `generation_source=ollama`, `generation_model=gemma4:e4b`, and the launcher
   serving at `http://127.0.0.1:18082/`.
-- Tester result 028 (`test-comms/TESTER-RESULT-028.md`): green low-memory
-  fail-clean gate. A 16 GB Windows tester with Docker Desktop reporting about
-  7.68 GiB now fails readiness before install with `ollama_model_memory`,
-  clear 24 GB host / 12 GB Docker-WSL memory requirements, and no host-mutating
-  install attempt.
-- Tester result 029 (`test-comms/TESTER-RESULT-029.md`): full proven-suite
-  clean-machine install/verify remains blocked because no qualifying Windows
-  host was available. The available tester was again a 16 GB class machine
-  below the required memory floor.
+- Tester result 028 (`test-comms/TESTER-RESULT-028.md`): historical
+  low-memory fail-clean gate. This result was superseded after product
+  clarification that the available 16 GB tester can run `gemma4:e4b` through
+  host Ollama and should be accepted when the actual model-load probe passes.
+- Tester result 030 (`test-comms/TESTER-RESULT-030.md`): historical blocked
+  result based on the superseded static 24 GB host / 12 GB Docker-WSL floor.
+  The current gate is no longer a static qualifying-host check; it requires the
+  available tester to pass readiness with the actual host-Ollama model-load
+  check, then proceed to install, verify, launcher, and live route proof.
 
 The green Stage 3A live gate showed:
 
@@ -83,9 +85,9 @@ The green Stage 3A live gate showed:
 - the suite launcher serves at `http://127.0.0.1:18082/`
 
 Tester result 022 closes the Stage 3A Windows artifact-refresh gate for this
-branch. Tester results 028 and 029 keep the proven-suite clean-machine gate
-honest: low-memory fail-clean behavior is proven, but the full proven-suite
-install/verify/launcher route proof still requires a qualifying Windows host.
+branch. The proven-suite clean-machine gate remains open after result 030, but
+the next rerun should use the available 16 GB Windows tester if host Ollama
+passes the actual `gemma4:e4b` model-load readiness probe.
 This does not merge, tag, status-promote, or claim public-use readiness,
 city-ready status, procurement readiness, production readiness, macOS lifecycle
 certification, airgap readiness, or full-suite release.

@@ -140,30 +140,36 @@ def test_ollama_prewarm_model_load_failure_is_required_failure(monkeypatch, tmp_
     assert "Increase Docker Desktop / WSL2 memory" in " ".join(prewarm["fix_steps"])
 
 
-def test_model_memory_readiness_blocks_tester_16gb_docker_7gb(monkeypatch) -> None:
+def test_model_resource_readiness_allows_tester_16gb_when_host_ollama_can_probe(
+    monkeypatch,
+) -> None:
     runner = _load_installer_runner()
 
     monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
 
-    check = runner.model_memory_readiness_check("Total Memory: 7.683GiB\n")
+    check = runner.model_resource_readiness_check("Total Memory: 7.683GiB\n")
 
-    assert check["status"] == "failed"
+    assert check["status"] == "passed"
     assert check["model"] == "gemma4:e4b"
     assert check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
-    assert check["required_host_memory_gb"] == 24
-    assert check["required_docker_memory_gb"] == 12
-    assert any("16 GB class hosts have failed" in step for step in check["fix_steps"])
-    assert any("Docker Desktop / WSL2 memory" in step for step in check["fix_steps"])
+    assert check["advisory_host_memory_gb"] == 16
+    assert check["advisory_docker_memory_gb"] == 8
+    assert check["notes"] == []
 
 
-def test_lifecycle_readiness_fails_before_install_when_model_memory_is_too_low(
+def test_lifecycle_readiness_uses_actual_host_ollama_probe_on_tester_profile(
     monkeypatch, tmp_path: Path
 ) -> None:
     runner = _load_installer_runner()
+    calls: list[list[str]] = []
 
     def fake_run(command, **_kwargs):
-        assert command == ["docker", "info"]
-        return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
+        calls.append(command)
+        if command == ["docker", "info"]:
+            return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
+        if command == ["ollama", "run", "gemma4:e4b", "Respond with OK."]:
+            return subprocess.CompletedProcess(command, 0, stdout="OK\n", stderr="")
+        raise AssertionError(f"unexpected command: {command}")
 
     def fail_install(*_args, **_kwargs):
         raise AssertionError("readiness must not enter install")
@@ -188,16 +194,62 @@ def test_lifecycle_readiness_fails_before_install_when_model_memory_is_too_low(
         ],
     )
 
-    assert runner.main() == 1
+    assert runner.main() == 0
     report = json.loads(
         (tmp_path / "reports" / "memory-gate" / "clerk-core-installer-lifecycle.json").read_text(
             encoding="utf-8"
         )
     )
+    assert report["status"] == "passed"
+    resource_check = [check for check in report["checks"] if check["name"] == "ollama_model_resources"][0]
+    model_check = [check for check in report["checks"] if check["name"] == "host_ollama_model_load"][0]
+    assert resource_check["status"] == "passed"
+    assert resource_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
+    assert model_check["status"] == "passed"
+    assert ["ollama", "run", "gemma4:e4b", "Respond with OK."] in calls
+
+
+def test_lifecycle_readiness_fails_when_actual_host_ollama_probe_fails(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+
+    def fake_run(command, **_kwargs):
+        if command == ["docker", "info"]:
+            return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
+        if command == ["ollama", "run", "gemma4:e4b", "Respond with OK."]:
+            return subprocess.CompletedProcess(command, 1, stdout="", stderr="unable to allocate CUDA_Host buffer")
+        raise AssertionError(f"unexpected command: {command}")
+
+    monkeypatch.setattr(runner, "REPORT_ROOT", tmp_path / "reports")
+    monkeypatch.setattr(runner, "require_command", lambda name: name)
+    monkeypatch.setattr(runner, "docker_command", lambda: "docker")
+    monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run-clerk-core-installer.py",
+            "readiness",
+            "--run-id",
+            "model-probe-fail",
+            "--install-root",
+            str(tmp_path / "install"),
+            "--host-ollama",
+        ],
+    )
+
+    assert runner.main() == 1
+    report = json.loads(
+        (tmp_path / "reports" / "model-probe-fail" / "clerk-core-installer-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
     assert report["status"] == "failed"
-    memory_check = [check for check in report["checks"] if check["name"] == "ollama_model_memory"][0]
-    assert memory_check["status"] == "failed"
-    assert memory_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
+    model_check = [check for check in report["checks"] if check["name"] == "host_ollama_model_load"][0]
+    assert model_check["status"] == "failed"
+    assert "CUDA_Host" in model_check["stderr"]
 
 
 def test_ollama_prewarm_success_requires_resident_model_check(monkeypatch, tmp_path: Path) -> None:
@@ -569,10 +621,10 @@ def test_generated_package_readme_uses_current_gemma_memory_and_disk_floor() -> 
     text = planner.read_text(encoding="utf-8")
 
     assert "MIN_FREE_DISK_GB = 25" in text
-    assert "MIN_LLM_MEMORY_GB = 24" in text
-    assert "MIN_DOCKER_MEMORY_GB = 12" in text
+    assert "MIN_LLM_MEMORY_GB = 16" in text
+    assert "MIN_DOCKER_MEMORY_GB = 8" in text
     assert "25 GB free disk" in text
-    assert "Docker Desktop / WSL2 must expose at least" in text
+    assert "readiness proves the actual model" in text
     assert "60 * 1024 * 1024 * 1024" not in text
     assert "60 GB free disk" not in text
 
