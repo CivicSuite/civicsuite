@@ -386,7 +386,7 @@
                                                "version_label_matches_recovery_status"
                                            ],
                         "current_version":  "0.2.2",
-                        "source_commit":  "9da49a8aa8181558cb45ecf7c98781d9f5349e26"
+                        "source_commit":  "7f578fdc7b32f26b67c732e2d802600369226e9d"
                     },
                     {
                         "id":  "civicgrants",
