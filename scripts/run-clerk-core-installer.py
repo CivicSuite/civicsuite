@@ -1521,6 +1521,7 @@ TRANSIENT_PIP_INSTALL_MARKERS = (
     "connection aborted",
     "read timed out",
     "temporarily unavailable",
+    "memoryerror",
 )
 PYTHON_SERVICE_INSTALL_RETRIES = 3
 
@@ -1528,6 +1529,16 @@ PYTHON_SERVICE_INSTALL_RETRIES = 3
 def python_service_install_is_transient_failure(result: subprocess.CompletedProcess[str]) -> bool:
     output = f"{result.stdout}\n{result.stderr}".lower()
     return any(marker in output for marker in TRANSIENT_PIP_INSTALL_MARKERS)
+
+
+def pip_retry_command(command: list[str | Path]) -> list[str | Path]:
+    if "--no-cache-dir" in [str(item) for item in command]:
+        return command
+    try:
+        install_index = [str(item) for item in command].index("install")
+    except ValueError:
+        return command
+    return [*command[: install_index + 1], "--no-cache-dir", *command[install_index + 1 :]]
 
 
 def run_python_service_step_with_transient_retry(
@@ -1540,13 +1551,15 @@ def run_python_service_step_with_transient_retry(
 ) -> tuple[subprocess.CompletedProcess[str], list[dict[str, object]]]:
     attempt_results: list[dict[str, object]] = []
     last_result: subprocess.CompletedProcess[str] | None = None
+    active_command = command
     for attempt in range(1, attempts + 1):
-        result = run_python_service_step(command, cwd=cwd, timeout=timeout)
+        result = run_python_service_step(active_command, cwd=cwd, timeout=timeout)
         last_result = result
         transient = result.returncode != 0 and python_service_install_is_transient_failure(result)
         attempt_results.append(
             {
                 "attempt": attempt,
+                "command": [str(item) for item in active_command],
                 "returncode": result.returncode,
                 "transient_failure": transient,
                 "stdout": result.stdout[-2000:],
@@ -1555,6 +1568,7 @@ def run_python_service_step_with_transient_retry(
         )
         if result.returncode == 0 or not transient or attempt == attempts:
             return result, attempt_results
+        active_command = pip_retry_command(active_command)
         time.sleep(retry_delay_seconds)
     assert last_result is not None
     return last_result, attempt_results

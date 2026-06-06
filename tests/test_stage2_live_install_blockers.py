@@ -2118,6 +2118,43 @@ def test_python_service_install_retries_transient_504(monkeypatch, tmp_path: Pat
     assert result.returncode == 0
     assert len(calls) == 2
     assert [attempt["transient_failure"] for attempt in attempts] == [True, False]
+    assert "--no-cache-dir" not in [str(item) for item in calls[0]]
+    assert "--no-cache-dir" in [str(item) for item in calls[1]]
+
+
+def test_python_service_install_retries_memoryerror_without_cache(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    calls: list[list[str | Path]] = []
+    results = iter(
+        [
+            subprocess.CompletedProcess(
+                ["pip"],
+                2,
+                stdout="",
+                stderr="File \"pip/_internal/utils/misc.py\", line 309, in read_chunks\nMemoryError",
+            ),
+            subprocess.CompletedProcess(["pip"], 0, stdout="installed", stderr=""),
+        ]
+    )
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return next(results)
+
+    monkeypatch.setattr(runner, "run_python_service_step", fake_run)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    result, attempts = runner.run_python_service_step_with_transient_retry(
+        ["python", "-m", "pip", "install", "-e", tmp_path],
+        cwd=tmp_path,
+        timeout=900,
+        attempts=3,
+    )
+
+    assert result.returncode == 0
+    assert len(calls) == 2
+    assert attempts[0]["transient_failure"] is True
+    assert "--no-cache-dir" in [str(item) for item in calls[1]]
 
 
 def test_python_service_install_does_not_retry_non_transient_failure(monkeypatch, tmp_path: Path) -> None:
