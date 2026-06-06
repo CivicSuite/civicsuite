@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import base64
+import ctypes
 import hashlib
 import json
 import os
+import platform
 import re
 import secrets
 import shutil
@@ -43,6 +45,10 @@ DEFAULT_PYTHON_MODULE_PORTS = {
 DEFAULT_SUITE_LAUNCHER_PORT = 18082
 DEFAULT_EMBEDDING_MODEL = "nomic-embed-text"
 DEFAULT_LLM_MODEL = "gemma4:e4b"
+MIN_LLM_HOST_MEMORY_GB = 24
+MIN_LLM_HOST_MEMORY_BYTES = MIN_LLM_HOST_MEMORY_GB * 1024 * 1024 * 1024
+MIN_DOCKER_MEMORY_GB = 12
+MIN_DOCKER_MEMORY_BYTES = MIN_DOCKER_MEMORY_GB * 1024 * 1024 * 1024
 RESPONSE_LETTER_TIMEOUT_SECONDS = 180
 RESPONSE_LETTER_LLM_TIMEOUT_SECONDS = 120
 OLLAMA_PREWARM_TIMEOUT_SECONDS = 300
@@ -353,6 +359,108 @@ def require_command(name: str) -> str:
             "start it, and rerun the installer readiness check."
         )
     return found
+
+
+def host_memory_bytes() -> int | None:
+    system = platform.system().lower()
+    if system == "windows":
+        class MemoryStatusEx(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = MemoryStatusEx()
+        status.dwLength = ctypes.sizeof(MemoryStatusEx)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            return int(status.ullTotalPhys)
+        return None
+    if system in {"linux", "darwin"}:
+        try:
+            pages = os.sysconf("SC_PHYS_PAGES")
+            page_size = os.sysconf("SC_PAGE_SIZE")
+        except (AttributeError, OSError, ValueError):
+            return None
+        if isinstance(pages, int) and isinstance(page_size, int) and pages > 0 and page_size > 0:
+            return pages * page_size
+    return None
+
+
+def parse_memory_size_bytes(value: str) -> int | None:
+    match = re.search(r"(?P<number>\d+(?:\.\d+)?)\s*(?P<unit>[kmgt]?i?b|bytes?)", value, re.IGNORECASE)
+    if not match:
+        return None
+    number = float(match.group("number"))
+    unit = match.group("unit").lower()
+    multipliers = {
+        "b": 1,
+        "byte": 1,
+        "bytes": 1,
+        "kb": 1000,
+        "kib": 1024,
+        "mb": 1000**2,
+        "mib": 1024**2,
+        "gb": 1000**3,
+        "gib": 1024**3,
+        "tb": 1000**4,
+        "tib": 1024**4,
+    }
+    multiplier = multipliers.get(unit)
+    if multiplier is None:
+        return None
+    return int(number * multiplier)
+
+
+def docker_memory_bytes_from_info(stdout: str) -> int | None:
+    stripped = stdout.strip()
+    if not stripped:
+        return None
+    if stripped.isdigit():
+        return int(stripped)
+    for line in stripped.splitlines():
+        if "total memory" not in line.lower():
+            continue
+        parsed = parse_memory_size_bytes(line)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def model_memory_readiness_check(docker_info_stdout: str) -> dict[str, object]:
+    detected_host_memory = host_memory_bytes()
+    detected_docker_memory = docker_memory_bytes_from_info(docker_info_stdout)
+    host_ok = detected_host_memory is not None and detected_host_memory >= MIN_LLM_HOST_MEMORY_BYTES
+    docker_ok = detected_docker_memory is not None and detected_docker_memory >= MIN_DOCKER_MEMORY_BYTES
+    fix_steps: list[str] = []
+    if not host_ok:
+        fix_steps.append(
+            f"Use a machine with at least {MIN_LLM_HOST_MEMORY_GB} GB RAM for {DEFAULT_LLM_MODEL}; "
+            "16 GB class hosts have failed the live model prewarm gate."
+        )
+    if not docker_ok:
+        fix_steps.append(
+            f"Increase Docker Desktop / WSL2 memory to at least {MIN_DOCKER_MEMORY_GB} GB, then rerun readiness before install."
+        )
+    return {
+        "name": "ollama_model_memory",
+        "status": "passed" if host_ok and docker_ok else "failed",
+        "model": DEFAULT_LLM_MODEL,
+        "host_ollama": USE_HOST_OLLAMA,
+        "detected_host_memory_bytes": detected_host_memory,
+        "required_host_memory_bytes": MIN_LLM_HOST_MEMORY_BYTES,
+        "required_host_memory_gb": MIN_LLM_HOST_MEMORY_GB,
+        "detected_docker_memory_bytes": detected_docker_memory,
+        "required_docker_memory_bytes": MIN_DOCKER_MEMORY_BYTES,
+        "required_docker_memory_gb": MIN_DOCKER_MEMORY_GB,
+        "fix_steps": fix_steps,
+    }
 
 
 def source_root(module_name: str) -> Path:
@@ -3573,7 +3681,25 @@ def main() -> int:
             require_command("docker")
             info = run([docker_command(), "info"], cwd=ROOT, timeout=30)
             payload["docker"] = {"returncode": info.returncode, "stdout": info.stdout[-1000:], "stderr": info.stderr[-1000:]}
-            payload["status"] = "passed" if info.returncode == 0 else "failed"
+            checks: list[dict[str, object]] = [
+                {
+                    "name": "docker_info",
+                    "status": "passed" if info.returncode == 0 else "failed",
+                    "returncode": info.returncode,
+                    "stdout": info.stdout[-1000:],
+                    "stderr": info.stderr[-1000:],
+                    "fix_steps": []
+                    if info.returncode == 0
+                    else [
+                        "Start Docker Desktop or Docker Engine and wait for it to report ready.",
+                        "Rerun readiness before install.",
+                    ],
+                }
+            ]
+            if info.returncode == 0:
+                checks.append(model_memory_readiness_check(info.stdout))
+            payload["checks"] = checks
+            payload["status"] = "passed" if all(check.get("status") == "passed" for check in checks) else "failed"
         elif args.mode == "install":
             payload.update(
                 install(

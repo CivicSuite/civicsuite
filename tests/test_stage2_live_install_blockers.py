@@ -140,6 +140,66 @@ def test_ollama_prewarm_model_load_failure_is_required_failure(monkeypatch, tmp_
     assert "Increase Docker Desktop / WSL2 memory" in " ".join(prewarm["fix_steps"])
 
 
+def test_model_memory_readiness_blocks_tester_16gb_docker_7gb(monkeypatch) -> None:
+    runner = _load_installer_runner()
+
+    monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+
+    check = runner.model_memory_readiness_check("Total Memory: 7.683GiB\n")
+
+    assert check["status"] == "failed"
+    assert check["model"] == "gemma4:e4b"
+    assert check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
+    assert check["required_host_memory_gb"] == 24
+    assert check["required_docker_memory_gb"] == 12
+    assert any("16 GB class hosts have failed" in step for step in check["fix_steps"])
+    assert any("Docker Desktop / WSL2 memory" in step for step in check["fix_steps"])
+
+
+def test_lifecycle_readiness_fails_before_install_when_model_memory_is_too_low(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+
+    def fake_run(command, **_kwargs):
+        assert command == ["docker", "info"]
+        return subprocess.CompletedProcess(command, 0, stdout="Total Memory: 7.683GiB\n", stderr="")
+
+    def fail_install(*_args, **_kwargs):
+        raise AssertionError("readiness must not enter install")
+
+    monkeypatch.setattr(runner, "REPORT_ROOT", tmp_path / "reports")
+    monkeypatch.setattr(runner, "require_command", lambda name: name)
+    monkeypatch.setattr(runner, "docker_command", lambda: "docker")
+    monkeypatch.setattr(runner, "host_memory_bytes", lambda: 16 * 1024 * 1024 * 1024)
+    monkeypatch.setattr(runner, "run", fake_run)
+    monkeypatch.setattr(runner, "install", fail_install)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run-clerk-core-installer.py",
+            "readiness",
+            "--run-id",
+            "memory-gate",
+            "--install-root",
+            str(tmp_path / "install"),
+            "--host-ollama",
+        ],
+    )
+
+    assert runner.main() == 1
+    report = json.loads(
+        (tmp_path / "reports" / "memory-gate" / "clerk-core-installer-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert report["status"] == "failed"
+    memory_check = [check for check in report["checks"] if check["name"] == "ollama_model_memory"][0]
+    assert memory_check["status"] == "failed"
+    assert memory_check["detected_docker_memory_bytes"] == int(7.683 * 1024 * 1024 * 1024)
+
+
 def test_ollama_prewarm_success_requires_resident_model_check(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
 
