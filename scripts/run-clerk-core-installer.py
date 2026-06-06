@@ -84,6 +84,8 @@ HOST_OLLAMA_PROBE_PROFILES = (
         },
     },
 )
+HOST_OLLAMA_NATIVE_DEFAULT_PROFILE = {"name": "native_default", "options": None}
+HOST_OLLAMA_MODEL_LOAD_PROFILES = (*HOST_OLLAMA_PROBE_PROFILES, HOST_OLLAMA_NATIVE_DEFAULT_PROFILE)
 # Host-Ollama mode: use the Windows host's native (GPU) Ollama and the per-module
 # docker-compose.host-ollama.yml variant (which disables the in-container CPU Ollama and
 # routes api/worker to host.docker.internal) instead of the containerized CPU Ollama.
@@ -622,14 +624,14 @@ def host_ollama_model_load_readiness_check() -> dict[str, object]:
 
 def host_ollama_generate(prompt: str, profile: dict[str, object] | None = None) -> dict[str, object]:
     selected_profile = profile or HOST_OLLAMA_PROBE_PROFILES[0]
-    options = dict(selected_profile["options"])  # type: ignore[arg-type]
     payload = {
         "model": DEFAULT_LLM_MODEL,
         "prompt": prompt,
         "stream": False,
         "keep_alive": OLLAMA_KEEP_ALIVE,
-        "options": options,
     }
+    if selected_profile["options"] is not None:
+        payload["options"] = dict(selected_profile["options"])  # type: ignore[arg-type]
     request = urllib.request.Request(
         f"{host_ollama_local_base_url()}/api/generate",
         data=json.dumps(payload).encode("utf-8"),
@@ -771,13 +773,14 @@ def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
             "initial_cleanup": initial_cleanup,
             "cleanup_failed": True,
         }
-    for profile in HOST_OLLAMA_PROBE_PROFILES:
+    for profile in HOST_OLLAMA_MODEL_LOAD_PROFILES:
         result = host_ollama_generate(prompt, profile)
         last_result = result
+        options = profile["options"]
         attempts.append(
             {
                 "profile": profile["name"],
-                "options": dict(profile["options"]),  # type: ignore[arg-type]
+                "options": dict(options) if options is not None else None,  # type: ignore[arg-type]
                 "returncode": int(result["returncode"]),
                 "stderr": str(result["stderr"])[-2000:],
             }

@@ -409,6 +409,51 @@ def test_host_ollama_generate_tries_low_batch_layers_then_cpu_tiny_batch_after_m
     assert "CUDA_Host" in result["attempts"][0]["stderr"]
 
 
+def test_host_ollama_generate_falls_back_to_native_options_after_forced_profiles_fail(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    payloads: list[dict[str, object]] = []
+    cleanup_calls: list[str] = []
+
+    class FakeResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    def fake_urlopen(request, timeout: int):
+        payload = json.loads(request.data.decode("utf-8"))
+        payloads.append(payload)
+        if payload.get("keep_alive") == 0:
+            return FakeResponse(b'{"done":true}')
+        if "options" in payload:
+            raise runner.urllib.error.HTTPError(
+                request.full_url,
+                500,
+                "Internal Server Error",
+                {},
+                io.BytesIO(b'{"error":"CPU_REPACK allocation failed"}'),
+            )
+        return FakeResponse(b'{"response":"OK"}')
+
+    monkeypatch.setattr(runner.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(runner, "ensure_host_ollama_server", lambda: {"status": "passed", "mode": "already_running", "port": 11435})
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_cleanup_runtime",
+        lambda: cleanup_calls.append("cleanup") or {"unload": {"returncode": 0, "stderr": ""}, "stop_orphan_servers": {"returncode": 0}},
+    )
+
+    result = runner.host_ollama_generate_with_fallback("Respond with OK.")
+
+    assert result["returncode"] == 0
+    assert result["selected_profile"] == "native_default"
+    assert "options" not in payloads[-1]
+    assert result["attempts"][-1]["profile"] == "native_default"
+    assert result["attempts"][-1]["options"] is None
+    assert cleanup_calls == ["cleanup"] * 9
+
+
 def test_host_ollama_stop_orphan_servers_terminates_windows_llama_processes(monkeypatch) -> None:
     runner = _load_installer_runner()
     commands: list[list[str]] = []
