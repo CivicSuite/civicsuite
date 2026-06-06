@@ -649,10 +649,36 @@ def host_ollama_cleanup_runtime() -> dict[str, object]:
     return {"unload": unload, "stop_orphan_servers": stop}
 
 
+def host_ollama_cleanup_access_denied(cleanup: dict[str, object]) -> bool:
+    stop = cleanup.get("stop_orphan_servers")
+    if not isinstance(stop, dict):
+        return False
+    results = stop.get("results")
+    if not isinstance(results, list):
+        return False
+    for result in results:
+        if isinstance(result, dict) and "access is denied" in str(result.get("stderr", "")).lower():
+            return True
+    return False
+
+
 def host_ollama_generate_with_fallback(prompt: str) -> dict[str, object]:
     attempts: list[dict[str, object]] = []
     last_result: dict[str, object] | None = None
     initial_cleanup = host_ollama_cleanup_runtime()
+    if host_ollama_cleanup_access_denied(initial_cleanup):
+        return {
+            "returncode": 1,
+            "stdout": "",
+            "stderr": (
+                "Host Ollama cleanup could not terminate stale llama-server workers: access denied. "
+                "Run the elevated Windows bootstrapper or reboot the tester so orphan model workers are cleared before readiness."
+            ),
+            "attempts": attempts,
+            "selected_profile": None,
+            "initial_cleanup": initial_cleanup,
+            "cleanup_failed": True,
+        }
     for profile in HOST_OLLAMA_PROBE_PROFILES:
         result = host_ollama_generate(prompt, profile)
         last_result = result

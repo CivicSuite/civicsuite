@@ -430,6 +430,41 @@ def test_host_ollama_stop_orphan_servers_terminates_windows_llama_processes(monk
     ]
 
 
+def test_host_ollama_probe_fails_fast_when_initial_cleanup_access_denied(monkeypatch) -> None:
+    runner = _load_installer_runner()
+
+    def fail_generate(*_args, **_kwargs):
+        raise AssertionError("host Ollama must not probe through inaccessible stale workers")
+
+    monkeypatch.setattr(runner, "host_ollama_generate", fail_generate)
+    monkeypatch.setattr(
+        runner,
+        "host_ollama_cleanup_runtime",
+        lambda: {
+            "unload": {"returncode": 0, "stderr": ""},
+            "stop_orphan_servers": {
+                "returncode": 1,
+                "results": [
+                    {
+                        "command": ["taskkill", "/F", "/IM", "llama-server.exe"],
+                        "returncode": 1,
+                        "stderr": "ERROR: The process could not be terminated.\nReason: Access is denied.",
+                    }
+                ],
+            },
+        },
+    )
+
+    result = runner.host_ollama_generate_with_fallback("Respond with OK.")
+
+    assert result["returncode"] == 1
+    assert result["selected_profile"] is None
+    assert result["attempts"] == []
+    assert result["cleanup_failed"] is True
+    assert "access denied" in result["stderr"].lower()
+    assert "elevated Windows bootstrapper" in result["stderr"]
+
+
 def test_host_ollama_install_prewarm_uses_bounded_http_probe(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     monkeypatch.setattr(runner, "USE_HOST_OLLAMA", True)
