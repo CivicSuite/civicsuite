@@ -1437,6 +1437,56 @@ def test_lifecycle_runner_accepts_source_pinned_python_service_modules(tmp_path:
     assert "http://127.0.0.1:23020/civiccode" in json.dumps(isolated_config)
 
 
+def test_civicaccess_verify_requires_ready_contracts(monkeypatch) -> None:
+    runner = _load_installer_runner()
+    calls: list[str] = []
+
+    def fake_get_json(url: str, **_kwargs):
+        calls.append(url)
+        if url.endswith("/api/v1/civicaccess/readiness"):
+            return 200, {"ready": True, "schema_ready": True}
+        if url.endswith("/api/v1/civicaccess/integration-contracts"):
+            return 200, {
+                "provides": [
+                    {"contract": "civicaccess.publication_accessibility_review.v1"},
+                    {"contract": "civicaccess.records_export.v1"},
+                ],
+                "downstream_ready_for": ["civicpermit applicant forms"],
+            }
+        return 404, {}
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+
+    proof = runner.verify_civicaccess_integration_contracts({"api": 18860})
+
+    assert proof["status"] == "passed"
+    assert calls == [
+        "http://127.0.0.1:18860/api/v1/civicaccess/readiness",
+        "http://127.0.0.1:18860/api/v1/civicaccess/integration-contracts",
+    ]
+
+
+def test_civicaccess_verify_fails_without_records_export_contract(monkeypatch) -> None:
+    runner = _load_installer_runner()
+
+    def fake_get_json(url: str, **_kwargs):
+        if url.endswith("/api/v1/civicaccess/readiness"):
+            return 200, {"ready": True, "schema_ready": True}
+        if url.endswith("/api/v1/civicaccess/integration-contracts"):
+            return 200, {
+                "provides": [{"contract": "civicaccess.publication_accessibility_review.v1"}],
+                "downstream_ready_for": ["civicpermit applicant forms"],
+            }
+        return 404, {}
+
+    monkeypatch.setattr(runner, "get_json", fake_get_json)
+
+    proof = runner.verify_civicaccess_integration_contracts({"api": 18860})
+
+    assert proof["status"] == "failed"
+    assert any("records_export" in step for step in proof["fix_steps"])
+
+
 def test_remote_suite_state_accepts_github_resolvable_staged_source_pin(monkeypatch) -> None:
     verifier = _load_suite_state_verifier()
     declared = "cddc4d2be856badfbc7c6bdd26917a34ef535677"

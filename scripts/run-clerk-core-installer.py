@@ -3623,6 +3623,43 @@ def verify_suite_launcher_serves(ctx: dict[str, object]) -> dict[str, object]:
     }
 
 
+def verify_civicaccess_integration_contracts(module_ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{module_ports['api']}"
+    readiness_status, readiness = get_json(f"{base}/api/v1/civicaccess/readiness", timeout_seconds=20)
+    contracts_status, contracts = get_json(f"{base}/api/v1/civicaccess/integration-contracts", timeout_seconds=20)
+    provided_contracts = {
+        str(item.get("contract"))
+        for item in contracts.get("provides", [])
+        if isinstance(item, dict)
+    }
+    downstream_ready = contracts.get("downstream_ready_for", [])
+    passed = (
+        readiness_status == 200
+        and readiness.get("ready") is True
+        and readiness.get("schema_ready") is True
+        and contracts_status == 200
+        and "civicaccess.records_export.v1" in provided_contracts
+        and "civicaccess.publication_accessibility_review.v1" in provided_contracts
+        and isinstance(downstream_ready, list)
+        and "civicpermit applicant forms" in downstream_ready
+    )
+    return {
+        "name": "civicaccess_integration_contracts",
+        "status": "passed" if passed else "failed",
+        "readiness_status_code": readiness_status,
+        "readiness": readiness,
+        "contracts_status_code": contracts_status,
+        "contracts": contracts,
+        "fix_steps": []
+        if passed
+        else [
+            "Confirm CivicAccess is pinned to the standalone-persistence source commit.",
+            "Confirm /api/v1/civicaccess/readiness reports ready=true and schema_ready=true.",
+            "Confirm /api/v1/civicaccess/integration-contracts includes records_export and publication_accessibility_review contracts.",
+        ],
+    }
+
+
 def start_suite_launcher(install_root: Path, report_dir: Path) -> dict[str, object]:
     launcher_root = install_root / SUITE_LAUNCHER_DIR_NAME
     url = f"http://127.0.0.1:{DEFAULT_SUITE_LAUNCHER_PORT}/"
@@ -3766,6 +3803,8 @@ def verify(
                     **wait_for_url(ready_url, timeout_seconds=60),
                 }
             )
+        if module_name == "civicaccess":
+            checks.append(verify_civicaccess_integration_contracts(module_ports))  # type: ignore[arg-type]
     if clerk_api_passed and not workflow_proof and staff_mode == CLERK_STAFF_MODE_PROTECTED:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
     if records_api_passed or clerk_api_passed:
