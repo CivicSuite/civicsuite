@@ -1843,6 +1843,14 @@ def stop_localhost_port_listener(port: int) -> dict[str, object]:
 
 def python_service_environment(install_root: Path, module_name: str) -> dict[str, str]:
     env = os.environ.copy()
+    for key in (
+        "OPENBLAS_NUM_THREADS",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+    ):
+        env.setdefault(key, "1")
     if module_name == "civicaccess":
         data_dir = install_root / "data" / "civicaccess"
         data_dir.mkdir(parents=True, exist_ok=True)

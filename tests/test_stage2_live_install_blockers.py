@@ -2521,6 +2521,57 @@ def test_start_civicboards_service_sets_local_data_dir_and_staff_key(monkeypatch
     assert (tmp_path / "data" / "civicboards").is_dir()
 
 
+def test_start_python_service_caps_blas_threads_for_low_memory_hosts(monkeypatch, tmp_path: Path) -> None:
+    runner = _load_installer_runner()
+    source = tmp_path / "source"
+    source.mkdir()
+    captured: dict[str, object] = {}
+
+    class FakeProcess:
+        pid = 7979
+
+        def poll(self):
+            return None
+
+    def fake_popen(_command, **kwargs):
+        captured["env"] = kwargs["env"]
+        return FakeProcess()
+
+    monkeypatch.delenv("OPENBLAS_NUM_THREADS", raising=False)
+    monkeypatch.delenv("OMP_NUM_THREADS", raising=False)
+    monkeypatch.delenv("MKL_NUM_THREADS", raising=False)
+    monkeypatch.delenv("NUMEXPR_NUM_THREADS", raising=False)
+    monkeypatch.delenv("VECLIB_MAXIMUM_THREADS", raising=False)
+    monkeypatch.setattr(runner, "stop_python_service", lambda *_args, **_kwargs: {"status": "skipped_no_pid"})
+    monkeypatch.setattr(runner, "stop_localhost_port_listener", lambda port: {"status": "no_listener", "port": port})
+    monkeypatch.setattr(runner.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(runner, "wait_for_url", lambda *_args, **_kwargs: {"status": "passed"})
+
+    proof = runner.start_python_service(tmp_path, "civicboards", source, port=23865)
+
+    assert proof["status"] == "passed"
+    for key in (
+        "OPENBLAS_NUM_THREADS",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "VECLIB_MAXIMUM_THREADS",
+    ):
+        assert captured["env"][key] == "1"
+
+
+def test_python_service_environment_preserves_operator_thread_overrides(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+    monkeypatch.setenv("OPENBLAS_NUM_THREADS", "2")
+
+    env = runner.python_service_environment(tmp_path, "civicboards")
+
+    assert env["OPENBLAS_NUM_THREADS"] == "2"
+    assert env["OMP_NUM_THREADS"] == "1"
+
+
 def test_verify_suite_launcher_requires_persistent_listener(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     (tmp_path / runner.SUITE_LAUNCHER_DIR_NAME).mkdir()
