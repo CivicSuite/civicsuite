@@ -1524,11 +1524,24 @@ TRANSIENT_PIP_INSTALL_MARKERS = (
     "memoryerror",
 )
 PYTHON_SERVICE_INSTALL_RETRIES = 3
+PYTHON_SERVICE_VENV_RETRIES = 3
+TRANSIENT_PYTHON_VENV_RETURN_CODES = {3221225773, -1073741523}
 
 
 def python_service_install_is_transient_failure(result: subprocess.CompletedProcess[str]) -> bool:
     output = f"{result.stdout}\n{result.stderr}".lower()
     return any(marker in output for marker in TRANSIENT_PIP_INSTALL_MARKERS)
+
+
+def python_service_venv_is_transient_failure(result: subprocess.CompletedProcess[str]) -> bool:
+    output = f"{result.stdout}\n{result.stderr}".lower()
+    if result.returncode in TRANSIENT_PYTHON_VENV_RETURN_CODES:
+        return True
+    return "ensurepip" in output and (
+        "non-zero exit status" in output
+        or "returned non-zero" in output
+        or "failed" in output
+    )
 
 
 def pip_retry_command(command: list[str | Path]) -> list[str | Path]:
@@ -1574,6 +1587,96 @@ def run_python_service_step_with_transient_retry(
     return last_result, attempt_results
 
 
+def run_python_service_create_venv(
+    *,
+    service_dir: Path,
+    source: Path,
+    python_path: Path,
+    retry_delay_seconds: float = 5.0,
+) -> dict[str, object]:
+    venv_dir = service_dir / ".venv"
+    command: list[str | Path] = [sys.executable, "-m", "venv", venv_dir]
+    attempts: list[dict[str, object]] = []
+    last_result: subprocess.CompletedProcess[str] | None = None
+    last_transient = False
+    for attempt in range(1, PYTHON_SERVICE_VENV_RETRIES + 1):
+        if attempt > 1:
+            shutil.rmtree(venv_dir, ignore_errors=True)
+        result = run_python_service_step(command, cwd=source, timeout=180)
+        last_result = result
+        last_transient = result.returncode != 0 and python_service_venv_is_transient_failure(result)
+        attempts.append(
+            {
+                "attempt": attempt,
+                "command": [str(item) for item in command],
+                "returncode": result.returncode,
+                "transient_failure": last_transient,
+                "stdout": result.stdout[-2000:],
+                "stderr": result.stderr[-2000:],
+            }
+        )
+        if result.returncode == 0:
+            return {
+                "step": "python_service_create_venv",
+                "returncode": 0,
+                "stdout": result.stdout[-4000:],
+                "stderr": result.stderr[-4000:],
+                "attempts": attempts,
+            }
+        if not last_transient or attempt == PYTHON_SERVICE_VENV_RETRIES:
+            break
+        time.sleep(retry_delay_seconds)
+
+    ensurepip_attempts: list[dict[str, object]] = []
+    if last_transient and python_path.is_file():
+        ensurepip_command: list[str | Path] = [
+            python_path,
+            "-m",
+            "ensurepip",
+            "--upgrade",
+            "--default-pip",
+        ]
+        for attempt in range(1, PYTHON_SERVICE_VENV_RETRIES + 1):
+            result = run_python_service_step(ensurepip_command, cwd=source, timeout=300)
+            ensurepip_transient = (
+                result.returncode != 0 and python_service_venv_is_transient_failure(result)
+            )
+            ensurepip_attempts.append(
+                {
+                    "attempt": attempt,
+                    "command": [str(item) for item in ensurepip_command],
+                    "returncode": result.returncode,
+                    "transient_failure": ensurepip_transient,
+                    "stdout": result.stdout[-2000:],
+                    "stderr": result.stderr[-2000:],
+                }
+            )
+            if result.returncode == 0:
+                return {
+                    "step": "python_service_create_venv",
+                    "returncode": 0,
+                    "stdout": result.stdout[-4000:],
+                    "stderr": result.stderr[-4000:],
+                    "attempts": attempts,
+                    "ensurepip_recovery_attempts": ensurepip_attempts,
+                    "status": "recovered_ensurepip",
+                }
+            if not ensurepip_transient or attempt == PYTHON_SERVICE_VENV_RETRIES:
+                last_result = result
+                break
+            time.sleep(retry_delay_seconds)
+
+    assert last_result is not None
+    return {
+        "step": "python_service_create_venv",
+        "returncode": last_result.returncode,
+        "stdout": last_result.stdout[-4000:],
+        "stderr": last_result.stderr[-4000:],
+        "attempts": attempts,
+        "ensurepip_recovery_attempts": ensurepip_attempts,
+    }
+
+
 def install_python_service_dependencies(
     install_root: Path, module_name: str, source: Path
 ) -> list[dict[str, object]]:
@@ -1582,21 +1685,13 @@ def install_python_service_dependencies(
     python_path = python_service_python(install_root, module_name)
     steps: list[dict[str, object]] = []
     if not python_path.is_file():
-        venv = run_python_service_step(
-            [sys.executable, "-m", "venv", service_dir / ".venv"],
-            cwd=source,
-            timeout=180,
+        venv_step = run_python_service_create_venv(
+            service_dir=service_dir,
+            source=source,
+            python_path=python_path,
         )
-        steps.append(
-            {
-                "module": module_name,
-                "step": "python_service_create_venv",
-                "returncode": venv.returncode,
-                "stdout": venv.stdout[-4000:],
-                "stderr": venv.stderr[-4000:],
-            }
-        )
-        if venv.returncode != 0:
+        steps.append({"module": module_name, **venv_step})
+        if venv_step["returncode"] != 0:
             return steps
     upgrade = run_python_service_step(
         [python_path, "-m", "pip", "install", "--upgrade", "pip"],

@@ -2157,6 +2157,95 @@ def test_python_service_install_retries_memoryerror_without_cache(monkeypatch, t
     assert "--no-cache-dir" in [str(item) for item in calls[1]]
 
 
+def test_python_service_create_venv_retries_ensurepip_crash_with_clean_state(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+    service_dir = tmp_path / "service"
+    source = tmp_path / "source"
+    source.mkdir()
+    venv_dir = service_dir / ".venv"
+    venv_dir.mkdir(parents=True)
+    stale_marker = venv_dir / "stale.txt"
+    stale_marker.write_text("partial", encoding="utf-8")
+    calls: list[list[str | Path]] = []
+    cleanup_states: list[bool] = []
+    results = iter(
+        [
+            subprocess.CompletedProcess(
+                ["venv"],
+                1,
+                stdout="",
+                stderr="Error: Command '['...python.exe', '-m', 'ensurepip']' returned non-zero exit status 3221225773.",
+            ),
+            subprocess.CompletedProcess(["venv"], 0, stdout="created", stderr=""),
+        ]
+    )
+
+    def fake_rmtree(path, **_kwargs):
+        cleanup_states.append(stale_marker.exists())
+        stale_marker.unlink(missing_ok=True)
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        return next(results)
+
+    monkeypatch.setattr(runner.shutil, "rmtree", fake_rmtree)
+    monkeypatch.setattr(runner, "run_python_service_step", fake_run)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    step = runner.run_python_service_create_venv(
+        service_dir=service_dir,
+        source=source,
+        python_path=service_dir / ".venv" / "Scripts" / "python.exe",
+    )
+
+    assert step["returncode"] == 0
+    assert len(calls) == 2
+    assert cleanup_states == [True]
+    assert [attempt["transient_failure"] for attempt in step["attempts"]] == [True, False]
+
+
+def test_python_service_create_venv_recovers_by_retrying_ensurepip(
+    monkeypatch, tmp_path: Path
+) -> None:
+    runner = _load_installer_runner()
+    service_dir = tmp_path / "service"
+    source = tmp_path / "source"
+    source.mkdir()
+    python_path = service_dir / ".venv" / "Scripts" / "python.exe"
+    calls: list[list[str | Path]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(command)
+        if [str(item) for item in command][1:3] == ["-m", "venv"]:
+            python_path.parent.mkdir(parents=True)
+            python_path.write_text("", encoding="utf-8")
+            return subprocess.CompletedProcess(
+                ["venv"],
+                1,
+                stdout="",
+                stderr="Error: Command '['...python.exe', '-m', 'ensurepip']' returned non-zero exit status 3221225773.",
+            )
+        return subprocess.CompletedProcess(["ensurepip"], 0, stdout="pip ready", stderr="")
+
+    monkeypatch.setattr(runner, "run_python_service_step", fake_run)
+    monkeypatch.setattr(runner.time, "sleep", lambda _seconds: None)
+
+    step = runner.run_python_service_create_venv(
+        service_dir=service_dir,
+        source=source,
+        python_path=python_path,
+    )
+
+    assert step["returncode"] == 0
+    assert step["status"] == "recovered_ensurepip"
+    assert len(calls) == 4
+    assert "-m" in [str(item) for item in calls[-1]]
+    assert "ensurepip" in [str(item) for item in calls[-1]]
+    assert step["ensurepip_recovery_attempts"][0]["returncode"] == 0
+
+
 def test_python_service_install_does_not_retry_non_transient_failure(monkeypatch, tmp_path: Path) -> None:
     runner = _load_installer_runner()
     calls: list[list[str | Path]] = []
