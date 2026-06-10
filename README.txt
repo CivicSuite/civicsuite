@@ -47,14 +47,13 @@ For honest module-by-module status see [STATUS.md](STATUS.md).
 
 ## Current Priorities
 
-The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The immediate sequence:
+The canonical roadmap lives at docs/roadmap/index.md. As of 2026-06-10 the suite runs under the full-suite finishing program (docs/roadmap/full-suite-program.md): all 27 modules finished one at a time behind a clean-VM definition of done, with the Windows profile moving to a portable-native runtime per ADR-0008. The immediate sequence within that program:
 
-1. Freeze public product-ready claims until the recovery gates pass.
-2. **Continue CivicCore shared-extraction depth before adding any new modules.** The suite's credibility depends on a richer civiccore platform, not on more catalog breadth (per the 2026-04-29 outside-review memo).
-3. Replace docs-render smoke checks with real user-flow Playwright evidence where a frontend exists.
-4. Add install/runtime proof, consistency gates, security scans, docs-source enforcement, and mock-vs-production labels.
-5. Re-audit and remediate repos one at a time. **No lateral v1.0 sweeps.**
-6. Re-earn release status only after the repo-specific recovery gate passes.
+1. Core hardening: CivicClerk persistence, CivicCode persistence and frontend, the CivicCore exemptions engine, and CivicRecords AI notification wiring.
+2. Installer rebuild to the portable-native Windows runtime (ADR-0008/ADR-0009) with plain-language unsigned-beta trust screens.
+3. The core four through the clean-VM definition-of-done gate as one package.
+4. Module-by-module finishing in the program's approved order, one module in flight at a time.
+5. Keep macOS explicitly beta/archive/readiness only until matching-host proof exists.
 
 ## Quick Start
 

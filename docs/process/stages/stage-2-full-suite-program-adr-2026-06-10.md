@@ -81,10 +81,39 @@ possible with later slices already drafted locally.
 
 ### Slice 3 - Suite truth sync
 
-Status: Planned
+Status: Complete
+
+Slice 2 commit:
+
+- `5a6e480` (`docs(roadmap): adopt the full-suite finishing program`)
+
+Changed files:
+
+- `C:\CivicSuiteDev\repos\civicsuite\README.md`
+- `C:\CivicSuiteDev\repos\civicsuite\README.txt`
+- `C:\CivicSuiteDev\repos\civicsuite\STATUS.md`
+- `C:\CivicSuiteDev\repos\civicsuite\docs\process\stages\stage-2-full-suite-program-adr-2026-06-10.md`
+
+Audit-lite report:
+
+- `C:\CivicSuiteDev\repos\civicsuite\docs\process\audits\audit-lite-stage-2-slice-3-truth-sync-2026-06-10.md`
+
+Local checks:
+
+- `git diff --check`
+- `bash scripts/verify-docs.sh` (PASS in WSL Ubuntu)
+- `python scripts/verify-secret-scan.py` (PASS)
 
 ## Stage Closeout
 
-Pending. Filled at stage end with: audit-lite evidence list, PR URL, merge
-commit, tag, and CI run IDs. The closeout references
-`audit-lite-stage-2-slice-1-adrs-2026-06-10.md` and subsequent slice reports.
+- Audit-lite evidence:
+  `docs/process/audits/audit-lite-stage-2-slice-1-adrs-2026-06-10.md`,
+  `docs/process/audits/audit-lite-stage-2-slice-2-program-doc-2026-06-10.md`,
+  `docs/process/audits/audit-lite-stage-2-slice-3-truth-sync-2026-06-10.md`
+- Slice 3 commit: recorded in the PR; the ledger cannot reference its own
+  commit hash.
+- Process note for future stages: amend the stage process to permit
+  commit-per-slice with a single push when later slices are already drafted,
+  since the pre-push clean-tree gate forbids per-slice pushes in that state.
+- PR, merge commit, tag, and CI run IDs: recorded on the PR
+  (`verify` runs on self-hosted runner `civicsuite-wsl-linux-2`).
