@@ -104,6 +104,41 @@ Local checks:
 - `bash scripts/verify-docs.sh` (PASS in WSL Ubuntu)
 - `python scripts/verify-secret-scan.py` (PASS)
 
+### Slice 4 - Verify workflow runner compatibility
+
+Status: Complete
+
+Slice 3 commit:
+
+- `cb64262` (`docs(truth): point suite priorities and status at the finishing program`)
+
+Changed files:
+
+- `C:\CivicSuiteDev\repos\civicsuite\.github\workflows\verify.yml`
+- `C:\CivicSuiteDev\repos\civicsuite\docs\process\stages\stage-2-full-suite-program-adr-2026-06-10.md`
+
+What and why:
+
+- `npx playwright install --with-deps chromium` hangs on the self-hosted
+  runner: `--with-deps` shells out to sudo, the `runner` account has no sudo
+  (by design — it executes pull-request code), and the sudo prompt blocks the
+  job forever. Chromium's OS dependencies are preinstalled root-side on the
+  runner image instead, and the workflow now runs `npx playwright install
+  chromium` only. A passwordless-sudo rule for the runner account was
+  considered and rejected as an unauthorized privilege escalation.
+- Runner image note: `civicsuite-wsl-linux-2` runs in WSL Ubuntu 24.04 (24.04,
+  not 26.04 — actions/setup-python has no 3.12 build for 26.04) with
+  Playwright Chromium OS dependencies preinstalled.
+
+Audit-lite report:
+
+- `C:\CivicSuiteDev\repos\civicsuite\docs\process\audits\audit-lite-stage-2-slice-4-verify-runner-2026-06-10.md`
+
+Local checks:
+
+- `git diff --check`
+- YAML parse: `python -c "import yaml; yaml.safe_load(open('.github/workflows/verify.yml'))"`
+
 ## Stage Closeout
 
 - Audit-lite evidence:
