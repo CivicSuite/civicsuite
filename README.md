@@ -46,13 +46,13 @@ For honest module-by-module status see [STATUS.md](STATUS.md).
 
 ## Current Priorities
 
-The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). The active execution target is the city-core nontechnical installability package. The immediate sequence:
+The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). As of 2026-06-10 the suite runs under the [full-suite finishing program](docs/roadmap/full-suite-program.md): all 27 modules finished one at a time behind a clean-VM definition of done, with the Windows profile moving to a portable-native runtime per [ADR-0008](docs/architecture/ADR-0008-portable-native-windows-runtime.md). The immediate sequence within that program:
 
-1. Make the city-core profile installable by a non-technical municipal operator on Linux and Windows.
-2. Keep macOS explicitly beta/archive/readiness only until matching-host proof exists.
-3. Keep Linux/Windows install/start/health/repair/backup/restore/uninstall evidence current for regenerated city-core artifacts.
-4. Browser-QA the first-run public and staff city-core paths with real user-flow evidence.
-5. Keep queued modules out of scope until city-core closes with evidence.
+1. Core hardening: CivicClerk persistence, CivicCode persistence and frontend, the CivicCore exemptions engine, and CivicRecords AI notification wiring.
+2. Installer rebuild to the portable-native Windows runtime (ADR-0008/ADR-0009) with plain-language unsigned-beta trust screens.
+3. The core four through the clean-VM definition-of-done gate as one package.
+4. Module-by-module finishing in the program's approved order, one module in flight at a time.
+5. Keep macOS explicitly beta/archive/readiness only until matching-host proof exists.
 
 ## Quick Start
 

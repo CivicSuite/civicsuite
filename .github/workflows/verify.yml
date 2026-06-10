@@ -52,7 +52,10 @@ jobs:
         run: npm ci
 
       - name: Install browser for docs landing page check
-        run: npx playwright install --with-deps chromium
+        # No --with-deps: it requires passwordless sudo and hangs on the
+        # self-hosted runner. Chromium OS dependencies are preinstalled on the
+        # runner image (see docs/process/stages stage-2 ledger, slice 4).
+        run: npx playwright install chromium
 
       - name: Verify docs landing page in browser
         run: npm run verify:browser
