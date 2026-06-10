@@ -55,7 +55,29 @@ Pushed commit:
 
 ### Slice 2 - Program control document
 
-Status: Planned
+Status: Complete
+
+Slice 1 commit:
+
+- `3b9021c` (`docs(adr): adopt portable-native windows runtime and postgres queue`)
+
+Changed files:
+
+- `C:\CivicSuiteDev\repos\civicsuite\docs\roadmap\full-suite-program.md`
+- `C:\CivicSuiteDev\repos\civicsuite\docs\process\stages\stage-2-full-suite-program-adr-2026-06-10.md`
+
+Audit-lite report:
+
+- `C:\CivicSuiteDev\repos\civicsuite\docs\process\audits\audit-lite-stage-2-slice-2-program-doc-2026-06-10.md`
+
+Local checks:
+
+- `git diff --check`
+- `bash scripts/verify-docs.sh` (PASS in WSL Ubuntu)
+
+Note: slices in this stage were committed sequentially and pushed together;
+the pre-push gate requires a clean working tree, so per-slice pushes were not
+possible with later slices already drafted locally.
 
 ### Slice 3 - Suite truth sync
 
