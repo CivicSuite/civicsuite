@@ -75,7 +75,7 @@ Use the module manager in Settings to confirm:
 
 Use the app screens, not a terminal:
 
-- Meetings & Notices: create a meeting, add an agenda item, mark notice ready, generate or type minutes, record a vote/action item, adopt minutes, and archive the public record.
+- Meetings & Notices: create a meeting, add an agenda item, record notice posting location/method/confirmation, mark notice ready, generate or type minutes, record a vote/action item, adopt minutes, and archive the public record.
 - Records Requests: create a request, record search/citation notes, generate or type a response draft, approve, export, mark fulfilled, and close.
 - Resident/Public Records Requests: submit a public request, keep the returned request number, and check status with the same submitted contact.
 - Code & Ordinances: import a code source, record sync state, generate or type guidance, approve guidance, publish source, answer a code question with citations, and create a clerk handoff.

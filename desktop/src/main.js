@@ -533,6 +533,9 @@ const state = {
     meetingDate: "",
     meetingSummary: "",
     agendaTitle: "",
+    noticeLocation: "",
+    noticeMethod: "",
+    noticeConfirmation: "",
     minutes: "",
     vote: "",
     actionItem: "",
@@ -1385,9 +1388,11 @@ function guidedReviewForAction(action) {
       visibility: "Resident/Public meeting materials can show posted notice information.",
       sources: [
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
-        detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
+        detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet."),
+        detailOrFallback(state.workDraft.noticeLocation, "Posting location is required."),
+        detailOrFallback(state.workDraft.noticeConfirmation, "Posting confirmation evidence is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for posting the notice.",
+      audit: "Creates a CivicClerk audit entry for posting the notice with location, method, and confirmation evidence.",
       retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
     },
     "export-meeting-packet": {
@@ -1806,6 +1811,9 @@ function renderMeetingsWorkflow() {
         <label>Date <input type="date" data-work-field="meetingDate" value="${state.workDraft.meetingDate}" /></label>
         <label>Summary <textarea data-work-field="meetingSummary">${state.workDraft.meetingSummary}</textarea></label>
         <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${state.workDraft.agendaTitle}" /></label>
+        <label>Notice posting location <input type="text" data-work-field="noticeLocation" value="${state.workDraft.noticeLocation}" placeholder="City Hall bulletin board and city website" /></label>
+        <label>Notice posting method <input type="text" data-work-field="noticeMethod" value="${state.workDraft.noticeMethod}" placeholder="Posted PDF and clerk attestation" /></label>
+        <label>Posting confirmation <textarea data-work-field="noticeConfirmation">${state.workDraft.noticeConfirmation}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
@@ -1851,6 +1859,7 @@ function renderMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No summary yet."}</p>
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
+          ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
           ${(meeting.public_comments || []).length > 0 ? `<p><strong>Public comments:</strong> ${(meeting.public_comments || []).length} received for clerk review</p>` : ""}
@@ -3395,7 +3404,12 @@ function workPayloadForAction(action) {
     },
     "add-agenda-item": { ...selected, agendaTitle: draft.agendaTitle },
     "add-code-handoff-agenda": selected,
-    "post-notice": selected,
+    "post-notice": {
+      ...selected,
+      postingLocation: draft.noticeLocation,
+      postingMethod: draft.noticeMethod,
+      postingConfirmation: draft.noticeConfirmation
+    },
     "export-meeting-packet": selected,
     "suggest-minutes-draft": selected,
     "record-minutes": { ...selected, minutes: draft.minutes },

@@ -1032,7 +1032,12 @@ mod tests {
             });
             workflows::city_work_action("record-minutes", Some(&minutes_payload))
                 .expect("minutes saved");
-            let selected_meeting = serde_json::json!({ "meetingId": meeting_id });
+            let selected_meeting = serde_json::json!({
+                "meetingId": meeting_id,
+                "postingLocation": "City website",
+                "postingMethod": "Posted PDF notice",
+                "postingConfirmation": "Clerk confirmed the notice was posted before the meeting."
+            });
             workflows::city_work_action("post-notice", Some(&selected_meeting))
                 .expect("notice ready");
             let public_comment = serde_json::json!({

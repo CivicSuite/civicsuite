@@ -39,6 +39,8 @@ const requiredUiPhrases = [
   "Download progress",
   "Official Google weights",
   "Download / Resume Model",
+  "Notice posting location",
+  "Posting confirmation",
   "Generate Local AI Minutes",
   "Generate Local AI Draft",
   "Generate Local AI Guidance",
@@ -336,6 +338,9 @@ for (const phrase of [
 }
 
 for (const phrase of [
+  "Notice Posting Evidence",
+  "postingLocation",
+  "postingConfirmation",
   "suggest-minutes-draft",
   "suggest-records-response",
   "suggest-code-guidance",

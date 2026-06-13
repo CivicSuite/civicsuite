@@ -39,12 +39,23 @@ pub struct PublicComment {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct NoticePosting {
+    pub id: String,
+    pub location: String,
+    pub method: String,
+    pub confirmation: String,
+    pub posted_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     pub title: String,
     pub meeting_date: String,
     pub status: String,
     pub notice_status: String,
+    #[serde(default)]
+    pub notice_postings: Vec<NoticePosting>,
     pub summary: String,
     pub agenda_items: Vec<AgendaItem>,
     pub minutes: String,
@@ -613,6 +624,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         meeting_date,
         status: "draft".to_string(),
         notice_status: "not posted".to_string(),
+        notice_postings: Vec::new(),
         summary,
         agenda_items: Vec::new(),
         minutes: String::new(),
@@ -703,11 +715,27 @@ fn add_code_handoff_agenda(
 }
 
 fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let posting_location = payload_string(payload, "postingLocation").map_err(|_| {
+        "Enter the notice posting location before marking notice ready.".to_string()
+    })?;
+    let posting_method = payload_string(payload, "postingMethod")
+        .map_err(|_| "Enter the notice posting method before marking notice ready.".to_string())?;
+    let posting_confirmation = payload_string(payload, "postingConfirmation").map_err(|_| {
+        "Enter the notice posting confirmation before marking notice ready.".to_string()
+    })?;
     let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     if meeting.agenda_items.is_empty() {
         return Err("Add at least one agenda item before posting notice.".to_string());
     }
+    let notice_id = new_id("notice", meeting.notice_postings.len());
+    meeting.notice_postings.push(NoticePosting {
+        id: notice_id,
+        location: posting_location.clone(),
+        method: posting_method.clone(),
+        confirmation: posting_confirmation.clone(),
+        posted_at_unix_seconds: now_unix_seconds(),
+    });
     let title = meeting.title.clone();
     meeting.notice_status = "public notice ready".to_string();
     meeting.status = "notice ready".to_string();
@@ -715,9 +743,11 @@ fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
         state,
         "civicclerk",
         "post-notice",
-        format!("Prepared public notice for: {title}"),
+        format!(
+            "Prepared public notice for {title}; posted at {posting_location} by {posting_method}; confirmation: {posting_confirmation}"
+        ),
     );
-    Ok("Notice marked ready with agenda evidence preserved locally.".to_string())
+    Ok("Notice marked ready with posting evidence preserved locally.".to_string())
 }
 
 fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
@@ -793,11 +823,12 @@ fn suggest_minutes_draft(
         return Err("Add a summary, agenda item, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nSummary: {}\nAgenda:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, notice evidence, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
         meeting.notice_status,
+        notice_postings_or_default(&meeting.notice_postings),
         if meeting.summary.is_empty() {
             "No summary recorded."
         } else {
@@ -1064,6 +1095,22 @@ fn code_version_history_or_default(entries: &[CodeVersionEntry]) -> String {
         .join("\n")
 }
 
+fn notice_postings_or_default(entries: &[NoticePosting]) -> String {
+    if entries.is_empty() {
+        return "No notice posting evidence recorded.".to_string();
+    }
+    entries
+        .iter()
+        .map(|entry| {
+            format!(
+                "- {} via {} at Unix timestamp {}; confirmation: {}",
+                entry.location, entry.method, entry.posted_at_unix_seconds, entry.confirmation
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn code_version_history_search_text(entries: &[CodeVersionEntry]) -> String {
     entries
         .iter()
@@ -1121,12 +1168,14 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         .minutes_adopted_at_unix_seconds
         .map(|timestamp| format!("Adopted at Unix timestamp {timestamp}."))
         .unwrap_or_else(|| "Minutes have not been adopted.".to_string());
+    let notice_postings = notice_postings_or_default(&meeting.notice_postings);
     format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
         meeting.notice_status,
+        notice_postings,
         if meeting.summary.is_empty() {
             "No summary recorded."
         } else {
@@ -2638,7 +2687,17 @@ mod tests {
                 "agendaTitle": "Adopt budget ordinance"
             });
             city_work_action("create-meeting", Some(&payload)).expect("meeting created");
-            city_work_action("post-notice", None).expect("notice prepared");
+            let missing_notice = match city_work_action("post-notice", None) {
+                Ok(_) => panic!("notice cannot post without evidence"),
+                Err(error) => error,
+            };
+            assert!(missing_notice.contains("Enter the notice posting location"));
+            let notice = serde_json::json!({
+                "postingLocation": "City Hall bulletin board and city website",
+                "postingMethod": "Posted PDF and clerk attestation",
+                "postingConfirmation": "Clerk confirmed posting before the statutory deadline."
+            });
+            city_work_action("post-notice", Some(&notice)).expect("notice prepared");
             let minutes = serde_json::json!({ "minutes": "Meeting called to order at 6:00 PM." });
             city_work_action("record-minutes", Some(&minutes)).expect("minutes saved");
             let vote = serde_json::json!({ "vote": "Budget ordinance passed 4-1." });
@@ -2668,6 +2727,11 @@ mod tests {
             let state = city_work_state().expect("state reads");
             let meeting = state.meetings.first().expect("meeting exists");
             assert_eq!(meeting.notice_status, "public notice ready");
+            assert_eq!(meeting.notice_postings.len(), 1);
+            assert_eq!(
+                meeting.notice_postings[0].location,
+                "City Hall bulletin board and city website"
+            );
             assert_eq!(meeting.status, "archived public record");
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
@@ -2682,6 +2746,8 @@ mod tests {
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
+            assert!(archive.contains("## Notice Posting Evidence"));
+            assert!(archive.contains("City Hall bulletin board and city website"));
             assert!(archive.contains("Local AI minutes draft"));
             assert!(archive.contains("## Action Items"));
             assert!(archive.contains("Finance staff to publish the adopted budget."));
@@ -2746,7 +2812,12 @@ mod tests {
 
             city_work_action(
                 "post-notice",
-                Some(&serde_json::json!({ "meetingId": meeting_id })),
+                Some(&serde_json::json!({
+                    "meetingId": meeting_id,
+                    "postingLocation": "City website",
+                    "postingMethod": "Meeting notice web posting",
+                    "postingConfirmation": "Clerk confirmed website posting."
+                })),
             )
             .expect("notice posted");
             city_work_action("submit-public-comment", Some(&public_comment))

@@ -6,6 +6,9 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Meeting" })).toBeVisible();
+  await expect(page.getByLabel("Notice posting location")).toBeVisible();
+  await expect(page.getByLabel("Notice posting method")).toBeVisible();
+  await expect(page.getByLabel("Posting confirmation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Notice Ready" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Packet" })).toBeVisible();
@@ -145,6 +148,7 @@ test("risky city workflow actions require guided review before mutation", async 
 
   await page.getByRole("button", { name: "Mark Notice Ready" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Posting Notice" })).toBeVisible();
+  await expect(page.getByText("Posting confirmation evidence is required.")).toBeVisible();
   await page.getByRole("button", { name: "Confirm Mark Notice Ready" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();
 
