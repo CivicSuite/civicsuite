@@ -14,7 +14,44 @@ const fallbackState = {
     ["health", "System Health", "Local services, model, backup, repair"],
     ["settings", "Settings", "City profile, users, modules"]
   ].map(([id, label, description]) => ({ id, label, description })),
-  modules: [],
+  modules: [
+    {
+      id: "civiccore",
+      display_name: "CivicCore",
+      role: "shared platform",
+      version: "1.2.0",
+      required: true,
+      selectable: false,
+      installed: true
+    },
+    {
+      id: "civicrecords-ai",
+      display_name: "CivicRecords AI",
+      role: "records workflow",
+      version: "1.7.3",
+      required: false,
+      selectable: true,
+      installed: true
+    },
+    {
+      id: "civicclerk",
+      display_name: "CivicClerk",
+      role: "meetings workflow",
+      version: "1.0.4",
+      required: false,
+      selectable: true,
+      installed: true
+    },
+    {
+      id: "civiccode",
+      display_name: "CivicCode",
+      role: "municipal code",
+      version: "1.0.8",
+      required: false,
+      selectable: true,
+      installed: true
+    }
+  ],
   installer_steps: [],
   first_run: {
     profile: "windows-local-1.0",
@@ -275,6 +312,16 @@ const state = {
   activeArea: "home",
   activeSurface: "Staff",
   auditOpen: false,
+  actionResult: null,
+  setupDraft: {
+    cityName: "",
+    state: "",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+    recordsContact: "",
+    clerkContact: "",
+    adminName: "",
+    adminEmail: ""
+  },
   app: fallbackState
 };
 
@@ -291,6 +338,10 @@ async function loadAppState() {
   } catch (error) {
     console.warn("Using browser fallback state", error);
   }
+}
+
+function hasTauriBridge() {
+  return "__TAURI_INTERNALS__" in window;
 }
 
 function moduleStatusLabel(module) {
@@ -395,6 +446,45 @@ function firstRunStatusClass(step) {
   return "status-muted";
 }
 
+function setupActionLabel(step) {
+  const labels = {
+    "review": "Review and continue",
+    "choose-location": "Create local folders",
+    "select-modules": "Use City Core modules",
+    "download-model": "Start model setup",
+    "create-city-profile": "Save city profile",
+    "create-admin": "Save first admin",
+    "choose-backup": "Create backup folder",
+    "verify-health": "Run health check",
+    "open-app": "Finish setup"
+  };
+  return labels[step.action] || "Continue setup";
+}
+
+function renderSetupFields(step) {
+  if (!step.current) return "";
+  if (step.id === "city-profile") {
+    return `
+      <div class="setup-form" aria-label="City profile">
+        <label>City name <input type="text" data-setup-field="cityName" value="${state.setupDraft.cityName}" autocomplete="organization" /></label>
+        <label>State <input type="text" data-setup-field="state" value="${state.setupDraft.state}" autocomplete="address-level1" /></label>
+        <label>Time zone <input type="text" data-setup-field="timeZone" value="${state.setupDraft.timeZone}" /></label>
+        <label>Records contact <input type="email" data-setup-field="recordsContact" value="${state.setupDraft.recordsContact}" autocomplete="email" /></label>
+        <label>Clerk contact <input type="email" data-setup-field="clerkContact" value="${state.setupDraft.clerkContact}" autocomplete="email" /></label>
+      </div>
+    `;
+  }
+  if (step.id === "first-admin") {
+    return `
+      <div class="setup-form two-column" aria-label="First admin">
+        <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
+        <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
+      </div>
+    `;
+  }
+  return "";
+}
+
 function renderFirstRunStep(step, index) {
   return `
     <article class="first-run-step ${step.current ? "current" : ""}">
@@ -407,8 +497,28 @@ function renderFirstRunStep(step, index) {
         <p>${step.summary}</p>
         <small>${step.detail}</small>
         ${step.current ? `<p class="next-action"><strong>Next:</strong> ${step.next_action}</p>` : ""}
+        ${renderSetupFields(step)}
+        ${step.current ? `
+          <div class="setup-actions">
+            <button type="button" class="primary-action" data-first-run-action="${step.action}" data-step-id="${step.id}">
+              ${setupActionLabel(step)}
+            </button>
+          </div>
+        ` : ""}
       </div>
     </article>
+  `;
+}
+
+function renderActionResult() {
+  if (!state.actionResult) return "";
+  const result = state.actionResult;
+  return `
+    <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
+      <strong>${result.status}</strong>
+      <span>${result.message}</span>
+      <small>${result.next_action}</small>
+    </div>
   `;
 }
 
@@ -440,6 +550,7 @@ function renderFirstRunWizard({ compact = false } = {}) {
       <div class="first-run-list">
         ${steps.map(renderFirstRunStep).join("")}
       </div>
+      ${renderActionResult()}
       ${compact && firstRun.steps.length > steps.length ? `
         <button type="button" class="text-link" data-area="health">View all setup and health steps</button>
       ` : ""}
@@ -678,6 +789,64 @@ function bindEvents() {
     state.auditOpen = !state.auditOpen;
     render();
   });
+  document.querySelectorAll("[data-setup-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      state.setupDraft[input.dataset.setupField] = input.value;
+    });
+  });
+  document.querySelectorAll("[data-first-run-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleFirstRunAction(button.dataset.firstRunAction, button.dataset.stepId);
+    });
+  });
+}
+
+function setupPayloadForStep(stepId) {
+  if (stepId === "city-profile") {
+    return {
+      cityName: state.setupDraft.cityName,
+      state: state.setupDraft.state,
+      timeZone: state.setupDraft.timeZone,
+      recordsContact: state.setupDraft.recordsContact,
+      clerkContact: state.setupDraft.clerkContact
+    };
+  }
+  if (stepId === "first-admin") {
+    return {
+      adminName: state.setupDraft.adminName,
+      adminEmail: state.setupDraft.adminEmail
+    };
+  }
+  return {};
+}
+
+async function handleFirstRunAction(action, stepId) {
+  if (!hasTauriBridge()) {
+    state.actionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Setup changes are saved by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to continue setup."
+    };
+    render();
+    return;
+  }
+  try {
+    state.actionResult = await invoke("first_run_action", {
+      action,
+      stepId,
+      payload: setupPayloadForStep(stepId)
+    });
+    await loadAppState();
+  } catch (error) {
+    state.actionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Correct the setup information and try again."
+    };
+  }
+  render();
 }
 
 await loadAppState();

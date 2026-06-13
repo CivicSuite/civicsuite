@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env;
+use std::fs;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const FIRST_RUN_MANIFEST_JSON: &str = include_str!("../../runtime/windows-first-run.json");
 const REQUIRED_STEP_IDS: [&str; 10] = [
@@ -114,6 +116,29 @@ pub struct FirstRunActionResult {
     pub next_action: String,
 }
 
+#[derive(Deserialize, Serialize, Default)]
+struct FirstRunProgress {
+    completed_step_ids: Vec<String>,
+    last_action: Option<String>,
+    last_updated_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize)]
+struct SavedCityProfile {
+    city_name: String,
+    state: String,
+    time_zone: String,
+    records_contact: String,
+    clerk_contact: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct SavedFirstAdmin {
+    display_name: String,
+    email: String,
+    role: String,
+}
+
 fn parse_manifest() -> Result<FirstRunManifest, String> {
     serde_json::from_str(FIRST_RUN_MANIFEST_JSON)
         .map_err(|error| format!("Could not parse Windows first-run manifest: {error}"))
@@ -168,6 +193,15 @@ fn validate_manifest(manifest: &FirstRunManifest) -> Result<(), String> {
 }
 
 fn windows_path_from_template(template: &str) -> String {
+    if let Ok(root) = env::var("CIVICSUITE_DESKTOP_STATE_DIR") {
+        return template
+            .replace("{local_app_data}/CivicSuite", &root)
+            .replace(
+                "{documents}/CivicSuite Backups",
+                &format!("{root}\\Backups"),
+            )
+            .replace('/', "\\");
+    }
     let local_app_data =
         env::var("LOCALAPPDATA").unwrap_or_else(|_| "{local_app_data}".to_string());
     let documents = env::var("USERPROFILE")
@@ -180,6 +214,64 @@ fn windows_path_from_template(template: &str) -> String {
         .replace('/', "\\")
 }
 
+fn civic_suite_root() -> PathBuf {
+    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            env::var("LOCALAPPDATA")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
+                .join("CivicSuite")
+        })
+}
+
+fn config_dir() -> PathBuf {
+    civic_suite_root().join("config")
+}
+
+fn progress_path() -> PathBuf {
+    config_dir().join("first-run-progress.json")
+}
+
+fn read_progress() -> Result<FirstRunProgress, String> {
+    let path = progress_path();
+    if !path.is_file() {
+        return Ok(FirstRunProgress::default());
+    }
+    let contents = fs::read_to_string(&path)
+        .map_err(|error| format!("Could not read first-run progress: {error}"))?;
+    serde_json::from_str(&contents)
+        .map_err(|error| format!("Could not parse first-run progress: {error}"))
+}
+
+fn write_json_file<T: Serialize>(path: PathBuf, value: &T) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
+    }
+    let contents = serde_json::to_string_pretty(value)
+        .map_err(|error| format!("Could not serialize local setup state: {error}"))?;
+    fs::write(&path, format!("{contents}\n"))
+        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+}
+
+fn write_progress(progress: &FirstRunProgress) -> Result<(), String> {
+    write_json_file(progress_path(), progress)
+}
+
+fn now_unix_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0)
+}
+
+#[cfg(test)]
+pub(crate) fn test_env_lock() -> &'static std::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| std::sync::Mutex::new(()))
+}
+
 fn resolve_locations(defaults: &DefaultLocations) -> FirstRunLocations {
     FirstRunLocations {
         install_root: windows_path_from_template(&defaults.install_root),
@@ -188,7 +280,7 @@ fn resolve_locations(defaults: &DefaultLocations) -> FirstRunLocations {
     }
 }
 
-pub fn first_run_state(completed_step_ids: &[String]) -> Result<FirstRunState, String> {
+fn first_run_state_from_completed(completed_step_ids: &[String]) -> Result<FirstRunState, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
     let completed: HashSet<&str> = completed_step_ids.iter().map(String::as_str).collect();
@@ -240,9 +332,98 @@ pub fn first_run_state(completed_step_ids: &[String]) -> Result<FirstRunState, S
     })
 }
 
+pub fn first_run_state(completed_step_ids: &[String]) -> Result<FirstRunState, String> {
+    if completed_step_ids.is_empty() {
+        let progress = read_progress()?;
+        return first_run_state_from_completed(&progress.completed_step_ids);
+    }
+    first_run_state_from_completed(completed_step_ids)
+}
+
+fn next_step_id(progress: &FirstRunProgress, manifest: &FirstRunManifest) -> Option<String> {
+    let completed: HashSet<&str> = progress
+        .completed_step_ids
+        .iter()
+        .map(String::as_str)
+        .collect();
+    manifest
+        .steps
+        .iter()
+        .find(|step| !completed.contains(step.id.as_str()))
+        .map(|step| step.id.clone())
+}
+
+fn payload_string(payload: Option<&serde_json::Value>, key: &str) -> Result<String, String> {
+    payload
+        .and_then(|value| value.get(key))
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| format!("Missing required setup field: {key}"))
+}
+
+fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), String> {
+    let profile = SavedCityProfile {
+        city_name: payload_string(payload, "cityName")?,
+        state: payload_string(payload, "state")?,
+        time_zone: payload_string(payload, "timeZone")?,
+        records_contact: payload_string(payload, "recordsContact")?,
+        clerk_contact: payload_string(payload, "clerkContact")?,
+    };
+    write_json_file(config_dir().join("city-profile.json"), &profile)
+}
+
+fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String> {
+    let admin = SavedFirstAdmin {
+        display_name: payload_string(payload, "adminName")?,
+        email: payload_string(payload, "adminEmail")?,
+        role: "local-admin".to_string(),
+    };
+    write_json_file(config_dir().join("first-admin.json"), &admin)
+}
+
+fn create_local_locations(locations: &FirstRunLocations) -> Result<(), String> {
+    for path in [
+        &locations.install_root,
+        &locations.data_root,
+        &locations.backup_root,
+    ] {
+        fs::create_dir_all(path).map_err(|error| format!("Could not create {path}: {error}"))?;
+    }
+    for path in [
+        PathBuf::from(&locations.data_root).join("files"),
+        PathBuf::from(&locations.data_root).join("logs"),
+        config_dir(),
+    ] {
+        fs::create_dir_all(&path)
+            .map_err(|error| format!("Could not create {}: {error}", path.display()))?;
+    }
+    Ok(())
+}
+
+fn action_blocks_until_runtime(action: &str) -> Option<(&'static str, &'static str)> {
+    match action {
+        "download-model" => Some((
+            "The native model downloader is the next runtime slice and is not safe to mark complete before checksum and resume handling exists.",
+            "Keep the pinned model visible, then use the model download step after the downloader lands.",
+        )),
+        "verify-health" => Some((
+            "Health verification cannot pass until the portable runtime services are installed and supervised.",
+            "Finish the runtime install slice, then run health verification again.",
+        )),
+        "open-app" => Some((
+            "CivicSuite cannot finish first-run while required setup and runtime checks are incomplete.",
+            "Complete all prior required setup steps and health verification first.",
+        )),
+        _ => None,
+    }
+}
+
 pub fn first_run_action(
     action: &str,
     step_id: Option<&str>,
+    payload: Option<&serde_json::Value>,
 ) -> Result<FirstRunActionResult, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -255,15 +436,65 @@ pub fn first_run_action(
         }
     }
 
+    if let Some((message, next_action)) = action_blocks_until_runtime(action) {
+        return Ok(FirstRunActionResult {
+            accepted: false,
+            action: action.to_string(),
+            step_id: step_id.map(str::to_string),
+            status: "Blocked",
+            message: message.to_string(),
+            next_action: next_action.to_string(),
+        });
+    }
+
+    let mut progress = read_progress()?;
+    let target_step_id = step_id
+        .map(str::to_string)
+        .or_else(|| next_step_id(&progress, &manifest))
+        .ok_or_else(|| "First-run setup is already finished.".to_string())?;
+    let step = manifest
+        .steps
+        .iter()
+        .find(|candidate| candidate.id == target_step_id)
+        .ok_or_else(|| format!("Unknown first-run step: {target_step_id}"))?;
+    if step.action != action {
+        return Err(format!(
+            "Step {} expects action {}, not {action}",
+            step.id, step.action
+        ));
+    }
+
+    let locations = resolve_locations(&manifest.default_locations);
+    match action {
+        "choose-location" | "choose-backup" => create_local_locations(&locations)?,
+        "create-city-profile" => persist_city_profile(payload)?,
+        "create-admin" => persist_first_admin(payload)?,
+        "review" | "select-modules" | "repair" | "backup" | "uninstall" => {}
+        _ => {
+            return Err(format!(
+                "First-run action {action} has no desktop executor yet"
+            ))
+        }
+    }
+
+    if !progress
+        .completed_step_ids
+        .iter()
+        .any(|completed| completed == &target_step_id)
+    {
+        progress.completed_step_ids.push(target_step_id.clone());
+    }
+    progress.last_action = Some(action.to_string());
+    progress.last_updated_unix_seconds = now_unix_seconds();
+    write_progress(&progress)?;
+
     Ok(FirstRunActionResult {
-        accepted: false,
+        accepted: true,
         action: action.to_string(),
-        step_id: step_id.map(str::to_string),
-        status: "Blocked",
-        message: "The native installer wizard has not been connected to host mutation yet."
-            .to_string(),
-        next_action: "Use this checklist as setup guidance until the installer executor is wired."
-            .to_string(),
+        step_id: Some(target_step_id),
+        status: "Saved",
+        message: "Setup progress was saved locally on this Windows profile.".to_string(),
+        next_action: "Continue to the next setup step.".to_string(),
     })
 }
 
@@ -308,10 +539,63 @@ mod tests {
 
     #[test]
     fn first_run_action_is_blocked_until_installer_executor_exists() {
-        let result = first_run_action("download-model", Some("model"))
+        let result = first_run_action("download-model", Some("model"), None)
             .expect("action response is structured");
         assert!(!result.accepted);
         assert_eq!(result.status, "Blocked");
-        assert!(result.message.contains("native installer wizard"));
+        assert!(result.message.contains("native model downloader"));
+    }
+
+    fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
+        let _guard = test_env_lock().lock().expect("test env lock");
+        let root = env::temp_dir().join(format!(
+            "civicsuite-desktop-first-run-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
+        let result = test(root.clone());
+        env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
+        let _ = fs::remove_dir_all(root);
+        result
+    }
+
+    #[test]
+    fn first_run_review_action_persists_progress() {
+        with_temp_state_dir(|root| {
+            let result = first_run_action("review", Some("unsigned-beta"), None)
+                .expect("review can be saved");
+            assert!(result.accepted);
+            let state = first_run_state(&[]).expect("state reads saved progress");
+            assert_eq!(state.current_step_id.as_deref(), Some("smartscreen"));
+            assert!(root
+                .join("config")
+                .join("first-run-progress.json")
+                .is_file());
+        });
+    }
+
+    #[test]
+    fn first_run_location_action_creates_local_folders() {
+        with_temp_state_dir(|root| {
+            first_run_action("review", Some("unsigned-beta"), None).expect("review can be saved");
+            first_run_action("review", Some("smartscreen"), None)
+                .expect("smartscreen review can be saved");
+            let result = first_run_action("choose-location", Some("locations"), None)
+                .expect("locations can be created");
+            assert!(result.accepted);
+            assert!(root.join("Data").join("files").is_dir());
+            assert!(root.join("Data").join("logs").is_dir());
+            assert!(root.join("config").is_dir());
+        });
+    }
+
+    #[test]
+    fn city_profile_requires_payload_before_completion() {
+        with_temp_state_dir(|_| {
+            let result = first_run_action("create-city-profile", Some("city-profile"), None);
+            assert!(result.is_err());
+            assert!(result.err().expect("error text").contains("cityName"));
+        });
     }
 }

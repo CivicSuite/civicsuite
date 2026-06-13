@@ -177,8 +177,9 @@ fn preview_first_run_state(completed_step_ids: Vec<String>) -> Result<FirstRunSt
 fn first_run_action(
     action: String,
     step_id: Option<String>,
+    payload: Option<Value>,
 ) -> Result<FirstRunActionResult, String> {
-    first_run::first_run_action(&action, step_id.as_deref())
+    first_run::first_run_action(&action, step_id.as_deref(), payload.as_ref())
 }
 
 #[tauri::command]
@@ -211,6 +212,23 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn with_clean_first_run_state<T>(test: impl FnOnce(PathBuf) -> T) -> T {
+        let _guard = first_run::test_env_lock().lock().expect("test env lock");
+        let root = env::temp_dir().join(format!(
+            "civicsuite-desktop-app-state-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
+        let result = test(root.clone());
+        env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
+        let _ = fs::remove_dir_all(root);
+        result
+    }
 
     #[test]
     fn city_core_modules_are_reported_installed() {
@@ -260,12 +278,14 @@ mod tests {
 
     #[test]
     fn app_state_reports_first_run_setup_contract() {
-        let state = get_app_state().expect("app state builds");
-        assert_eq!(state.first_run.status, "Needs setup");
-        assert_eq!(
-            state.first_run.current_step_id.as_deref(),
-            Some("unsigned-beta")
-        );
-        assert!(state.first_run.local_only);
+        with_clean_first_run_state(|_| {
+            let state = get_app_state().expect("app state builds");
+            assert_eq!(state.first_run.status, "Needs setup");
+            assert_eq!(
+                state.first_run.current_step_id.as_deref(),
+                Some("unsigned-beta")
+            );
+            assert!(state.first_run.local_only);
+        });
     }
 }

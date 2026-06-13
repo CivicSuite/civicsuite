@@ -74,7 +74,8 @@ main:focus-visible {
 
 .surface-switch button,
 .icon-text,
-.task-card button {
+.task-card button,
+.primary-action {
   border: 1px solid transparent;
   border-radius: 5px;
   cursor: pointer;
@@ -89,7 +90,8 @@ main:focus-visible {
 
 .surface-switch button.active,
 .icon-text,
-.task-card button {
+.task-card button,
+.primary-action {
   background: #1e5f74;
   color: #ffffff;
 }
@@ -355,6 +357,66 @@ main {
   width: 30px;
 }
 
+.setup-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.setup-form.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.setup-form label {
+  color: #4b5b67;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.setup-form input {
+  border: 1px solid #c8d5de;
+  border-radius: 5px;
+  color: #1d252d;
+  display: block;
+  font: inherit;
+  margin-top: 4px;
+  min-height: 38px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.setup-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.action-result {
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.action-result.saved {
+  background: #e6f4ea;
+  border: 1px solid #badcc6;
+  color: #1d5c35;
+}
+
+.action-result.blocked {
+  background: #fff4d8;
+  border: 1px solid #ead49a;
+  color: #6d4d10;
+}
+
+.action-result span,
+.action-result small {
+  color: inherit;
+}
+
 .step-header {
   align-items: center;
   display: flex;
@@ -504,7 +566,9 @@ main {
   .health-grid,
   .location-grid,
   .model-meta-grid,
-  .module-list.compact {
+  .module-list.compact,
+  .setup-form,
+  .setup-form.two-column {
     grid-template-columns: 1fr;
   }
 
