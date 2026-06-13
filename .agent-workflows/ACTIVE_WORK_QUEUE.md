@@ -12,24 +12,34 @@ active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
 portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
 UX, city-core module completion, and future module package foundation.
 
-Current slice: Windows desktop design control and module package contract.
+Current slice: Portable runtime supervisor and Windows process lifecycle.
+
+Closed Windows Local slices:
+
+- Windows desktop design control and module package contract foundation.
+  Evidence: `docs/design/windows-desktop-design-control.md`,
+  `docs/architecture/ADR-0010-module-package-contract.md`,
+  `installer/module-manifest-contract.json`,
+  `tests/test_module_manifest_contract.py`, and
+  `docs/process/audits/audit-lite-windows-desktop-design-contract-2026-06-13.md`.
+- Tauri/WebView2 desktop shell scaffold and local task navigation.
+  Evidence: `desktop/`, `desktop/tests/static-smoke.mjs`, Tauri no-bundle
+  executable build, and
+  `docs/process/audits/audit-lite-windows-desktop-shell-scaffold-2026-06-13.md`.
 
 Slice Definition of Done:
 
-- Create the Windows desktop design control from the existing suite/product UX
-  specs.
-- Create the module package contract ADR and machine-readable contract.
-- Validate the existing 27 product modules plus CivicCore registry shape.
-- Keep city-core selected in order: CivicCore, CivicRecords AI, CivicClerk,
-  CivicCode.
-- Keep Custom available for future module selection.
-- Prove the validator with tests.
+- Define the local service manifest for PostgreSQL, Python services, file
+  storage, task queue, and Ollama/model runtime integration.
+- Add a Windows-safe process supervisor contract and first implementation hook
+  for start, stop, health, repair, and logs.
+- Keep supervisor behavior local-only and hidden behind plain-English health
+  states in the desktop shell.
+- Add tests for service manifest validation and supervisor state transitions.
 - Run audit-lite and fix all slice findings.
 
-Next slices after this foundation:
+Next slices after this runtime foundation:
 
-2. Tauri/WebView2 desktop shell scaffold and local app navigation.
-3. Portable runtime supervisor and Windows service/process lifecycle.
 4. Installer and first-run wizard without Docker/WSL.
 5. Gemma 4 12B quantization-aware model download/readiness path.
 6. CivicCore local platform completion for auth, audit, module registry, model

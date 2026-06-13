@@ -1,0 +1,373 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  background: #f5f7f9;
+  color: #1d252d;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 860px;
+}
+
+button {
+  font: inherit;
+}
+
+button:focus-visible,
+main:focus-visible {
+  outline: 3px solid #2f80ed;
+  outline-offset: 2px;
+}
+
+.topbar {
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #d8e0e7;
+  display: flex;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 12px 24px;
+}
+
+.topbar h1,
+.page-heading h2,
+.section-title h2,
+.section-title h3,
+.task-card h3,
+.workflow-step h3,
+.module-row h3,
+.health-card h3 {
+  margin: 0;
+}
+
+.eyebrow {
+  color: #5f6f7d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.surface-switch {
+  background: #eef3f6;
+  border: 1px solid #c9d5de;
+  border-radius: 6px;
+  display: flex;
+  padding: 3px;
+}
+
+.surface-switch button,
+.icon-text,
+.task-card button {
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 7px 12px;
+}
+
+.surface-switch button {
+  background: transparent;
+  color: #32414d;
+}
+
+.surface-switch button.active,
+.icon-text,
+.task-card button {
+  background: #1e5f74;
+  color: #ffffff;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: calc(100vh - 76px);
+}
+
+.sidebar {
+  background: #20313b;
+  border-right: 1px solid #16242c;
+  padding: 14px;
+}
+
+.nav-item {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #d7e3ea;
+  cursor: pointer;
+  display: block;
+  margin-bottom: 6px;
+  padding: 11px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.nav-item span {
+  display: block;
+  font-weight: 700;
+}
+
+.nav-item small {
+  color: #aebdc7;
+  display: block;
+  margin-top: 3px;
+}
+
+.nav-item.active {
+  background: #ffffff;
+  color: #192730;
+}
+
+.nav-item.active small {
+  color: #51606b;
+}
+
+main {
+  padding: 24px;
+}
+
+.page-heading {
+  margin-bottom: 22px;
+  max-width: 920px;
+}
+
+.page-heading p {
+  color: #536575;
+  margin: 8px 0 0;
+}
+
+.task-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.task-card,
+.workflow-panel,
+.section-band,
+.health-card,
+.module-row {
+  background: #ffffff;
+  border: 1px solid #d7e0e7;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(31, 45, 55, 0.06);
+}
+
+.task-card {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  min-height: 154px;
+  padding: 18px;
+}
+
+.task-card p,
+.workflow-step p,
+.module-row p,
+.health-card p,
+.section-title p {
+  color: #536575;
+  margin: 6px 0 0;
+}
+
+.section-band {
+  margin-top: 18px;
+  padding: 18px;
+}
+
+.section-title {
+  margin-bottom: 14px;
+}
+
+.workflow-panel {
+  display: grid;
+  gap: 0;
+}
+
+.workflow-step {
+  align-items: center;
+  border-bottom: 1px solid #e3e9ee;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  padding: 16px 18px;
+}
+
+.workflow-step:last-child {
+  border-bottom: 0;
+}
+
+.workflow-step strong {
+  align-items: center;
+  background: #eaf3f5;
+  border: 1px solid #c9dde3;
+  border-radius: 50%;
+  color: #1e5f74;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.module-columns {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.module-list {
+  display: grid;
+  gap: 8px;
+}
+
+.module-list.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.module-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 82px;
+  padding: 14px;
+}
+
+.module-meta {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: right;
+}
+
+.status-ok,
+.status-warn,
+.status-muted {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.status-ok {
+  background: #e6f4ea;
+  color: #23623a;
+}
+
+.status-warn {
+  background: #fff4d8;
+  color: #76530c;
+}
+
+.status-muted {
+  background: #edf1f4;
+  color: #536575;
+}
+
+.health-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.health-card {
+  min-height: 148px;
+  padding: 16px;
+}
+
+.health-card h3 {
+  margin-top: 12px;
+}
+
+.step-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.step-list li {
+  margin: 7px 0;
+}
+
+.audit-drawer {
+  background: #ffffff;
+  border-left: 1px solid #d7e0e7;
+  bottom: 0;
+  box-shadow: -6px 0 18px rgba(20, 31, 40, 0.08);
+  max-width: 360px;
+  padding: 20px;
+  position: fixed;
+  right: 0;
+  top: 76px;
+  transform: translateX(100%);
+  transition: transform 150ms ease;
+  width: 32vw;
+  z-index: 5;
+}
+
+.audit-drawer.open {
+  transform: translateX(0);
+}
+
+.audit-entry {
+  border-top: 1px solid #e0e7ed;
+  padding-top: 14px;
+}
+
+@media (max-width: 980px) {
+  body {
+    min-width: 0;
+  }
+
+  .layout,
+  .task-grid,
+  .module-columns,
+  .health-grid,
+  .module-list.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .surface-switch {
+    flex-wrap: wrap;
+  }
+
+  .audit-drawer {
+    max-width: none;
+    width: 88vw;
+  }
+}

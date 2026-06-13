@@ -13,18 +13,32 @@ non-technical installer, Gemma 4 12B quantization-aware local model path,
 CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
 contract that lets future modules plug into the existing app one at a time.
 
-Current working slice: Windows desktop design control and module package
-contract foundation.
+Current working slice: Portable runtime supervisor and Windows process
+lifecycle foundation.
 
 Definition of Done for this slice:
 
-- Windows desktop design control exists and names the clerk-first UX rules.
-- Module package ADR exists and defines the future module plug-in contract.
-- `installer/modules.json` carries the contract version.
-- A verifier and tests enforce the registry-level contract.
-- The old active queue no longer silently routes resumed work back to
-  CivicInspect.
+- Local service manifest names the Windows local runtime pieces: PostgreSQL,
+  Python services, file storage, task queue, and local model runtime.
+- Process supervisor contract covers start, stop, health, repair, logs, and
+  local-only service state.
+- Desktop shell consumes the supervisor health state through plain-English
+  status labels without exposing terminal or Docker/WSL steps.
+- Tests cover manifest validation and supervisor state transitions.
 - audit-lite runs for this slice and findings are fixed before push.
+
+Closed Windows Local slices:
+
+- Windows desktop design control and module package contract foundation.
+  Evidence: `docs/design/windows-desktop-design-control.md`,
+  `docs/architecture/ADR-0010-module-package-contract.md`,
+  `installer/module-manifest-contract.json`,
+  `scripts/verify-module-manifest-contract.py`, and
+  `docs/process/audits/audit-lite-windows-desktop-design-contract-2026-06-13.md`.
+- Tauri/WebView2 desktop shell scaffold and local task navigation.
+  Evidence: `desktop/`, `desktop/tests/static-smoke.mjs`, Tauri no-bundle
+  executable build, and
+  `docs/process/audits/audit-lite-windows-desktop-shell-scaffold-2026-06-13.md`.
 
 Stop conditions:
 
