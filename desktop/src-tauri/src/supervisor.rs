@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const RUNTIME_MANIFEST_JSON: &str = include_str!("../../runtime/windows-local-runtime.json");
 const RUNTIME_PAYLOADS_JSON: &str = include_str!("../../runtime/windows-runtime-payloads.json");
-const REQUIRED_ACTIONS: [&str; 9] = [
+const REQUIRED_ACTIONS: [&str; 10] = [
     "install",
     "start",
     "stop",
@@ -19,6 +19,7 @@ const REQUIRED_ACTIONS: [&str; 9] = [
     "repair",
     "logs",
     "backup",
+    "open-backup-folder",
     "restore",
     "uninstall",
 ];
@@ -1594,6 +1595,19 @@ fn backup_action() -> Result<SupervisorActionResult, String> {
     })
 }
 
+fn open_backup_folder_action() -> Result<SupervisorActionResult, String> {
+    let path = backup_root();
+    crate::local_shell::open_local_folder(&path)?;
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "open-backup-folder".to_string(),
+        service_id: None,
+        status: "Backup folder open",
+        message: format!("Opened the CivicSuite backup folder: {}.", path.display()),
+        next_action: "Use Backup Now before restore, reinstall, or uninstall work.".to_string(),
+    })
+}
+
 fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult, String> {
     let Some(source) = latest_backup_dir()? else {
         return Ok(SupervisorActionResult {
@@ -1704,6 +1718,7 @@ pub fn supervisor_action(
         "health" => health_action(service_id),
         "logs" => log_action(&services),
         "backup" => backup_action(),
+        "open-backup-folder" => open_backup_folder_action(),
         "restore" => restore_action(&services),
         "uninstall" => uninstall_action(&services),
         _ => Err(format!("Unsupported supervisor action: {action}")),
@@ -2050,6 +2065,17 @@ mod tests {
                 .files
                 .iter()
                 .any(|file| { file.path == "config/city.json" && file.sha256.len() == 64 }));
+        });
+    }
+
+    #[test]
+    fn open_backup_folder_creates_and_opens_backup_root() {
+        with_temp_state_dir(|root| {
+            let result = supervisor_action("open-backup-folder", None).expect("action response");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Backup folder open");
+            assert!(root.join("Backups").is_dir());
         });
     }
 

@@ -212,7 +212,7 @@ for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   }
 }
 
-for (const action of ["install", "start", "stop", "health", "repair", "logs", "backup", "restore", "uninstall"]) {
+for (const action of ["install", "start", "stop", "health", "repair", "logs", "backup", "open-backup-folder", "restore", "uninstall"]) {
   if (!runtimeManifest.lifecycle_actions.includes(action)) {
     throw new Error(`Windows runtime manifest missing lifecycle action: ${action}`);
   }

@@ -15,6 +15,7 @@
     "repair",
     "logs",
     "backup",
+    "open-backup-folder",
     "restore",
     "uninstall"
   ],

@@ -2423,6 +2423,7 @@ function renderHealth() {
       </div>
       <div class="health-actions lifecycle-actions">
         <button type="button" class="secondary-action" data-supervisor-action="backup">Backup Now</button>
+        <button type="button" class="secondary-action" data-supervisor-action="open-backup-folder">Open Backup Folder</button>
         <button type="button" class="secondary-action" data-supervisor-action="restore">Restore Latest Backup</button>
         <button type="button" class="secondary-action" data-supervisor-action="uninstall">Prepare Uninstall</button>
       </div>
