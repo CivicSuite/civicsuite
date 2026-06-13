@@ -1032,13 +1032,25 @@ pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
     let local_path = model_path(&manifest.model.artifact);
 
     let result = match action {
-        "open-model-folder" => ensure_parent_dir(&local_path).map(|()| {
-            (
-                "Ready",
-                "The local model folder exists.".to_string(),
-                "Place or download the pinned GGUF file there, then verify checksum.".to_string(),
-            )
-        }),
+        "open-model-folder" => {
+            let folder = local_path
+                .parent()
+                .ok_or_else(|| {
+                    format!(
+                        "Could not resolve model folder for {}",
+                        local_path.display()
+                    )
+                })
+                .and_then(crate::local_shell::open_local_folder);
+            folder.map(|()| {
+                (
+                    "Ready",
+                    "The local model folder is open.".to_string(),
+                    "Place or download the pinned GGUF file there, then verify checksum."
+                        .to_string(),
+                )
+            })
+        }
         "verify-checksum" => verify_and_register_model_artifact(&manifest, &local_path).map(|()| {
             (
                 "Verified",
@@ -1239,10 +1251,11 @@ mod tests {
     }
 
     #[test]
-    fn model_open_folder_action_creates_local_folder() {
+    fn model_open_folder_action_creates_and_opens_local_folder() {
         with_temp_state_dir(|root| {
             let result = model_action("open-model-folder").expect("action response");
             assert!(result.accepted);
+            assert_eq!(result.message, "The local model folder is open.");
             assert!(root.join("Data").join("models").is_dir());
         });
     }

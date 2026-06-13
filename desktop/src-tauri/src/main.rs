@@ -1,5 +1,6 @@
 mod auth;
 mod first_run;
+mod local_shell;
 mod model;
 mod module_registry;
 mod supervisor;
