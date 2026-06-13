@@ -1,6 +1,6 @@
 # Downstream Pin Lockstep Record
 
-Status date: 2026-05-26
+Status date: 2026-06-13
 
 This file records the downstream module version/pin changes that accompany the
 umbrella release-truth updates. It exists because the CivicSuite org uses
@@ -78,6 +78,29 @@ For the 2026-05-29 city-core post-merge source-pin bump:
 | CivicSuite/civicrecords-ai | `master`, post-PR-#101 merge | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `ae34a499c1e0794d3322146369f798f19bd0a146` |
 | CivicSuite/civicclerk | `main`, post-PR-#171 merge | 1.0.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `f39d0eeccc6804b86c542b4cdffe4fab0665d503` |
 | CivicSuite/civiccode | `main`, post-PR-#76 merge | 1.0.8 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `a960bba0a2249d118b593dd61bee3a65a69a9d77` |
+
+For the 2026-06-13 city-core source-pin refresh and CivicClerk v1.0.4 release:
+
+| Repo | Release / default branch context | Package version | CivicCore pin | Installer source_commit |
+|---|---|---:|---|---|
+| CivicSuite/civicrecords-ai | `master`, post-PR-#102 soft AI dependency fix | 1.7.3 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `538766523ad90ee7553b0ffa75b626d3d4850b17` |
+| CivicSuite/civicclerk | v1.0.4 release tag `9f63ab79a0a75611ec3221d77e8577a95501e4c7`; `main`, post-PR-#176 workflow repair | 1.0.4 | `civiccore-1.2.0-py3-none-any.whl#sha256=a94ce958e36fb03c8d961e4db4672ce5bcfa25765c57d75886e999cf15703ec7` | `dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5` |
+
+CivicClerk v1.0.4 supersedes v1.0.3 as the city-core clerk package/source
+truth. The v1.0.4 release object peels to `9f63ab79a0a75611ec3221d77e8577a95501e4c7`.
+Release workflow run `27451630904` passed preflight and verify-build, including
+attestation verification, but the draft-release upload step had a directory glob
+bug. PR #176 repaired that workflow for future tags; the already-passed v1.0.4
+artifact set was then completed from the workflow artifact after checksum
+verification. The installer `source_commit` intentionally tracks the current
+CivicClerk `main` head `dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5`, which is the
+same v1.0.4 source line plus the workflow-only release repair. The CivicRecords
+AI source pin also advances to post-PR-#102 `master` head
+`538766523ad90ee7553b0ffa75b626d3d4850b17` so the remote-only suite verifier and
+vendored-source installer stay aligned with the default branch; this does not
+change the published CivicRecords AI v1.7.3 release object. This does not change
+CivicCore or CivicCode pins, and it does not promote the suite beyond the
+existing beta-ready truth-reconciled city-core boundary.
 
 For the CivicCore v1.0.1 security-hardening recovery patch:
 

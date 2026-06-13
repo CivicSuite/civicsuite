@@ -187,8 +187,8 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
 | CivicCore | 1.2.0 | shared platform | none | `9f7e3a5a0156` | `v1_2_0_shared_ingestion_shipped` |
-| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `ae34a499c1e0` | `v1_7_3_city_core_release_car` |
-| CivicClerk | 1.0.3 | meetings workflow | `civiccore` | `f39d0eeccc68` | `v1_0_3_city_core_release_car` |
+| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `538766523ad9` | `v1_7_3_city_core_release_car` |
+| CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `dae807ec9d13` | `v1_0_4_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
 
 Excluded from city-core:

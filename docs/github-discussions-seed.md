@@ -30,7 +30,7 @@ Welcome to the CivicSuite community space. This post is a snapshot of where the 
 
 - `civiccore` v1.2.0 - the shared platform package for the active city-core profile. Repo: <https://github.com/CivicSuite/civiccore>.
 - `civicrecords-ai` v1.7.3 - open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
-- `civicclerk` v1.0.3 - meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/CivicSuite/civicclerk>.
+- `civicclerk` v1.0.4 - meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/CivicSuite/civicclerk>.
 - `civiccode` v1.0.8 - municipal code search, cited Q&A, and Clerk ordinance handoff support. Repo: <https://github.com/CivicSuite/civiccode>.
 
 **Planned or queued:**

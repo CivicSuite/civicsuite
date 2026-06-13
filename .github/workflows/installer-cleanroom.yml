@@ -83,14 +83,14 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicrecords-ai
-          ref: ae34a499c1e0794d3322146369f798f19bd0a146
+          ref: 538766523ad90ee7553b0ffa75b626d3d4850b17
           path: modules/civicrecords-ai
 
       - name: Check out CivicClerk bundle source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: f39d0eeccc6804b86c542b4cdffe4fab0665d503
+          ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5
           path: modules/civicclerk
 
       - name: Check out CivicCode bundle source
@@ -129,6 +129,7 @@ jobs:
     timeout-minutes: 120
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - profile: clerk-core
@@ -147,14 +148,14 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicrecords-ai
-          ref: ae34a499c1e0794d3322146369f798f19bd0a146
+          ref: 538766523ad90ee7553b0ffa75b626d3d4850b17
           path: modules/civicrecords-ai
 
       - name: Check out CivicClerk bundle source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: f39d0eeccc6804b86c542b4cdffe4fab0665d503
+          ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5
           path: modules/civicclerk
 
       - name: Check out CivicCode bundle source

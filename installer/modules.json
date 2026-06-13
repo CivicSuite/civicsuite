@@ -177,7 +177,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.7.3",
-                        "source_commit":  "ae34a499c1e0794d3322146369f798f19bd0a146"
+                        "source_commit":  "538766523ad90ee7553b0ffa75b626d3d4850b17"
                     },
                     {
                         "id":  "civicclerk",
@@ -192,7 +192,7 @@
                                              "civiccore"
                                          ],
                         "default_port":  8010,
-                        "installer_status":  "v1_0_3_city_core_release_car",
+                        "installer_status":  "v1_0_4_city_core_release_car",
                         "proof_required":  [
                                                "install",
                                                "health_check",
@@ -201,8 +201,8 @@
                                                "backup",
                                                "restore"
                                            ],
-                        "current_version":  "1.0.3",
-                        "source_commit":  "f39d0eeccc6804b86c542b4cdffe4fab0665d503"
+                        "current_version":  "1.0.4",
+                        "source_commit":  "dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5"
                     },
                     {
                         "id":  "civiccode",
