@@ -309,6 +309,17 @@ for (const phrase of [
   }
 }
 
+for (const phrase of [
+  "renderGuidedModuleReview",
+  "Review Before Removing",
+  "Existing module data is not deleted.",
+  "data-module-review-confirm"
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop module manager missing guided review phrase: ${phrase}`);
+  }
+}
+
 for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   if (runtimeManifest.operator_path[key] !== false) {
     throw new Error(`Windows runtime operator path cannot require ${key}`);

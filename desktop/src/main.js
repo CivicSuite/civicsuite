@@ -493,6 +493,8 @@ const state = {
   },
   pendingSupervisorReviewAction: null,
   pendingSupervisorReviewServiceId: null,
+  pendingModuleReviewAction: null,
+  pendingModuleReviewId: null,
   pendingWorkReviewAction: null,
   workSelection: {
     meetingId: "",
@@ -2424,6 +2426,137 @@ function renderModuleRow(module, { actions = false } = {}) {
   `;
 }
 
+const GUIDED_MODULE_ACTIONS = new Set([
+  "install-module",
+  "enable-module",
+  "disable-module",
+  "update-module",
+  "remove-module"
+]);
+
+function moduleForReview(moduleId) {
+  return state.app.modules.find((module) => module.id === moduleId) || null;
+}
+
+function guidedModuleReviewForAction(action, moduleId) {
+  const module = moduleForReview(moduleId);
+  if (!module) return null;
+  const moduleName = module.display_name || module.id;
+  const version = module.version || "No release version";
+  const common = {
+    module: "Module Manager",
+    subject: moduleName,
+    sources: [
+      `Module id: ${module.id}`,
+      `Pinned version: ${version}`,
+      `CivicCore requirement: ${module.civiccore_requirement || "CivicCore foundation"}`
+    ]
+  };
+  const reviews = {
+    "install-module": {
+      title: `Review Before Installing ${moduleName}`,
+      confirmLabel: "Install Module",
+      status: "Profile install requested",
+      changes: "Adds this ready module to the active local profile and enables its work area when dependencies are enabled.",
+      visibility: "Local administrator only. Staff will see the module work area after the profile is saved.",
+      audit: "Updates the local module-selection record and keeps the action in the profile history.",
+      retry: "If dependencies or proof gates are missing, the module is not installed and the current profile remains unchanged."
+    },
+    "enable-module": {
+      title: `Review Before Enabling ${moduleName}`,
+      confirmLabel: "Enable Module",
+      status: "Module enable requested",
+      changes: "Shows this installed module's work area again and allows its city-work actions.",
+      visibility: "Local administrator only. Staff with access will see the module after it is enabled.",
+      audit: "Updates the local enabled-module list without changing existing module data.",
+      retry: "If a dependency is disabled, CivicSuite reports the dependency and leaves the module disabled."
+    },
+    "disable-module": {
+      title: `Review Before Disabling ${moduleName}`,
+      confirmLabel: "Disable Module",
+      status: "Module disable requested",
+      changes: "Hides this module's work area and blocks its city-work actions. Existing module data remains installed.",
+      visibility: "Local administrator only. Staff will no longer see this module while it is disabled.",
+      audit: "Updates the local enabled-module list without deleting records, exports, or settings.",
+      retry: "If another enabled module depends on it, CivicSuite reports that dependency before changing the profile."
+    },
+    "update-module": {
+      title: `Review Before Checking ${moduleName} Updates`,
+      confirmLabel: "Check Update",
+      status: "Manifest update check requested",
+      changes: "Checks this module against the pinned versioned manifest. This does not download unverified code.",
+      visibility: "Local administrator only. Staff workflows remain available while the check runs.",
+      audit: "Returns the current module version state from the local module manifest.",
+      retry: "If the module is not installed, CivicSuite asks you to install it before update checks."
+    },
+    "remove-module": {
+      title: `Review Before Removing ${moduleName} From Profile`,
+      confirmLabel: "Remove From Profile",
+      status: "Profile removal requested",
+      changes: "Removes this module from the active local profile and hides its work area. Existing module data is not deleted.",
+      visibility: "Local administrator only. Staff will not see this module until it is installed again.",
+      audit: "Updates the local module-selection record; preserved module data remains covered by profile backup and restore.",
+      retry: "If another installed module depends on it, CivicSuite reports that dependency before changing the profile."
+    }
+  };
+  const review = reviews[action];
+  return review ? { ...common, ...review } : null;
+}
+
+function requiresGuidedModuleReview(action) {
+  return GUIDED_MODULE_ACTIONS.has(action);
+}
+
+function renderGuidedModuleReview() {
+  const review = guidedModuleReviewForAction(state.pendingModuleReviewAction, state.pendingModuleReviewId);
+  if (!review) return "";
+  return `
+    <section class="guided-review" aria-labelledby="module-review-title">
+      <div>
+        <p class="eyebrow">${escapeHtml(review.module)}</p>
+        <h3 id="module-review-title">${escapeHtml(review.title)}</h3>
+        <dl class="review-grid">
+          <div>
+            <dt>Subject</dt>
+            <dd>${escapeHtml(review.subject)}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>${escapeHtml(review.status)}</dd>
+          </div>
+          <div>
+            <dt>What will change</dt>
+            <dd>${escapeHtml(review.changes)}</dd>
+          </div>
+          <div>
+            <dt>Who can see it</dt>
+            <dd>${escapeHtml(review.visibility)}</dd>
+          </div>
+          <div>
+            <dt>Sources and evidence</dt>
+            <dd>${review.sources.map((source) => `<span>${escapeHtml(source)}</span>`).join("")}</dd>
+          </div>
+          <div>
+            <dt>Audit trail</dt>
+            <dd>${escapeHtml(review.audit)}</dd>
+          </div>
+          <div>
+            <dt>Failure and retry</dt>
+            <dd>${escapeHtml(review.retry)}</dd>
+          </div>
+        </dl>
+        <button
+          type="button"
+          class="primary-action"
+          data-module-review-confirm="${state.pendingModuleReviewAction}"
+          data-module-id="${escapeHtml(state.pendingModuleReviewId)}"
+        >Confirm ${escapeHtml(review.confirmLabel)}</button>
+        <button type="button" class="secondary-action" data-module-review-cancel>Cancel Review</button>
+      </div>
+    </section>
+  `;
+}
+
 function runtimeServiceForReview(serviceId) {
   return (state.app.health || []).find((item) => item.id === serviceId) || null;
 }
@@ -2624,10 +2757,11 @@ function renderModules() {
       </div>
     </section>
     ${renderActionResult()}
+    ${renderGuidedModuleReview()}
     <section class="page-heading compact-heading">
       <p class="eyebrow">Module Manager</p>
       <h2>City Core Modules</h2>
-      <p>CivicCore stays installed. Product modules can be enabled or disabled without deleting their local data.</p>
+      <p>CivicCore stays installed. Product modules can be installed, updated, enabled, disabled, or removed from this profile without silently deleting their local data.</p>
     </section>
     <section class="section-band">
       <div class="section-title">
@@ -2808,6 +2942,8 @@ function bindEvents() {
       state.pendingWorkReviewAction = null;
       state.pendingSupervisorReviewAction = null;
       state.pendingSupervisorReviewServiceId = null;
+      state.pendingModuleReviewAction = null;
+      state.pendingModuleReviewId = null;
       render();
       byId("main-content")?.focus();
     });
@@ -2818,6 +2954,8 @@ function bindEvents() {
       state.pendingWorkReviewAction = null;
       state.pendingSupervisorReviewAction = null;
       state.pendingSupervisorReviewServiceId = null;
+      state.pendingModuleReviewAction = null;
+      state.pendingModuleReviewId = null;
       render();
     });
   });
@@ -2833,6 +2971,8 @@ function bindEvents() {
   document.querySelectorAll("[data-module-profile-id]").forEach((input) => {
     input.addEventListener("change", () => {
       state.moduleDraft.profileId = input.dataset.moduleProfileId;
+      state.pendingModuleReviewAction = null;
+      state.pendingModuleReviewId = null;
       if (state.moduleDraft.profileId === "city-core") {
         state.moduleDraft.selectedModuleIds = [...CITY_CORE_PRODUCT_MODULE_IDS];
       }
@@ -2850,12 +2990,26 @@ function bindEvents() {
       }
       state.moduleDraft.profileId = "custom";
       state.moduleDraft.selectedModuleIds = Array.from(selectedIds);
+      state.pendingModuleReviewAction = null;
+      state.pendingModuleReviewId = null;
       render();
     });
   });
   document.querySelectorAll("[data-module-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleModuleAction(button.dataset.moduleAction, button.dataset.moduleId);
+    });
+  });
+  document.querySelectorAll("[data-module-review-confirm]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleModuleAction(button.dataset.moduleReviewConfirm, button.dataset.moduleId, { confirmed: true });
+    });
+  });
+  document.querySelectorAll("[data-module-review-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.pendingModuleReviewAction = null;
+      state.pendingModuleReviewId = null;
+      render();
     });
   });
   document.querySelectorAll("[data-first-run-action]").forEach((button) => {
@@ -3000,7 +3154,16 @@ async function handleFirstRunAction(action, stepId) {
   render();
 }
 
-async function handleModuleAction(action, moduleId) {
+async function handleModuleAction(action, moduleId, { confirmed = false } = {}) {
+  if (requiresGuidedModuleReview(action) && !confirmed) {
+    state.pendingModuleReviewAction = action;
+    state.pendingModuleReviewId = moduleId;
+    state.actionResult = null;
+    render();
+    return;
+  }
+  state.pendingModuleReviewAction = null;
+  state.pendingModuleReviewId = null;
   if (!hasTauriBridge()) {
     state.actionResult = {
       accepted: false,
