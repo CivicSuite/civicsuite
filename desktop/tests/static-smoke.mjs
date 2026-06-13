@@ -11,8 +11,10 @@ const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.ns
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
 const runtimePayloadManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-runtime-payloads.json"), "utf8"));
+const runtimeSourcesManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-runtime-sources.json"), "utf8"));
 const firstRunManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-first-run.json"), "utf8"));
 const modelManifest = JSON.parse(readFileSync(join(root, "runtime", "gemma4-model.json"), "utf8"));
+const runtimePayloadScript = readFileSync(join(root, "scripts", "prepare-runtime-payload.ps1"), "utf8");
 
 const requiredUiPhrases = [
   "Meetings & Notices",
@@ -102,6 +104,29 @@ if (runtimeManifest.local_only !== true) {
 
 if (runtimePayloadManifest.profile !== "windows-local-1.0" || runtimePayloadManifest.local_only !== true) {
   throw new Error("Windows runtime payload manifest must target the local-only Windows profile");
+}
+
+if (runtimeSourcesManifest.profile !== "windows-local-1.0") {
+  throw new Error("Windows runtime sources manifest must target the Windows profile");
+}
+
+for (const sourceKey of ["postgres", "pgvector", "python", "ollama"]) {
+  if (!runtimeSourcesManifest.sources[sourceKey]) {
+    throw new Error(`Windows runtime sources manifest missing source: ${sourceKey}`);
+  }
+}
+
+for (const phrase of [
+  "Install-PostgresPayload",
+  "Install-PythonPayload",
+  "Install-OllamaPayload",
+  "Install-PgvectorPayload",
+  "MSVC cl.exe and nmake.exe are required",
+  "runtime-payload-lock.json"
+]) {
+  if (!runtimePayloadScript.includes(phrase)) {
+    throw new Error(`Windows runtime payload script missing phrase: ${phrase}`);
+  }
 }
 
 for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {

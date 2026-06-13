@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "profile": "windows-local-1.0",
+  "payload_root": "desktop/runtime/payload",
+  "sources": {
+    "postgres": {
+      "id": "postgres-17",
+      "label": "PostgreSQL 17 Windows x86-64 binaries",
+      "provider": "EDB",
+      "download_page": "https://www.enterprisedb.com/download-postgresql-binaries",
+      "major_version": 17,
+      "archive_root_hint": "pgsql"
+    },
+    "pgvector": {
+      "id": "pgvector",
+      "label": "pgvector extension for PostgreSQL",
+      "provider": "pgvector",
+      "git_url": "https://github.com/pgvector/pgvector.git",
+      "tag": "v0.8.2",
+      "requires_msvc": true
+    },
+    "python": {
+      "id": "cpython-embed",
+      "label": "CPython embeddable Windows x86-64 runtime",
+      "provider": "Python Software Foundation",
+      "version": "3.13.5",
+      "download_url": "https://www.python.org/ftp/python/3.13.5/python-3.13.5-embed-amd64.zip",
+      "pth_file": "python313._pth"
+    },
+    "ollama": {
+      "id": "ollama-windows",
+      "label": "Ollama Windows x86-64 runtime",
+      "provider": "Ollama",
+      "release_api": "https://api.github.com/repos/ollama/ollama/releases/latest",
+      "asset_name_pattern": "ollama-windows-amd64.zip"
+    }
+  }
+}
