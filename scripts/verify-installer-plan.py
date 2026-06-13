@@ -25,6 +25,9 @@ INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 PACKAGE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-installer-package-cleanroom.py"
 CLEANROOM_RUNNER = ROOT / "scripts" / "run-minimal-cleanroom.py"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
+MODULE_MANIFEST_CONTRACT_VERIFIER = (
+    ROOT / "scripts" / "verify-module-manifest-contract.py"
+)
 WINDOWS_LAUNCHER = ROOT / "installer" / "windows" / "plan-installer.ps1"
 MACOS_LAUNCHER = ROOT / "installer" / "macos" / "plan-installer.sh"
 LINUX_LAUNCHER = ROOT / "installer" / "linux" / "plan-installer.sh"
@@ -765,6 +768,21 @@ def check_manifest(data: dict[str, object]) -> list[str]:
                 )
 
     return errors
+
+
+def check_module_manifest_contract() -> list[str]:
+    if not MODULE_MANIFEST_CONTRACT_VERIFIER.is_file():
+        return [fail(f"missing {MODULE_MANIFEST_CONTRACT_VERIFIER.relative_to(ROOT)}")]
+    result = subprocess.run(
+        [sys.executable, str(MODULE_MANIFEST_CONTRACT_VERIFIER)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode == 0:
+        return []
+    detail = (result.stdout + result.stderr).strip()
+    return [fail(detail or "module manifest contract verification failed")]
 
 
 def check_planner(data: dict[str, object]) -> list[str]:
@@ -2449,6 +2467,7 @@ def main() -> int:
             try:
                 manifest = load_manifest()
                 errors.extend(check_manifest(manifest))
+                errors.extend(check_module_manifest_contract())
                 errors.extend(check_planner(manifest))
                 errors.extend(check_launchers())
             except Exception as exc:

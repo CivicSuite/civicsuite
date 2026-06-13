@@ -1,6 +1,40 @@
 # CivicSuite Project Control Plane
 
-Last updated: 2026-05-18
+Last updated: 2026-06-13
+
+## Current Authorized Target
+
+Active target: CivicSuite Windows Local 1.0 city-core desktop completion.
+
+Scott explicitly superseded the stale CivicInspect queue on 2026-06-13 and
+authorized implementation of the Windows Local 1.0 plan. The target is a real
+Tauri/WebView2 Windows desktop application, local portable-native runtime,
+non-technical installer, Gemma 4 12B quantization-aware local model path,
+CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
+contract that lets future modules plug into the existing app one at a time.
+
+Current working slice: Windows desktop design control and module package
+contract foundation.
+
+Definition of Done for this slice:
+
+- Windows desktop design control exists and names the clerk-first UX rules.
+- Module package ADR exists and defines the future module plug-in contract.
+- `installer/modules.json` carries the contract version.
+- A verifier and tests enforce the registry-level contract.
+- The old active queue no longer silently routes resumed work back to
+  CivicInspect.
+- audit-lite runs for this slice and findings are fixed before push.
+
+Stop conditions:
+
+- Any action requires signing keys, paid services, production secrets,
+  destructive data operations, history rewrite, tag deletion, or release
+  publication.
+- Validation reveals that implementing the Windows app requires removing real
+  existing module functionality.
+- A clean-machine test directive is sent and reports a human-only external
+  blocker.
 
 ## Project Goal
 

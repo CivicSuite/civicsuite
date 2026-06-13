@@ -1,6 +1,47 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-05-18
+Last updated: 2026-06-13
+
+## Active Target Override
+
+1. **CivicSuite Windows Local 1.0 city-core desktop completion - ACTIVE**
+
+Why now: Scott explicitly reset the target on 2026-06-13. The old module queue
+did not deliver the required non-technical Windows installable product. The
+active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
+portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
+UX, city-core module completion, and future module package foundation.
+
+Current slice: Windows desktop design control and module package contract.
+
+Slice Definition of Done:
+
+- Create the Windows desktop design control from the existing suite/product UX
+  specs.
+- Create the module package contract ADR and machine-readable contract.
+- Validate the existing 27 product modules plus CivicCore registry shape.
+- Keep city-core selected in order: CivicCore, CivicRecords AI, CivicClerk,
+  CivicCode.
+- Keep Custom available for future module selection.
+- Prove the validator with tests.
+- Run audit-lite and fix all slice findings.
+
+Next slices after this foundation:
+
+2. Tauri/WebView2 desktop shell scaffold and local app navigation.
+3. Portable runtime supervisor and Windows service/process lifecycle.
+4. Installer and first-run wizard without Docker/WSL.
+5. Gemma 4 12B quantization-aware model download/readiness path.
+6. CivicCore local platform completion for auth, audit, module registry, model
+   registry, queue, health, backup/restore, and installer APIs.
+7. CivicRecords AI Windows local persistence and workflow closure.
+8. CivicClerk persistence and public-meeting workflow closure.
+9. CivicCode local integration and handoff workflow closure.
+10. Cross-module workflows, full walkthrough, audit-full, clean-machine gate,
+    and release closeout.
+
+The historical queue below is retained as recovery history only. It is not the
+active target while this override is in force.
 
 ## Completed Target
 
