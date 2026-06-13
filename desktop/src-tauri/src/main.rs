@@ -262,7 +262,7 @@ fn city_work_action(
         }
     }
     let mut result = workflows::city_work_action(&action, payload.as_ref())?;
-    if !admin_signed_in && public_action {
+    if !admin_signed_in && public_action && action != "lookup-public-records-request" {
         result.state = workflows::city_work_public_projection(&result.state);
     }
     Ok(result)
@@ -678,6 +678,36 @@ mod tests {
             assert!(public_result.accepted);
             assert!(public_result.message.contains("Public records request"));
             assert!(public_result.state.records_requests.is_empty());
+
+            let lookup_payload = serde_json::json!({
+                "trackingNumber": "REQ-0001",
+                "requesterContact": "riley@example.org"
+            });
+            let lookup_result = city_work_action(
+                "lookup-public-records-request".to_string(),
+                Some(lookup_payload),
+            )
+            .expect("public request status can be checked without admin session");
+            assert!(lookup_result.accepted);
+            assert_eq!(lookup_result.status, "Status found");
+            assert_eq!(lookup_result.state.records_requests.len(), 1);
+            assert_eq!(
+                lookup_result.state.records_requests[0].requester_contact,
+                ""
+            );
+
+            let wrong_lookup_payload = serde_json::json!({
+                "trackingNumber": "REQ-0001",
+                "requesterContact": "wrong@example.org"
+            });
+            let wrong_lookup_result = city_work_action(
+                "lookup-public-records-request".to_string(),
+                Some(wrong_lookup_payload),
+            )
+            .expect("public request status mismatch is safe");
+            assert!(!wrong_lookup_result.accepted);
+            assert_eq!(wrong_lookup_result.status, "No match");
+            assert!(wrong_lookup_result.state.records_requests.is_empty());
 
             let staff_payload = serde_json::json!({
                 "requester": "Staff-only",

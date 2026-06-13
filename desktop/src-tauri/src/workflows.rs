@@ -1993,7 +1993,12 @@ fn public_records_request_projection(request: &RecordsRequest) -> Option<Records
     if !is_released {
         return None;
     }
+    Some(public_records_request_status_projection(request))
+}
+
+fn public_records_request_status_projection(request: &RecordsRequest) -> RecordsRequest {
     let mut public_request = request.clone();
+    public_request.requester_contact.clear();
     public_request.assigned_to.clear();
     public_request.clarification_notes.clear();
     public_request.search_notes.clear();
@@ -2001,7 +2006,55 @@ fn public_records_request_projection(request: &RecordsRequest) -> Option<Records
     public_request.fee_estimate.clear();
     public_request.response_draft.clear();
     public_request.approval_notes.clear();
-    Some(public_request)
+    public_request
+}
+
+fn public_records_status_lookup(
+    state: &CityWorkState,
+    payload: Option<&Value>,
+) -> Result<CityWorkActionResult, String> {
+    let tracking_number = payload_string(payload, "trackingNumber")?;
+    let requester_contact = payload_string(payload, "requesterContact")?;
+    let normalized_tracking = tracking_number.trim().to_ascii_lowercase();
+    let normalized_contact = requester_contact.trim().to_ascii_lowercase();
+    let mut public_state = city_work_public_projection(state);
+    let found_request = state.records_requests.iter().find(|request| {
+        request.public_tracking_number.to_ascii_lowercase() == normalized_tracking
+            && request.requester_contact.to_ascii_lowercase() == normalized_contact
+    });
+    if let Some(request) = found_request {
+        let projected_request = public_records_request_status_projection(request);
+        if !public_state
+            .records_requests
+            .iter()
+            .any(|public_request| public_request.id == projected_request.id)
+        {
+            public_state.records_requests.insert(0, projected_request);
+        }
+        return Ok(CityWorkActionResult {
+            accepted: true,
+            action: "lookup-public-records-request".to_string(),
+            status: "Status found",
+            message: format!(
+                "Request {tracking_number} matched the submitted contact and is ready to review."
+            ),
+            next_action:
+                "Review the current status below or contact staff with the request number."
+                    .to_string(),
+            state: public_state,
+            search_results: Vec::new(),
+        });
+    }
+    Ok(CityWorkActionResult {
+        accepted: false,
+        action: "lookup-public-records-request".to_string(),
+        status: "No match",
+        message: "No local request matched that request number and submitted contact.".to_string(),
+        next_action: "Check the request number and contact, or contact the clerk if you need help."
+            .to_string(),
+        state: public_state,
+        search_results: Vec::new(),
+    })
 }
 
 fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
@@ -2053,7 +2106,10 @@ pub fn public_city_work_state() -> Result<CityWorkState, String> {
 pub(crate) fn city_work_action_allows_public(action: &str) -> bool {
     matches!(
         action,
-        "submit-public-comment" | "submit-public-records-request" | "answer-code-question"
+        "submit-public-comment"
+            | "submit-public-records-request"
+            | "lookup-public-records-request"
+            | "answer-code-question"
     )
 }
 
@@ -2080,6 +2136,7 @@ pub fn city_work_action(
         "archive-meeting" => archive_meeting(&mut state, payload)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
         "submit-public-records-request" => submit_public_records_request(&mut state, payload)?,
+        "lookup-public-records-request" => return public_records_status_lookup(&state, payload),
         "request-records-clarification" => request_records_clarification(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
         "record-records-search" => record_records_search(&mut state, payload)?,
@@ -2461,6 +2518,39 @@ mod tests {
             assert_eq!(request.deadline, "Pending clerk deadline review");
             assert!(request.approved_at_unix_seconds.is_none());
             assert!(request.fulfilled_at_unix_seconds.is_none());
+            let public_state = public_city_work_state().expect("public state reads");
+            assert!(public_state.records_requests.is_empty());
+
+            let lookup = serde_json::json!({
+                "trackingNumber": "REQ-0001",
+                "requesterContact": "MORGAN@example.gov"
+            });
+            let lookup_result = city_work_action("lookup-public-records-request", Some(&lookup))
+                .expect("public lookup completes");
+            assert_eq!(lookup_result.status, "Status found");
+            assert_eq!(lookup_result.state.records_requests.len(), 1);
+            let public_request = &lookup_result.state.records_requests[0];
+            assert_eq!(public_request.public_tracking_number, "REQ-0001");
+            assert_eq!(public_request.status, "public intake received");
+            assert_eq!(public_request.requester_contact, "");
+            assert_eq!(public_request.assigned_to, "");
+            assert!(public_request.clarification_notes.is_empty());
+            assert!(public_request.search_notes.is_empty());
+            assert!(public_request.exemption_reviews.is_empty());
+            assert_eq!(public_request.fee_estimate, "");
+            assert_eq!(public_request.response_draft, "");
+            assert!(public_request.approval_notes.is_empty());
+
+            let wrong_contact = serde_json::json!({
+                "trackingNumber": "REQ-0001",
+                "requesterContact": "wrong@example.gov"
+            });
+            let wrong_lookup =
+                city_work_action("lookup-public-records-request", Some(&wrong_contact))
+                    .expect("public lookup handles mismatch");
+            assert!(!wrong_lookup.accepted);
+            assert_eq!(wrong_lookup.status, "No match");
+            assert!(wrong_lookup.state.records_requests.is_empty());
             assert!(state.audit_entries.iter().any(|entry| {
                 entry.module_id == "civicrecords-ai"
                     && entry.action == "submit-public-records-request"

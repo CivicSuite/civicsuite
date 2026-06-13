@@ -397,6 +397,11 @@ const state = {
   workActionResult: null,
   authActionResult: null,
   searchResults: [],
+  publicRecordsLookup: {
+    trackingNumber: "",
+    requesterContact: "",
+    found: false
+  },
   pendingWorkReviewAction: null,
   workSelection: {
     meetingId: "",
@@ -441,6 +446,7 @@ const state = {
     publicRequesterContact: "",
     publicRecordsSummary: "",
     publicRequestLookup: "",
+    publicRequestContact: "",
     recordsSummary: "",
     deadline: "",
     assignedTo: "",
@@ -1471,16 +1477,28 @@ function renderMeetingsWorkflow() {
   `;
 }
 
-function publicRecordsRequests(work) {
-  const lookup = state.workDraft.publicRequestLookup.trim().toLowerCase();
-  return work.records_requests.filter((request) => (
-    request.status === "fulfilled" ||
+function recordsRequestIsReleased(request) {
+  return request.status === "fulfilled" ||
     request.status === "closed" ||
-    Boolean(request.fulfilled_at_unix_seconds) ||
-    (
-      lookup &&
+    Boolean(request.fulfilled_at_unix_seconds);
+}
+
+function publicRecordsLookupVerifiedFor(request) {
+  const lookup = state.workDraft.publicRequestLookup.trim().toLowerCase();
+  const requesterContact = state.workDraft.publicRequestContact.trim().toLowerCase();
+  return Boolean(
+    lookup &&
+      requesterContact &&
+      state.publicRecordsLookup.found &&
+      state.publicRecordsLookup.trackingNumber === lookup &&
+      state.publicRecordsLookup.requesterContact === requesterContact &&
       String(request.public_tracking_number || "").toLowerCase() === lookup
-    )
+  );
+}
+
+function publicRecordsRequests(work) {
+  return work.records_requests.filter((request) => (
+    recordsRequestIsReleased(request) || publicRecordsLookupVerifiedFor(request)
   ));
 }
 
@@ -1544,9 +1562,11 @@ function renderPublicRecordsWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Check Status</h3>
-        <p class="form-help">Use the request number returned after submission when asking staff for an update.</p>
+        <p class="form-help">Use the request number returned after submission and the same email or phone you gave staff.</p>
         <label>Request number <input type="text" data-work-field="publicRequestLookup" value="${state.workDraft.publicRequestLookup}" placeholder="REQ-0001" /></label>
-        <small>Released responses appear below after staff approval, export, and fulfillment. Pending public intake appears only for an exact request-number match.</small>
+        <label>Submitted contact <input type="text" data-work-field="publicRequestContact" value="${state.workDraft.publicRequestContact}" autocomplete="email" /></label>
+        <button type="button" class="secondary-action" data-work-action="lookup-public-records-request">Check Request Status</button>
+        <small>Released responses appear below after staff approval, export, and fulfillment. Pending public intake appears only after the request number and submitted contact match.</small>
       </div>
     </section>
     ${renderWorkActionResult()}
@@ -2411,6 +2431,10 @@ function workPayloadForAction(action) {
       requesterContact: draft.publicRequesterContact,
       summary: draft.publicRecordsSummary
     },
+    "lookup-public-records-request": {
+      trackingNumber: draft.publicRequestLookup,
+      requesterContact: draft.publicRequestContact
+    },
     "request-records-clarification": { ...selected, clarificationNote: draft.clarificationNote },
     "assign-records-request": { ...selected, assignedTo: draft.assignedTo },
     "record-records-search": {
@@ -2511,6 +2535,22 @@ async function handleCityWorkAction(action, { confirmed = false } = {}) {
     state.workActionResult = result;
     state.app.city_work = result.state;
     state.searchResults = result.search_results || [];
+    if (action === "submit-public-records-request") {
+      const trackingNumber = String(result.message || "").match(/\bREQ-\d+\b/)?.[0] || "";
+      if (trackingNumber) {
+        state.workDraft.publicRequestLookup = trackingNumber;
+        state.workDraft.publicRequestContact = state.workDraft.publicRequesterContact;
+      }
+      state.publicRecordsLookup = { trackingNumber: "", requesterContact: "", found: false };
+    }
+    if (action === "lookup-public-records-request") {
+      const trackingNumber = state.workDraft.publicRequestLookup.trim().toLowerCase();
+      const requesterContact = state.workDraft.publicRequestContact.trim().toLowerCase();
+      const found = Boolean((result.state.records_requests || []).some((request) => (
+        String(request.public_tracking_number || "").toLowerCase() === trackingNumber
+      )));
+      state.publicRecordsLookup = { trackingNumber, requesterContact, found };
+    }
   } catch (error) {
     state.workActionResult = {
       accepted: false,

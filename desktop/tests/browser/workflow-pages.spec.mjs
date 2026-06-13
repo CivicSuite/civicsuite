@@ -79,7 +79,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Submit Public Records Request" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Submit Records Request" })).toBeVisible();
   await expect(page.getByLabel("Request number")).toBeVisible();
-  await expect(page.getByText("Pending public intake appears only for an exact request-number match.")).toBeVisible();
+  await expect(page.getByLabel("Submitted contact")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check Request Status" })).toBeVisible();
+  await expect(page.getByText("Pending public intake appears only after the request number and submitted contact match.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
