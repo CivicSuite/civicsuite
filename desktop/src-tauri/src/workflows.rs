@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -70,6 +71,10 @@ pub struct AuditEntry {
     pub action: String,
     pub summary: String,
     pub created_at_unix_seconds: u64,
+    #[serde(default)]
+    pub previous_hash: String,
+    #[serde(default)]
+    pub entry_hash: String,
 }
 
 #[derive(Serialize, Clone)]
@@ -206,14 +211,58 @@ fn payload_optional_string(payload: Option<&Value>, key: &str) -> String {
         .unwrap_or_default()
 }
 
+fn bytes_to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+fn audit_entry_hash(
+    previous_hash: &str,
+    id: &str,
+    module_id: &str,
+    action: &str,
+    summary: &str,
+    created_at_unix_seconds: u64,
+) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(previous_hash.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(id.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(module_id.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(action.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(summary.as_bytes());
+    hasher.update(b"\n");
+    hasher.update(created_at_unix_seconds.to_string().as_bytes());
+    bytes_to_hex(&hasher.finalize())
+}
+
 fn push_audit(state: &mut CityWorkState, module_id: &str, action: &str, summary: String) {
     let id = new_id("audit", state.audit_entries.len());
+    let created_at_unix_seconds = now_unix_seconds();
+    let previous_hash = state
+        .audit_entries
+        .last()
+        .map(|entry| entry.entry_hash.clone())
+        .filter(|hash| !hash.is_empty())
+        .unwrap_or_else(|| "GENESIS".to_string());
+    let entry_hash = audit_entry_hash(
+        &previous_hash,
+        &id,
+        module_id,
+        action,
+        &summary,
+        created_at_unix_seconds,
+    );
     state.audit_entries.push(AuditEntry {
         id,
         module_id: module_id.to_string(),
         action: action.to_string(),
         summary,
-        created_at_unix_seconds: now_unix_seconds(),
+        created_at_unix_seconds,
+        previous_hash,
+        entry_hash,
     });
 }
 
@@ -669,6 +718,30 @@ mod tests {
         result
     }
 
+    fn assert_valid_audit_chain(entries: &[AuditEntry]) {
+        assert!(!entries.is_empty());
+        for (index, entry) in entries.iter().enumerate() {
+            let expected_previous = if index == 0 {
+                "GENESIS".to_string()
+            } else {
+                entries[index - 1].entry_hash.clone()
+            };
+            assert_eq!(entry.previous_hash, expected_previous);
+            assert_eq!(entry.entry_hash.len(), 64);
+            assert_eq!(
+                entry.entry_hash,
+                audit_entry_hash(
+                    &entry.previous_hash,
+                    &entry.id,
+                    &entry.module_id,
+                    &entry.action,
+                    &entry.summary,
+                    entry.created_at_unix_seconds
+                )
+            );
+        }
+    }
+
     #[test]
     fn meeting_workflow_persists_agenda_notice_minutes_and_vote() {
         with_temp_state_dir(|_| {
@@ -693,6 +766,7 @@ mod tests {
             assert_eq!(meeting.exports.len(), 1);
             assert!(PathBuf::from(&meeting.exports[0]).is_file());
             assert!(state.audit_entries.len() >= 5);
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 

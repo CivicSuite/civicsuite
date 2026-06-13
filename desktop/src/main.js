@@ -1084,6 +1084,7 @@ function renderAuditDrawer() {
           <p><strong>${entry.action}</strong></p>
           <p>${entry.summary}</p>
           <small>${new Date(entry.created_at_unix_seconds * 1000).toLocaleString()}</small>
+          ${entry.entry_hash ? `<small>Audit hash ${entry.entry_hash.slice(0, 12)}${entry.previous_hash ? `; previous ${entry.previous_hash.slice(0, 12)}` : ""}</small>` : ""}
         </div>
       `).join("")}
     </aside>
