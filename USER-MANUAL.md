@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-05-28
+**Last verified:** 2026-06-13
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -24,7 +24,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 
 - `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records release car at v1.7.3.
-- `civicclerk` (meetings) is the current meeting workflow release car at v1.0.3.
+- `civicclerk` (meetings) is the current meeting workflow release car at v1.0.4.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
 - The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence. The 2026-05-28 engagement is closing the full independent audit-team finding set before the beta-ready truth-reconciled label is current. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
@@ -127,7 +127,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 |---|---|
 | `civicrecords-ai` | v1.7.3 developer-preview city-core records release car |
 | `civiccore` | Shared platform; v1.2.0 current city-core platform |
-| `civicclerk` | v1.0.3 meeting workflow city-core release car |
+| `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
 | `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
 | `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
