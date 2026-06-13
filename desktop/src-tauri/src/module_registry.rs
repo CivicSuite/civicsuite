@@ -122,7 +122,7 @@ pub struct ModuleProfileSummary {
     pub module_count: usize,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ModuleSelectionState {
     pub profile_id: String,
     pub profile_label: String,
@@ -367,6 +367,91 @@ fn validate_profile(registry: &ModuleRegistry, profile_id: &str) -> Result<(), S
     Ok(())
 }
 
+fn resolve_custom_module_order(
+    registry: &ModuleRegistry,
+    selected_modules: &[String],
+) -> Result<Vec<String>, String> {
+    let module_map = module_index(registry);
+    let selected_product_modules: Vec<&str> = selected_modules
+        .iter()
+        .map(String::as_str)
+        .filter(|module_id| *module_id != "civiccore")
+        .collect();
+    if selected_product_modules.is_empty() {
+        return Err("Custom module selection requires at least one product module.".to_string());
+    }
+
+    let mut ordered = Vec::new();
+    let mut visiting = HashSet::new();
+    let mut visited = HashSet::new();
+
+    fn visit(
+        module_id: &str,
+        module_map: &HashMap<&str, &ModuleDefinition>,
+        visiting: &mut HashSet<String>,
+        visited: &mut HashSet<String>,
+        ordered: &mut Vec<String>,
+    ) -> Result<(), String> {
+        if visited.contains(module_id) {
+            return Ok(());
+        }
+        if !visiting.insert(module_id.to_string()) {
+            return Err(format!("Module dependency cycle includes {module_id}"));
+        }
+        let module = module_map
+            .get(module_id)
+            .ok_or_else(|| format!("Custom selection references unknown module {module_id}"))?;
+        if module.id != "civiccore" && !module.selectable {
+            return Err(format!(
+                "Module {} cannot be selected in a custom Windows Local profile.",
+                module.id
+            ));
+        }
+        validate_installable_module_contract(module)?;
+        for dependency in &module.dependencies {
+            visit(dependency, module_map, visiting, visited, ordered)?;
+        }
+        visiting.remove(module_id);
+        visited.insert(module_id.to_string());
+        ordered.push(module_id.to_string());
+        Ok(())
+    }
+
+    visit(
+        "civiccore",
+        &module_map,
+        &mut visiting,
+        &mut visited,
+        &mut ordered,
+    )?;
+    for module_id in selected_product_modules {
+        visit(
+            module_id,
+            &module_map,
+            &mut visiting,
+            &mut visited,
+            &mut ordered,
+        )?;
+    }
+    Ok(ordered)
+}
+
+fn validate_custom_selection(
+    registry: &ModuleRegistry,
+    installed_module_ids: &[String],
+) -> Result<(), String> {
+    let selected_product_modules: Vec<String> = installed_module_ids
+        .iter()
+        .filter(|module_id| module_id.as_str() != "civiccore")
+        .cloned()
+        .collect();
+    let expected = resolve_custom_module_order(registry, &selected_product_modules)?;
+    if expected != installed_module_ids {
+        return Err("Saved custom module selection does not match dependency order.".to_string());
+    }
+    Ok(())
+}
+
 fn selection_for_profile(
     registry: &ModuleRegistry,
     profile_id: &str,
@@ -427,12 +512,39 @@ pub fn persist_profile_selection(profile_id: &str) -> Result<ModuleSelectionStat
     Ok(selection)
 }
 
+pub fn persist_custom_selection(
+    selected_modules: &[String],
+) -> Result<ModuleSelectionState, String> {
+    let registry = parse_registry(MODULES_JSON)?;
+    let installed_module_ids = resolve_custom_module_order(&registry, selected_modules)?;
+    let installed: HashSet<&str> = installed_module_ids.iter().map(String::as_str).collect();
+    let disabled_module_ids = registry
+        .modules
+        .iter()
+        .filter(|module| !installed.contains(module.id.as_str()))
+        .map(|module| module.id.clone())
+        .collect();
+    let selection = ModuleSelectionState {
+        profile_id: "custom".to_string(),
+        profile_label: "Custom".to_string(),
+        installed_module_ids,
+        disabled_module_ids,
+        last_updated_unix_seconds: now_unix_seconds(),
+    };
+    write_selection(&selection)?;
+    Ok(selection)
+}
+
 pub fn module_selection_state() -> Result<ModuleSelectionState, String> {
     let registry = parse_registry(MODULES_JSON)?;
     let selection = match read_saved_selection()? {
         Some(selection) => selection,
         None => selection_for_profile(&registry, DEFAULT_PROFILE_ID)?,
     };
+    if selection.profile_id == "custom" {
+        validate_custom_selection(&registry, &selection.installed_module_ids)?;
+        return Ok(selection);
+    }
     validate_profile(&registry, &selection.profile_id)?;
     let profile = profile_by_id(&registry, &selection.profile_id)?;
     let expected: HashSet<&str> = profile.modules.iter().map(String::as_str).collect();
@@ -455,14 +567,21 @@ pub fn module_profiles() -> Result<Vec<ModuleProfileSummary>, String> {
     Ok(registry
         .profiles
         .iter()
-        .map(|profile| ModuleProfileSummary {
-            id: profile.id.clone(),
-            label: profile.label.clone(),
-            description: profile.description.clone(),
-            selected: profile.id == selection.profile_id,
-            disabled: profile.disabled,
-            disabled_reason: profile.disabled_reason.clone(),
-            module_count: profile.modules.len(),
+        .map(|profile| {
+            let selected = profile.id == selection.profile_id;
+            ModuleProfileSummary {
+                id: profile.id.clone(),
+                label: profile.label.clone(),
+                description: profile.description.clone(),
+                selected,
+                disabled: profile.disabled,
+                disabled_reason: profile.disabled_reason.clone(),
+                module_count: if selected && profile.id == "custom" {
+                    selection.installed_module_ids.len()
+                } else {
+                    profile.modules.len()
+                },
+            }
         })
         .collect())
 }
@@ -569,6 +688,65 @@ mod tests {
                 persist_profile_selection("city-core").expect("profile selection persists");
             assert_eq!(selection.profile_label, "City Core");
             assert!(root.join("config").join("module-selection.json").is_file());
+        });
+    }
+
+    #[test]
+    fn custom_selection_locks_civiccore_and_resolves_ready_modules() {
+        with_temp_state_dir(|root| {
+            let selection =
+                persist_custom_selection(&["civicclerk".to_string(), "civiccode".to_string()])
+                    .expect("custom selection persists");
+
+            assert_eq!(selection.profile_id, "custom");
+            assert_eq!(
+                selection.installed_module_ids,
+                vec![
+                    "civiccore".to_string(),
+                    "civicclerk".to_string(),
+                    "civiccode".to_string()
+                ]
+            );
+            assert!(root.join("config").join("module-selection.json").is_file());
+            let reloaded = module_selection_state().expect("custom selection reloads");
+            assert_eq!(
+                reloaded.installed_module_ids,
+                selection.installed_module_ids
+            );
+            let profiles = module_profiles().expect("profiles build");
+            assert!(profiles.iter().any(|profile| {
+                profile.id == "custom" && profile.selected && profile.module_count == 3
+            }));
+            let modules = module_summaries().expect("summaries build");
+            assert!(modules
+                .iter()
+                .any(|module| module.id == "civiccore" && module.installed));
+            assert!(modules
+                .iter()
+                .any(|module| module.id == "civicclerk" && module.installed));
+            assert!(modules
+                .iter()
+                .any(|module| module.id == "civicrecords-ai" && !module.installed));
+        });
+    }
+
+    #[test]
+    fn custom_selection_rejects_empty_or_not_ready_modules() {
+        with_temp_state_dir(|_| {
+            let empty = persist_custom_selection(&[]);
+            assert!(empty
+                .expect_err("empty custom selection fails")
+                .contains("at least one product module"));
+
+            let planned = persist_custom_selection(&["civicregwatch".to_string()]);
+            assert!(planned
+                .expect_err("planned module selection fails")
+                .contains("cannot be selected"));
+
+            let not_ready = persist_custom_selection(&["civiczone".to_string()]);
+            assert!(not_ready
+                .expect_err("not-ready module selection fails")
+                .contains("CivicCore 1.2.0"));
         });
     }
 

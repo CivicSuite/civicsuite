@@ -421,6 +421,36 @@ fn payload_string(payload: Option<&serde_json::Value>, key: &str) -> Result<Stri
         .ok_or_else(|| format!("Missing required setup field: {key}"))
 }
 
+fn payload_optional_string(payload: Option<&serde_json::Value>, key: &str) -> Option<String> {
+    payload
+        .and_then(|value| value.get(key))
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+}
+
+fn payload_string_array(
+    payload: Option<&serde_json::Value>,
+    key: &str,
+) -> Result<Vec<String>, String> {
+    let values = payload
+        .and_then(|value| value.get(key))
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| format!("Missing required setup field: {key}"))?;
+    values
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .map(str::trim)
+                .filter(|module_id| !module_id.is_empty())
+                .map(str::to_string)
+                .ok_or_else(|| format!("Setup field {key} must contain module ids"))
+        })
+        .collect()
+}
+
 fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), String> {
     let profile = SavedCityProfile {
         city_name: payload_string(payload, "cityName")?,
@@ -727,9 +757,18 @@ pub fn first_run_action(
     let locations = resolve_locations(&manifest.default_locations);
     match action {
         "choose-location" | "choose-backup" => create_local_locations(&locations)?,
-        "select-modules" => {
-            module_registry::persist_profile_selection("city-core")?;
-        }
+        "select-modules" => match payload_optional_string(payload, "profileId").as_deref() {
+            None | Some("city-core") => {
+                module_registry::persist_profile_selection("city-core")?;
+            }
+            Some("custom") => {
+                let selected_modules = payload_string_array(payload, "selectedModuleIds")?;
+                module_registry::persist_custom_selection(&selected_modules)?;
+            }
+            Some(profile_id) => {
+                module_registry::persist_profile_selection(profile_id)?;
+            }
+        },
         "create-city-profile" => persist_city_profile(payload)?,
         "create-admin" => persist_first_admin(payload)?,
         "review" | "download-model" | "verify-health" | "open-app" | "repair" | "backup"
@@ -915,6 +954,30 @@ mod tests {
                 .expect("module selection can be saved");
             assert!(result.accepted);
             assert!(root.join("config").join("module-selection.json").is_file());
+        });
+    }
+
+    #[test]
+    fn first_run_module_selection_accepts_valid_custom_payload() {
+        with_temp_state_dir(|_| {
+            let payload = serde_json::json!({
+                "profileId": "custom",
+                "selectedModuleIds": ["civicclerk", "civiccode"]
+            });
+            let result = first_run_action("select-modules", Some("modules"), Some(&payload))
+                .expect("custom module selection can be saved");
+            assert!(result.accepted);
+            let selection =
+                module_registry::module_selection_state().expect("selection state reads");
+            assert_eq!(selection.profile_id, "custom");
+            assert_eq!(
+                selection.installed_module_ids,
+                vec![
+                    "civiccore".to_string(),
+                    "civicclerk".to_string(),
+                    "civiccode".to_string()
+                ]
+            );
         });
     }
 
