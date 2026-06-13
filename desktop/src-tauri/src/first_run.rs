@@ -573,6 +573,20 @@ pub fn first_run_action(
                 next_action: bootstrap.next_action,
             });
         }
+        if !model::local_model_ready()? {
+            return Ok(FirstRunActionResult {
+                accepted: false,
+                action: action.to_string(),
+                step_id: Some(target_step_id),
+                status: "Needs attention",
+                message:
+                    "The local Gemma model is not fully ready in the bundled Ollama runtime yet."
+                        .to_string(),
+                next_action:
+                    "Use Local AI model setup to verify the file, start Ollama, and load the pinned model before final health verification."
+                        .to_string(),
+            });
+        }
     }
 
     let locations = resolve_locations(&manifest.default_locations);

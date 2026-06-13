@@ -2,24 +2,28 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json");
-const REQUIRED_ACTIONS: [&str; 5] = [
+const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
+const REQUIRED_ACTIONS: [&str; 6] = [
     "download",
     "resume-download",
+    "load-runtime-model",
     "verify-checksum",
     "open-model-folder",
     "retry",
 ];
-const REQUIRED_READINESS_CHECKS: [&str; 5] = [
+const REQUIRED_READINESS_CHECKS: [&str; 6] = [
     "metadata",
     "artifact-file",
     "checksum",
     "runtime",
+    "runtime-model",
     "registered-model",
 ];
 
@@ -54,6 +58,7 @@ struct ModelDefinition {
     license: String,
     runtime: String,
     ollama_model: String,
+    runtime_model: String,
     format: String,
     quantization: String,
     parameters: String,
@@ -88,6 +93,27 @@ struct ReadinessDefinition {
     label: String,
     required: bool,
     next_action: String,
+}
+
+#[derive(Deserialize, Default)]
+struct OllamaTagsResponse {
+    #[serde(default)]
+    models: Vec<OllamaTag>,
+}
+
+#[derive(Deserialize, Default)]
+struct OllamaTag {
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    model: Option<String>,
+}
+
+#[derive(Default)]
+struct ModelRuntimeProbe {
+    reachable: bool,
+    model_available: bool,
+    message: String,
 }
 
 #[derive(Serialize)]
@@ -127,6 +153,7 @@ pub struct ModelState {
     pub license: String,
     pub runtime: String,
     pub ollama_model: String,
+    pub runtime_model: String,
     pub format: String,
     pub quantization: String,
     pub parameters: String,
@@ -163,6 +190,8 @@ struct RegisteredModel {
     provider: String,
     runtime: String,
     ollama_model: String,
+    #[serde(default)]
+    runtime_model: String,
     artifact_path: String,
     sha256: String,
     registered_at_unix_seconds: u64,
@@ -228,6 +257,13 @@ fn validate_manifest(manifest: &ModelManifest) -> Result<(), String> {
     if !manifest.model.ollama_model.starts_with("hf.co/google/") {
         return Err("Gemma model must use the official Google Hugging Face Ollama id".to_string());
     }
+    if manifest.model.runtime_model.trim().is_empty()
+        || manifest.model.runtime_model == manifest.model.ollama_model
+    {
+        return Err(
+            "Gemma model manifest must define a local Ollama runtime model name".to_string(),
+        );
+    }
     if manifest.model.artifact.file_name != "gemma-4-12b-it-qat-q4_0.gguf" {
         return Err("Gemma model manifest must pin the expected GGUF file name".to_string());
     }
@@ -275,6 +311,20 @@ fn windows_config_root() -> PathBuf {
         .join("config")
 }
 
+fn windows_runtime_root() -> PathBuf {
+    if let Ok(root) = env::var("CIVICSUITE_RUNTIME_ROOT") {
+        return PathBuf::from(root);
+    }
+    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            env::var("LOCALAPPDATA")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
+                .join("CivicSuite")
+        })
+}
+
 fn model_path(artifact: &ArtifactDefinition) -> PathBuf {
     let mut path = windows_data_root();
     for part in artifact.relative_path.split('/') {
@@ -300,6 +350,50 @@ fn checksum_marker_path(local_path: &Path) -> PathBuf {
 
 fn partial_download_path(local_path: &Path) -> PathBuf {
     local_path.with_extension("gguf.part")
+}
+
+fn runtime_modelfile_path(local_path: &Path) -> PathBuf {
+    local_path.with_file_name("gemma-4-12b-it-qat-q4_0.Modelfile")
+}
+
+fn ollama_base_url() -> String {
+    env::var("OLLAMA_BASE_URL")
+        .unwrap_or_else(|_| DEFAULT_OLLAMA_BASE_URL.to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+fn ollama_tags_endpoint() -> String {
+    format!("{}/api/tags", ollama_base_url())
+}
+
+fn ollama_host_env() -> String {
+    ollama_base_url()
+        .strip_prefix("http://")
+        .unwrap_or(DEFAULT_OLLAMA_BASE_URL.trim_start_matches("http://"))
+        .to_string()
+}
+
+fn bundled_ollama_path() -> PathBuf {
+    windows_runtime_root()
+        .join("runtime")
+        .join("ollama")
+        .join("ollama.exe")
+}
+
+fn ollama_executable() -> PathBuf {
+    env::var("CIVICSUITE_OLLAMA_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let bundled = bundled_ollama_path();
+            if bundled.is_file() {
+                bundled
+            } else if cfg!(target_os = "windows") {
+                PathBuf::from("ollama.exe")
+            } else {
+                PathBuf::from("ollama")
+            }
+        })
 }
 
 fn parse_available_disk_override() -> Option<Result<u64, String>> {
@@ -385,6 +479,86 @@ fn checksum_marker_matches(local_path: &Path, expected_sha256: &str) -> bool {
         && std::fs::read_to_string(checksum_marker_path(local_path))
             .map(|value| value.trim().eq_ignore_ascii_case(expected_sha256))
             .unwrap_or(false)
+}
+
+fn http_get_text(endpoint: &str) -> Result<String, String> {
+    let rest = endpoint.strip_prefix("http://").ok_or_else(|| {
+        format!("Only local http endpoints are supported for model readiness: {endpoint}")
+    })?;
+    let (host_port, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let address = host_port
+        .to_socket_addrs()
+        .map_err(|error| format!("Could not resolve Ollama endpoint {host_port}: {error}"))?
+        .next()
+        .ok_or_else(|| format!("Could not resolve Ollama endpoint {host_port}"))?;
+    let mut stream = TcpStream::connect_timeout(&address, Duration::from_millis(800))
+        .map_err(|error| format!("Ollama is not responding at {endpoint}: {error}"))?;
+    let _ = stream.set_read_timeout(Some(Duration::from_millis(800)));
+    let request = format!("GET /{path} HTTP/1.1\r\nHost: {host_port}\r\nConnection: close\r\n\r\n");
+    stream
+        .write_all(request.as_bytes())
+        .map_err(|error| format!("Could not query Ollama readiness: {error}"))?;
+    let mut response = String::new();
+    stream
+        .read_to_string(&mut response)
+        .map_err(|error| format!("Could not read Ollama readiness response: {error}"))?;
+    let status_line = response.lines().next().unwrap_or_default();
+    if !(status_line.starts_with("HTTP/1.1 2") || status_line.starts_with("HTTP/1.0 2")) {
+        return Err(format!("Ollama readiness endpoint returned {status_line}"));
+    }
+    Ok(response
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or_default())
+}
+
+fn parse_ollama_model_names(body: &str) -> Vec<String> {
+    serde_json::from_str::<OllamaTagsResponse>(body)
+        .map(|payload| {
+            payload
+                .models
+                .into_iter()
+                .flat_map(|tag| [tag.name, tag.model])
+                .flatten()
+                .filter(|name| !name.trim().is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn ollama_model_list_contains(body: &str, model_name: &str) -> bool {
+    parse_ollama_model_names(body)
+        .iter()
+        .any(|candidate| candidate.eq_ignore_ascii_case(model_name))
+}
+
+fn probe_model_runtime(manifest: &ModelManifest) -> ModelRuntimeProbe {
+    let endpoint = ollama_tags_endpoint();
+    match http_get_text(&endpoint) {
+        Ok(body) => {
+            let model_available = ollama_model_list_contains(&body, &manifest.model.runtime_model);
+            ModelRuntimeProbe {
+                reachable: true,
+                model_available,
+                message: if model_available {
+                    format!(
+                        "Ollama is responding at {endpoint} and lists {}.",
+                        manifest.model.runtime_model
+                    )
+                } else {
+                    format!(
+                        "Ollama is responding at {endpoint}, but {} is not loaded yet.",
+                        manifest.model.runtime_model
+                    )
+                },
+            }
+        }
+        Err(message) => ModelRuntimeProbe {
+            reachable: false,
+            model_available: false,
+            message,
+        },
+    }
 }
 
 fn sha256_file(local_path: &Path) -> Result<String, String> {
@@ -475,6 +649,7 @@ fn register_verified_model(manifest: &ModelManifest, local_path: &Path) -> Resul
         provider: manifest.model.provider.clone(),
         runtime: manifest.model.runtime.clone(),
         ollama_model: manifest.model.ollama_model.clone(),
+        runtime_model: manifest.model.runtime_model.clone(),
         artifact_path: local_path.to_string_lossy().to_string(),
         sha256: manifest.model.artifact.sha256.clone(),
         registered_at_unix_seconds: now_unix_seconds(),
@@ -499,6 +674,80 @@ fn verify_and_register_model_artifact(
     register_verified_model(manifest, local_path)
 }
 
+fn load_model_into_runtime(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
+    if !model_artifact_verified(local_path, &manifest.model.artifact) {
+        return Err(
+            "The pinned Gemma model file must pass checksum verification before it can be loaded into Ollama."
+                .to_string(),
+        );
+    }
+    let runtime = probe_model_runtime(manifest);
+    if !runtime.reachable {
+        return Err(format!(
+            "The local Ollama runtime is not ready yet. {}",
+            runtime.message
+        ));
+    }
+    if runtime.model_available {
+        return Ok(());
+    }
+    let parent = local_path.parent().ok_or_else(|| {
+        format!(
+            "Could not resolve model folder for {}",
+            local_path.display()
+        )
+    })?;
+    let file_name = local_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| {
+            format!(
+                "Could not resolve model file name for {}",
+                local_path.display()
+            )
+        })?;
+    let modelfile_path = runtime_modelfile_path(local_path);
+    fs::write(
+        &modelfile_path,
+        format!("FROM ./{file_name}\nPARAMETER temperature 0.1\n"),
+    )
+    .map_err(|error| format!("Could not write {}: {error}", modelfile_path.display()))?;
+    let executable = ollama_executable();
+    let status = Command::new(&executable)
+        .arg("create")
+        .arg(&manifest.model.runtime_model)
+        .arg("-f")
+        .arg(&modelfile_path)
+        .env("OLLAMA_HOST", ollama_host_env())
+        .current_dir(parent)
+        .status()
+        .map_err(|error| {
+            format!(
+                "Could not load {} with {}: {error}",
+                manifest.model.runtime_model,
+                executable.display()
+            )
+        })?;
+    if !status.success() {
+        return Err(format!(
+            "Ollama could not load {} and exited with code {}.",
+            manifest.model.runtime_model,
+            status
+                .code()
+                .map(|code| code.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        ));
+    }
+    let updated_runtime = probe_model_runtime(manifest);
+    if !updated_runtime.model_available {
+        return Err(format!(
+            "Ollama finished the load command, but {} is still not listed by the local runtime.",
+            manifest.model.runtime_model
+        ));
+    }
+    Ok(())
+}
+
 fn model_registry_matches(manifest: &ModelManifest, local_path: &Path) -> bool {
     read_model_registry()
         .map(|registry| {
@@ -507,6 +756,7 @@ fn model_registry_matches(manifest: &ModelManifest, local_path: &Path) -> bool {
                     && entry
                         .sha256
                         .eq_ignore_ascii_case(&manifest.model.artifact.sha256)
+                    && entry.runtime_model == manifest.model.runtime_model
                     && entry.artifact_path == local_path.to_string_lossy().as_ref()
             })
         })
@@ -594,7 +844,11 @@ fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Resul
     verify_and_register_model_artifact(manifest, local_path)
 }
 
-fn readiness_items(manifest: &ModelManifest, local_path: &Path) -> Vec<ModelReadinessItem> {
+fn readiness_items(
+    manifest: &ModelManifest,
+    local_path: &Path,
+    runtime: &ModelRuntimeProbe,
+) -> Vec<ModelReadinessItem> {
     manifest
         .readiness_checks
         .iter()
@@ -643,12 +897,34 @@ fn readiness_items(manifest: &ModelManifest, local_path: &Path) -> Vec<ModelRead
                         )
                     }
                 }
-                "runtime" => (
-                    false,
-                    "Needs setup",
-                    "The bundled local model runtime has not been started by the installer yet."
-                        .to_string(),
-                ),
+                "runtime" => {
+                    if runtime.reachable {
+                        (true, "OK", runtime.message.clone())
+                    } else {
+                        (false, "Needs start", runtime.message.clone())
+                    }
+                }
+                "runtime-model" => {
+                    if runtime.model_available {
+                        (
+                            true,
+                            "Loaded",
+                            format!(
+                                "{} is available to the local Ollama runtime.",
+                                manifest.model.runtime_model
+                            ),
+                        )
+                    } else if runtime.reachable {
+                        (false, "Needs load", runtime.message.clone())
+                    } else {
+                        (
+                            false,
+                            "Needs runtime",
+                            "Start the bundled Ollama runtime before loading the Gemma model."
+                                .to_string(),
+                        )
+                    }
+                }
                 "registered-model" => {
                     if model_artifact_verified(local_path, &manifest.model.artifact)
                         && model_registry_matches(manifest, local_path)
@@ -691,7 +967,8 @@ pub fn model_state() -> Result<ModelState, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
     let local_path = model_path(&manifest.model.artifact);
-    let checks = readiness_items(&manifest, &local_path);
+    let runtime = probe_model_runtime(&manifest);
+    let checks = readiness_items(&manifest, &local_path, &runtime);
     let ready = checks.iter().all(|check| check.ok);
     let status = if ready { "Ready" } else { "Needs download" };
 
@@ -710,6 +987,7 @@ pub fn model_state() -> Result<ModelState, String> {
         license: manifest.model.license,
         runtime: manifest.model.runtime,
         ollama_model: manifest.model.ollama_model,
+        runtime_model: manifest.model.runtime_model,
         format: manifest.model.format,
         quantization: manifest.model.quantization,
         parameters: manifest.model.parameters,
@@ -735,6 +1013,16 @@ pub fn model_state() -> Result<ModelState, String> {
     })
 }
 
+pub(crate) fn local_model_ready() -> Result<bool, String> {
+    Ok(model_state()?.ready)
+}
+
+pub(crate) fn pinned_runtime_model() -> Result<String, String> {
+    let manifest = parse_manifest()?;
+    validate_manifest(&manifest)?;
+    Ok(manifest.model.runtime_model)
+}
+
 pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -756,6 +1044,14 @@ pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
                 "Verified",
                 "The local Gemma model file matches the pinned size and SHA-256.".to_string(),
                 "Start the bundled model runtime before staff workflows use local AI.".to_string(),
+            )
+        }),
+        "load-runtime-model" => load_model_into_runtime(&manifest, &local_path).map(|()| {
+            (
+                "Loaded",
+                "The pinned Gemma model is available through the local Ollama runtime.".to_string(),
+                "Run final System Health verification before staff workflows use local AI."
+                    .to_string(),
             )
         }),
         "download" | "resume-download" | "retry" => download_model_artifact(&manifest, &local_path)
@@ -811,6 +1107,10 @@ mod tests {
             .model
             .ollama_model
             .contains("gemma-4-12B-it-qat-q4_0-gguf"));
+        assert_eq!(
+            manifest.model.runtime_model,
+            "civicsuite-gemma4-12b-qat:q4_0"
+        );
     }
 
     #[test]
@@ -821,6 +1121,14 @@ mod tests {
         assert!(manifest.download.requires_user_consent);
         assert!(manifest.model.artifact.checksum_required);
         assert!(is_sha256(&manifest.model.artifact.sha256));
+        assert!(manifest
+            .actions
+            .iter()
+            .any(|action| action == "load-runtime-model"));
+        assert!(manifest
+            .readiness_checks
+            .iter()
+            .any(|check| check.id == "runtime-model" && check.required));
     }
 
     #[test]
@@ -837,6 +1145,10 @@ mod tests {
             .checks
             .iter()
             .any(|check| check.id == "registered-model" && !check.ok));
+        assert!(state
+            .checks
+            .iter()
+            .any(|check| check.id == "runtime-model" && !check.ok));
     }
 
     #[test]
@@ -900,6 +1212,16 @@ mod tests {
         let _ = std::fs::remove_file(marker_path);
     }
 
+    #[test]
+    fn ollama_tags_match_pinned_model_name() {
+        let body = r#"{"models":[{"name":"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0","model":"hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0"}]}"#;
+        assert!(ollama_model_list_contains(
+            body,
+            "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0"
+        ));
+        assert!(!ollama_model_list_contains(body, "gemma2:4b"));
+    }
+
     fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
         let _guard = crate::first_run::test_env_lock()
             .lock()
@@ -922,6 +1244,16 @@ mod tests {
             let result = model_action("open-model-folder").expect("action response");
             assert!(result.accepted);
             assert!(root.join("Data").join("models").is_dir());
+        });
+    }
+
+    #[test]
+    fn model_load_runtime_action_requires_verified_artifact() {
+        with_temp_state_dir(|_| {
+            let result = model_action("load-runtime-model").expect("action response");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs attention");
+            assert!(result.message.contains("checksum verification"));
         });
     }
 
@@ -954,6 +1286,10 @@ mod tests {
             assert_eq!(registry.models.len(), 1);
             assert_eq!(registry.models[0].model_id, manifest.model.id);
             assert_eq!(registry.models[0].ollama_model, manifest.model.ollama_model);
+            assert_eq!(
+                registry.models[0].runtime_model,
+                manifest.model.runtime_model
+            );
         });
     }
 

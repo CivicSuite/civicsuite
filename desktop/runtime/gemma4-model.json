@@ -18,6 +18,7 @@
     "license": "Apache-2.0",
     "runtime": "ollama",
     "ollama_model": "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+    "runtime_model": "civicsuite-gemma4-12b-qat:q4_0",
     "format": "GGUF",
     "quantization": "QAT Q4_0",
     "parameters": "12B",
@@ -43,6 +44,7 @@
   "actions": [
     "download",
     "resume-download",
+    "load-runtime-model",
     "verify-checksum",
     "open-model-folder",
     "retry"
@@ -71,6 +73,12 @@
       "label": "Local model runtime",
       "required": true,
       "next_action": "Start the bundled Ollama runtime after the portable runtime is installed."
+    },
+    {
+      "id": "runtime-model",
+      "label": "Gemma model loaded in Ollama",
+      "required": true,
+      "next_action": "Load the verified Gemma model into the local Ollama runtime before staff workflows use AI."
     },
     {
       "id": "registered-model",

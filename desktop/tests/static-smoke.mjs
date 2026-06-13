@@ -214,6 +214,10 @@ if (modelManifest.model.artifact.file_name !== "gemma-4-12b-it-qat-q4_0.gguf") {
   throw new Error("Windows model manifest must pin the expected GGUF file");
 }
 
+if (modelManifest.model.runtime_model !== "civicsuite-gemma4-12b-qat:q4_0") {
+  throw new Error("Windows model manifest must define the local Ollama runtime model name");
+}
+
 if (!modelManifest.model.artifact.checksum_required || !/^[a-f0-9]{64}$/i.test(modelManifest.model.artifact.sha256)) {
   throw new Error("Windows model manifest must require a SHA-256 checksum");
 }
@@ -222,7 +226,7 @@ if (modelManifest.download.automatic || !modelManifest.download.resumable || !mo
   throw new Error("Windows model download must be explicit, resumable, and consent-gated");
 }
 
-for (const checkId of ["metadata", "artifact-file", "checksum", "runtime", "registered-model"]) {
+for (const checkId of ["metadata", "artifact-file", "checksum", "runtime", "runtime-model", "registered-model"]) {
   if (!modelManifest.readiness_checks.some((check) => check.id === checkId && check.required)) {
     throw new Error(`Windows model manifest missing readiness check: ${checkId}`);
   }

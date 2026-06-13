@@ -231,6 +231,7 @@ const fallbackState = {
     license: "Apache-2.0",
     runtime: "ollama",
     ollama_model: "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+    runtime_model: "civicsuite-gemma4-12b-qat:q4_0",
     format: "GGUF",
     quantization: "QAT Q4_0",
     parameters: "12B",
@@ -279,9 +280,17 @@ const fallbackState = {
         id: "runtime",
         label: "Local model runtime",
         ok: false,
-        status: "Needs setup",
-        message: "The bundled local model runtime has not been started by the installer yet.",
+        status: "Needs start",
+        message: "The bundled local model runtime is not responding yet.",
         next_action: "Start the bundled Ollama runtime after the portable runtime is installed."
+      },
+      {
+        id: "runtime-model",
+        label: "Gemma model loaded in Ollama",
+        ok: false,
+        status: "Needs load",
+        message: "The local Ollama runtime does not list civicsuite-gemma4-12b-qat:q4_0 yet.",
+        next_action: "Load the verified Gemma model into the local Ollama runtime before staff workflows use AI."
       },
       {
         id: "registered-model",
@@ -746,6 +755,9 @@ function renderModelActions(model) {
       <button type="button" class="secondary-action" data-model-action="verify-checksum">
         Verify Checksum
       </button>
+      <button type="button" class="secondary-action" data-model-action="load-runtime-model">
+        Load in Ollama
+      </button>
       <button type="button" class="secondary-action" data-model-action="retry">
         Retry Setup
       </button>
@@ -774,8 +786,12 @@ function renderModelReadiness({ compact = false } = {}) {
           <strong>${formatBytes(model.download_size_bytes)} resumable</strong>
         </div>
         <div>
-          <span>Runtime id</span>
+          <span>Official source</span>
           <strong>${model.ollama_model}</strong>
+        </div>
+        <div>
+          <span>Runtime name</span>
+          <strong>${model.runtime_model || model.ollama_model}</strong>
         </div>
         <div>
           <span>Checksum required</span>

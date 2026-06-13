@@ -872,6 +872,19 @@ fn service_environment(service: &ServiceDefinition) -> Result<Vec<(String, Strin
             "CIVICCLERK_OLLAMA_BASE_URL".to_string(),
             "http://127.0.0.1:15434".to_string(),
         ),
+        ("CIVICCODE_AI_MODE".to_string(), "ollama".to_string()),
+        (
+            "CIVICCODE_OLLAMA_URL".to_string(),
+            "http://127.0.0.1:15434".to_string(),
+        ),
+        (
+            "CIVICCODE_OLLAMA_MODEL".to_string(),
+            crate::model::pinned_runtime_model()?,
+        ),
+        (
+            "LLM_MODEL".to_string(),
+            crate::model::pinned_runtime_model()?,
+        ),
         ("CIVICCORE_LLM_PROVIDER".to_string(), "ollama".to_string()),
     ];
     if service.kind.contains("python") || service.binary.ends_with("python.exe") {
@@ -1655,6 +1668,28 @@ mod tests {
         let payload_manifest = parse_payload_manifest().expect("payload manifest parses");
         validate_payload_manifest(&manifest, &payload_manifest)
             .expect("payload manifest covers services");
+    }
+
+    #[test]
+    fn service_environment_pins_city_modules_to_local_gemma_runtime_model() {
+        with_temp_state_dir(|_| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let service = manifest
+                .services
+                .iter()
+                .find(|candidate| candidate.id == "python-services")
+                .expect("python services declared");
+            let env = service_environment(service).expect("service environment builds");
+            assert!(env
+                .iter()
+                .any(|(name, value)| name == "CIVICCODE_AI_MODE" && value == "ollama"));
+            assert!(env.iter().any(|(name, value)| {
+                name == "CIVICCODE_OLLAMA_MODEL" && value == "civicsuite-gemma4-12b-qat:q4_0"
+            }));
+            assert!(env.iter().any(|(name, value)| {
+                name == "LLM_MODEL" && value == "civicsuite-gemma4-12b-qat:q4_0"
+            }));
+        });
     }
 
     #[test]
