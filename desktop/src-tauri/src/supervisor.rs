@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
@@ -122,7 +123,14 @@ struct ServiceRuntimeState {
     last_updated_unix_seconds: u64,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
+struct BackupFileEntry {
+    path: String,
+    size_bytes: u64,
+    sha256: String,
+}
+
+#[derive(Deserialize, Serialize)]
 struct BackupManifest {
     schema_version: u16,
     kind: String,
@@ -133,6 +141,8 @@ struct BackupManifest {
     backup_root: String,
     contains_data: bool,
     contains_config: bool,
+    file_count: usize,
+    files: Vec<BackupFileEntry>,
 }
 
 fn parse_manifest() -> Result<RuntimeManifest, String> {
@@ -381,6 +391,100 @@ fn copy_path_recursive(source: &Path, destination: &Path) -> Result<(), String> 
     Ok(())
 }
 
+fn normalized_backup_path(root: &Path, path: &Path) -> Result<String, String> {
+    let relative = path.strip_prefix(root).map_err(|error| {
+        format!(
+            "Could not calculate backup-relative path for {}: {error}",
+            path.display()
+        )
+    })?;
+    Ok(relative
+        .components()
+        .map(|component| component.as_os_str().to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/"))
+}
+
+fn sha256_file(path: &Path) -> Result<(u64, String), String> {
+    let mut file = fs::File::open(path)
+        .map_err(|error| format!("Could not open {}: {error}", path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut size = 0_u64;
+    let mut buffer = [0_u8; 8192];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|error| format!("Could not read {}: {error}", path.display()))?;
+        if read == 0 {
+            break;
+        }
+        size += read as u64;
+        hasher.update(&buffer[..read]);
+    }
+    Ok((
+        size,
+        hasher
+            .finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
+    ))
+}
+
+fn collect_backup_files(root: &Path) -> Result<Vec<BackupFileEntry>, String> {
+    fn collect(
+        root: &Path,
+        current: &Path,
+        entries: &mut Vec<BackupFileEntry>,
+    ) -> Result<(), String> {
+        if !current.exists() {
+            return Ok(());
+        }
+        let metadata = fs::symlink_metadata(current).map_err(|error| {
+            format!(
+                "Could not inspect backup file {}: {error}",
+                current.display()
+            )
+        })?;
+        if metadata.file_type().is_symlink() {
+            return Err(format!(
+                "Refusing to follow symbolic link in backup: {}",
+                current.display()
+            ));
+        }
+        if metadata.is_dir() {
+            let mut children = fs::read_dir(current)
+                .map_err(|error| {
+                    format!(
+                        "Could not read backup folder {}: {error}",
+                        current.display()
+                    )
+                })?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|error| format!("Could not inspect backup folder entry: {error}"))?;
+            children.sort_by_key(|entry| entry.path());
+            for child in children {
+                collect(root, &child.path(), entries)?;
+            }
+            return Ok(());
+        }
+        if metadata.is_file() && current != root.join("backup-manifest.json") {
+            let (size_bytes, sha256) = sha256_file(current)?;
+            entries.push(BackupFileEntry {
+                path: normalized_backup_path(root, current)?,
+                size_bytes,
+                sha256,
+            });
+        }
+        Ok(())
+    }
+
+    let mut entries = Vec::new();
+    collect(root, root, &mut entries)?;
+    entries.sort_by(|left, right| left.path.cmp(&right.path));
+    Ok(entries)
+}
+
 fn payloads_for_services<'a>(
     payload_manifest: &'a RuntimePayloadManifest,
     services: &[&ServiceDefinition],
@@ -474,6 +578,7 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
     let contains_config = config.exists();
     copy_path_recursive(&data, &destination.join("Data"))?;
     copy_path_recursive(&config, &destination.join("config"))?;
+    let files = collect_backup_files(&destination)?;
 
     let manifest = BackupManifest {
         schema_version: 1,
@@ -485,6 +590,8 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
         backup_root: root.display().to_string(),
         contains_data,
         contains_config,
+        file_count: files.len(),
+        files,
     };
     let contents = serde_json::to_string_pretty(&manifest)
         .map_err(|error| format!("Could not serialize backup manifest: {error}"))?;
@@ -494,6 +601,28 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
     )
     .map_err(|error| format!("Could not write backup manifest: {error}"))?;
     Ok(destination)
+}
+
+fn verified_backup_manifest(source: &Path) -> Result<BackupManifest, String> {
+    let manifest_path = source.join("backup-manifest.json");
+    let contents = fs::read_to_string(&manifest_path)
+        .map_err(|error| format!("Could not read {}: {error}", manifest_path.display()))?;
+    let manifest: BackupManifest = serde_json::from_str(&contents)
+        .map_err(|error| format!("Could not parse backup manifest: {error}"))?;
+    if manifest.schema_version != 1 {
+        return Err(format!(
+            "unsupported backup manifest schema {}",
+            manifest.schema_version
+        ));
+    }
+    let actual_files = collect_backup_files(source)?;
+    if manifest.file_count != manifest.files.len() {
+        return Err("backup manifest file count does not match its file list".to_string());
+    }
+    if manifest.file_count != actual_files.len() || manifest.files != actual_files {
+        return Err("backup files do not match the recorded SHA-256 manifest".to_string());
+    }
+    Ok(manifest)
 }
 
 fn latest_backup_dir() -> Result<Option<PathBuf>, String> {
@@ -1480,6 +1609,38 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
                 .to_string(),
         });
     };
+    let manifest = match verified_backup_manifest(&source) {
+        Ok(manifest) => manifest,
+        Err(error) => {
+            return Ok(SupervisorActionResult {
+                accepted: false,
+                action: "restore".to_string(),
+                service_id: None,
+                status: "Backup verification failed",
+                message: format!(
+                    "CivicSuite did not restore from {} because backup verification failed: {error}.",
+                    source.display()
+                ),
+                next_action: "Use another backup or create a fresh verified backup before retrying restore."
+                    .to_string(),
+            });
+        }
+    };
+    if !manifest.contains_data && !manifest.contains_config {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "restore".to_string(),
+            service_id: None,
+            status: "Backup has no data",
+            message: format!(
+                "CivicSuite did not restore from {} because that backup contains no local data or setup/config files.",
+                source.display()
+            ),
+            next_action:
+                "Choose a backup that contains city data or setup/config before retrying restore."
+                    .to_string(),
+        });
+    }
     let safety_backup = create_backup("pre-restore")?;
     let _ = stop_services(services)?;
     remove_profile_dir(&data_root())?;
@@ -1871,6 +2032,24 @@ mod tests {
                 .is_file());
             assert!(backup.join("config").join("city.json").is_file());
             assert!(backup.join("backup-manifest.json").is_file());
+            let manifest =
+                verified_backup_manifest(&backup).expect("backup hash manifest verifies");
+            assert_eq!(manifest.file_count, manifest.files.len());
+            assert!(manifest.files.iter().any(|file| {
+                file.path == "Data/files/record.txt"
+                    && file.size_bytes == "agenda".len() as u64
+                    && file.sha256.len() == 64
+            }));
+            assert!(manifest.files.iter().any(|file| {
+                file.path == "Data/workflows/city-work.json" && file.sha256.len() == 64
+            }));
+            assert!(manifest.files.iter().any(|file| {
+                file.path == "Data/exports/meetings/packet.md" && file.sha256.len() == 64
+            }));
+            assert!(manifest
+                .files
+                .iter()
+                .any(|file| { file.path == "config/city.json" && file.sha256.len() == 64 }));
         });
     }
 
@@ -1945,6 +2124,70 @@ mod tests {
                 .expect("backups")
                 .filter_map(Result::ok)
                 .any(|entry| entry.file_name().to_string_lossy().contains("pre-restore")));
+        });
+    }
+
+    #[test]
+    fn restore_refuses_tampered_backup_manifest() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(root.join("Data").join("files").join("record.txt"), "before")
+                .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "before").expect("config file");
+            supervisor_action("backup", None).expect("backup response");
+            let backup = latest_backup_dir()
+                .expect("latest backup lookup")
+                .expect("backup exists");
+            fs::write(
+                backup.join("Data").join("files").join("record.txt"),
+                "tampered",
+            )
+            .expect("tamper with backup data");
+            fs::write(
+                root.join("Data").join("files").join("record.txt"),
+                "current",
+            )
+            .expect("current data");
+
+            let result = supervisor_action("restore", None).expect("restore response");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Backup verification failed");
+            assert_eq!(
+                fs::read_to_string(root.join("Data").join("files").join("record.txt"))
+                    .expect("current data kept"),
+                "current"
+            );
+            assert!(!root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .any(|entry| entry.file_name().to_string_lossy().contains("pre-restore")));
+        });
+    }
+
+    #[test]
+    fn restore_refuses_empty_backup() {
+        with_temp_state_dir(|root| {
+            supervisor_action("backup", None).expect("empty backup response");
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(
+                root.join("Data").join("files").join("record.txt"),
+                "current",
+            )
+            .expect("current data");
+
+            let result = supervisor_action("restore", None).expect("restore response");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Backup has no data");
+            assert_eq!(
+                fs::read_to_string(root.join("Data").join("files").join("record.txt"))
+                    .expect("current data kept"),
+                "current"
+            );
         });
     }
 
