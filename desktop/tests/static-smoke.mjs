@@ -6,6 +6,8 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const main = readFileSync(join(root, "src", "main.js"), "utf8");
 const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
+const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
+const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
 const firstRunManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-first-run.json"), "utf8"));
@@ -42,6 +44,43 @@ for (const phrase of ["Docker", "WSL"]) {
 
 if (!tauriConfig.includes('"identifier": "org.civicsuite.desktop"')) {
   throw new Error("Tauri identifier is missing");
+}
+
+if (!tauriConfig.includes('"licenseFile": "../installer/windows/unsigned-beta-install-notice.txt"')) {
+  throw new Error("Tauri NSIS installer must include the unsigned beta install notice");
+}
+
+if (!tauriConfig.includes('"installerHooks": "../installer/windows/nsis-hooks.nsh"')) {
+  throw new Error("Tauri NSIS installer must include the CivicSuite install hook");
+}
+
+for (const phrase of [
+  "not code-signed",
+  "Microsoft Defender SmartScreen",
+  "More info",
+  "Run anyway",
+  "No Docker requirement",
+  "No WSL requirement",
+  "No terminal requirement",
+  "Windows uninstall entry",
+  "repair, backup, restore, and uninstall"
+]) {
+  if (!installerNotice.includes(phrase)) {
+    throw new Error(`installer notice missing phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "NSIS_HOOK_PREINSTALL",
+  "unsigned beta software",
+  "Microsoft Defender SmartScreen",
+  "More info",
+  "Run anyway",
+  "does not require Docker, WSL, or a terminal"
+]) {
+  if (!nsisHooks.includes(phrase)) {
+    throw new Error(`NSIS hook missing phrase: ${phrase}`);
+  }
 }
 
 if (!rustMain.includes('include_str!("../../../installer/modules.json")')) {

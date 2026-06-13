@@ -28,9 +28,14 @@
     "active": true,
     "targets": ["nsis"],
     "publisher": "CivicSuite",
+    "licenseFile": "../installer/windows/unsigned-beta-install-notice.txt",
     "windows": {
       "nsis": {
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "installMode": "currentUser",
+        "installerHooks": "../installer/windows/nsis-hooks.nsh",
+        "languages": ["English"],
+        "startMenuFolder": "CivicSuite"
       }
     }
   }
