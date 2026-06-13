@@ -19,7 +19,17 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.getByRole("button", { name: /Records Requests/ }).click();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Request" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Scope & Search" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Search" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Exemption Review" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Estimate Fee" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Response & Release" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve Response" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Response" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close Request" })).toBeVisible();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
@@ -50,7 +60,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Public Records Status" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Export Response" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Municipal Code Search" })).toBeVisible();

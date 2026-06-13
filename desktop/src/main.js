@@ -388,8 +388,14 @@ const state = {
     requester: "",
     recordsSummary: "",
     deadline: "",
+    assignedTo: "",
+    clarificationNote: "",
+    sourceNote: "",
+    exemptionNote: "",
+    feeEstimate: "",
     responseDraft: "",
     citation: "",
+    approvalNote: "",
     codeTitle: "",
     codeCitation: "",
     codeBody: "",
@@ -965,7 +971,11 @@ function renderMeetingsWorkflow() {
 }
 
 function publicRecordsRequests(work) {
-  return work.records_requests.filter((request) => request.status === "exported");
+  return work.records_requests.filter((request) => (
+    request.status === "fulfilled" ||
+    request.status === "closed" ||
+    Boolean(request.fulfilled_at_unix_seconds)
+  ));
 }
 
 function publicCodeSources(work) {
@@ -986,7 +996,7 @@ function renderPublicRecordsWorkflow() {
           <span class="status-ok">${request.status}</span>
           <h3>${request.requester}</h3>
           <p>${request.summary}</p>
-          <small>Released exports: ${request.exports.length}</small>
+          <small>Due ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
         </article>
       `).join("")}
     </section>
@@ -1011,12 +1021,31 @@ function renderRecordsWorkflow() {
         <button type="button" class="primary-action" data-work-action="create-records-request">Create Request</button>
       </div>
       <div class="workflow-form">
-        <h3>Draft Response</h3>
-        <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
+        <h3>Scope & Search</h3>
+        <label>Assign to <input type="text" data-work-field="assignedTo" value="${state.workDraft.assignedTo}" /></label>
+        <label>Clarification note <textarea data-work-field="clarificationNote">${state.workDraft.clarificationNote}</textarea></label>
+        <label>Search source note <textarea data-work-field="sourceNote">${state.workDraft.sourceNote}</textarea></label>
         <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
+        <label>Exemption review <textarea data-work-field="exemptionNote">${state.workDraft.exemptionNote}</textarea></label>
+        <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${state.workDraft.feeEstimate}" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="assign-records-request">Assign</button>
+          <button type="button" class="secondary-action" data-work-action="request-records-clarification">Request Clarification</button>
+          <button type="button" class="secondary-action" data-work-action="record-records-search">Record Search</button>
+          <button type="button" class="secondary-action" data-work-action="add-records-exemption-review">Add Exemption Review</button>
+          <button type="button" class="secondary-action" data-work-action="estimate-records-fee">Estimate Fee</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Response & Release</h3>
+        <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
+        <label>Approval note <input type="text" data-work-field="approvalNote" value="${state.workDraft.approvalNote}" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="draft-records-response">Save Draft</button>
+          <button type="button" class="secondary-action" data-work-action="approve-records-response">Approve Response</button>
           <button type="button" class="secondary-action" data-work-action="export-records-response">Export Response</button>
+          <button type="button" class="secondary-action" data-work-action="fulfill-records-request">Mark Fulfilled</button>
+          <button type="button" class="secondary-action" data-work-action="close-records-request">Close Request</button>
         </div>
       </div>
     </section>
@@ -1027,7 +1056,11 @@ function renderRecordsWorkflow() {
           <span class="status-warn">${request.status}</span>
           <h3>${request.requester}</h3>
           <p>${request.summary}</p>
-          <small>Due ${request.deadline} · ${request.citations.length} citations · ${request.exports.length} exports</small>
+          ${request.assigned_to ? `<p><strong>Assigned:</strong> ${request.assigned_to}</p>` : ""}
+          ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
+          ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
+          ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
+          <small>Due ${request.deadline} - ${(request.citations || []).length} citations - ${(request.exemption_reviews || []).length} exemption notes - ${(request.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -1120,7 +1153,20 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   });
   const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
   recordsRequests.forEach((request) => {
-    if ([request.requester, request.summary, request.status].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+    const recordsSearchText = [
+      request.requester,
+      request.summary,
+      request.status,
+      request.assigned_to,
+      request.fee_estimate,
+      request.response_draft,
+      ...(request.citations || []),
+      ...(request.clarification_notes || []),
+      ...(request.search_notes || []),
+      ...(request.exemption_reviews || []),
+      ...(request.approval_notes || [])
+    ];
+    if (recordsSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicrecords-ai", title: `Records request: ${request.requester}`, snippet: request.summary, citation: request.citations[0] || "Local records request", status: request.status });
     }
   });
@@ -1578,10 +1624,21 @@ function workPayloadForAction(action) {
       summary: draft.recordsSummary,
       deadline: draft.deadline
     },
+    "request-records-clarification": { clarificationNote: draft.clarificationNote },
+    "assign-records-request": { assignedTo: draft.assignedTo },
+    "record-records-search": {
+      sourceNote: draft.sourceNote,
+      citation: draft.citation
+    },
+    "add-records-exemption-review": { exemptionNote: draft.exemptionNote },
+    "estimate-records-fee": { feeEstimate: draft.feeEstimate },
     "draft-records-response": {
       responseDraft: draft.responseDraft,
       citation: draft.citation
     },
+    "approve-records-response": { approvalNote: draft.approvalNote },
+    "fulfill-records-request": {},
+    "close-records-request": {},
     "import-code-source": {
       title: draft.codeTitle,
       citation: draft.codeCitation,

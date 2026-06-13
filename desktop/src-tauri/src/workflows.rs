@@ -46,9 +46,30 @@ pub struct RecordsRequest {
     pub summary: String,
     pub deadline: String,
     pub status: String,
+    #[serde(default)]
+    pub assigned_to: String,
+    #[serde(default)]
+    pub clarification_notes: Vec<String>,
+    #[serde(default)]
+    pub search_notes: Vec<String>,
+    #[serde(default)]
+    pub exemption_reviews: Vec<String>,
+    #[serde(default)]
+    pub fee_estimate: String,
+    #[serde(default)]
     pub citations: Vec<String>,
+    #[serde(default)]
     pub response_draft: String,
+    #[serde(default)]
+    pub approval_notes: Vec<String>,
+    #[serde(default)]
     pub exports: Vec<String>,
+    #[serde(default)]
+    pub approved_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub fulfilled_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub closed_at_unix_seconds: Option<u64>,
     pub created_at_unix_seconds: u64,
 }
 
@@ -311,6 +332,22 @@ fn first_record_mut(state: &mut CityWorkState) -> Result<&mut RecordsRequest, St
     state.records_requests.first_mut().ok_or_else(|| {
         "Create a records request before drafting or exporting a response.".to_string()
     })
+}
+
+fn ensure_records_request_active(request: &RecordsRequest) -> Result<(), String> {
+    if request.closed_at_unix_seconds.is_some() || request.status == "closed" {
+        return Err(
+            "This records request is closed. Create a new request for new records work."
+                .to_string(),
+        );
+    }
+    if request.fulfilled_at_unix_seconds.is_some() || request.status == "fulfilled" {
+        return Err(
+            "This records request has already been fulfilled. Close it or create a new request."
+                .to_string(),
+        );
+    }
+    Ok(())
 }
 
 fn first_pending_code_handoff_index(state: &CityWorkState) -> Result<usize, String> {
@@ -627,10 +664,19 @@ fn create_records_request(
             requester: requester.clone(),
             summary,
             deadline,
-            status: "intake".to_string(),
+            status: "received".to_string(),
+            assigned_to: String::new(),
+            clarification_notes: Vec::new(),
+            search_notes: Vec::new(),
+            exemption_reviews: Vec::new(),
+            fee_estimate: String::new(),
             citations: Vec::new(),
             response_draft: String::new(),
+            approval_notes: Vec::new(),
             exports: Vec::new(),
+            approved_at_unix_seconds: None,
+            fulfilled_at_unix_seconds: None,
+            closed_at_unix_seconds: None,
             created_at_unix_seconds: now_unix_seconds(),
         },
     );
@@ -643,6 +689,100 @@ fn create_records_request(
     Ok("Records request intake saved locally with deadline tracking.".to_string())
 }
 
+fn request_records_clarification(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let note = payload_string(payload, "clarificationNote")?;
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    request.clarification_notes.push(note.clone());
+    request.status = "clarification".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "request-records-clarification",
+        "Saved clarification note for records request.".to_string(),
+    );
+    Ok("Clarification note saved; no denial or release occurred.".to_string())
+}
+
+fn assign_records_request(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let assigned_to = payload_string(payload, "assignedTo")?;
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    request.assigned_to = assigned_to.clone();
+    request.status = "assigned".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "assign-records-request",
+        format!("Assigned records request to: {assigned_to}"),
+    );
+    Ok("Records request assigned for staff search and review.".to_string())
+}
+
+fn record_records_search(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let source_note = payload_string(payload, "sourceNote")?;
+    let citation = payload_optional_string(payload, "citation");
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    request.search_notes.push(source_note.clone());
+    if !citation.is_empty() {
+        request.citations.push(citation.clone());
+    }
+    request.status = "searching".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "record-records-search",
+        "Recorded records search source note.".to_string(),
+    );
+    Ok("Search source note saved with citation evidence.".to_string())
+}
+
+fn add_records_exemption_review(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let exemption_note = payload_string(payload, "exemptionNote")?;
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    request.exemption_reviews.push(exemption_note.clone());
+    request.status = "in review".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-records-exemption-review",
+        "Recorded human exemption review note.".to_string(),
+    );
+    Ok("Exemption review note saved for human approval.".to_string())
+}
+
+fn estimate_records_fee(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let fee_estimate = payload_string(payload, "feeEstimate")?;
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    request.fee_estimate = fee_estimate.clone();
+    request.status = "ready".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "estimate-records-fee",
+        format!("Saved records fee estimate: {fee_estimate}"),
+    );
+    Ok("Fee estimate saved before approval or fulfillment.".to_string())
+}
+
 fn draft_records_response(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -650,8 +790,9 @@ fn draft_records_response(
     let draft = payload_string(payload, "responseDraft")?;
     let citation = payload_optional_string(payload, "citation");
     let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
     request.response_draft = draft;
-    request.status = "review draft".to_string();
+    request.status = "drafted".to_string();
     if !citation.is_empty() {
         request.citations.push(citation.clone());
     }
@@ -664,33 +805,81 @@ fn draft_records_response(
     Ok("Records response draft saved with citation evidence.".to_string())
 }
 
+fn approve_records_response(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let approval_note = payload_optional_string(payload, "approvalNote");
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    if request.response_draft.trim().is_empty() {
+        return Err("Draft a records response before approval.".to_string());
+    }
+    if request.citations.is_empty() {
+        return Err("Add at least one citation or source note before approval.".to_string());
+    }
+    if !approval_note.is_empty() {
+        request.approval_notes.push(approval_note.clone());
+    }
+    request.approved_at_unix_seconds = Some(now_unix_seconds());
+    request.status = "approved".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "approve-records-response",
+        "Approved records response for export by a human reviewer.".to_string(),
+    );
+    Ok("Records response approved by staff; export is now available.".to_string())
+}
+
 fn export_records_response(state: &mut CityWorkState) -> Result<String, String> {
     let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
     if request.response_draft.trim().is_empty() {
         return Err("Draft a records response before exporting.".to_string());
     }
-    let citations = if request.citations.is_empty() {
-        "No citations recorded.".to_string()
-    } else {
-        request
-            .citations
-            .iter()
-            .map(|citation| format!("- {citation}"))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
+    if request.approved_at_unix_seconds.is_none() {
+        return Err(
+            "Approve the records response before exporting the response package.".to_string(),
+        );
+    }
+    let citations = list_or_default(&request.citations, "No citations recorded.");
+    let search_notes = list_or_default(&request.search_notes, "No search notes recorded.");
+    let exemption_reviews = list_or_default(
+        &request.exemption_reviews,
+        "No exemption review notes recorded.",
+    );
+    let clarification_notes = list_or_default(
+        &request.clarification_notes,
+        "No clarification notes recorded.",
+    );
+    let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
     let contents = format!(
-        "# Records Response\n\nRequester: {}\nDeadline: {}\nStatus: {}\n\n## Request\n{}\n\n## Draft Response\n{}\n\n## Citations\n{}\n",
+        "# Records Response\n\nRequester: {}\nDeadline: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         request.requester,
         request.deadline,
+        if request.assigned_to.is_empty() {
+            "Unassigned"
+        } else {
+            &request.assigned_to
+        },
         request.status,
+        if request.fee_estimate.is_empty() {
+            "No fee estimate recorded."
+        } else {
+            &request.fee_estimate
+        },
         request.summary,
+        clarification_notes,
+        search_notes,
+        exemption_reviews,
         request.response_draft,
-        citations
+        citations,
+        approval_notes
     );
     let export_path = write_export_file("records", &request.requester, &contents)?;
     request.exports.push(export_path.clone());
-    request.status = "exported".to_string();
+    request.status = "response package exported".to_string();
     push_audit(
         state,
         "civicrecords-ai",
@@ -698,6 +887,45 @@ fn export_records_response(state: &mut CityWorkState) -> Result<String, String> 
         format!("Exported records response package: {export_path}"),
     );
     Ok(format!("Records response export written to {export_path}."))
+}
+
+fn fulfill_records_request(state: &mut CityWorkState) -> Result<String, String> {
+    let request = first_record_mut(state)?;
+    ensure_records_request_active(request)?;
+    if request.approved_at_unix_seconds.is_none() {
+        return Err("Approve the records response before fulfillment.".to_string());
+    }
+    if request.exports.is_empty() {
+        return Err("Export the approved records response package before fulfillment.".to_string());
+    }
+    request.fulfilled_at_unix_seconds = Some(now_unix_seconds());
+    request.status = "fulfilled".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "fulfill-records-request",
+        "Marked records request fulfilled after human approval and export.".to_string(),
+    );
+    Ok("Records request fulfilled and eligible for public status display.".to_string())
+}
+
+fn close_records_request(state: &mut CityWorkState) -> Result<String, String> {
+    let request = first_record_mut(state)?;
+    if request.closed_at_unix_seconds.is_some() || request.status == "closed" {
+        return Err("This records request is already closed.".to_string());
+    }
+    if request.fulfilled_at_unix_seconds.is_none() {
+        return Err("Fulfill the records request before closing it.".to_string());
+    }
+    request.closed_at_unix_seconds = Some(now_unix_seconds());
+    request.status = "closed".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "close-records-request",
+        "Closed fulfilled records request.".to_string(),
+    );
+    Ok("Records request closed with audit evidence preserved.".to_string())
 }
 
 fn import_code_source(
@@ -862,8 +1090,25 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         }
     }
     for request in &state.records_requests {
+        let citations = request.citations.join(" ");
+        let clarification_notes = request.clarification_notes.join(" ");
+        let search_notes = request.search_notes.join(" ");
+        let exemption_reviews = request.exemption_reviews.join(" ");
+        let approval_notes = request.approval_notes.join(" ");
         if contains_query(
-            &[&request.requester, &request.summary, &request.status],
+            &[
+                &request.requester,
+                &request.summary,
+                &request.status,
+                &request.assigned_to,
+                &request.fee_estimate,
+                &request.response_draft,
+                &citations,
+                &clarification_notes,
+                &search_notes,
+                &exemption_reviews,
+                &approval_notes,
+            ],
             query,
         ) {
             results.push(SearchResult {
@@ -918,8 +1163,16 @@ pub fn city_work_action(
         "export-meeting-packet" => export_meeting_packet(&mut state)?,
         "archive-meeting" => archive_meeting(&mut state)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
+        "request-records-clarification" => request_records_clarification(&mut state, payload)?,
+        "assign-records-request" => assign_records_request(&mut state, payload)?,
+        "record-records-search" => record_records_search(&mut state, payload)?,
+        "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
+        "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
+        "approve-records-response" => approve_records_response(&mut state, payload)?,
         "export-records-response" => export_records_response(&mut state)?,
+        "fulfill-records-request" => fulfill_records_request(&mut state)?,
+        "close-records-request" => close_records_request(&mut state)?,
         "import-code-source" => import_code_source(&mut state, payload)?,
         "publish-code-source" => publish_code_source(&mut state)?,
         "unpublish-code-source" => unpublish_code_source(&mut state)?,
@@ -1059,7 +1312,7 @@ mod tests {
     }
 
     #[test]
-    fn records_workflow_persists_draft_and_export() {
+    fn records_workflow_requires_human_approval_before_release() {
         with_temp_state_dir(|_| {
             let payload = serde_json::json!({
                 "requester": "Alex Rivera",
@@ -1067,17 +1320,59 @@ mod tests {
                 "deadline": "2026-07-10"
             });
             city_work_action("create-records-request", Some(&payload)).expect("request created");
-            let draft = serde_json::json!({
-                "responseDraft": "Responsive records are attached for review.",
+            let clarification = serde_json::json!({
+                "clarificationNote": "Asked requester to narrow the date range."
+            });
+            city_work_action("request-records-clarification", Some(&clarification))
+                .expect("clarification saved");
+            let assignment = serde_json::json!({ "assignedTo": "Records Officer" });
+            city_work_action("assign-records-request", Some(&assignment)).expect("assigned");
+            let search = serde_json::json!({
+                "sourceNote": "Searched parks shared drive and clerk email journal.",
                 "citation": "PRA-2026-001"
             });
+            city_work_action("record-records-search", Some(&search)).expect("search saved");
+            let exemption = serde_json::json!({
+                "exemptionNote": "Reviewed attorney-client content; no auto-redaction applied."
+            });
+            city_work_action("add-records-exemption-review", Some(&exemption))
+                .expect("exemption saved");
+            let fee = serde_json::json!({ "feeEstimate": "$12.50 staff time estimate" });
+            city_work_action("estimate-records-fee", Some(&fee)).expect("fee saved");
+            let draft = serde_json::json!({
+                "responseDraft": "Responsive records are attached for review.",
+                "citation": "PRA-2026-002"
+            });
             city_work_action("draft-records-response", Some(&draft)).expect("draft saved");
+            let error = match city_work_action("export-records-response", None) {
+                Ok(_) => panic!("records response cannot export before human approval"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Approve the records response"));
+            let approval = serde_json::json!({ "approvalNote": "Reviewed and approved by clerk." });
+            city_work_action("approve-records-response", Some(&approval)).expect("approved");
             city_work_action("export-records-response", None).expect("export saved");
+            city_work_action("fulfill-records-request", None).expect("fulfilled");
+            city_work_action("close-records-request", None).expect("closed");
             let state = city_work_state().expect("state reads");
             let request = state.records_requests.first().expect("request exists");
-            assert_eq!(request.status, "exported");
+            assert_eq!(request.status, "closed");
+            assert_eq!(request.assigned_to, "Records Officer");
+            assert_eq!(request.clarification_notes.len(), 1);
+            assert_eq!(request.search_notes.len(), 1);
+            assert_eq!(request.exemption_reviews.len(), 1);
+            assert_eq!(request.fee_estimate, "$12.50 staff time estimate");
+            assert!(request.approved_at_unix_seconds.is_some());
+            assert!(request.fulfilled_at_unix_seconds.is_some());
+            assert!(request.closed_at_unix_seconds.is_some());
             assert_eq!(request.exports.len(), 1);
             assert!(PathBuf::from(&request.exports[0]).is_file());
+            let exported = fs::read_to_string(&request.exports[0]).expect("export reads");
+            assert!(exported.contains("## Exemption Review"));
+            assert!(exported.contains("Reviewed attorney-client content"));
+            assert!(exported.contains("## Approval Notes"));
+            let results = search_city_work(&state, "attorney-client");
+            assert_eq!(results.len(), 1);
         });
     }
 
