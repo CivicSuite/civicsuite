@@ -827,23 +827,27 @@ function renderFirstRunWizard({ compact = false } = {}) {
 }
 
 function renderModelActions(model) {
+  const access = accessState();
+  const needsAdmin = access.configured && !access.signed_in;
+  const adminDisabled = needsAdmin ? "disabled" : "";
   return `
     <div class="model-actions" aria-label="Local model setup actions">
-      <button type="button" class="secondary-action" data-model-action="open-model-folder">
+      <button type="button" class="secondary-action" data-model-action="open-model-folder" ${adminDisabled}>
         Open Model Folder
       </button>
-      <button type="button" class="primary-action" data-model-action="${model.download_resumable ? "resume-download" : "download"}">
+      <button type="button" class="primary-action" data-model-action="${model.download_resumable ? "resume-download" : "download"}" ${adminDisabled}>
         ${model.download_resumable ? "Download / Resume" : "Download Model"}
       </button>
-      <button type="button" class="secondary-action" data-model-action="verify-checksum">
+      <button type="button" class="secondary-action" data-model-action="verify-checksum" ${adminDisabled}>
         Verify Checksum
       </button>
-      <button type="button" class="secondary-action" data-model-action="load-runtime-model">
+      <button type="button" class="secondary-action" data-model-action="load-runtime-model" ${adminDisabled}>
         Load in Ollama
       </button>
-      <button type="button" class="secondary-action" data-model-action="retry">
+      <button type="button" class="secondary-action" data-model-action="retry" ${adminDisabled}>
         Retry Setup
       </button>
+      ${needsAdmin ? `<small>Sign in as local administrator to change local model setup.</small>` : ""}
     </div>
   `;
 }

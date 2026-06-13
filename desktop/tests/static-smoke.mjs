@@ -36,7 +36,8 @@ const requiredUiPhrases = [
   "Download / Resume Model",
   "Set Up Services and Model",
   "Package Profiles",
-  "Module Catalog"
+  "Module Catalog",
+  "Sign in as local administrator to change local model setup."
 ];
 
 for (const phrase of requiredUiPhrases) {
@@ -133,6 +134,10 @@ if (!rustMain.includes('include_str!("../../../installer/modules.json")')) {
 
 if (!rustMain.includes('mod model;') || !rustMain.includes('get_model_state')) {
   throw new Error("desktop shell must expose model readiness state");
+}
+
+if (!rustMain.includes("before changing local model setup")) {
+  throw new Error("desktop shell must require local admin access before model setup mutations");
 }
 
 for (const phrase of [

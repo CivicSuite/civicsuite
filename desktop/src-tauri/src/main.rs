@@ -160,11 +160,23 @@ fn get_app_state() -> Result<AppState, String> {
 
 #[tauri::command]
 fn get_model_state() -> Result<ModelState, String> {
-    model::model_state()
+    let access = auth::access_state()?;
+    let model = model::model_state()?;
+    if access_is_local_admin(&access) {
+        Ok(model)
+    } else {
+        Ok(public_model_state(model))
+    }
 }
 
 #[tauri::command]
 fn model_action(action: String) -> Result<ModelActionResult, String> {
+    let access = auth::access_state()?;
+    if access.configured && !access_is_local_admin(&access) {
+        return Err(
+            "Sign in as the local administrator before changing local model setup.".to_string(),
+        );
+    }
     model::model_action(&action)
 }
 
@@ -348,6 +360,46 @@ mod tests {
             .checks
             .iter()
             .any(|check| check.id == "checksum" && !check.ok));
+    }
+
+    #[test]
+    fn model_state_hides_local_path_without_admin_session() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+
+            let public_model = get_model_state().expect("model state");
+            assert_eq!(
+                public_model.artifact.local_path,
+                "Sign in as local administrator to view the model file path."
+            );
+
+            sign_in_as_first_admin();
+            let staff_model = get_model_state().expect("staff model state");
+            assert!(staff_model
+                .artifact
+                .local_path
+                .contains("gemma-4-12b-it-qat-q4_0.gguf"));
+        });
+    }
+
+    #[test]
+    fn model_actions_require_admin_after_first_admin_exists() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+
+            let signed_out_result = model_action("open-model-folder".to_string());
+
+            assert!(signed_out_result.is_err());
+            assert!(signed_out_result
+                .err()
+                .expect("model action auth error")
+                .contains("Sign in as the local administrator"));
+
+            sign_in_as_first_admin();
+            let signed_in_result =
+                model_action("open-model-folder".to_string()).expect("model action allowed");
+            assert!(signed_in_result.accepted);
+        });
     }
 
     #[test]
