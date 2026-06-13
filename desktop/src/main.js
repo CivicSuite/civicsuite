@@ -590,7 +590,7 @@ function setupActionLabel(step) {
     "review": "Review and continue",
     "choose-location": "Create local folders",
     "select-modules": "Use City Core modules",
-    "download-model": "Confirm model verified",
+    "download-model": "Download / Resume Model",
     "create-city-profile": "Save city profile",
     "create-admin": "Save first admin",
     "choose-backup": "Create backup folder",

@@ -31,7 +31,8 @@ const requiredUiPhrases = [
   "Gemma 4 12B QAT Q4_0",
   "Checksum required",
   "No silent download",
-  "Official Google weights"
+  "Official Google weights",
+  "Download / Resume Model"
 ];
 
 for (const phrase of requiredUiPhrases) {

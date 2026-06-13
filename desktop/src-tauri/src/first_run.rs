@@ -559,18 +559,33 @@ pub fn first_run_action(
         ));
     }
 
-    if action == "download-model" && !model::local_model_artifact_verified()? {
-        return Ok(FirstRunActionResult {
-            accepted: false,
-            action: action.to_string(),
-            step_id: Some(target_step_id),
-            status: "Needs attention",
-            message: "The pinned Gemma model has not passed local checksum verification yet."
-                .to_string(),
-            next_action:
-                "Use Local AI model setup to download or place the GGUF file, then verify checksum."
+    let mut action_completion: Option<(&'static str, String, String)> = None;
+    if action == "download-model" {
+        if model::local_model_artifact_verified()? {
+            action_completion = Some((
+                "Verified",
+                "The pinned Gemma model has already passed local checksum verification."
                     .to_string(),
-        });
+                "Continue to city profile setup.".to_string(),
+            ));
+        } else {
+            let model_result = model::model_action("resume-download")?;
+            if !model_result.accepted {
+                return Ok(FirstRunActionResult {
+                    accepted: false,
+                    action: action.to_string(),
+                    step_id: Some(target_step_id),
+                    status: model_result.status,
+                    message: model_result.message,
+                    next_action: model_result.next_action,
+                });
+            }
+            action_completion = Some((
+                model_result.status,
+                model_result.message,
+                "Continue to city profile setup.".to_string(),
+            ));
+        }
     }
     if action == "verify-health" {
         if !model::local_model_artifact_verified()? {
@@ -641,13 +656,19 @@ pub fn first_run_action(
     progress.last_updated_unix_seconds = now_unix_seconds();
     write_progress(&progress)?;
 
+    let (status, message, next_action) = action_completion.unwrap_or((
+        "Saved",
+        "Setup progress was saved locally on this Windows profile.".to_string(),
+        "Continue to the next setup step.".to_string(),
+    ));
+
     Ok(FirstRunActionResult {
         accepted: true,
         action: action.to_string(),
         step_id: Some(target_step_id),
-        status: "Saved",
-        message: "Setup progress was saved locally on this Windows profile.".to_string(),
-        next_action: "Continue to the next setup step.".to_string(),
+        status,
+        message,
+        next_action,
     })
 }
 
@@ -691,13 +712,34 @@ mod tests {
     }
 
     #[test]
-    fn first_run_model_action_waits_for_verified_artifact() {
+    fn first_run_model_action_downloads_through_model_setup_and_blocks_low_disk() {
         with_temp_state_dir(|_| {
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "1");
             let result = first_run_action("download-model", Some("model"), None)
                 .expect("action response is structured");
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
             assert!(!result.accepted);
             assert_eq!(result.status, "Needs attention");
-            assert!(result.message.contains("checksum verification"));
+            assert!(result.message.contains("needs at least 15000000000"));
+        });
+    }
+
+    #[test]
+    fn first_run_model_action_advances_when_model_is_verified() {
+        with_temp_state_dir(|_| {
+            env::set_var("CIVICSUITE_TEST_MODEL_VERIFIED", "1");
+            let result = first_run_action("download-model", Some("model"), None)
+                .expect("action response is structured");
+            env::remove_var("CIVICSUITE_TEST_MODEL_VERIFIED");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Verified");
+            assert!(result.message.contains("already passed local checksum"));
+            let state = first_run_state(&[]).expect("state reads saved progress");
+            assert!(state
+                .steps
+                .iter()
+                .any(|step| step.id == "model" && step.completed));
         });
     }
 
