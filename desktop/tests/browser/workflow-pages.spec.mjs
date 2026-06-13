@@ -6,9 +6,11 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Meeting" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Code Handoff" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Notice Ready" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Packet" })).toBeVisible();
   await expect(page.getByText("No local meetings have been created yet.")).toBeVisible();
+  await expect(page.getByText("No CivicCode handoffs are waiting for the clerk.")).toBeVisible();
 
   await page.getByRole("button", { name: /Records Requests/ }).click();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toBeVisible();

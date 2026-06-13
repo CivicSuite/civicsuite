@@ -750,6 +750,7 @@ function workflowEmpty(label) {
 
 function renderMeetingsWorkflow() {
   const work = cityWork();
+  const pendingCodeHandoffs = work.code_handoffs.filter((handoff) => handoff.status !== "sent to clerk agenda");
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
@@ -766,6 +767,7 @@ function renderMeetingsWorkflow() {
         <div class="workflow-actions">
           <button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
+          <button type="button" class="secondary-action" data-work-action="add-code-handoff-agenda">Add Code Handoff</button>
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
           <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Packet</button>
         </div>
@@ -788,6 +790,16 @@ function renderMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No summary yet."}</p>
           <small>${meeting.meeting_date} · ${meeting.notice_status} · ${meeting.agenda_items.length} agenda items · ${meeting.votes.length} outcomes · ${meeting.exports?.length || 0} exports</small>
+        </article>
+      `).join("")}
+    </section>
+    <section class="workflow-list" aria-label="CivicCode handoffs">
+      ${pendingCodeHandoffs.length === 0 ? workflowEmpty("No CivicCode handoffs are waiting for the clerk.") : pendingCodeHandoffs.map((handoff) => `
+        <article class="workflow-record handoff">
+          <span class="status-warn">${handoff.status}</span>
+          <h3>${handoff.title}</h3>
+          <p>${handoff.summary}</p>
+          <small>CivicCode handoff for agenda review</small>
         </article>
       `).join("")}
     </section>

@@ -279,6 +279,14 @@ fn first_record_mut(state: &mut CityWorkState) -> Result<&mut RecordsRequest, St
     })
 }
 
+fn first_pending_code_handoff_index(state: &CityWorkState) -> Result<usize, String> {
+    state
+        .code_handoffs
+        .iter()
+        .position(|handoff| handoff.status != "sent to clerk agenda")
+        .ok_or_else(|| "Create a code handoff before adding it to a clerk agenda.".to_string())
+}
+
 fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let title = payload_string(payload, "title")?;
     let meeting_date = payload_string(payload, "meetingDate")?;
@@ -338,6 +346,35 @@ fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         format!("Added agenda item: {title}"),
     );
     Ok("Agenda item added to the current meeting draft.".to_string())
+}
+
+fn add_code_handoff_agenda(state: &mut CityWorkState) -> Result<String, String> {
+    if state.meetings.is_empty() {
+        return Err("Create a meeting before adding a code handoff to the agenda.".to_string());
+    }
+    let handoff_index = first_pending_code_handoff_index(state)?;
+    let handoff_title = state.code_handoffs[handoff_index].title.clone();
+    let handoff_summary = state.code_handoffs[handoff_index].summary.clone();
+    let agenda_count = state.meetings[0].agenda_items.len();
+    let agenda_title = format!("Code review: {handoff_title}");
+    let meeting = first_meeting_mut(state)?;
+    meeting.agenda_items.push(AgendaItem {
+        id: new_id("agenda", agenda_count),
+        title: agenda_title,
+        status: "draft".to_string(),
+        visibility: "staff draft".to_string(),
+    });
+    meeting.status = "agenda drafting".to_string();
+    state.code_handoffs[handoff_index].status = "sent to clerk agenda".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "add-code-handoff-agenda",
+        format!("Code handoff added to agenda: {handoff_title}. {handoff_summary}"),
+    );
+    Ok(format!(
+        "Code handoff added to the current meeting agenda: {handoff_title}."
+    ))
 }
 
 fn post_notice(state: &mut CityWorkState) -> Result<String, String> {
@@ -664,6 +701,7 @@ pub fn city_work_action(
     let message = match action {
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
+        "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state)?,
         "post-notice" => post_notice(&mut state)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
@@ -808,6 +846,43 @@ mod tests {
             let results = search_city_work(&state, "quiet hours");
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].citation, "CMC 8.12");
+        });
+    }
+
+    #[test]
+    fn code_handoff_can_be_added_to_clerk_agenda() {
+        with_temp_state_dir(|_| {
+            let meeting = serde_json::json!({
+                "title": "Council Regular Meeting",
+                "meetingDate": "2026-07-01",
+                "summary": "Ordinance review"
+            });
+            city_work_action("create-meeting", Some(&meeting)).expect("meeting created");
+            let source = serde_json::json!({
+                "title": "Noise Ordinance",
+                "citation": "CMC 8.12",
+                "body": "Quiet hours begin at 10 PM."
+            });
+            city_work_action("import-code-source", Some(&source)).expect("source imported");
+            city_work_action("create-code-handoff", None).expect("handoff created");
+            city_work_action("add-code-handoff-agenda", None).expect("handoff added");
+
+            let state = city_work_state().expect("state reads");
+            let meeting = state.meetings.first().expect("meeting exists");
+            assert_eq!(meeting.agenda_items.len(), 1);
+            assert_eq!(meeting.agenda_items[0].visibility, "staff draft");
+            assert!(meeting.agenda_items[0]
+                .title
+                .contains("Code review: Clerk handoff: Noise Ordinance"));
+            assert_eq!(
+                state.code_handoffs[0].status,
+                "sent to clerk agenda".to_string()
+            );
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "add-code-handoff-agenda"));
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 }
