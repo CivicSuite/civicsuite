@@ -302,6 +302,76 @@ fn partial_download_path(local_path: &Path) -> PathBuf {
     local_path.with_extension("gguf.part")
 }
 
+fn parse_available_disk_override() -> Option<Result<u64, String>> {
+    env::var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE")
+        .ok()
+        .map(|value| {
+            value.parse::<u64>().map_err(|error| {
+                format!("Invalid CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE value: {error}")
+            })
+        })
+}
+
+fn available_disk_bytes(path: &Path) -> Result<u64, String> {
+    if let Some(override_value) = parse_available_disk_override() {
+        return override_value;
+    }
+    if cfg!(target_os = "windows") {
+        let literal_path = path.to_string_lossy().replace('\'', "''");
+        let script = format!(
+            "$item = Get-Item -LiteralPath '{}'; [int64]$item.PSDrive.Free",
+            literal_path
+        );
+        let output = Command::new("powershell.exe")
+            .arg("-NoProfile")
+            .arg("-NonInteractive")
+            .arg("-Command")
+            .arg(script)
+            .output()
+            .map_err(|error| format!("Could not check available disk space: {error}"))?;
+        if !output.status.success() {
+            return Err(format!(
+                "Could not check available disk space: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        return String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .parse::<u64>()
+            .map_err(|error| format!("Could not parse available disk space: {error}"));
+    }
+    let output = Command::new("df")
+        .arg("-Pk")
+        .arg(path)
+        .output()
+        .map_err(|error| format!("Could not check available disk space: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "Could not check available disk space: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let available_kb = stdout
+        .lines()
+        .nth(1)
+        .and_then(|line| line.split_whitespace().nth(3))
+        .ok_or_else(|| "Could not parse available disk space output".to_string())?
+        .parse::<u64>()
+        .map_err(|error| format!("Could not parse available disk space: {error}"))?;
+    Ok(available_kb * 1024)
+}
+
+fn ensure_minimum_free_disk(path: &Path, minimum_free_disk_bytes: u64) -> Result<(), String> {
+    let available = available_disk_bytes(path)?;
+    if available < minimum_free_disk_bytes {
+        return Err(format!(
+            "The model download needs at least {minimum_free_disk_bytes} free bytes, but only {available} bytes are available."
+        ));
+    }
+    Ok(())
+}
+
 fn ensure_parent_dir(path: &Path) -> Result<(), String> {
     let parent = path
         .parent()
@@ -473,6 +543,13 @@ fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Resul
         return Ok(());
     }
     ensure_parent_dir(local_path)?;
+    let parent = local_path.parent().ok_or_else(|| {
+        format!(
+            "Could not resolve parent folder for {}",
+            local_path.display()
+        )
+    })?;
+    ensure_minimum_free_disk(parent, manifest.download.minimum_free_disk_bytes)?;
     let partial_path = partial_download_path(local_path);
     let status = Command::new(curl_executable())
         .arg("-L")
@@ -765,6 +842,37 @@ mod tests {
             assert!(!result.accepted);
             assert_eq!(result.status, "Needs attention");
             assert!(result.message.contains("Could not inspect"));
+        });
+    }
+
+    #[test]
+    fn model_download_checks_free_disk_before_network() {
+        with_temp_state_dir(|_| {
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "1");
+            let result = model_action("download").expect("action response is structured");
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs attention");
+            assert!(result.message.contains("needs at least 15000000000"));
+        });
+    }
+
+    #[test]
+    fn model_download_reports_missing_downloader() {
+        with_temp_state_dir(|root| {
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "99999999999");
+            env::set_var(
+                "CIVICSUITE_CURL_PATH",
+                root.join("missing-curl.exe").to_string_lossy().to_string(),
+            );
+            let result = model_action("download").expect("action response is structured");
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            env::remove_var("CIVICSUITE_CURL_PATH");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs attention");
+            assert!(result
+                .message
+                .contains("Could not start the model download"));
         });
     }
 

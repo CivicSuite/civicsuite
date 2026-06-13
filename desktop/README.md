@@ -21,10 +21,12 @@ into this surface as the completion work advances.
 
 The local AI model path is also contract-first. The shell reads
 `runtime/gemma4-model.json`, renders the pinned Google/Hugging Face source,
-expected GGUF file, expected SHA-256, local path, and readiness checks, and
-blocks download or verification actions until the native installer downloader is
-wired. Staff workflows must not treat AI as available until the local file,
-checksum, runtime, and CivicCore model registry checks are all ready.
+expected GGUF file, expected SHA-256, local path, and readiness checks. The
+desktop model actions create the local model folder, run an explicit resumable
+download through the pinned source URL, enforce the declared free-disk floor,
+verify size and SHA-256, and register the verified model in the local CivicCore
+model registry. Staff workflows must not treat AI as available until the local
+file, checksum, runtime, and CivicCore model registry checks are all ready.
 
 `npm test` runs fast static desktop contract checks. `npm run test:browser`
 starts the local Vite app and uses Playwright with the installed Microsoft
