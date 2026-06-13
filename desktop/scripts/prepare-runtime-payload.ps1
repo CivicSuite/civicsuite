@@ -60,7 +60,7 @@ function Invoke-CivicDownload {
     }
     $Parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $Parent | Out-Null
-    Invoke-WebRequest -Uri $Url -OutFile $Destination -UseBasicParsing
+    Invoke-WebRequest -Uri $Url -OutFile $Destination -UseBasicParsing -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
     return Get-Sha256 -Path $Destination
 }
 
@@ -221,6 +221,14 @@ function Get-PostgresBinaryUrl {
     throw "Could not discover PostgreSQL $MajorVersion Windows binary URL from $DownloadPage"
 }
 
+function Get-PostgresSourceUrl {
+    param([object]$Source)
+    if ($Source.download_url) {
+        return [string]$Source.download_url
+    }
+    return Get-PostgresBinaryUrl -DownloadPage $Source.download_page -MajorVersion $Source.major_version
+}
+
 function Install-PostgresPayload {
     param(
         [object]$Source,
@@ -231,7 +239,7 @@ function Install-PostgresPayload {
     if (Test-Path -LiteralPath (Join-Path $Destination "bin\pg_ctl.exe")) {
         return @{ status = "present"; path = $Destination }
     }
-    $Url = Get-PostgresBinaryUrl -DownloadPage $Source.download_page -MajorVersion $Source.major_version
+    $Url = Get-PostgresSourceUrl -Source $Source
     $Archive = Join-Path $CacheRoot "postgres-windows-binaries.zip"
     $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
     Expand-PostgresServerPayload -Archive $Archive -Destination $Destination

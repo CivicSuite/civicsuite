@@ -177,11 +177,16 @@ for (const sourceKey of ["postgres", "pgvector", "python", "ollama"]) {
   }
 }
 
+if (!runtimeSourcesManifest.sources.postgres.download_url?.includes("postgresql-17.10-2-windows-x64-binaries.zip")) {
+  throw new Error("Windows runtime sources manifest must pin a direct PostgreSQL 17 Windows binary ZIP URL");
+}
+
 for (const phrase of [
   "Install-PostgresPayload",
   "Install-PythonPayload",
   "Install-OllamaPayload",
   "Install-PgvectorPayload",
+  "Get-PostgresSourceUrl",
   "MSVC cl.exe and nmake.exe are required",
   "System.Security.Cryptography.SHA256",
   "runtime-payload-lock.json"
