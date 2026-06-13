@@ -363,6 +363,7 @@ const state = {
   workActionResult: null,
   authActionResult: null,
   searchResults: [],
+  pendingWorkReviewAction: null,
   setupDraft: {
     cityName: "",
     state: "",
@@ -872,6 +873,309 @@ function workflowEmpty(label) {
   return `<p class="empty-note">${label}</p>`;
 }
 
+const GUIDED_WORK_ACTIONS = new Set([
+  "add-code-handoff-agenda",
+  "post-notice",
+  "export-meeting-packet",
+  "adopt-minutes",
+  "archive-meeting",
+  "approve-records-response",
+  "export-records-response",
+  "fulfill-records-request",
+  "close-records-request",
+  "approve-code-guidance",
+  "publish-code-source",
+  "unpublish-code-source",
+  "create-code-handoff"
+]);
+
+function currentMeeting(work = cityWork()) {
+  return work.meetings[0] || null;
+}
+
+function currentRecordsRequest(work = cityWork()) {
+  return work.records_requests[0] || null;
+}
+
+function currentCodeSource(work = cityWork()) {
+  return work.code_sources[0] || null;
+}
+
+function currentCodeHandoff(work = cityWork()) {
+  return work.code_handoffs.find((handoff) => handoff.status !== "sent to clerk agenda") || work.code_handoffs[0] || null;
+}
+
+function detailOrFallback(value, fallback) {
+  return value ? value : fallback;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+function guidedReviewForAction(action) {
+  const work = cityWork();
+  const meeting = currentMeeting(work);
+  const request = currentRecordsRequest(work);
+  const source = currentCodeSource(work);
+  const handoff = currentCodeHandoff(work);
+  const meetingSubject = meeting ? `${meeting.title} (${meeting.meeting_date})` : "Current meeting";
+  const requestSubject = request ? `${request.requester}: ${request.summary}` : "Current records request";
+  const sourceSubject = source ? `${source.title} (${source.citation})` : "Current code source";
+  const handoffSubject = handoff ? handoff.title : "Current code handoff";
+  const reviews = {
+    "add-code-handoff-agenda": {
+      title: "Review Before Adding Code Handoff",
+      confirmLabel: "Add Code Handoff",
+      module: "CivicClerk + CivicCode",
+      subject: handoffSubject,
+      status: handoff ? handoff.status : "No pending code handoff selected yet.",
+      changes: "Adds the pending CivicCode ordinance or resolution handoff to the current meeting agenda.",
+      visibility: "Staff agenda draft only until notice, packet, or archive steps make meeting material public.",
+      sources: [
+        detailOrFallback(handoff?.summary, "No handoff summary is available yet."),
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving."
+      ],
+      audit: "Creates a CivicClerk audit entry for adding the code handoff to the agenda.",
+      retry: "If no handoff or meeting exists, the desktop app stops before changing local records."
+    },
+    "post-notice": {
+      title: "Review Before Posting Notice",
+      confirmLabel: "Mark Notice Ready",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Marks the current meeting notice as ready for public posting.",
+      visibility: "Resident/Public meeting materials can show posted notice information.",
+      sources: [
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
+        detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
+      ],
+      audit: "Creates a CivicClerk audit entry for posting the notice.",
+      retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
+    },
+    "export-meeting-packet": {
+      title: "Review Before Exporting Packet",
+      confirmLabel: "Export Packet",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Writes a local packet export from the meeting agenda, minutes, votes, action items, and comments.",
+      visibility: "Exported packet material remains local staff work unless later posted or archived.",
+      sources: [
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
+        detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the packet export.",
+      retry: "If the export path is unavailable, the desktop app reports the failure and preserves the meeting record."
+    },
+    "adopt-minutes": {
+      title: "Review Before Adopting Minutes",
+      confirmLabel: "Adopt Minutes",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Marks the current minutes as adopted and unlocks the public archive step.",
+      visibility: "Adopted minutes remain local staff records until archive/publication.",
+      sources: [
+        detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet."),
+        meeting ? `${(meeting.votes || []).length} vote or motion record(s)` : "The desktop app will require a meeting before saving."
+      ],
+      audit: "Creates a CivicClerk audit entry for adopting minutes.",
+      retry: "If no minutes draft exists, the desktop app blocks adoption and asks staff to save minutes first."
+    },
+    "archive-meeting": {
+      title: "Review Before Archiving Public Record",
+      confirmLabel: "Archive Public Record",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Writes the public archive export, locks later meeting edits, and records a publication event hash.",
+      visibility: "Resident/Public meeting materials can show this archived public record.",
+      sources: [
+        meeting?.minutes_adopted_at_unix_seconds ? "Minutes have been adopted." : "Minutes are not marked adopted yet.",
+        meeting ? `${(meeting.exports || []).length} existing export(s)` : "The desktop app will require a meeting before saving."
+      ],
+      audit: "Creates CivicClerk audit and CivicCore publication-gate entries.",
+      retry: "If minutes are not adopted, the desktop app blocks archive and leaves the meeting editable."
+    },
+    "approve-records-response": {
+      title: "Review Before Approving Records Response",
+      confirmLabel: "Approve Response",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Records human approval for the drafted records response.",
+      visibility: "Internal staff status changes to human-approved; nothing is public until export and fulfillment.",
+      sources: [
+        detailOrFallback(request?.response_draft, "No response draft has been saved yet."),
+        request ? `${(request.exemption_reviews || []).length} exemption review note(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before saving."
+      ],
+      audit: "Creates a CivicRecords AI audit entry for human approval.",
+      retry: "If the response draft is missing, the desktop app blocks approval before release steps."
+    },
+    "export-records-response": {
+      title: "Review Before Exporting Records Response",
+      confirmLabel: "Export Response",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Writes the approved records response package to the local export folder.",
+      visibility: "The export remains local until the request is marked fulfilled.",
+      sources: [
+        request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
+        request ? `${(request.search_notes || []).length} search note(s); ${(request.approval_notes || []).length} approval note(s)` : "The desktop app will require a request before saving."
+      ],
+      audit: "Creates a CivicRecords AI audit entry for exporting the response package.",
+      retry: "If approval is missing, the desktop app blocks export and keeps the draft internal."
+    },
+    "fulfill-records-request": {
+      title: "Review Before Marking Records Fulfilled",
+      confirmLabel: "Mark Fulfilled",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Marks the request fulfilled and records a publication event hash for the released response.",
+      visibility: "Resident/Public records status can show the released response metadata.",
+      sources: [
+        request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
+        request ? `${(request.exports || []).length} export package(s)` : "The desktop app will require a request before saving."
+      ],
+      audit: "Creates CivicRecords AI audit and CivicCore publication-gate entries.",
+      retry: "If approval or export is missing, the desktop app blocks fulfillment."
+    },
+    "close-records-request": {
+      title: "Review Before Closing Records Request",
+      confirmLabel: "Close Request",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Closes the request after fulfillment and preserves the request history.",
+      visibility: "Closed fulfilled requests remain visible in public records status.",
+      sources: [
+        request?.fulfilled_at_unix_seconds ? "Request has been fulfilled." : "Request is not fulfilled yet.",
+        request ? `Due date: ${request.deadline}` : "The desktop app will require a request before saving."
+      ],
+      audit: "Creates a CivicRecords AI audit entry for closing the request.",
+      retry: "If the request has not been fulfilled, the desktop app blocks closure."
+    },
+    "approve-code-guidance": {
+      title: "Review Before Approving Code Guidance",
+      confirmLabel: "Approve Guidance",
+      module: "CivicCode",
+      subject: sourceSubject,
+      status: source ? source.status : "No code source selected yet.",
+      changes: "Approves staff guidance and any plain-English summary for public-facing code context.",
+      visibility: "Approved summaries can appear with published code sources as non-authoritative guidance.",
+      sources: [
+        detailOrFallback(source?.staff_guidance, "No guidance draft has been saved yet."),
+        detailOrFallback(source?.plain_language_summary, "No plain-English summary has been saved yet.")
+      ],
+      audit: "Creates a CivicCode audit entry for approving guidance.",
+      retry: "If guidance is missing, the desktop app blocks approval and keeps the source internal."
+    },
+    "publish-code-source": {
+      title: "Review Before Publishing Code Source",
+      confirmLabel: "Publish Source",
+      module: "CivicCode",
+      subject: sourceSubject,
+      status: source ? `${source.public_status || "internal draft"}; ${source.codifier_sync_status || "not synced"}` : "No code source selected yet.",
+      changes: "Writes a public code export and records a publication event hash.",
+      visibility: "Resident/Public municipal code search can show the published source and approved non-authoritative summary.",
+      sources: [
+        source ? `Citation: ${source.citation}` : "The desktop app will require a code source before saving.",
+        source?.guidance_approved_at_unix_seconds ? "Guidance has human approval." : "Guidance is not approved; only source text and required disclaimers will publish."
+      ],
+      audit: "Creates CivicCode audit and CivicCore publication-gate entries.",
+      retry: "If required source text is missing, the desktop app blocks publication."
+    },
+    "unpublish-code-source": {
+      title: "Review Before Unpublishing Code Source",
+      confirmLabel: "Unpublish Source",
+      module: "CivicCode",
+      subject: sourceSubject,
+      status: source ? source.public_status || "internal draft" : "No code source selected yet.",
+      changes: "Returns the source to internal draft status and retracts the latest live publication event.",
+      visibility: "Resident/Public municipal code search stops showing this source.",
+      sources: [
+        source ? `${(source.public_exports || []).length} public export(s) remain in local history.` : "The desktop app will require a code source before saving.",
+        "Retraction keeps publication history instead of deleting the prior event."
+      ],
+      audit: "Creates CivicCode audit and CivicCore retraction metadata.",
+      retry: "If no source exists, the desktop app stops before changing local records."
+    },
+    "create-code-handoff": {
+      title: "Review Before Creating Clerk Handoff",
+      confirmLabel: "Create Clerk Handoff",
+      module: "CivicCode",
+      subject: sourceSubject,
+      status: source ? source.status : "No code source selected yet.",
+      changes: "Creates an internal clerk handoff for ordinance or resolution agenda work.",
+      visibility: "Staff-only handoff until the clerk adds it to a meeting agenda and later posts materials.",
+      sources: [
+        source ? `Citation: ${source.citation}` : "The desktop app will require a code source before saving.",
+        detailOrFallback(state.workDraft.handoffSummary, "No handoff summary has been typed yet.")
+      ],
+      audit: "Creates a CivicCode audit entry for the clerk handoff.",
+      retry: "If no source exists, the desktop app blocks handoff creation."
+    }
+  };
+  return reviews[action] || null;
+}
+
+function requiresGuidedWorkReview(action) {
+  return GUIDED_WORK_ACTIONS.has(action);
+}
+
+function renderGuidedWorkReview() {
+  const review = guidedReviewForAction(state.pendingWorkReviewAction);
+  if (!review) return "";
+  return `
+    <section class="guided-review" aria-labelledby="guided-review-title">
+      <div>
+        <p class="eyebrow">${escapeHtml(review.module)}</p>
+        <h3 id="guided-review-title">${escapeHtml(review.title)}</h3>
+        <p>${escapeHtml(review.subject)}</p>
+      </div>
+      <div class="review-grid">
+        <div>
+          <strong>Current status</strong>
+          <p>${escapeHtml(review.status)}</p>
+        </div>
+        <div>
+          <strong>What will change</strong>
+          <p>${escapeHtml(review.changes)}</p>
+        </div>
+        <div>
+          <strong>Who can see it</strong>
+          <p>${escapeHtml(review.visibility)}</p>
+        </div>
+        <div>
+          <strong>Audit trail</strong>
+          <p>${escapeHtml(review.audit)}</p>
+        </div>
+      </div>
+      <div>
+        <strong>Sources and evidence</strong>
+        <ul class="review-evidence">
+          ${review.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join("")}
+        </ul>
+      </div>
+      <p class="next-action">${escapeHtml(review.retry)}</p>
+      <div class="review-actions">
+        <button type="button" class="primary-action" data-review-confirm="${state.pendingWorkReviewAction}">Confirm ${escapeHtml(review.confirmLabel)}</button>
+        <button type="button" class="secondary-action" data-review-cancel>Cancel Review</button>
+      </div>
+    </section>
+  `;
+}
+
 function isPublicSurface() {
   return state.activeSurface === "Resident/Public";
 }
@@ -951,6 +1255,7 @@ function renderMeetingsWorkflow() {
         </div>
       </div>
     </section>
+    ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${work.meetings.length === 0 ? workflowEmpty("No local meetings have been created yet.") : work.meetings.map((meeting) => `
@@ -1057,6 +1362,7 @@ function renderRecordsWorkflow() {
         </div>
       </div>
     </section>
+    ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${work.records_requests.length === 0 ? workflowEmpty("No local records requests have been created yet.") : work.records_requests.map((request) => `
@@ -1148,6 +1454,7 @@ function renderCodeWorkflow() {
         <button type="button" class="secondary-action" data-work-action="create-code-handoff">Create Clerk Handoff</button>
       </div>
     </section>
+    ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${work.code_sources.length === 0 ? workflowEmpty("No local code sources have been imported yet.") : work.code_sources.map((source) => `
@@ -1471,6 +1778,7 @@ function bindEvents() {
   document.querySelectorAll("[data-area]").forEach((button) => {
     button.addEventListener("click", () => {
       state.activeArea = button.dataset.area;
+      state.pendingWorkReviewAction = null;
       render();
       byId("main-content")?.focus();
     });
@@ -1478,6 +1786,7 @@ function bindEvents() {
   document.querySelectorAll("[data-surface]").forEach((button) => {
     button.addEventListener("click", () => {
       state.activeSurface = button.dataset.surface;
+      state.pendingWorkReviewAction = null;
       render();
     });
   });
@@ -1526,6 +1835,17 @@ function bindEvents() {
   document.querySelectorAll("[data-work-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleCityWorkAction(button.dataset.workAction);
+    });
+  });
+  document.querySelectorAll("[data-review-confirm]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleCityWorkAction(button.dataset.reviewConfirm, { confirmed: true });
+    });
+  });
+  document.querySelectorAll("[data-review-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.pendingWorkReviewAction = null;
+      render();
     });
   });
 }
@@ -1733,7 +2053,14 @@ function workPayloadForAction(action) {
   return payloads[action] || {};
 }
 
-async function handleCityWorkAction(action) {
+async function handleCityWorkAction(action, { confirmed = false } = {}) {
+  if (requiresGuidedWorkReview(action) && !confirmed) {
+    state.pendingWorkReviewAction = action;
+    state.workActionResult = null;
+    render();
+    return;
+  }
+  state.pendingWorkReviewAction = null;
   if (action === "search-city-knowledge" && !hasTauriBridge()) {
     state.searchResults = localSearchResults(state.workDraft.searchQuery);
     state.workActionResult = {

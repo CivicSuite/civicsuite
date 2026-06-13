@@ -88,6 +88,37 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Search Local Data" })).toHaveCount(0);
 });
 
+test("risky city workflow actions require guided review before mutation", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await page.getByRole("button", { name: "Archive Public Record" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Archiving Public Record" })).toBeVisible();
+  await expect(page.getByText("What will change")).toBeVisible();
+  await expect(page.getByText("Who can see it")).toBeVisible();
+  await expect(page.getByText("Sources and evidence")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Archive Public Record" })).toBeVisible();
+  await expect(page.getByText("Desktop app required")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Archiving Public Record" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Mark Notice Ready" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Posting Notice" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm Mark Notice Ready" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+
+  await page.getByRole("button", { name: /Records Requests/ }).click();
+  await page.getByRole("button", { name: "Approve Response" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Approving Records Response" })).toBeVisible();
+  await expect(page.getByText("Internal staff status changes to human-approved")).toBeVisible();
+
+  await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await page.getByRole("button", { name: "Publish Source", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Publishing Code Source" })).toBeVisible();
+  await expect(page.getByText("Creates CivicCode audit and CivicCore publication-gate entries.")).toBeVisible();
+});
+
 test("browser preview refuses persistent city workflow mutations", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
