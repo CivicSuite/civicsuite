@@ -24,10 +24,18 @@ pub struct Meeting {
     pub summary: String,
     pub agenda_items: Vec<AgendaItem>,
     pub minutes: String,
+    #[serde(default)]
     pub votes: Vec<String>,
+    #[serde(default)]
     pub action_items: Vec<String>,
     #[serde(default)]
+    pub resident_comments: Vec<String>,
+    #[serde(default)]
     pub exports: Vec<String>,
+    #[serde(default)]
+    pub minutes_adopted_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub archived_at_unix_seconds: Option<u64>,
     pub created_at_unix_seconds: u64,
 }
 
@@ -194,8 +202,14 @@ fn write_export_file(folder: &str, stem: &str, contents: &str) -> Result<String,
     let directory = exports_dir().join(folder);
     fs::create_dir_all(&directory)
         .map_err(|error| format!("Could not create export folder: {error}"))?;
-    let file_name = format!("{}-{}.md", safe_file_stem(stem), now_unix_seconds());
-    let path = directory.join(file_name);
+    let safe_stem = safe_file_stem(stem);
+    let timestamp = now_unix_seconds();
+    let mut path = directory.join(format!("{safe_stem}-{timestamp}.md"));
+    let mut suffix = 2;
+    while path.exists() {
+        path = directory.join(format!("{safe_stem}-{timestamp}-{suffix}.md"));
+        suffix += 1;
+    }
     fs::write(&path, contents)
         .map_err(|error| format!("Could not write export {}: {error}", path.display()))?;
     Ok(path.to_string_lossy().to_string())
@@ -283,6 +297,16 @@ fn first_meeting_mut(state: &mut CityWorkState) -> Result<&mut Meeting, String> 
         .ok_or_else(|| "Create a meeting before recording this clerk action.".to_string())
 }
 
+fn ensure_meeting_can_change(meeting: &Meeting) -> Result<(), String> {
+    if meeting.archived_at_unix_seconds.is_some() || meeting.status == "archived public record" {
+        return Err(
+            "This meeting is archived as a public record. Create a new meeting for new clerk work."
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
 fn first_record_mut(state: &mut CityWorkState) -> Result<&mut RecordsRequest, String> {
     state.records_requests.first_mut().ok_or_else(|| {
         "Create a records request before drafting or exporting a response.".to_string()
@@ -314,7 +338,10 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         minutes: String::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
+        resident_comments: Vec::new(),
         exports: Vec::new(),
+        minutes_adopted_at_unix_seconds: None,
+        archived_at_unix_seconds: None,
         created_at_unix_seconds: now_unix_seconds(),
     };
     if !agenda_title.is_empty() {
@@ -339,6 +366,7 @@ fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result
     let title = payload_string(payload, "agendaTitle")?;
     let agenda_count = {
         let meeting = first_meeting_mut(state)?;
+        ensure_meeting_can_change(meeting)?;
         meeting.agenda_items.len()
     };
     let meeting = first_meeting_mut(state)?;
@@ -368,6 +396,7 @@ fn add_code_handoff_agenda(state: &mut CityWorkState) -> Result<String, String> 
     let agenda_count = state.meetings[0].agenda_items.len();
     let agenda_title = format!("Code review: {handoff_title}");
     let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
     meeting.agenda_items.push(AgendaItem {
         id: new_id("agenda", agenda_count),
         title: agenda_title,
@@ -389,6 +418,7 @@ fn add_code_handoff_agenda(state: &mut CityWorkState) -> Result<String, String> 
 
 fn post_notice(state: &mut CityWorkState) -> Result<String, String> {
     let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
     if meeting.agenda_items.is_empty() {
         return Err("Add at least one agenda item before posting notice.".to_string());
     }
@@ -407,6 +437,7 @@ fn post_notice(state: &mut CityWorkState) -> Result<String, String> {
 fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let minutes = payload_string(payload, "minutes")?;
     let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
     let title = meeting.title.clone();
     meeting.minutes = minutes;
     meeting.status = "minutes drafted".to_string();
@@ -422,6 +453,7 @@ fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
 fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let vote = payload_string(payload, "vote")?;
     let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
     meeting.votes.push(vote.clone());
     meeting.status = "outcomes recorded".to_string();
     push_audit(
@@ -433,8 +465,70 @@ fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
     Ok("Vote or action outcome saved locally.".to_string())
 }
 
-fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
+fn add_action_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let action_item = payload_string(payload, "actionItem")?;
     let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
+    meeting.action_items.push(action_item.clone());
+    meeting.status = "action items recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "add-action-item",
+        format!("Recorded action item: {action_item}"),
+    );
+    Ok("Action item added to the meeting record.".to_string())
+}
+
+fn record_resident_comment(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let resident_comment = payload_string(payload, "residentComment")?;
+    let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
+    meeting.resident_comments.push(resident_comment.clone());
+    meeting.status = "resident comments recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-resident-comment",
+        "Logged resident comment for meeting record.".to_string(),
+    );
+    Ok("Resident comment saved to the meeting record.".to_string())
+}
+
+fn adopt_minutes(state: &mut CityWorkState) -> Result<String, String> {
+    let meeting = first_meeting_mut(state)?;
+    ensure_meeting_can_change(meeting)?;
+    if meeting.minutes.trim().is_empty() {
+        return Err("Save a minutes draft before adopting minutes.".to_string());
+    }
+    let title = meeting.title.clone();
+    meeting.minutes_adopted_at_unix_seconds = Some(now_unix_seconds());
+    meeting.status = "minutes adopted".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "adopt-minutes",
+        format!("Adopted minutes for: {title}"),
+    );
+    Ok("Minutes marked adopted with audit evidence.".to_string())
+}
+
+fn list_or_default(values: &[String], empty: &str) -> String {
+    if values.is_empty() {
+        empty.to_string()
+    } else {
+        values
+            .iter()
+            .map(|value| format!("- {value}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+fn meeting_packet_contents(meeting: &Meeting) -> String {
     let agenda = if meeting.agenda_items.is_empty() {
         "No agenda items recorded.".to_string()
     } else {
@@ -445,18 +539,16 @@ fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
             .collect::<Vec<_>>()
             .join("\n")
     };
-    let votes = if meeting.votes.is_empty() {
-        "No outcomes recorded.".to_string()
-    } else {
-        meeting
-            .votes
-            .iter()
-            .map(|vote| format!("- {vote}"))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
-    let contents = format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Outcomes\n{}\n",
+    let votes = list_or_default(&meeting.votes, "No outcomes recorded.");
+    let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
+    let resident_comments =
+        list_or_default(&meeting.resident_comments, "No resident comments recorded.");
+    let minutes_adoption = meeting
+        .minutes_adopted_at_unix_seconds
+        .map(|timestamp| format!("Adopted at Unix timestamp {timestamp}."))
+        .unwrap_or_else(|| "Minutes have not been adopted.".to_string());
+    format!(
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Resident Comments\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -472,11 +564,21 @@ fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
         } else {
             &meeting.minutes
         },
-        votes
-    );
+        minutes_adoption,
+        votes,
+        action_items,
+        resident_comments
+    )
+}
+
+fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
+    let meeting = first_meeting_mut(state)?;
+    let contents = meeting_packet_contents(meeting);
     let export_path = write_export_file("meetings", &meeting.title, &contents)?;
     meeting.exports.push(export_path.clone());
-    meeting.status = "packet exported".to_string();
+    if meeting.archived_at_unix_seconds.is_none() {
+        meeting.status = "packet exported".to_string();
+    }
     push_audit(
         state,
         "civicclerk",
@@ -484,6 +586,30 @@ fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
         format!("Exported meeting packet: {export_path}"),
     );
     Ok(format!("Meeting packet export written to {export_path}."))
+}
+
+fn archive_meeting(state: &mut CityWorkState) -> Result<String, String> {
+    let (title, export_path) = {
+        let meeting = first_meeting_mut(state)?;
+        if meeting.minutes_adopted_at_unix_seconds.is_none() {
+            return Err(
+                "Adopt the minutes before archiving the public meeting record.".to_string(),
+            );
+        }
+        meeting.status = "archived public record".to_string();
+        meeting.archived_at_unix_seconds = Some(now_unix_seconds());
+        let contents = meeting_packet_contents(meeting);
+        let export_path = write_export_file("meetings", &meeting.title, &contents)?;
+        meeting.exports.push(export_path.clone());
+        (meeting.title.clone(), export_path)
+    };
+    push_audit(
+        state,
+        "civicclerk",
+        "archive-meeting",
+        format!("Archived public meeting record for {title}: {export_path}"),
+    );
+    Ok(format!("Public meeting archive written to {export_path}."))
 }
 
 fn create_records_request(
@@ -703,7 +829,28 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
     }
     let mut results = Vec::new();
     for meeting in &state.meetings {
-        if contains_query(&[&meeting.title, &meeting.summary, &meeting.status], query) {
+        let agenda_titles = meeting
+            .agenda_items
+            .iter()
+            .map(|item| item.title.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let votes = meeting.votes.join(" ");
+        let action_items = meeting.action_items.join(" ");
+        let resident_comments = meeting.resident_comments.join(" ");
+        if contains_query(
+            &[
+                &meeting.title,
+                &meeting.summary,
+                &meeting.status,
+                &meeting.minutes,
+                &agenda_titles,
+                &votes,
+                &action_items,
+                &resident_comments,
+            ],
+            query,
+        ) {
             results.push(SearchResult {
                 module_id: "civicclerk".to_string(),
                 record_id: meeting.id.clone(),
@@ -765,7 +912,11 @@ pub fn city_work_action(
         "post-notice" => post_notice(&mut state)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
+        "add-action-item" => add_action_item(&mut state, payload)?,
+        "record-resident-comment" => record_resident_comment(&mut state, payload)?,
+        "adopt-minutes" => adopt_minutes(&mut state)?,
         "export-meeting-packet" => export_meeting_packet(&mut state)?,
+        "archive-meeting" => archive_meeting(&mut state)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "export-records-response" => export_records_response(&mut state)?,
@@ -843,7 +994,7 @@ mod tests {
     }
 
     #[test]
-    fn meeting_workflow_persists_agenda_notice_minutes_and_vote() {
+    fn meeting_workflow_persists_agenda_notice_minutes_votes_comments_actions_and_archive() {
         with_temp_state_dir(|_| {
             let payload = serde_json::json!({
                 "title": "Council Regular Meeting",
@@ -857,16 +1008,53 @@ mod tests {
             city_work_action("record-minutes", Some(&minutes)).expect("minutes saved");
             let vote = serde_json::json!({ "vote": "Budget ordinance passed 4-1." });
             city_work_action("record-vote", Some(&vote)).expect("vote saved");
+            let action_item =
+                serde_json::json!({ "actionItem": "Finance staff to publish the adopted budget." });
+            city_work_action("add-action-item", Some(&action_item)).expect("action item saved");
+            let resident_comment =
+                serde_json::json!({ "residentComment": "Resident asked for sidewalk funding." });
+            city_work_action("record-resident-comment", Some(&resident_comment))
+                .expect("resident comment saved");
+            city_work_action("adopt-minutes", None).expect("minutes adopted");
             city_work_action("export-meeting-packet", None).expect("packet exported");
+            city_work_action("archive-meeting", None).expect("meeting archived");
             let state = city_work_state().expect("state reads");
             let meeting = state.meetings.first().expect("meeting exists");
             assert_eq!(meeting.notice_status, "public notice ready");
-            assert_eq!(meeting.status, "packet exported");
+            assert_eq!(meeting.status, "archived public record");
             assert_eq!(meeting.votes.len(), 1);
-            assert_eq!(meeting.exports.len(), 1);
+            assert_eq!(meeting.action_items.len(), 1);
+            assert_eq!(meeting.resident_comments.len(), 1);
+            assert!(meeting.minutes_adopted_at_unix_seconds.is_some());
+            assert!(meeting.archived_at_unix_seconds.is_some());
+            assert_eq!(meeting.exports.len(), 2);
+            assert_ne!(meeting.exports[0], meeting.exports[1]);
             assert!(PathBuf::from(&meeting.exports[0]).is_file());
-            assert!(state.audit_entries.len() >= 5);
+            assert!(PathBuf::from(&meeting.exports[1]).is_file());
+            let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
+            assert!(archive.contains("## Action Items"));
+            assert!(archive.contains("Finance staff to publish the adopted budget."));
+            assert!(archive.contains("## Resident Comments"));
+            assert!(archive.contains("Resident asked for sidewalk funding."));
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "archive-meeting"));
+            assert!(state.audit_entries.len() >= 9);
             assert_valid_audit_chain(&state.audit_entries);
+
+            let late_vote = serde_json::json!({ "vote": "Late amendment after archive." });
+            let error = match city_work_action("record-vote", Some(&late_vote)) {
+                Ok(_) => panic!("archived meeting cannot be mutated"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+
+            city_work_action("export-meeting-packet", None).expect("archived packet can re-export");
+            let reloaded = city_work_state().expect("state reads after re-export");
+            let reloaded_meeting = reloaded.meetings.first().expect("meeting exists");
+            assert_eq!(reloaded_meeting.status, "archived public record");
+            assert_eq!(reloaded_meeting.exports.len(), 3);
         });
     }
 

@@ -383,6 +383,8 @@ const state = {
     agendaTitle: "",
     minutes: "",
     vote: "",
+    actionItem: "",
+    residentComment: "",
     requester: "",
     recordsSummary: "",
     deadline: "",
@@ -866,7 +868,10 @@ function isPublicReadableArea() {
 
 function publicMeetings(work) {
   return work.meetings.filter((meeting) => (
-    meeting.notice_status === "public notice ready" || meeting.status === "packet exported"
+    meeting.notice_status === "public notice ready" ||
+    meeting.status === "packet exported" ||
+    meeting.status === "archived public record" ||
+    Boolean(meeting.archived_at_unix_seconds)
   ));
 }
 
@@ -881,10 +886,10 @@ function renderPublicMeetingsWorkflow() {
     <section class="workflow-list">
       ${meetings.length === 0 ? workflowEmpty("No public meeting materials have been posted yet.") : meetings.map((meeting) => `
         <article class="workflow-record">
-          <span class="status-ok">${meeting.notice_status}</span>
+          <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : meeting.notice_status}</span>
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No public summary recorded."}</p>
-          <small>${meeting.meeting_date} - ${meeting.agenda_items.length} agenda items - ${meeting.exports?.length || 0} packet exports</small>
+          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -919,10 +924,16 @@ function renderMeetingsWorkflow() {
       <div class="workflow-form">
         <h3>Capture Outcomes</h3>
         <label>Minutes draft <textarea data-work-field="minutes">${state.workDraft.minutes}</textarea></label>
-        <label>Motion, vote, or action item <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
+        <label>Motion or vote <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
+        <label>Action item <input type="text" data-work-field="actionItem" value="${state.workDraft.actionItem}" /></label>
+        <label>Resident comment <textarea data-work-field="residentComment">${state.workDraft.residentComment}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
           <button type="button" class="secondary-action" data-work-action="record-vote">Record Outcome</button>
+          <button type="button" class="secondary-action" data-work-action="add-action-item">Add Action Item</button>
+          <button type="button" class="secondary-action" data-work-action="record-resident-comment">Record Resident Comment</button>
+          <button type="button" class="secondary-action" data-work-action="adopt-minutes">Adopt Minutes</button>
+          <button type="button" class="secondary-action" data-work-action="archive-meeting">Archive Public Record</button>
         </div>
       </div>
     </section>
@@ -933,7 +944,10 @@ function renderMeetingsWorkflow() {
           <span class="status-warn">${meeting.status}</span>
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No summary yet."}</p>
-          <small>${meeting.meeting_date} · ${meeting.notice_status} · ${meeting.agenda_items.length} agenda items · ${meeting.votes.length} outcomes · ${meeting.exports?.length || 0} exports</small>
+          ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
+          ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
+          ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
+          <small>${meeting.meeting_date} · ${meeting.notice_status} · ${(meeting.agenda_items || []).length} agenda items · ${(meeting.votes || []).length} outcomes · ${(meeting.action_items || []).length} action items · ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -1096,7 +1110,11 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   const results = [];
   const meetings = publicOnly ? publicMeetings(work) : work.meetings;
   meetings.forEach((meeting) => {
-    if ([meeting.title, meeting.summary, meeting.status].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+    const agendaTitles = (meeting.agenda_items || []).map((item) => item.title).join(" ");
+    const outcomes = (meeting.votes || []).join(" ");
+    const actionItems = (meeting.action_items || []).join(" ");
+    const residentComments = (meeting.resident_comments || []).join(" ");
+    if ([meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments].some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
   });
@@ -1551,6 +1569,10 @@ function workPayloadForAction(action) {
     "add-agenda-item": { agendaTitle: draft.agendaTitle },
     "record-minutes": { minutes: draft.minutes },
     "record-vote": { vote: draft.vote },
+    "add-action-item": { actionItem: draft.actionItem },
+    "record-resident-comment": { residentComment: draft.residentComment },
+    "adopt-minutes": {},
+    "archive-meeting": {},
     "create-records-request": {
       requester: draft.requester,
       summary: draft.recordsSummary,
