@@ -10,6 +10,7 @@ const installerNotice = readFileSync(join(root, "installer", "windows", "unsigne
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
+const runtimePayloadManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-runtime-payloads.json"), "utf8"));
 const firstRunManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-first-run.json"), "utf8"));
 const modelManifest = JSON.parse(readFileSync(join(root, "runtime", "gemma4-model.json"), "utf8"));
 
@@ -54,6 +55,10 @@ if (!tauriConfig.includes('"installerHooks": "../installer/windows/nsis-hooks.ns
   throw new Error("Tauri NSIS installer must include the CivicSuite install hook");
 }
 
+if (!tauriConfig.includes('"resources": ["../runtime/payload/"]')) {
+  throw new Error("Tauri bundle must include the Windows runtime payload resource folder");
+}
+
 for (const phrase of [
   "not code-signed",
   "Microsoft Defender SmartScreen",
@@ -95,6 +100,10 @@ if (runtimeManifest.local_only !== true) {
   throw new Error("Windows runtime manifest must default to local-only");
 }
 
+if (runtimePayloadManifest.profile !== "windows-local-1.0" || runtimePayloadManifest.local_only !== true) {
+  throw new Error("Windows runtime payload manifest must target the local-only Windows profile");
+}
+
 for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   if (runtimeManifest.operator_path[key] !== false) {
     throw new Error(`Windows runtime operator path cannot require ${key}`);
@@ -116,6 +125,26 @@ for (const action of ["install", "start", "stop", "health", "repair", "logs", "b
 for (const serviceId of ["postgres", "python-services", "task-queue", "model-runtime", "file-storage"]) {
   if (!runtimeManifest.services.some((service) => service.id === serviceId)) {
     throw new Error(`Windows runtime manifest missing service: ${serviceId}`);
+  }
+  if (!runtimePayloadManifest.payloads.some((payload) => payload.services.includes(serviceId))) {
+    throw new Error(`Windows runtime payload manifest missing service payload: ${serviceId}`);
+  }
+}
+
+for (const requiredPayload of [
+  ["postgres-17-pgvector", "bin/pg_ctl.exe", "share/extension/vector.control"],
+  ["cpython-services", "python.exe", "Lib/site-packages/civiccore"],
+  ["ollama-runtime", "ollama.exe"]
+]) {
+  const [payloadId, ...requiredFiles] = requiredPayload;
+  const payload = runtimePayloadManifest.payloads.find((candidate) => candidate.id === payloadId);
+  if (!payload) {
+    throw new Error(`Windows runtime payload manifest missing payload: ${payloadId}`);
+  }
+  for (const requiredFile of requiredFiles) {
+    if (!payload.required_files.includes(requiredFile)) {
+      throw new Error(`Windows runtime payload ${payloadId} missing required file: ${requiredFile}`);
+    }
   }
 }
 

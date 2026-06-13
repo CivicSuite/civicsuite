@@ -29,6 +29,7 @@
     "targets": ["nsis"],
     "publisher": "CivicSuite",
     "licenseFile": "../installer/windows/unsigned-beta-install-notice.txt",
+    "resources": ["../runtime/payload/"],
     "windows": {
       "nsis": {
         "displayLanguageSelector": false,

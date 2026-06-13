@@ -8,6 +8,7 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const RUNTIME_MANIFEST_JSON: &str = include_str!("../../runtime/windows-local-runtime.json");
+const RUNTIME_PAYLOADS_JSON: &str = include_str!("../../runtime/windows-runtime-payloads.json");
 const REQUIRED_ACTIONS: [&str; 9] = [
     "install",
     "start",
@@ -35,6 +36,26 @@ struct RuntimeManifest {
     operator_path: OperatorPath,
     lifecycle_actions: Vec<String>,
     services: Vec<ServiceDefinition>,
+}
+
+#[derive(Deserialize)]
+struct RuntimePayloadManifest {
+    schema_version: u16,
+    profile: String,
+    local_only: bool,
+    payload_root: String,
+    install_root: String,
+    payloads: Vec<RuntimePayloadDefinition>,
+}
+
+#[derive(Deserialize)]
+struct RuntimePayloadDefinition {
+    id: String,
+    label: String,
+    services: Vec<String>,
+    source_dir: String,
+    destination_dir: String,
+    required_files: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -115,6 +136,11 @@ fn parse_manifest() -> Result<RuntimeManifest, String> {
         .map_err(|error| format!("Could not parse Windows runtime manifest: {error}"))
 }
 
+fn parse_payload_manifest() -> Result<RuntimePayloadManifest, String> {
+    serde_json::from_str(RUNTIME_PAYLOADS_JSON)
+        .map_err(|error| format!("Could not parse Windows runtime payload manifest: {error}"))
+}
+
 fn validate_manifest(manifest: &RuntimeManifest) -> Result<(), String> {
     if manifest.schema_version != 1 {
         return Err(format!(
@@ -145,6 +171,45 @@ fn validate_manifest(manifest: &RuntimeManifest) -> Result<(), String> {
     }
     if manifest.services.is_empty() {
         return Err("Windows runtime manifest must define at least one service".to_string());
+    }
+    Ok(())
+}
+
+fn validate_payload_manifest(
+    manifest: &RuntimeManifest,
+    payload_manifest: &RuntimePayloadManifest,
+) -> Result<(), String> {
+    if payload_manifest.schema_version != 1 {
+        return Err(format!(
+            "Unsupported Windows runtime payload manifest schema {}",
+            payload_manifest.schema_version
+        ));
+    }
+    if payload_manifest.profile != manifest.profile {
+        return Err(
+            "Windows runtime payload manifest profile does not match runtime profile".to_string(),
+        );
+    }
+    if !payload_manifest.local_only {
+        return Err("Windows runtime payload manifest must be local-only".to_string());
+    }
+    if payload_manifest.payload_root != "runtime/payload" {
+        return Err("Windows runtime payload root must be runtime/payload".to_string());
+    }
+    if payload_manifest.install_root != "runtime" {
+        return Err("Windows runtime payload install root must be runtime".to_string());
+    }
+    for service in &manifest.services {
+        if !payload_manifest
+            .payloads
+            .iter()
+            .any(|payload| payload.services.iter().any(|id| id == &service.id))
+        {
+            return Err(format!(
+                "Windows runtime payload manifest is missing service {}",
+                service.id
+            ));
+        }
     }
     Ok(())
 }
@@ -187,6 +252,22 @@ fn runtime_root() -> PathBuf {
     env::var("CIVICSUITE_RUNTIME_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|_| civic_suite_root())
+}
+
+fn runtime_payload_roots() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+    if let Ok(root) = env::var("CIVICSUITE_RUNTIME_PAYLOAD_DIR") {
+        candidates.push(PathBuf::from(root));
+    }
+    if let Ok(exe) = env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            candidates.push(parent.join("runtime").join("payload"));
+            candidates.push(parent.join("resources").join("runtime").join("payload"));
+            candidates.push(parent.join("resources").join("runtime-payload"));
+        }
+    }
+    candidates.push(runtime_root().join("runtime").join("payload"));
+    candidates
 }
 
 fn state_path() -> PathBuf {
@@ -257,6 +338,67 @@ fn copy_path_recursive(source: &Path, destination: &Path) -> Result<(), String> 
         })?;
     }
     Ok(())
+}
+
+fn payloads_for_services<'a>(
+    payload_manifest: &'a RuntimePayloadManifest,
+    services: &[&ServiceDefinition],
+) -> Vec<&'a RuntimePayloadDefinition> {
+    payload_manifest
+        .payloads
+        .iter()
+        .filter(|payload| {
+            services.iter().any(|service| {
+                payload
+                    .services
+                    .iter()
+                    .any(|payload_service| payload_service == &service.id)
+            })
+        })
+        .collect()
+}
+
+fn payload_destination(payload: &RuntimePayloadDefinition) -> PathBuf {
+    let destination = PathBuf::from(payload.destination_dir.replace('/', "\\"));
+    if destination.is_absolute() {
+        destination
+    } else {
+        runtime_root().join(destination)
+    }
+}
+
+fn payload_required_files_present(payload: &RuntimePayloadDefinition) -> bool {
+    let destination = payload_destination(payload);
+    payload
+        .required_files
+        .iter()
+        .all(|file| destination.join(file.replace('/', "\\")).exists())
+}
+
+fn first_payload_source(payload: &RuntimePayloadDefinition) -> Option<PathBuf> {
+    runtime_payload_roots()
+        .into_iter()
+        .map(|root| root.join(payload.source_dir.replace('/', "\\")))
+        .find(|candidate| candidate.is_dir())
+}
+
+fn install_runtime_payloads(payloads: &[&RuntimePayloadDefinition]) -> Result<Vec<String>, String> {
+    let mut missing = Vec::new();
+    for payload in payloads {
+        if payload_required_files_present(payload) {
+            continue;
+        }
+        let Some(source) = first_payload_source(payload) else {
+            missing.push(format!("{} ({})", payload.label, payload.id));
+            continue;
+        };
+        let destination = payload_destination(payload);
+        copy_path_recursive(&source, &destination)?;
+        if !payload_required_files_present(payload) {
+            missing.push(format!("{} ({})", payload.label, payload.id));
+        }
+    }
+    Ok(missing)
 }
 
 fn remove_profile_dir(path: &Path) -> Result<bool, String> {
@@ -655,8 +797,13 @@ fn ensure_runtime_dirs(service: &ServiceDefinition) -> Result<(), String> {
 
 fn install_or_repair(
     action: &str,
+    manifest: &RuntimeManifest,
     services: &[&ServiceDefinition],
 ) -> Result<SupervisorActionResult, String> {
+    let payload_manifest = parse_payload_manifest()?;
+    validate_payload_manifest(manifest, &payload_manifest)?;
+    let payloads = payloads_for_services(&payload_manifest, services);
+    let missing_payloads = install_runtime_payloads(&payloads)?;
     let mut state = read_state()?;
     let mut missing_required = Vec::new();
     for service in services {
@@ -670,24 +817,36 @@ fn install_or_repair(
     }
     write_state(&state)?;
 
-    if missing_required.is_empty() {
+    if missing_required.is_empty() && missing_payloads.is_empty() {
         Ok(SupervisorActionResult {
             accepted: true,
             action: action.to_string(),
             service_id: None,
             status: "Installed",
-            message: "The local runtime folders and service state were prepared.".to_string(),
+            message:
+                "The bundled local runtime payloads, folders, and service state were prepared."
+                    .to_string(),
             next_action: "Start the local services and run health verification.".to_string(),
         })
     } else {
+        let mut details = Vec::new();
+        if !missing_payloads.is_empty() {
+            details.push(format!("missing payloads: {}", missing_payloads.join(", ")));
+        }
+        if !missing_required.is_empty() {
+            details.push(format!(
+                "missing service executables: {}",
+                missing_required.join(", ")
+            ));
+        }
         Ok(SupervisorActionResult {
             accepted: false,
             action: action.to_string(),
             service_id: None,
             status: "Needs runtime files",
             message: format!(
-                "Local folders were prepared, but bundled executables are missing for: {}.",
-                missing_required.join(", ")
+                "Local folders were prepared, but required Windows runtime files are incomplete: {}.",
+                details.join("; ")
             ),
             next_action: "Repair or install the bundled Windows runtime files, then retry."
                 .to_string(),
@@ -928,7 +1087,7 @@ pub fn supervisor_action(
 
     let services = target_services(&manifest, service_id)?;
     match action {
-        "install" | "repair" => install_or_repair(action, &services),
+        "install" | "repair" => install_or_repair(action, &manifest, &services),
         "start" => start_services(&services),
         "stop" => stop_services(&services),
         "health" => health_action(service_id),
@@ -955,10 +1114,12 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
         env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
         env::set_var("CIVICSUITE_RUNTIME_ROOT", root.join("Runtime"));
+        env::set_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR", root.join("Payload"));
         env::set_var("CIVICSUITE_BACKUP_DIR", root.join("Backups"));
         let result = test(root.clone());
         env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
         env::remove_var("CIVICSUITE_RUNTIME_ROOT");
+        env::remove_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR");
         env::remove_var("CIVICSUITE_BACKUP_DIR");
         let _ = fs::remove_dir_all(root);
         result
@@ -982,6 +1143,15 @@ mod tests {
                 .iter()
                 .any(|candidate| candidate == action));
         }
+    }
+
+    #[test]
+    fn payload_manifest_covers_runtime_services() {
+        let manifest = parse_manifest().expect("manifest parses");
+        validate_manifest(&manifest).expect("manifest validates");
+        let payload_manifest = parse_payload_manifest().expect("payload manifest parses");
+        validate_payload_manifest(&manifest, &payload_manifest)
+            .expect("payload manifest covers services");
     }
 
     #[test]
@@ -1021,6 +1191,37 @@ mod tests {
             assert!(!result.accepted);
             assert_eq!(result.status, "Needs install");
             assert!(result.message.contains("cannot start"));
+        });
+    }
+
+    #[test]
+    fn supervisor_install_copies_bundled_runtime_payload() {
+        with_temp_state_dir(|root| {
+            let payload = root.join("Payload").join("postgres");
+            for file in [
+                "bin/pg_ctl.exe",
+                "bin/initdb.exe",
+                "bin/postgres.exe",
+                "share/extension/vector.control",
+                "lib/vector.dll",
+            ] {
+                let path = payload.join(file);
+                fs::create_dir_all(path.parent().expect("payload parent")).expect("payload dir");
+                fs::write(path, "fake runtime file").expect("payload file");
+            }
+
+            let result = supervisor_action("install", Some("postgres"))
+                .expect("action response is structured");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Installed");
+            assert!(root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin")
+                .join("pg_ctl.exe")
+                .is_file());
         });
     }
 
