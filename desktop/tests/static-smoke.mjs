@@ -39,6 +39,13 @@ const requiredUiPhrases = [
   "Download progress",
   "Official Google weights",
   "Download / Resume Model",
+  "Notice meeting type",
+  "Statutory notice basis",
+  "Notice deadline",
+  "Notice time zone",
+  "Clerk has reviewed and approved the notice checklist",
+  "Actual posting date",
+  "Approve Notice Checklist",
   "Notice posting location",
   "Posting confirmation",
   "Generate Local AI Minutes",
@@ -338,9 +345,14 @@ for (const phrase of [
 }
 
 for (const phrase of [
+  "Notice Checklist",
+  "complete-notice-checklist",
+  "noticeStatutoryBasis",
+  "noticeTimeZone",
   "Notice Posting Evidence",
   "postingLocation",
   "postingConfirmation",
+  "postingDate",
   "suggest-minutes-draft",
   "suggest-records-response",
   "suggest-code-guidance",

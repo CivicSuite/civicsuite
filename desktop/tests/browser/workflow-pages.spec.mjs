@@ -6,10 +6,17 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Meeting" })).toBeVisible();
+  await expect(page.getByLabel("Notice meeting type")).toBeVisible();
+  await expect(page.getByLabel("Statutory notice basis")).toBeVisible();
+  await expect(page.getByLabel("Notice deadline")).toBeVisible();
+  await expect(page.getByLabel("Notice time zone")).toBeVisible();
+  await expect(page.getByLabel("Clerk has reviewed and approved the notice checklist")).toBeVisible();
+  await expect(page.getByLabel("Actual posting date")).toBeVisible();
   await expect(page.getByLabel("Notice posting location")).toBeVisible();
   await expect(page.getByLabel("Notice posting method")).toBeVisible();
   await expect(page.getByLabel("Posting confirmation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve Notice Checklist" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Notice Ready" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Packet" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
@@ -146,8 +153,16 @@ test("risky city workflow actions require guided review before mutation", async 
   await expect(page.getByText("Uses the verified local AI model to draft internal meeting minutes")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
+  await page.getByRole("button", { name: "Approve Notice Checklist" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Approving Notice Checklist" })).toBeVisible();
+  await expect(page.getByText("Statutory notice basis is required.")).toBeVisible();
+  await expect(page.getByText("Clerk approval is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
   await page.getByRole("button", { name: "Mark Notice Ready" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Posting Notice" })).toBeVisible();
+  await expect(page.getByText("Approved notice checklist is required.")).toBeVisible();
+  await expect(page.getByText("Actual posting date is required.")).toBeVisible();
   await expect(page.getByText("Posting confirmation evidence is required.")).toBeVisible();
   await page.getByRole("button", { name: "Confirm Mark Notice Ready" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();

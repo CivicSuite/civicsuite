@@ -44,7 +44,25 @@ pub struct NoticePosting {
     pub location: String,
     pub method: String,
     pub confirmation: String,
+    #[serde(default)]
+    pub posted_on: String,
+    #[serde(default)]
+    pub time_zone: String,
+    #[serde(default)]
+    pub checklist_id: String,
     pub posted_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct NoticeChecklist {
+    pub id: String,
+    pub meeting_type: String,
+    pub statutory_basis: String,
+    pub posting_deadline: String,
+    pub time_zone: String,
+    pub human_approval: bool,
+    pub status: String,
+    pub checked_at_unix_seconds: u64,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -54,6 +72,8 @@ pub struct Meeting {
     pub meeting_date: String,
     pub status: String,
     pub notice_status: String,
+    #[serde(default)]
+    pub notice_checklists: Vec<NoticeChecklist>,
     #[serde(default)]
     pub notice_postings: Vec<NoticePosting>,
     pub summary: String,
@@ -408,6 +428,75 @@ fn payload_bool(payload: Option<&Value>, key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn days_in_month(year: u32, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 => 29,
+        2 => 28,
+        _ => 0,
+    }
+}
+
+fn parse_iso_date(value: &str, label: &str) -> Result<(u32, u32, u32), String> {
+    let parts = value.split('-').collect::<Vec<_>>();
+    if parts.len() != 3
+        || parts[0].len() != 4
+        || parts[1].len() != 2
+        || parts[2].len() != 2
+        || parts
+            .iter()
+            .any(|part| !part.chars().all(|character| character.is_ascii_digit()))
+    {
+        return Err(format!("Enter {label} as YYYY-MM-DD."));
+    }
+    let year = parts[0]
+        .parse::<u32>()
+        .map_err(|_| format!("Enter {label} as YYYY-MM-DD."))?;
+    let month = parts[1]
+        .parse::<u32>()
+        .map_err(|_| format!("Enter {label} as YYYY-MM-DD."))?;
+    let day = parts[2]
+        .parse::<u32>()
+        .map_err(|_| format!("Enter {label} as YYYY-MM-DD."))?;
+    let max_day = days_in_month(year, month);
+    if !(1900..=9999).contains(&year) || max_day == 0 || day == 0 || day > max_day {
+        return Err(format!("Enter {label} as a real calendar date."));
+    }
+    Ok((year, month, day))
+}
+
+fn iso_date_after(
+    left: &str,
+    right: &str,
+    left_label: &str,
+    right_label: &str,
+) -> Result<bool, String> {
+    Ok(parse_iso_date(left, left_label)? > parse_iso_date(right, right_label)?)
+}
+
+fn ensure_notice_time_zone(time_zone: &str) -> Result<(), String> {
+    const SUPPORTED_TIME_ZONES: &[&str] = &[
+        "America/New_York",
+        "America/Chicago",
+        "America/Denver",
+        "America/Phoenix",
+        "America/Los_Angeles",
+        "America/Anchorage",
+        "Pacific/Honolulu",
+        "America/Puerto_Rico",
+        "UTC",
+    ];
+    if SUPPORTED_TIME_ZONES.contains(&time_zone) {
+        return Ok(());
+    }
+    Err("Choose a valid IANA time zone, such as America/Denver.".to_string())
+}
+
+fn latest_notice_checklist(meeting: &Meeting) -> Option<&NoticeChecklist> {
+    meeting.notice_checklists.last()
+}
+
 fn bytes_to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
@@ -624,6 +713,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         meeting_date,
         status: "draft".to_string(),
         notice_status: "not posted".to_string(),
+        notice_checklists: Vec::new(),
         notice_postings: Vec::new(),
         summary,
         agenda_items: Vec::new(),
@@ -714,6 +804,67 @@ fn add_code_handoff_agenda(
     ))
 }
 
+fn complete_notice_checklist(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let meeting_type = payload_string(payload, "noticeMeetingType")
+        .map_err(|_| "Enter the meeting type for the notice checklist.".to_string())?;
+    let statutory_basis = payload_string(payload, "noticeStatutoryBasis")
+        .map_err(|_| "Enter the statutory notice basis before posting notice.".to_string())?;
+    let posting_deadline = payload_string(payload, "noticeDeadline")
+        .map_err(|_| "Enter the notice posting deadline as YYYY-MM-DD.".to_string())?;
+    let time_zone = payload_string(payload, "noticeTimeZone")
+        .map_err(|_| "Enter the notice time zone, such as America/Denver.".to_string())?;
+    ensure_notice_time_zone(&time_zone)?;
+    parse_iso_date(&posting_deadline, "notice posting deadline")?;
+    let human_approval = payload_bool(payload, "noticeHumanApproval");
+    if !human_approval {
+        return Err("A clerk must approve the notice checklist before posting notice.".to_string());
+    }
+
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    parse_iso_date(&meeting.meeting_date, "meeting date")?;
+    if meeting.agenda_items.is_empty() {
+        return Err(
+            "Add at least one agenda item before approving the notice checklist.".to_string(),
+        );
+    }
+    if iso_date_after(
+        &posting_deadline,
+        &meeting.meeting_date,
+        "notice posting deadline",
+        "meeting date",
+    )? {
+        return Err("Notice deadline must be on or before the meeting date.".to_string());
+    }
+
+    let checklist_id = new_id("notice-checklist", meeting.notice_checklists.len());
+    meeting.notice_checklists.push(NoticeChecklist {
+        id: checklist_id,
+        meeting_type: meeting_type.clone(),
+        statutory_basis: statutory_basis.clone(),
+        posting_deadline: posting_deadline.clone(),
+        time_zone: time_zone.clone(),
+        human_approval,
+        status: "ready for posting".to_string(),
+        checked_at_unix_seconds: now_unix_seconds(),
+    });
+    let title = meeting.title.clone();
+    meeting.notice_status = "notice checklist ready".to_string();
+    meeting.status = "notice checklist ready".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "complete-notice-checklist",
+        format!(
+            "Notice checklist approved for {title}; type: {meeting_type}; basis: {statutory_basis}; deadline: {posting_deadline}; time zone: {time_zone}"
+        ),
+    );
+    Ok("Notice checklist approved locally. Posting proof can now be recorded.".to_string())
+}
+
 fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let posting_location = payload_string(payload, "postingLocation").map_err(|_| {
         "Enter the notice posting location before marking notice ready.".to_string()
@@ -723,10 +874,30 @@ fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
     let posting_confirmation = payload_string(payload, "postingConfirmation").map_err(|_| {
         "Enter the notice posting confirmation before marking notice ready.".to_string()
     })?;
+    let posting_date = payload_string(payload, "postingDate")
+        .map_err(|_| "Enter the actual notice posting date as YYYY-MM-DD.".to_string())?;
+    parse_iso_date(&posting_date, "actual notice posting date")?;
     let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     if meeting.agenda_items.is_empty() {
         return Err("Add at least one agenda item before posting notice.".to_string());
+    }
+    let checklist = latest_notice_checklist(meeting)
+        .cloned()
+        .ok_or_else(|| "Complete the notice checklist before marking notice ready.".to_string())?;
+    if checklist.status != "ready for posting" || !checklist.human_approval {
+        return Err("A clerk must approve the notice checklist before posting notice.".to_string());
+    }
+    if iso_date_after(
+        &posting_date,
+        &checklist.posting_deadline,
+        "actual notice posting date",
+        "notice posting deadline",
+    )? {
+        return Err(
+            "The posting date is after the notice checklist deadline; update the checklist before marking notice ready."
+                .to_string(),
+        );
     }
     let notice_id = new_id("notice", meeting.notice_postings.len());
     meeting.notice_postings.push(NoticePosting {
@@ -734,6 +905,9 @@ fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
         location: posting_location.clone(),
         method: posting_method.clone(),
         confirmation: posting_confirmation.clone(),
+        posted_on: posting_date.clone(),
+        time_zone: checklist.time_zone.clone(),
+        checklist_id: checklist.id.clone(),
         posted_at_unix_seconds: now_unix_seconds(),
     });
     let title = meeting.title.clone();
@@ -744,7 +918,8 @@ fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
         "civicclerk",
         "post-notice",
         format!(
-            "Prepared public notice for {title}; posted at {posting_location} by {posting_method}; confirmation: {posting_confirmation}"
+            "Prepared public notice for {title}; posted at {posting_location} by {posting_method} on {posting_date} {}; confirmation: {posting_confirmation}",
+            checklist.time_zone
         ),
     );
     Ok("Notice marked ready with posting evidence preserved locally.".to_string())
@@ -823,11 +998,12 @@ fn suggest_minutes_draft(
         return Err("Add a summary, agenda item, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, notice evidence, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
         meeting.notice_status,
+        notice_checklists_or_default(&meeting.notice_checklists),
         notice_postings_or_default(&meeting.notice_postings),
         if meeting.summary.is_empty() {
             "No summary recorded."
@@ -1095,6 +1271,26 @@ fn code_version_history_or_default(entries: &[CodeVersionEntry]) -> String {
         .join("\n")
 }
 
+fn notice_checklists_or_default(entries: &[NoticeChecklist]) -> String {
+    if entries.is_empty() {
+        return "No notice checklist has been approved.".to_string();
+    }
+    entries
+        .iter()
+        .map(|entry| {
+            format!(
+                "- {} notice; basis: {}; deadline: {}; time zone: {}; status: {}",
+                entry.meeting_type,
+                entry.statutory_basis,
+                entry.posting_deadline,
+                entry.time_zone,
+                entry.status
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn notice_postings_or_default(entries: &[NoticePosting]) -> String {
     if entries.is_empty() {
         return "No notice posting evidence recorded.".to_string();
@@ -1102,9 +1298,14 @@ fn notice_postings_or_default(entries: &[NoticePosting]) -> String {
     entries
         .iter()
         .map(|entry| {
+            let posted_on = if entry.posted_on.is_empty() {
+                format!("Unix timestamp {}", entry.posted_at_unix_seconds)
+            } else {
+                format!("{} {}", entry.posted_on, entry.time_zone)
+            };
             format!(
-                "- {} via {} at Unix timestamp {}; confirmation: {}",
-                entry.location, entry.method, entry.posted_at_unix_seconds, entry.confirmation
+                "- {} via {} on {}; confirmation: {}",
+                entry.location, entry.method, posted_on, entry.confirmation
             )
         })
         .collect::<Vec<_>>()
@@ -1168,13 +1369,15 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         .minutes_adopted_at_unix_seconds
         .map(|timestamp| format!("Adopted at Unix timestamp {timestamp}."))
         .unwrap_or_else(|| "Minutes have not been adopted.".to_string());
+    let notice_checklists = notice_checklists_or_default(&meeting.notice_checklists);
     let notice_postings = notice_postings_or_default(&meeting.notice_postings);
     format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
         meeting.notice_status,
+        notice_checklists,
         notice_postings,
         if meeting.summary.is_empty() {
             "No summary recorded."
@@ -2213,6 +2416,36 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let votes = meeting.votes.join(" ");
         let action_items = meeting.action_items.join(" ");
         let resident_comments = meeting.resident_comments.join(" ");
+        let notice_checklists = meeting
+            .notice_checklists
+            .iter()
+            .map(|checklist| {
+                format!(
+                    "{} {} {} {} {}",
+                    checklist.meeting_type,
+                    checklist.statutory_basis,
+                    checklist.posting_deadline,
+                    checklist.time_zone,
+                    checklist.status
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        let notice_postings = meeting
+            .notice_postings
+            .iter()
+            .map(|posting| {
+                format!(
+                    "{} {} {} {} {}",
+                    posting.location,
+                    posting.method,
+                    posting.confirmation,
+                    posting.posted_on,
+                    posting.time_zone
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let public_comments = meeting
             .public_comments
             .iter()
@@ -2238,6 +2471,8 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &votes,
                 &action_items,
                 &resident_comments,
+                &notice_checklists,
+                &notice_postings,
                 &public_comments,
             ],
             query,
@@ -2507,6 +2742,7 @@ pub fn city_work_action(
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
+        "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "suggest-minutes-draft" => suggest_minutes_draft(&mut state, payload)?,
@@ -2687,15 +2923,72 @@ mod tests {
                 "agendaTitle": "Adopt budget ordinance"
             });
             city_work_action("create-meeting", Some(&payload)).expect("meeting created");
-            let missing_notice = match city_work_action("post-notice", None) {
-                Ok(_) => panic!("notice cannot post without evidence"),
+            let missing_checklist = match city_work_action("complete-notice-checklist", None) {
+                Ok(_) => panic!("notice checklist cannot pass without evidence"),
                 Err(error) => error,
             };
-            assert!(missing_notice.contains("Enter the notice posting location"));
+            assert!(missing_checklist.contains("Enter the meeting type"));
+            let missing_basis = serde_json::json!({
+                "noticeMeetingType": "Regular council meeting",
+                "noticeDeadline": "2026-06-30",
+                "noticeTimeZone": "America/Denver",
+                "noticeHumanApproval": true
+            });
+            let error = match city_work_action("complete-notice-checklist", Some(&missing_basis)) {
+                Ok(_) => panic!("notice checklist cannot pass without statutory basis"),
+                Err(error) => error,
+            };
+            assert!(error.contains("statutory notice basis"));
+            let bad_time_zone = serde_json::json!({
+                "noticeMeetingType": "Regular council meeting",
+                "noticeStatutoryBasis": "Municipal open meetings notice",
+                "noticeDeadline": "2026-06-30",
+                "noticeTimeZone": "Denver",
+                "noticeHumanApproval": true
+            });
+            let error = match city_work_action("complete-notice-checklist", Some(&bad_time_zone)) {
+                Ok(_) => panic!("notice checklist cannot pass with invalid timezone"),
+                Err(error) => error,
+            };
+            assert!(error.contains("valid IANA time zone"));
+            let missing_approval = serde_json::json!({
+                "noticeMeetingType": "Regular council meeting",
+                "noticeStatutoryBasis": "Municipal open meetings notice",
+                "noticeDeadline": "2026-06-30",
+                "noticeTimeZone": "America/Denver",
+                "noticeHumanApproval": false
+            });
+            let error = match city_work_action("complete-notice-checklist", Some(&missing_approval))
+            {
+                Ok(_) => panic!("notice checklist cannot pass without clerk approval"),
+                Err(error) => error,
+            };
+            assert!(error.contains("clerk must approve"));
+            let checklist = serde_json::json!({
+                "noticeMeetingType": "Regular council meeting",
+                "noticeStatutoryBasis": "Municipal open meetings notice",
+                "noticeDeadline": "2026-06-30",
+                "noticeTimeZone": "America/Denver",
+                "noticeHumanApproval": true
+            });
+            city_work_action("complete-notice-checklist", Some(&checklist))
+                .expect("notice checklist approved");
+            let late_notice = serde_json::json!({
+                "postingLocation": "City Hall bulletin board and city website",
+                "postingMethod": "Posted PDF and clerk attestation",
+                "postingConfirmation": "Clerk confirmed posting after the statutory deadline.",
+                "postingDate": "2026-07-01"
+            });
+            let error = match city_work_action("post-notice", Some(&late_notice)) {
+                Ok(_) => panic!("late notice posting cannot mark notice ready"),
+                Err(error) => error,
+            };
+            assert!(error.contains("after the notice checklist deadline"));
             let notice = serde_json::json!({
                 "postingLocation": "City Hall bulletin board and city website",
                 "postingMethod": "Posted PDF and clerk attestation",
-                "postingConfirmation": "Clerk confirmed posting before the statutory deadline."
+                "postingConfirmation": "Clerk confirmed posting before the statutory deadline.",
+                "postingDate": "2026-06-30"
             });
             city_work_action("post-notice", Some(&notice)).expect("notice prepared");
             let minutes = serde_json::json!({ "minutes": "Meeting called to order at 6:00 PM." });
@@ -2727,11 +3020,17 @@ mod tests {
             let state = city_work_state().expect("state reads");
             let meeting = state.meetings.first().expect("meeting exists");
             assert_eq!(meeting.notice_status, "public notice ready");
+            assert_eq!(meeting.notice_checklists.len(), 1);
+            assert_eq!(
+                meeting.notice_checklists[0].statutory_basis,
+                "Municipal open meetings notice"
+            );
             assert_eq!(meeting.notice_postings.len(), 1);
             assert_eq!(
                 meeting.notice_postings[0].location,
                 "City Hall bulletin board and city website"
             );
+            assert_eq!(meeting.notice_postings[0].posted_on, "2026-06-30");
             assert_eq!(meeting.status, "archived public record");
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
@@ -2746,6 +3045,8 @@ mod tests {
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
+            assert!(archive.contains("## Notice Checklist"));
+            assert!(archive.contains("Municipal open meetings notice"));
             assert!(archive.contains("## Notice Posting Evidence"));
             assert!(archive.contains("City Hall bulletin board and city website"));
             assert!(archive.contains("Local AI minutes draft"));
@@ -2811,12 +3112,25 @@ mod tests {
             assert!(error.contains("Public comments open only after"));
 
             city_work_action(
+                "complete-notice-checklist",
+                Some(&serde_json::json!({
+                    "meetingId": meeting_id.clone(),
+                    "noticeMeetingType": "Public hearing",
+                    "noticeStatutoryBasis": "Municipal hearing notice",
+                    "noticeDeadline": "2026-07-14",
+                    "noticeTimeZone": "America/Denver",
+                    "noticeHumanApproval": true
+                })),
+            )
+            .expect("notice checklist approved");
+            city_work_action(
                 "post-notice",
                 Some(&serde_json::json!({
-                    "meetingId": meeting_id,
+                    "meetingId": meeting_id.clone(),
                     "postingLocation": "City website",
                     "postingMethod": "Meeting notice web posting",
-                    "postingConfirmation": "Clerk confirmed website posting."
+                    "postingConfirmation": "Clerk confirmed website posting.",
+                    "postingDate": "2026-07-14"
                 })),
             )
             .expect("notice posted");

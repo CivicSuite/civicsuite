@@ -136,6 +136,7 @@ fn city_work_action_module_requirement(
         "create-meeting"
         | "add-agenda-item"
         | "add-code-handoff-agenda"
+        | "complete-notice-checklist"
         | "post-notice"
         | "record-minutes"
         | "suggest-minutes-draft"
@@ -1027,16 +1028,27 @@ mod tests {
                     .expect("meeting created");
             let meeting_id = meeting_result.state.meetings[0].id.clone();
             let minutes_payload = serde_json::json!({
-                "meetingId": meeting_id,
+                "meetingId": meeting_id.clone(),
                 "minutes": "Private draft minutes with staff notes."
             });
             workflows::city_work_action("record-minutes", Some(&minutes_payload))
                 .expect("minutes saved");
+            let notice_checklist = serde_json::json!({
+                "meetingId": meeting_id.clone(),
+                "noticeMeetingType": "Budget work session",
+                "noticeStatutoryBasis": "Municipal open meetings notice",
+                "noticeDeadline": "2026-07-01",
+                "noticeTimeZone": "America/Denver",
+                "noticeHumanApproval": true
+            });
+            workflows::city_work_action("complete-notice-checklist", Some(&notice_checklist))
+                .expect("notice checklist ready");
             let selected_meeting = serde_json::json!({
-                "meetingId": meeting_id,
+                "meetingId": meeting_id.clone(),
                 "postingLocation": "City website",
                 "postingMethod": "Posted PDF notice",
-                "postingConfirmation": "Clerk confirmed the notice was posted before the meeting."
+                "postingConfirmation": "Clerk confirmed the notice was posted before the meeting.",
+                "postingDate": "2026-07-01"
             });
             workflows::city_work_action("post-notice", Some(&selected_meeting))
                 .expect("notice ready");

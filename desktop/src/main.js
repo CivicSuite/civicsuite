@@ -533,9 +533,15 @@ const state = {
     meetingDate: "",
     meetingSummary: "",
     agendaTitle: "",
+    noticeMeetingType: "",
+    noticeStatutoryBasis: "",
+    noticeDeadline: "",
+    noticeTimeZone: "America/Denver",
+    noticeHumanApproval: false,
     noticeLocation: "",
     noticeMethod: "",
     noticeConfirmation: "",
+    noticePostingDate: "",
     minutes: "",
     vote: "",
     actionItem: "",
@@ -1280,6 +1286,7 @@ function workflowEmpty(label) {
 
 const GUIDED_WORK_ACTIONS = new Set([
   "add-code-handoff-agenda",
+  "complete-notice-checklist",
   "post-notice",
   "export-meeting-packet",
   "review-public-comment",
@@ -1378,16 +1385,37 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicClerk audit entry for adding the code handoff to the agenda.",
       retry: "If no handoff or meeting exists, the desktop app stops before changing local records."
     },
+    "complete-notice-checklist": {
+      title: "Review Before Approving Notice Checklist",
+      confirmLabel: "Approve Notice Checklist",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Records the meeting type, statutory notice basis, deadline, time zone, and clerk approval needed before posting proof can mark the notice ready.",
+      visibility: "Internal checklist until the notice is posted or the meeting is archived.",
+      sources: [
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
+        detailOrFallback(state.workDraft.noticeMeetingType, "Meeting type is required."),
+        detailOrFallback(state.workDraft.noticeStatutoryBasis, "Statutory notice basis is required."),
+        detailOrFallback(state.workDraft.noticeDeadline, "Notice deadline is required."),
+        detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
+        state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
+      ],
+      audit: "Creates a CivicClerk audit entry for checklist approval without claiming legal sufficiency.",
+      retry: "If required checklist details are missing, the time zone is invalid, or approval is not checked, the desktop app leaves the notice unchanged."
+    },
     "post-notice": {
       title: "Review Before Posting Notice",
       confirmLabel: "Mark Notice Ready",
       module: "CivicClerk",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
-      changes: "Marks the current meeting notice as ready for public posting.",
+      changes: "Records final posting proof and marks the current meeting notice as ready for public posting after the approved checklist passes.",
       visibility: "Resident/Public meeting materials can show posted notice information.",
       sources: [
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
+        meeting && (meeting.notice_checklists || []).length > 0 ? "Notice checklist approved." : "Approved notice checklist is required.",
+        detailOrFallback(state.workDraft.noticePostingDate, "Actual posting date is required."),
         detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet."),
         detailOrFallback(state.workDraft.noticeLocation, "Posting location is required."),
         detailOrFallback(state.workDraft.noticeConfirmation, "Posting confirmation evidence is required.")
@@ -1811,6 +1839,12 @@ function renderMeetingsWorkflow() {
         <label>Date <input type="date" data-work-field="meetingDate" value="${state.workDraft.meetingDate}" /></label>
         <label>Summary <textarea data-work-field="meetingSummary">${state.workDraft.meetingSummary}</textarea></label>
         <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${state.workDraft.agendaTitle}" /></label>
+        <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${state.workDraft.noticeMeetingType}" placeholder="Regular council meeting" /></label>
+        <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${state.workDraft.noticeStatutoryBasis}" placeholder="Municipal open meetings notice" /></label>
+        <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${state.workDraft.noticeDeadline}" /></label>
+        <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${state.workDraft.noticeTimeZone}" placeholder="America/Denver" /></label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="noticeHumanApproval" ${state.workDraft.noticeHumanApproval ? "checked" : ""} /> Clerk has reviewed and approved the notice checklist</label>
+        <label>Actual posting date <input type="date" data-work-field="noticePostingDate" value="${state.workDraft.noticePostingDate}" /></label>
         <label>Notice posting location <input type="text" data-work-field="noticeLocation" value="${state.workDraft.noticeLocation}" placeholder="City Hall bulletin board and city website" /></label>
         <label>Notice posting method <input type="text" data-work-field="noticeMethod" value="${state.workDraft.noticeMethod}" placeholder="Posted PDF and clerk attestation" /></label>
         <label>Posting confirmation <textarea data-work-field="noticeConfirmation">${state.workDraft.noticeConfirmation}</textarea></label>
@@ -1818,6 +1852,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
           <button type="button" class="secondary-action" data-work-action="add-code-handoff-agenda">Add Code Handoff</button>
+          <button type="button" class="secondary-action" data-work-action="complete-notice-checklist">Approve Notice Checklist</button>
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
           <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Packet</button>
           <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
@@ -1859,6 +1894,7 @@ function renderMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No summary yet."}</p>
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
+          ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
@@ -2306,6 +2342,12 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const outcomes = (meeting.votes || []).join(" ");
     const actionItems = (meeting.action_items || []).join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
+    const noticeChecklists = (meeting.notice_checklists || [])
+      .map((entry) => [entry.meeting_type, entry.statutory_basis, entry.posting_deadline, entry.time_zone, entry.status].join(" "))
+      .join(" ");
+    const noticePostings = (meeting.notice_postings || [])
+      .map((entry) => [entry.location, entry.method, entry.confirmation, entry.posted_on, entry.time_zone].join(" "))
+      .join(" ");
     const publicComments = (meeting.public_comments || [])
       .filter((comment) => !publicOnly || ["reviewed for public record", "redacted for public record"].includes(comment.status))
       .map((comment) => {
@@ -2331,6 +2373,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       meeting.summary,
       meeting.status,
       meeting.notice_status,
+      noticeChecklists,
+      noticePostings,
       agendaTitles,
       publicComments
     ];
@@ -2338,7 +2382,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, outcomes, actionItems, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments, publicComments];
+      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, outcomes, actionItems, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -3140,7 +3184,7 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-work-field]").forEach((input) => {
     const syncWorkField = () => {
-      state.workDraft[input.dataset.workField] = input.value;
+      state.workDraft[input.dataset.workField] = input.type === "checkbox" ? input.checked : input.value;
       if (["searchQuery", "codeQuestion"].includes(input.dataset.workField)) {
         state.searchResults = [];
       }
@@ -3404,11 +3448,20 @@ function workPayloadForAction(action) {
     },
     "add-agenda-item": { ...selected, agendaTitle: draft.agendaTitle },
     "add-code-handoff-agenda": selected,
+    "complete-notice-checklist": {
+      ...selected,
+      noticeMeetingType: draft.noticeMeetingType,
+      noticeStatutoryBasis: draft.noticeStatutoryBasis,
+      noticeDeadline: draft.noticeDeadline,
+      noticeTimeZone: draft.noticeTimeZone,
+      noticeHumanApproval: draft.noticeHumanApproval
+    },
     "post-notice": {
       ...selected,
       postingLocation: draft.noticeLocation,
       postingMethod: draft.noticeMethod,
-      postingConfirmation: draft.noticeConfirmation
+      postingConfirmation: draft.noticeConfirmation,
+      postingDate: draft.noticePostingDate
     },
     "export-meeting-packet": selected,
     "suggest-minutes-draft": selected,
