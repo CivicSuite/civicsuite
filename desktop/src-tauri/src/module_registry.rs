@@ -398,6 +398,7 @@ fn write_selection(selection: &ModuleSelectionState) -> Result<(), String> {
         .map_err(|error| format!("Could not write {}: {error}", path.display()))
 }
 
+#[cfg(test)]
 pub fn validate_default_registry() -> Result<(), String> {
     let registry = parse_registry(MODULES_JSON)?;
     validate_profile(&registry, DEFAULT_PROFILE_ID)
