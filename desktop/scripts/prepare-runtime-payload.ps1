@@ -6,6 +6,7 @@
 param(
     [string]$RepoRoot = "",
     [string]$ManifestPath = "",
+    [string]$PayloadManifestPath = "",
     [string]$PayloadRoot = "",
     [switch]$SkipDownloads,
     [switch]$SkipPgvectorBuild
@@ -44,6 +45,66 @@ function Get-Sha256 {
     } finally {
         $Stream.Dispose()
         $Sha256.Dispose()
+    }
+}
+
+function Join-CivicPath {
+    param(
+        [string]$Root,
+        [string]$RelativePath
+    )
+    $Path = $Root
+    foreach ($Part in ($RelativePath -split "[/\\]+")) {
+        if ($Part) {
+            $Path = Join-Path $Path $Part
+        }
+    }
+    return $Path
+}
+
+function Get-PayloadRequiredFileLock {
+    param(
+        [string]$PayloadRoot,
+        [object]$Payload
+    )
+    $SourceRoot = Join-CivicPath -Root $PayloadRoot -RelativePath $Payload.source_dir
+    $Files = @()
+    foreach ($RequiredFile in $Payload.required_files) {
+        $Path = Join-CivicPath -Root $SourceRoot -RelativePath $RequiredFile
+        if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+            throw "Runtime payload $($Payload.id) is missing required file for lock: $RequiredFile"
+        }
+        $Item = Get-Item -LiteralPath $Path
+        $Files += [ordered]@{
+            path = $RequiredFile
+            size_bytes = $Item.Length
+            sha256 = Get-Sha256 -Path $Path
+        }
+    }
+    return [ordered]@{
+        id = $Payload.id
+        label = $Payload.label
+        source_dir = $Payload.source_dir
+        status = "present"
+        required_files = $Files
+    }
+}
+
+function New-RuntimePayloadLock {
+    param(
+        [object]$PayloadManifest,
+        [string]$PayloadRoot
+    )
+    $PayloadLocks = @()
+    foreach ($Payload in $PayloadManifest.payloads) {
+        $PayloadLocks += Get-PayloadRequiredFileLock -PayloadRoot $PayloadRoot -Payload $Payload
+    }
+    return [ordered]@{
+        schema_version = 1
+        profile = $PayloadManifest.profile
+        generated_at = (Get-Date).ToUniversalTime().ToString("o")
+        payload_root = $PayloadRoot
+        payloads = $PayloadLocks
     }
 }
 
@@ -527,6 +588,9 @@ function Install-PgvectorPayload {
 if (-not $ManifestPath) {
     $ManifestPath = Join-Path $RepoRoot "desktop\runtime\windows-runtime-sources.json"
 }
+if (-not $PayloadManifestPath) {
+    $PayloadManifestPath = Join-Path $RepoRoot "desktop\runtime\windows-runtime-payloads.json"
+}
 if (-not $PayloadRoot) {
     $PayloadRoot = Join-Path $RepoRoot "desktop\runtime\payload"
 }
@@ -535,12 +599,18 @@ $Manifest = Read-JsonFile -Path $ManifestPath
 if ($Manifest.schema_version -ne 1 -or $Manifest.profile -ne "windows-local-1.0") {
     throw "Unsupported runtime source manifest."
 }
+$PayloadManifest = Read-JsonFile -Path $PayloadManifestPath
+if ($PayloadManifest.schema_version -ne 1 -or $PayloadManifest.profile -ne "windows-local-1.0") {
+    throw "Unsupported runtime payload manifest."
+}
 
 $CacheRoot = Join-Path $RepoRoot ".runtime-cache\windows-local-1.0"
 New-Item -ItemType Directory -Force -Path $CacheRoot | Out-Null
 New-Item -ItemType Directory -Force -Path $PayloadRoot | Out-Null
 
 $Report = [ordered]@{
+    schema_version = 1
+    profile = $PayloadManifest.profile
     generated_at = (Get-Date).ToUniversalTime().ToString("o")
     payload_root = $PayloadRoot
     postgres = Install-PostgresPayload -Source $Manifest.sources.postgres -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
@@ -548,6 +618,8 @@ $Report = [ordered]@{
     ollama = Install-OllamaPayload -Source $Manifest.sources.ollama -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
 }
 $Report.pgvector = Install-PgvectorPayload -Source $Manifest.sources.pgvector -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
+$PayloadLock = New-RuntimePayloadLock -PayloadManifest $PayloadManifest -PayloadRoot $PayloadRoot
+$Report.payloads = $PayloadLock.payloads
 
 Write-JsonFile -Path (Join-Path $PayloadRoot "runtime-payload-lock.json") -Value $Report
 Write-Output ("Prepared CivicSuite Windows runtime payload at {0}" -f $PayloadRoot)

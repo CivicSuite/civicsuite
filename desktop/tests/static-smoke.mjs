@@ -10,6 +10,7 @@ const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows",
 const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
+const supervisorRust = readFileSync(join(root, "src-tauri", "src", "supervisor.rs"), "utf8");
 const firstRunRust = readFileSync(join(root, "src-tauri", "src", "first_run.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
 const runtimePayloadManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-runtime-payloads.json"), "utf8"));
@@ -220,6 +221,10 @@ for (const phrase of [
   "Get-PostgresSourceUrl",
   "MSVC cl.exe and nmake.exe are required",
   "System.Security.Cryptography.SHA256",
+  "PayloadManifestPath",
+  "New-RuntimePayloadLock",
+  "required_files",
+  "size_bytes",
   "runtime-payload-lock.json"
 ]) {
   if (!runtimePayloadScript.includes(phrase)) {
@@ -229,6 +234,17 @@ for (const phrase of [
 
 if (runtimePayloadScript.includes("Get-FileHash")) {
   throw new Error("Windows runtime payload hashing must not depend on Get-FileHash availability");
+}
+
+for (const phrase of [
+  "runtime-payload-lock.json",
+  "Runtime payload file failed integrity check",
+  "source payload integrity check failed",
+  "copied payload integrity check failed"
+]) {
+  if (!supervisorRust.includes(phrase)) {
+    throw new Error(`Windows supervisor missing payload integrity phrase: ${phrase}`);
+  }
 }
 
 for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
@@ -263,13 +279,13 @@ for (const requiredPayload of [
   [
     "cpython-services",
     "python.exe",
-    "Lib/site-packages/civiccore",
+    "Lib/site-packages/civiccore/__init__.py",
     "Lib/site-packages/civiccore/migrations/alembic.ini",
     "Lib/site-packages/civiccore/migrations/versions/civiccore_0003_local_task_queue.py",
-    "Lib/site-packages/app",
-    "Lib/site-packages/civicclerk",
-    "Lib/site-packages/civiccode",
-    "Lib/site-packages/civicsuite_runtime",
+    "Lib/site-packages/app/main.py",
+    "Lib/site-packages/civicclerk/main.py",
+    "Lib/site-packages/civiccode/main.py",
+    "Lib/site-packages/civicsuite_runtime/__init__.py",
     "Lib/site-packages/civicsuite_runtime/migrate.py",
     "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic.ini",
     "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic/env.py"

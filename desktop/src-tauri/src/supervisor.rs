@@ -65,6 +65,27 @@ struct RuntimePayloadDefinition {
 }
 
 #[derive(Deserialize)]
+struct RuntimePayloadLock {
+    schema_version: u16,
+    profile: String,
+    payloads: Vec<RuntimePayloadLockEntry>,
+}
+
+#[derive(Deserialize)]
+struct RuntimePayloadLockEntry {
+    id: String,
+    source_dir: String,
+    required_files: Vec<RuntimePayloadLockFile>,
+}
+
+#[derive(Deserialize)]
+struct RuntimePayloadLockFile {
+    path: String,
+    size_bytes: u64,
+    sha256: String,
+}
+
+#[derive(Deserialize)]
 struct ServiceDefinition {
     id: String,
     label: String,
@@ -521,27 +542,132 @@ fn payload_required_files_present(payload: &RuntimePayloadDefinition) -> bool {
         .all(|file| destination.join(file.replace('/', "\\")).exists())
 }
 
-fn first_payload_source(payload: &RuntimePayloadDefinition) -> Option<PathBuf> {
+fn normalized_payload_file_path(path: &str) -> String {
+    path.replace('\\', "/")
+}
+
+fn parse_payload_lock(payload_root: &Path) -> Result<RuntimePayloadLock, String> {
+    let lock_path = payload_root.join("runtime-payload-lock.json");
+    let contents = fs::read_to_string(&lock_path)
+        .map_err(|error| format!("Could not read {}: {error}", lock_path.display()))?;
+    serde_json::from_str(&contents)
+        .map_err(|error| format!("Could not parse {}: {error}", lock_path.display()))
+}
+
+fn verify_payload_files_against_lock(
+    payload: &RuntimePayloadDefinition,
+    payload_root: &Path,
+    base_dir: &Path,
+) -> Result<(), String> {
+    let lock = parse_payload_lock(payload_root)?;
+    if lock.schema_version != 1 {
+        return Err(format!(
+            "Unsupported runtime payload lock schema {}",
+            lock.schema_version
+        ));
+    }
+    if lock.profile != "windows-local-1.0" {
+        return Err("Runtime payload lock profile must be windows-local-1.0".to_string());
+    }
+    let entry = lock
+        .payloads
+        .iter()
+        .find(|entry| entry.id == payload.id)
+        .ok_or_else(|| format!("Runtime payload lock is missing {}", payload.id))?;
+    if normalized_payload_file_path(&entry.source_dir)
+        != normalized_payload_file_path(&payload.source_dir)
+    {
+        return Err(format!(
+            "Runtime payload lock source for {} does not match the payload manifest",
+            payload.id
+        ));
+    }
+    for required_file in &payload.required_files {
+        let normalized_required_file = normalized_payload_file_path(required_file);
+        let locked_file = entry
+            .required_files
+            .iter()
+            .find(|file| normalized_payload_file_path(&file.path) == normalized_required_file)
+            .ok_or_else(|| {
+                format!(
+                    "Runtime payload lock missing required file {} for {}",
+                    required_file, payload.id
+                )
+            })?;
+        if locked_file.sha256.len() != 64
+            || !locked_file
+                .sha256
+                .chars()
+                .all(|character| character.is_ascii_hexdigit())
+        {
+            return Err(format!(
+                "Runtime payload lock has an invalid SHA-256 for {} in {}",
+                required_file, payload.id
+            ));
+        }
+        let path = base_dir.join(required_file.replace('/', "\\"));
+        if !path.is_file() {
+            return Err(format!(
+                "Runtime payload file is missing: {}",
+                path.display()
+            ));
+        }
+        let (size_bytes, sha256) = sha256_file(&path)?;
+        if size_bytes != locked_file.size_bytes || sha256 != locked_file.sha256.to_lowercase() {
+            return Err(format!(
+                "Runtime payload file failed integrity check: {}",
+                required_file
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn first_payload_source(payload: &RuntimePayloadDefinition) -> Option<(PathBuf, PathBuf)> {
     runtime_payload_roots()
         .into_iter()
-        .map(|root| root.join(payload.source_dir.replace('/', "\\")))
-        .find(|candidate| candidate.is_dir())
+        .filter_map(|root| {
+            let source = root.join(payload.source_dir.replace('/', "\\"));
+            source.is_dir().then_some((root, source))
+        })
+        .next()
 }
 
 fn install_runtime_payloads(payloads: &[&RuntimePayloadDefinition]) -> Result<Vec<String>, String> {
     let mut missing = Vec::new();
     for payload in payloads {
+        let destination = payload_destination(payload);
         if payload_required_files_present(payload) {
-            continue;
+            if let Some((payload_root, _)) = first_payload_source(payload) {
+                if verify_payload_files_against_lock(payload, &payload_root, &destination).is_ok() {
+                    continue;
+                }
+            } else {
+                continue;
+            }
         }
-        let Some(source) = first_payload_source(payload) else {
+        let Some((payload_root, source)) = first_payload_source(payload) else {
             missing.push(format!("{} ({})", payload.label, payload.id));
             continue;
         };
-        let destination = payload_destination(payload);
+        if let Err(error) = verify_payload_files_against_lock(payload, &payload_root, &source) {
+            missing.push(format!(
+                "{} ({}) source payload integrity check failed: {}",
+                payload.label, payload.id, error
+            ));
+            continue;
+        }
         copy_path_recursive(&source, &destination)?;
         if !payload_required_files_present(payload) {
             missing.push(format!("{} ({})", payload.label, payload.id));
+            continue;
+        }
+        if let Err(error) = verify_payload_files_against_lock(payload, &payload_root, &destination)
+        {
+            missing.push(format!(
+                "{} ({}) copied payload integrity check failed: {}",
+                payload.label, payload.id, error
+            ));
         }
     }
     Ok(missing)
@@ -1751,6 +1877,75 @@ mod tests {
         result
     }
 
+    fn write_test_payload_lock(
+        payload_root: &Path,
+        payload_id: &str,
+        label: &str,
+        source_dir: &str,
+        required_files: &[&str],
+    ) {
+        let source_root = payload_root.join(source_dir);
+        let files = required_files
+            .iter()
+            .map(|required_file| {
+                let path = source_root.join(required_file.replace('/', "\\"));
+                let (size_bytes, sha256) = sha256_file(&path).expect("test payload hash");
+                serde_json::json!({
+                    "path": required_file,
+                    "size_bytes": size_bytes,
+                    "sha256": sha256
+                })
+            })
+            .collect::<Vec<_>>();
+        let lock = serde_json::json!({
+            "schema_version": 1,
+            "profile": "windows-local-1.0",
+            "generated_at": "test",
+            "payload_root": payload_root.to_string_lossy(),
+            "payloads": [
+                {
+                    "id": payload_id,
+                    "label": label,
+                    "source_dir": source_dir,
+                    "status": "present",
+                    "required_files": files
+                }
+            ]
+        });
+        fs::write(
+            payload_root.join("runtime-payload-lock.json"),
+            serde_json::to_string_pretty(&lock).expect("lock serializes"),
+        )
+        .expect("lock writes");
+    }
+
+    fn write_test_postgres_payload(payload_root: &Path) {
+        for file in [
+            "bin/pg_ctl.exe",
+            "bin/initdb.exe",
+            "bin/postgres.exe",
+            "share/extension/vector.control",
+            "lib/vector.dll",
+        ] {
+            let path = payload_root.join("postgres").join(file.replace('/', "\\"));
+            fs::create_dir_all(path.parent().expect("payload parent")).expect("payload dir");
+            fs::write(path, "fake runtime file").expect("payload file");
+        }
+        write_test_payload_lock(
+            payload_root,
+            "postgres-17-pgvector",
+            "Portable PostgreSQL 17 with pgvector",
+            "postgres",
+            &[
+                "bin/pg_ctl.exe",
+                "bin/initdb.exe",
+                "bin/postgres.exe",
+                "share/extension/vector.control",
+                "lib/vector.dll",
+            ],
+        );
+    }
+
     fn with_temp_state_dir_and_payload<T>(
         payload_dir: PathBuf,
         test: impl FnOnce(PathBuf) -> T,
@@ -1911,18 +2106,7 @@ mod tests {
     #[test]
     fn supervisor_install_copies_bundled_runtime_payload() {
         with_temp_state_dir(|root| {
-            let payload = root.join("Payload").join("postgres");
-            for file in [
-                "bin/pg_ctl.exe",
-                "bin/initdb.exe",
-                "bin/postgres.exe",
-                "share/extension/vector.control",
-                "lib/vector.dll",
-            ] {
-                let path = payload.join(file);
-                fs::create_dir_all(path.parent().expect("payload parent")).expect("payload dir");
-                fs::write(path, "fake runtime file").expect("payload file");
-            }
+            write_test_postgres_payload(&root.join("Payload"));
 
             let result = supervisor_action("install", Some("postgres"))
                 .expect("action response is structured");
@@ -1930,6 +2114,34 @@ mod tests {
             assert!(result.accepted);
             assert_eq!(result.status, "Installed");
             assert!(root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin")
+                .join("pg_ctl.exe")
+                .is_file());
+        });
+    }
+
+    #[test]
+    fn supervisor_install_rejects_tampered_runtime_payload() {
+        with_temp_state_dir(|root| {
+            let payload_root = root.join("Payload");
+            write_test_postgres_payload(&payload_root);
+            fs::write(
+                payload_root.join("postgres").join("bin").join("pg_ctl.exe"),
+                "tampered runtime file",
+            )
+            .expect("tamper payload");
+
+            let result = supervisor_action("install", Some("postgres"))
+                .expect("action response is structured");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs runtime files");
+            assert!(result.message.contains("integrity check"));
+            assert!(result.message.contains("bin/pg_ctl.exe"));
+            assert!(!root
                 .join("Runtime")
                 .join("runtime")
                 .join("postgres")
