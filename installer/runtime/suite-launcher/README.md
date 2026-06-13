@@ -1,6 +1,6 @@
 # CivicSuite Suite Launcher
 
-This directory contains the first suite-level launcher scaffold for the
+This directory contains the first suite-level static launcher for the
 city-core installer runtime. It is intentionally static and self-contained:
 no network fonts, no build step, and no dependency install is required.
 
@@ -14,7 +14,7 @@ no network fonts, no build step, and no dependency install is required.
 - `src/app.js` owns the Staff, Resident, and IT-Admin surfaces, module tiles,
   audit drawer, command palette, and QA state simulation.
 - `scripts/serve.mjs` starts a small local static server for browser QA.
-- `tests/smoke.mjs` checks the required scaffold features without external
+- `tests/smoke.mjs` checks the required launcher features without external
   packages.
 
 ## Local Checks
