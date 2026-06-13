@@ -1359,6 +1359,21 @@ fn health_action(service_id: Option<&str>) -> Result<SupervisorActionResult, Str
     })
 }
 
+fn wait_for_services_health(services: &[&ServiceDefinition]) -> Result<(), String> {
+    for _ in 0..40 {
+        let state = read_state()?;
+        if services
+            .iter()
+            .filter(|service| service.required)
+            .all(|service| probe_service_health(service, &state))
+        {
+            return Ok(());
+        }
+        thread::sleep(Duration::from_millis(500));
+    }
+    Ok(())
+}
+
 pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -1394,6 +1409,7 @@ pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, Str
         });
     }
 
+    wait_for_services_health(&services)?;
     let health = health_action(None)?;
     if !health.accepted {
         return Ok(SupervisorActionResult {
@@ -1740,8 +1756,31 @@ mod tests {
                 .expect("install python service payload");
             let start = supervisor_action("start", Some("postgres")).expect("start postgres");
             assert!(start.accepted);
+            let python_start =
+                supervisor_action("start", Some("python-services")).expect("start python services");
+            assert!(python_start.accepted);
+            let worker_start =
+                supervisor_action("start", Some("task-queue")).expect("start task queue");
+            assert!(worker_start.accepted);
+            for _ in 0..40 {
+                let health = runtime_health().expect("health builds");
+                if health
+                    .iter()
+                    .any(|item| item.id == "python-services" && item.ok)
+                    && health.iter().any(|item| item.id == "task-queue" && item.ok)
+                {
+                    break;
+                }
+                thread::sleep(Duration::from_millis(500));
+            }
             let health = runtime_health().expect("health builds");
             assert!(health.iter().any(|item| item.id == "postgres" && item.ok));
+            assert!(health
+                .iter()
+                .any(|item| item.id == "python-services" && item.ok));
+            assert!(health.iter().any(|item| item.id == "task-queue" && item.ok));
+            supervisor_action("stop", Some("task-queue")).expect("stop task queue");
+            supervisor_action("stop", Some("python-services")).expect("stop python services");
             supervisor_action("stop", Some("postgres")).expect("stop postgres");
         });
     }

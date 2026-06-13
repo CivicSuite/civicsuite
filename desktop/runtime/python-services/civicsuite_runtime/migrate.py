@@ -38,24 +38,34 @@ def _run_alembic(label: str, config_path: Path, script_location: Path, database_
     cfg = Config(str(config_path))
     cfg.set_main_option("script_location", str(script_location))
     cfg.set_main_option("sqlalchemy.url", database_url)
-    command.upgrade(cfg, "head")
+    previous_database_url = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = database_url
+    try:
+        command.upgrade(cfg, "head")
+    finally:
+        if previous_database_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = previous_database_url
 
 
 def upgrade_all() -> None:
     _set_local_defaults()
     database_url = os.environ["DATABASE_URL"]
     runtime_root = Path(__file__).resolve().parent
+    core_root = _package_root("civiccore") / "migrations"
     records_root = runtime_root / "civicrecords_alembic"
     clerk_root = _package_root("civicclerk") / "migrations"
     code_root = _package_root("civiccode") / "migrations"
 
+    sync_url = _sync_database_url(database_url)
+    _run_alembic("CivicCore", core_root / "alembic.ini", core_root, sync_url)
     _run_alembic(
         "CivicRecords AI",
         records_root / "alembic.ini",
         records_root / "alembic",
         database_url,
     )
-    sync_url = _sync_database_url(database_url)
     _run_alembic("CivicClerk", clerk_root / "alembic.ini", clerk_root, sync_url)
     _run_alembic("CivicCode", code_root / "alembic.ini", code_root, sync_url)
 

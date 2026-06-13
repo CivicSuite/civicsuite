@@ -10,6 +10,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import create_engine, text
+
 from civicsuite_runtime import __version__
 
 DEFAULT_HOST = "127.0.0.1"
@@ -93,14 +95,59 @@ def _module_status(module_id: str, import_name: str) -> dict[str, Any]:
     }
 
 
+def _sync_database_url(url: str) -> str:
+    return (
+        url.replace("postgresql+asyncpg", "postgresql+psycopg2")
+        .replace("postgres+asyncpg", "postgresql+psycopg2")
+        .replace("postgresql://", "postgresql+psycopg2://", 1)
+        .replace("postgres://", "postgresql+psycopg2://", 1)
+    )
+
+
+def _database_status() -> dict[str, Any]:
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        return {
+            "ok": False,
+            "status": "missing",
+            "message": "DATABASE_URL is not configured for the local runtime.",
+        }
+    engine = create_engine(_sync_database_url(database_url), pool_pre_ping=True)
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            task_table = connection.execute(
+                text("SELECT to_regclass('public.civiccore_local_tasks')")
+            ).scalar()
+    except Exception as exc:  # pragma: no cover - surfaced through /health
+        return {
+            "ok": False,
+            "status": "unavailable",
+            "message": f"{type(exc).__name__}: {exc}",
+        }
+    finally:
+        engine.dispose()
+    return {
+        "ok": task_table == "civiccore_local_tasks",
+        "status": "ready" if task_table == "civiccore_local_tasks" else "migrations-needed",
+        "message": (
+            "Local database and task queue schema are ready."
+            if task_table == "civiccore_local_tasks"
+            else "Local database is reachable but task queue migrations are not applied."
+        ),
+    }
+
+
 def health_payload() -> dict[str, Any]:
     _set_local_defaults()
     modules = [_module_status(module_id, import_name) for module_id, import_name in MODULE_IMPORTS]
+    database = _database_status()
     return {
-        "status": "ok" if all(item["ok"] for item in modules) else "degraded",
+        "status": "ok" if all(item["ok"] for item in modules) and database["ok"] else "degraded",
         "service": "civicsuite-runtime",
         "version": __version__,
         "modules": modules,
+        "database": database,
         "local_only": True,
     }
 
