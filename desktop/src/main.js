@@ -1014,16 +1014,26 @@ function renderActiveArea() {
 }
 
 function renderAuditDrawer() {
+  const entries = cityWork().audit_entries || [];
   return `
     <aside class="audit-drawer ${state.auditOpen ? "open" : ""}" aria-hidden="${!state.auditOpen}">
       <div class="section-title">
         <h2>Audit Trail</h2>
-        <p>Every official staff action will write who, what, when, and source context.</p>
+        <p>Local workflow actions record module, action, time, and summary in the Windows data profile.</p>
       </div>
-      <div class="audit-entry">
-        <span class="status-muted">Scaffold</span>
-        <p>No official actions have been recorded by this shell yet.</p>
-      </div>
+      ${entries.length === 0 ? `
+        <div class="audit-entry">
+          <span class="status-muted">No entries</span>
+          <p>No local workflow actions have been recorded yet.</p>
+        </div>
+      ` : entries.slice(0, 12).map((entry) => `
+        <div class="audit-entry">
+          <span class="status-ok">${entry.module_id}</span>
+          <p><strong>${entry.action}</strong></p>
+          <p>${entry.summary}</p>
+          <small>${new Date(entry.created_at_unix_seconds * 1000).toLocaleString()}</small>
+        </div>
+      `).join("")}
     </aside>
   `;
 }

@@ -33,3 +33,12 @@ test("browser preview refuses persistent city workflow mutations", async ({ page
   await expect(page.getByText("Desktop app required")).toBeVisible();
   await expect(page.getByText("City workflow changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
 });
+
+test("audit drawer uses local workflow audit language instead of placeholder text", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Audit Trail" }).click();
+
+  await expect(page.getByRole("heading", { name: "Audit Trail" })).toBeVisible();
+  await expect(page.getByText("No local workflow actions have been recorded yet.")).toBeVisible();
+  await expect(page.getByText("Scaffold")).toHaveCount(0);
+});
