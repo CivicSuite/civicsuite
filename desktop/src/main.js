@@ -502,7 +502,7 @@ function renderHome() {
   const installed = state.app.modules.filter((module) => module.installed || module.required);
   return `
     <section class="page-heading">
-      <p class="eyebrow">Staff surface</p>
+      <p class="eyebrow">${state.activeSurface} surface</p>
       <h2>Work that needs attention</h2>
       <p>Start with the task, not the module. City-core workflows stay local on this machine.</p>
     </section>
@@ -840,7 +840,43 @@ function workflowEmpty(label) {
   return `<p class="empty-note">${label}</p>`;
 }
 
+function isPublicSurface() {
+  return state.activeSurface === "Resident/Public";
+}
+
+function isPublicReadableArea() {
+  return isPublicSurface() && ["home", "meetings", "records", "code", "search"].includes(state.activeArea);
+}
+
+function publicMeetings(work) {
+  return work.meetings.filter((meeting) => (
+    meeting.notice_status === "public notice ready" || meeting.status === "packet exported"
+  ));
+}
+
+function renderPublicMeetingsWorkflow() {
+  const meetings = publicMeetings(cityWork());
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">Resident/Public</p>
+      <h2>Public Meeting Materials</h2>
+      <p>Posted agendas, notices, packets, and approved public outcomes appear here without staff drafting controls.</p>
+    </section>
+    <section class="workflow-list">
+      ${meetings.length === 0 ? workflowEmpty("No public meeting materials have been posted yet.") : meetings.map((meeting) => `
+        <article class="workflow-record">
+          <span class="status-ok">${meeting.notice_status}</span>
+          <h3>${meeting.title}</h3>
+          <p>${meeting.summary || "No public summary recorded."}</p>
+          <small>${meeting.meeting_date} - ${meeting.agenda_items.length} agenda items - ${meeting.exports?.length || 0} packet exports</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
 function renderMeetingsWorkflow() {
+  if (isPublicSurface()) return renderPublicMeetingsWorkflow();
   const work = cityWork();
   const pendingCodeHandoffs = work.code_handoffs.filter((handoff) => handoff.status !== "sent to clerk agenda");
   return `
@@ -898,7 +934,33 @@ function renderMeetingsWorkflow() {
   `;
 }
 
+function publicRecordsRequests(work) {
+  return work.records_requests.filter((request) => request.status === "exported");
+}
+
+function renderPublicRecordsWorkflow() {
+  const requests = publicRecordsRequests(cityWork());
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">Resident/Public</p>
+      <h2>Public Records Status</h2>
+      <p>Released records responses appear here without staff review drafts or internal citations.</p>
+    </section>
+    <section class="workflow-list">
+      ${requests.length === 0 ? workflowEmpty("No public records responses have been released yet.") : requests.map((request) => `
+        <article class="workflow-record">
+          <span class="status-ok">${request.status}</span>
+          <h3>${request.requester}</h3>
+          <p>${request.summary}</p>
+          <small>Released exports: ${request.exports.length}</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
 function renderRecordsWorkflow() {
+  if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
   return `
     <section class="page-heading">
@@ -938,7 +1000,29 @@ function renderRecordsWorkflow() {
   `;
 }
 
+function renderPublicCodeWorkflow() {
+  const work = cityWork();
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">Resident/Public</p>
+      <h2>Municipal Code Search</h2>
+      <p>Published code sources appear with citations. Staff handoffs and draft guidance stay in the Staff surface.</p>
+    </section>
+    <section class="workflow-list">
+      ${work.code_sources.length === 0 ? workflowEmpty("No municipal code sources have been published locally yet.") : work.code_sources.map((source) => `
+        <article class="workflow-record">
+          <span class="status-ok">${source.status}</span>
+          <h3>${source.title}</h3>
+          <p>${source.body}</p>
+          <small>${source.citation}</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
 function renderCodeWorkflow() {
+  if (isPublicSurface()) return renderPublicCodeWorkflow();
   const work = cityWork();
   return `
     <section class="page-heading">
@@ -981,17 +1065,19 @@ function renderCodeWorkflow() {
   `;
 }
 
-function localSearchResults(query) {
+function localSearchResults(query, { publicOnly = false } = {}) {
   const normalized = query.trim().toLowerCase();
   const work = cityWork();
   if (!normalized) return [];
   const results = [];
-  work.meetings.forEach((meeting) => {
+  const meetings = publicOnly ? publicMeetings(work) : work.meetings;
+  meetings.forEach((meeting) => {
     if ([meeting.title, meeting.summary, meeting.status].some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
   });
-  work.records_requests.forEach((request) => {
+  const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
+  recordsRequests.forEach((request) => {
     if ([request.requester, request.summary, request.status].some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicrecords-ai", title: `Records request: ${request.requester}`, snippet: request.summary, citation: request.citations[0] || "Local records request", status: request.status });
     }
@@ -1005,20 +1091,27 @@ function localSearchResults(query) {
 }
 
 function renderSearchWorkflow() {
-  const results = state.searchResults.length > 0 ? state.searchResults : localSearchResults(state.workDraft.searchQuery);
+  const publicOnly = isPublicSurface();
+  const results = state.searchResults.length > 0 && !publicOnly ? state.searchResults : localSearchResults(state.workDraft.searchQuery, { publicOnly });
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
       <h2>Search City Knowledge</h2>
-      <p>Search local meetings, records requests, and imported code sources with citations and owning module labels.</p>
+      <p>${publicOnly ? "Search public meeting materials, released records, and published code sources." : "Search local meetings, records requests, and imported code sources with citations and owning module labels."}</p>
     </section>
-    <section class="workflow-editor single">
+    ${publicOnly ? "" : `<section class="workflow-editor single">
       <div class="workflow-form">
         <h3>Local Search</h3>
         <label>Search terms <input type="search" data-work-field="searchQuery" value="${state.workDraft.searchQuery}" /></label>
         <button type="button" class="primary-action" data-work-action="search-city-knowledge">Search Local Data</button>
       </div>
-    </section>
+    </section>`}
+    ${publicOnly ? `<section class="workflow-editor single">
+      <div class="workflow-form">
+        <h3>Public Search</h3>
+        <label>Search terms <input type="search" data-work-field="searchQuery" value="${state.workDraft.searchQuery}" /></label>
+      </div>
+    </section>` : ""}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${results.length === 0 ? workflowEmpty("No local search results yet.") : results.map((result) => `
@@ -1158,7 +1251,7 @@ function renderHealth() {
 
 function renderActiveArea() {
   const access = accessState();
-  if (state.activeArea !== "home" && access.configured && !access.signed_in) {
+  if (state.activeArea !== "home" && access.configured && !access.signed_in && !isPublicReadableArea()) {
     return renderAccessPanel();
   }
   switch (state.activeArea) {
