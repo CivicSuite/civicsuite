@@ -58,6 +58,15 @@ for (const phrase of ["Docker", "WSL"]) {
   }
 }
 
+for (const [label, character] of [
+  ["mojibake capital A with circumflex", String.fromCharCode(0x00c2)],
+  ["middle dot separator", String.fromCharCode(0x00b7)]
+]) {
+  if (main.includes(character)) {
+    throw new Error(`desktop shell contains non-ASCII or mojibake separator: ${label}`);
+  }
+}
+
 if (!tauriConfig.includes('"identifier": "org.civicsuite.desktop"')) {
   throw new Error("Tauri identifier is missing");
 }

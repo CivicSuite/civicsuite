@@ -57,6 +57,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();
   await expect(page.getByRole("heading", { name: "Local Search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Search Local Data" })).toBeVisible();
+  await expect(page.getByText("No local search results yet.")).toBeVisible();
   await expect(page.locator("main").getByText("Scaffold")).toHaveCount(0);
 });
 
@@ -113,7 +114,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();
   await expect(page.getByRole("heading", { name: "Public Search" })).toBeVisible();
+  await expect(page.getByText("No public search results yet.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Local Search" })).toHaveCount(0);
+  await expect(page.getByText("No local search results yet.")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Search Local Data" })).toHaveCount(0);
 });
 

@@ -1663,7 +1663,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} Â· ${meeting.notice_status} Â· ${(meeting.agenda_items || []).length} agenda items Â· ${(meeting.votes || []).length} outcomes Â· ${(meeting.action_items || []).length} action items Â· ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -2108,12 +2108,12 @@ function renderSearchWorkflow() {
     </section>` : ""}
     ${renderWorkActionResult()}
     <section class="workflow-list">
-      ${results.length === 0 ? workflowEmpty("No local search results yet.") : results.map((result) => `
+      ${results.length === 0 ? workflowEmpty(publicOnly ? "No public search results yet." : "No local search results yet.") : results.map((result) => `
         <article class="workflow-record">
           <span class="status-ok">${result.module_id}</span>
           <h3>${result.title}</h3>
           <p>${result.snippet || "No snippet available."}</p>
-          <small>${result.citation} Â· ${result.status}</small>
+          <small>${result.citation} - ${result.status}</small>
         </article>
       `).join("")}
     </section>
@@ -2158,7 +2158,7 @@ function renderModuleRow(module) {
       <div>
         <h3>${module.display_name}</h3>
         <p>${module.role}</p>
-        ${contractParts.length ? `<small>${contractParts.join(" · ")}</small>` : ""}
+        ${contractParts.length ? `<small>${contractParts.join(" - ")}</small>` : ""}
       </div>
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
