@@ -402,6 +402,8 @@ const state = {
     requesterContact: "",
     found: false
   },
+  pendingSupervisorReviewAction: null,
+  pendingSupervisorReviewServiceId: null,
   pendingWorkReviewAction: null,
   workSelection: {
     meetingId: "",
@@ -965,6 +967,14 @@ const GUIDED_WORK_ACTIONS = new Set([
   "publish-code-source",
   "unpublish-code-source",
   "create-code-handoff"
+]);
+
+const GUIDED_SUPERVISOR_ACTIONS = new Set([
+  "backup",
+  "restore",
+  "uninstall",
+  "repair",
+  "stop"
 ]);
 
 function selectedFrom(collection, selectedId) {
@@ -1939,6 +1949,145 @@ function renderModuleRow(module) {
   `;
 }
 
+function runtimeServiceForReview(serviceId) {
+  return (state.app.health || []).find((item) => item.id === serviceId) || null;
+}
+
+function guidedSupervisorReviewForAction(action, serviceId) {
+  const service = runtimeServiceForReview(serviceId);
+  const serviceLabel = service?.label || "selected local service";
+  const serviceStatus = service ? `${service.status}: ${service.message}` : "Whole local profile action";
+  const reviews = {
+    "backup": {
+      title: "Review Before Backing Up Local Profile",
+      confirmLabel: "Backup Now",
+      module: "CivicCore local runtime",
+      subject: "CivicSuite city profile",
+      status: "Manual backup requested",
+      changes: "Copies local city data and configuration to the configured backup folder with a backup manifest.",
+      visibility: "Local administrator only. This does not publish or change public civic records.",
+      sources: [
+        "Source: local CivicSuite Data and config folders.",
+        "Destination: configured CivicSuite backup folder."
+      ],
+      audit: "Creates a local backup manifest with file hashes for restore/reinstall recovery.",
+      retry: "If the backup folder cannot be written, the desktop app reports the error and leaves city data unchanged."
+    },
+    "restore": {
+      title: "Review Before Restoring Latest Backup",
+      confirmLabel: "Restore Latest Backup",
+      module: "CivicCore local runtime",
+      subject: "Latest local CivicSuite backup",
+      status: "Restore requested",
+      changes: "Creates a pre-restore safety backup, stops local services, and replaces local data/config from the latest backup manifest.",
+      visibility: "Local administrator only. Restored records affect what staff see after restart.",
+      sources: [
+        "Source: latest backup-manifest.json in the CivicSuite backup folder.",
+        "Safety: a pre-restore backup is created before replacement."
+      ],
+      audit: "Creates a pre-restore backup manifest and returns a restore action result.",
+      retry: "If no valid backup exists, restore stops before changing the local profile."
+    },
+    "uninstall": {
+      title: "Review Before Preparing Uninstall",
+      confirmLabel: "Prepare Uninstall",
+      module: "CivicCore local runtime",
+      subject: "Local CivicSuite city profile",
+      status: "Profile removal requested",
+      changes: "Stops local services, creates a final uninstall backup, and removes local data and setup/config state.",
+      visibility: "Local administrator only. Program files remain for the Windows uninstall entry to remove.",
+      sources: [
+        "Source: local CivicSuite Data and config folders.",
+        "Safety: final-uninstall backup is written before profile removal."
+      ],
+      audit: "Creates a final uninstall backup manifest and returns an uninstall action result.",
+      retry: "If the final backup fails, uninstall stops before removing the profile."
+    },
+    "repair": {
+      title: `Review Before Repairing ${serviceLabel}`,
+      confirmLabel: "Repair",
+      module: "CivicCore local runtime",
+      subject: serviceLabel,
+      status: serviceStatus,
+      changes: "Rechecks portable runtime files and repairs the selected local service setup where possible.",
+      visibility: "Local administrator only. This may change local service files but does not publish civic records.",
+      sources: [
+        service ? `Service id: ${service.id}` : "No service selected yet.",
+        service?.next_action || "System Health will report the next repair step."
+      ],
+      audit: "Returns a repair action result and updates local runtime service state.",
+      retry: "If required bundled files are missing, repair reports the missing payload and leaves the service state clear."
+    },
+    "stop": {
+      title: `Review Before Stopping ${serviceLabel}`,
+      confirmLabel: "Stop",
+      module: "CivicCore local runtime",
+      subject: serviceLabel,
+      status: serviceStatus,
+      changes: "Stops the selected local service state so it can be restarted or repaired.",
+      visibility: "Local administrator only. Staff workflows may be unavailable until services restart.",
+      sources: [
+        service ? `Service id: ${service.id}` : "No service selected yet.",
+        "System Health remains available after the stop action."
+      ],
+      audit: "Returns a stop action result and updates local runtime service state.",
+      retry: "If the service is already stopped, the desktop app keeps the profile available for health checks."
+    }
+  };
+  return reviews[action] || null;
+}
+
+function requiresGuidedSupervisorReview(action) {
+  return GUIDED_SUPERVISOR_ACTIONS.has(action);
+}
+
+function renderGuidedSupervisorReview() {
+  const review = guidedSupervisorReviewForAction(
+    state.pendingSupervisorReviewAction,
+    state.pendingSupervisorReviewServiceId
+  );
+  if (!review) return "";
+  const serviceAttr = state.pendingSupervisorReviewServiceId ? ` data-service-id="${escapeHtml(state.pendingSupervisorReviewServiceId)}"` : "";
+  return `
+    <section class="guided-review" aria-labelledby="supervisor-review-title">
+      <div>
+        <p class="eyebrow">${escapeHtml(review.module)}</p>
+        <h3 id="supervisor-review-title">${escapeHtml(review.title)}</h3>
+        <p>${escapeHtml(review.subject)}</p>
+      </div>
+      <div class="review-grid">
+        <div>
+          <strong>Current status</strong>
+          <p>${escapeHtml(review.status)}</p>
+        </div>
+        <div>
+          <strong>What will change</strong>
+          <p>${escapeHtml(review.changes)}</p>
+        </div>
+        <div>
+          <strong>Who can see it</strong>
+          <p>${escapeHtml(review.visibility)}</p>
+        </div>
+        <div>
+          <strong>Audit trail</strong>
+          <p>${escapeHtml(review.audit)}</p>
+        </div>
+      </div>
+      <div>
+        <strong>Sources and evidence</strong>
+        <ul class="review-evidence">
+          ${review.sources.map((source) => `<li>${escapeHtml(source)}</li>`).join("")}
+        </ul>
+      </div>
+      <p class="next-action">${escapeHtml(review.retry)}</p>
+      <div class="review-actions">
+        <button type="button" class="primary-action" data-supervisor-review-confirm="${state.pendingSupervisorReviewAction}"${serviceAttr}>Confirm ${escapeHtml(review.confirmLabel)}</button>
+        <button type="button" class="secondary-action" data-supervisor-review-cancel>Cancel Review</button>
+      </div>
+    </section>
+  `;
+}
+
 function renderProfileRow(profile) {
   return `
     <article class="module-row">
@@ -2043,6 +2192,7 @@ function renderHealth() {
         <button type="button" class="secondary-action" data-supervisor-action="uninstall">Prepare Uninstall</button>
       </div>
     </section>
+    ${renderGuidedSupervisorReview()}
     <section class="health-grid">
       ${state.app.health.map((item) => `
         <article class="health-card">
@@ -2152,6 +2302,8 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.activeArea = button.dataset.area;
       state.pendingWorkReviewAction = null;
+      state.pendingSupervisorReviewAction = null;
+      state.pendingSupervisorReviewServiceId = null;
       render();
       byId("main-content")?.focus();
     });
@@ -2160,6 +2312,8 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.activeSurface = button.dataset.surface;
       state.pendingWorkReviewAction = null;
+      state.pendingSupervisorReviewAction = null;
+      state.pendingSupervisorReviewServiceId = null;
       render();
     });
   });
@@ -2195,6 +2349,18 @@ function bindEvents() {
   document.querySelectorAll("[data-supervisor-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleSupervisorAction(button.dataset.supervisorAction, button.dataset.serviceId);
+    });
+  });
+  document.querySelectorAll("[data-supervisor-review-confirm]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleSupervisorAction(button.dataset.supervisorReviewConfirm, button.dataset.serviceId, { confirmed: true });
+    });
+  });
+  document.querySelectorAll("[data-supervisor-review-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.pendingSupervisorReviewAction = null;
+      state.pendingSupervisorReviewServiceId = null;
+      render();
     });
   });
   document.querySelectorAll("[data-work-field]").forEach((input) => {
@@ -2310,7 +2476,16 @@ async function handleModelAction(action) {
   render();
 }
 
-async function handleSupervisorAction(action, serviceId) {
+async function handleSupervisorAction(action, serviceId, { confirmed = false } = {}) {
+  if (requiresGuidedSupervisorReview(action) && !confirmed) {
+    state.pendingSupervisorReviewAction = action;
+    state.pendingSupervisorReviewServiceId = serviceId || null;
+    state.supervisorActionResult = null;
+    render();
+    return;
+  }
+  state.pendingSupervisorReviewAction = null;
+  state.pendingSupervisorReviewServiceId = null;
   if (!hasTauriBridge()) {
     state.supervisorActionResult = {
       accepted: false,

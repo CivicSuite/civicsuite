@@ -56,6 +56,34 @@ test("browser preview explains supervisor actions require the desktop bridge", a
   await page.getByRole("button", { name: /System Health/ }).click();
   await page.getByRole("button", { name: "Backup Now" }).click();
 
+  await expect(page.getByRole("heading", { name: "Review Before Backing Up Local Profile" })).toBeVisible();
+  await expect(page.getByText("What will change")).toBeVisible();
+  await expect(page.getByText("Sources and evidence")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Backup Now" })).toBeVisible();
+  await expect(page.getByText("Desktop app required")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Confirm Backup Now" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();
   await expect(page.getByText("Runtime service changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
+});
+
+test("system health repair and uninstall actions require guided review", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /System Health/ }).click();
+
+  await page.getByRole("button", { name: /^Repair$/ }).first().click();
+  await expect(page.getByRole("heading", { name: "Review Before Repairing Local data store" })).toBeVisible();
+  await expect(page.getByText("Rechecks portable runtime files")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Repairing Local data store" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /^Stop$/ }).first().click();
+  await expect(page.getByRole("heading", { name: "Review Before Stopping Local data store" })).toBeVisible();
+  await expect(page.getByText("Staff workflows may be unavailable until services restart.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Prepare Uninstall" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Preparing Uninstall" })).toBeVisible();
+  await expect(page.getByText("final-uninstall backup")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Prepare Uninstall" })).toBeVisible();
 });
