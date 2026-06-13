@@ -1310,21 +1310,38 @@ fn local_folder_health(
     id: &str,
     label: &str,
     path: PathBuf,
-    next_action: &str,
+    missing_action: &str,
+    permission_action: &str,
 ) -> RuntimeHealthItem {
-    let ok = path.is_dir();
+    let exists = path.is_dir();
+    let write_probe = if exists {
+        folder_write_probe(&path)
+    } else {
+        Err("folder is missing".to_string())
+    };
+    let ok = exists && write_probe.is_ok();
     let (status, message, next_action) = if ok {
         (
             "OK",
-            format!("{label} is available on this Windows profile."),
+            format!("{label} is available and writable on this Windows profile."),
             "Continue local setup.".to_string(),
+        )
+    } else if exists {
+        (
+            "Needs access",
+            format!("{label} exists, but CivicSuite cannot save files there."),
+            permission_action.to_string(),
         )
     } else {
         (
             "Needs setup",
             format!("{label} has not been created yet."),
-            next_action.to_string(),
+            missing_action.to_string(),
         )
+    };
+    let write_check = match &write_probe {
+        Ok(()) => "ok".to_string(),
+        Err(error) => error.clone(),
     };
 
     RuntimeHealthItem {
@@ -1334,9 +1351,36 @@ fn local_folder_health(
         status,
         message,
         next_action,
-        admin_detail: format!("kind local-folder; path {}; exists {}", path.display(), ok),
+        admin_detail: format!(
+            "kind local-folder; path {}; exists {}; writable {}; write_check {}",
+            path.display(),
+            exists,
+            write_probe.is_ok(),
+            write_check
+        ),
         actionable: false,
     }
+}
+
+fn folder_write_probe(path: &Path) -> Result<(), String> {
+    let check_path = path.join(format!(
+        ".civicsuite-health-check-{}-{}.tmp",
+        std::process::id(),
+        now_unix_seconds()
+    ));
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&check_path)
+        .map_err(|error| format!("could not create temporary write check: {error}"))?;
+    if let Err(error) = file.write_all(b"CivicSuite local folder health check\n") {
+        let _ = fs::remove_file(&check_path);
+        return Err(format!("could not write temporary check file: {error}"));
+    }
+    drop(file);
+    fs::remove_file(&check_path)
+        .map_err(|error| format!("could not remove temporary write check: {error}"))?;
+    Ok(())
 }
 
 pub fn runtime_health() -> Result<Vec<RuntimeHealthItem>, String> {
@@ -1358,12 +1402,14 @@ pub fn runtime_health() -> Result<Vec<RuntimeHealthItem>, String> {
         "City data folder",
         data_root(),
         "Use First Run or Repair to create the city data folder.",
+        "Choose another city data folder in Settings or ask IT to grant write access.",
     ));
     health.push(local_folder_health(
         "backup-folder",
         "Backup folder",
         backup_root(),
         "Use First Run or Backup Now to create the backup folder.",
+        "Choose another backup folder in Settings or ask IT to grant write access.",
     ));
     health.extend(
         manifest
@@ -2217,19 +2263,38 @@ mod tests {
             assert!(!data_item.ok);
             assert!(!data_item.actionable);
             assert!(data_item.admin_detail.contains("custom-city-data"));
+            assert!(data_item.admin_detail.contains("writable false"));
 
             supervisor_action("install", Some("file-storage")).expect("install file storage");
 
             let installed = runtime_health().expect("health builds after install");
-            assert!(installed
+            let installed_data = installed
                 .iter()
-                .any(|item| { item.id == "local-data-folder" && item.ok && !item.actionable }));
+                .find(|item| item.id == "local-data-folder")
+                .expect("data folder health remains present");
+            assert!(installed_data.ok);
+            assert!(!installed_data.actionable);
+            assert!(installed_data
+                .admin_detail
+                .contains("writable true; write_check "));
             assert!(installed.iter().any(|item| {
                 item.id == "backup-folder"
                     && item.ok
                     && !item.actionable
                     && item.admin_detail.contains("custom-backups")
+                    && item.admin_detail.contains("writable true")
             }));
+            let leftover_checks = fs::read_dir(&custom_data)
+                .expect("data dir readable")
+                .filter_map(Result::ok)
+                .filter(|entry| {
+                    entry
+                        .file_name()
+                        .to_string_lossy()
+                        .starts_with(".civicsuite-health-check-")
+                })
+                .count();
+            assert_eq!(leftover_checks, 0);
         });
     }
 

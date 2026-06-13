@@ -314,6 +314,18 @@ for (const phrase of [
   }
 }
 
+for (const phrase of [
+  "is available and writable on this Windows profile.",
+  "CivicSuite cannot save files there.",
+  "Choose another city data folder in Settings or ask IT to grant write access.",
+  "Choose another backup folder in Settings or ask IT to grant write access.",
+  "writable {}; write_check {}"
+]) {
+  if (!supervisorRust.includes(phrase)) {
+    throw new Error(`Windows supervisor missing folder write-health phrase: ${phrase}`);
+  }
+}
+
 for (const requiredPayload of [
   ["postgres-17-pgvector", "bin/pg_ctl.exe", "share/extension/vector.control"],
   [
