@@ -128,6 +128,119 @@ fn public_runtime_health(mut health: Vec<RuntimeHealthItem>) -> Vec<RuntimeHealt
     health
 }
 
+fn city_work_action_module_requirement(
+    action: &str,
+    payload: Option<&Value>,
+) -> Option<(Vec<&'static str>, bool)> {
+    match action {
+        "create-meeting"
+        | "add-agenda-item"
+        | "add-code-handoff-agenda"
+        | "post-notice"
+        | "record-minutes"
+        | "record-vote"
+        | "add-action-item"
+        | "record-resident-comment"
+        | "submit-public-comment"
+        | "review-public-comment"
+        | "redact-public-comment"
+        | "adopt-minutes"
+        | "export-meeting-packet"
+        | "archive-meeting" => Some((vec!["civicclerk"], false)),
+        "create-records-request"
+        | "submit-public-records-request"
+        | "lookup-public-records-request"
+        | "request-records-clarification"
+        | "assign-records-request"
+        | "record-records-search"
+        | "add-records-exemption-review"
+        | "estimate-records-fee"
+        | "draft-records-response"
+        | "approve-records-response"
+        | "export-records-response"
+        | "fulfill-records-request"
+        | "close-records-request" => Some((vec!["civicrecords-ai"], false)),
+        "import-code-source"
+        | "record-codifier-sync"
+        | "record-codifier-sync-failure"
+        | "retry-codifier-sync"
+        | "mark-code-stale"
+        | "draft-code-guidance"
+        | "approve-code-guidance"
+        | "publish-code-source"
+        | "unpublish-code-source"
+        | "create-code-handoff"
+        | "answer-code-question" => Some((vec!["civiccode"], false)),
+        "search-city-knowledge" => Some((vec!["civicclerk", "civicrecords-ai", "civiccode"], true)),
+        "open-exports-folder" => match payload
+            .and_then(|value| value.get("folder"))
+            .and_then(Value::as_str)
+        {
+            Some("meetings") => Some((vec!["civicclerk"], false)),
+            Some("records") => Some((vec!["civicrecords-ai"], false)),
+            Some("code") => Some((vec!["civiccode"], false)),
+            _ => Some((vec!["civicclerk", "civicrecords-ai", "civiccode"], true)),
+        },
+        _ => None,
+    }
+}
+
+fn module_display_name(module_id: &str) -> String {
+    module_summaries()
+        .ok()
+        .and_then(|modules| {
+            modules
+                .into_iter()
+                .find(|module| module.id == module_id)
+                .map(|module| module.display_name)
+        })
+        .unwrap_or_else(|| module_id.to_string())
+}
+
+fn require_enabled_city_modules(action: &str, payload: Option<&Value>) -> Result<(), String> {
+    let Some((module_ids, allow_any)) = city_work_action_module_requirement(action, payload) else {
+        return Ok(());
+    };
+    let selection = module_registry::module_selection_state()?;
+    let enabled = module_ids
+        .iter()
+        .filter(|module_id| {
+            selection
+                .enabled_module_ids
+                .iter()
+                .any(|enabled_id| enabled_id == **module_id)
+        })
+        .copied()
+        .collect::<Vec<_>>();
+    if (allow_any && !enabled.is_empty()) || (!allow_any && enabled.len() == module_ids.len()) {
+        return Ok(());
+    }
+    let missing = module_ids
+        .iter()
+        .filter(|module_id| !enabled.iter().any(|enabled_id| enabled_id == *module_id))
+        .map(|module_id| module_display_name(module_id))
+        .collect::<Vec<_>>();
+    Err(format!(
+        "{} {} disabled in this local profile. Re-enable {} in Settings before using this workflow.",
+        missing.join(", "),
+        if missing.len() == 1 { "is" } else { "are" },
+        if missing.len() == 1 { "it" } else { "them" }
+    ))
+}
+
+fn filter_search_results_for_enabled_modules(
+    result: &mut CityWorkActionResult,
+) -> Result<(), String> {
+    let selection = module_registry::module_selection_state()?;
+    result.search_results.retain(|search_result| {
+        selection
+            .enabled_module_ids
+            .iter()
+            .any(|module_id| module_id == &search_result.module_id)
+    });
+    Ok(())
+}
+
 fn first_run_action_requires_admin_after_setup(action: &str) -> bool {
     matches!(
         action,
@@ -327,7 +440,15 @@ fn city_work_action(
             payload = Some(public_payload);
         }
     }
+    require_enabled_city_modules(&action, payload.as_ref())?;
     let mut result = workflows::city_work_action(&action, payload.as_ref())?;
+    if action == "search-city-knowledge" {
+        filter_search_results_for_enabled_modules(&mut result)?;
+        result.message = format!(
+            "Local search completed across enabled modules with {} result(s).",
+            result.search_results.len()
+        );
+    }
     if !admin_signed_in && public_action && action != "lookup-public-records-request" {
         result.state = workflows::city_work_public_projection(&result.state);
     }
@@ -524,6 +645,54 @@ mod tests {
                 .enabled_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+        });
+    }
+
+    #[test]
+    fn disabled_modules_block_owned_city_work_actions() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+            sign_in_as_first_admin();
+            module_action("disable-module".to_string(), "civiccode".to_string())
+                .expect("civiccode disabled");
+
+            let code_payload = serde_json::json!({
+                "title": "Backyard Chicken Rules",
+                "citation": "CMC 6.16.040",
+                "body": "Backyard chickens are allowed with a coop permit."
+            });
+            let result = city_work_action("import-code-source".to_string(), Some(code_payload));
+
+            assert!(result.is_err());
+            assert!(result
+                .err()
+                .expect("disabled module error")
+                .contains("CivicCode is disabled"));
+        });
+    }
+
+    #[test]
+    fn disabled_modules_are_filtered_from_cross_module_search() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+            sign_in_as_first_admin();
+            let code_payload = serde_json::json!({
+                "title": "Backyard Chicken Rules",
+                "citation": "CMC 6.16.040",
+                "body": "Backyard chickens are allowed with a coop permit."
+            });
+            city_work_action("import-code-source".to_string(), Some(code_payload))
+                .expect("code source imported");
+            module_action("disable-module".to_string(), "civiccode".to_string())
+                .expect("civiccode disabled");
+
+            let search_payload = serde_json::json!({ "query": "chickens" });
+            let result =
+                city_work_action("search-city-knowledge".to_string(), Some(search_payload))
+                    .expect("search remains available through enabled modules");
+
+            assert!(result.search_results.is_empty());
+            assert!(result.message.contains("enabled modules with 0 result"));
         });
     }
 

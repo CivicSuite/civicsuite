@@ -2308,7 +2308,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       results.push({ module_id: "civiccode", title: source.title, snippet: source.body, citation: source.citation, status: source.status });
     }
   });
-  return results;
+  return results.filter((result) => moduleIsEnabled(result.module_id));
 }
 
 function renderSearchWorkflow() {
