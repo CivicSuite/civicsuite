@@ -22,7 +22,11 @@ const fallbackState = {
       version: "1.2.0",
       required: true,
       selectable: false,
-      installed: true
+      installed: true,
+      lifecycle_install: "always-installed-with-profile",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "not-allowed-required-foundation",
+      lifecycle_uninstall: "backup-first-profile-removal"
     },
     {
       id: "civicrecords-ai",
@@ -31,7 +35,11 @@ const fallbackState = {
       version: "1.7.3",
       required: false,
       selectable: true,
-      installed: true
+      installed: true,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
     },
     {
       id: "civicclerk",
@@ -40,7 +48,11 @@ const fallbackState = {
       version: "1.0.4",
       required: false,
       selectable: true,
-      installed: true
+      installed: true,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
     },
     {
       id: "civiccode",
@@ -53,7 +65,11 @@ const fallbackState = {
       route_count: 2,
       service_count: 2,
       task_count: 4,
-      model_required: true
+      model_required: true,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
     },
     {
       id: "civiczone",
@@ -1925,8 +1941,33 @@ function renderSearchWorkflow() {
   `;
 }
 
+function lifecycleStatusText(value) {
+  const labels = {
+    "always-installed-with-profile": "Always installed with CivicCore",
+    "profile-selected": "Installed by selected package profile",
+    "manifest-versioned": "Updated through the versioned module manifest",
+    "not-allowed-required-foundation": "Cannot be disabled because it is the required foundation",
+    "allowed-after-backup": "Allowed after a backup is created",
+    "backup-first-profile-removal": "Removed only through backup-first profile removal",
+    "backup-first-module-data-removal": "Removed only after module data backup"
+  };
+  return labels[value] || String(value || "").replace(/-/g, " ");
+}
+
+function moduleLifecycleItems(module) {
+  return [
+    ["Install", module.lifecycle_install],
+    ["Update", module.lifecycle_update],
+    ["Disable", module.lifecycle_disable],
+    ["Remove", module.lifecycle_uninstall]
+  ]
+    .filter(([, value]) => Boolean(value))
+    .map(([label, value]) => ({ label, value: lifecycleStatusText(value) }));
+}
+
 function renderModuleRow(module) {
   const proofCount = module.proof_required?.length || 0;
+  const lifecycle = moduleLifecycleItems(module);
   const contractParts = [
     module.route_count ? `${module.route_count} route${module.route_count === 1 ? "" : "s"}` : "",
     module.service_count ? `${module.service_count} service${module.service_count === 1 ? "" : "s"}` : "",
@@ -1943,7 +1984,7 @@ function renderModuleRow(module) {
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
         <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
-        ${module.lifecycle_uninstall ? `<small>${module.lifecycle_uninstall}</small>` : ""}
+        ${lifecycle.map((item) => `<small><strong>${item.label}:</strong> ${item.value}</small>`).join("")}
       </div>
     </article>
   `;

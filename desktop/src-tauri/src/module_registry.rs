@@ -105,6 +105,7 @@ pub struct ModuleSummary {
     pub permission_count: usize,
     pub task_count: usize,
     pub lifecycle_install: Option<String>,
+    pub lifecycle_update: Option<String>,
     pub lifecycle_disable: Option<String>,
     pub lifecycle_uninstall: Option<String>,
     pub model_required: bool,
@@ -499,6 +500,10 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
                 .lifecycle
                 .as_ref()
                 .map(|lifecycle| lifecycle.install.clone()),
+            lifecycle_update: module
+                .lifecycle
+                .as_ref()
+                .map(|lifecycle| lifecycle.update.clone()),
             lifecycle_disable: module
                 .lifecycle
                 .as_ref()
@@ -600,6 +605,10 @@ mod tests {
             assert_eq!(
                 civiccode.lifecycle_uninstall.as_deref(),
                 Some("backup-first-module-data-removal")
+            );
+            assert_eq!(
+                civiccode.lifecycle_update.as_deref(),
+                Some("manifest-versioned")
             );
             assert!(civiccode.route_count > 0);
             assert!(civiccode.service_count > 0);
