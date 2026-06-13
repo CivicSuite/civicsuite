@@ -197,11 +197,14 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
-  await expect(page.getByText("Selected profile: City Core. Installed modules: 4.")).toBeVisible();
+  await expect(page.getByText("Selected profile: City Core. Installed modules: 4. Enabled modules: 4.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();
+  await page.getByRole("button", { name: "Disable CivicCode" }).click();
+  await expect(page.getByText("Module changes are saved by the Windows desktop app")).toBeVisible();
   await expect(page.getByText("Installed by selected package profile").first()).toBeVisible();
   await expect(page.getByText("Updated through the versioned module manifest").first()).toBeVisible();
   await expect(page.getByText("Allowed after a backup is created").first()).toBeVisible();

@@ -41,6 +41,9 @@ const requiredUiPhrases = [
   "Custom selection will install CivicCore plus",
   "Not ready for Windows Local 1.0",
   "Apply Module Selection",
+  "Enabled modules:",
+  "Data remains installed. Re-enable this module to show its work area.",
+  "Module changes are saved by the Windows desktop app",
   "Source history:",
   "Sign in as local administrator to change local model setup.",
   "Sign in with the local administrator passcode before continuing setup.",
@@ -168,6 +171,10 @@ if (!rustMain.includes('mod model;') || !rustMain.includes('get_model_state')) {
 
 if (!rustMain.includes("before changing local model setup")) {
   throw new Error("desktop shell must require local admin access before model setup mutations");
+}
+
+if (!rustMain.includes("fn module_action") || !main.includes('invoke("module_action"')) {
+  throw new Error("desktop shell must expose and call module enable/disable actions");
 }
 
 if (!rustMain.includes("before changing CivicSuite setup, profile, model, backup, or runtime settings")) {

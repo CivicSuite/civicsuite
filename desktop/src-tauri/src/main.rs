@@ -43,6 +43,17 @@ struct AppState {
     city_work: CityWorkState,
 }
 
+#[derive(Serialize)]
+struct ModuleActionResult {
+    accepted: bool,
+    action: String,
+    status: &'static str,
+    message: String,
+    next_action: &'static str,
+    selection: ModuleSelectionState,
+    modules: Vec<ModuleSummary>,
+}
+
 fn navigation() -> Vec<NavigationItem> {
     vec![
         NavigationItem {
@@ -240,6 +251,45 @@ fn supervisor_action(
 }
 
 #[tauri::command]
+fn module_action(action: String, module_id: String) -> Result<ModuleActionResult, String> {
+    let access = auth::access_state()?;
+    if access.configured && !access_is_local_admin(&access) {
+        return Err(
+            "Sign in as the local administrator before changing installed modules.".to_string(),
+        );
+    }
+    let enabled = match action.as_str() {
+        "enable-module" => true,
+        "disable-module" => false,
+        _ => return Err(format!("Unsupported module action: {action}")),
+    };
+    let selection = module_registry::set_module_enabled(&module_id, enabled)?;
+    let modules = module_summaries()?;
+    let display_name = modules
+        .iter()
+        .find(|module| module.id == module_id)
+        .map(|module| module.display_name.clone())
+        .unwrap_or_else(|| module_id.clone());
+    Ok(ModuleActionResult {
+        accepted: true,
+        action,
+        status: if enabled {
+            "Module enabled"
+        } else {
+            "Module disabled"
+        },
+        message: if enabled {
+            format!("{display_name} is enabled in the local CivicSuite shell.")
+        } else {
+            format!("{display_name} is disabled in the local CivicSuite shell. Its data remains installed and can be re-enabled.")
+        },
+        next_action: "Review the module list or continue city work.",
+        selection,
+        modules,
+    })
+}
+
+#[tauri::command]
 fn get_city_work_state() -> Result<CityWorkState, String> {
     let access = auth::access_state()?;
     if access_is_local_admin(&access) {
@@ -294,6 +344,7 @@ pub fn run() {
             first_run_action,
             auth_action,
             supervisor_action,
+            module_action,
             get_city_work_state,
             city_work_action
         ])
@@ -428,6 +479,50 @@ mod tests {
             let signed_in_result =
                 model_action("open-model-folder".to_string()).expect("model action allowed");
             assert!(signed_in_result.accepted);
+        });
+    }
+
+    #[test]
+    fn module_actions_require_admin_after_first_admin_exists() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+
+            let signed_out_result =
+                module_action("disable-module".to_string(), "civiccode".to_string());
+
+            assert!(signed_out_result.is_err());
+            assert!(signed_out_result
+                .err()
+                .expect("module action auth error")
+                .contains("Sign in as the local administrator"));
+
+            sign_in_as_first_admin();
+            let disabled = module_action("disable-module".to_string(), "civiccode".to_string())
+                .expect("module disable allowed");
+            assert!(disabled.accepted);
+            assert_eq!(disabled.status, "Module disabled");
+            assert!(disabled
+                .selection
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            assert!(!disabled
+                .selection
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            assert!(disabled
+                .modules
+                .iter()
+                .any(|module| module.id == "civiccode" && module.installed && !module.enabled));
+
+            let enabled = module_action("enable-module".to_string(), "civiccode".to_string())
+                .expect("module enable allowed");
+            assert!(enabled
+                .selection
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
         });
     }
 

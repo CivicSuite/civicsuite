@@ -3,6 +3,11 @@ import "./styles.css";
 
 const LOCKED_FOUNDATION_MODULE_ID = "civiccore";
 const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccode"];
+const MODULE_AREA_BY_ID = {
+  meetings: "civicclerk",
+  records: "civicrecords-ai",
+  code: "civiccode"
+};
 
 const fallbackState = {
   product_name: "CivicSuite",
@@ -26,6 +31,7 @@ const fallbackState = {
       required: true,
       selectable: false,
       installed: true,
+      enabled: true,
       contract_ready: true,
       blocked_reason: null,
       lifecycle_install: "always-installed-with-profile",
@@ -42,6 +48,7 @@ const fallbackState = {
       required: false,
       selectable: true,
       installed: true,
+      enabled: true,
       contract_ready: true,
       blocked_reason: null,
       dependencies: ["civiccore"],
@@ -63,6 +70,7 @@ const fallbackState = {
       required: false,
       selectable: true,
       installed: true,
+      enabled: true,
       contract_ready: true,
       blocked_reason: null,
       dependencies: ["civiccore"],
@@ -84,6 +92,7 @@ const fallbackState = {
       required: false,
       selectable: true,
       installed: true,
+      enabled: true,
       contract_ready: true,
       blocked_reason: null,
       dependencies: ["civiccore"],
@@ -104,6 +113,7 @@ const fallbackState = {
       required: false,
       selectable: true,
       installed: false,
+      enabled: false,
       contract_ready: false,
       blocked_reason: "Module civiczone must target CivicCore 1.2.0 for Windows Local 1.0",
       route_count: 0,
@@ -143,6 +153,7 @@ const fallbackState = {
     profile_id: "city-core",
     profile_label: "City Core",
     installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"],
+    enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"],
     disabled_module_ids: [],
     last_updated_unix_seconds: 0
   },
@@ -611,15 +622,40 @@ function accessState() {
   return state.app.access || fallbackState.access;
 }
 
+function moduleById(moduleId) {
+  return (state.app.modules || []).find((module) => module.id === moduleId) || null;
+}
+
+function moduleIsEnabled(moduleId) {
+  const module = moduleById(moduleId);
+  return Boolean(module && (module.installed || module.required) && module.enabled !== false);
+}
+
+function areaIsEnabled(areaId) {
+  if (["home", "health", "settings"].includes(areaId)) return true;
+  if (areaId === "search") {
+    return CITY_CORE_PRODUCT_MODULE_IDS.some((moduleId) => moduleIsEnabled(moduleId));
+  }
+  const moduleId = MODULE_AREA_BY_ID[areaId];
+  return moduleId ? moduleIsEnabled(moduleId) : true;
+}
+
+function visibleNavigationItems() {
+  return (state.app.navigation || fallbackState.navigation).filter((item) => areaIsEnabled(item.id));
+}
+
 function moduleStatusLabel(module) {
   if (module.required) return "Required";
-  if (module.installed) return "Installed";
+  if (module.installed && module.enabled === false) return "Disabled";
+  if (module.installed) return "Enabled";
   if (module.selectable) return "Package waiting";
   return "Locked";
 }
 
 function moduleStatusClass(module) {
-  if (module.required || module.installed) return "status-ok";
+  if (module.required) return "status-ok";
+  if (module.installed && module.enabled === false) return "status-muted";
+  if (module.installed) return "status-ok";
   if (module.selectable) return "status-muted";
   return "status-muted";
 }
@@ -673,7 +709,7 @@ function renderTopbar() {
 function renderNav() {
   return `
     <nav class="sidebar" aria-label="Primary">
-      ${state.app.navigation.map((item) => `
+      ${visibleNavigationItems().map((item) => `
         <button
           type="button"
           class="nav-item ${state.activeArea === item.id ? "active" : ""}"
@@ -689,6 +725,9 @@ function renderNav() {
 
 function renderHome() {
   const installed = state.app.modules.filter((module) => module.installed || module.required);
+  const primaryTasks = visibleNavigationItems()
+    .filter((item) => item.id !== "home" && item.id !== "settings")
+    .slice(0, 5);
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface} surface</p>
@@ -699,7 +738,7 @@ function renderHome() {
     ${renderAccessPanel()}
     ${renderModelReadiness({ compact: true })}
     <section class="task-grid" aria-label="Primary work areas">
-      ${state.app.navigation.filter((item) => item.id !== "home" && item.id !== "settings").slice(0, 5).map((item) => `
+      ${primaryTasks.map((item) => `
         <article class="task-card">
           <div>
             <p class="eyebrow">${item.id === "health" ? "Local system" : "City work"}</p>
@@ -2246,9 +2285,13 @@ function moduleLifecycleItems(module) {
     .map(([label, value]) => ({ label, value: lifecycleStatusText(value) }));
 }
 
-function renderModuleRow(module) {
+function renderModuleRow(module, { actions = false } = {}) {
   const proofCount = module.proof_required?.length || 0;
   const lifecycle = moduleLifecycleItems(module);
+  const disabled = module.installed && module.enabled === false;
+  const canToggle = actions && module.installed && !module.required;
+  const toggleAction = disabled ? "enable-module" : "disable-module";
+  const toggleLabel = disabled ? "Enable" : "Disable";
   const contractParts = [
     module.route_count ? `${module.route_count} route${module.route_count === 1 ? "" : "s"}` : "",
     module.service_count ? `${module.service_count} service${module.service_count === 1 ? "" : "s"}` : "",
@@ -2256,7 +2299,7 @@ function renderModuleRow(module) {
     module.model_required ? "local AI required" : ""
   ].filter(Boolean);
   return `
-    <article class="module-row">
+    <article class="module-row ${disabled ? "module-disabled" : ""}">
       <div>
         <h3>${module.display_name}</h3>
         <p>${module.role}</p>
@@ -2265,7 +2308,19 @@ function renderModuleRow(module) {
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
         <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
+        ${disabled ? `<small>Data remains installed. Re-enable this module to show its work area.</small>` : ""}
         ${lifecycle.map((item) => `<small><strong>${item.label}:</strong> ${item.value}</small>`).join("")}
+        ${canToggle ? `
+          <div class="module-actions">
+            <button
+              type="button"
+              class="secondary-action"
+              data-module-action="${toggleAction}"
+              data-module-id="${escapeHtml(module.id)}"
+              aria-label="${toggleLabel} ${escapeHtml(module.display_name)}"
+            >${toggleLabel}</button>
+          </div>
+        ` : ""}
       </div>
     </article>
   `;
@@ -2431,6 +2486,7 @@ function renderModules() {
   const catalog = state.app.modules.filter((module) => !module.installed && !module.required);
   const profiles = state.app.module_profiles || [];
   const selection = state.app.module_selection || fallbackState.module_selection;
+  const enabledCount = (selection.enabled_module_ids || installed.filter((module) => module.enabled !== false).map((module) => module.id)).length;
   const admin = (state.app.users || [])[0];
   const moduleSelectionLocked =
     state.moduleDraft.profileId === "custom" && customSelectedModuleIds().length === 0;
@@ -2465,7 +2521,7 @@ function renderModules() {
     <section class="page-heading compact-heading">
       <p class="eyebrow">Module Manager</p>
       <h2>City Core Modules</h2>
-      <p>CivicCore stays installed and product modules are managed through the City Core package.</p>
+      <p>CivicCore stays installed. Product modules can be enabled or disabled without deleting their local data.</p>
     </section>
     <section class="section-band">
       <div class="section-title">
@@ -2484,12 +2540,12 @@ function renderModules() {
       <div>
         <div class="section-title">
           <h3>City Core Package</h3>
-          <p>Installed for the ${selection.profile_label} local profile.</p>
+          <p>Installed for the ${selection.profile_label} local profile. Disabled modules stay installed and can be re-enabled here.</p>
         </div>
         <div class="empty-note">
-          Selected profile: ${selection.profile_label}. Installed modules: ${selection.installed_module_ids.length}.
+          Selected profile: ${selection.profile_label}. Installed modules: ${selection.installed_module_ids.length}. Enabled modules: ${enabledCount}.
         </div>
-        <div class="module-list">${installed.map(renderModuleRow).join("")}</div>
+        <div class="module-list">${installed.map((module) => renderModuleRow(module, { actions: true })).join("")}</div>
       </div>
       <div>
         <div class="section-title">
@@ -2624,6 +2680,9 @@ function renderAuditDrawer() {
 }
 
 function render() {
+  if (!areaIsEnabled(state.activeArea)) {
+    state.activeArea = "settings";
+  }
   byId("app").innerHTML = `
     ${renderTopbar()}
     <div class="layout">
@@ -2638,6 +2697,7 @@ function render() {
 function bindEvents() {
   document.querySelectorAll("[data-area]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (!areaIsEnabled(button.dataset.area)) return;
       state.activeArea = button.dataset.area;
       state.pendingWorkReviewAction = null;
       state.pendingSupervisorReviewAction = null;
@@ -2685,6 +2745,11 @@ function bindEvents() {
       state.moduleDraft.profileId = "custom";
       state.moduleDraft.selectedModuleIds = Array.from(selectedIds);
       render();
+    });
+  });
+  document.querySelectorAll("[data-module-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleModuleAction(button.dataset.moduleAction, button.dataset.moduleId);
     });
   });
   document.querySelectorAll("[data-first-run-action]").forEach((button) => {
@@ -2810,6 +2875,39 @@ async function handleFirstRunAction(action, stepId) {
       status: "Needs attention",
       message: String(error),
       next_action: "Correct the setup information and try again."
+    };
+  }
+  render();
+}
+
+async function handleModuleAction(action, moduleId) {
+  if (!hasTauriBridge()) {
+    state.actionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Module changes are saved by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to enable or disable installed modules."
+    };
+    render();
+    return;
+  }
+  try {
+    state.actionResult = await invoke("module_action", {
+      action,
+      moduleId
+    });
+    state.app.module_selection = state.actionResult.selection;
+    state.app.modules = state.actionResult.modules;
+    await loadAppState();
+    if (!areaIsEnabled(state.activeArea)) {
+      state.activeArea = "settings";
+    }
+  } catch (error) {
+    state.actionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Sign in as the local administrator and try the module action again."
     };
   }
   render();

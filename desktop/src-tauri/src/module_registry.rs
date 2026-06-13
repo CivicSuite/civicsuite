@@ -98,6 +98,7 @@ pub struct ModuleSummary {
     pub required: bool,
     pub selectable: bool,
     pub installed: bool,
+    pub enabled: bool,
     pub contract_ready: bool,
     pub blocked_reason: Option<String>,
     pub dependencies: Vec<String>,
@@ -130,6 +131,8 @@ pub struct ModuleSelectionState {
     pub profile_label: String,
     pub installed_module_ids: Vec<String>,
     pub disabled_module_ids: Vec<String>,
+    #[serde(default)]
+    pub enabled_module_ids: Vec<String>,
     pub last_updated_unix_seconds: u64,
 }
 
@@ -471,10 +474,67 @@ fn selection_for_profile(
     Ok(ModuleSelectionState {
         profile_id: profile.id.clone(),
         profile_label: profile.label.clone(),
+        enabled_module_ids: installed_module_ids.clone(),
         installed_module_ids,
         disabled_module_ids,
         last_updated_unix_seconds: now_unix_seconds(),
     })
+}
+
+fn validate_enabled_modules(
+    registry: &ModuleRegistry,
+    selection: &ModuleSelectionState,
+) -> Result<(), String> {
+    let module_map = module_index(registry);
+    let installed: HashSet<&str> = selection
+        .installed_module_ids
+        .iter()
+        .map(String::as_str)
+        .collect();
+    let enabled: HashSet<&str> = selection
+        .enabled_module_ids
+        .iter()
+        .map(String::as_str)
+        .collect();
+    if !enabled.contains("civiccore") {
+        return Err("CivicCore must stay enabled as the local foundation.".to_string());
+    }
+    for module_id in &selection.enabled_module_ids {
+        if !installed.contains(module_id.as_str()) {
+            return Err(format!(
+                "Enabled module {module_id} is not installed in the selected profile"
+            ));
+        }
+        let module = module_map
+            .get(module_id.as_str())
+            .ok_or_else(|| format!("Enabled module {module_id} is missing from the registry"))?;
+        for dependency in &module.dependencies {
+            if !enabled.contains(dependency.as_str()) {
+                return Err(format!(
+                    "Enabled module {module_id} requires enabled dependency {dependency}"
+                ));
+            }
+        }
+    }
+    for module in &registry.modules {
+        if module.required
+            && installed.contains(module.id.as_str())
+            && !enabled.contains(module.id.as_str())
+        {
+            return Err(format!("Required module {} cannot be disabled", module.id));
+        }
+    }
+    Ok(())
+}
+
+fn normalize_enabled_modules(
+    registry: &ModuleRegistry,
+    selection: &mut ModuleSelectionState,
+) -> Result<(), String> {
+    if selection.enabled_module_ids.is_empty() {
+        selection.enabled_module_ids = selection.installed_module_ids.clone();
+    }
+    validate_enabled_modules(registry, selection)
 }
 
 fn read_saved_selection() -> Result<Option<ModuleSelectionState>, String> {
@@ -529,6 +589,7 @@ pub fn persist_custom_selection(
     let selection = ModuleSelectionState {
         profile_id: "custom".to_string(),
         profile_label: "Custom".to_string(),
+        enabled_module_ids: installed_module_ids.clone(),
         installed_module_ids,
         disabled_module_ids,
         last_updated_unix_seconds: now_unix_seconds(),
@@ -539,10 +600,11 @@ pub fn persist_custom_selection(
 
 pub fn module_selection_state() -> Result<ModuleSelectionState, String> {
     let registry = parse_registry(MODULES_JSON)?;
-    let selection = match read_saved_selection()? {
+    let mut selection = match read_saved_selection()? {
         Some(selection) => selection,
         None => selection_for_profile(&registry, DEFAULT_PROFILE_ID)?,
     };
+    normalize_enabled_modules(&registry, &mut selection)?;
     if selection.profile_id == "custom" {
         validate_custom_selection(&registry, &selection.installed_module_ids)?;
         return Ok(selection);
@@ -560,6 +622,66 @@ pub fn module_selection_state() -> Result<ModuleSelectionState, String> {
             "Saved module selection does not match the selected profile contract".to_string(),
         );
     }
+    Ok(selection)
+}
+
+pub fn set_module_enabled(module_id: &str, enabled: bool) -> Result<ModuleSelectionState, String> {
+    let registry = parse_registry(MODULES_JSON)?;
+    let module_map = module_index(&registry);
+    let module = module_map
+        .get(module_id)
+        .ok_or_else(|| format!("Module {module_id} is missing from the registry"))?;
+    let mut selection = module_selection_state()?;
+    if !selection
+        .installed_module_ids
+        .iter()
+        .any(|installed| installed == module_id)
+    {
+        return Err(format!(
+            "Module {module_id} is not installed in the selected local profile"
+        ));
+    }
+    if module.required && !enabled {
+        return Err(format!("Required module {module_id} cannot be disabled"));
+    }
+    let mut enabled_ids: HashSet<String> = selection.enabled_module_ids.iter().cloned().collect();
+    if enabled {
+        for dependency in &module.dependencies {
+            if !enabled_ids.contains(dependency) {
+                return Err(format!(
+                    "Enable dependency {dependency} before enabling module {module_id}"
+                ));
+            }
+        }
+        enabled_ids.insert(module_id.to_string());
+    } else {
+        for candidate in &registry.modules {
+            if candidate.id == module_id {
+                continue;
+            }
+            if enabled_ids.contains(&candidate.id)
+                && candidate
+                    .dependencies
+                    .iter()
+                    .any(|dependency| dependency == module_id)
+            {
+                return Err(format!(
+                    "Disable dependent module {} before disabling {module_id}",
+                    candidate.id
+                ));
+            }
+        }
+        enabled_ids.remove(module_id);
+    }
+    selection.enabled_module_ids = selection
+        .installed_module_ids
+        .iter()
+        .filter(|module_id| enabled_ids.contains(*module_id))
+        .cloned()
+        .collect();
+    selection.last_updated_unix_seconds = now_unix_seconds();
+    validate_enabled_modules(&registry, &selection)?;
+    write_selection(&selection)?;
     Ok(selection)
 }
 
@@ -594,6 +716,11 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
     let selection = module_selection_state()?;
     let installed_ids: HashSet<&str> = selection
         .installed_module_ids
+        .iter()
+        .map(String::as_str)
+        .collect();
+    let enabled_ids: HashSet<&str> = selection
+        .enabled_module_ids
         .iter()
         .map(String::as_str)
         .collect();
@@ -646,6 +773,7 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
                     .as_ref()
                     .map(|needs| needs.iter().any(|need| need.required))
                     .unwrap_or(false),
+                enabled: enabled_ids.contains(module.id.as_str()),
             }
         })
         .collect())
@@ -689,6 +817,7 @@ mod tests {
                     "civiccode".to_string()
                 ]
             );
+            assert_eq!(selection.enabled_module_ids, selection.installed_module_ids);
         });
     }
 
@@ -718,6 +847,7 @@ mod tests {
                     "civiccode".to_string()
                 ]
             );
+            assert_eq!(selection.enabled_module_ids, selection.installed_module_ids);
             assert!(root.join("config").join("module-selection.json").is_file());
             let reloaded = module_selection_state().expect("custom selection reloads");
             assert_eq!(
@@ -738,6 +868,40 @@ mod tests {
             assert!(modules
                 .iter()
                 .any(|module| module.id == "civicrecords-ai" && !module.installed));
+        });
+    }
+
+    #[test]
+    fn installed_product_modules_can_be_disabled_without_uninstalling() {
+        with_temp_state_dir(|_| {
+            persist_profile_selection("city-core").expect("profile selection persists");
+            let disabled =
+                set_module_enabled("civiccode", false).expect("civiccode can be disabled");
+            assert!(disabled
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            assert!(!disabled
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            let modules = module_summaries().expect("summaries build");
+            let civiccode = modules
+                .iter()
+                .find(|module| module.id == "civiccode")
+                .expect("civiccode module");
+            assert!(civiccode.installed);
+            assert!(!civiccode.enabled);
+
+            let enabled =
+                set_module_enabled("civiccode", true).expect("civiccode can be re-enabled");
+            assert!(enabled
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            let core_error =
+                set_module_enabled("civiccore", false).expect_err("civiccore cannot be disabled");
+            assert!(core_error.contains("Required module civiccore cannot be disabled"));
         });
     }
 

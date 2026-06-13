@@ -714,12 +714,22 @@ main {
   padding: 14px;
 }
 
+.module-row.module-disabled {
+  background: #f7f9fb;
+}
+
 .module-meta {
   align-items: flex-end;
   display: flex;
   flex-direction: column;
   gap: 5px;
   text-align: right;
+}
+
+.module-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
 .status-ok,
