@@ -165,6 +165,7 @@ pub struct ModelState {
     pub download_policy: String,
     pub minimum_free_disk_bytes: u64,
     pub artifact: ModelArtifact,
+    pub download_state: ModelDownloadState,
     pub checks: Vec<ModelReadinessItem>,
     pub next_action: String,
 }
@@ -176,6 +177,22 @@ pub struct ModelActionResult {
     pub status: &'static str,
     pub message: String,
     pub next_action: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Default)]
+pub struct ModelDownloadState {
+    pub schema_version: u16,
+    pub model_id: String,
+    pub status: String,
+    pub message: String,
+    pub local_path: String,
+    pub partial_path: String,
+    pub expected_size_bytes: u64,
+    pub local_bytes: u64,
+    pub partial_bytes: u64,
+    pub progress_percent: f64,
+    pub last_error: Option<String>,
+    pub updated_at_unix_seconds: u64,
 }
 
 #[derive(Deserialize, Serialize, Default)]
@@ -335,6 +352,10 @@ fn model_path(artifact: &ArtifactDefinition) -> PathBuf {
 
 fn model_registry_path() -> PathBuf {
     windows_config_root().join("model-registry.json")
+}
+
+fn model_download_status_path() -> PathBuf {
+    windows_config_root().join("model-download-status.json")
 }
 
 fn checksum_marker_path(local_path: &Path) -> PathBuf {
@@ -641,6 +662,151 @@ fn write_model_registry(registry: &LocalModelRegistry) -> Result<(), String> {
         .map_err(|error| format!("Could not write {}: {error}", path.display()))
 }
 
+fn file_size_or_zero(path: &Path) -> u64 {
+    fs::metadata(path)
+        .map(|metadata| {
+            if metadata.is_file() {
+                metadata.len()
+            } else {
+                0
+            }
+        })
+        .unwrap_or(0)
+}
+
+fn read_model_download_state() -> Option<ModelDownloadState> {
+    let path = model_download_status_path();
+    if !path.is_file() {
+        return None;
+    }
+    fs::read_to_string(path)
+        .ok()
+        .and_then(|contents| serde_json::from_str::<ModelDownloadState>(&contents).ok())
+}
+
+fn progress_percent(progress_bytes: u64, expected_size_bytes: u64) -> f64 {
+    if expected_size_bytes == 0 {
+        return 0.0;
+    }
+    let percent = (progress_bytes as f64 / expected_size_bytes as f64) * 100.0;
+    let rounded = (percent * 100.0).round() / 100.0;
+    if progress_bytes > 0 && rounded == 0.0 {
+        0.01
+    } else {
+        rounded
+    }
+}
+
+fn current_model_download_state(manifest: &ModelManifest, local_path: &Path) -> ModelDownloadState {
+    let partial_path = partial_download_path(local_path);
+    let expected_size_bytes = manifest.model.artifact.size_bytes;
+    let local_bytes = file_size_or_zero(local_path);
+    let partial_bytes = file_size_or_zero(&partial_path);
+    let persisted = read_model_download_state();
+    let verified = model_artifact_verified(local_path, &manifest.model.artifact);
+    let progress_bytes = if verified {
+        expected_size_bytes
+    } else if local_bytes > 0 {
+        local_bytes
+    } else {
+        partial_bytes
+    };
+
+    let (status, message, last_error, updated_at_unix_seconds) = if verified {
+        (
+            "Verified".to_string(),
+            "The pinned Gemma model file has passed checksum verification.".to_string(),
+            None,
+            persisted
+                .as_ref()
+                .map(|state| state.updated_at_unix_seconds)
+                .unwrap_or(0),
+        )
+    } else if local_bytes == expected_size_bytes {
+        (
+            "Needs verification".to_string(),
+            "The pinned Gemma model file is present and needs checksum verification.".to_string(),
+            persisted
+                .as_ref()
+                .and_then(|state| state.last_error.clone()),
+            persisted
+                .as_ref()
+                .map(|state| state.updated_at_unix_seconds)
+                .unwrap_or(0),
+        )
+    } else if partial_bytes > 0 {
+        (
+            "Partial download".to_string(),
+            "A partial Gemma model download is saved locally and can be resumed.".to_string(),
+            persisted
+                .as_ref()
+                .and_then(|state| state.last_error.clone()),
+            persisted
+                .as_ref()
+                .map(|state| state.updated_at_unix_seconds)
+                .unwrap_or(0),
+        )
+    } else if let Some(state) = persisted
+        .as_ref()
+        .filter(|state| state.status == "Download failed")
+    {
+        (
+            state.status.clone(),
+            state.message.clone(),
+            state.last_error.clone(),
+            state.updated_at_unix_seconds,
+        )
+    } else {
+        (
+            "Not downloaded".to_string(),
+            "No verified or partial Gemma model download is saved on this machine.".to_string(),
+            None,
+            persisted
+                .as_ref()
+                .map(|state| state.updated_at_unix_seconds)
+                .unwrap_or(0),
+        )
+    };
+
+    ModelDownloadState {
+        schema_version: 1,
+        model_id: manifest.model.id.clone(),
+        status,
+        message,
+        local_path: local_path.to_string_lossy().to_string(),
+        partial_path: partial_path.to_string_lossy().to_string(),
+        expected_size_bytes,
+        local_bytes,
+        partial_bytes,
+        progress_percent: progress_percent(progress_bytes, expected_size_bytes),
+        last_error,
+        updated_at_unix_seconds,
+    }
+}
+
+fn write_model_download_state(
+    manifest: &ModelManifest,
+    local_path: &Path,
+    status: &str,
+    message: String,
+    last_error: Option<String>,
+) -> Result<(), String> {
+    let mut state = current_model_download_state(manifest, local_path);
+    state.status = status.to_string();
+    state.message = message;
+    state.last_error = last_error;
+    state.updated_at_unix_seconds = now_unix_seconds();
+    let path = model_download_status_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Could not create model download status folder: {error}"))?;
+    }
+    let contents = serde_json::to_string_pretty(&state)
+        .map_err(|error| format!("Could not serialize model download status: {error}"))?;
+    fs::write(&path, format!("{contents}\n"))
+        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+}
+
 fn register_verified_model(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
     let mut registry = read_model_registry()?;
     let entry = RegisteredModel {
@@ -671,7 +837,15 @@ fn verify_and_register_model_artifact(
     local_path: &Path,
 ) -> Result<(), String> {
     verify_model_artifact(local_path, &manifest.model.artifact)?;
-    register_verified_model(manifest, local_path)
+    register_verified_model(manifest, local_path)?;
+    write_model_download_state(
+        manifest,
+        local_path,
+        "Verified",
+        "The pinned Gemma model file passed checksum verification and is registered with CivicCore."
+            .to_string(),
+        None,
+    )
 }
 
 fn load_model_into_runtime(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
@@ -792,8 +966,19 @@ fn curl_executable() -> String {
     })
 }
 
-fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
+fn download_model_artifact_inner(
+    manifest: &ModelManifest,
+    local_path: &Path,
+) -> Result<(), String> {
     if checksum_marker_matches(local_path, &manifest.model.artifact.sha256) {
+        register_verified_model(manifest, local_path)?;
+        write_model_download_state(
+            manifest,
+            local_path,
+            "Verified",
+            "The pinned Gemma model file has already passed checksum verification and is registered with CivicCore.".to_string(),
+            None,
+        )?;
         return Ok(());
     }
     ensure_parent_dir(local_path)?;
@@ -805,6 +990,14 @@ fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Resul
     })?;
     ensure_minimum_free_disk(parent, manifest.download.minimum_free_disk_bytes)?;
     let partial_path = partial_download_path(local_path);
+    write_model_download_state(
+        manifest,
+        local_path,
+        "Downloading",
+        "CivicSuite is downloading the pinned Gemma model file. Closing the app keeps the partial file for resume."
+            .to_string(),
+        None,
+    )?;
     let status = Command::new(curl_executable())
         .arg("-L")
         .arg("--fail")
@@ -842,6 +1035,21 @@ fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Resul
     fs::rename(&partial_path, local_path)
         .map_err(|error| format!("Could not move verified model into place: {error}"))?;
     verify_and_register_model_artifact(manifest, local_path)
+}
+
+fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
+    let result = download_model_artifact_inner(manifest, local_path);
+    if let Err(message) = &result {
+        let _ = write_model_download_state(
+            manifest,
+            local_path,
+            "Download failed",
+            "The Gemma model download did not complete. The saved partial file can be resumed."
+                .to_string(),
+            Some(message.clone()),
+        );
+    }
+    result
 }
 
 fn readiness_items(
@@ -969,6 +1177,7 @@ pub fn model_state() -> Result<ModelState, String> {
     let local_path = model_path(&manifest.model.artifact);
     let runtime = probe_model_runtime(&manifest);
     let checks = readiness_items(&manifest, &local_path, &runtime);
+    let download_state = current_model_download_state(&manifest, &local_path);
     let ready = checks.iter().all(|check| check.ok);
     let status = if ready { "Ready" } else { "Needs download" };
 
@@ -1007,6 +1216,7 @@ pub fn model_state() -> Result<ModelState, String> {
             checksum_source: manifest.model.artifact.checksum_source,
             etag_blob_id: manifest.model.artifact.etag_blob_id,
         },
+        download_state,
         checks,
         next_action: "Use first-run setup to download, resume, and verify the pinned local model."
             .to_string(),
@@ -1201,6 +1411,62 @@ mod tests {
             assert!(result
                 .message
                 .contains("Could not start the model download"));
+        });
+    }
+
+    #[test]
+    fn model_download_failure_persists_status_for_resume() {
+        with_temp_state_dir(|root| {
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "99999999999");
+            env::set_var(
+                "CIVICSUITE_CURL_PATH",
+                root.join("missing-curl.exe").to_string_lossy().to_string(),
+            );
+
+            let result = model_action("download").expect("action response is structured");
+
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            env::remove_var("CIVICSUITE_CURL_PATH");
+
+            assert!(!result.accepted);
+            assert!(root
+                .join("config")
+                .join("model-download-status.json")
+                .is_file());
+
+            let state = model_state().expect("model state");
+            assert_eq!(state.download_state.status, "Download failed");
+            assert!(state
+                .download_state
+                .last_error
+                .unwrap_or_default()
+                .contains("Could not start the model download"));
+        });
+    }
+
+    #[test]
+    fn model_state_reports_partial_download_progress() {
+        with_temp_state_dir(|root| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let local_path = model_path(&manifest.model.artifact);
+            let partial_path = partial_download_path(&local_path);
+            fs::create_dir_all(partial_path.parent().expect("partial parent")).expect("mkdir");
+            fs::write(&partial_path, vec![7_u8; 4096]).expect("partial write");
+
+            let state = model_state().expect("model state");
+
+            assert_eq!(state.download_state.status, "Partial download");
+            assert_eq!(state.download_state.partial_bytes, 4096);
+            assert!(state.download_state.progress_percent > 0.0);
+            assert!(state.download_state.message.contains("can be resumed"));
+            assert_eq!(
+                state.download_state.partial_path,
+                root.join("Data")
+                    .join("models")
+                    .join("gemma-4-12b-it-qat-q4_0.gguf.part")
+                    .to_string_lossy()
+                    .to_string()
+            );
         });
     }
 

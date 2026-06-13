@@ -472,7 +472,8 @@ main {
 }
 
 .model-meta-grid div,
-.model-source {
+.model-source,
+.model-download-status {
   background: #f5f8fa;
   border: 1px solid #dbe4ea;
   border-radius: 6px;
@@ -481,22 +482,46 @@ main {
 }
 
 .model-meta-grid span,
-.model-source span {
+.model-source span,
+.model-download-status span {
   color: #6b7885;
   display: block;
   font-size: 0.78rem;
 }
 
 .model-meta-grid strong,
-.model-source strong {
+.model-source strong,
+.model-download-status strong {
   display: block;
   font-size: 0.86rem;
   margin-top: 3px;
   overflow-wrap: anywhere;
 }
 
-.model-source {
+.model-source,
+.model-download-status {
   margin-bottom: 12px;
+}
+
+.model-download-status {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.model-download-status small {
+  color: #6b7885;
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
+.model-download-status .download-error {
+  border-top: 1px solid #dbe4ea;
+  grid-column: 1 / -1;
+  padding-top: 10px;
 }
 
 .model-actions {
@@ -848,6 +873,7 @@ main {
   .health-actions,
   .location-grid,
   .model-meta-grid,
+  .model-download-status,
   .module-list.compact,
   .profile-choice-grid,
   .review-grid,

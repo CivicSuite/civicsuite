@@ -10,6 +10,8 @@ test("home surface shows first-run setup and pinned local model readiness", asyn
   await expect(page.getByText("No silent download starts from this screen.")).toBeVisible();
   await expect(page.getByText("faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1")).toBeVisible();
   await expect(page.getByText("hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0")).toBeVisible();
+  await expect(page.getByText("Download progress")).toBeVisible();
+  await expect(page.getByText("No verified or partial Gemma model download is saved on this machine.")).toBeVisible();
   await expect(page.getByText("Needs verification")).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Model Folder" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download / Resume" })).toBeVisible();

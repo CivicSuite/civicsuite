@@ -31,6 +31,12 @@ LAUNCHER_NAMES = {
     "macos": "start-civicsuite-installer.sh",
     "windows": "start-civicsuite-installer.ps1",
 }
+DEPENDENCY_GATE_MARKERS = (
+    "toomanyrequests",
+    "too many requests",
+    "unauthenticated pull rate limit",
+    "failed to resolve source metadata for docker.io",
+)
 
 
 def make_run_id() -> str:
@@ -329,9 +335,12 @@ def classify_evidence(
     skip_install: bool,
     status: str,
     lifecycle_blocked: bool,
+    dependency_gate_blocked: bool,
 ) -> str:
     if skip_install:
         return "archive_readiness_only"
+    if dependency_gate_blocked:
+        return "dependency_gate_blocked"
     if lifecycle_blocked:
         if platform == "macos" and host_platform != "macos":
             return "unsupported_lifecycle"
@@ -348,10 +357,24 @@ def certification_scope(classification: str) -> str:
         "archive_readiness_only": "Archive extraction, readiness, and dry-run plan only; not lifecycle certification.",
         "matching_host_lifecycle": "Matching-host install, repair, verify, backup, restore, and uninstall lifecycle evidence.",
         "matching_host_lifecycle_failed": "Matching-host lifecycle was attempted but did not pass.",
+        "dependency_gate_blocked": "Matching-host lifecycle was blocked by an external dependency gate such as Docker Hub rate limiting.",
         "host_platform_mismatch": "Host platform did not match package target; not lifecycle certification.",
         "unsupported_lifecycle": "Requested lifecycle is unsupported on this host; not lifecycle certification.",
     }
     return scopes[classification]
+
+
+def dependency_gate_message(steps: list[dict[str, object]]) -> str | None:
+    for step in steps:
+        stdout = str(step.get("stdout") or "")
+        stderr = str(step.get("stderr") or "")
+        combined = f"{stdout}\n{stderr}".lower()
+        if any(marker in combined for marker in DEPENDENCY_GATE_MARKERS):
+            return (
+                "Docker Hub rate limiting blocked the lifecycle container build. "
+                "This is an external dependency gate, not product code failure."
+            )
+    return None
 
 
 def main() -> int:
@@ -489,12 +512,17 @@ def main() -> int:
             }
         )
 
+    dependency_gate = dependency_gate_message(steps) if status == "failed" else None
+    if dependency_gate:
+        status = "blocked"
+
     classification = classify_evidence(
         platform=platform,
         host_platform=host_platform,
         skip_install=args.skip_install,
         status=status,
         lifecycle_blocked=lifecycle_blocked,
+        dependency_gate_blocked=dependency_gate is not None,
     )
 
     retained_evidence = retain_lifecycle_evidence(bundle_root, report_dir)
@@ -523,6 +551,11 @@ def main() -> int:
         "workflow_proof_requested": args.workflow_proof,
         "workflow_proof_modes": workflow_proof_modes,
         "civicclerk_staff_mode": args.staff_mode,
+        "dependency_gate": {
+            "blocked": dependency_gate is not None,
+            "message": dependency_gate,
+            "allowed_ci_pass": classification == "dependency_gate_blocked",
+        },
         "lifecycle_isolation": {
             "run_id": run_id,
             "environment": {
@@ -545,7 +578,7 @@ def main() -> int:
         encoding="utf-8",
     )
     print(json.dumps(proof, indent=2, sort_keys=True))
-    return 0 if status == "passed" else 1
+    return 0 if status == "passed" or classification == "dependency_gate_blocked" else 1
 
 
 if __name__ == "__main__":

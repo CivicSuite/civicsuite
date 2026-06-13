@@ -330,6 +330,20 @@ const fallbackState = {
     download_requires_consent: true,
     download_policy: "Explicit model setup only",
     minimum_free_disk_bytes: 15000000000,
+    download_state: {
+      schema_version: 1,
+      model_id: "gemma-4-12b-it-qat-q4_0",
+      status: "Not downloaded",
+      message: "No verified or partial Gemma model download is saved on this machine.",
+      local_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+      partial_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf.part",
+      expected_size_bytes: 6975877728,
+      local_bytes: 0,
+      partial_bytes: 0,
+      progress_percent: 0,
+      last_error: null,
+      updated_at_unix_seconds: 0
+    },
     artifact: {
       file_name: "gemma-4-12b-it-qat-q4_0.gguf",
       local_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
@@ -1084,6 +1098,32 @@ function renderModelActions(model) {
   `;
 }
 
+function renderModelDownloadStatus(model) {
+  const downloadState = model.download_state;
+  if (!downloadState) return "";
+  const downloadedBytes = Math.max(downloadState.local_bytes || 0, downloadState.partial_bytes || 0);
+  return `
+    <div class="model-download-status" aria-label="Model download progress">
+      <div>
+        <span>Download progress</span>
+        <strong>${downloadState.status}</strong>
+        <small>${downloadState.message}</small>
+      </div>
+      <div>
+        <span>Saved locally</span>
+        <strong>${formatBytes(downloadedBytes)} of ${formatBytes(downloadState.expected_size_bytes || model.download_size_bytes)}</strong>
+        <small>${Number(downloadState.progress_percent || 0).toFixed(2)}% complete</small>
+      </div>
+      ${downloadState.last_error ? `
+        <div class="download-error">
+          <span>Last error</span>
+          <strong>${downloadState.last_error}</strong>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
 function renderModelReadiness({ compact = false } = {}) {
   const model = state.app.model;
   if (!model) return "";
@@ -1124,6 +1164,7 @@ function renderModelReadiness({ compact = false } = {}) {
         <small>Checksum source: ${model.artifact.checksum_source}</small>
         <small>Local path: ${model.artifact.local_path}</small>
       </div>
+      ${renderModelDownloadStatus(model)}
       ${renderModelActions(model)}
       ${renderModelActionResult()}
       <div class="readiness-list">

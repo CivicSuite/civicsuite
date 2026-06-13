@@ -295,7 +295,7 @@ extracted bundle, remove the extracted payload, and write evidence under
 `installer/reports/{run_id}`. Each package report records an
 `evidence_classification`: `archive_readiness_only`,
 `matching_host_lifecycle`, `matching_host_lifecycle_failed`,
-`host_platform_mismatch`, or `unsupported_lifecycle`. Full
+`dependency_gate_blocked`, `host_platform_mismatch`, or `unsupported_lifecycle`. Full
 install/repair/verify/backup/restore/uninstall proof is certification evidence
 only when the archive is run on a matching host or VM. Windows lifecycle
 evidence now exists from a Windows 11 + WSL 2 Docker Desktop host; macOS

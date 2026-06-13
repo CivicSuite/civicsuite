@@ -33,6 +33,7 @@ const requiredUiPhrases = [
   "Gemma 4 12B QAT Q4_0",
   "Checksum required",
   "No silent download",
+  "Download progress",
   "Official Google weights",
   "Download / Resume Model",
   "Set Up Services and Model",
@@ -244,6 +245,17 @@ for (const phrase of [
 ]) {
   if (!supervisorRust.includes(phrase)) {
     throw new Error(`Windows supervisor missing payload integrity phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "ModelDownloadState",
+  "model-download-status.json",
+  "Partial download",
+  "Download failed"
+]) {
+  if (!readFileSync(join(root, "src-tauri", "src", "model.rs"), "utf8").includes(phrase)) {
+    throw new Error(`Windows model setup missing durable download state phrase: ${phrase}`);
   }
 }
 

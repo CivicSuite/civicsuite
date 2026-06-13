@@ -118,6 +118,7 @@ ALLOWED_EVIDENCE_CLASSIFICATIONS = {
     "archive_readiness_only",
     "matching_host_lifecycle",
     "matching_host_lifecycle_failed",
+    "dependency_gate_blocked",
     "host_platform_mismatch",
     "unsupported_lifecycle",
 }
@@ -511,6 +512,7 @@ def check_package_cleanroom_evidence_contract(
         "evidence_classification",
         "archive_readiness_only",
         "matching_host_lifecycle",
+        "dependency_gate_blocked",
         "unsupported_lifecycle",
         "darwin",
         "CIVICSUITE_INSTALLER_RUN_ID",
