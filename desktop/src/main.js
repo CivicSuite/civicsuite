@@ -312,7 +312,9 @@ const fallbackState = {
     code_sources: [],
     code_handoffs: [],
     audit_entries: []
-  }
+  },
+  city_profile: null,
+  users: []
 };
 
 const state = {
@@ -364,8 +366,25 @@ async function loadAppState() {
   }
   try {
     state.app = await invoke("get_app_state");
+    hydrateSetupDraftFromApp();
   } catch (error) {
     console.warn("Using browser fallback state", error);
+  }
+}
+
+function hydrateSetupDraftFromApp() {
+  const profile = state.app.city_profile;
+  if (profile) {
+    state.setupDraft.cityName = profile.city_name || "";
+    state.setupDraft.state = profile.state || "";
+    state.setupDraft.timeZone = profile.time_zone || "";
+    state.setupDraft.recordsContact = profile.records_contact || "";
+    state.setupDraft.clerkContact = profile.clerk_contact || "";
+  }
+  const admin = (state.app.users || [])[0];
+  if (admin) {
+    state.setupDraft.adminName = admin.display_name || "";
+    state.setupDraft.adminEmail = admin.email || "";
   }
 }
 
@@ -927,11 +946,38 @@ function renderModuleRow(module) {
 
 function renderModules() {
   const installed = state.app.modules.filter((module) => module.installed || module.required);
+  const admin = (state.app.users || [])[0];
   return `
     <section class="page-heading">
       <p class="eyebrow">Settings</p>
-      <h2>Module Manager</h2>
-      <p>The module manager keeps CivicCore installed and manages the City Core package on this Windows machine.</p>
+      <h2>Settings</h2>
+      <p>The module manager shares this screen with the local city profile, first admin, and installed City Core package on this Windows machine.</p>
+    </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>City Profile</h3>
+        <label>City name <input type="text" data-setup-field="cityName" value="${state.setupDraft.cityName}" autocomplete="organization" /></label>
+        <label>State <input type="text" data-setup-field="state" value="${state.setupDraft.state}" autocomplete="address-level1" /></label>
+        <label>Time zone <input type="text" data-setup-field="timeZone" value="${state.setupDraft.timeZone}" /></label>
+        <label>Records contact <input type="email" data-setup-field="recordsContact" value="${state.setupDraft.recordsContact}" autocomplete="email" /></label>
+        <label>Clerk contact <input type="email" data-setup-field="clerkContact" value="${state.setupDraft.clerkContact}" autocomplete="email" /></label>
+        <button type="button" class="primary-action" data-first-run-action="create-city-profile" data-step-id="city-profile">Save City Profile</button>
+      </div>
+      <div class="workflow-form">
+        <h3>First Admin</h3>
+        <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
+        <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
+        <div class="module-meta">
+          <span class="${admin ? "status-ok" : "status-warn"}">${admin ? admin.role : "Needed"}</span>
+        </div>
+        <button type="button" class="secondary-action" data-first-run-action="create-admin" data-step-id="first-admin">Save First Admin</button>
+      </div>
+    </section>
+    ${renderActionResult()}
+    <section class="page-heading compact-heading">
+      <p class="eyebrow">Module Manager</p>
+      <h2>City Core Modules</h2>
+      <p>CivicCore stays installed and product modules are managed through the City Core package.</p>
     </section>
     <section class="module-columns">
       <div>

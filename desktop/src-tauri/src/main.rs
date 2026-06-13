@@ -3,7 +3,7 @@ mod model;
 mod supervisor;
 mod workflows;
 
-use first_run::{FirstRunActionResult, FirstRunState};
+use first_run::{FirstRunActionResult, FirstRunState, SavedCityProfile, SavedFirstAdmin};
 use model::{ModelActionResult, ModelState};
 use serde::Serialize;
 use serde_json::Value;
@@ -39,6 +39,8 @@ struct AppState {
     modules: Vec<ModuleSummary>,
     installer_steps: Vec<&'static str>,
     first_run: FirstRunState,
+    city_profile: Option<SavedCityProfile>,
+    users: Vec<SavedFirstAdmin>,
     model: ModelState,
     health: Vec<RuntimeHealthItem>,
     city_work: CityWorkState,
@@ -156,6 +158,8 @@ fn get_app_state() -> Result<AppState, String> {
         modules: module_summaries()?,
         installer_steps: installer_steps(),
         first_run: first_run::first_run_state(&[])?,
+        city_profile: first_run::saved_city_profile()?,
+        users: first_run::saved_users()?,
         model: model::model_state()?,
         health: supervisor::runtime_health()?,
         city_work: workflows::city_work_state()?,
@@ -305,6 +309,40 @@ mod tests {
                 Some("unsigned-beta")
             );
             assert!(state.first_run.local_only);
+        });
+    }
+
+    #[test]
+    fn app_state_reports_saved_city_profile_and_first_admin() {
+        with_clean_first_run_state(|_| {
+            let city_payload = serde_json::json!({
+                "cityName": "Brookfield",
+                "state": "CO",
+                "timeZone": "America/Denver",
+                "recordsContact": "records@example.gov",
+                "clerkContact": "clerk@example.gov"
+            });
+            first_run::first_run_action(
+                "create-city-profile",
+                Some("city-profile"),
+                Some(&city_payload),
+            )
+            .expect("city profile saved");
+            let admin_payload = serde_json::json!({
+                "adminName": "Alex Clerk",
+                "adminEmail": "alex@example.gov"
+            });
+            first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+                .expect("admin saved");
+
+            let state = get_app_state().expect("app state");
+
+            let profile = state.city_profile.expect("city profile");
+            assert_eq!(profile.city_name, "Brookfield");
+            assert_eq!(profile.records_contact, "records@example.gov");
+            assert_eq!(state.users.len(), 1);
+            assert_eq!(state.users[0].email, "alex@example.gov");
+            assert_eq!(state.users[0].role, "local-admin");
         });
     }
 

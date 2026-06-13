@@ -1,3 +1,4 @@
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env;
@@ -125,20 +126,20 @@ struct FirstRunProgress {
     last_updated_unix_seconds: u64,
 }
 
-#[derive(Deserialize, Serialize)]
-struct SavedCityProfile {
-    city_name: String,
-    state: String,
-    time_zone: String,
-    records_contact: String,
-    clerk_contact: String,
+#[derive(Deserialize, Serialize, Clone)]
+pub struct SavedCityProfile {
+    pub city_name: String,
+    pub state: String,
+    pub time_zone: String,
+    pub records_contact: String,
+    pub clerk_contact: String,
 }
 
-#[derive(Deserialize, Serialize)]
-struct SavedFirstAdmin {
-    display_name: String,
-    email: String,
-    role: String,
+#[derive(Deserialize, Serialize, Clone)]
+pub struct SavedFirstAdmin {
+    pub display_name: String,
+    pub email: String,
+    pub role: String,
 }
 
 fn parse_manifest() -> Result<FirstRunManifest, String> {
@@ -257,8 +258,31 @@ fn write_json_file<T: Serialize>(path: PathBuf, value: &T) -> Result<(), String>
         .map_err(|error| format!("Could not write {}: {error}", path.display()))
 }
 
+fn read_optional_json_file<T: DeserializeOwned>(path: PathBuf) -> Result<Option<T>, String> {
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let contents = fs::read_to_string(&path)
+        .map_err(|error| format!("Could not read {}: {error}", path.display()))?;
+    serde_json::from_str(&contents)
+        .map(Some)
+        .map_err(|error| format!("Could not parse {}: {error}", path.display()))
+}
+
 fn write_progress(progress: &FirstRunProgress) -> Result<(), String> {
     write_json_file(progress_path(), progress)
+}
+
+pub fn saved_city_profile() -> Result<Option<SavedCityProfile>, String> {
+    read_optional_json_file(config_dir().join("city-profile.json"))
+}
+
+pub fn saved_users() -> Result<Vec<SavedFirstAdmin>, String> {
+    Ok(
+        read_optional_json_file(config_dir().join("first-admin.json"))?
+            .into_iter()
+            .collect(),
+    )
 }
 
 fn now_unix_seconds() -> u64 {
