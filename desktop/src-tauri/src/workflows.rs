@@ -134,6 +134,21 @@ pub struct AuditEntry {
     pub entry_hash: String,
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct PublicationEvent {
+    pub id: String,
+    pub source_module: String,
+    pub source_record_id: String,
+    pub record_type: String,
+    pub public_payload: String,
+    pub payload_hash: String,
+    pub published_at_unix_seconds: u64,
+    #[serde(default)]
+    pub retracted_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub retracted_by: String,
+}
+
 #[derive(Serialize, Clone)]
 pub struct SearchResult {
     pub module_id: String,
@@ -151,6 +166,8 @@ pub struct CityWorkState {
     pub code_sources: Vec<CodeSource>,
     pub code_handoffs: Vec<CodeHandoff>,
     pub audit_entries: Vec<AuditEntry>,
+    #[serde(default)]
+    pub publication_events: Vec<PublicationEvent>,
 }
 
 #[derive(Serialize)]
@@ -335,6 +352,50 @@ fn push_audit(state: &mut CityWorkState, module_id: &str, action: &str, summary:
         previous_hash,
         entry_hash,
     });
+}
+
+fn hash_public_payload(payload: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(payload.as_bytes());
+    bytes_to_hex(&hasher.finalize())
+}
+
+fn push_publication_event(
+    state: &mut CityWorkState,
+    source_module: &str,
+    source_record_id: String,
+    record_type: &str,
+    public_payload: String,
+) {
+    let id = new_id("publication", state.publication_events.len());
+    let payload_hash = hash_public_payload(&public_payload);
+    state.publication_events.push(PublicationEvent {
+        id,
+        source_module: source_module.to_string(),
+        source_record_id,
+        record_type: record_type.to_string(),
+        public_payload,
+        payload_hash,
+        published_at_unix_seconds: now_unix_seconds(),
+        retracted_at_unix_seconds: None,
+        retracted_by: String::new(),
+    });
+}
+
+fn retract_publication_event(
+    state: &mut CityWorkState,
+    source_module: &str,
+    source_record_id: &str,
+    retracted_by: &str,
+) {
+    if let Some(event) = state.publication_events.iter_mut().rev().find(|event| {
+        event.source_module == source_module
+            && event.source_record_id == source_record_id
+            && event.retracted_at_unix_seconds.is_none()
+    }) {
+        event.retracted_at_unix_seconds = Some(now_unix_seconds());
+        event.retracted_by = retracted_by.to_string();
+    }
 }
 
 fn first_meeting_mut(state: &mut CityWorkState) -> Result<&mut Meeting, String> {
@@ -652,7 +713,7 @@ fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
 }
 
 fn archive_meeting(state: &mut CityWorkState) -> Result<String, String> {
-    let (title, export_path) = {
+    let (meeting_id, title, export_path, public_payload) = {
         let meeting = first_meeting_mut(state)?;
         if meeting.minutes_adopted_at_unix_seconds.is_none() {
             return Err(
@@ -664,8 +725,20 @@ fn archive_meeting(state: &mut CityWorkState) -> Result<String, String> {
         let contents = meeting_packet_contents(meeting);
         let export_path = write_export_file("meetings", &meeting.title, &contents)?;
         meeting.exports.push(export_path.clone());
-        (meeting.title.clone(), export_path)
+        (
+            meeting.id.clone(),
+            meeting.title.clone(),
+            export_path,
+            contents,
+        )
     };
+    push_publication_event(
+        state,
+        "civicclerk",
+        meeting_id,
+        "meeting-archive",
+        public_payload,
+    );
     push_audit(
         state,
         "civicclerk",
@@ -916,16 +989,36 @@ fn export_records_response(state: &mut CityWorkState) -> Result<String, String> 
 }
 
 fn fulfill_records_request(state: &mut CityWorkState) -> Result<String, String> {
-    let request = first_record_mut(state)?;
-    ensure_records_request_active(request)?;
-    if request.approved_at_unix_seconds.is_none() {
-        return Err("Approve the records response before fulfillment.".to_string());
-    }
-    if request.exports.is_empty() {
-        return Err("Export the approved records response package before fulfillment.".to_string());
-    }
-    request.fulfilled_at_unix_seconds = Some(now_unix_seconds());
-    request.status = "fulfilled".to_string();
+    let (request_id, public_payload) = {
+        let request = first_record_mut(state)?;
+        ensure_records_request_active(request)?;
+        if request.approved_at_unix_seconds.is_none() {
+            return Err("Approve the records response before fulfillment.".to_string());
+        }
+        if request.exports.is_empty() {
+            return Err(
+                "Export the approved records response package before fulfillment.".to_string(),
+            );
+        }
+        request.fulfilled_at_unix_seconds = Some(now_unix_seconds());
+        request.status = "fulfilled".to_string();
+        (
+            request.id.clone(),
+            format!(
+                "Records request fulfilled for {}. Deadline: {}. Exports: {}.",
+                request.requester,
+                request.deadline,
+                request.exports.join("; ")
+            ),
+        )
+    };
+    push_publication_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "records-response",
+        public_payload,
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1119,7 +1212,7 @@ fn approve_code_guidance(state: &mut CityWorkState) -> Result<String, String> {
 }
 
 fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
-    let (title, citation, export_path) = {
+    let (source_id, title, citation, export_path, public_payload) = {
         let source = first_code_source_mut(state)?;
         let codifier = if source.codifier_name.is_empty() {
             "No codifier sync recorded.".to_string()
@@ -1174,8 +1267,15 @@ fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
         source.public_status = "published".to_string();
         source.public_exports.push(export_path.clone());
         source.published_at_unix_seconds = Some(now_unix_seconds());
-        (source.title.clone(), source.citation.clone(), export_path)
+        (
+            source.id.clone(),
+            source.title.clone(),
+            source.citation.clone(),
+            export_path,
+            contents,
+        )
     };
+    push_publication_event(state, "civiccode", source_id, "code-source", public_payload);
     push_audit(
         state,
         "civiccode",
@@ -1186,12 +1286,17 @@ fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
 }
 
 fn unpublish_code_source(state: &mut CityWorkState) -> Result<String, String> {
-    let (title, citation) = {
+    let (source_id, title, citation) = {
         let source = first_code_source_mut(state)?;
         source.public_status = default_code_public_status();
         source.published_at_unix_seconds = None;
-        (source.title.clone(), source.citation.clone())
+        (
+            source.id.clone(),
+            source.title.clone(),
+            source.citation.clone(),
+        )
     };
+    retract_publication_event(state, "civiccode", &source_id, "civiccode");
     push_audit(
         state,
         "civiccode",
@@ -1515,6 +1620,15 @@ mod tests {
                 .audit_entries
                 .iter()
                 .any(|entry| entry.action == "archive-meeting"));
+            let publication = state
+                .publication_events
+                .iter()
+                .find(|event| event.record_type == "meeting-archive")
+                .expect("meeting archive publication event exists");
+            assert_eq!(publication.source_module, "civicclerk");
+            assert_eq!(publication.source_record_id, meeting.id);
+            assert_eq!(publication.payload_hash.len(), 64);
+            assert!(publication.retracted_at_unix_seconds.is_none());
             assert!(state.audit_entries.len() >= 9);
             assert_valid_audit_chain(&state.audit_entries);
 
@@ -1593,6 +1707,15 @@ mod tests {
             assert!(exported.contains("## Exemption Review"));
             assert!(exported.contains("Reviewed attorney-client content"));
             assert!(exported.contains("## Approval Notes"));
+            let publication = state
+                .publication_events
+                .iter()
+                .find(|event| event.record_type == "records-response")
+                .expect("records response publication event exists");
+            assert_eq!(publication.source_module, "civicrecords-ai");
+            assert_eq!(publication.source_record_id, request.id);
+            assert_eq!(publication.payload_hash.len(), 64);
+            assert!(publication.retracted_at_unix_seconds.is_none());
             let results = search_city_work(&state, "attorney-client");
             assert_eq!(results.len(), 1);
         });
@@ -1649,6 +1772,15 @@ mod tests {
                 fs::read_to_string(&source.public_exports[0]).expect("public code export reads");
             assert!(public_export.contains("Non-Authoritative Plain-English Summary"));
             assert!(public_export.contains("contact city staff"));
+            let publication = state
+                .publication_events
+                .iter()
+                .find(|event| event.record_type == "code-source")
+                .expect("code source publication event exists");
+            assert_eq!(publication.source_module, "civiccode");
+            assert_eq!(publication.source_record_id, source.id);
+            assert_eq!(publication.payload_hash.len(), 64);
+            assert!(publication.retracted_at_unix_seconds.is_none());
             assert_eq!(state.code_handoffs.len(), 1);
             let results = search_city_work(&state, "event permits");
             assert_eq!(results.len(), 1);
@@ -1673,6 +1805,16 @@ mod tests {
             assert_eq!(source.public_status, "internal draft");
             assert!(source.published_at_unix_seconds.is_none());
             assert_eq!(source.public_exports.len(), 1);
+            let publication = state
+                .publication_events
+                .iter()
+                .find(|event| event.record_type == "code-source")
+                .expect("code source publication event exists");
+            assert_eq!(publication.source_module, "civiccode");
+            assert_eq!(publication.source_record_id, source.id);
+            assert_eq!(publication.payload_hash.len(), 64);
+            assert!(publication.retracted_at_unix_seconds.is_some());
+            assert_eq!(publication.retracted_by, "civiccode");
             assert!(state
                 .audit_entries
                 .iter()

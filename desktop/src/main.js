@@ -337,7 +337,8 @@ const fallbackState = {
     records_requests: [],
     code_sources: [],
     code_handoffs: [],
-    audit_entries: []
+    audit_entries: [],
+    publication_events: []
   },
   city_profile: null,
   users: [],
@@ -1413,12 +1414,29 @@ function renderActiveArea() {
 
 function renderAuditDrawer() {
   const entries = cityWork().audit_entries || [];
+  const publications = cityWork().publication_events || [];
   return `
     <aside class="audit-drawer ${state.auditOpen ? "open" : ""}" aria-hidden="${!state.auditOpen}">
       <div class="section-title">
         <h2>Audit Trail</h2>
-        <p>Local workflow actions record module, action, time, and summary in the Windows data profile.</p>
+        <p>Local workflow actions and public publication gates record module, action, hash, time, and summary in the Windows data profile.</p>
       </div>
+      <h3>Publication Gates</h3>
+      ${publications.length === 0 ? `
+        <div class="audit-entry">
+          <span class="status-muted">No publications</span>
+          <p>No human-approved public records have been published yet.</p>
+        </div>
+      ` : publications.slice(0, 8).map((event) => `
+        <div class="audit-entry">
+          <span class="${event.retracted_at_unix_seconds ? "status-warn" : "status-ok"}">${event.source_module}</span>
+          <p><strong>${event.record_type}</strong></p>
+          <p>${event.retracted_at_unix_seconds ? "Retracted" : "Published"} record ${event.source_record_id}</p>
+          <small>Payload hash ${(event.payload_hash || "pending").slice(0, 12)}</small>
+          <small>${new Date(event.published_at_unix_seconds * 1000).toLocaleString()}</small>
+        </div>
+      `).join("")}
+      <h3>Workflow Actions</h3>
       ${entries.length === 0 ? `
         <div class="audit-entry">
           <span class="status-muted">No entries</span>

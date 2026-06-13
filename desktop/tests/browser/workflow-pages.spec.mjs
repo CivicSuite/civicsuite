@@ -102,6 +102,8 @@ test("audit drawer uses local workflow audit language instead of placeholder tex
   await page.getByRole("button", { name: "Audit Trail" }).click();
 
   await expect(page.getByRole("heading", { name: "Audit Trail" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Publication Gates" })).toBeVisible();
+  await expect(page.getByText("No human-approved public records have been published yet.")).toBeVisible();
   await expect(page.getByText("No local workflow actions have been recorded yet.")).toBeVisible();
   await expect(page.getByText("Scaffold")).toHaveCount(0);
 });
