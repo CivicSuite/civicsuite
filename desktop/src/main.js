@@ -16,7 +16,35 @@ const fallbackState = {
   ].map(([id, label, description]) => ({ id, label, description })),
   modules: [],
   installer_steps: [],
-  health: []
+  health: [
+    {
+      id: "desktop-shell",
+      label: "Desktop shell",
+      ok: true,
+      status: "OK",
+      message: "Tauri/WebView2 shell is running locally.",
+      next_action: "Continue the Windows local setup.",
+      admin_detail: "Browser preview fallback; Tauri provides live state in the desktop app."
+    },
+    {
+      id: "postgres",
+      label: "Local data store",
+      ok: false,
+      status: "Needs setup",
+      message: "Local data store is defined for the Windows local runtime but has not been installed yet.",
+      next_action: "Install the portable local data store during first run.",
+      admin_detail: "Portable PostgreSQL 17 + pgvector"
+    },
+    {
+      id: "model-runtime",
+      label: "Local AI model",
+      ok: false,
+      status: "Needs setup",
+      message: "Local AI model is defined for the Windows local runtime but has not been installed yet.",
+      next_action: "Download and verify the pinned local model weights.",
+      admin_detail: "Ollama runtime with Gemma 4 12B quantization-aware weights"
+    }
+  ]
 };
 
 const state = {
@@ -210,9 +238,11 @@ function renderHealth() {
     <section class="health-grid">
       ${state.app.health.map((item) => `
         <article class="health-card">
-          <span class="${item.ok ? "status-ok" : "status-warn"}">${item.ok ? "OK" : "Needs setup"}</span>
+          <span class="${item.ok ? "status-ok" : "status-warn"}">${item.status || (item.ok ? "OK" : "Needs setup")}</span>
           <h3>${item.label}</h3>
           <p>${item.message}</p>
+          ${item.next_action ? `<p class="next-action"><strong>Next:</strong> ${item.next_action}</p>` : ""}
+          ${item.admin_detail ? `<small>${item.admin_detail}</small>` : ""}
         </article>
       `).join("")}
     </section>

@@ -298,6 +298,19 @@ main {
   margin-top: 12px;
 }
 
+.health-card small {
+  color: #6b7885;
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-top: 10px;
+}
+
+.next-action {
+  border-left: 3px solid #a97812;
+  padding-left: 10px;
+}
+
 .step-list {
   margin: 0;
   padding-left: 22px;

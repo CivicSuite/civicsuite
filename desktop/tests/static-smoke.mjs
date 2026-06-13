@@ -7,6 +7,7 @@ const main = readFileSync(join(root, "src", "main.js"), "utf8");
 const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
+const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
 
 const requiredUiPhrases = [
   "Meetings & Notices",
@@ -36,6 +37,28 @@ if (!tauriConfig.includes('"identifier": "org.civicsuite.desktop"')) {
 
 if (!rustMain.includes('include_str!("../../../installer/modules.json")')) {
   throw new Error("desktop shell must read the suite module registry at compile time");
+}
+
+if (runtimeManifest.local_only !== true) {
+  throw new Error("Windows runtime manifest must default to local-only");
+}
+
+for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
+  if (runtimeManifest.operator_path[key] !== false) {
+    throw new Error(`Windows runtime operator path cannot require ${key}`);
+  }
+}
+
+for (const action of ["install", "start", "stop", "health", "repair", "logs", "backup", "restore", "uninstall"]) {
+  if (!runtimeManifest.lifecycle_actions.includes(action)) {
+    throw new Error(`Windows runtime manifest missing lifecycle action: ${action}`);
+  }
+}
+
+for (const serviceId of ["postgres", "python-services", "task-queue", "model-runtime", "file-storage"]) {
+  if (!runtimeManifest.services.some((service) => service.id === serviceId)) {
+    throw new Error(`Windows runtime manifest missing service: ${serviceId}`);
+  }
 }
 
 if (css.includes("blur(") || css.includes("radial-gradient")) {

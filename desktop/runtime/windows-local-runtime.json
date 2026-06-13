@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "profile": "windows-local-1.0",
+  "local_only": true,
+  "operator_path": {
+    "requires_docker": false,
+    "requires_wsl": false,
+    "requires_terminal": false
+  },
+  "lifecycle_actions": [
+    "install",
+    "start",
+    "stop",
+    "health",
+    "repair",
+    "logs",
+    "backup",
+    "restore",
+    "uninstall"
+  ],
+  "services": [
+    {
+      "id": "postgres",
+      "label": "Local data store",
+      "admin_label": "Portable PostgreSQL 17 + pgvector",
+      "kind": "postgres",
+      "required": true,
+      "binary": "runtime/postgres/bin/pg_ctl.exe",
+      "args": ["start", "-D", "{data_dir}/postgres"],
+      "health": {
+        "kind": "tcp",
+        "host": "127.0.0.1",
+        "port": 15432
+      },
+      "log_path": "{data_dir}/logs/postgres.log",
+      "next_action": "Install the portable local data store during first run."
+    },
+    {
+      "id": "python-services",
+      "label": "City workflow services",
+      "admin_label": "Bundled CPython module services",
+      "kind": "python-services",
+      "required": true,
+      "binary": "runtime/python/python.exe",
+      "args": ["-m", "civicsuite_runtime.services"],
+      "health": {
+        "kind": "http",
+        "endpoint": "http://127.0.0.1:15480/health"
+      },
+      "log_path": "{data_dir}/logs/python-services.log",
+      "next_action": "Install CivicCore and the selected city-core module services."
+    },
+    {
+      "id": "task-queue",
+      "label": "Background work queue",
+      "admin_label": "PostgreSQL-backed CivicCore task queue",
+      "kind": "postgres-task-queue",
+      "required": true,
+      "binary": "runtime/python/python.exe",
+      "args": ["-m", "civiccore.tasks.worker", "--backend", "postgres"],
+      "health": {
+        "kind": "supervisor",
+        "service": "task-queue"
+      },
+      "log_path": "{data_dir}/logs/task-queue.log",
+      "next_action": "Create the local task queue after the local data store is ready."
+    },
+    {
+      "id": "model-runtime",
+      "label": "Local AI model",
+      "admin_label": "Ollama runtime with Gemma 4 12B quantization-aware weights",
+      "kind": "model-runtime",
+      "required": true,
+      "binary": "runtime/ollama/ollama.exe",
+      "args": ["serve"],
+      "health": {
+        "kind": "http",
+        "endpoint": "http://127.0.0.1:15434/api/tags"
+      },
+      "log_path": "{data_dir}/logs/model-runtime.log",
+      "next_action": "Download and verify the pinned local model weights."
+    },
+    {
+      "id": "file-storage",
+      "label": "Local document storage",
+      "admin_label": "CivicSuite local file storage",
+      "kind": "file-storage",
+      "required": true,
+      "binary": "runtime/python/python.exe",
+      "args": ["-m", "civicsuite_runtime.storage"],
+      "health": {
+        "kind": "filesystem",
+        "path": "{data_dir}/files"
+      },
+      "log_path": "{data_dir}/logs/file-storage.log",
+      "next_action": "Create the local document storage folders during first run."
+    }
+  ]
+}

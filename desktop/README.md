@@ -9,6 +9,7 @@ The first scaffold is intentionally focused on the shell contract:
 - Staff, Resident/Public, and IT/Admin surfaces
 - module manager backed by `installer/modules.json`
 - local health and installer-readiness surfaces
+- Windows local runtime supervisor manifest and health state
 - honest state copy while the portable runtime and services are still landing
 
 The shell is not a replacement for module services. It is the host that the

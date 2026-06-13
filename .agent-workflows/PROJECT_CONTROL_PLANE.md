@@ -13,18 +13,16 @@ non-technical installer, Gemma 4 12B quantization-aware local model path,
 CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
 contract that lets future modules plug into the existing app one at a time.
 
-Current working slice: Portable runtime supervisor and Windows process
-lifecycle foundation.
+Current working slice: Installer and first-run wizard without Docker/WSL.
 
 Definition of Done for this slice:
 
-- Local service manifest names the Windows local runtime pieces: PostgreSQL,
-  Python services, file storage, task queue, and local model runtime.
-- Process supervisor contract covers start, stop, health, repair, logs, and
-  local-only service state.
-- Desktop shell consumes the supervisor health state through plain-English
-  status labels without exposing terminal or Docker/WSL steps.
-- Tests cover manifest validation and supervisor state transitions.
+- Desktop installer and first-run surfaces explain unsigned beta/SmartScreen,
+  install/data locations, local runtime install, model download, city profile,
+  first admin user, health verification, backup, repair, and uninstall.
+- First-run state is structured and testable, not static copy.
+- The clerk path stays free of terminal, Docker, WSL, and developer tooling.
+- Tests cover first-run state transitions and installer readiness.
 - audit-lite runs for this slice and findings are fixed before push.
 
 Closed Windows Local slices:
@@ -39,6 +37,10 @@ Closed Windows Local slices:
   Evidence: `desktop/`, `desktop/tests/static-smoke.mjs`, Tauri no-bundle
   executable build, and
   `docs/process/audits/audit-lite-windows-desktop-shell-scaffold-2026-06-13.md`.
+- Portable runtime supervisor and Windows process lifecycle foundation.
+  Evidence: `desktop/runtime/windows-local-runtime.json`,
+  `desktop/src-tauri/src/supervisor.rs`, System Health runtime rendering, and
+  `docs/process/audits/audit-lite-windows-runtime-supervisor-2026-06-13.md`.
 
 Stop conditions:
 

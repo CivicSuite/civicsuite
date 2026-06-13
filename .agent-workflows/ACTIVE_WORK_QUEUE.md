@@ -12,7 +12,7 @@ active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
 portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
 UX, city-core module completion, and future module package foundation.
 
-Current slice: Portable runtime supervisor and Windows process lifecycle.
+Current slice: Installer and first-run wizard without Docker/WSL.
 
 Closed Windows Local slices:
 
@@ -26,21 +26,23 @@ Closed Windows Local slices:
   Evidence: `desktop/`, `desktop/tests/static-smoke.mjs`, Tauri no-bundle
   executable build, and
   `docs/process/audits/audit-lite-windows-desktop-shell-scaffold-2026-06-13.md`.
+- Portable runtime supervisor and Windows process lifecycle foundation.
+  Evidence: `desktop/runtime/windows-local-runtime.json`,
+  `desktop/src-tauri/src/supervisor.rs`, System Health runtime rendering, and
+  `docs/process/audits/audit-lite-windows-runtime-supervisor-2026-06-13.md`.
 
 Slice Definition of Done:
 
-- Define the local service manifest for PostgreSQL, Python services, file
-  storage, task queue, and Ollama/model runtime integration.
-- Add a Windows-safe process supervisor contract and first implementation hook
-  for start, stop, health, repair, and logs.
-- Keep supervisor behavior local-only and hidden behind plain-English health
-  states in the desktop shell.
-- Add tests for service manifest validation and supervisor state transitions.
+- Add installer and first-run wizard surfaces for unsigned beta/SmartScreen,
+  install/data locations, runtime install, model download, city profile, first
+  admin user, health verification, backup, repair, and uninstall.
+- Keep the end-user path free of Docker, WSL, terminal, and developer tooling.
+- Connect installer steps to structured desktop state instead of static copy.
+- Add tests for first-run state transitions and installer readiness.
 - Run audit-lite and fix all slice findings.
 
-Next slices after this runtime foundation:
+Next slices after this installer/first-run foundation:
 
-4. Installer and first-run wizard without Docker/WSL.
 5. Gemma 4 12B quantization-aware model download/readiness path.
 6. CivicCore local platform completion for auth, audit, module registry, model
    registry, queue, health, backup/restore, and installer APIs.

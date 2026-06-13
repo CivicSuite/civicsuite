@@ -1,5 +1,8 @@
+mod supervisor;
+
 use serde::Serialize;
 use serde_json::Value;
+use supervisor::{RuntimeHealthItem, SupervisorActionResult};
 
 const MODULES_JSON: &str = include_str!("../../../installer/modules.json");
 
@@ -22,14 +25,6 @@ struct ModuleSummary {
 }
 
 #[derive(Serialize)]
-struct HealthItem {
-    id: &'static str,
-    label: &'static str,
-    ok: bool,
-    message: &'static str,
-}
-
-#[derive(Serialize)]
 struct AppState {
     product_name: &'static str,
     status_label: &'static str,
@@ -37,7 +32,7 @@ struct AppState {
     navigation: Vec<NavigationItem>,
     modules: Vec<ModuleSummary>,
     installer_steps: Vec<&'static str>,
-    health: Vec<HealthItem>,
+    health: Vec<RuntimeHealthItem>,
 }
 
 fn navigation() -> Vec<NavigationItem> {
@@ -88,35 +83,6 @@ fn installer_steps() -> Vec<&'static str> {
         "Download and verify Gemma 4 12B quantization-aware weights.",
         "Create city profile and first admin user.",
         "Verify local health, backup, repair, and uninstall entry points.",
-    ]
-}
-
-fn health() -> Vec<HealthItem> {
-    vec![
-        HealthItem {
-            id: "desktop-shell",
-            label: "Desktop shell",
-            ok: true,
-            message: "Tauri/WebView2 shell is running locally.",
-        },
-        HealthItem {
-            id: "portable-runtime",
-            label: "Portable runtime",
-            ok: false,
-            message: "Portable PostgreSQL, Python services, and supervisor land in the next slice.",
-        },
-        HealthItem {
-            id: "local-model",
-            label: "Local AI model",
-            ok: false,
-            message: "Gemma 4 12B download and checksum flow is not wired yet.",
-        },
-        HealthItem {
-            id: "backup",
-            label: "Backup",
-            ok: false,
-            message: "Backup and restore controls are scaffolded, not active.",
-        },
     ]
 }
 
@@ -180,14 +146,22 @@ fn get_app_state() -> Result<AppState, String> {
         navigation: navigation(),
         modules: module_summaries()?,
         installer_steps: installer_steps(),
-        health: health(),
+        health: supervisor::runtime_health()?,
     })
+}
+
+#[tauri::command]
+fn supervisor_action(
+    action: String,
+    service_id: Option<String>,
+) -> Result<SupervisorActionResult, String> {
+    supervisor::supervisor_action(&action, service_id.as_deref())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_app_state])
+        .invoke_handler(tauri::generate_handler![get_app_state, supervisor_action])
         .run(tauri::generate_context!())
         .expect("failed to run CivicSuite desktop");
 }
@@ -222,5 +196,14 @@ mod tests {
         assert!(labels.contains(&"Records Requests"));
         assert!(labels.contains(&"Code & Ordinances"));
         assert!(!labels.contains(&"Docker"));
+        assert!(!labels.contains(&"WSL"));
+    }
+
+    #[test]
+    fn app_state_reports_runtime_health_from_manifest() {
+        let state = get_app_state().expect("app state builds");
+        assert!(state.health.iter().any(|item| item.id == "desktop-shell"));
+        assert!(state.health.iter().any(|item| item.id == "postgres"));
+        assert!(state.health.iter().any(|item| item.id == "model-runtime"));
     }
 }
