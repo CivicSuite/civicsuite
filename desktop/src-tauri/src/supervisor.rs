@@ -567,6 +567,39 @@ fn service_arg_values(service: &ServiceDefinition) -> Vec<String> {
         .collect()
 }
 
+fn service_environment(service: &ServiceDefinition) -> Vec<(String, String)> {
+    let data = data_root();
+    let db_url = "postgresql+asyncpg://civicsuite:civicsuite@127.0.0.1:15432/civicsuite";
+    let mut env = vec![
+        (
+            "CIVICSUITE_DATA_DIR".to_string(),
+            data.to_string_lossy().to_string(),
+        ),
+        (
+            "CIVICSUITE_FILE_STORAGE_DIR".to_string(),
+            data.join("files").to_string_lossy().to_string(),
+        ),
+        ("DATABASE_URL".to_string(), db_url.to_string()),
+        ("PORTAL_MODE".to_string(), "private".to_string()),
+        (
+            "OLLAMA_BASE_URL".to_string(),
+            "http://127.0.0.1:15434".to_string(),
+        ),
+        (
+            "CIVICCLERK_OLLAMA_BASE_URL".to_string(),
+            "http://127.0.0.1:15434".to_string(),
+        ),
+        ("CIVICCORE_LLM_PROVIDER".to_string(), "ollama".to_string()),
+    ];
+    if service.kind.contains("python") || service.binary.ends_with("python.exe") {
+        env.push(("PYTHONNOUSERSITE".to_string(), "1".to_string()));
+    }
+    if service.id == "model-runtime" {
+        env.push(("OLLAMA_HOST".to_string(), "127.0.0.1:15434".to_string()));
+    }
+    env
+}
+
 fn health_detail(health: &HealthDefinition) -> String {
     match health {
         HealthDefinition::Tcp { host, port } => format!("tcp {host}:{port}"),
@@ -888,6 +921,7 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             .map_err(|error| format!("Could not open {}: {error}", log_path.display()))?;
         let child = Command::new(&binary)
             .args(service_arg_values(service))
+            .envs(service_environment(service))
             .stdout(Stdio::from(log.try_clone().map_err(|error| {
                 format!("Could not prepare service log: {error}")
             })?))

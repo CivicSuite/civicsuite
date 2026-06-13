@@ -158,7 +158,15 @@ for (const serviceId of ["postgres", "python-services", "task-queue", "model-run
 
 for (const requiredPayload of [
   ["postgres-17-pgvector", "bin/pg_ctl.exe", "share/extension/vector.control"],
-  ["cpython-services", "python.exe", "Lib/site-packages/civiccore"],
+  [
+    "cpython-services",
+    "python.exe",
+    "Lib/site-packages/civiccore",
+    "Lib/site-packages/app",
+    "Lib/site-packages/civicclerk",
+    "Lib/site-packages/civiccode",
+    "Lib/site-packages/civicsuite_runtime"
+  ],
   ["ollama-runtime", "ollama.exe"]
 ]) {
   const [payloadId, ...requiredFiles] = requiredPayload;

@@ -13,6 +13,8 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+build/
+*.egg-info/
 
 # Node (for any future docs site)
 node_modules/
@@ -21,6 +23,7 @@ node_modules/
 # Env
 .env
 .env.local
+.runtime-cache/
 
 # Static-site builds
 _site/

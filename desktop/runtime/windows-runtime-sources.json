@@ -25,6 +25,7 @@
       "provider": "Python Software Foundation",
       "version": "3.13.5",
       "download_url": "https://www.python.org/ftp/python/3.13.5/python-3.13.5-embed-amd64.zip",
+      "get_pip_url": "https://bootstrap.pypa.io/get-pip.py",
       "pth_file": "python313._pth"
     },
     "ollama": {

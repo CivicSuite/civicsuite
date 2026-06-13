@@ -4,7 +4,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
+    [string]$RepoRoot = "",
     [string]$ManifestPath = "",
     [string]$PayloadRoot = "",
     [switch]$SkipDownloads,
@@ -12,6 +12,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $RepoRoot) {
+    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+}
 
 function Read-JsonFile {
     param([string]$Path)
@@ -40,6 +44,9 @@ function Invoke-CivicDownload {
         [string]$Url,
         [string]$Destination
     )
+    if (Test-Path -LiteralPath $Destination) {
+        return Get-Sha256 -Path $Destination
+    }
     if ($SkipDownloads) {
         throw "Download required but -SkipDownloads was supplied: $Url"
     }
@@ -61,16 +68,112 @@ function Expand-CivicZip {
     Expand-Archive -LiteralPath $Archive -DestinationPath $Destination -Force
 }
 
-function Copy-DirectoryContents {
+function Expand-PostgresServerPayload {
     param(
-        [string]$Source,
+        [string]$Archive,
         [string]$Destination
     )
     if (Test-Path -LiteralPath $Destination) {
         Remove-Item -LiteralPath $Destination -Recurse -Force
     }
     New-Item -ItemType Directory -Force -Path $Destination | Out-Null
-    Copy-Item -LiteralPath (Join-Path $Source "*") -Destination $Destination -Recurse -Force
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $DestinationRoot = [System.IO.Path]::GetFullPath($Destination)
+    $ServerDirectories = @("bin", "include", "lib", "share")
+    $ServerFiles = @("server_license.txt", "commandlinetools_3rd_party_licenses.txt")
+    $Zip = [System.IO.Compression.ZipFile]::OpenRead($Archive)
+    try {
+        foreach ($Entry in $Zip.Entries) {
+            $NormalizedName = $Entry.FullName -replace "\\", "/"
+            if (-not $NormalizedName.StartsWith("pgsql/", [System.StringComparison]::OrdinalIgnoreCase)) {
+                continue
+            }
+            $RelativeName = $NormalizedName.Substring(6)
+            if (-not $RelativeName) {
+                continue
+            }
+            $FirstSegment = ($RelativeName -split "/", 2)[0]
+            if (($ServerDirectories -notcontains $FirstSegment) -and ($ServerFiles -notcontains $RelativeName)) {
+                continue
+            }
+            $Target = Join-Path $Destination ($RelativeName -replace "/", "\")
+            $TargetPath = [System.IO.Path]::GetFullPath($Target)
+            if (-not $TargetPath.StartsWith($DestinationRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "PostgreSQL archive contains an unsafe path: $($Entry.FullName)"
+            }
+            if ($NormalizedName.EndsWith("/")) {
+                New-Item -ItemType Directory -Force -Path $TargetPath | Out-Null
+                continue
+            }
+            $Parent = Split-Path -Parent $TargetPath
+            if ($Parent) {
+                New-Item -ItemType Directory -Force -Path $Parent | Out-Null
+            }
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($Entry, $TargetPath, $true)
+        }
+    } finally {
+        $Zip.Dispose()
+    }
+
+    foreach ($RequiredFile in @("bin\pg_ctl.exe", "bin\initdb.exe", "bin\postgres.exe", "share\postgresql.conf.sample")) {
+        if (-not (Test-Path -LiteralPath (Join-Path $Destination $RequiredFile))) {
+            throw "PostgreSQL server payload missing required file after extraction: $RequiredFile"
+        }
+    }
+}
+
+function Get-MsvcDevCmdPath {
+    $VsWhereCandidates = @(
+        "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+    )
+    $VsWhereCommand = Get-Command vswhere.exe -ErrorAction SilentlyContinue
+    if ($VsWhereCommand) {
+        $VsWhereCandidates += $VsWhereCommand.Source
+    }
+    foreach ($VsWhere in $VsWhereCandidates | Select-Object -Unique) {
+        if (-not (Test-Path -LiteralPath $VsWhere)) {
+            continue
+        }
+        $InstallPath = & $VsWhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if ($InstallPath) {
+            $DevCmd = Join-Path $InstallPath "Common7\Tools\VsDevCmd.bat"
+            if (Test-Path -LiteralPath $DevCmd) {
+                return $DevCmd
+            }
+        }
+    }
+    return $null
+}
+
+function Invoke-PgvectorBuild {
+    param(
+        [string]$SourceDir,
+        [string]$PostgresRoot
+    )
+    $HasMsvcPath = (Get-Command cl.exe -ErrorAction SilentlyContinue) -and
+        (Get-Command nmake.exe -ErrorAction SilentlyContinue)
+    $DevCmd = Get-MsvcDevCmdPath
+    if ((-not $HasMsvcPath) -and (-not $DevCmd)) {
+        throw "MSVC cl.exe and nmake.exe are required to build pgvector for the Windows payload."
+    }
+
+    Push-Location $SourceDir
+    try {
+        if ($DevCmd) {
+            $BuildCommand = "call `"$DevCmd`" -arch=x64 -host_arch=x64 >nul && set `"PGROOT=$PostgresRoot`" && nmake /F Makefile.win && nmake /F Makefile.win install"
+        } else {
+            $BuildCommand = "set `"PGROOT=$PostgresRoot`" && nmake /F Makefile.win && nmake /F Makefile.win install"
+        }
+        $BuildOutput = cmd.exe /D /S /C $BuildCommand 2>&1
+        $BuildExitCode = $LASTEXITCODE
+        $BuildOutput | ForEach-Object { Write-Host $_ }
+        if ($BuildExitCode -ne 0) {
+            throw "pgvector build failed with exit code $BuildExitCode"
+        }
+    } finally {
+        Pop-Location
+    }
 }
 
 function Get-PostgresBinaryUrl {
@@ -82,15 +185,13 @@ function Get-PostgresBinaryUrl {
         throw "PostgreSQL download discovery requires network access."
     }
     $Html = (Invoke-WebRequest -Uri $DownloadPage -UseBasicParsing).Content
-    $Normalized = $Html -replace "><", ">`n<"
-    $Lines = $Normalized -replace "`r", "" -split "`n"
-    for ($Index = 0; $Index -lt $Lines.Count; $Index++) {
-        if ($Lines[$Index] -match "Binaries from installer Version $MajorVersion\.") {
-            $Window = $Lines[$Index..([Math]::Min($Index + 30, $Lines.Count - 1))] -join "`n"
-            if ($Window -match "https://sbp\.enterprisedb\.com/getfile\.jsp\?fileid=\d+") {
-                return $Matches[0]
-            }
-        }
+    $Normalized = $Html -replace "`r", "" -replace "&amp;", "&" -replace "\\/", "/"
+    $Pattern = "(?is)Binaries\s+from\s+installer.*?Version\s*(?:<!--\s*-->\s*)?" +
+        [regex]::Escape([string]$MajorVersion) +
+        "\.\d+.*?<a\s+href=[""'](?<url>https?://sbp\.enterprisedb\.com/getfile\.jsp\?fileid=\d+)[""'][^>]*>\s*<img[^>]+alt=[""']Windows\s+x86-64[""']"
+    $Match = [regex]::Match($Normalized, $Pattern)
+    if ($Match.Success) {
+        return $Match.Groups["url"].Value
     }
     throw "Could not discover PostgreSQL $MajorVersion Windows binary URL from $DownloadPage"
 }
@@ -108,15 +209,7 @@ function Install-PostgresPayload {
     $Url = Get-PostgresBinaryUrl -DownloadPage $Source.download_page -MajorVersion $Source.major_version
     $Archive = Join-Path $CacheRoot "postgres-windows-binaries.zip"
     $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
-    $Extracted = Join-Path $CacheRoot "postgres-extracted"
-    Expand-CivicZip -Archive $Archive -Destination $Extracted
-    $PgRoot = Get-ChildItem -LiteralPath $Extracted -Directory -Recurse |
-        Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName "bin\pg_ctl.exe") } |
-        Select-Object -First 1
-    if (-not $PgRoot) {
-        throw "PostgreSQL archive did not contain bin\pg_ctl.exe"
-    }
-    Copy-DirectoryContents -Source $PgRoot.FullName -Destination $Destination
+    Expand-PostgresServerPayload -Archive $Archive -Destination $Destination
     return @{ status = "installed"; url = $Url; sha256 = $Sha; path = $Destination }
 }
 
@@ -124,25 +217,202 @@ function Install-PythonPayload {
     param(
         [object]$Source,
         [string]$CacheRoot,
-        [string]$PayloadRoot
+        [string]$PayloadRoot,
+        [string]$RepoRoot
     )
     $Destination = Join-Path $PayloadRoot "python"
+    $Status = "present"
     if (Test-Path -LiteralPath (Join-Path $Destination "python.exe")) {
-        return @{ status = "present"; path = $Destination }
-    }
-    $Archive = Join-Path $CacheRoot ("python-{0}-embed-amd64.zip" -f $Source.version)
-    $Sha = Invoke-CivicDownload -Url $Source.download_url -Destination $Archive
-    Expand-CivicZip -Archive $Archive -Destination $Destination
-    $Pth = Join-Path $Destination $Source.pth_file
-    if (Test-Path -LiteralPath $Pth) {
-        $Content = Get-Content -LiteralPath $Pth
-        $Content = $Content | ForEach-Object {
-            if ($_ -eq "#import site") { "import site" } else { $_ }
+        $Sha = $null
+    } else {
+        $Archive = Join-Path $CacheRoot ("python-{0}-embed-amd64.zip" -f $Source.version)
+        $Sha = Invoke-CivicDownload -Url $Source.download_url -Destination $Archive
+        Expand-CivicZip -Archive $Archive -Destination $Destination
+        $Pth = Join-Path $Destination $Source.pth_file
+        if (Test-Path -LiteralPath $Pth) {
+            $Content = Get-Content -LiteralPath $Pth
+            $Content = $Content | ForEach-Object {
+                if ($_ -eq "#import site") { "import site" } else { $_ }
+            }
+            $Content | Set-Content -LiteralPath $Pth -Encoding ASCII
         }
-        $Content | Set-Content -LiteralPath $Pth -Encoding ASCII
+        $Status = "installed"
     }
     New-Item -ItemType Directory -Force -Path (Join-Path $Destination "Lib\site-packages") | Out-Null
-    return @{ status = "installed"; url = $Source.download_url; sha256 = $Sha; path = $Destination }
+    Write-PythonNoUserSiteGuard -PythonRoot $Destination
+    $Packages = Install-PythonServicePackages -Source $Source -CacheRoot $CacheRoot -PythonRoot $Destination -RepoRoot $RepoRoot
+    $Result = @{
+        status = $Status
+        url = $Source.download_url
+        path = $Destination
+        packages = $Packages
+    }
+    if ($Sha) {
+        $Result.sha256 = $Sha
+    }
+    return $Result
+}
+
+function Write-PythonNoUserSiteGuard {
+    param([string]$PythonRoot)
+    $SitePackages = Join-Path $PythonRoot "Lib\site-packages"
+    New-Item -ItemType Directory -Force -Path $SitePackages | Out-Null
+    @'
+"""Keep the CivicSuite embedded runtime isolated from user Python packages."""
+
+from __future__ import annotations
+
+import os
+import site
+import sys
+
+site.ENABLE_USER_SITE = False
+
+try:
+    _user_site = site.getusersitepackages()
+except Exception:
+    _user_site = None
+
+if _user_site:
+    _normalized_user_site = os.path.normcase(os.path.abspath(_user_site))
+    sys.path[:] = [
+        path
+        for path in sys.path
+        if os.path.normcase(os.path.abspath(path)) != _normalized_user_site
+        and not os.path.normcase(os.path.abspath(path)).startswith(_normalized_user_site + os.sep)
+    ]
+'@ | Set-Content -LiteralPath (Join-Path $SitePackages "sitecustomize.py") -Encoding UTF8
+}
+
+function Invoke-PythonPayloadCommand {
+    param(
+        [string]$PythonRoot,
+        [string[]]$Arguments,
+        [hashtable]$ExtraEnvironment = @{}
+    )
+    $Python = Join-Path $PythonRoot "python.exe"
+    if (-not (Test-Path -LiteralPath $Python)) {
+        throw "Embedded Python was not found at $Python"
+    }
+    if (-not $ExtraEnvironment.ContainsKey("PYTHONNOUSERSITE")) {
+        $ExtraEnvironment["PYTHONNOUSERSITE"] = "1"
+    }
+    $PreviousValues = @{}
+    foreach ($Name in $ExtraEnvironment.Keys) {
+        $PreviousValues[$Name] = [Environment]::GetEnvironmentVariable($Name, "Process")
+        [Environment]::SetEnvironmentVariable($Name, [string]$ExtraEnvironment[$Name], "Process")
+    }
+    $PreviousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $Output = & $Python @Arguments 2>&1
+        $ExitCode = $LASTEXITCODE
+        $Output | ForEach-Object { Write-Host $_ }
+        if ($ExitCode -ne 0) {
+            throw "Embedded Python command failed with exit code ${ExitCode}: $($Arguments -join ' ')"
+        }
+    } finally {
+        $ErrorActionPreference = $PreviousErrorActionPreference
+        foreach ($Name in $ExtraEnvironment.Keys) {
+            [Environment]::SetEnvironmentVariable($Name, $PreviousValues[$Name], "Process")
+        }
+    }
+}
+
+function Ensure-PythonPip {
+    param(
+        [object]$Source,
+        [string]$CacheRoot,
+        [string]$PythonRoot
+    )
+    $Python = Join-Path $PythonRoot "python.exe"
+    $PreviousErrorActionPreference = $ErrorActionPreference
+    $PreviousNoUserSite = [Environment]::GetEnvironmentVariable("PYTHONNOUSERSITE", "Process")
+    $ErrorActionPreference = "Continue"
+    try {
+        [Environment]::SetEnvironmentVariable("PYTHONNOUSERSITE", "1", "Process")
+        & $Python -c "import pip" 1>$null 2>$null
+        $PipExitCode = $LASTEXITCODE
+    } finally {
+        [Environment]::SetEnvironmentVariable("PYTHONNOUSERSITE", $PreviousNoUserSite, "Process")
+        $ErrorActionPreference = $PreviousErrorActionPreference
+    }
+    if ($PipExitCode -eq 0) {
+        return @{ status = "present" }
+    }
+    $GetPip = Join-Path $CacheRoot "get-pip.py"
+    $Sha = Invoke-CivicDownload -Url $Source.get_pip_url -Destination $GetPip
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+        $GetPip,
+        "--no-warn-script-location",
+        "--disable-pip-version-check"
+    )
+    return @{ status = "installed"; url = $Source.get_pip_url; sha256 = $Sha }
+}
+
+function Test-PythonServiceImports {
+    param([string]$PythonRoot)
+    $ImportScript = @"
+import importlib
+import os
+os.environ.setdefault('TESTING', 'true')
+os.environ.setdefault('PORTAL_MODE', 'private')
+os.environ.setdefault('DATABASE_URL', 'postgresql+asyncpg://civicsuite:civicsuite@127.0.0.1:15432/civicsuite')
+for name in ['civiccore', 'app.main', 'civicclerk.main', 'civiccode.main', 'civicsuite_runtime.services']:
+    importlib.import_module(name)
+print('CivicSuite embedded Python service imports verified')
+"@
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @("-c", $ImportScript)
+}
+
+function Install-PythonServicePackages {
+    param(
+        [object]$Source,
+        [string]$CacheRoot,
+        [string]$PythonRoot,
+        [string]$RepoRoot
+    )
+    $PipStatus = Ensure-PythonPip -Source $Source -CacheRoot $CacheRoot -PythonRoot $PythonRoot
+    $CivicCore = (Resolve-Path (Join-Path $RepoRoot "..\civiccore")).Path
+    $CivicRecords = (Resolve-Path (Join-Path $RepoRoot "..\civicrecords-ai\backend")).Path
+    $CivicClerk = (Resolve-Path (Join-Path $RepoRoot "..\civicclerk")).Path
+    $CivicCode = (Resolve-Path (Join-Path $RepoRoot "..\civiccode")).Path
+    $RuntimeBridge = (Resolve-Path (Join-Path $RepoRoot "desktop\runtime\python-services")).Path
+
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+        "-m", "pip", "install",
+        "--disable-pip-version-check",
+        "--no-warn-script-location",
+        "setuptools>=68",
+        "wheel",
+        "hatchling>=1.27.0"
+    )
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+        "-m", "pip", "install",
+        "--disable-pip-version-check",
+        "--no-warn-script-location",
+        "--no-build-isolation",
+        $CivicCore,
+        "psycopg2-binary>=2.9.0,<3.0.0",
+        "PyMuPDF>=1.26.0,<2.0.0"
+    )
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+        "-m", "pip", "install",
+        "--disable-pip-version-check",
+        "--no-warn-script-location",
+        "--no-build-isolation",
+        "--no-deps",
+        "--force-reinstall",
+        $CivicRecords,
+        $CivicClerk,
+        $CivicCode,
+        $RuntimeBridge
+    )
+    Test-PythonServiceImports -PythonRoot $PythonRoot
+    return @{
+        pip = $PipStatus
+        installed = @("civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicsuite-runtime")
+    }
 }
 
 function Install-OllamaPayload {
@@ -189,9 +459,6 @@ function Install-PgvectorPayload {
     if ($SkipPgvectorBuild) {
         return @{ status = "skipped"; reason = "SkipPgvectorBuild"; path = $PostgresRoot }
     }
-    if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or -not (Get-Command nmake.exe -ErrorAction SilentlyContinue)) {
-        throw "MSVC cl.exe and nmake.exe are required to build pgvector for the Windows payload."
-    }
     if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
         throw "git.exe is required to fetch pgvector."
     }
@@ -199,14 +466,7 @@ function Install-PgvectorPayload {
     if (-not (Test-Path -LiteralPath $SourceDir)) {
         git clone --branch $Source.tag --depth 1 $Source.git_url $SourceDir
     }
-    Push-Location $SourceDir
-    try {
-        $env:PGROOT = $PostgresRoot
-        nmake /F Makefile.win
-        nmake /F Makefile.win install
-    } finally {
-        Pop-Location
-    }
+    Invoke-PgvectorBuild -SourceDir $SourceDir -PostgresRoot $PostgresRoot
     return @{ status = "installed"; tag = $Source.tag; path = $PostgresRoot }
 }
 
@@ -230,7 +490,7 @@ $Report = [ordered]@{
     generated_at = (Get-Date).ToUniversalTime().ToString("o")
     payload_root = $PayloadRoot
     postgres = Install-PostgresPayload -Source $Manifest.sources.postgres -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
-    python = Install-PythonPayload -Source $Manifest.sources.python -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
+    python = Install-PythonPayload -Source $Manifest.sources.python -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot -RepoRoot $RepoRoot
     ollama = Install-OllamaPayload -Source $Manifest.sources.ollama -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
 }
 $Report.pgvector = Install-PgvectorPayload -Source $Manifest.sources.pgvector -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot

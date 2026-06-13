@@ -28,6 +28,9 @@
       "required_files": [
         "python.exe",
         "Lib/site-packages/civiccore",
+        "Lib/site-packages/app",
+        "Lib/site-packages/civicclerk",
+        "Lib/site-packages/civiccode",
         "Lib/site-packages/civicsuite_runtime"
       ]
     },
