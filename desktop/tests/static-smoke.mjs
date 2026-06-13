@@ -277,6 +277,17 @@ for (const phrase of [
   }
 }
 
+for (const phrase of [
+  "CivicSuite cannot finish setup until these required steps are complete",
+  "CivicSuite setup is complete on this Windows profile.",
+  "System Health keeps backup, repair, logs, restore, and uninstall available.",
+  "Start city work from Meetings & Notices, Records Requests, Code & Ordinances, or Search City Knowledge."
+]) {
+  if (!firstRunRust.includes(phrase)) {
+    throw new Error(`Windows first-run finish contract missing phrase: ${phrase}`);
+  }
+}
+
 for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   if (runtimeManifest.operator_path[key] !== false) {
     throw new Error(`Windows runtime operator path cannot require ${key}`);

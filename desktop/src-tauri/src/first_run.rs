@@ -413,6 +413,25 @@ fn next_step_id(progress: &FirstRunProgress, manifest: &FirstRunManifest) -> Opt
         .map(|step| step.id.clone())
 }
 
+fn missing_prior_required_steps(
+    progress: &FirstRunProgress,
+    manifest: &FirstRunManifest,
+    target_step_id: &str,
+) -> Vec<String> {
+    let completed: HashSet<&str> = progress
+        .completed_step_ids
+        .iter()
+        .map(String::as_str)
+        .collect();
+    manifest
+        .steps
+        .iter()
+        .take_while(|step| step.id != target_step_id)
+        .filter(|step| step.required && !completed.contains(step.id.as_str()))
+        .map(|step| step.label.clone())
+        .collect()
+}
+
 fn payload_string(payload: Option<&serde_json::Value>, key: &str) -> Result<String, String> {
     payload
         .and_then(|value| value.get(key))
@@ -688,6 +707,22 @@ pub fn first_run_action(
             step.id, step.action
         ));
     }
+    if action == "open-app" {
+        let missing_steps = missing_prior_required_steps(&progress, &manifest, &target_step_id);
+        if !missing_steps.is_empty() {
+            return Ok(FirstRunActionResult {
+                accepted: false,
+                action: action.to_string(),
+                step_id: Some(target_step_id),
+                status: "Setup incomplete",
+                message: format!(
+                    "CivicSuite cannot finish setup until these required steps are complete: {}.",
+                    missing_steps.join(", ")
+                ),
+                next_action: "Complete the current setup step before finishing.".to_string(),
+            });
+        }
+    }
 
     let mut action_completion: Option<(&'static str, String, String)> = None;
     if action == "download-model" {
@@ -771,6 +806,15 @@ pub fn first_run_action(
             "Ready",
             format!("{} {}", bootstrap.message, model_load.message),
             "Continue to finish setup.".to_string(),
+        ));
+    }
+    if action == "open-app" {
+        action_completion = Some((
+            "Finished",
+            "CivicSuite setup is complete on this Windows profile. System Health keeps backup, repair, logs, restore, and uninstall available."
+                .to_string(),
+            "Start city work from Meetings & Notices, Records Requests, Code & Ordinances, or Search City Knowledge."
+                .to_string(),
         ));
     }
 
@@ -869,6 +913,51 @@ mod tests {
             .steps
             .iter()
             .any(|step| step.id == "locations" && step.current));
+    }
+
+    #[test]
+    fn first_run_finish_blocks_incomplete_required_steps() {
+        with_temp_state_dir(|_| {
+            let result =
+                first_run_action("open-app", Some("finish"), None).expect("finish response");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Setup incomplete");
+            assert!(result.message.contains("Welcome and unsigned beta notice"));
+            let state = first_run_state(&[]).expect("state remains unfinished");
+            assert_eq!(state.current_step_id.as_deref(), Some("unsigned-beta"));
+            assert!(!state.finished);
+        });
+    }
+
+    #[test]
+    fn first_run_finish_reports_completed_product_surface() {
+        with_temp_state_dir(|_| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let completed_step_ids = manifest
+                .steps
+                .iter()
+                .filter(|step| step.id != "finish")
+                .map(|step| step.id.clone())
+                .collect::<Vec<_>>();
+            write_progress(&FirstRunProgress {
+                completed_step_ids,
+                last_action: Some("verify-health".to_string()),
+                last_updated_unix_seconds: now_unix_seconds(),
+            })
+            .expect("progress writes");
+
+            let result =
+                first_run_action("open-app", Some("finish"), None).expect("finish response");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Finished");
+            assert!(result.message.contains("setup is complete"));
+            assert!(result.next_action.contains("Meetings & Notices"));
+            let state = first_run_state(&[]).expect("state reads finished");
+            assert!(state.finished);
+            assert_eq!(state.status, "Finished");
+        });
     }
 
     #[test]
