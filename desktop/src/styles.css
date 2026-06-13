@@ -652,6 +652,60 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.module-selection-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.profile-choice-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-choice,
+.module-choice {
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid #d5e0e8;
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 12px;
+}
+
+.profile-choice.selected,
+.module-choice.selected {
+  border-color: #1e5f74;
+}
+
+.module-choice.locked {
+  background: #eef3f6;
+}
+
+.module-choice.disabled {
+  color: #6a7884;
+}
+
+.profile-choice input,
+.module-choice input {
+  margin-top: 3px;
+}
+
+.profile-choice small,
+.module-choice small {
+  color: #536575;
+  display: block;
+  margin-top: 3px;
+}
+
+.module-choice-list {
+  display: grid;
+  gap: 8px;
+}
+
 .module-row {
   align-items: center;
   display: flex;
@@ -785,6 +839,7 @@ main {
   .location-grid,
   .model-meta-grid,
   .module-list.compact,
+  .profile-choice-grid,
   .review-grid,
   .setup-form,
   .setup-form.two-column {

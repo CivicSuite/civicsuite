@@ -98,6 +98,8 @@ pub struct ModuleSummary {
     pub required: bool,
     pub selectable: bool,
     pub installed: bool,
+    pub contract_ready: bool,
+    pub blocked_reason: Option<String>,
     pub dependencies: Vec<String>,
     pub proof_required: Vec<String>,
     pub route_count: usize,
@@ -599,43 +601,52 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
     Ok(registry
         .modules
         .iter()
-        .map(|module| ModuleSummary {
-            installed: installed_ids.contains(module.id.as_str()),
-            id: module.id.clone(),
-            display_name: module.display_name.clone(),
-            role: module.role.clone(),
-            version: module.current_version.clone(),
-            installer_status: module.installer_status.clone(),
-            civiccore_requirement: module.civiccore_requirement.clone(),
-            required: module.required,
-            selectable: module.selectable,
-            dependencies: module.dependencies.clone(),
-            proof_required: module.proof_required.clone(),
-            route_count: module.routes.as_ref().map_or(0, Vec::len),
-            service_count: module.services.as_ref().map_or(0, Vec::len),
-            permission_count: module.permissions.as_ref().map_or(0, Vec::len),
-            task_count: module.tasks.as_ref().map_or(0, Vec::len),
-            lifecycle_install: module
-                .lifecycle
-                .as_ref()
-                .map(|lifecycle| lifecycle.install.clone()),
-            lifecycle_update: module
-                .lifecycle
-                .as_ref()
-                .map(|lifecycle| lifecycle.update.clone()),
-            lifecycle_disable: module
-                .lifecycle
-                .as_ref()
-                .map(|lifecycle| lifecycle.disable.clone()),
-            lifecycle_uninstall: module
-                .lifecycle
-                .as_ref()
-                .map(|lifecycle| lifecycle.uninstall.clone()),
-            model_required: module
-                .model_needs
-                .as_ref()
-                .map(|needs| needs.iter().any(|need| need.required))
-                .unwrap_or(false),
+        .map(|module| {
+            let contract_result = validate_installable_module_contract(module);
+            let (contract_ready, blocked_reason) = match contract_result {
+                Ok(()) => (true, None),
+                Err(error) => (false, Some(error)),
+            };
+            ModuleSummary {
+                installed: installed_ids.contains(module.id.as_str()),
+                id: module.id.clone(),
+                display_name: module.display_name.clone(),
+                role: module.role.clone(),
+                version: module.current_version.clone(),
+                installer_status: module.installer_status.clone(),
+                civiccore_requirement: module.civiccore_requirement.clone(),
+                required: module.required,
+                selectable: module.selectable,
+                contract_ready,
+                blocked_reason,
+                dependencies: module.dependencies.clone(),
+                proof_required: module.proof_required.clone(),
+                route_count: module.routes.as_ref().map_or(0, Vec::len),
+                service_count: module.services.as_ref().map_or(0, Vec::len),
+                permission_count: module.permissions.as_ref().map_or(0, Vec::len),
+                task_count: module.tasks.as_ref().map_or(0, Vec::len),
+                lifecycle_install: module
+                    .lifecycle
+                    .as_ref()
+                    .map(|lifecycle| lifecycle.install.clone()),
+                lifecycle_update: module
+                    .lifecycle
+                    .as_ref()
+                    .map(|lifecycle| lifecycle.update.clone()),
+                lifecycle_disable: module
+                    .lifecycle
+                    .as_ref()
+                    .map(|lifecycle| lifecycle.disable.clone()),
+                lifecycle_uninstall: module
+                    .lifecycle
+                    .as_ref()
+                    .map(|lifecycle| lifecycle.uninstall.clone()),
+                model_required: module
+                    .model_needs
+                    .as_ref()
+                    .map(|needs| needs.iter().any(|need| need.required))
+                    .unwrap_or(false),
+            }
         })
         .collect())
 }
@@ -793,6 +804,8 @@ mod tests {
             assert!(civiccode.permission_count > 0);
             assert!(civiccode.task_count > 0);
             assert!(civiccode.model_required);
+            assert!(civiccode.contract_ready);
+            assert!(civiccode.blocked_reason.is_none());
 
             let civiczone = modules
                 .iter()
@@ -803,6 +816,12 @@ mod tests {
                 civiczone.installer_status.as_deref(),
                 Some("demoted_v0_2_2_truth_repair_no_functional_upgrade")
             );
+            assert!(!civiczone.contract_ready);
+            assert!(civiczone
+                .blocked_reason
+                .as_deref()
+                .unwrap_or_default()
+                .contains("CivicCore 1.2.0"));
         });
     }
 }

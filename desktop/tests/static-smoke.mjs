@@ -37,6 +37,10 @@ const requiredUiPhrases = [
   "Set Up Services and Model",
   "Package Profiles",
   "Module Catalog",
+  "Choose Product Modules",
+  "Custom selection will install CivicCore plus",
+  "Not ready for Windows Local 1.0",
+  "Apply Module Selection",
   "Sign in as local administrator to change local model setup.",
   "Sign in with the local administrator passcode before continuing setup.",
   "before changing city work, setup, model setup, settings, backups, restore, repair, or runtime services"

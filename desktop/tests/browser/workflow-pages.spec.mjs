@@ -173,6 +173,18 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("button", { name: "Save First Admin" })).toBeVisible();
   await expect(page.getByLabel("Local passcode")).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Modules" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose Product Modules" })).toBeVisible();
+  await expect(page.getByLabel(/City Core/)).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civicrecords-ai"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civicclerk"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civiccode"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civiczone"]')).toBeDisabled();
+  await expect(page.getByText("Not ready for Windows Local 1.0")).toBeVisible();
+  await page.getByLabel(/Custom/).check();
+  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
+  await page.locator('[data-module-toggle="civicrecords-ai"]').uncheck();
+  await expect(page.getByText("Custom selection will install CivicCore plus 2 selected product modules.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Apply Module Selection" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
@@ -189,6 +201,5 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "Full Suite" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
   await expect(page.getByText("Package waiting")).toBeVisible();
-  await expect(page.getByText("Not ready")).toHaveCount(0);
   await expect(page.getByText("Scaffold")).toHaveCount(0);
 });

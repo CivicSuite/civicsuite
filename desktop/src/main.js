@@ -1,6 +1,9 @@
 ﻿import { invoke } from "@tauri-apps/api/core";
 import "./styles.css";
 
+const LOCKED_FOUNDATION_MODULE_ID = "civiccore";
+const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccode"];
+
 const fallbackState = {
   product_name: "CivicSuite",
   status_label: "Windows Local 1.0 desktop",
@@ -23,6 +26,8 @@ const fallbackState = {
       required: true,
       selectable: false,
       installed: true,
+      contract_ready: true,
+      blocked_reason: null,
       lifecycle_install: "always-installed-with-profile",
       lifecycle_update: "manifest-versioned",
       lifecycle_disable: "not-allowed-required-foundation",
@@ -33,9 +38,17 @@ const fallbackState = {
       display_name: "CivicRecords AI",
       role: "records workflow",
       version: "1.7.3",
+      civiccore_requirement: "1.2.0",
       required: false,
       selectable: true,
       installed: true,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore"],
+      route_count: 2,
+      service_count: 2,
+      task_count: 6,
+      model_required: true,
       lifecycle_install: "profile-selected",
       lifecycle_update: "manifest-versioned",
       lifecycle_disable: "allowed-after-backup",
@@ -46,9 +59,17 @@ const fallbackState = {
       display_name: "CivicClerk",
       role: "meetings workflow",
       version: "1.0.4",
+      civiccore_requirement: "1.2.0",
       required: false,
       selectable: true,
       installed: true,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore"],
+      route_count: 2,
+      service_count: 2,
+      task_count: 6,
+      model_required: true,
       lifecycle_install: "profile-selected",
       lifecycle_update: "manifest-versioned",
       lifecycle_disable: "allowed-after-backup",
@@ -59,9 +80,13 @@ const fallbackState = {
       display_name: "CivicCode",
       role: "municipal code",
       version: "1.0.8",
+      civiccore_requirement: "1.2.0",
       required: false,
       selectable: true,
       installed: true,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore"],
       route_count: 2,
       service_count: 2,
       task_count: 4,
@@ -79,6 +104,8 @@ const fallbackState = {
       required: false,
       selectable: true,
       installed: false,
+      contract_ready: false,
+      blocked_reason: "Module civiczone must target CivicCore 1.2.0 for Windows Local 1.0",
       route_count: 0,
       service_count: 0,
       task_count: 0,
@@ -438,6 +465,10 @@ const state = {
     adminEmail: "",
     adminPasscode: ""
   },
+  moduleDraft: {
+    profileId: "city-core",
+    selectedModuleIds: [...CITY_CORE_PRODUCT_MODULE_IDS]
+  },
   accessDraft: {
     email: "",
     passcode: ""
@@ -503,6 +534,7 @@ async function loadAppState() {
   try {
     state.app = await invoke("get_app_state");
     hydrateSetupDraftFromApp();
+    hydrateModuleDraftFromApp();
   } catch (error) {
     console.warn("Using browser fallback state", error);
   }
@@ -528,6 +560,47 @@ function hydrateSetupDraftFromApp() {
   } else if (admin?.email) {
     state.accessDraft.email = admin.email;
   }
+}
+
+function productModuleIdsFromSelection(selection) {
+  return (selection?.installed_module_ids || [])
+    .filter((moduleId) => moduleId !== LOCKED_FOUNDATION_MODULE_ID);
+}
+
+function hydrateModuleDraftFromApp() {
+  const selection = state.app.module_selection || fallbackState.module_selection;
+  const productModuleIds = productModuleIdsFromSelection(selection);
+  state.moduleDraft.profileId = selection.profile_id === "custom" ? "custom" : "city-core";
+  state.moduleDraft.selectedModuleIds =
+    productModuleIds.length > 0 ? productModuleIds : [...CITY_CORE_PRODUCT_MODULE_IDS];
+}
+
+function isWindowsLocalReadyProductModule(module) {
+  return Boolean(
+    module &&
+    !module.required &&
+    module.selectable &&
+    module.contract_ready
+  );
+}
+
+function customSelectedModuleIds() {
+  const readyIds = new Set(
+    state.app.modules
+      .filter(isWindowsLocalReadyProductModule)
+      .map((module) => module.id)
+  );
+  return state.moduleDraft.selectedModuleIds.filter((moduleId) => readyIds.has(moduleId));
+}
+
+function moduleSelectionPayload() {
+  if (state.moduleDraft.profileId === "custom") {
+    return {
+      profileId: "custom",
+      selectedModuleIds: customSelectedModuleIds()
+    };
+  }
+  return { profileId: "city-core" };
 }
 
 function hasTauriBridge() {
@@ -659,7 +732,7 @@ function setupActionLabel(step) {
   const labels = {
     "review": "Review and continue",
     "choose-location": "Create local folders",
-    "select-modules": "Use City Core modules",
+    "select-modules": state.moduleDraft.profileId === "custom" ? "Save Module Selection" : "Use City Core Modules",
     "download-model": "Download / Resume Model",
     "create-city-profile": "Save city profile",
     "create-admin": "Save first admin",
@@ -670,8 +743,90 @@ function setupActionLabel(step) {
   return labels[step.action] || "Continue setup";
 }
 
+function renderModuleSelectionControls() {
+  const modules = state.app.modules || [];
+  const foundation = modules.find((module) => module.id === LOCKED_FOUNDATION_MODULE_ID);
+  const productModules = modules.filter((module) => !module.required);
+  const selectedIds = new Set(state.moduleDraft.selectedModuleIds);
+  const customMode = state.moduleDraft.profileId === "custom";
+  const readySelectedCount = customSelectedModuleIds().length;
+  const profileChoices = [
+    {
+      id: "city-core",
+      label: "City Core",
+      description: "Installs CivicRecords AI, CivicClerk, and CivicCode with CivicCore."
+    },
+    {
+      id: "custom",
+      label: "Custom",
+      description: "Choose ready product modules. CivicCore is always included."
+    }
+  ];
+  return `
+    <div class="module-selection-panel" aria-label="Module selection">
+      <div class="profile-choice-grid" role="radiogroup" aria-label="Module profile">
+        ${profileChoices.map((profile) => `
+          <label class="profile-choice ${state.moduleDraft.profileId === profile.id ? "selected" : ""}">
+            <input
+              type="radio"
+              name="module-profile"
+              value="${profile.id}"
+              data-module-profile-id="${profile.id}"
+              ${state.moduleDraft.profileId === profile.id ? "checked" : ""}
+            />
+            <span>
+              <strong>${escapeHtml(profile.label)}</strong>
+              <small>${escapeHtml(profile.description)}</small>
+            </span>
+          </label>
+        `).join("")}
+      </div>
+      <div class="module-choice-list" aria-label="Choose product modules">
+        ${foundation ? `
+          <label class="module-choice locked">
+            <input type="checkbox" checked disabled />
+            <span>
+              <strong>${escapeHtml(foundation.display_name)}</strong>
+              <small>Required foundation. CivicCore cannot be removed.</small>
+            </span>
+          </label>
+        ` : ""}
+        ${productModules.map((module) => {
+          const ready = isWindowsLocalReadyProductModule(module);
+          const checked = customMode ? selectedIds.has(module.id) : CITY_CORE_PRODUCT_MODULE_IDS.includes(module.id);
+          const disabled = !customMode || !ready;
+          const status = ready ? "Ready for Windows Local 1.0" : "Not ready for Windows Local 1.0";
+          const blockedReason = !ready && module.blocked_reason ? `: ${module.blocked_reason}` : "";
+          return `
+            <label class="module-choice ${checked ? "selected" : ""} ${disabled ? "disabled" : ""}">
+              <input
+                type="checkbox"
+                data-module-toggle="${escapeHtml(module.id)}"
+                ${checked ? "checked" : ""}
+                ${disabled ? "disabled" : ""}
+              />
+              <span>
+                <strong>${escapeHtml(module.display_name)}</strong>
+                <small>${escapeHtml(module.role)} - ${status}${escapeHtml(blockedReason)}</small>
+              </span>
+            </label>
+          `;
+        }).join("")}
+      </div>
+      <p class="empty-note">
+        ${customMode
+          ? `Custom selection will install CivicCore plus ${readySelectedCount} selected product module${readySelectedCount === 1 ? "" : "s"}.`
+          : "City Core installs the complete current 1.0 package: CivicRecords AI, CivicClerk, and CivicCode."}
+      </p>
+    </div>
+  `;
+}
+
 function renderSetupFields(step) {
   if (!step.current) return "";
+  if (step.id === "modules") {
+    return renderModuleSelectionControls();
+  }
   if (step.id === "city-profile") {
     return `
       <div class="setup-form" aria-label="City profile">
@@ -701,7 +856,13 @@ function setupActionLockedByAdmin() {
 }
 
 function renderFirstRunStep(step, index) {
-  const actionLocked = step.current && setupActionLockedByAdmin();
+  const adminLocked = step.current && setupActionLockedByAdmin();
+  const moduleSelectionLocked =
+    step.current &&
+    step.id === "modules" &&
+    state.moduleDraft.profileId === "custom" &&
+    customSelectedModuleIds().length === 0;
+  const actionLocked = adminLocked || moduleSelectionLocked;
   return `
     <article class="first-run-step ${step.current ? "current" : ""}">
       <strong>${index + 1}</strong>
@@ -719,7 +880,8 @@ function renderFirstRunStep(step, index) {
             <button type="button" class="primary-action" data-first-run-action="${step.action}" data-step-id="${step.id}" ${actionLocked ? "disabled" : ""}>
               ${setupActionLabel(step)}
             </button>
-            ${actionLocked ? `<small>Sign in with the local administrator passcode before continuing setup.</small>` : ""}
+            ${adminLocked ? `<small>Sign in with the local administrator passcode before continuing setup.</small>` : ""}
+            ${moduleSelectionLocked ? `<small>Select at least one ready product module for a custom profile.</small>` : ""}
           </div>
         ` : ""}
       </div>
@@ -2158,6 +2320,8 @@ function renderModules() {
   const profiles = state.app.module_profiles || [];
   const selection = state.app.module_selection || fallbackState.module_selection;
   const admin = (state.app.users || [])[0];
+  const moduleSelectionLocked =
+    state.moduleDraft.profileId === "custom" && customSelectedModuleIds().length === 0;
   return `
     <section class="page-heading">
       <p class="eyebrow">Settings</p>
@@ -2190,6 +2354,19 @@ function renderModules() {
       <p class="eyebrow">Module Manager</p>
       <h2>City Core Modules</h2>
       <p>CivicCore stays installed and product modules are managed through the City Core package.</p>
+    </section>
+    <section class="section-band">
+      <div class="section-title">
+        <h3>Choose Product Modules</h3>
+        <p>City Core is the complete 1.0 package. Custom selection is available for ready modules and always keeps CivicCore installed.</p>
+      </div>
+      ${renderModuleSelectionControls()}
+      <div class="setup-actions">
+        <button type="button" class="primary-action" data-first-run-action="select-modules" data-step-id="modules" ${moduleSelectionLocked ? "disabled" : ""}>
+          Apply Module Selection
+        </button>
+        ${moduleSelectionLocked ? `<small>Select at least one ready product module for a custom profile.</small>` : ""}
+      </div>
     </section>
     <section class="module-columns">
       <div>
@@ -2374,6 +2551,29 @@ function bindEvents() {
       state.setupDraft[input.dataset.setupField] = input.value;
     });
   });
+  document.querySelectorAll("[data-module-profile-id]").forEach((input) => {
+    input.addEventListener("change", () => {
+      state.moduleDraft.profileId = input.dataset.moduleProfileId;
+      if (state.moduleDraft.profileId === "city-core") {
+        state.moduleDraft.selectedModuleIds = [...CITY_CORE_PRODUCT_MODULE_IDS];
+      }
+      render();
+    });
+  });
+  document.querySelectorAll("[data-module-toggle]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const moduleId = input.dataset.moduleToggle;
+      const selectedIds = new Set(state.moduleDraft.selectedModuleIds);
+      if (input.checked) {
+        selectedIds.add(moduleId);
+      } else {
+        selectedIds.delete(moduleId);
+      }
+      state.moduleDraft.profileId = "custom";
+      state.moduleDraft.selectedModuleIds = Array.from(selectedIds);
+      render();
+    });
+  });
   document.querySelectorAll("[data-first-run-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleFirstRunAction(button.dataset.firstRunAction, button.dataset.stepId);
@@ -2466,6 +2666,9 @@ function setupPayloadForStep(stepId) {
       adminEmail: state.setupDraft.adminEmail,
       adminPasscode: state.setupDraft.adminPasscode
     };
+  }
+  if (stepId === "modules") {
+    return moduleSelectionPayload();
   }
   return {};
 }
