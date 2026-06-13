@@ -393,6 +393,12 @@ const state = {
     vote: "",
     actionItem: "",
     residentComment: "",
+    publicCommentMeetingId: "",
+    publicCommentName: "",
+    publicCommentContact: "",
+    publicCommentMode: "written",
+    publicCommentTopic: "",
+    publicCommentBody: "",
     requester: "",
     publicRequester: "",
     publicRequesterContact: "",
@@ -1211,21 +1217,61 @@ function publicMeetings(work) {
   ));
 }
 
+function publicCommentMeetings(work) {
+  return publicMeetings(work).filter((meeting) => (
+    !meeting.archived_at_unix_seconds &&
+    meeting.status !== "archived public record" &&
+    (
+      meeting.notice_status === "public notice ready" ||
+      meeting.status === "packet exported" ||
+      meeting.status === "public comments received"
+    )
+  ));
+}
+
 function renderPublicMeetingsWorkflow() {
-  const meetings = publicMeetings(cityWork());
+  const work = cityWork();
+  const meetings = publicMeetings(work);
+  const commentMeetings = publicCommentMeetings(work);
+  const selectedCommentMeetingId = state.workDraft.publicCommentMeetingId || commentMeetings[0]?.id || "";
   return `
     <section class="page-heading">
       <p class="eyebrow">Resident/Public</p>
       <h2>Public Meeting Materials</h2>
       <p>Posted agendas, notices, packets, and approved public outcomes appear here without staff drafting controls.</p>
     </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Submit Public Comment</h3>
+        <p class="form-help">Written and remote comments become part of the meeting record and are reviewed by the clerk under the city's public comment rules.</p>
+        ${commentMeetings.length === 0 ? `<p class="form-help">No posted public meeting is open for comment.</p>` : ""}
+        <label>Meeting
+          <select data-work-field="publicCommentMeetingId" ${commentMeetings.length === 0 ? "disabled" : ""}>
+            ${commentMeetings.length === 0 ? `<option>No meeting available</option>` : commentMeetings.map((meeting) => `
+              <option value="${meeting.id}" ${meeting.id === selectedCommentMeetingId ? "selected" : ""}>${meeting.meeting_date} - ${meeting.title}</option>
+            `).join("")}
+          </select>
+        </label>
+        <label>Your name <input type="text" data-work-field="publicCommentName" value="${state.workDraft.publicCommentName}" autocomplete="name" /></label>
+        <label>Email or phone <input type="text" data-work-field="publicCommentContact" value="${state.workDraft.publicCommentContact}" autocomplete="email" /></label>
+        <label>Comment type
+          <select data-work-field="publicCommentMode">
+            ${["written", "remote", "in-person sign-up"].map((mode) => `<option value="${mode}" ${state.workDraft.publicCommentMode === mode ? "selected" : ""}>${mode}</option>`).join("")}
+          </select>
+        </label>
+        <label>Agenda item or topic <input type="text" data-work-field="publicCommentTopic" value="${state.workDraft.publicCommentTopic}" /></label>
+        <label>Comment <textarea data-work-field="publicCommentBody">${state.workDraft.publicCommentBody}</textarea></label>
+        ${commentMeetings.length === 0 ? `<button type="button" class="primary-action" disabled>Submit Public Comment</button>` : `<button type="button" class="primary-action" data-work-action="submit-public-comment">Submit Public Comment</button>`}
+      </div>
+    </section>
+    ${renderWorkActionResult()}
     <section class="workflow-list">
       ${meetings.length === 0 ? workflowEmpty("No public meeting materials have been posted yet.") : meetings.map((meeting) => `
         <article class="workflow-record">
           <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : meeting.notice_status}</span>
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No public summary recorded."}</p>
-          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${(meeting.public_comments || []).length} public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -1285,6 +1331,7 @@ function renderMeetingsWorkflow() {
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
+          ${(meeting.public_comments || []).length > 0 ? `<p><strong>Public comments:</strong> ${(meeting.public_comments || []).length} received for clerk review</p>` : ""}
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
@@ -1550,7 +1597,14 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const outcomes = (meeting.votes || []).join(" ");
     const actionItems = (meeting.action_items || []).join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
-    if ([meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+    const publicComments = (meeting.public_comments || []).map((comment) => [
+      comment.commenter_name,
+      comment.commenter_contact,
+      comment.mode,
+      comment.topic,
+      comment.body
+    ].join(" ")).join(" ");
+    if ([meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments, publicComments].some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
   });
@@ -1888,12 +1942,14 @@ function bindEvents() {
     });
   });
   document.querySelectorAll("[data-work-field]").forEach((input) => {
-    input.addEventListener("input", () => {
+    const syncWorkField = () => {
       state.workDraft[input.dataset.workField] = input.value;
       if (input.dataset.workField === "searchQuery") {
         state.searchResults = [];
       }
-    });
+    };
+    input.addEventListener("input", syncWorkField);
+    input.addEventListener("change", syncWorkField);
   });
   document.querySelectorAll("[data-select-work-record]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -2085,6 +2141,14 @@ function workPayloadForAction(action) {
     "record-vote": { ...selected, vote: draft.vote },
     "add-action-item": { ...selected, actionItem: draft.actionItem },
     "record-resident-comment": { ...selected, residentComment: draft.residentComment },
+    "submit-public-comment": {
+      meetingId: draft.publicCommentMeetingId || publicCommentMeetings(cityWork())[0]?.id || "",
+      commenterName: draft.publicCommentName,
+      commenterContact: draft.publicCommentContact,
+      commentMode: draft.publicCommentMode,
+      commentTopic: draft.publicCommentTopic,
+      commentBody: draft.publicCommentBody
+    },
     "adopt-minutes": selected,
     "archive-meeting": selected,
     "create-records-request": {

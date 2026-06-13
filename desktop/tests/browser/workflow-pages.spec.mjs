@@ -59,6 +59,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
 
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
   await expect(page.getByRole("heading", { name: "Public Meeting Materials" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Submit Public Comment" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit Public Comment" })).toBeDisabled();
+  await expect(page.getByText("No posted public meeting is open for comment")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);

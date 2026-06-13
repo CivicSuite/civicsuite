@@ -15,6 +15,18 @@ pub struct AgendaItem {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct PublicComment {
+    pub id: String,
+    pub commenter_name: String,
+    pub commenter_contact: String,
+    pub mode: String,
+    pub topic: String,
+    pub body: String,
+    pub status: String,
+    pub submitted_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     pub title: String,
@@ -30,6 +42,8 @@ pub struct Meeting {
     pub action_items: Vec<String>,
     #[serde(default)]
     pub resident_comments: Vec<String>,
+    #[serde(default)]
+    pub public_comments: Vec<PublicComment>,
     #[serde(default)]
     pub exports: Vec<String>,
     #[serde(default)]
@@ -531,6 +545,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         votes: Vec::new(),
         action_items: Vec::new(),
         resident_comments: Vec::new(),
+        public_comments: Vec::new(),
         exports: Vec::new(),
         minutes_adopted_at_unix_seconds: None,
         archived_at_unix_seconds: None,
@@ -695,6 +710,60 @@ fn record_resident_comment(
     Ok("Resident comment saved to the meeting record.".to_string())
 }
 
+fn submit_public_comment(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let meeting_id = payload_string(payload, "meetingId")?;
+    let commenter_name = payload_string(payload, "commenterName")?;
+    let commenter_contact = payload_optional_string(payload, "commenterContact");
+    let mode = payload_optional_string(payload, "commentMode");
+    let topic = payload_optional_string(payload, "commentTopic");
+    let body = payload_string(payload, "commentBody")?;
+    let meeting = state
+        .meetings
+        .iter_mut()
+        .find(|meeting| meeting.id == meeting_id)
+        .ok_or_else(|| "Select a posted public meeting before submitting comment.".to_string())?;
+    if meeting.archived_at_unix_seconds.is_some() || meeting.status == "archived public record" {
+        return Err("This meeting is archived. Public comments are closed.".to_string());
+    }
+    if meeting.notice_status != "public notice ready" && meeting.status != "packet exported" {
+        return Err(
+            "Public comments open only after the meeting notice or packet is posted.".to_string(),
+        );
+    }
+    let comment_id = new_id("comment", meeting.public_comments.len());
+    meeting.public_comments.push(PublicComment {
+        id: comment_id.clone(),
+        commenter_name: commenter_name.clone(),
+        commenter_contact,
+        mode: if mode.is_empty() {
+            "written".to_string()
+        } else {
+            mode
+        },
+        topic: if topic.is_empty() {
+            "General public comment".to_string()
+        } else {
+            topic
+        },
+        body,
+        status: "received for clerk review".to_string(),
+        submitted_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "public comments received".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "submit-public-comment",
+        format!("Received public comment {comment_id} from: {commenter_name}"),
+    );
+    Ok(format!(
+        "Public comment {comment_id} saved for clerk review and packet/archive preservation."
+    ))
+}
+
 fn adopt_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
@@ -740,12 +809,27 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let resident_comments =
         list_or_default(&meeting.resident_comments, "No resident comments recorded.");
+    let public_comments = if meeting.public_comments.is_empty() {
+        "No public comments submitted.".to_string()
+    } else {
+        meeting
+            .public_comments
+            .iter()
+            .map(|comment| {
+                format!(
+                    "- {} [{} / {}]: {}",
+                    comment.commenter_name, comment.mode, comment.status, comment.body
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
     let minutes_adoption = meeting
         .minutes_adopted_at_unix_seconds
         .map(|timestamp| format!("Adopted at Unix timestamp {timestamp}."))
         .unwrap_or_else(|| "Minutes have not been adopted.".to_string());
     format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Resident Comments\n{}\n",
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -764,7 +848,8 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         minutes_adoption,
         votes,
         action_items,
-        resident_comments
+        resident_comments,
+        public_comments
     )
 }
 
@@ -1562,6 +1647,21 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let votes = meeting.votes.join(" ");
         let action_items = meeting.action_items.join(" ");
         let resident_comments = meeting.resident_comments.join(" ");
+        let public_comments = meeting
+            .public_comments
+            .iter()
+            .map(|comment| {
+                format!(
+                    "{} {} {} {} {}",
+                    comment.commenter_name,
+                    comment.commenter_contact,
+                    comment.mode,
+                    comment.topic,
+                    comment.body
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         if contains_query(
             &[
                 &meeting.title,
@@ -1572,6 +1672,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &votes,
                 &action_items,
                 &resident_comments,
+                &public_comments,
             ],
             query,
         ) {
@@ -1674,6 +1775,7 @@ pub fn city_work_action(
         "record-vote" => record_vote(&mut state, payload)?,
         "add-action-item" => add_action_item(&mut state, payload)?,
         "record-resident-comment" => record_resident_comment(&mut state, payload)?,
+        "submit-public-comment" => submit_public_comment(&mut state, payload)?,
         "adopt-minutes" => adopt_minutes(&mut state, payload)?,
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
@@ -1809,7 +1911,7 @@ mod tests {
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert!(archive.contains("## Action Items"));
             assert!(archive.contains("Finance staff to publish the adopted budget."));
-            assert!(archive.contains("## Resident Comments"));
+            assert!(archive.contains("## Staff-Entered Resident Comments"));
             assert!(archive.contains("Resident asked for sidewalk funding."));
             assert!(state
                 .audit_entries
@@ -1839,6 +1941,66 @@ mod tests {
             let reloaded_meeting = reloaded.meetings.first().expect("meeting exists");
             assert_eq!(reloaded_meeting.status, "archived public record");
             assert_eq!(reloaded_meeting.exports.len(), 3);
+        });
+    }
+
+    #[test]
+    fn public_comment_intake_requires_posted_meeting_and_is_preserved() {
+        with_temp_state_dir(|_| {
+            let payload = serde_json::json!({
+                "title": "Council Hearing",
+                "meetingDate": "2026-07-15",
+                "summary": "Sidewalk tree ordinance hearing",
+                "agendaTitle": "Discuss sidewalk tree ordinance"
+            });
+            city_work_action("create-meeting", Some(&payload)).expect("meeting created");
+            let state = city_work_state().expect("state reads");
+            let meeting_id = state.meetings.first().expect("meeting exists").id.clone();
+            let public_comment = serde_json::json!({
+                "meetingId": meeting_id.clone(),
+                "commenterName": "Jordan Smith",
+                "commenterContact": "jordan@example.gov",
+                "commentMode": "remote",
+                "commentTopic": "Agenda item: sidewalk trees",
+                "commentBody": "Please preserve the mature trees on Maple Avenue."
+            });
+            let error = match city_work_action("submit-public-comment", Some(&public_comment)) {
+                Ok(_) => panic!("comment cannot be submitted before public posting"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Public comments open only after"));
+
+            city_work_action(
+                "post-notice",
+                Some(&serde_json::json!({ "meetingId": meeting_id })),
+            )
+            .expect("notice posted");
+            city_work_action("submit-public-comment", Some(&public_comment))
+                .expect("public comment saved");
+            city_work_action(
+                "export-meeting-packet",
+                Some(&serde_json::json!({ "meetingId": meeting_id })),
+            )
+            .expect("packet exported");
+
+            let state = city_work_state().expect("state reads");
+            let meeting = state.meetings.first().expect("meeting exists");
+            assert_eq!(meeting.public_comments.len(), 1);
+            let comment = meeting.public_comments.first().expect("comment exists");
+            assert_eq!(comment.commenter_name, "Jordan Smith");
+            assert_eq!(comment.commenter_contact, "jordan@example.gov");
+            assert_eq!(comment.mode, "remote");
+            assert_eq!(comment.status, "received for clerk review");
+            let exported = fs::read_to_string(meeting.exports.first().expect("export exists"))
+                .expect("export reads");
+            assert!(exported.contains("## Public Comments"));
+            assert!(exported.contains("Please preserve the mature trees"));
+            let results = search_city_work(&state, "mature trees");
+            assert_eq!(results.len(), 1);
+            assert!(state.audit_entries.iter().any(|entry| {
+                entry.module_id == "civicclerk" && entry.action == "submit-public-comment"
+            }));
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 

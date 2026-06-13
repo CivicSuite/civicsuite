@@ -260,6 +260,7 @@ main {
 }
 
 .workflow-form input,
+.workflow-form select,
 .workflow-form textarea {
   border: 1px solid #c8d5de;
   border-radius: 5px;
