@@ -25,6 +25,8 @@ pub struct Meeting {
     pub minutes: String,
     pub votes: Vec<String>,
     pub action_items: Vec<String>,
+    #[serde(default)]
+    pub exports: Vec<String>,
     pub created_at_unix_seconds: u64,
 }
 
@@ -118,6 +120,10 @@ fn workflows_path() -> PathBuf {
         .join("city-work.json")
 }
 
+fn exports_dir() -> PathBuf {
+    civic_suite_root().join("Data").join("exports")
+}
+
 fn now_unix_seconds() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -150,6 +156,34 @@ fn write_state(state: &CityWorkState) -> Result<(), String> {
         .map_err(|error| format!("Could not serialize local workflow state: {error}"))?;
     fs::write(&path, format!("{contents}\n"))
         .map_err(|error| format!("Could not write {}: {error}", path.display()))
+}
+
+fn safe_file_stem(value: &str) -> String {
+    let stem: String = value
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() {
+                character.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    stem.split('-')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
+fn write_export_file(folder: &str, stem: &str, contents: &str) -> Result<String, String> {
+    let directory = exports_dir().join(folder);
+    fs::create_dir_all(&directory)
+        .map_err(|error| format!("Could not create export folder: {error}"))?;
+    let file_name = format!("{}-{}.md", safe_file_stem(stem), now_unix_seconds());
+    let path = directory.join(file_name);
+    fs::write(&path, contents)
+        .map_err(|error| format!("Could not write export {}: {error}", path.display()))?;
+    Ok(path.to_string_lossy().to_string())
 }
 
 fn payload_string(payload: Option<&Value>, key: &str) -> Result<String, String> {
@@ -213,6 +247,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         minutes: String::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
+        exports: Vec::new(),
         created_at_unix_seconds: now_unix_seconds(),
     };
     if !agenda_title.is_empty() {
@@ -302,6 +337,59 @@ fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
     Ok("Vote or action outcome saved locally.".to_string())
 }
 
+fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
+    let meeting = first_meeting_mut(state)?;
+    let agenda = if meeting.agenda_items.is_empty() {
+        "No agenda items recorded.".to_string()
+    } else {
+        meeting
+            .agenda_items
+            .iter()
+            .map(|item| format!("- {} [{} / {}]", item.title, item.status, item.visibility))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let votes = if meeting.votes.is_empty() {
+        "No outcomes recorded.".to_string()
+    } else {
+        meeting
+            .votes
+            .iter()
+            .map(|vote| format!("- {vote}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let contents = format!(
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Outcomes\n{}\n",
+        meeting.title,
+        meeting.meeting_date,
+        meeting.status,
+        meeting.notice_status,
+        if meeting.summary.is_empty() {
+            "No summary recorded."
+        } else {
+            &meeting.summary
+        },
+        agenda,
+        if meeting.minutes.is_empty() {
+            "No minutes draft recorded."
+        } else {
+            &meeting.minutes
+        },
+        votes
+    );
+    let export_path = write_export_file("meetings", &meeting.title, &contents)?;
+    meeting.exports.push(export_path.clone());
+    meeting.status = "packet exported".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "export-meeting-packet",
+        format!("Exported meeting packet: {export_path}"),
+    );
+    Ok(format!("Meeting packet export written to {export_path}."))
+}
+
 fn create_records_request(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -359,16 +447,35 @@ fn export_records_response(state: &mut CityWorkState) -> Result<String, String> 
     if request.response_draft.trim().is_empty() {
         return Err("Draft a records response before exporting.".to_string());
     }
-    let export_id = new_id("records-export", request.exports.len());
-    request.exports.push(export_id.clone());
+    let citations = if request.citations.is_empty() {
+        "No citations recorded.".to_string()
+    } else {
+        request
+            .citations
+            .iter()
+            .map(|citation| format!("- {citation}"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let contents = format!(
+        "# Records Response\n\nRequester: {}\nDeadline: {}\nStatus: {}\n\n## Request\n{}\n\n## Draft Response\n{}\n\n## Citations\n{}\n",
+        request.requester,
+        request.deadline,
+        request.status,
+        request.summary,
+        request.response_draft,
+        citations
+    );
+    let export_path = write_export_file("records", &request.requester, &contents)?;
+    request.exports.push(export_path.clone());
     request.status = "exported".to_string();
     push_audit(
         state,
         "civicrecords-ai",
         "export-records-response",
-        format!("Exported records response package: {export_id}"),
+        format!("Exported records response package: {export_path}"),
     );
-    Ok("Records response export recorded locally.".to_string())
+    Ok(format!("Records response export written to {export_path}."))
 }
 
 fn import_code_source(
@@ -511,6 +618,7 @@ pub fn city_work_action(
         "post-notice" => post_notice(&mut state)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
+        "export-meeting-packet" => export_meeting_packet(&mut state)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "export-records-response" => export_records_response(&mut state)?,
@@ -576,12 +684,15 @@ mod tests {
             city_work_action("record-minutes", Some(&minutes)).expect("minutes saved");
             let vote = serde_json::json!({ "vote": "Budget ordinance passed 4-1." });
             city_work_action("record-vote", Some(&vote)).expect("vote saved");
+            city_work_action("export-meeting-packet", None).expect("packet exported");
             let state = city_work_state().expect("state reads");
             let meeting = state.meetings.first().expect("meeting exists");
             assert_eq!(meeting.notice_status, "public notice ready");
-            assert_eq!(meeting.status, "outcomes recorded");
+            assert_eq!(meeting.status, "packet exported");
             assert_eq!(meeting.votes.len(), 1);
-            assert!(state.audit_entries.len() >= 4);
+            assert_eq!(meeting.exports.len(), 1);
+            assert!(PathBuf::from(&meeting.exports[0]).is_file());
+            assert!(state.audit_entries.len() >= 5);
         });
     }
 
@@ -604,6 +715,7 @@ mod tests {
             let request = state.records_requests.first().expect("request exists");
             assert_eq!(request.status, "exported");
             assert_eq!(request.exports.len(), 1);
+            assert!(PathBuf::from(&request.exports[0]).is_file());
         });
     }
 

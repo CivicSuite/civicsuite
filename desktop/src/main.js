@@ -748,6 +748,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
+          <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Packet</button>
         </div>
       </div>
       <div class="workflow-form">
@@ -767,7 +768,7 @@ function renderMeetingsWorkflow() {
           <span class="status-warn">${meeting.status}</span>
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No summary yet."}</p>
-          <small>${meeting.meeting_date} · ${meeting.notice_status} · ${meeting.agenda_items.length} agenda items · ${meeting.votes.length} outcomes</small>
+          <small>${meeting.meeting_date} · ${meeting.notice_status} · ${meeting.agenda_items.length} agenda items · ${meeting.votes.length} outcomes · ${meeting.exports?.length || 0} exports</small>
         </article>
       `).join("")}
     </section>
@@ -796,7 +797,7 @@ function renderRecordsWorkflow() {
         <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="draft-records-response">Save Draft</button>
-          <button type="button" class="secondary-action" data-work-action="export-records-response">Record Export</button>
+          <button type="button" class="secondary-action" data-work-action="export-records-response">Export Response</button>
         </div>
       </div>
     </section>
