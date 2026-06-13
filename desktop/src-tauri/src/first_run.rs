@@ -1,3 +1,7 @@
+use argon2::{
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Algorithm, Argon2, Params, Version,
+};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -35,6 +39,8 @@ const REQUIRED_ACTIONS: [&str; 12] = [
     "backup",
     "uninstall",
 ];
+const PASSCODE_ALGORITHM_ARGON2ID: &str = "argon2id-v1";
+const PASSCODE_ALGORITHM_LEGACY_SHA256: &str = "sha256-100000";
 
 #[derive(Deserialize)]
 struct OperatorPath {
@@ -147,8 +153,14 @@ pub(crate) struct SavedFirstAdminRecord {
     pub display_name: String,
     pub email: String,
     pub role: String,
+    #[serde(default = "default_passcode_algorithm")]
+    pub passcode_algorithm: String,
     pub passcode_salt: String,
     pub passcode_hash: String,
+}
+
+fn default_passcode_algorithm() -> String {
+    PASSCODE_ALGORITHM_LEGACY_SHA256.to_string()
 }
 
 fn parse_manifest() -> Result<FirstRunManifest, String> {
@@ -301,6 +313,10 @@ pub(crate) fn saved_admin_record() -> Result<Option<SavedFirstAdminRecord>, Stri
     read_optional_json_file(config_dir().join("first-admin.json"))
 }
 
+fn write_admin_record(record: &SavedFirstAdminRecord) -> Result<(), String> {
+    write_json_file(config_dir().join("first-admin.json"), record)
+}
+
 fn now_unix_seconds() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -418,15 +434,16 @@ fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), Strin
 
 fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String> {
     let passcode = payload_string(payload, "adminPasscode")?;
-    let salt = format!("admin-{}-{}", now_unix_seconds(), std::process::id());
+    let (passcode_salt, passcode_hash) = hash_argon2id_admin_passcode(&passcode)?;
     let admin = SavedFirstAdminRecord {
         display_name: payload_string(payload, "adminName")?,
         email: payload_string(payload, "adminEmail")?,
         role: "local-admin".to_string(),
-        passcode_hash: hash_admin_passcode(&salt, &passcode),
-        passcode_salt: salt,
+        passcode_algorithm: PASSCODE_ALGORITHM_ARGON2ID.to_string(),
+        passcode_hash,
+        passcode_salt,
     };
-    write_json_file(config_dir().join("first-admin.json"), &admin)
+    write_admin_record(&admin)
 }
 
 pub(crate) fn hash_admin_passcode(salt: &str, passcode: &str) -> String {
@@ -446,6 +463,52 @@ pub(crate) fn hash_admin_passcode(salt: &str, passcode: &str) -> String {
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
+fn argon2id() -> Result<Argon2<'static>, String> {
+    let params = Params::new(19 * 1024, 2, 1, Some(32))
+        .map_err(|error| format!("Could not configure local admin passcode hashing: {error}"))?;
+    Ok(Argon2::new(Algorithm::Argon2id, Version::V0x13, params))
+}
+
+fn random_salt() -> Result<SaltString, String> {
+    let mut bytes = [0_u8; 16];
+    getrandom::getrandom(&mut bytes)
+        .map_err(|error| format!("Could not create local admin passcode salt: {error}"))?;
+    SaltString::encode_b64(&bytes)
+        .map_err(|error| format!("Could not encode local admin passcode salt: {error}"))
+}
+
+fn hash_argon2id_admin_passcode(passcode: &str) -> Result<(String, String), String> {
+    let salt = random_salt()?;
+    let hash = argon2id()?
+        .hash_password(passcode.as_bytes(), &salt)
+        .map_err(|error| format!("Could not hash local admin passcode: {error}"))?
+        .to_string();
+    Ok((salt.to_string(), hash))
+}
+
+fn verify_argon2id_admin_passcode(encoded_hash: &str, passcode: &str) -> Result<bool, String> {
+    let parsed = PasswordHash::new(encoded_hash)
+        .map_err(|error| format!("Could not read local admin passcode hash: {error}"))?;
+    Ok(argon2id()?
+        .verify_password(passcode.as_bytes(), &parsed)
+        .is_ok())
+}
+
+fn upgrade_legacy_admin_passcode(
+    record: &SavedFirstAdminRecord,
+    passcode: &str,
+) -> Result<(), String> {
+    let (passcode_salt, passcode_hash) = hash_argon2id_admin_passcode(passcode)?;
+    write_admin_record(&SavedFirstAdminRecord {
+        display_name: record.display_name.clone(),
+        email: record.email.clone(),
+        role: record.role.clone(),
+        passcode_algorithm: PASSCODE_ALGORITHM_ARGON2ID.to_string(),
+        passcode_salt,
+        passcode_hash,
+    })
+}
+
 pub(crate) fn verify_admin_passcode(
     email: &str,
     passcode: &str,
@@ -455,8 +518,25 @@ pub(crate) fn verify_admin_passcode(
     if !record.email.eq_ignore_ascii_case(email.trim()) {
         return Err("The local administrator email does not match.".to_string());
     }
-    let candidate_hash = hash_admin_passcode(&record.passcode_salt, passcode);
-    if candidate_hash != record.passcode_hash {
+    let verified = match record.passcode_algorithm.as_str() {
+        PASSCODE_ALGORITHM_ARGON2ID => {
+            verify_argon2id_admin_passcode(&record.passcode_hash, passcode)?
+        }
+        PASSCODE_ALGORITHM_LEGACY_SHA256 => {
+            let candidate_hash = hash_admin_passcode(&record.passcode_salt, passcode);
+            let verified = candidate_hash == record.passcode_hash;
+            if verified {
+                upgrade_legacy_admin_passcode(&record, passcode)?;
+            }
+            verified
+        }
+        _ => {
+            return Err(
+                "The local administrator passcode hash uses an unsupported format.".to_string(),
+            )
+        }
+    };
+    if !verified {
         return Err("The local administrator passcode did not match.".to_string());
     }
     Ok(SavedFirstAdmin {
@@ -849,10 +929,53 @@ mod tests {
             first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
                 .expect("admin saved");
 
+            let record = saved_admin_record()
+                .expect("admin record reads")
+                .expect("admin record exists");
+            assert_eq!(record.passcode_algorithm, PASSCODE_ALGORITHM_ARGON2ID);
+            assert!(record.passcode_hash.starts_with("$argon2id$"));
+            assert!(!record
+                .passcode_hash
+                .contains("correct horse battery staple"));
+
             let admin = verify_admin_passcode("alex@example.gov", "correct horse battery staple")
                 .expect("passcode verifies");
             assert_eq!(admin.role, "local-admin");
             assert!(verify_admin_passcode("alex@example.gov", "wrong passcode").is_err());
+        });
+    }
+
+    #[test]
+    fn legacy_sha256_admin_passcode_upgrades_after_successful_verify() {
+        with_temp_state_dir(|_| {
+            fs::create_dir_all(config_dir()).expect("config folder");
+            let legacy_salt = "legacy-admin-salt";
+            let legacy_hash = hash_admin_passcode(legacy_salt, "legacy passcode");
+            fs::write(
+                config_dir().join("first-admin.json"),
+                format!(
+                    r#"{{
+  "display_name": "Alex Clerk",
+  "email": "alex@example.gov",
+  "role": "local-admin",
+  "passcode_salt": "{legacy_salt}",
+  "passcode_hash": "{legacy_hash}"
+}}
+"#
+                ),
+            )
+            .expect("legacy admin record");
+
+            let admin = verify_admin_passcode("alex@example.gov", "legacy passcode")
+                .expect("legacy passcode verifies");
+            assert_eq!(admin.role, "local-admin");
+            let upgraded = saved_admin_record()
+                .expect("admin record reads")
+                .expect("admin record exists");
+            assert_eq!(upgraded.passcode_algorithm, PASSCODE_ALGORITHM_ARGON2ID);
+            assert!(upgraded.passcode_hash.starts_with("$argon2id$"));
+            assert_ne!(upgraded.passcode_salt, legacy_salt);
+            assert!(verify_admin_passcode("alex@example.gov", "legacy passcode").is_ok());
         });
     }
 
