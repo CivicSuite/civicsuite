@@ -186,3 +186,7 @@ Staff-key headers used:
 The Docker readiness blocker from `TESTER-RESULT-062.md` was cleared. CivicBoards itself installed, started, passed readiness/contracts, and passed the independent UI/API workflow checks required by this directive.
 
 The full directive still fails because the required verify phase failed in protected CivicClerk runtime workflow checks with HTTP 401 responses. This is a suite verify failure outside the CivicBoards live API checks, so the CivicBoards gate cannot be marked passed.
+
+## Repost marker
+
+Reposted unchanged for dev watcher pickup at 2026-06-13T13:58:00Z.
