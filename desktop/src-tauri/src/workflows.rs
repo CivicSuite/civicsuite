@@ -105,6 +105,17 @@ pub struct RecordsRequest {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct CodeVersionEntry {
+    pub id: String,
+    pub label: String,
+    pub source: String,
+    pub authoritative_url: String,
+    pub note: String,
+    pub status: String,
+    pub recorded_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CodeSource {
     pub id: String,
     pub title: String,
@@ -127,6 +138,8 @@ pub struct CodeSource {
     pub stale_since_unix_seconds: Option<u64>,
     #[serde(default)]
     pub amendment_notes: Vec<String>,
+    #[serde(default)]
+    pub version_history: Vec<CodeVersionEntry>,
     #[serde(default)]
     pub staff_guidance: String,
     #[serde(default)]
@@ -947,6 +960,40 @@ fn list_or_default(values: &[String], empty: &str) -> String {
     }
 }
 
+fn code_version_history_or_default(entries: &[CodeVersionEntry]) -> String {
+    if entries.is_empty() {
+        return "No version or codifier history recorded.".to_string();
+    }
+    entries
+        .iter()
+        .map(|entry| {
+            let url = if entry.authoritative_url.is_empty() {
+                "No authoritative URL recorded."
+            } else {
+                &entry.authoritative_url
+            };
+            format!(
+                "- {}: {} from {} at {}\n  URL: {}",
+                entry.status, entry.label, entry.source, entry.recorded_at_unix_seconds, url
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn code_version_history_search_text(entries: &[CodeVersionEntry]) -> String {
+    entries
+        .iter()
+        .map(|entry| {
+            format!(
+                "{} {} {} {} {}",
+                entry.status, entry.label, entry.source, entry.authoritative_url, entry.note
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn meeting_packet_contents(meeting: &Meeting) -> String {
     let agenda = if meeting.agenda_items.is_empty() {
         "No agenda items recorded.".to_string()
@@ -1478,6 +1525,26 @@ fn close_records_request(
     Ok("Records request closed with audit evidence preserved.".to_string())
 }
 
+fn append_code_version_history(
+    source: &mut CodeSource,
+    status: &str,
+    label: String,
+    source_name: String,
+    authoritative_url: String,
+    note: String,
+) {
+    let id = new_id("code-version", source.version_history.len());
+    source.version_history.push(CodeVersionEntry {
+        id,
+        label,
+        source: source_name,
+        authoritative_url,
+        note,
+        status: status.to_string(),
+        recorded_at_unix_seconds: now_unix_seconds(),
+    });
+}
+
 fn import_code_source(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -1486,31 +1553,38 @@ fn import_code_source(
     let citation = payload_string(payload, "citation")?;
     let body = payload_string(payload, "body")?;
     let id = new_id("code", state.code_sources.len());
-    state.code_sources.insert(
-        0,
-        CodeSource {
-            id,
-            title: title.clone(),
-            citation,
-            body,
-            status: "imported".to_string(),
-            codifier_name: String::new(),
-            authoritative_url: String::new(),
-            version_label: String::new(),
-            codifier_sync_status: default_code_sync_status(),
-            codifier_sync_errors: Vec::new(),
-            last_codifier_sync_at_unix_seconds: None,
-            stale_since_unix_seconds: None,
-            amendment_notes: Vec::new(),
-            staff_guidance: String::new(),
-            plain_language_summary: String::new(),
-            guidance_approved_at_unix_seconds: None,
-            public_status: default_code_public_status(),
-            public_exports: Vec::new(),
-            published_at_unix_seconds: None,
-            created_at_unix_seconds: now_unix_seconds(),
-        },
+    let mut source = CodeSource {
+        id,
+        title: title.clone(),
+        citation: citation.clone(),
+        body,
+        status: "imported".to_string(),
+        codifier_name: String::new(),
+        authoritative_url: String::new(),
+        version_label: String::new(),
+        codifier_sync_status: default_code_sync_status(),
+        codifier_sync_errors: Vec::new(),
+        last_codifier_sync_at_unix_seconds: None,
+        stale_since_unix_seconds: None,
+        amendment_notes: Vec::new(),
+        version_history: Vec::new(),
+        staff_guidance: String::new(),
+        plain_language_summary: String::new(),
+        guidance_approved_at_unix_seconds: None,
+        public_status: default_code_public_status(),
+        public_exports: Vec::new(),
+        published_at_unix_seconds: None,
+        created_at_unix_seconds: now_unix_seconds(),
+    };
+    append_code_version_history(
+        &mut source,
+        "local import",
+        "Local import".to_string(),
+        "CivicSuite local source".to_string(),
+        String::new(),
+        format!("Imported with citation {citation}."),
     );
+    state.code_sources.insert(0, source);
     push_audit(
         state,
         "civiccode",
@@ -1557,13 +1631,26 @@ fn record_codifier_sync(
     let version_label = payload_optional_string(payload, "versionLabel");
     let source = selected_code_source_mut(state, payload)?;
     source.codifier_name = codifier_name.clone();
-    source.authoritative_url = authoritative_url;
-    source.version_label = version_label;
+    source.authoritative_url = authoritative_url.clone();
+    source.version_label = version_label.clone();
     source.codifier_sync_status = "synced".to_string();
     source.codifier_sync_errors.clear();
     source.last_codifier_sync_at_unix_seconds = Some(now_unix_seconds());
     source.stale_since_unix_seconds = None;
     source.status = "codifier synced".to_string();
+    let history_label = if version_label.is_empty() {
+        "Codifier sync without version label".to_string()
+    } else {
+        version_label
+    };
+    append_code_version_history(
+        source,
+        "codifier synced",
+        history_label,
+        codifier_name.clone(),
+        authoritative_url,
+        "Codifier sync recorded locally.".to_string(),
+    );
     push_audit(
         state,
         "civiccode",
@@ -1617,6 +1704,25 @@ fn mark_code_stale(state: &mut CityWorkState, payload: Option<&Value>) -> Result
     source.stale_since_unix_seconds = Some(now_unix_seconds());
     source.codifier_sync_status = "stale - codifier update pending".to_string();
     source.status = "codifier update pending".to_string();
+    let history_label = if source.version_label.is_empty() {
+        "Current local version".to_string()
+    } else {
+        source.version_label.clone()
+    };
+    let history_source = if source.codifier_name.is_empty() {
+        "Local code source".to_string()
+    } else {
+        source.codifier_name.clone()
+    };
+    let history_url = source.authoritative_url.clone();
+    append_code_version_history(
+        source,
+        "stale pending update",
+        history_label,
+        history_source,
+        history_url,
+        amendment_note.clone(),
+    );
     push_audit(
         state,
         "civiccode",
@@ -1696,19 +1802,14 @@ fn publish_code_source(
         } else {
             "No approved non-authoritative summary.".to_string()
         };
-        let staff_guidance = if source.staff_guidance.trim().is_empty() {
-            "No internal staff guidance recorded.".to_string()
+        let public_update_status = if source.stale_since_unix_seconds.is_some() {
+            "Codifier update pending; staff amendment notes stay in the Staff surface."
         } else {
-            source.staff_guidance.clone()
+            "No public stale-code warning recorded."
         };
-        let amendments =
-            list_or_default(&source.amendment_notes, "No pending amendments recorded.");
-        let sync_errors = list_or_default(
-            &source.codifier_sync_errors,
-            "No codifier sync errors recorded.",
-        );
+        let version_history = code_version_history_or_default(&source.version_history);
         let contents = format!(
-            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\nCodifier sync: {}\nAuthoritative URL: {}\n\n## Authoritative Text\n{}\n\n## Non-Authoritative Plain-English Summary\n{}\n\n## Internal Staff Guidance\n{}\n\n## Amendment / Stale Notes\n{}\n\n## Sync Errors\n{}\n\nFor legal interpretation, contact city staff and rely on the authoritative codified ordinance text.\n",
+            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\nCodifier sync: {}\nAuthoritative URL: {}\n\n## Authoritative Text\n{}\n\n## Non-Authoritative Plain-English Summary\n{}\n\n## Public Update Status\n{}\n\n## Version / Codifier History\n{}\n\n## Staff Boundary\nInternal staff guidance, operational sync errors, and staff amendment notes stay in the Staff surface and are not included in this public export.\n\nFor legal interpretation, contact city staff and rely on the authoritative codified ordinance text.\n",
             source.title,
             source.citation,
             source.status,
@@ -1720,9 +1821,8 @@ fn publish_code_source(
             },
             source.body,
             summary,
-            staff_guidance,
-            amendments,
-            sync_errors
+            public_update_status,
+            version_history
         );
         let export_path = write_export_file("code", &source.title, &contents)?;
         source.public_status = "published".to_string();
@@ -1844,16 +1944,16 @@ fn answer_code_question(
         .filter(|source| !public_only || source.public_status == "published")
         .filter(|source| source.stale_since_unix_seconds.is_none())
         .filter(|source| {
-            contains_question_terms(
-                &[
-                    &source.title,
-                    &source.citation,
-                    &source.body,
-                    &source.plain_language_summary,
-                    &source.staff_guidance,
-                ],
-                query,
-            )
+            let mut fields: Vec<&str> = vec![
+                source.title.as_str(),
+                source.citation.as_str(),
+                source.body.as_str(),
+                source.plain_language_summary.as_str(),
+            ];
+            if !public_only {
+                fields.push(source.staff_guidance.as_str());
+            }
+            contains_question_terms(&fields, query)
         })
         .take(3)
         .map(|source| {
@@ -1986,6 +2086,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
     for source in &state.code_sources {
         let amendment_notes = source.amendment_notes.join(" ");
         let sync_errors = source.codifier_sync_errors.join(" ");
+        let version_history = code_version_history_search_text(&source.version_history);
         if contains_query(
             &[
                 &source.title,
@@ -2001,6 +2102,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &source.plain_language_summary,
                 &amendment_notes,
                 &sync_errors,
+                &version_history,
             ],
             query,
         ) {
@@ -2139,6 +2241,9 @@ fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
     public_source.staff_guidance.clear();
     public_source.codifier_sync_errors.clear();
     public_source.amendment_notes.clear();
+    for entry in &mut public_source.version_history {
+        entry.note.clear();
+    }
     if public_source.guidance_approved_at_unix_seconds.is_none() {
         public_source.plain_language_summary.clear();
     }
@@ -2724,6 +2829,10 @@ mod tests {
             assert_eq!(source.amendment_notes.len(), 1);
             assert!(source.last_codifier_sync_at_unix_seconds.is_some());
             assert!(source.stale_since_unix_seconds.is_some());
+            assert_eq!(source.version_history.len(), 3);
+            assert_eq!(source.version_history[0].status, "local import");
+            assert_eq!(source.version_history[1].label, "2026-07 codifier export");
+            assert_eq!(source.version_history[2].status, "stale pending update");
             assert!(source.guidance_approved_at_unix_seconds.is_some());
             assert_eq!(source.public_exports.len(), 1);
             assert!(source.published_at_unix_seconds.is_some());
@@ -2732,7 +2841,12 @@ mod tests {
                 fs::read_to_string(&source.public_exports[0]).expect("public code export reads");
             assert_export_integrity_manifest(&source.public_exports[0], &public_export);
             assert!(public_export.contains("Non-Authoritative Plain-English Summary"));
+            assert!(public_export.contains("Version / Codifier History"));
+            assert!(public_export.contains("2026-07 codifier export"));
+            assert!(public_export.contains("stale pending update"));
             assert!(public_export.contains("contact city staff"));
+            assert!(!public_export.contains("Staff should confirm event permits"));
+            assert!(!public_export.contains("Ordinance 2026-14"));
             let publication = state
                 .publication_events
                 .iter()
@@ -2746,6 +2860,9 @@ mod tests {
             let results = search_city_work(&state, "event permits");
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].citation, "CMC 8.12");
+            let version_results = search_city_work(&state, "2026-07 codifier export");
+            assert_eq!(version_results.len(), 1);
+            assert_eq!(version_results[0].citation, "CMC 8.12");
         });
     }
 
@@ -2820,6 +2937,24 @@ mod tests {
                 .audit_entries
                 .iter()
                 .any(|entry| entry.action == "answer-code-question"));
+
+            let public_internal_question = serde_json::json!({
+                "query": "parcel-specific nuisance complaints",
+                "publicOnly": true
+            });
+            let public_internal_result =
+                city_work_action("answer-code-question", Some(&public_internal_question))
+                    .expect("public internal question handled");
+            assert!(public_internal_result.search_results.is_empty());
+
+            let staff_internal_question = serde_json::json!({
+                "query": "parcel-specific nuisance complaints",
+                "publicOnly": false
+            });
+            let staff_internal_result =
+                city_work_action("answer-code-question", Some(&staff_internal_question))
+                    .expect("staff internal question answered");
+            assert_eq!(staff_internal_result.search_results.len(), 1);
 
             let stale = serde_json::json!({
                 "amendmentNote": "Ordinance 2026-22 amended backyard animal rules."

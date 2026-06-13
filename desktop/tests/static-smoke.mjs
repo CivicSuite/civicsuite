@@ -41,6 +41,7 @@ const requiredUiPhrases = [
   "Custom selection will install CivicCore plus",
   "Not ready for Windows Local 1.0",
   "Apply Module Selection",
+  "Source history:",
   "Sign in as local administrator to change local model setup.",
   "Sign in with the local administrator passcode before continuing setup.",
   "before changing city work, setup, model setup, settings, backups, restore, repair, or runtime services"
@@ -49,6 +50,20 @@ const requiredUiPhrases = [
 for (const phrase of requiredUiPhrases) {
   if (!main.includes(phrase)) {
     throw new Error(`missing desktop UI phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "function publicMeetingView",
+  "function publicRecordsRequestView",
+  "function publicCodeSourceView",
+  "function codeQuestionSearchFields",
+  "function codeSourceSearchFields",
+  "if (!publicOnly) fields.push(source.staff_guidance);",
+  "? [entry.label, entry.source, entry.status, entry.authoritative_url]"
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop public/staff boundary guard missing phrase: ${phrase}`);
   }
 }
 

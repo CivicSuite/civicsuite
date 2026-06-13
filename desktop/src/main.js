@@ -1509,12 +1509,35 @@ function isPublicReadableArea() {
   return isPublicSurface() && ["home", "meetings", "records", "code", "search"].includes(state.activeArea);
 }
 
+function publicCommentView(comment) {
+  if (!["reviewed for public record", "redacted for public record"].includes(comment.status)) return null;
+  const publicComment = { ...comment, commenter_contact: "" };
+  if (publicComment.status === "redacted for public record" && publicComment.redacted_body) {
+    publicComment.body = publicComment.redacted_body;
+  }
+  return publicComment;
+}
+
+function publicMeetingView(meeting) {
+  const publicArchive = meeting.status === "archived public record" || Boolean(meeting.archived_at_unix_seconds);
+  const publicNotice = meeting.notice_status === "public notice ready";
+  if (!publicArchive && !publicNotice) return null;
+  const publicMeeting = {
+    ...meeting,
+    public_comments: (meeting.public_comments || []).map(publicCommentView).filter(Boolean)
+  };
+  if (!publicArchive) {
+    publicMeeting.minutes = "";
+    publicMeeting.votes = [];
+    publicMeeting.action_items = [];
+    publicMeeting.resident_comments = [];
+    publicMeeting.exports = [];
+  }
+  return publicMeeting;
+}
+
 function publicMeetings(work) {
-  return work.meetings.filter((meeting) => (
-    meeting.notice_status === "public notice ready" ||
-    meeting.status === "archived public record" ||
-    Boolean(meeting.archived_at_unix_seconds)
-  ));
+  return work.meetings.map(publicMeetingView).filter(Boolean);
 }
 
 function publicCommentMeetings(work) {
@@ -1699,14 +1722,94 @@ function publicRecordsLookupVerifiedFor(request) {
   );
 }
 
+function publicRecordsRequestView(request) {
+  if (!recordsRequestIsReleased(request) && !publicRecordsLookupVerifiedFor(request)) return null;
+  return {
+    ...request,
+    requester_contact: "",
+    assigned_to: "",
+    clarification_notes: [],
+    search_notes: [],
+    exemption_reviews: [],
+    fee_estimate: "",
+    response_draft: "",
+    approval_notes: []
+  };
+}
+
 function publicRecordsRequests(work) {
-  return work.records_requests.filter((request) => (
-    recordsRequestIsReleased(request) || publicRecordsLookupVerifiedFor(request)
-  ));
+  return work.records_requests.map(publicRecordsRequestView).filter(Boolean);
+}
+
+function publicCodeSourceView(source) {
+  if (source.public_status !== "published") return null;
+  const publicSource = {
+    ...source,
+    staff_guidance: "",
+    codifier_sync_errors: [],
+    amendment_notes: [],
+    version_history: (source.version_history || []).map((entry) => ({ ...entry, note: "" }))
+  };
+  if (!publicSource.guidance_approved_at_unix_seconds) publicSource.plain_language_summary = "";
+  return publicSource;
 }
 
 function publicCodeSources(work) {
-  return work.code_sources.filter((source) => source.public_status === "published");
+  return work.code_sources.map(publicCodeSourceView).filter(Boolean);
+}
+
+function codeVersionHistorySummary(source) {
+  const entries = source.version_history || [];
+  if (!entries.length) return "";
+  return entries
+    .slice(0, 3)
+    .map((entry) => [entry.label, entry.source, entry.status].filter(Boolean).join(" / "))
+    .join("; ");
+}
+
+function codeVersionHistorySearchText(source, { publicOnly = false } = {}) {
+  return (source.version_history || [])
+    .map((entry) => {
+      const fields = publicOnly
+        ? [entry.label, entry.source, entry.status, entry.authoritative_url]
+        : [entry.label, entry.source, entry.status, entry.note, entry.authoritative_url];
+      return fields.join(" ");
+    })
+    .join(" ");
+}
+
+function codeQuestionSearchFields(source, { publicOnly = false } = {}) {
+  const fields = [
+    source.title,
+    source.citation,
+    source.body,
+    source.plain_language_summary
+  ];
+  if (!publicOnly) fields.push(source.staff_guidance);
+  return fields;
+}
+
+function codeSourceSearchFields(source, { publicOnly = false } = {}) {
+  const publicFields = [
+    source.title,
+    source.citation,
+    source.body,
+    source.status,
+    source.public_status,
+    source.codifier_name,
+    source.authoritative_url,
+    source.version_label,
+    source.codifier_sync_status,
+    source.plain_language_summary,
+    codeVersionHistorySearchText(source, { publicOnly })
+  ];
+  if (publicOnly) return publicFields;
+  return [
+    ...publicFields,
+    source.staff_guidance,
+    ...(source.amendment_notes || []),
+    ...(source.codifier_sync_errors || [])
+  ];
 }
 
 function localCodeQuestionResults(query, { publicOnly = false } = {}) {
@@ -1720,13 +1823,7 @@ function localCodeQuestionResults(query, { publicOnly = false } = {}) {
   const sources = publicOnly ? publicCodeSources(cityWork()) : cityWork().code_sources;
   return sources
     .filter((source) => !source.stale_since_unix_seconds)
-    .filter((source) => [
-      source.title,
-      source.citation,
-      source.body,
-      source.staff_guidance,
-      source.plain_language_summary
-    ].some(matchesQuestion))
+    .filter((source) => codeQuestionSearchFields(source, { publicOnly }).some(matchesQuestion))
     .slice(0, 3)
     .map((source) => {
       const publicSummaryAllowed = source.guidance_approved_at_unix_seconds && source.plain_language_summary;
@@ -1895,6 +1992,7 @@ function renderPublicCodeWorkflow() {
           <h3>${source.title}</h3>
           <p>${source.body}</p>
           ${source.guidance_approved_at_unix_seconds && source.plain_language_summary ? `<p><strong>Plain-English summary:</strong> ${source.plain_language_summary}</p>` : ""}
+          ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${codeVersionHistorySummary(source)}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Update status:</strong> codifier update pending</p>" : ""}
           <small>${source.citation} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports - contact city staff for legal interpretation</small>
         </article>
@@ -1982,6 +2080,7 @@ function renderCodeWorkflow() {
           <h3>${source.title}</h3>
           <p>${source.body}</p>
           ${source.codifier_name ? `<p><strong>Codifier:</strong> ${source.codifier_name}</p>` : ""}
+          ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${codeVersionHistorySummary(source)}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Stale:</strong> codifier update pending</p>" : ""}
           ${source.staff_guidance ? `<p><strong>Staff guidance:</strong> ${source.staff_guidance}</p>` : ""}
           <div class="record-actions">
@@ -2031,26 +2130,43 @@ function localSearchResults(query, { publicOnly = false } = {}) {
               comment.body,
               comment.redacted_body,
               comment.redaction_basis
-            ];
+        ];
         return fields.join(" ");
       }).join(" ");
-    if ([meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments, publicComments].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+    const publicArchive = publicOnly && (meeting.status === "archived public record" || meeting.archived_at_unix_seconds);
+    const publicMeetingFields = [
+      meeting.title,
+      meeting.summary,
+      meeting.status,
+      meeting.notice_status,
+      agendaTitles,
+      publicComments
+    ];
+    const meetingSearchText = publicOnly
+      ? publicArchive
+        ? [...publicMeetingFields, meeting.minutes, outcomes, actionItems, residentComments]
+        : publicMeetingFields
+      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments, publicComments];
+    if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
   });
   const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
   recordsRequests.forEach((request) => {
-    const recordsSearchText = [
+    const publicRecordFields = [
       request.public_tracking_number,
       request.requester,
-      request.requester_contact,
       request.submitted_via,
       request.summary,
       request.status,
+      ...(request.citations || [])
+    ];
+    const recordsSearchText = publicOnly ? publicRecordFields : [
+      ...publicRecordFields,
+      request.requester_contact,
       request.assigned_to,
       request.fee_estimate,
       request.response_draft,
-      ...(request.citations || []),
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
       ...(request.exemption_reviews || []),
@@ -2062,21 +2178,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   });
   const codeSources = publicOnly ? publicCodeSources(work) : work.code_sources;
   codeSources.forEach((source) => {
-    const codeSearchText = [
-      source.title,
-      source.citation,
-      source.body,
-      source.status,
-      source.public_status,
-      source.codifier_name,
-      source.authoritative_url,
-      source.version_label,
-      source.codifier_sync_status,
-      source.staff_guidance,
-      source.plain_language_summary,
-      ...(source.amendment_notes || []),
-      ...(source.codifier_sync_errors || [])
-    ];
+    const codeSearchText = codeSourceSearchFields(source, { publicOnly });
     if (codeSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civiccode", title: source.title, snippet: source.body, citation: source.citation, status: source.status });
     }
