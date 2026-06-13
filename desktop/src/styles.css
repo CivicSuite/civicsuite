@@ -75,7 +75,8 @@ main:focus-visible {
 .surface-switch button,
 .icon-text,
 .task-card button,
-.primary-action {
+.primary-action,
+.secondary-action {
   border: 1px solid transparent;
   border-radius: 5px;
   cursor: pointer;
@@ -94,6 +95,13 @@ main:focus-visible {
 .primary-action {
   background: #1e5f74;
   color: #ffffff;
+}
+
+.secondary-action {
+  background: #ffffff;
+  border-color: #b8c8d3;
+  color: #1e5f74;
+  font-weight: 700;
 }
 
 .layout {
@@ -301,6 +309,13 @@ main {
 }
 
 .model-source {
+  margin-bottom: 12px;
+}
+
+.model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
@@ -587,6 +602,11 @@ main {
     align-items: flex-start;
     flex-direction: column;
     width: 100%;
+  }
+
+  .model-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .surface-switch {

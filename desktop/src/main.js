@@ -313,6 +313,7 @@ const state = {
   activeSurface: "Staff",
   auditOpen: false,
   actionResult: null,
+  modelActionResult: null,
   setupDraft: {
     cityName: "",
     state: "",
@@ -522,6 +523,18 @@ function renderActionResult() {
   `;
 }
 
+function renderModelActionResult() {
+  if (!state.modelActionResult) return "";
+  const result = state.modelActionResult;
+  return `
+    <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
+      <strong>${result.status}</strong>
+      <span>${result.message}</span>
+      <small>${result.next_action}</small>
+    </div>
+  `;
+}
+
 function renderFirstRunWizard({ compact = false } = {}) {
   const firstRun = state.app.first_run;
   if (!firstRun || firstRun.finished) return "";
@@ -555,6 +568,25 @@ function renderFirstRunWizard({ compact = false } = {}) {
         <button type="button" class="text-link" data-area="health">View all setup and health steps</button>
       ` : ""}
     </section>
+  `;
+}
+
+function renderModelActions(model) {
+  return `
+    <div class="model-actions" aria-label="Local model setup actions">
+      <button type="button" class="secondary-action" data-model-action="open-model-folder">
+        Open Model Folder
+      </button>
+      <button type="button" class="primary-action" data-model-action="${model.download_resumable ? "resume-download" : "download"}">
+        ${model.download_resumable ? "Download / Resume" : "Download Model"}
+      </button>
+      <button type="button" class="secondary-action" data-model-action="verify-checksum">
+        Verify Checksum
+      </button>
+      <button type="button" class="secondary-action" data-model-action="retry">
+        Retry Setup
+      </button>
+    </div>
   `;
 }
 
@@ -594,6 +626,8 @@ function renderModelReadiness({ compact = false } = {}) {
         <small>Checksum source: ${model.artifact.checksum_source}</small>
         <small>Local path: ${model.artifact.local_path}</small>
       </div>
+      ${renderModelActions(model)}
+      ${renderModelActionResult()}
       <div class="readiness-list">
         ${checks.map((check) => `
           <article class="readiness-item">
@@ -799,6 +833,11 @@ function bindEvents() {
       await handleFirstRunAction(button.dataset.firstRunAction, button.dataset.stepId);
     });
   });
+  document.querySelectorAll("[data-model-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleModelAction(button.dataset.modelAction);
+    });
+  });
 }
 
 function setupPayloadForStep(stepId) {
@@ -844,6 +883,31 @@ async function handleFirstRunAction(action, stepId) {
       status: "Needs attention",
       message: String(error),
       next_action: "Correct the setup information and try again."
+    };
+  }
+  render();
+}
+
+async function handleModelAction(action) {
+  if (!hasTauriBridge()) {
+    state.modelActionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Model setup changes are saved by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to continue local model setup."
+    };
+    render();
+    return;
+  }
+  try {
+    state.modelActionResult = await invoke("model_action", { action });
+    await loadAppState();
+  } catch (error) {
+    state.modelActionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Check the local model file, network connection, and available disk space, then retry."
     };
   }
   render();

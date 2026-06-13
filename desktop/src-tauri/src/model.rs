@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::env;
+use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json");
 const REQUIRED_ACTIONS: [&str; 5] = [
@@ -225,6 +229,9 @@ fn validate_manifest(manifest: &ModelManifest) -> Result<(), String> {
 }
 
 fn windows_data_root() -> PathBuf {
+    if let Ok(root) = env::var("CIVICSUITE_DESKTOP_STATE_DIR") {
+        return PathBuf::from(root).join("Data");
+    }
     env::var("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
@@ -251,6 +258,18 @@ fn checksum_marker_path(local_path: &Path) -> PathBuf {
     local_path.with_file_name(marker_name)
 }
 
+fn partial_download_path(local_path: &Path) -> PathBuf {
+    local_path.with_extension("gguf.part")
+}
+
+fn ensure_parent_dir(path: &Path) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("Could not resolve parent folder for {}", path.display()))?;
+    fs::create_dir_all(parent)
+        .map_err(|error| format!("Could not create {}: {error}", parent.display()))
+}
+
 fn checksum_marker_matches(local_path: &Path, expected_sha256: &str) -> bool {
     local_path.is_file()
         && std::fs::read_to_string(checksum_marker_path(local_path))
@@ -258,10 +277,116 @@ fn checksum_marker_matches(local_path: &Path, expected_sha256: &str) -> bool {
             .unwrap_or(false)
 }
 
+fn sha256_file(local_path: &Path) -> Result<String, String> {
+    let mut file = fs::File::open(local_path)
+        .map_err(|error| format!("Could not open {}: {error}", local_path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0_u8; 1024 * 1024];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|error| format!("Could not read {}: {error}", local_path.display()))?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn verify_file_checksum(
+    local_path: &Path,
+    expected_size_bytes: u64,
+    expected_sha256: &str,
+) -> Result<(), String> {
+    let metadata = fs::metadata(local_path)
+        .map_err(|error| format!("Could not inspect {}: {error}", local_path.display()))?;
+    if !metadata.is_file() {
+        return Err(format!("{} is not a model file", local_path.display()));
+    }
+    if metadata.len() != expected_size_bytes {
+        return Err(format!(
+            "Model file size is {}, expected {} bytes",
+            metadata.len(),
+            expected_size_bytes
+        ));
+    }
+    let actual_sha256 = sha256_file(local_path)?;
+    if !actual_sha256.eq_ignore_ascii_case(expected_sha256) {
+        return Err(format!(
+            "Model checksum mismatch: expected {expected_sha256}, got {actual_sha256}"
+        ));
+    }
+    fs::write(
+        checksum_marker_path(local_path),
+        format!("{expected_sha256}\n"),
+    )
+    .map_err(|error| format!("Could not record checksum marker: {error}"))
+}
+
 fn file_size_matches(local_path: &Path, expected_size_bytes: u64) -> bool {
     std::fs::metadata(local_path)
         .map(|metadata| metadata.is_file() && metadata.len() == expected_size_bytes)
         .unwrap_or(false)
+}
+
+fn verify_model_artifact(local_path: &Path, artifact: &ArtifactDefinition) -> Result<(), String> {
+    verify_file_checksum(local_path, artifact.size_bytes, &artifact.sha256)
+}
+
+fn curl_executable() -> String {
+    env::var("CIVICSUITE_CURL_PATH").unwrap_or_else(|_| {
+        if cfg!(target_os = "windows") {
+            "curl.exe".to_string()
+        } else {
+            "curl".to_string()
+        }
+    })
+}
+
+fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
+    if checksum_marker_matches(local_path, &manifest.model.artifact.sha256) {
+        return Ok(());
+    }
+    ensure_parent_dir(local_path)?;
+    let partial_path = partial_download_path(local_path);
+    let status = Command::new(curl_executable())
+        .arg("-L")
+        .arg("--fail")
+        .arg("--retry")
+        .arg("3")
+        .arg("--continue-at")
+        .arg("-")
+        .arg("--output")
+        .arg(&partial_path)
+        .arg(&manifest.model.resolve_url)
+        .status()
+        .map_err(|error| format!("Could not start the model download: {error}"))?;
+    if !status.success() {
+        return Err(format!(
+            "Model download failed with exit code {}",
+            status
+                .code()
+                .map(|code| code.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        ));
+    }
+    let downloaded_size = fs::metadata(&partial_path)
+        .map_err(|error| format!("Could not inspect downloaded model: {error}"))?
+        .len();
+    if downloaded_size != manifest.model.artifact.size_bytes {
+        return Err(format!(
+            "Model download is incomplete: got {downloaded_size}, expected {} bytes",
+            manifest.model.artifact.size_bytes
+        ));
+    }
+    if local_path.exists() {
+        fs::remove_file(local_path)
+            .map_err(|error| format!("Could not replace old model file: {error}"))?;
+    }
+    fs::rename(&partial_path, local_path)
+        .map_err(|error| format!("Could not move verified model into place: {error}"))?;
+    verify_model_artifact(local_path, &manifest.model.artifact)
 }
 
 fn readiness_items(manifest: &ModelManifest, local_path: &Path) -> Vec<ModelReadinessItem> {
@@ -397,17 +522,57 @@ pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
     if !manifest.actions.iter().any(|candidate| candidate == action) {
         return Err(format!("Unsupported model action: {action}"));
     }
+    let local_path = model_path(&manifest.model.artifact);
 
-    Ok(ModelActionResult {
-        accepted: false,
-        action: action.to_string(),
-        status: "Blocked",
-        message: "The native model downloader has not been connected to host mutation yet."
-            .to_string(),
-        next_action:
-            "Keep the pinned model readiness state visible until the installer executor is wired."
-                .to_string(),
-    })
+    let result = match action {
+        "open-model-folder" => ensure_parent_dir(&local_path).map(|()| {
+            (
+                "Ready",
+                "The local model folder exists.".to_string(),
+                "Place or download the pinned GGUF file there, then verify checksum.".to_string(),
+            )
+        }),
+        "verify-checksum" => {
+            verify_model_artifact(&local_path, &manifest.model.artifact).map(|()| {
+                (
+                    "Verified",
+                    "The local Gemma model file matches the pinned size and SHA-256.".to_string(),
+                    "Start the bundled model runtime and register the model with CivicCore."
+                        .to_string(),
+                )
+            })
+        }
+        "download" | "resume-download" | "retry" => download_model_artifact(&manifest, &local_path)
+            .map(|()| {
+                (
+                    "Verified",
+                    "The pinned Gemma model downloaded and passed checksum verification."
+                        .to_string(),
+                    "Start the bundled model runtime and register the model with CivicCore."
+                        .to_string(),
+                )
+            }),
+        _ => Err(format!("Unsupported model action: {action}")),
+    };
+
+    match result {
+        Ok((status, message, next_action)) => Ok(ModelActionResult {
+            accepted: true,
+            action: action.to_string(),
+            status,
+            message,
+            next_action,
+        }),
+        Err(message) => Ok(ModelActionResult {
+            accepted: false,
+            action: action.to_string(),
+            status: "Needs attention",
+            message,
+            next_action:
+                "Check the model file, network connection, and available disk space, then retry."
+                    .to_string(),
+        }),
+    }
 }
 
 #[cfg(test)]
@@ -459,11 +624,13 @@ mod tests {
     }
 
     #[test]
-    fn model_actions_refuse_to_mutate_host_until_downloader_exists() {
-        let result = model_action("download").expect("action response is structured");
-        assert!(!result.accepted);
-        assert_eq!(result.status, "Blocked");
-        assert!(result.message.contains("native model downloader"));
+    fn model_checksum_action_reports_missing_file_without_downloading() {
+        with_temp_state_dir(|_| {
+            let result = model_action("verify-checksum").expect("action response is structured");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs attention");
+            assert!(result.message.contains("Could not inspect"));
+        });
     }
 
     #[test]
@@ -484,5 +651,45 @@ mod tests {
             "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1"
         ));
         let _ = std::fs::remove_file(marker_path);
+    }
+
+    fn test_env_lock() -> &'static std::sync::Mutex<()> {
+        static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+        LOCK.get_or_init(|| std::sync::Mutex::new(()))
+    }
+
+    fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
+        let _guard = test_env_lock().lock().expect("test env lock");
+        let root = env::temp_dir().join(format!(
+            "civicsuite-desktop-model-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
+        let result = test(root.clone());
+        env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
+        let _ = fs::remove_dir_all(root);
+        result
+    }
+
+    #[test]
+    fn model_open_folder_action_creates_local_folder() {
+        with_temp_state_dir(|root| {
+            let result = model_action("open-model-folder").expect("action response");
+            assert!(result.accepted);
+            assert!(root.join("Data").join("models").is_dir());
+        });
+    }
+
+    #[test]
+    fn verify_file_checksum_writes_marker_for_matching_file() {
+        with_temp_state_dir(|root| {
+            let model_path = root.join("Data").join("models").join("tiny.gguf");
+            fs::create_dir_all(model_path.parent().expect("parent")).expect("mkdir");
+            fs::write(&model_path, b"civicsuite").expect("write model");
+            let expected = sha256_file(&model_path).expect("hash");
+            verify_file_checksum(&model_path, 10, &expected).expect("verify");
+            assert!(checksum_marker_matches(&model_path, &expected));
+        });
     }
 }

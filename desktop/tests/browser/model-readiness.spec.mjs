@@ -11,11 +11,23 @@ test("home surface shows first-run setup and pinned local model readiness", asyn
   await expect(page.getByText("faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1")).toBeVisible();
   await expect(page.getByText("hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0")).toBeVisible();
   await expect(page.getByText("Needs verification")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Model Folder" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Download / Resume" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Verify Checksum" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry Setup" })).toBeVisible();
   await expect(page.getByText("4 local components are part of this Windows profile.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
 
   await expect(page.getByText("Start Docker")).toHaveCount(0);
   await expect(page.getByText("Install WSL")).toHaveCount(0);
+});
+
+test("browser preview explains model actions require the desktop bridge", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Verify Checksum" }).click();
+
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+  await expect(page.getByText("Model setup changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
 });
 
 test("system health keeps full model readiness visible", async ({ page }) => {
