@@ -491,6 +491,26 @@ fn action_blocks_until_runtime(action: &str) -> Option<(&'static str, &'static s
     }
 }
 
+fn setup_lifecycle_action(
+    action: &str,
+    step_id: Option<&str>,
+) -> Result<Option<FirstRunActionResult>, String> {
+    match action {
+        "repair" | "backup" | "uninstall" => {
+            let result = supervisor::supervisor_action(action, None)?;
+            Ok(Some(FirstRunActionResult {
+                accepted: result.accepted,
+                action: action.to_string(),
+                step_id: step_id.map(str::to_string),
+                status: result.status,
+                message: result.message,
+                next_action: result.next_action,
+            }))
+        }
+        _ => Ok(None),
+    }
+}
+
 pub fn first_run_action(
     action: &str,
     step_id: Option<&str>,
@@ -505,6 +525,10 @@ pub fn first_run_action(
         if !manifest.steps.iter().any(|step| step.id == id) {
             return Err(format!("Unknown first-run step: {id}"));
         }
+    }
+
+    if let Some(result) = setup_lifecycle_action(action, step_id)? {
+        return Ok(result);
     }
 
     if let Some((message, next_action)) = action_blocks_until_runtime(action) {
@@ -697,7 +721,7 @@ mod tests {
             env::remove_var("CIVICSUITE_TEST_MODEL_VERIFIED");
             assert!(!result.accepted);
             assert_eq!(result.status, "Needs runtime files");
-            assert!(result.message.contains("local runtime files"));
+            assert!(result.message.contains("runtime files"));
             assert!(root.join("config").join("runtime-state.json").is_file());
         });
     }
@@ -780,6 +804,84 @@ mod tests {
             let result = first_run_action("create-city-profile", Some("city-profile"), None);
             assert!(result.is_err());
             assert!(result.err().expect("error text").contains("cityName"));
+        });
+    }
+
+    #[test]
+    fn first_run_repair_action_uses_real_supervisor_without_advancing_setup() {
+        with_temp_state_dir(|root| {
+            let result =
+                first_run_action("repair", None, None).expect("repair action is structured");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs runtime files");
+            assert!(result.message.contains("runtime files"));
+            assert!(root.join("config").join("runtime-state.json").is_file());
+            let state = first_run_state(&[]).expect("first-run progress did not advance");
+            assert_eq!(
+                state.current_step_id.as_deref(),
+                Some("unsigned-beta"),
+                "recovery actions must not complete setup steps"
+            );
+        });
+    }
+
+    #[test]
+    fn first_run_backup_action_uses_real_supervisor_without_advancing_setup() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(
+                root.join("Data").join("files").join("record.txt"),
+                "official",
+            )
+            .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city-profile.json"), "{}").expect("config file");
+
+            let result =
+                first_run_action("backup", None, None).expect("backup action is structured");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Backup complete");
+            assert!(root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .any(|entry| entry.file_name().to_string_lossy().contains("manual")));
+            let state = first_run_state(&[]).expect("first-run progress did not advance");
+            assert_eq!(state.current_step_id.as_deref(), Some("unsigned-beta"));
+        });
+    }
+
+    #[test]
+    fn first_run_uninstall_action_uses_real_supervisor_final_backup() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(
+                root.join("Data").join("files").join("record.txt"),
+                "official",
+            )
+            .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city-profile.json"), "{}").expect("config file");
+
+            let result =
+                first_run_action("uninstall", None, None).expect("uninstall action is structured");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Local profile removed");
+            assert!(!root.join("Data").exists());
+            assert!(!root.join("config").exists());
+            assert!(root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .any(|entry| entry
+                    .file_name()
+                    .to_string_lossy()
+                    .contains("final-uninstall")));
         });
     }
 }

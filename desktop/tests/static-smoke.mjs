@@ -154,11 +154,16 @@ for (const phrase of [
   "Install-OllamaPayload",
   "Install-PgvectorPayload",
   "MSVC cl.exe and nmake.exe are required",
+  "System.Security.Cryptography.SHA256",
   "runtime-payload-lock.json"
 ]) {
   if (!runtimePayloadScript.includes(phrase)) {
     throw new Error(`Windows runtime payload script missing phrase: ${phrase}`);
   }
+}
+
+if (runtimePayloadScript.includes("Get-FileHash")) {
+  throw new Error("Windows runtime payload hashing must not depend on Get-FileHash availability");
 }
 
 for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {

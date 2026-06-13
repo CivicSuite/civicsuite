@@ -36,7 +36,15 @@ function Write-JsonFile {
 
 function Get-Sha256 {
     param([string]$Path)
-    return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
+    $Stream = [System.IO.File]::OpenRead($Path)
+    $Sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $HashBytes = $Sha256.ComputeHash($Stream)
+        return -join ($HashBytes | ForEach-Object { $_.ToString("x2") })
+    } finally {
+        $Stream.Dispose()
+        $Sha256.Dispose()
+    }
 }
 
 function Invoke-CivicDownload {
