@@ -736,6 +736,100 @@ fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
     Ok("Minutes draft saved locally and tied to the meeting audit trail.".to_string())
 }
 
+fn suggest_minutes_draft(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    if meeting.minutes_adopted_at_unix_seconds.is_some() {
+        return Err(
+            "Minutes are already adopted. Create a correction record before drafting new minutes."
+                .to_string(),
+        );
+    }
+    let public_comments = if meeting.public_comments.is_empty() {
+        "No public comments submitted.".to_string()
+    } else {
+        meeting
+            .public_comments
+            .iter()
+            .map(|comment| {
+                let body = if comment.status == "redacted for public record"
+                    && !comment.redacted_body.is_empty()
+                {
+                    format!(
+                        "{} (Redaction basis: {})",
+                        comment.redacted_body, comment.redaction_basis
+                    )
+                } else {
+                    comment.body.clone()
+                };
+                format!(
+                    "- {} [{} / {}]: {}",
+                    comment.commenter_name, comment.mode, comment.status, body
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let agenda = if meeting.agenda_items.is_empty() {
+        "No agenda items recorded.".to_string()
+    } else {
+        meeting
+            .agenda_items
+            .iter()
+            .map(|item| format!("- {} [{} / {}]", item.title, item.status, item.visibility))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let has_meeting_evidence = !meeting.summary.trim().is_empty()
+        || !meeting.agenda_items.is_empty()
+        || !meeting.votes.is_empty()
+        || !meeting.action_items.is_empty()
+        || !meeting.resident_comments.is_empty()
+        || !meeting.public_comments.is_empty();
+    if !has_meeting_evidence {
+        return Err("Add a summary, agenda item, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
+    }
+    let prompt = format!(
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nSummary: {}\nAgenda:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        meeting.title,
+        meeting.meeting_date,
+        meeting.status,
+        meeting.notice_status,
+        if meeting.summary.is_empty() {
+            "No summary recorded."
+        } else {
+            &meeting.summary
+        },
+        agenda,
+        if meeting.minutes.is_empty() {
+            "No existing minutes draft recorded."
+        } else {
+            &meeting.minutes
+        },
+        list_or_default(&meeting.votes, "No outcomes recorded."),
+        list_or_default(&meeting.action_items, "No action items recorded."),
+        list_or_default(&meeting.resident_comments, "No resident comments recorded."),
+        public_comments
+    );
+    let title = meeting.title.clone();
+    let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
+    meeting.minutes = generated;
+    meeting.status = "local AI minutes draft ready for review".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "suggest-minutes-draft",
+        format!("Generated local AI minutes draft for {title} with {runtime_model}; adoption still requires human review."),
+    );
+    Ok(
+        "Local AI minutes draft generated. Review, edit, and adopt minutes before archive."
+            .to_string(),
+    )
+}
+
 fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let vote = payload_string(payload, "vote")?;
     let meeting = selected_meeting_mut(state, payload)?;
@@ -2366,6 +2460,7 @@ pub fn city_work_action(
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
+        "suggest-minutes-draft" => suggest_minutes_draft(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
         "add-action-item" => add_action_item(&mut state, payload)?,
         "record-resident-comment" => record_resident_comment(&mut state, payload)?,
@@ -2555,6 +2650,18 @@ mod tests {
                 serde_json::json!({ "residentComment": "Resident asked for sidewalk funding." });
             city_work_action("record-resident-comment", Some(&resident_comment))
                 .expect("resident comment saved");
+            env::set_var(
+                "CIVICSUITE_FAKE_MODEL_RESPONSE",
+                "Local AI minutes draft: budget ordinance passed 4-1 with finance publication action.",
+            );
+            let suggested =
+                city_work_action("suggest-minutes-draft", None).expect("AI minutes generated");
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(suggested.message.contains("Local AI minutes draft"));
+            let suggested_state = city_work_state().expect("state reads after AI minutes");
+            assert!(suggested_state.meetings[0]
+                .minutes
+                .contains("Local AI minutes draft"));
             city_work_action("adopt-minutes", None).expect("minutes adopted");
             city_work_action("export-meeting-packet", None).expect("packet exported");
             city_work_action("archive-meeting", None).expect("meeting archived");
@@ -2575,6 +2682,7 @@ mod tests {
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
+            assert!(archive.contains("Local AI minutes draft"));
             assert!(archive.contains("## Action Items"));
             assert!(archive.contains("Finance staff to publish the adopted budget."));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
@@ -2592,7 +2700,7 @@ mod tests {
             assert_eq!(publication.source_record_id, meeting.id);
             assert_eq!(publication.payload_hash.len(), 64);
             assert!(publication.retracted_at_unix_seconds.is_none());
-            assert!(state.audit_entries.len() >= 9);
+            assert!(state.audit_entries.len() >= 10);
             assert_valid_audit_chain(&state.audit_entries);
 
             let late_vote = serde_json::json!({ "vote": "Late amendment after archive." });

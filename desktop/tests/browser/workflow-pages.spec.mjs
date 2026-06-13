@@ -12,6 +12,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Action Item" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Local AI Minutes" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Adopt Minutes" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Public Comment Review" })).toBeVisible();
@@ -136,6 +137,11 @@ test("risky city workflow actions require guided review before mutation", async 
 
   await page.getByRole("button", { name: "Cancel Review" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Archiving Public Record" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Generate Local AI Minutes" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Generating Minutes Draft" })).toBeVisible();
+  await expect(page.getByText("Uses the verified local AI model to draft internal meeting minutes")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Mark Notice Ready" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Posting Notice" })).toBeVisible();

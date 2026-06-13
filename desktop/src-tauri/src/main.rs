@@ -138,6 +138,7 @@ fn city_work_action_module_requirement(
         | "add-code-handoff-agenda"
         | "post-notice"
         | "record-minutes"
+        | "suggest-minutes-draft"
         | "record-vote"
         | "add-action-item"
         | "record-resident-comment"

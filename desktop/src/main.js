@@ -1281,6 +1281,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "export-meeting-packet",
   "review-public-comment",
   "redact-public-comment",
+  "suggest-minutes-draft",
   "adopt-minutes",
   "archive-meeting",
   "approve-records-response",
@@ -1403,6 +1404,21 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for the packet export.",
       retry: "If the export path is unavailable, the desktop app reports the failure and preserves the meeting record."
+    },
+    "suggest-minutes-draft": {
+      title: "Review Before Generating Minutes Draft",
+      confirmLabel: "Generate Minutes Draft",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, outcomes, action items, and comments. It does not adopt or archive the minutes.",
+      visibility: "Internal staff draft only. A clerk must review, edit, and adopt minutes before the public archive step.",
+      sources: [
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.votes || []).length} outcome(s); ${(meeting.action_items || []).length} action item(s)` : "The desktop app will require a meeting before generating.",
+        detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
+      ],
+      audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
+      retry: "If the local AI model is not ready, the minutes are already adopted, or no meeting evidence exists, the desktop app stops before changing the draft."
     },
     "adopt-minutes": {
       title: "Review Before Adopting Minutes",
@@ -1806,6 +1822,7 @@ function renderMeetingsWorkflow() {
         <label>Action item <input type="text" data-work-field="actionItem" value="${state.workDraft.actionItem}" /></label>
         <label>Resident comment <textarea data-work-field="residentComment">${state.workDraft.residentComment}</textarea></label>
         <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="suggest-minutes-draft">Generate Local AI Minutes</button>
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
           <button type="button" class="secondary-action" data-work-action="record-vote">Record Outcome</button>
           <button type="button" class="secondary-action" data-work-action="add-action-item">Add Action Item</button>
@@ -3380,6 +3397,7 @@ function workPayloadForAction(action) {
     "add-code-handoff-agenda": selected,
     "post-notice": selected,
     "export-meeting-packet": selected,
+    "suggest-minutes-draft": selected,
     "record-minutes": { ...selected, minutes: draft.minutes },
     "record-vote": { ...selected, vote: draft.vote },
     "add-action-item": { ...selected, actionItem: draft.actionItem },
