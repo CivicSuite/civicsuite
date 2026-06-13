@@ -221,7 +221,7 @@ fn require_enabled_city_modules(action: &str, payload: Option<&Value>) -> Result
         .map(|module_id| module_display_name(module_id))
         .collect::<Vec<_>>();
     Err(format!(
-        "{} {} disabled in this local profile. Re-enable {} in Settings before using this workflow.",
+        "{} {} not enabled in this local profile. Install or enable {} in Settings before using this workflow.",
         missing.join(", "),
         if missing.len() == 1 { "is" } else { "are" },
         if missing.len() == 1 { "it" } else { "them" }
@@ -372,32 +372,85 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
             "Sign in as the local administrator before changing installed modules.".to_string(),
         );
     }
-    let enabled = match action.as_str() {
-        "enable-module" => true,
-        "disable-module" => false,
+    let previous_selection = module_registry::module_selection_state()?;
+    let was_installed = previous_selection
+        .installed_module_ids
+        .iter()
+        .any(|installed_id| installed_id == &module_id);
+    let selection = match action.as_str() {
+        "enable-module" => module_registry::set_module_enabled(&module_id, true)?,
+        "disable-module" => module_registry::set_module_enabled(&module_id, false)?,
+        "install-module" => module_registry::set_module_installed(&module_id, true)?,
+        "remove-module" => module_registry::set_module_installed(&module_id, false)?,
+        "update-module" => previous_selection,
         _ => return Err(format!("Unsupported module action: {action}")),
     };
-    let selection = module_registry::set_module_enabled(&module_id, enabled)?;
     let modules = module_summaries()?;
     let display_name = modules
         .iter()
         .find(|module| module.id == module_id)
         .map(|module| module.display_name.clone())
         .unwrap_or_else(|| module_id.clone());
+    let is_installed = selection
+        .installed_module_ids
+        .iter()
+        .any(|installed_id| installed_id == &module_id);
+    let is_enabled = selection
+        .enabled_module_ids
+        .iter()
+        .any(|enabled_id| enabled_id == &module_id);
+    let (status, message, next_action) = match action.as_str() {
+        "enable-module" => (
+            "Module enabled",
+            format!("{display_name} is enabled in the local CivicSuite shell."),
+            "Review the module list or continue city work.",
+        ),
+        "disable-module" => (
+            "Module disabled",
+            format!("{display_name} is disabled in the local CivicSuite shell. Its data remains installed and can be re-enabled."),
+            "Review the module list or continue city work.",
+        ),
+        "install-module" if was_installed => (
+            "Module already installed",
+            format!("{display_name} is already installed in this local profile."),
+            "Enable the module if it is disabled, or continue city work.",
+        ),
+        "install-module" => (
+            "Module installed",
+            format!("{display_name} is installed and enabled in this local profile."),
+            "Review the module list or open the module work area.",
+        ),
+        "remove-module" if !was_installed => (
+            "Module not installed",
+            format!("{display_name} is not installed in this local profile."),
+            "Choose an available module to install.",
+        ),
+        "remove-module" => (
+            "Module removed",
+            format!("{display_name} is removed from the active local profile. Existing module data was not deleted and remains covered by profile backup/restore."),
+            "Install the module again if staff need this work area.",
+        ),
+        "update-module" => (
+            "Module current",
+            if is_installed {
+                format!("{display_name} is already on the pinned version for this module manifest.")
+            } else {
+                format!("{display_name} is not installed; install it before checking updates.")
+            },
+            "Review module versions in Settings.",
+        ),
+        _ => unreachable!("unsupported module action already returned"),
+    };
     Ok(ModuleActionResult {
         accepted: true,
         action,
-        status: if enabled {
-            "Module enabled"
+        status,
+        message,
+        next_action: if is_enabled || !matches!(status, "Module installed") {
+            next_action
         } else {
-            "Module disabled"
+            "Enable required dependencies before opening this module."
         },
-        message: if enabled {
-            format!("{display_name} is enabled in the local CivicSuite shell.")
-        } else {
-            format!("{display_name} is disabled in the local CivicSuite shell. Its data remains installed and can be re-enabled.")
-        },
-        next_action: "Review the module list or continue city work.",
         selection,
         modules,
     })
@@ -645,6 +698,30 @@ mod tests {
                 .enabled_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+
+            let current = module_action("update-module".to_string(), "civiccode".to_string())
+                .expect("module update check allowed");
+            assert_eq!(current.status, "Module current");
+            assert!(current.message.contains("pinned version"));
+
+            let removed = module_action("remove-module".to_string(), "civiccode".to_string())
+                .expect("module remove allowed");
+            assert_eq!(removed.status, "Module removed");
+            assert!(removed.message.contains("was not deleted"));
+            assert!(!removed
+                .selection
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+
+            let installed = module_action("install-module".to_string(), "civiccode".to_string())
+                .expect("module install allowed");
+            assert_eq!(installed.status, "Module installed");
+            assert!(installed
+                .selection
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
         });
     }
 
@@ -667,7 +744,7 @@ mod tests {
             assert!(result
                 .err()
                 .expect("disabled module error")
-                .contains("CivicCode is disabled"));
+                .contains("CivicCode is not enabled"));
         });
     }
 

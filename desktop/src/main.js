@@ -690,6 +690,7 @@ function moduleStatusLabel(module) {
   if (module.required) return "Required";
   if (module.installed && module.enabled === false) return "Disabled";
   if (module.installed) return "Enabled";
+  if (module.selectable && module.contract_ready) return "Available";
   if (module.selectable) return "Package waiting";
   return "Locked";
 }
@@ -2376,8 +2377,17 @@ function renderModuleRow(module, { actions = false } = {}) {
   const lifecycle = moduleLifecycleItems(module);
   const disabled = module.installed && module.enabled === false;
   const canToggle = actions && module.installed && !module.required;
+  const canInstall = actions && !module.installed && module.selectable && module.contract_ready;
+  const canUpdate = actions && module.installed;
+  const canRemove = actions && module.installed && !module.required;
   const toggleAction = disabled ? "enable-module" : "disable-module";
   const toggleLabel = disabled ? "Enable" : "Disable";
+  const actionButtons = [
+    canInstall ? ["install-module", "Install"] : null,
+    canToggle ? [toggleAction, toggleLabel] : null,
+    canUpdate ? ["update-module", "Check Update"] : null,
+    canRemove ? ["remove-module", "Remove From Profile"] : null
+  ].filter(Boolean);
   const contractParts = [
     module.route_count ? `${module.route_count} route${module.route_count === 1 ? "" : "s"}` : "",
     module.service_count ? `${module.service_count} service${module.service_count === 1 ? "" : "s"}` : "",
@@ -2396,15 +2406,17 @@ function renderModuleRow(module, { actions = false } = {}) {
         <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
         ${disabled ? `<small>Data remains installed. Re-enable this module to show its work area.</small>` : ""}
         ${lifecycle.map((item) => `<small><strong>${item.label}:</strong> ${item.value}</small>`).join("")}
-        ${canToggle ? `
+        ${actionButtons.length ? `
           <div class="module-actions">
-            <button
-              type="button"
-              class="secondary-action"
-              data-module-action="${toggleAction}"
-              data-module-id="${escapeHtml(module.id)}"
-              aria-label="${toggleLabel} ${escapeHtml(module.display_name)}"
-            >${toggleLabel}</button>
+            ${actionButtons.map(([action, label]) => `
+              <button
+                type="button"
+                class="secondary-action"
+                data-module-action="${action}"
+                data-module-id="${escapeHtml(module.id)}"
+                aria-label="${label} ${escapeHtml(module.display_name)}"
+              >${label}</button>
+            `).join("")}
           </div>
         ` : ""}
       </div>
@@ -2994,7 +3006,7 @@ async function handleModuleAction(action, moduleId) {
       accepted: false,
       status: "Desktop app required",
       message: "Module changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to enable or disable installed modules."
+      next_action: "Open the CivicSuite desktop app to install, update, enable, disable, or remove local modules."
     };
     render();
     return;

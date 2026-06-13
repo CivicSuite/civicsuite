@@ -290,11 +290,22 @@ for (const phrase of [
 
 for (const phrase of [
   "city_work_action_module_requirement",
-  "Re-enable {} in Settings before using this workflow.",
+  "Install or enable {} in Settings before using this workflow.",
   "Local search completed across enabled modules with {} result(s)."
 ]) {
   if (!rustMain.includes(phrase)) {
     throw new Error(`desktop command boundary missing disabled-module guard phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "install-module",
+  "remove-module",
+  "update-module",
+  "Existing module data was not deleted"
+]) {
+  if (!rustMain.includes(phrase)) {
+    throw new Error(`desktop command boundary missing module lifecycle phrase: ${phrase}`);
   }
 }
 

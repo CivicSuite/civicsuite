@@ -448,6 +448,80 @@ fn validate_custom_selection(
     Ok(())
 }
 
+fn selection_from_installed_and_enabled(
+    registry: &ModuleRegistry,
+    installed_module_ids: Vec<String>,
+    enabled_module_ids: Vec<String>,
+) -> Result<ModuleSelectionState, String> {
+    let module_map = module_index(registry);
+    if !installed_module_ids
+        .iter()
+        .any(|module_id| module_id == "civiccore")
+    {
+        return Err("CivicCore must stay installed as the local foundation.".to_string());
+    }
+    for module_id in &installed_module_ids {
+        module_map
+            .get(module_id.as_str())
+            .ok_or_else(|| format!("Installed module {module_id} is missing from the registry"))?;
+    }
+
+    let ordered_module_ids = if installed_module_ids
+        .iter()
+        .any(|module_id| module_id != "civiccore")
+    {
+        let product_modules = installed_module_ids
+            .iter()
+            .filter(|module_id| module_id.as_str() != "civiccore")
+            .cloned()
+            .collect::<Vec<_>>();
+        resolve_custom_module_order(registry, &product_modules)?
+    } else {
+        vec!["civiccore".to_string()]
+    };
+    let installed: HashSet<&str> = ordered_module_ids.iter().map(String::as_str).collect();
+    let mut enabled_module_ids = enabled_module_ids
+        .into_iter()
+        .filter(|module_id| installed.contains(module_id.as_str()))
+        .collect::<Vec<_>>();
+    if !enabled_module_ids
+        .iter()
+        .any(|module_id| module_id == "civiccore")
+    {
+        enabled_module_ids.insert(0, "civiccore".to_string());
+    }
+    let mut seen_enabled = HashSet::new();
+    enabled_module_ids.retain(|module_id| seen_enabled.insert(module_id.clone()));
+
+    let (profile_id, profile_label) = registry
+        .profiles
+        .iter()
+        .find(|profile| !profile.disabled && profile.modules == ordered_module_ids)
+        .map(|profile| (profile.id.clone(), profile.label.clone()))
+        .unwrap_or_else(|| ("custom".to_string(), "Custom".to_string()));
+    let disabled_module_ids = registry
+        .modules
+        .iter()
+        .filter(|module| !installed.contains(module.id.as_str()))
+        .map(|module| module.id.clone())
+        .collect();
+    let selection = ModuleSelectionState {
+        profile_id,
+        profile_label,
+        installed_module_ids: ordered_module_ids,
+        disabled_module_ids,
+        enabled_module_ids,
+        last_updated_unix_seconds: now_unix_seconds(),
+    };
+    validate_enabled_modules(registry, &selection)?;
+    if selection.profile_id == "custom" {
+        validate_custom_selection(registry, &selection.installed_module_ids)?;
+    } else {
+        validate_profile(registry, &selection.profile_id)?;
+    }
+    Ok(selection)
+}
+
 fn selection_for_profile(
     registry: &ModuleRegistry,
     profile_id: &str,
@@ -676,6 +750,102 @@ pub fn set_module_enabled(module_id: &str, enabled: bool) -> Result<ModuleSelect
     Ok(selection)
 }
 
+pub fn set_module_installed(
+    module_id: &str,
+    installed: bool,
+) -> Result<ModuleSelectionState, String> {
+    let registry = parse_registry(MODULES_JSON)?;
+    let module_map = module_index(&registry);
+    let module = module_map
+        .get(module_id)
+        .ok_or_else(|| format!("Module {module_id} is missing from the registry"))?;
+    let selection = module_selection_state()?;
+    let currently_installed = selection
+        .installed_module_ids
+        .iter()
+        .any(|installed_id| installed_id == module_id);
+
+    if installed {
+        if currently_installed {
+            return Ok(selection);
+        }
+        if module.required || !module.selectable {
+            return Err(format!(
+                "Module {} is not available for Windows Local install yet.",
+                module.id
+            ));
+        }
+        validate_installable_module_contract(module)?;
+        let mut installed_module_ids = selection.installed_module_ids.clone();
+        installed_module_ids.push(module_id.to_string());
+        let mut enabled_module_ids = selection.enabled_module_ids.clone();
+        let product_modules = installed_module_ids
+            .iter()
+            .filter(|installed_id| installed_id.as_str() != "civiccore")
+            .cloned()
+            .collect::<Vec<_>>();
+        let ordered_module_ids = resolve_custom_module_order(&registry, &product_modules)?;
+        for installed_id in &ordered_module_ids {
+            if !selection
+                .installed_module_ids
+                .iter()
+                .any(|previous_id| previous_id == installed_id)
+            {
+                enabled_module_ids.push(installed_id.clone());
+            }
+        }
+        let next_selection = selection_from_installed_and_enabled(
+            &registry,
+            ordered_module_ids,
+            enabled_module_ids,
+        )?;
+        write_selection(&next_selection)?;
+        return Ok(next_selection);
+    }
+
+    if !currently_installed {
+        return Ok(selection);
+    }
+    if module.required {
+        return Err(format!("Required module {module_id} cannot be removed"));
+    }
+    for candidate in &registry.modules {
+        if candidate.id == module_id {
+            continue;
+        }
+        if selection
+            .installed_module_ids
+            .iter()
+            .any(|installed_id| installed_id == &candidate.id)
+            && candidate
+                .dependencies
+                .iter()
+                .any(|dependency| dependency == module_id)
+        {
+            return Err(format!(
+                "Remove dependent module {} before removing {module_id}",
+                candidate.id
+            ));
+        }
+    }
+    let installed_module_ids = selection
+        .installed_module_ids
+        .iter()
+        .filter(|installed_id| installed_id.as_str() != module_id)
+        .cloned()
+        .collect::<Vec<_>>();
+    let enabled_module_ids = selection
+        .enabled_module_ids
+        .iter()
+        .filter(|enabled_id| enabled_id.as_str() != module_id)
+        .cloned()
+        .collect::<Vec<_>>();
+    let next_selection =
+        selection_from_installed_and_enabled(&registry, installed_module_ids, enabled_module_ids)?;
+    write_selection(&next_selection)?;
+    Ok(next_selection)
+}
+
 pub fn module_profiles() -> Result<Vec<ModuleProfileSummary>, String> {
     let registry = parse_registry(MODULES_JSON)?;
     let selection = module_selection_state()?;
@@ -893,6 +1063,66 @@ mod tests {
             let core_error =
                 set_module_enabled("civiccore", false).expect_err("civiccore cannot be disabled");
             assert!(core_error.contains("Required module civiccore cannot be disabled"));
+        });
+    }
+
+    #[test]
+    fn product_modules_can_be_removed_and_reinstalled_without_data_deletion() {
+        with_temp_state_dir(|_| {
+            persist_profile_selection("city-core").expect("profile selection persists");
+            let removed =
+                set_module_installed("civiccode", false).expect("civiccode can be removed");
+            assert_eq!(removed.profile_id, "clerk-core");
+            assert!(!removed
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            assert!(!removed
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            assert!(removed
+                .disabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            let removed_modules = module_summaries().expect("summaries build");
+            assert!(removed_modules
+                .iter()
+                .any(|module| module.id == "civiccode" && !module.installed && !module.enabled));
+
+            let installed =
+                set_module_installed("civiccode", true).expect("civiccode can be reinstalled");
+            assert_eq!(installed.profile_id, "city-core");
+            assert!(installed
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+            assert!(installed
+                .enabled_module_ids
+                .iter()
+                .any(|module_id| module_id == "civiccode"));
+        });
+    }
+
+    #[test]
+    fn module_install_remove_respects_contract_boundaries() {
+        with_temp_state_dir(|_| {
+            persist_profile_selection("minimal").expect("minimal profile persists");
+            let planned = set_module_installed("civicregwatch", true)
+                .expect_err("planned module cannot be installed");
+            assert!(planned.contains("not available for Windows Local install"));
+
+            let required =
+                set_module_installed("civiccore", false).expect_err("civiccore cannot be removed");
+            assert!(required.contains("Required module civiccore cannot be removed"));
+
+            let installed =
+                set_module_installed("civicrecords-ai", true).expect("records can install");
+            assert_eq!(installed.profile_id, "custom");
+            assert!(installed
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civicrecords-ai"));
         });
     }
 
