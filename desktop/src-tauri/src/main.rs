@@ -98,8 +98,47 @@ fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
     module_registry::module_summaries()
 }
 
+fn access_is_local_admin(access: &AccessState) -> bool {
+    access.signed_in && access.role.as_deref() == Some("local-admin")
+}
+
+fn public_model_state(mut model: ModelState) -> ModelState {
+    model.artifact.local_path =
+        "Sign in as local administrator to view the model file path.".to_string();
+    model
+}
+
+fn public_runtime_health(mut health: Vec<RuntimeHealthItem>) -> Vec<RuntimeHealthItem> {
+    for item in &mut health {
+        item.admin_detail.clear();
+    }
+    health
+}
+
 #[tauri::command]
 fn get_app_state() -> Result<AppState, String> {
+    let access = auth::access_state()?;
+    let admin_signed_in = access_is_local_admin(&access);
+    let city_work = if admin_signed_in {
+        workflows::city_work_state()?
+    } else {
+        workflows::public_city_work_state()?
+    };
+    let users = if admin_signed_in {
+        first_run::saved_users()?
+    } else {
+        Vec::new()
+    };
+    let model = if admin_signed_in {
+        model::model_state()?
+    } else {
+        public_model_state(model::model_state()?)
+    };
+    let health = if admin_signed_in {
+        supervisor::runtime_health()?
+    } else {
+        public_runtime_health(supervisor::runtime_health()?)
+    };
     Ok(AppState {
         product_name: "CivicSuite",
         status_label: "Windows Local 1.0 desktop",
@@ -111,11 +150,11 @@ fn get_app_state() -> Result<AppState, String> {
         installer_steps: installer_steps(),
         first_run: first_run::first_run_state(&[])?,
         city_profile: first_run::saved_city_profile()?,
-        users: first_run::saved_users()?,
-        access: auth::access_state()?,
-        model: model::model_state()?,
-        health: supervisor::runtime_health()?,
-        city_work: workflows::city_work_state()?,
+        users,
+        access,
+        model,
+        health,
+        city_work,
     })
 }
 
@@ -161,7 +200,12 @@ fn supervisor_action(
 
 #[tauri::command]
 fn get_city_work_state() -> Result<CityWorkState, String> {
-    workflows::city_work_state()
+    let access = auth::access_state()?;
+    if access_is_local_admin(&access) {
+        workflows::city_work_state()
+    } else {
+        workflows::public_city_work_state()
+    }
 }
 
 #[tauri::command]
@@ -169,8 +213,33 @@ fn city_work_action(
     action: String,
     payload: Option<Value>,
 ) -> Result<CityWorkActionResult, String> {
-    auth::require_admin_session()?;
-    workflows::city_work_action(&action, payload.as_ref())
+    let mut payload = payload;
+    let access = auth::access_state()?;
+    let admin_signed_in = access_is_local_admin(&access);
+    let public_action = workflows::city_work_action_allows_public(&action);
+    if !admin_signed_in {
+        if !access.configured {
+            return Err(
+                "Finish first-run setup before public city workflows are available.".to_string(),
+            );
+        }
+        if !public_action {
+            auth::require_admin_session()?;
+        }
+        if action == "answer-code-question" {
+            let mut public_payload = payload.unwrap_or_else(|| serde_json::json!({}));
+            let Some(fields) = public_payload.as_object_mut() else {
+                return Err("Public code questions must use a JSON object payload.".to_string());
+            };
+            fields.insert("publicOnly".to_string(), Value::Bool(true));
+            payload = Some(public_payload);
+        }
+    }
+    let mut result = workflows::city_work_action(&action, payload.as_ref())?;
+    if !admin_signed_in && public_action {
+        result.state = workflows::city_work_public_projection(&result.state);
+    }
+    Ok(result)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -214,6 +283,24 @@ mod tests {
         env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
         let _ = fs::remove_dir_all(root);
         result
+    }
+
+    fn create_first_admin() {
+        let admin_payload = serde_json::json!({
+            "adminName": "Alex Clerk",
+            "adminEmail": "alex@example.gov",
+            "adminPasscode": "correct horse battery staple"
+        });
+        first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+            .expect("admin saved");
+    }
+
+    fn sign_in_as_first_admin() {
+        let sign_in_payload = serde_json::json!({
+            "email": "alex@example.gov",
+            "passcode": "correct horse battery staple"
+        });
+        auth::auth_action("sign-in", Some(&sign_in_payload)).expect("admin signed in");
     }
 
     #[test]
@@ -299,6 +386,7 @@ mod tests {
             });
             first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
                 .expect("admin saved");
+            sign_in_as_first_admin();
 
             let state = get_app_state().expect("app state");
 
@@ -338,6 +426,185 @@ mod tests {
             assert_eq!(state.city_work.meetings.len(), 0);
             assert_eq!(state.city_work.records_requests.len(), 0);
             assert_eq!(state.city_work.code_sources.len(), 0);
+        });
+    }
+
+    #[test]
+    fn unauthenticated_city_work_state_is_public_projection() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+
+            let meeting_payload = serde_json::json!({
+                "title": "Budget Work Session",
+                "meetingDate": "2026-07-02",
+                "summary": "Review draft budget priorities.",
+                "agendaTitle": "Budget priorities"
+            });
+            let meeting_result =
+                workflows::city_work_action("create-meeting", Some(&meeting_payload))
+                    .expect("meeting created");
+            let meeting_id = meeting_result.state.meetings[0].id.clone();
+            let minutes_payload = serde_json::json!({
+                "meetingId": meeting_id,
+                "minutes": "Private draft minutes with staff notes."
+            });
+            workflows::city_work_action("record-minutes", Some(&minutes_payload))
+                .expect("minutes saved");
+            let selected_meeting = serde_json::json!({ "meetingId": meeting_id });
+            workflows::city_work_action("post-notice", Some(&selected_meeting))
+                .expect("notice ready");
+            let public_comment = serde_json::json!({
+                "meetingId": meeting_id,
+                "commenterName": "Riley Resident",
+                "commenterContact": "riley@example.org",
+                "commentMode": "written",
+                "commentTopic": "Budget",
+                "commentBody": "Please protect park funding."
+            });
+            workflows::city_work_action("submit-public-comment", Some(&public_comment))
+                .expect("public comment saved");
+
+            let records_payload = serde_json::json!({
+                "requester": "Internal requester",
+                "summary": "Private staff records request",
+                "deadline": "2026-07-15"
+            });
+            workflows::city_work_action("create-records-request", Some(&records_payload))
+                .expect("records request saved");
+            let code_payload = serde_json::json!({
+                "title": "Draft Noise Ordinance",
+                "citation": "Draft 8.12",
+                "body": "Private draft ordinance text."
+            });
+            workflows::city_work_action("import-code-source", Some(&code_payload))
+                .expect("code source saved");
+            let private_packet_meeting = serde_json::json!({
+                "title": "Unposted Packet Draft",
+                "meetingDate": "2026-07-09",
+                "summary": "Packet export before public notice.",
+                "agendaTitle": "Private packet"
+            });
+            let private_packet_result =
+                workflows::city_work_action("create-meeting", Some(&private_packet_meeting))
+                    .expect("private packet meeting created");
+            let private_packet_id = private_packet_result.state.meetings[0].id.clone();
+            let private_packet_minutes = serde_json::json!({
+                "meetingId": private_packet_id,
+                "minutes": "Packet-only private minutes."
+            });
+            workflows::city_work_action("record-minutes", Some(&private_packet_minutes))
+                .expect("private packet minutes saved");
+            let private_packet_selection = serde_json::json!({ "meetingId": private_packet_id });
+            workflows::city_work_action("export-meeting-packet", Some(&private_packet_selection))
+                .expect("private packet exported");
+
+            let public_state = get_city_work_state().expect("public city work state");
+
+            assert_eq!(public_state.meetings.len(), 1);
+            assert_eq!(public_state.meetings[0].title, "Budget Work Session");
+            assert_eq!(public_state.meetings[0].minutes, "");
+            assert!(public_state.meetings[0].public_comments.is_empty());
+            assert!(public_state.records_requests.is_empty());
+            assert!(public_state.code_sources.is_empty());
+            assert!(public_state.code_handoffs.is_empty());
+            assert!(public_state.audit_entries.is_empty());
+            let public_app_state = get_app_state().expect("public app state");
+            assert!(public_app_state.users.is_empty());
+            assert_eq!(
+                public_app_state.model.artifact.local_path,
+                "Sign in as local administrator to view the model file path."
+            );
+            assert!(public_app_state
+                .health
+                .iter()
+                .all(|item| item.admin_detail.is_empty()));
+
+            sign_in_as_first_admin();
+            let staff_state = get_city_work_state().expect("staff city work state");
+
+            assert_eq!(
+                staff_state
+                    .meetings
+                    .iter()
+                    .find(|meeting| meeting.title == "Budget Work Session")
+                    .expect("budget meeting visible")
+                    .minutes,
+                "Private draft minutes with staff notes."
+            );
+            assert_eq!(
+                staff_state
+                    .meetings
+                    .iter()
+                    .find(|meeting| meeting.title == "Budget Work Session")
+                    .expect("budget meeting visible")
+                    .public_comments
+                    .len(),
+                1
+            );
+            assert!(staff_state
+                .meetings
+                .iter()
+                .any(|meeting| meeting.title == "Unposted Packet Draft"));
+            assert_eq!(staff_state.records_requests.len(), 1);
+            assert_eq!(staff_state.code_sources.len(), 1);
+            assert!(!staff_state.audit_entries.is_empty());
+        });
+    }
+
+    #[test]
+    fn public_city_work_actions_require_first_run_owner() {
+        with_clean_first_run_state(|_| {
+            let public_payload = serde_json::json!({
+                "requester": "Riley Resident",
+                "requesterContact": "riley@example.org",
+                "summary": "Please provide the current council packet."
+            });
+            let result = city_work_action(
+                "submit-public-records-request".to_string(),
+                Some(public_payload),
+            );
+
+            assert!(result.is_err());
+            assert!(result
+                .err()
+                .expect("setup error")
+                .contains("Finish first-run setup"));
+        });
+    }
+
+    #[test]
+    fn public_city_work_actions_do_not_require_admin_session() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+
+            let public_payload = serde_json::json!({
+                "requester": "Riley Resident",
+                "requesterContact": "riley@example.org",
+                "summary": "Please provide the current council packet."
+            });
+            let public_result = city_work_action(
+                "submit-public-records-request".to_string(),
+                Some(public_payload),
+            )
+            .expect("public request can be submitted without admin session");
+
+            assert!(public_result.accepted);
+            assert!(public_result.message.contains("Public records request"));
+            assert!(public_result.state.records_requests.is_empty());
+
+            let staff_payload = serde_json::json!({
+                "requester": "Staff-only",
+                "summary": "Internal request",
+                "deadline": "2026-07-01"
+            });
+            let staff_result =
+                city_work_action("create-records-request".to_string(), Some(staff_payload));
+
+            assert!(staff_result.is_err());
+            assert!(staff_result
+                .err()
+                .expect("staff error")
+                .contains("Sign in as the local administrator"));
         });
     }
 }

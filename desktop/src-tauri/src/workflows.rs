@@ -746,10 +746,8 @@ fn submit_public_comment(
     if meeting.archived_at_unix_seconds.is_some() || meeting.status == "archived public record" {
         return Err("This meeting is archived. Public comments are closed.".to_string());
     }
-    if meeting.notice_status != "public notice ready" && meeting.status != "packet exported" {
-        return Err(
-            "Public comments open only after the meeting notice or packet is posted.".to_string(),
-        );
+    if meeting.notice_status != "public notice ready" {
+        return Err("Public comments open only after the meeting notice is posted.".to_string());
     }
     let comment_id = new_id("comment", meeting.public_comments.len());
     meeting.public_comments.push(PublicComment {
@@ -1947,6 +1945,116 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
 
 pub fn city_work_state() -> Result<CityWorkState, String> {
     read_state()
+}
+
+fn public_comment_projection(comment: &PublicComment) -> Option<PublicComment> {
+    if comment.status != "reviewed for public record"
+        && comment.status != "redacted for public record"
+    {
+        return None;
+    }
+    let mut public_comment = comment.clone();
+    public_comment.commenter_contact.clear();
+    if public_comment.status == "redacted for public record"
+        && !public_comment.redacted_body.is_empty()
+    {
+        public_comment.body = public_comment.redacted_body.clone();
+    }
+    Some(public_comment)
+}
+
+fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
+    let is_public_notice = meeting.notice_status == "public notice ready";
+    let is_public_archive =
+        meeting.status == "archived public record" || meeting.archived_at_unix_seconds.is_some();
+    if !is_public_notice && !is_public_archive {
+        return None;
+    }
+    let mut public_meeting = meeting.clone();
+    public_meeting.public_comments = meeting
+        .public_comments
+        .iter()
+        .filter_map(public_comment_projection)
+        .collect();
+    if !is_public_archive {
+        public_meeting.minutes.clear();
+        public_meeting.votes.clear();
+        public_meeting.action_items.clear();
+        public_meeting.resident_comments.clear();
+        public_meeting.exports.clear();
+    }
+    Some(public_meeting)
+}
+
+fn public_records_request_projection(request: &RecordsRequest) -> Option<RecordsRequest> {
+    let is_released = request.status == "fulfilled"
+        || request.status == "closed"
+        || request.fulfilled_at_unix_seconds.is_some();
+    if !is_released {
+        return None;
+    }
+    let mut public_request = request.clone();
+    public_request.assigned_to.clear();
+    public_request.clarification_notes.clear();
+    public_request.search_notes.clear();
+    public_request.exemption_reviews.clear();
+    public_request.fee_estimate.clear();
+    public_request.response_draft.clear();
+    public_request.approval_notes.clear();
+    Some(public_request)
+}
+
+fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
+    if source.public_status != "published" {
+        return None;
+    }
+    let mut public_source = source.clone();
+    public_source.staff_guidance.clear();
+    public_source.codifier_sync_errors.clear();
+    public_source.amendment_notes.clear();
+    if public_source.guidance_approved_at_unix_seconds.is_none() {
+        public_source.plain_language_summary.clear();
+    }
+    Some(public_source)
+}
+
+pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkState {
+    CityWorkState {
+        meetings: state
+            .meetings
+            .iter()
+            .filter_map(public_meeting_projection)
+            .collect(),
+        records_requests: state
+            .records_requests
+            .iter()
+            .filter_map(public_records_request_projection)
+            .collect(),
+        code_sources: state
+            .code_sources
+            .iter()
+            .filter_map(public_code_source_projection)
+            .collect(),
+        code_handoffs: Vec::new(),
+        audit_entries: Vec::new(),
+        publication_events: state
+            .publication_events
+            .iter()
+            .filter(|event| event.retracted_at_unix_seconds.is_none())
+            .cloned()
+            .collect(),
+    }
+}
+
+pub fn public_city_work_state() -> Result<CityWorkState, String> {
+    read_state().map(|state| city_work_public_projection(&state))
+}
+
+pub(crate) fn city_work_action_allows_public(action: &str) -> bool {
+    matches!(
+        action,
+        "submit-public-comment" | "submit-public-records-request" | "answer-code-question"
+    )
 }
 
 pub fn city_work_action(

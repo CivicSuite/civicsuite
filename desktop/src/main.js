@@ -1300,7 +1300,6 @@ function isPublicReadableArea() {
 function publicMeetings(work) {
   return work.meetings.filter((meeting) => (
     meeting.notice_status === "public notice ready" ||
-    meeting.status === "packet exported" ||
     meeting.status === "archived public record" ||
     Boolean(meeting.archived_at_unix_seconds)
   ));
@@ -1312,7 +1311,6 @@ function publicCommentMeetings(work) {
     meeting.status !== "archived public record" &&
     (
       meeting.notice_status === "public notice ready" ||
-      meeting.status === "packet exported" ||
       meeting.status === "public comments received"
     )
   ));
