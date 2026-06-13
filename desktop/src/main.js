@@ -938,6 +938,10 @@ function publicRecordsRequests(work) {
   return work.records_requests.filter((request) => request.status === "exported");
 }
 
+function publicCodeSources(work) {
+  return work.code_sources.filter((source) => source.public_status === "published");
+}
+
 function renderPublicRecordsWorkflow() {
   const requests = publicRecordsRequests(cityWork());
   return `
@@ -1001,7 +1005,7 @@ function renderRecordsWorkflow() {
 }
 
 function renderPublicCodeWorkflow() {
-  const work = cityWork();
+  const sources = publicCodeSources(cityWork());
   return `
     <section class="page-heading">
       <p class="eyebrow">Resident/Public</p>
@@ -1009,12 +1013,12 @@ function renderPublicCodeWorkflow() {
       <p>Published code sources appear with citations. Staff handoffs and draft guidance stay in the Staff surface.</p>
     </section>
     <section class="workflow-list">
-      ${work.code_sources.length === 0 ? workflowEmpty("No municipal code sources have been published locally yet.") : work.code_sources.map((source) => `
+      ${sources.length === 0 ? workflowEmpty("No published municipal code sources are available yet.") : sources.map((source) => `
         <article class="workflow-record">
-          <span class="status-ok">${source.status}</span>
+          <span class="status-ok">${source.public_status}</span>
           <h3>${source.title}</h3>
           <p>${source.body}</p>
-          <small>${source.citation}</small>
+          <small>${source.citation} - ${source.public_exports?.length || 0} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -1036,7 +1040,11 @@ function renderCodeWorkflow() {
         <label>Source title <input type="text" data-work-field="codeTitle" value="${state.workDraft.codeTitle}" /></label>
         <label>Citation <input type="text" data-work-field="codeCitation" value="${state.workDraft.codeCitation}" /></label>
         <label>Source text <textarea data-work-field="codeBody">${state.workDraft.codeBody}</textarea></label>
-        <button type="button" class="primary-action" data-work-action="import-code-source">Import Source</button>
+        <div class="workflow-actions">
+          <button type="button" class="primary-action" data-work-action="import-code-source">Import Source</button>
+          <button type="button" class="secondary-action" data-work-action="publish-code-source">Publish Source</button>
+          <button type="button" class="secondary-action" data-work-action="unpublish-code-source">Unpublish Source</button>
+        </div>
       </div>
       <div class="workflow-form">
         <h3>Clerk Handoff</h3>
@@ -1051,7 +1059,7 @@ function renderCodeWorkflow() {
           <span class="status-ok">${source.status}</span>
           <h3>${source.title}</h3>
           <p>${source.body}</p>
-          <small>${source.citation}</small>
+          <small>${source.citation} - ${source.public_status || "internal draft"} - ${source.public_exports?.length || 0} public exports</small>
         </article>
       `).join("")}
       ${work.code_handoffs.map((handoff) => `
@@ -1082,7 +1090,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       results.push({ module_id: "civicrecords-ai", title: `Records request: ${request.requester}`, snippet: request.summary, citation: request.citations[0] || "Local records request", status: request.status });
     }
   });
-  work.code_sources.forEach((source) => {
+  const codeSources = publicOnly ? publicCodeSources(work) : work.code_sources;
+  codeSources.forEach((source) => {
     if ([source.title, source.citation, source.body].some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civiccode", title: source.title, snippet: source.body, citation: source.citation, status: source.status });
     }
@@ -1540,6 +1549,8 @@ function workPayloadForAction(action) {
       citation: draft.codeCitation,
       body: draft.codeBody
     },
+    "publish-code-source": {},
+    "unpublish-code-source": {},
     "create-code-handoff": { summary: draft.handoffSummary },
     "search-city-knowledge": { query: draft.searchQuery }
   };

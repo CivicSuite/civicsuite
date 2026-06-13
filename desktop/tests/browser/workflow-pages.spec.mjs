@@ -20,6 +20,8 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Import Source" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toBeVisible();
 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();
@@ -48,6 +50,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Municipal Code Search" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Import Source" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();

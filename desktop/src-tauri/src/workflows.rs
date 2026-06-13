@@ -51,6 +51,12 @@ pub struct CodeSource {
     pub citation: String,
     pub body: String,
     pub status: String,
+    #[serde(default = "default_code_public_status")]
+    pub public_status: String,
+    #[serde(default)]
+    pub public_exports: Vec<String>,
+    #[serde(default)]
+    pub published_at_unix_seconds: Option<u64>,
     pub created_at_unix_seconds: u64,
 }
 
@@ -138,6 +144,10 @@ fn now_unix_seconds() -> u64 {
 
 fn new_id(prefix: &str, count: usize) -> String {
     format!("{prefix}-{}-{}", now_unix_seconds(), count + 1)
+}
+
+fn default_code_public_status() -> String {
+    "internal draft".to_string()
 }
 
 fn read_state() -> Result<CityWorkState, String> {
@@ -580,6 +590,9 @@ fn import_code_source(
             citation,
             body,
             status: "imported".to_string(),
+            public_status: default_code_public_status(),
+            public_exports: Vec::new(),
+            published_at_unix_seconds: None,
             created_at_unix_seconds: now_unix_seconds(),
         },
     );
@@ -590,6 +603,53 @@ fn import_code_source(
         format!("Imported code source: {title}"),
     );
     Ok("Municipal code source imported locally with citation.".to_string())
+}
+
+fn first_code_source_mut(state: &mut CityWorkState) -> Result<&mut CodeSource, String> {
+    state
+        .code_sources
+        .first_mut()
+        .ok_or_else(|| "Import a code source before changing its public status.".to_string())
+}
+
+fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
+    let (title, citation, export_path) = {
+        let source = first_code_source_mut(state)?;
+        let contents = format!(
+            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\n\n{}\n",
+            source.title, source.citation, source.status, source.body
+        );
+        let export_path = write_export_file("code", &source.title, &contents)?;
+        source.public_status = "published".to_string();
+        source.public_exports.push(export_path.clone());
+        source.published_at_unix_seconds = Some(now_unix_seconds());
+        (source.title.clone(), source.citation.clone(), export_path)
+    };
+    push_audit(
+        state,
+        "civiccode",
+        "publish-code-source",
+        format!("Published code source {citation}: {export_path}"),
+    );
+    Ok(format!("{title} is published for Resident/Public search."))
+}
+
+fn unpublish_code_source(state: &mut CityWorkState) -> Result<String, String> {
+    let (title, citation) = {
+        let source = first_code_source_mut(state)?;
+        source.public_status = default_code_public_status();
+        source.published_at_unix_seconds = None;
+        (source.title.clone(), source.citation.clone())
+    };
+    push_audit(
+        state,
+        "civiccode",
+        "unpublish-code-source",
+        format!("Returned code source {citation} to internal draft."),
+    );
+    Ok(format!(
+        "{title} is no longer visible in Resident/Public search."
+    ))
 }
 
 fn create_code_handoff(
@@ -710,6 +770,8 @@ pub fn city_work_action(
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "export-records-response" => export_records_response(&mut state)?,
         "import-code-source" => import_code_source(&mut state, payload)?,
+        "publish-code-source" => publish_code_source(&mut state)?,
+        "unpublish-code-source" => unpublish_code_source(&mut state)?,
         "create-code-handoff" => create_code_handoff(&mut state, payload)?,
         "search-city-knowledge" => {
             let query = payload_string(payload, "query")?;
@@ -840,12 +902,43 @@ mod tests {
                 "body": "Quiet hours begin at 10 PM."
             });
             city_work_action("import-code-source", Some(&payload)).expect("source imported");
+            city_work_action("publish-code-source", None).expect("source published");
             city_work_action("create-code-handoff", None).expect("handoff created");
             let state = city_work_state().expect("state reads");
+            let source = state.code_sources.first().expect("source exists");
+            assert_eq!(source.public_status, "published");
+            assert_eq!(source.public_exports.len(), 1);
+            assert!(source.published_at_unix_seconds.is_some());
+            assert!(PathBuf::from(&source.public_exports[0]).is_file());
             assert_eq!(state.code_handoffs.len(), 1);
             let results = search_city_work(&state, "quiet hours");
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].citation, "CMC 8.12");
+        });
+    }
+
+    #[test]
+    fn code_publication_can_be_retracted() {
+        with_temp_state_dir(|_| {
+            let payload = serde_json::json!({
+                "title": "Noise Ordinance",
+                "citation": "CMC 8.12",
+                "body": "Quiet hours begin at 10 PM."
+            });
+            city_work_action("import-code-source", Some(&payload)).expect("source imported");
+            city_work_action("publish-code-source", None).expect("source published");
+            city_work_action("unpublish-code-source", None).expect("source unpublished");
+
+            let state = city_work_state().expect("state reads");
+            let source = state.code_sources.first().expect("source exists");
+            assert_eq!(source.public_status, "internal draft");
+            assert!(source.published_at_unix_seconds.is_none());
+            assert_eq!(source.public_exports.len(), 1);
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "unpublish-code-source"));
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 
