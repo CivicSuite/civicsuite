@@ -13,18 +13,19 @@ non-technical installer, Gemma 4 12B quantization-aware local model path,
 CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
 contract that lets future modules plug into the existing app one at a time.
 
-Current working slice: Gemma 4 12B quantization-aware model download/readiness
-path.
+Current working slice: CivicCore local platform completion for auth, audit,
+module registry, model registry, queue, health, backup/restore, and installer
+APIs.
 
 Definition of Done for this slice:
 
-- Pinned Gemma 4 12B quantization-aware model metadata and checksum
-  requirements are defined for the Windows local profile.
-- Desktop model state shows download/readiness/blocking state without silent
-  network or host mutation.
-- Setup and health copy remain local-only and plain-English when the model is
-  unavailable.
-- Tests cover model metadata validation, readiness state, and setup copy.
+- CivicCore local platform contracts and implementation surface are aligned
+  with the Windows desktop profile.
+- Auth/RBAC, audit chain, module registry, model registry, task queue, health,
+  backup/restore, and installer/runtime APIs have automated local contract
+  coverage.
+- Desktop and installer paths use real CivicCore contracts where implementation
+  exists and keep blocked states clear where native execution is not yet wired.
 - audit-lite runs for this slice and findings are fixed before push.
 
 Closed Windows Local slices:
@@ -47,6 +48,11 @@ Closed Windows Local slices:
   Evidence: `desktop/runtime/windows-first-run.json`,
   `desktop/src-tauri/src/first_run.rs`, Home/System Health setup rendering, and
   `docs/process/audits/audit-lite-windows-first-run-setup-2026-06-13.md`.
+- Gemma 4 12B quantization-aware model metadata and readiness path.
+  Evidence: `desktop/runtime/gemma4-model.json`,
+  `desktop/src-tauri/src/model.rs`, Home/System Health model readiness
+  rendering, Playwright browser checks, and
+  `docs/process/audits/audit-lite-windows-model-readiness-2026-06-13.md`.
 
 Stop conditions:
 

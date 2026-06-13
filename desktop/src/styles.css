@@ -44,7 +44,8 @@ main:focus-visible {
 .workflow-step h3,
 .first-run-step h3,
 .module-row h3,
-.health-card h3 {
+.health-card h3,
+.readiness-item h4 {
   margin: 0;
 }
 
@@ -182,6 +183,7 @@ main {
 .task-card p,
 .workflow-step p,
 .first-run-step p,
+.readiness-item p,
 .module-row p,
 .health-card p,
 .section-title p {
@@ -232,6 +234,10 @@ main {
   margin-bottom: 18px;
 }
 
+.model-panel {
+  border-left: 4px solid #1e5f74;
+}
+
 .location-grid {
   display: grid;
   gap: 10px;
@@ -261,7 +267,57 @@ main {
   overflow-wrap: anywhere;
 }
 
+.model-meta-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.model-meta-grid div,
+.model-source {
+  background: #f5f8fa;
+  border: 1px solid #dbe4ea;
+  border-radius: 6px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.model-meta-grid span,
+.model-source span {
+  color: #6b7885;
+  display: block;
+  font-size: 0.78rem;
+}
+
+.model-meta-grid strong,
+.model-source strong {
+  display: block;
+  font-size: 0.86rem;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.model-source {
+  margin-bottom: 12px;
+}
+
+.model-source small,
+.readiness-item small {
+  color: #6b7885;
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
 .first-run-list {
+  display: grid;
+  gap: 8px;
+}
+
+.readiness-list {
   display: grid;
   gap: 8px;
 }
@@ -271,6 +327,17 @@ main {
   gap: 12px;
   grid-template-columns: 38px minmax(0, 1fr);
   padding: 14px;
+}
+
+.readiness-item {
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid #dbe4ea;
+  border-radius: 6px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 12px;
 }
 
 .first-run-step.current {
@@ -436,6 +503,7 @@ main {
   .module-columns,
   .health-grid,
   .location-grid,
+  .model-meta-grid,
   .module-list.compact {
     grid-template-columns: 1fr;
   }

@@ -9,6 +9,7 @@ const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "ut
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
 const firstRunManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-first-run.json"), "utf8"));
+const modelManifest = JSON.parse(readFileSync(join(root, "runtime", "gemma4-model.json"), "utf8"));
 
 const requiredUiPhrases = [
   "Meetings & Notices",
@@ -20,7 +21,11 @@ const requiredUiPhrases = [
   "module manager",
   "Windows SmartScreen explanation",
   "First admin user",
-  "repair, backup, and uninstall"
+  "repair, backup, and uninstall",
+  "Gemma 4 12B QAT Q4_0",
+  "Checksum required",
+  "No silent download",
+  "Official Google weights"
 ];
 
 for (const phrase of requiredUiPhrases) {
@@ -43,6 +48,10 @@ if (!rustMain.includes('include_str!("../../../installer/modules.json")')) {
   throw new Error("desktop shell must read the suite module registry at compile time");
 }
 
+if (!rustMain.includes('mod model;') || !rustMain.includes('get_model_state')) {
+  throw new Error("desktop shell must expose model readiness state");
+}
+
 if (runtimeManifest.local_only !== true) {
   throw new Error("Windows runtime manifest must default to local-only");
 }
@@ -53,6 +62,9 @@ for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   }
   if (firstRunManifest.operator_path[key] !== false) {
     throw new Error(`Windows first-run operator path cannot require ${key}`);
+  }
+  if (modelManifest.operator_path[key] !== false) {
+    throw new Error(`Windows model operator path cannot require ${key}`);
   }
 }
 
@@ -77,6 +89,36 @@ for (const stepId of ["unsigned-beta", "smartscreen", "locations", "modules", "m
 for (const action of ["review", "choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"]) {
   if (!firstRunManifest.actions.includes(action)) {
     throw new Error(`Windows first-run manifest missing action: ${action}`);
+  }
+}
+
+if (modelManifest.local_only !== true) {
+  throw new Error("Windows model manifest must default to local-only");
+}
+
+if (modelManifest.model.id !== "gemma-4-12b-it-qat-q4_0") {
+  throw new Error("Windows model manifest must pin Gemma 4 12B QAT Q4_0");
+}
+
+if (modelManifest.model.format !== "GGUF" || !modelManifest.model.quantization.includes("QAT")) {
+  throw new Error("Windows model manifest must pin QAT GGUF weights");
+}
+
+if (modelManifest.model.artifact.file_name !== "gemma-4-12b-it-qat-q4_0.gguf") {
+  throw new Error("Windows model manifest must pin the expected GGUF file");
+}
+
+if (!modelManifest.model.artifact.checksum_required || !/^[a-f0-9]{64}$/i.test(modelManifest.model.artifact.sha256)) {
+  throw new Error("Windows model manifest must require a SHA-256 checksum");
+}
+
+if (modelManifest.download.automatic || !modelManifest.download.resumable || !modelManifest.download.requires_user_consent) {
+  throw new Error("Windows model download must be explicit, resumable, and consent-gated");
+}
+
+for (const checkId of ["metadata", "artifact-file", "checksum", "runtime", "registered-model"]) {
+  if (!modelManifest.readiness_checks.some((check) => check.id === checkId && check.required)) {
+    throw new Error(`Windows model manifest missing readiness check: ${checkId}`);
   }
 }
 

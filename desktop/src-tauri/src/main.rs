@@ -1,7 +1,9 @@
 mod first_run;
+mod model;
 mod supervisor;
 
 use first_run::{FirstRunActionResult, FirstRunState};
+use model::{ModelActionResult, ModelState};
 use serde::Serialize;
 use serde_json::Value;
 use supervisor::{RuntimeHealthItem, SupervisorActionResult};
@@ -35,6 +37,7 @@ struct AppState {
     modules: Vec<ModuleSummary>,
     installer_steps: Vec<&'static str>,
     first_run: FirstRunState,
+    model: ModelState,
     health: Vec<RuntimeHealthItem>,
 }
 
@@ -150,8 +153,19 @@ fn get_app_state() -> Result<AppState, String> {
         modules: module_summaries()?,
         installer_steps: installer_steps(),
         first_run: first_run::first_run_state(&[])?,
+        model: model::model_state()?,
         health: supervisor::runtime_health()?,
     })
+}
+
+#[tauri::command]
+fn get_model_state() -> Result<ModelState, String> {
+    model::model_state()
+}
+
+#[tauri::command]
+fn model_action(action: String) -> Result<ModelActionResult, String> {
+    model::model_action(&action)
 }
 
 #[tauri::command]
@@ -180,6 +194,8 @@ pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             get_app_state,
+            get_model_state,
+            model_action,
             preview_first_run_state,
             first_run_action,
             supervisor_action
@@ -227,6 +243,19 @@ mod tests {
         assert!(state.health.iter().any(|item| item.id == "desktop-shell"));
         assert!(state.health.iter().any(|item| item.id == "postgres"));
         assert!(state.health.iter().any(|item| item.id == "model-runtime"));
+    }
+
+    #[test]
+    fn app_state_reports_model_readiness_contract() {
+        let state = get_app_state().expect("app state builds");
+        assert_eq!(state.model.display_name, "Gemma 4 12B QAT Q4_0");
+        assert_eq!(state.model.status, "Needs download");
+        assert!(state.model.artifact.checksum_required);
+        assert!(state
+            .model
+            .checks
+            .iter()
+            .any(|check| check.id == "checksum" && !check.ok));
     }
 
     #[test]

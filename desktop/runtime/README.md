@@ -13,6 +13,12 @@ SmartScreen guidance, local paths, module selection, model download, city
 profile, first admin, backup, health, repair, and uninstall steps testable
 before the native installer executor mutates host state.
 
+`gemma4-model.json` is the pinned local model contract for the Windows Local
+1.0 profile. It identifies the official Gemma 4 12B QAT Q4_0 GGUF source,
+Ollama runtime id, expected file size, required SHA-256 checksum, resumable
+consent-gated download policy, and readiness checks that must pass before AI
+workflows are enabled.
+
 Current state:
 
 - The manifest defines the local services the supervisor will own.
@@ -22,3 +28,6 @@ Current state:
   process start/stop code is connected to real binaries.
 - First-run steps are declared now so the desktop shell renders setup from
   structured state instead of static copy.
+- Model readiness is declared now so the desktop shell can show blocked,
+  checksum-required local model state without silently starting a network
+  download.

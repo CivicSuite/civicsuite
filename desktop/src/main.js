@@ -162,6 +162,84 @@ const fallbackState = {
       }
     ]
   },
+  model: {
+    profile: "windows-local-1.0",
+    local_only: true,
+    ready: false,
+    status: "Needs download",
+    display_name: "Gemma 4 12B QAT Q4_0",
+    model_id: "gemma-4-12b-it-qat-q4_0",
+    provider: "Google",
+    source_repo: "google/gemma-4-12B-it-qat-q4_0-gguf",
+    source_url: "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf",
+    resolve_url: "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf",
+    documentation_url: "https://ai.google.dev/gemma/docs/core",
+    license: "Apache-2.0",
+    runtime: "ollama",
+    ollama_model: "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+    format: "GGUF",
+    quantization: "QAT Q4_0",
+    parameters: "12B",
+    context_window_tokens: 256000,
+    approximate_weight_memory_gb: 6.7,
+    download_size_bytes: 6975877728,
+    download_resumable: true,
+    download_requires_consent: true,
+    download_policy: "Explicit model setup only",
+    minimum_free_disk_bytes: 15000000000,
+    artifact: {
+      file_name: "gemma-4-12b-it-qat-q4_0.gguf",
+      local_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+      expected_size_bytes: 6975877728,
+      expected_sha256: "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+      checksum_required: true,
+      checksum_source: "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-q4_0-gguf?blobs=true",
+      etag_blob_id: "2bf67e31a647c65d7037e38fd6e42fd6319da4bc"
+    },
+    checks: [
+      {
+        id: "metadata",
+        label: "Pinned model metadata",
+        ok: true,
+        status: "OK",
+        message: "Gemma 4 12B QAT Q4_0 is pinned with official source metadata and checksum requirements.",
+        next_action: "Keep this pinned model contract with the Windows Local 1.0 installer."
+      },
+      {
+        id: "artifact-file",
+        label: "Local model file",
+        ok: false,
+        status: "Needs download",
+        message: "The pinned GGUF file is not present with the expected size on this machine yet.",
+        next_action: "Download the pinned GGUF file during first-run setup."
+      },
+      {
+        id: "checksum",
+        label: "Checksum verification",
+        ok: false,
+        status: "Needs verification",
+        message: "The model must match the pinned SHA-256 before AI workflows can run.",
+        next_action: "Verify the local file against the pinned SHA-256 before enabling AI workflows."
+      },
+      {
+        id: "runtime",
+        label: "Local model runtime",
+        ok: false,
+        status: "Needs setup",
+        message: "The bundled local model runtime has not been started by the installer yet.",
+        next_action: "Start the bundled Ollama runtime after the portable runtime is installed."
+      },
+      {
+        id: "registered-model",
+        label: "CivicCore model registry",
+        ok: false,
+        status: "Needs setup",
+        message: "CivicCore has not registered this verified local model yet.",
+        next_action: "Register the verified model with CivicCore before staff workflows use it."
+      }
+    ],
+    next_action: "Use first-run setup to download, resume, and verify the pinned local model."
+  },
   health: [
     {
       id: "desktop-shell",
@@ -205,6 +283,9 @@ function byId(id) {
 }
 
 async function loadAppState() {
+  if (!("__TAURI_INTERNALS__" in window)) {
+    return;
+  }
   try {
     state.app = await invoke("get_app_state");
   } catch (error) {
@@ -223,6 +304,11 @@ function moduleStatusClass(module) {
   if (module.required || module.installed) return "status-ok";
   if (module.selectable) return "status-warn";
   return "status-muted";
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return "Unknown size";
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
 }
 
 function renderTopbar() {
@@ -278,6 +364,7 @@ function renderHome() {
       <p>Start with the task, not the module. City-core workflows stay local on this machine.</p>
     </section>
     ${renderFirstRunWizard()}
+    ${renderModelReadiness({ compact: true })}
     <section class="task-grid" aria-label="Primary work areas">
       ${state.app.navigation.filter((item) => item.id !== "home" && item.id !== "settings").slice(0, 5).map((item) => `
         <article class="task-card">
@@ -355,6 +442,61 @@ function renderFirstRunWizard({ compact = false } = {}) {
       </div>
       ${compact && firstRun.steps.length > steps.length ? `
         <button type="button" class="text-link" data-area="health">View all setup and health steps</button>
+      ` : ""}
+    </section>
+  `;
+}
+
+function renderModelReadiness({ compact = false } = {}) {
+  const model = state.app.model;
+  if (!model) return "";
+  const checks = compact ? model.checks.slice(0, 3) : model.checks;
+  return `
+    <section class="section-band model-panel" aria-label="Local AI model readiness">
+      <div class="section-title">
+        <p class="eyebrow">Local AI model</p>
+        <h3>${model.display_name}</h3>
+        <p>Official Google weights are pinned for local-only use. No silent download starts from this screen.</p>
+      </div>
+      <div class="model-meta-grid">
+        <div>
+          <span>Status</span>
+          <strong class="${model.ready ? "status-ok" : "status-warn"}">${model.status}</strong>
+        </div>
+        <div>
+          <span>Download</span>
+          <strong>${formatBytes(model.download_size_bytes)} resumable</strong>
+        </div>
+        <div>
+          <span>Runtime id</span>
+          <strong>${model.ollama_model}</strong>
+        </div>
+        <div>
+          <span>Checksum required</span>
+          <strong>${model.artifact.expected_sha256}</strong>
+        </div>
+      </div>
+      <div class="model-source">
+        <span>${model.provider} source</span>
+        <strong>${model.source_repo}</strong>
+        <small>${model.download_policy}; explicit setup consent required.</small>
+        <small>Checksum source: ${model.artifact.checksum_source}</small>
+        <small>Local path: ${model.artifact.local_path}</small>
+      </div>
+      <div class="readiness-list">
+        ${checks.map((check) => `
+          <article class="readiness-item">
+            <span class="${check.ok ? "status-ok" : "status-warn"}">${check.status}</span>
+            <div>
+              <h4>${check.label}</h4>
+              <p>${check.message}</p>
+              ${check.next_action ? `<small>${check.next_action}</small>` : ""}
+            </div>
+          </article>
+        `).join("")}
+      </div>
+      ${compact && model.checks.length > checks.length ? `
+        <button type="button" class="text-link" data-area="health">View full model readiness</button>
       ` : ""}
     </section>
   `;
@@ -440,6 +582,7 @@ function renderHealth() {
       <h2>System Health</h2>
       <p>Plain-English local health first. Technical logs stay behind repair detail screens.</p>
     </section>
+    ${renderModelReadiness()}
     <section class="health-grid">
       ${state.app.health.map((item) => `
         <article class="health-card">

@@ -12,7 +12,8 @@ active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
 portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
 UX, city-core module completion, and future module package foundation.
 
-Current slice: Gemma 4 12B quantization-aware model download/readiness path.
+Current slice: CivicCore local platform completion for auth, audit, module
+registry, model registry, queue, health, backup/restore, and installer APIs.
 
 Closed Windows Local slices:
 
@@ -34,21 +35,25 @@ Closed Windows Local slices:
   Evidence: `desktop/runtime/windows-first-run.json`,
   `desktop/src-tauri/src/first_run.rs`, Home/System Health setup rendering, and
   `docs/process/audits/audit-lite-windows-first-run-setup-2026-06-13.md`.
+- Gemma 4 12B quantization-aware model metadata and readiness path.
+  Evidence: `desktop/runtime/gemma4-model.json`,
+  `desktop/src-tauri/src/model.rs`, Home/System Health model readiness
+  rendering, Playwright browser checks, and
+  `docs/process/audits/audit-lite-windows-model-readiness-2026-06-13.md`.
 
 Slice Definition of Done:
 
-- Define pinned Gemma 4 12B quantization-aware model metadata and checksum
-  requirements for the Windows local profile.
-- Add local model download/readiness state to the desktop shell without
-  starting a network download silently.
-- Keep fallback/blocking UI honest when the model is unavailable.
-- Add tests for model metadata validation, readiness state, and setup copy.
+- Complete CivicCore local platform contracts and implementation surface needed
+  by the Windows desktop profile.
+- Cover auth/RBAC, audit chain, module registry, model registry, task queue,
+  health, backup/restore, and installer/runtime APIs.
+- Ensure the desktop and installer path call real CivicCore contracts instead
+  of duplicated local-only placeholders where implementation exists.
+- Add automated tests for the local platform contracts and blocked/ready states.
 - Run audit-lite and fix all slice findings.
 
-Next slices after this model-readiness foundation:
+Next slices after this CivicCore local platform foundation:
 
-6. CivicCore local platform completion for auth, audit, module registry, model
-   registry, queue, health, backup/restore, and installer APIs.
 7. CivicRecords AI Windows local persistence and workflow closure.
 8. CivicClerk persistence and public-meeting workflow closure.
 9. CivicCode local integration and handoff workflow closure.
