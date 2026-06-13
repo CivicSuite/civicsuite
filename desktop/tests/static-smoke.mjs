@@ -314,6 +314,8 @@ for (const phrase of [
 for (const phrase of [
   "renderGuidedModuleReview",
   "Review Before Removing",
+  "Creates a verified local profile backup",
+  "Writes a backup manifest before updating the local module-selection record",
   "Existing module data is not deleted.",
   "data-module-review-confirm",
   "Open Exports",

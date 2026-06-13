@@ -211,6 +211,11 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("button", { name: "Open Exports CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Check Update CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Remove From Profile CivicCode" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove From Profile CivicCode" }).click();
+  const removeReview = page.locator(".guided-review").filter({ hasText: "Review Before Removing CivicCode From Profile" });
+  await expect(removeReview.getByText("Creates a verified local profile backup")).toBeVisible();
+  await expect(removeReview.getByText("Writes a backup manifest before updating the local module-selection record")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Disable CivicCode" }).click();
   const moduleReview = page.locator(".guided-review").filter({ hasText: "Review Before Disabling CivicCode" });
   await expect(moduleReview.getByRole("heading", { name: "Review Before Disabling CivicCode" })).toBeVisible();

@@ -387,11 +387,20 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
         .iter()
         .any(|installed_id| installed_id == &module_id);
     let display_name = module_display_name(&module_id);
+    let mut removal_backup_message = None;
     let selection = match action.as_str() {
         "enable-module" => module_registry::set_module_enabled(&module_id, true)?,
         "disable-module" => module_registry::set_module_enabled(&module_id, false)?,
         "install-module" => module_registry::set_module_installed(&module_id, true)?,
-        "remove-module" => module_registry::set_module_installed(&module_id, false)?,
+        "remove-module" => {
+            if was_installed {
+                let backup = supervisor::supervisor_action("backup", None)?;
+                removal_backup_message = Some(backup.message);
+                module_registry::set_module_installed(&module_id, false)?
+            } else {
+                previous_selection
+            }
+        }
         "update-module" => previous_selection,
         "open-module-exports" => {
             if !was_installed {
@@ -447,7 +456,12 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
         ),
         "remove-module" => (
             "Module removed",
-            format!("{display_name} is removed from the active local profile. Existing module data was not deleted and remains covered by profile backup/restore."),
+            format!(
+                "{display_name} is removed from the active local profile after a verified profile backup. Existing module data was not deleted and remains covered by profile backup/restore. {}",
+                removal_backup_message
+                    .as_deref()
+                    .unwrap_or("The profile backup completed before removal.")
+            ),
             "Install the module again if staff need this work area.",
         ),
         "update-module" => (
@@ -747,12 +761,23 @@ mod tests {
             let removed = module_action("remove-module".to_string(), "civiccode".to_string())
                 .expect("module remove allowed");
             assert_eq!(removed.status, "Module removed");
+            assert!(removed.message.contains("verified profile backup"));
             assert!(removed.message.contains("was not deleted"));
             assert!(!removed
                 .selection
                 .installed_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+            let backup_count = fs::read_dir(root.join("Backups"))
+                .expect("backup root exists")
+                .filter(|entry| {
+                    entry
+                        .as_ref()
+                        .map(|entry| entry.path().join("backup-manifest.json").is_file())
+                        .unwrap_or(false)
+                })
+                .count();
+            assert_eq!(backup_count, 1);
 
             let removed_exports =
                 module_action("open-module-exports".to_string(), "civiccode".to_string());

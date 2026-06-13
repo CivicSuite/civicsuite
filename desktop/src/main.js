@@ -2497,10 +2497,10 @@ function guidedModuleReviewForAction(action, moduleId) {
       title: `Review Before Removing ${moduleName} From Profile`,
       confirmLabel: "Remove From Profile",
       status: "Profile removal requested",
-      changes: "Removes this module from the active local profile and hides its work area. Existing module data is not deleted.",
+      changes: "Creates a verified local profile backup, removes this module from the active profile, and hides its work area. Existing module data is not deleted.",
       visibility: "Local administrator only. Staff will not see this module until it is installed again.",
-      audit: "Updates the local module-selection record; preserved module data remains covered by profile backup and restore.",
-      retry: "If another installed module depends on it, CivicSuite reports that dependency before changing the profile."
+      audit: "Writes a backup manifest before updating the local module-selection record; preserved module data remains covered by profile backup and restore.",
+      retry: "If backup creation fails or another installed module depends on it, CivicSuite reports the issue before changing the profile."
     }
   };
   const review = reviews[action];
