@@ -215,6 +215,101 @@ main {
   gap: 0;
 }
 
+.workflow-editor {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.workflow-editor.single {
+  grid-template-columns: minmax(0, 680px);
+}
+
+.workflow-form,
+.workflow-record {
+  background: #ffffff;
+  border: 1px solid #d7e0e7;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(31, 45, 55, 0.06);
+  min-width: 0;
+  padding: 16px;
+}
+
+.workflow-form {
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-form h3,
+.workflow-record h3 {
+  margin: 0;
+}
+
+.workflow-form label {
+  color: #4b5b67;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.workflow-form input,
+.workflow-form textarea {
+  border: 1px solid #c8d5de;
+  border-radius: 5px;
+  color: #1d252d;
+  display: block;
+  font: inherit;
+  margin-top: 4px;
+  min-height: 38px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.workflow-form textarea {
+  min-height: 94px;
+  resize: vertical;
+}
+
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-list {
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-record {
+  display: grid;
+  gap: 6px;
+}
+
+.workflow-record p,
+.empty-note {
+  color: #536575;
+  margin: 0;
+}
+
+.workflow-record small {
+  color: #6b7885;
+  display: block;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.workflow-record.handoff {
+  border-left: 4px solid #d8a42b;
+}
+
+.empty-note {
+  background: #ffffff;
+  border: 1px dashed #b8c8d3;
+  border-radius: 8px;
+  padding: 16px;
+}
+
 .workflow-step {
   align-items: center;
   border-bottom: 1px solid #e3e9ee;
@@ -590,6 +685,8 @@ main {
 
   .layout,
   .task-grid,
+  .workflow-editor,
+  .workflow-editor.single,
   .module-columns,
   .health-grid,
   .health-actions,

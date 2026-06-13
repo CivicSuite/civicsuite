@@ -305,7 +305,14 @@ const fallbackState = {
       next_action: "Download and verify the pinned local model weights.",
       admin_detail: "Ollama runtime with Gemma 4 12B quantization-aware weights"
     }
-  ]
+  ],
+  city_work: {
+    meetings: [],
+    records_requests: [],
+    code_sources: [],
+    code_handoffs: [],
+    audit_entries: []
+  }
 };
 
 const state = {
@@ -315,6 +322,8 @@ const state = {
   actionResult: null,
   modelActionResult: null,
   supervisorActionResult: null,
+  workActionResult: null,
+  searchResults: [],
   setupDraft: {
     cityName: "",
     state: "",
@@ -323,6 +332,24 @@ const state = {
     clerkContact: "",
     adminName: "",
     adminEmail: ""
+  },
+  workDraft: {
+    meetingTitle: "",
+    meetingDate: "",
+    meetingSummary: "",
+    agendaTitle: "",
+    minutes: "",
+    vote: "",
+    requester: "",
+    recordsSummary: "",
+    deadline: "",
+    responseDraft: "",
+    citation: "",
+    codeTitle: "",
+    codeCitation: "",
+    codeBody: "",
+    handoffSummary: "",
+    searchQuery: ""
   },
   app: fallbackState
 };
@@ -548,6 +575,18 @@ function renderSupervisorActionResult() {
   `;
 }
 
+function renderWorkActionResult() {
+  if (!state.workActionResult) return "";
+  const result = state.workActionResult;
+  return `
+    <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
+      <strong>${result.status}</strong>
+      <span>${result.message}</span>
+      <small>${result.next_action}</small>
+    </div>
+  `;
+}
+
 function renderFirstRunWizard({ compact = false } = {}) {
   const firstRun = state.app.first_run;
   if (!firstRun || firstRun.finished) return "";
@@ -682,6 +721,194 @@ function renderWorkflow(title, body, actions) {
   `;
 }
 
+function cityWork() {
+  return state.app.city_work || fallbackState.city_work;
+}
+
+function workflowEmpty(label) {
+  return `<p class="empty-note">${label}</p>`;
+}
+
+function renderMeetingsWorkflow() {
+  const work = cityWork();
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">${state.activeSurface}</p>
+      <h2>Meetings & Notices</h2>
+      <p>Create meetings, agenda items, notices, minutes, votes, and action records in the local city profile.</p>
+    </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Prepare Meeting</h3>
+        <label>Meeting title <input type="text" data-work-field="meetingTitle" value="${state.workDraft.meetingTitle}" /></label>
+        <label>Date <input type="date" data-work-field="meetingDate" value="${state.workDraft.meetingDate}" /></label>
+        <label>Summary <textarea data-work-field="meetingSummary">${state.workDraft.meetingSummary}</textarea></label>
+        <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${state.workDraft.agendaTitle}" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>
+          <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
+          <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Capture Outcomes</h3>
+        <label>Minutes draft <textarea data-work-field="minutes">${state.workDraft.minutes}</textarea></label>
+        <label>Motion, vote, or action item <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
+          <button type="button" class="secondary-action" data-work-action="record-vote">Record Outcome</button>
+        </div>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list">
+      ${work.meetings.length === 0 ? workflowEmpty("No local meetings have been created yet.") : work.meetings.map((meeting) => `
+        <article class="workflow-record">
+          <span class="status-warn">${meeting.status}</span>
+          <h3>${meeting.title}</h3>
+          <p>${meeting.summary || "No summary yet."}</p>
+          <small>${meeting.meeting_date} · ${meeting.notice_status} · ${meeting.agenda_items.length} agenda items · ${meeting.votes.length} outcomes</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
+function renderRecordsWorkflow() {
+  const work = cityWork();
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">${state.activeSurface}</p>
+      <h2>Records Requests</h2>
+      <p>Track intake, deadline, review draft, citations, exports, and audit evidence locally.</p>
+    </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Request Intake</h3>
+        <label>Requester <input type="text" data-work-field="requester" value="${state.workDraft.requester}" /></label>
+        <label>Deadline <input type="date" data-work-field="deadline" value="${state.workDraft.deadline}" /></label>
+        <label>Request summary <textarea data-work-field="recordsSummary">${state.workDraft.recordsSummary}</textarea></label>
+        <button type="button" class="primary-action" data-work-action="create-records-request">Create Request</button>
+      </div>
+      <div class="workflow-form">
+        <h3>Draft Response</h3>
+        <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
+        <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="draft-records-response">Save Draft</button>
+          <button type="button" class="secondary-action" data-work-action="export-records-response">Record Export</button>
+        </div>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list">
+      ${work.records_requests.length === 0 ? workflowEmpty("No local records requests have been created yet.") : work.records_requests.map((request) => `
+        <article class="workflow-record">
+          <span class="status-warn">${request.status}</span>
+          <h3>${request.requester}</h3>
+          <p>${request.summary}</p>
+          <small>Due ${request.deadline} · ${request.citations.length} citations · ${request.exports.length} exports</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
+function renderCodeWorkflow() {
+  const work = cityWork();
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">${state.activeSurface}</p>
+      <h2>Code & Ordinances</h2>
+      <p>Import local code sources with citation text and create clerk handoffs for ordinance or resolution work.</p>
+    </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Import Code Source</h3>
+        <label>Source title <input type="text" data-work-field="codeTitle" value="${state.workDraft.codeTitle}" /></label>
+        <label>Citation <input type="text" data-work-field="codeCitation" value="${state.workDraft.codeCitation}" /></label>
+        <label>Source text <textarea data-work-field="codeBody">${state.workDraft.codeBody}</textarea></label>
+        <button type="button" class="primary-action" data-work-action="import-code-source">Import Source</button>
+      </div>
+      <div class="workflow-form">
+        <h3>Clerk Handoff</h3>
+        <label>Handoff summary <textarea data-work-field="handoffSummary">${state.workDraft.handoffSummary}</textarea></label>
+        <button type="button" class="secondary-action" data-work-action="create-code-handoff">Create Clerk Handoff</button>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list">
+      ${work.code_sources.length === 0 ? workflowEmpty("No local code sources have been imported yet.") : work.code_sources.map((source) => `
+        <article class="workflow-record">
+          <span class="status-ok">${source.status}</span>
+          <h3>${source.title}</h3>
+          <p>${source.body}</p>
+          <small>${source.citation}</small>
+        </article>
+      `).join("")}
+      ${work.code_handoffs.map((handoff) => `
+        <article class="workflow-record handoff">
+          <span class="status-warn">${handoff.status}</span>
+          <h3>${handoff.title}</h3>
+          <p>${handoff.summary}</p>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
+function localSearchResults(query) {
+  const normalized = query.trim().toLowerCase();
+  const work = cityWork();
+  if (!normalized) return [];
+  const results = [];
+  work.meetings.forEach((meeting) => {
+    if ([meeting.title, meeting.summary, meeting.status].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
+    }
+  });
+  work.records_requests.forEach((request) => {
+    if ([request.requester, request.summary, request.status].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({ module_id: "civicrecords-ai", title: `Records request: ${request.requester}`, snippet: request.summary, citation: request.citations[0] || "Local records request", status: request.status });
+    }
+  });
+  work.code_sources.forEach((source) => {
+    if ([source.title, source.citation, source.body].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({ module_id: "civiccode", title: source.title, snippet: source.body, citation: source.citation, status: source.status });
+    }
+  });
+  return results;
+}
+
+function renderSearchWorkflow() {
+  const results = state.searchResults.length > 0 ? state.searchResults : localSearchResults(state.workDraft.searchQuery);
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">${state.activeSurface}</p>
+      <h2>Search City Knowledge</h2>
+      <p>Search local meetings, records requests, and imported code sources with citations and owning module labels.</p>
+    </section>
+    <section class="workflow-editor single">
+      <div class="workflow-form">
+        <h3>Local Search</h3>
+        <label>Search terms <input type="search" data-work-field="searchQuery" value="${state.workDraft.searchQuery}" /></label>
+        <button type="button" class="primary-action" data-work-action="search-city-knowledge">Search Local Data</button>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list">
+      ${results.length === 0 ? workflowEmpty("No local search results yet.") : results.map((result) => `
+        <article class="workflow-record">
+          <span class="status-ok">${result.module_id}</span>
+          <h3>${result.title}</h3>
+          <p>${result.snippet || "No snippet available."}</p>
+          <small>${result.citation} · ${result.status}</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
 function renderModuleRow(module) {
   return `
     <article class="module-row">
@@ -770,29 +997,13 @@ function renderHealth() {
 function renderActiveArea() {
   switch (state.activeArea) {
     case "meetings":
-      return renderWorkflow("Meetings & Notices", "Create agendas, packets, notices, minutes, votes, actions, and archive records with source-backed review.", [
-        { title: "Prepare packet", body: "Collect agenda items and source documents before public posting.", ready: false },
-        { title: "Review notice", body: "Show draft/public/official status before a notice is posted.", ready: false },
-        { title: "Capture outcomes", body: "Record motions, votes, minutes, and action items with audit entries.", ready: false }
-      ]);
+      return renderMeetingsWorkflow();
     case "records":
-      return renderWorkflow("Records Requests", "Track intake, search, review, response letters, exports, and citations in the local city data store.", [
-        { title: "Intake request", body: "Capture requester, scope, deadline, and staff owner.", ready: false },
-        { title: "Search sources", body: "Use local indexed documents and show citations beside AI-assisted drafts.", ready: false },
-        { title: "Export response", body: "Label exports as draft, internal, public, or official.", ready: false }
-      ]);
+      return renderRecordsWorkflow();
     case "code":
-      return renderWorkflow("Code & Ordinances", "Search local code, import source material, and create clerk handoffs for ordinances and resolutions.", [
-        { title: "Import source", body: "Store source documents locally with provenance.", ready: false },
-        { title: "Answer with citations", body: "Every answer shows source sections and refuses when sources are missing.", ready: false },
-        { title: "Create handoff", body: "Move ordinance and resolution work to the clerk workflow through CivicCore.", ready: false }
-      ]);
+      return renderCodeWorkflow();
     case "search":
-      return renderWorkflow("Search City Knowledge", "Find local records, code, meetings, and notices through one cited search surface.", [
-        { title: "Search local index", body: "Search must stay local by default.", ready: false },
-        { title: "Show citations", body: "Results distinguish official source, local file, staff note, and sample data.", ready: false },
-        { title: "Open source workflow", body: "Each result routes to the owning module.", ready: false }
-      ]);
+      return renderSearchWorkflow();
     case "health":
       return renderHealth();
     case "settings":
@@ -865,6 +1076,19 @@ function bindEvents() {
   document.querySelectorAll("[data-supervisor-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleSupervisorAction(button.dataset.supervisorAction, button.dataset.serviceId);
+    });
+  });
+  document.querySelectorAll("[data-work-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      state.workDraft[input.dataset.workField] = input.value;
+      if (input.dataset.workField === "searchQuery") {
+        state.searchResults = [];
+      }
+    });
+  });
+  document.querySelectorAll("[data-work-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleCityWorkAction(button.dataset.workAction);
     });
   });
 }
@@ -965,6 +1189,79 @@ async function handleSupervisorAction(action, serviceId) {
       status: "Needs attention",
       message: String(error),
       next_action: "Review System Health and try the action again."
+    };
+  }
+  render();
+}
+
+function workPayloadForAction(action) {
+  const draft = state.workDraft;
+  const payloads = {
+    "create-meeting": {
+      title: draft.meetingTitle,
+      meetingDate: draft.meetingDate,
+      summary: draft.meetingSummary,
+      agendaTitle: draft.agendaTitle
+    },
+    "add-agenda-item": { agendaTitle: draft.agendaTitle },
+    "record-minutes": { minutes: draft.minutes },
+    "record-vote": { vote: draft.vote },
+    "create-records-request": {
+      requester: draft.requester,
+      summary: draft.recordsSummary,
+      deadline: draft.deadline
+    },
+    "draft-records-response": {
+      responseDraft: draft.responseDraft,
+      citation: draft.citation
+    },
+    "import-code-source": {
+      title: draft.codeTitle,
+      citation: draft.codeCitation,
+      body: draft.codeBody
+    },
+    "create-code-handoff": { summary: draft.handoffSummary },
+    "search-city-knowledge": { query: draft.searchQuery }
+  };
+  return payloads[action] || {};
+}
+
+async function handleCityWorkAction(action) {
+  if (action === "search-city-knowledge" && !hasTauriBridge()) {
+    state.searchResults = localSearchResults(state.workDraft.searchQuery);
+    state.workActionResult = {
+      accepted: true,
+      status: "Search complete",
+      message: "Browser preview searched the local preview state. The desktop app records search audit events.",
+      next_action: "Open a result or refine the search terms."
+    };
+    render();
+    return;
+  }
+  if (!hasTauriBridge()) {
+    state.workActionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "City workflow changes are saved by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to save local city work."
+    };
+    render();
+    return;
+  }
+  try {
+    const result = await invoke("city_work_action", {
+      action,
+      payload: workPayloadForAction(action)
+    });
+    state.workActionResult = result;
+    state.app.city_work = result.state;
+    state.searchResults = result.search_results || [];
+  } catch (error) {
+    state.workActionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Review the required fields and try again."
     };
   }
   render();

@@ -1,12 +1,14 @@
 mod first_run;
 mod model;
 mod supervisor;
+mod workflows;
 
 use first_run::{FirstRunActionResult, FirstRunState};
 use model::{ModelActionResult, ModelState};
 use serde::Serialize;
 use serde_json::Value;
 use supervisor::{RuntimeHealthItem, SupervisorActionResult};
+use workflows::{CityWorkActionResult, CityWorkState};
 
 const MODULES_JSON: &str = include_str!("../../../installer/modules.json");
 
@@ -39,6 +41,7 @@ struct AppState {
     first_run: FirstRunState,
     model: ModelState,
     health: Vec<RuntimeHealthItem>,
+    city_work: CityWorkState,
 }
 
 fn navigation() -> Vec<NavigationItem> {
@@ -155,6 +158,7 @@ fn get_app_state() -> Result<AppState, String> {
         first_run: first_run::first_run_state(&[])?,
         model: model::model_state()?,
         health: supervisor::runtime_health()?,
+        city_work: workflows::city_work_state()?,
     })
 }
 
@@ -190,6 +194,19 @@ fn supervisor_action(
     supervisor::supervisor_action(&action, service_id.as_deref())
 }
 
+#[tauri::command]
+fn get_city_work_state() -> Result<CityWorkState, String> {
+    workflows::city_work_state()
+}
+
+#[tauri::command]
+fn city_work_action(
+    action: String,
+    payload: Option<Value>,
+) -> Result<CityWorkActionResult, String> {
+    workflows::city_work_action(&action, payload.as_ref())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -199,7 +216,9 @@ pub fn run() {
             model_action,
             preview_first_run_state,
             first_run_action,
-            supervisor_action
+            supervisor_action,
+            get_city_work_state,
+            city_work_action
         ])
         .run(tauri::generate_context!())
         .expect("failed to run CivicSuite desktop");
@@ -286,6 +305,16 @@ mod tests {
                 Some("unsigned-beta")
             );
             assert!(state.first_run.local_only);
+        });
+    }
+
+    #[test]
+    fn app_state_reports_local_city_work_state() {
+        with_clean_first_run_state(|_| {
+            let state = get_app_state().expect("app state builds");
+            assert_eq!(state.city_work.meetings.len(), 0);
+            assert_eq!(state.city_work.records_requests.len(), 0);
+            assert_eq!(state.city_work.code_sources.len(), 0);
         });
     }
 }
