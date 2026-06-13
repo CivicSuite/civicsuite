@@ -146,14 +146,16 @@
                         "dependencies":  [
 
                                          ],
-                        "installer_status":  "v1_2_0_shared_ingestion_shipped",
+                        "installer_status":  "v1_2_0_windows_local_platform_contracts",
                         "proof_required":  [
                                                "install",
                                                "version_check",
-                                               "compatibility_matrix_check"
+                                               "compatibility_matrix_check",
+                                               "windows_local_contracts",
+                                               "task_queue_worker"
                                            ],
                         "current_version":  "1.2.0",
-                        "source_commit":  "9f7e3a5a0156fca779b48076d49c13181d15151c"
+                        "source_commit":  "1a53f0680fffce34efeb939cbeb9915b6e208d6c"
                     },
                     {
                         "id":  "civicrecords-ai",

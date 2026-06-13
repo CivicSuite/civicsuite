@@ -1,1 +1,1 @@
-C:/dev/Claude/civiccore/dist/civiccore-1.2.0-py3-none-any.whl
+C:/dev/Codex/civiccore/dist/civiccore-1.2.0-py3-none-any.whl

@@ -30,7 +30,7 @@ As of 2026-05-14, the release-integrity decision is:
 
 | Repo | Correct label | Status |
 |---|---:|---|
-| civiccore | v1.2.0 shipped | Real shared platform; v1.2.0 shipped the shared document-ingestion pipeline and retains the earlier platform hardening. |
+| civiccore | v1.2.0 shipped | Real shared platform; v1.2.0 shipped the shared document-ingestion pipeline and now includes the Windows-local platform contracts plus PostgreSQL-backed task queue/worker. |
 | civicclerk | v1.0.4 shipped | Real meeting workflow release car pinned to CivicCore v1.2.0; protected staff auth defaults remain required. |
 | civicrecords-ai | v1.7.3 shipped | Developer preview records release car pinned to CivicCore v1.2.0 and consuming shared CivicCore ingestion; v1.7.3 adds release-asset convention bring-up without functional installer behavior changes. |
 | civiccode | v1.0.8 shipped | City-core release car pinned to CivicCore v1.2.0; v1.0.8 supersedes the earlier v1.0.0 posture and carries release attestation. |
@@ -46,7 +46,7 @@ All other modules remain foundation surfaces unless their own repo evidence says
 
 ## What Works Today
 
-- `civiccore` v1.2.0 is the current shared platform release and includes the shared document-ingestion pipeline used by the city-core release cars.
+- `civiccore` v1.2.0 is the current shared platform release and includes the shared document-ingestion pipeline, Windows-local platform contracts, and PostgreSQL-backed local task queue/worker used by the city-core release cars.
 - `civicrecords-ai` v1.7.3 remains developer preview, consumes CivicCore v1.2.0 shared ingestion, and keeps the city-core installer on the vendored-source path.
 - `civicclerk` v1.0.4 is the current meeting workflow release car for city-core.
 - `civiccode` v1.0.8 is the current municipal-code release car for city-core.

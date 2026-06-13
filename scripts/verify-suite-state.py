@@ -57,8 +57,9 @@ CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0"
 CURRENT_CITY_CORE_INSTALLER_STATUS = "city_core_beta_ready_truth_reconciled"
 EXPECTED_CITY_CORE_PROFILE_STATUS = "beta_ready_truth_reconciled"
 CITY_CORE_SOURCE_PIN_RECOVERY = (
-    "2026-06-13 source-pin refresh includes CivicRecords AI post-PR-#102 "
-    "and CivicClerk v1.0.4 post-PR-#176 default-branch heads"
+    "2026-06-13 source-pin refresh includes CivicCore Windows-local platform "
+    "contracts, CivicRecords AI post-PR-#102, and CivicClerk v1.0.4 "
+    "post-PR-#176 default-branch heads"
 )
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",

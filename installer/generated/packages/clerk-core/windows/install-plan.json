@@ -31,7 +31,9 @@
       "proof_required": [
         "install",
         "version_check",
-        "compatibility_matrix_check"
+        "compatibility_matrix_check",
+        "windows_local_contracts",
+        "task_queue_worker"
       ],
       "repo": "CivicSuite/civiccore",
       "type": "install_module"

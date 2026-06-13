@@ -12,7 +12,7 @@ provisional until the repo passes the recovery gates in
 
 | Module          | Repo                           | Current version | Released   | Compatible CivicCore range | Last verified | Notes |
 |-----------------|--------------------------------|-----------------|------------|----------------------------|---------------|-------|
-| civiccore       | CivicSuite/civiccore           | 1.2.0           | 2026-05-23 | n/a                        | 2026-05-23    | Shared document-ingestion pipeline release; retains earlier platform hardening. |
+| civiccore       | CivicSuite/civiccore           | 1.2.0           | 2026-05-23 | n/a                        | 2026-06-13    | Shared document-ingestion pipeline release; now includes Windows-local platform contracts and PostgreSQL-backed local task queue/worker. |
 | civicrecords-ai | CivicSuite/civicrecords-ai     | 1.7.3           | 2026-05-23 | `==1.2.0`                  | 2026-05-25    | City-core records release car consuming CivicCore shared ingestion; v1.7.3 adds release-asset convention bring-up without installer behavior changes. |
 | civicclerk      | CivicSuite/civicclerk          | 1.0.4           | 2026-06-13 | `==1.2.0`                  | 2026-06-13    | City-core clerk release car with persistence refresh and protected staff auth defaults retained. |
 | civicregwatch   | CivicSuite/civicregwatch       | planned         | not released | TBD                      | 2026-04-30    | New planned federal regulatory intelligence module. Implementation spec exists in `specs/05_civicregwatch.md`; repo and civiccore pin are not scaffolded yet. |
