@@ -398,11 +398,27 @@ fn retract_publication_event(
     }
 }
 
-fn first_meeting_mut(state: &mut CityWorkState) -> Result<&mut Meeting, String> {
+fn selected_meeting_index(state: &CityWorkState, payload: Option<&Value>) -> Result<usize, String> {
+    let meeting_id = payload_optional_string(payload, "meetingId");
+    if meeting_id.is_empty() {
+        if state.meetings.is_empty() {
+            return Err("Create a meeting before recording this clerk action.".to_string());
+        }
+        return Ok(0);
+    }
     state
         .meetings
-        .first_mut()
-        .ok_or_else(|| "Create a meeting before recording this clerk action.".to_string())
+        .iter()
+        .position(|meeting| meeting.id == meeting_id)
+        .ok_or_else(|| "The selected meeting was not found in the local city profile.".to_string())
+}
+
+fn selected_meeting_mut<'a>(
+    state: &'a mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<&'a mut Meeting, String> {
+    let index = selected_meeting_index(state, payload)?;
+    Ok(&mut state.meetings[index])
 }
 
 fn ensure_meeting_can_change(meeting: &Meeting) -> Result<(), String> {
@@ -415,10 +431,31 @@ fn ensure_meeting_can_change(meeting: &Meeting) -> Result<(), String> {
     Ok(())
 }
 
-fn first_record_mut(state: &mut CityWorkState) -> Result<&mut RecordsRequest, String> {
-    state.records_requests.first_mut().ok_or_else(|| {
-        "Create a records request before drafting or exporting a response.".to_string()
-    })
+fn selected_record_index(state: &CityWorkState, payload: Option<&Value>) -> Result<usize, String> {
+    let request_id = payload_optional_string(payload, "recordsRequestId");
+    if request_id.is_empty() {
+        if state.records_requests.is_empty() {
+            return Err(
+                "Create a records request before drafting or exporting a response.".to_string(),
+            );
+        }
+        return Ok(0);
+    }
+    state
+        .records_requests
+        .iter()
+        .position(|request| request.id == request_id)
+        .ok_or_else(|| {
+            "The selected records request was not found in the local city profile.".to_string()
+        })
+}
+
+fn selected_record_mut<'a>(
+    state: &'a mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<&'a mut RecordsRequest, String> {
+    let index = selected_record_index(state, payload)?;
+    Ok(&mut state.records_requests[index])
 }
 
 fn ensure_records_request_active(request: &RecordsRequest) -> Result<(), String> {
@@ -443,6 +480,27 @@ fn first_pending_code_handoff_index(state: &CityWorkState) -> Result<usize, Stri
         .iter()
         .position(|handoff| handoff.status != "sent to clerk agenda")
         .ok_or_else(|| "Create a code handoff before adding it to a clerk agenda.".to_string())
+}
+
+fn selected_pending_code_handoff_index(
+    state: &CityWorkState,
+    payload: Option<&Value>,
+) -> Result<usize, String> {
+    let handoff_id = payload_optional_string(payload, "codeHandoffId");
+    if handoff_id.is_empty() {
+        return first_pending_code_handoff_index(state);
+    }
+    let index = state
+        .code_handoffs
+        .iter()
+        .position(|handoff| handoff.id == handoff_id)
+        .ok_or_else(|| {
+            "The selected code handoff was not found in the local city profile.".to_string()
+        })?;
+    if state.code_handoffs[index].status == "sent to clerk agenda" {
+        return Err("The selected code handoff has already been sent to an agenda.".to_string());
+    }
+    Ok(index)
 }
 
 fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
@@ -488,12 +546,13 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
 
 fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let title = payload_string(payload, "agendaTitle")?;
+    let meeting_index = selected_meeting_index(state, payload)?;
     let agenda_count = {
-        let meeting = first_meeting_mut(state)?;
+        let meeting = &state.meetings[meeting_index];
         ensure_meeting_can_change(meeting)?;
         meeting.agenda_items.len()
     };
-    let meeting = first_meeting_mut(state)?;
+    let meeting = &mut state.meetings[meeting_index];
     meeting.agenda_items.push(AgendaItem {
         id: new_id("agenda", agenda_count),
         title: title.clone(),
@@ -510,16 +569,20 @@ fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result
     Ok("Agenda item added to the current meeting draft.".to_string())
 }
 
-fn add_code_handoff_agenda(state: &mut CityWorkState) -> Result<String, String> {
+fn add_code_handoff_agenda(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
     if state.meetings.is_empty() {
         return Err("Create a meeting before adding a code handoff to the agenda.".to_string());
     }
-    let handoff_index = first_pending_code_handoff_index(state)?;
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let handoff_index = selected_pending_code_handoff_index(state, payload)?;
     let handoff_title = state.code_handoffs[handoff_index].title.clone();
     let handoff_summary = state.code_handoffs[handoff_index].summary.clone();
-    let agenda_count = state.meetings[0].agenda_items.len();
+    let agenda_count = state.meetings[meeting_index].agenda_items.len();
     let agenda_title = format!("Code review: {handoff_title}");
-    let meeting = first_meeting_mut(state)?;
+    let meeting = &mut state.meetings[meeting_index];
     ensure_meeting_can_change(meeting)?;
     meeting.agenda_items.push(AgendaItem {
         id: new_id("agenda", agenda_count),
@@ -540,8 +603,8 @@ fn add_code_handoff_agenda(state: &mut CityWorkState) -> Result<String, String> 
     ))
 }
 
-fn post_notice(state: &mut CityWorkState) -> Result<String, String> {
-    let meeting = first_meeting_mut(state)?;
+fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     if meeting.agenda_items.is_empty() {
         return Err("Add at least one agenda item before posting notice.".to_string());
@@ -560,7 +623,7 @@ fn post_notice(state: &mut CityWorkState) -> Result<String, String> {
 
 fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let minutes = payload_string(payload, "minutes")?;
-    let meeting = first_meeting_mut(state)?;
+    let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     let title = meeting.title.clone();
     meeting.minutes = minutes;
@@ -576,7 +639,7 @@ fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
 
 fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let vote = payload_string(payload, "vote")?;
-    let meeting = first_meeting_mut(state)?;
+    let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     meeting.votes.push(vote.clone());
     meeting.status = "outcomes recorded".to_string();
@@ -591,7 +654,7 @@ fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
 
 fn add_action_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let action_item = payload_string(payload, "actionItem")?;
-    let meeting = first_meeting_mut(state)?;
+    let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     meeting.action_items.push(action_item.clone());
     meeting.status = "action items recorded".to_string();
@@ -609,7 +672,7 @@ fn record_resident_comment(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let resident_comment = payload_string(payload, "residentComment")?;
-    let meeting = first_meeting_mut(state)?;
+    let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     meeting.resident_comments.push(resident_comment.clone());
     meeting.status = "resident comments recorded".to_string();
@@ -622,8 +685,8 @@ fn record_resident_comment(
     Ok("Resident comment saved to the meeting record.".to_string())
 }
 
-fn adopt_minutes(state: &mut CityWorkState) -> Result<String, String> {
-    let meeting = first_meeting_mut(state)?;
+fn adopt_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
     if meeting.minutes.trim().is_empty() {
         return Err("Save a minutes draft before adopting minutes.".to_string());
@@ -695,8 +758,11 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     )
 }
 
-fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
-    let meeting = first_meeting_mut(state)?;
+fn export_meeting_packet(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let meeting = selected_meeting_mut(state, payload)?;
     let contents = meeting_packet_contents(meeting);
     let export_path = write_export_file("meetings", &meeting.title, &contents)?;
     meeting.exports.push(export_path.clone());
@@ -712,9 +778,9 @@ fn export_meeting_packet(state: &mut CityWorkState) -> Result<String, String> {
     Ok(format!("Meeting packet export written to {export_path}."))
 }
 
-fn archive_meeting(state: &mut CityWorkState) -> Result<String, String> {
+fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let (meeting_id, title, export_path, public_payload) = {
-        let meeting = first_meeting_mut(state)?;
+        let meeting = selected_meeting_mut(state, payload)?;
         if meeting.minutes_adopted_at_unix_seconds.is_none() {
             return Err(
                 "Adopt the minutes before archiving the public meeting record.".to_string(),
@@ -793,7 +859,7 @@ fn request_records_clarification(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let note = payload_string(payload, "clarificationNote")?;
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     request.clarification_notes.push(note.clone());
     request.status = "clarification".to_string();
@@ -811,7 +877,7 @@ fn assign_records_request(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let assigned_to = payload_string(payload, "assignedTo")?;
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     request.assigned_to = assigned_to.clone();
     request.status = "assigned".to_string();
@@ -830,7 +896,7 @@ fn record_records_search(
 ) -> Result<String, String> {
     let source_note = payload_string(payload, "sourceNote")?;
     let citation = payload_optional_string(payload, "citation");
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     request.search_notes.push(source_note.clone());
     if !citation.is_empty() {
@@ -851,7 +917,7 @@ fn add_records_exemption_review(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let exemption_note = payload_string(payload, "exemptionNote")?;
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     request.exemption_reviews.push(exemption_note.clone());
     request.status = "in review".to_string();
@@ -869,7 +935,7 @@ fn estimate_records_fee(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let fee_estimate = payload_string(payload, "feeEstimate")?;
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     request.fee_estimate = fee_estimate.clone();
     request.status = "ready".to_string();
@@ -888,7 +954,7 @@ fn draft_records_response(
 ) -> Result<String, String> {
     let draft = payload_string(payload, "responseDraft")?;
     let citation = payload_optional_string(payload, "citation");
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     request.response_draft = draft;
     request.status = "drafted".to_string();
@@ -909,7 +975,7 @@ fn approve_records_response(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let approval_note = payload_optional_string(payload, "approvalNote");
-    let request = first_record_mut(state)?;
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     if request.response_draft.trim().is_empty() {
         return Err("Draft a records response before approval.".to_string());
@@ -931,8 +997,11 @@ fn approve_records_response(
     Ok("Records response approved by staff; export is now available.".to_string())
 }
 
-fn export_records_response(state: &mut CityWorkState) -> Result<String, String> {
-    let request = first_record_mut(state)?;
+fn export_records_response(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     if request.response_draft.trim().is_empty() {
         return Err("Draft a records response before exporting.".to_string());
@@ -988,9 +1057,12 @@ fn export_records_response(state: &mut CityWorkState) -> Result<String, String> 
     Ok(format!("Records response export written to {export_path}."))
 }
 
-fn fulfill_records_request(state: &mut CityWorkState) -> Result<String, String> {
+fn fulfill_records_request(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
     let (request_id, public_payload) = {
-        let request = first_record_mut(state)?;
+        let request = selected_record_mut(state, payload)?;
         ensure_records_request_active(request)?;
         if request.approved_at_unix_seconds.is_none() {
             return Err("Approve the records response before fulfillment.".to_string());
@@ -1028,8 +1100,11 @@ fn fulfill_records_request(state: &mut CityWorkState) -> Result<String, String> 
     Ok("Records request fulfilled and eligible for public status display.".to_string())
 }
 
-fn close_records_request(state: &mut CityWorkState) -> Result<String, String> {
-    let request = first_record_mut(state)?;
+fn close_records_request(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let request = selected_record_mut(state, payload)?;
     if request.closed_at_unix_seconds.is_some() || request.status == "closed" {
         return Err("This records request is already closed.".to_string());
     }
@@ -1089,11 +1164,32 @@ fn import_code_source(
     Ok("Municipal code source imported locally with citation.".to_string())
 }
 
-fn first_code_source_mut(state: &mut CityWorkState) -> Result<&mut CodeSource, String> {
+fn selected_code_source_index(
+    state: &CityWorkState,
+    payload: Option<&Value>,
+) -> Result<usize, String> {
+    let source_id = payload_optional_string(payload, "codeSourceId");
+    if source_id.is_empty() {
+        if state.code_sources.is_empty() {
+            return Err("Import a code source before changing its public status.".to_string());
+        }
+        return Ok(0);
+    }
     state
         .code_sources
-        .first_mut()
-        .ok_or_else(|| "Import a code source before changing its public status.".to_string())
+        .iter()
+        .position(|source| source.id == source_id)
+        .ok_or_else(|| {
+            "The selected code source was not found in the local city profile.".to_string()
+        })
+}
+
+fn selected_code_source_mut<'a>(
+    state: &'a mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<&'a mut CodeSource, String> {
+    let index = selected_code_source_index(state, payload)?;
+    Ok(&mut state.code_sources[index])
 }
 
 fn record_codifier_sync(
@@ -1103,7 +1199,7 @@ fn record_codifier_sync(
     let codifier_name = payload_string(payload, "codifierName")?;
     let authoritative_url = payload_optional_string(payload, "authoritativeUrl");
     let version_label = payload_optional_string(payload, "versionLabel");
-    let source = first_code_source_mut(state)?;
+    let source = selected_code_source_mut(state, payload)?;
     source.codifier_name = codifier_name.clone();
     source.authoritative_url = authoritative_url;
     source.version_label = version_label;
@@ -1126,7 +1222,7 @@ fn record_codifier_sync_failure(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let sync_error = payload_string(payload, "syncError")?;
-    let source = first_code_source_mut(state)?;
+    let source = selected_code_source_mut(state, payload)?;
     source.codifier_sync_status = "sync failed".to_string();
     source.codifier_sync_errors.push(sync_error.clone());
     source.status = "codifier sync failed".to_string();
@@ -1139,8 +1235,11 @@ fn record_codifier_sync_failure(
     Ok("Codifier sync failure recorded for retry.".to_string())
 }
 
-fn retry_codifier_sync(state: &mut CityWorkState) -> Result<String, String> {
-    let source = first_code_source_mut(state)?;
+fn retry_codifier_sync(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let source = selected_code_source_mut(state, payload)?;
     if source.codifier_sync_errors.is_empty() && source.codifier_sync_status != "sync failed" {
         return Err("Record a codifier sync failure before retrying.".to_string());
     }
@@ -1157,7 +1256,7 @@ fn retry_codifier_sync(state: &mut CityWorkState) -> Result<String, String> {
 
 fn mark_code_stale(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let amendment_note = payload_string(payload, "amendmentNote")?;
-    let source = first_code_source_mut(state)?;
+    let source = selected_code_source_mut(state, payload)?;
     source.amendment_notes.push(amendment_note.clone());
     source.stale_since_unix_seconds = Some(now_unix_seconds());
     source.codifier_sync_status = "stale - codifier update pending".to_string();
@@ -1177,7 +1276,7 @@ fn draft_code_guidance(
 ) -> Result<String, String> {
     let guidance = payload_string(payload, "guidanceDraft")?;
     let summary = payload_optional_string(payload, "summaryDraft");
-    let source = first_code_source_mut(state)?;
+    let source = selected_code_source_mut(state, payload)?;
     source.staff_guidance = guidance;
     if !summary.is_empty() {
         source.plain_language_summary = summary;
@@ -1193,8 +1292,11 @@ fn draft_code_guidance(
     Ok("Code guidance draft saved for human approval.".to_string())
 }
 
-fn approve_code_guidance(state: &mut CityWorkState) -> Result<String, String> {
-    let source = first_code_source_mut(state)?;
+fn approve_code_guidance(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let source = selected_code_source_mut(state, payload)?;
     if source.staff_guidance.trim().is_empty() && source.plain_language_summary.trim().is_empty() {
         return Err(
             "Draft staff guidance or a plain-language summary before approval.".to_string(),
@@ -1211,9 +1313,12 @@ fn approve_code_guidance(state: &mut CityWorkState) -> Result<String, String> {
     Ok("Code guidance approved; public summaries remain labeled non-authoritative.".to_string())
 }
 
-fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
+fn publish_code_source(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
     let (source_id, title, citation, export_path, public_payload) = {
-        let source = first_code_source_mut(state)?;
+        let source = selected_code_source_mut(state, payload)?;
         let codifier = if source.codifier_name.is_empty() {
             "No codifier sync recorded.".to_string()
         } else {
@@ -1285,9 +1390,12 @@ fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
     Ok(format!("{title} is published for Resident/Public search."))
 }
 
-fn unpublish_code_source(state: &mut CityWorkState) -> Result<String, String> {
+fn unpublish_code_source(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
     let (source_id, title, citation) = {
-        let source = first_code_source_mut(state)?;
+        let source = selected_code_source_mut(state, payload)?;
         source.public_status = default_code_public_status();
         source.published_at_unix_seconds = None;
         (
@@ -1312,10 +1420,8 @@ fn create_code_handoff(
     state: &mut CityWorkState,
     payload: Option<&Value>,
 ) -> Result<String, String> {
-    let source = state
-        .code_sources
-        .first()
-        .ok_or_else(|| "Import a code source before creating a clerk handoff.".to_string())?;
+    let source_index = selected_code_source_index(state, payload)?;
+    let source = &state.code_sources[source_index];
     let summary = payload_optional_string(payload, "summary");
     let id = new_id("handoff", state.code_handoffs.len());
     state.code_handoffs.insert(
@@ -1474,15 +1580,15 @@ pub fn city_work_action(
     let message = match action {
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
-        "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state)?,
-        "post-notice" => post_notice(&mut state)?,
+        "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
+        "post-notice" => post_notice(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
         "add-action-item" => add_action_item(&mut state, payload)?,
         "record-resident-comment" => record_resident_comment(&mut state, payload)?,
-        "adopt-minutes" => adopt_minutes(&mut state)?,
-        "export-meeting-packet" => export_meeting_packet(&mut state)?,
-        "archive-meeting" => archive_meeting(&mut state)?,
+        "adopt-minutes" => adopt_minutes(&mut state, payload)?,
+        "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
+        "archive-meeting" => archive_meeting(&mut state, payload)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
         "request-records-clarification" => request_records_clarification(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
@@ -1491,18 +1597,18 @@ pub fn city_work_action(
         "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "approve-records-response" => approve_records_response(&mut state, payload)?,
-        "export-records-response" => export_records_response(&mut state)?,
-        "fulfill-records-request" => fulfill_records_request(&mut state)?,
-        "close-records-request" => close_records_request(&mut state)?,
+        "export-records-response" => export_records_response(&mut state, payload)?,
+        "fulfill-records-request" => fulfill_records_request(&mut state, payload)?,
+        "close-records-request" => close_records_request(&mut state, payload)?,
         "import-code-source" => import_code_source(&mut state, payload)?,
         "record-codifier-sync" => record_codifier_sync(&mut state, payload)?,
         "record-codifier-sync-failure" => record_codifier_sync_failure(&mut state, payload)?,
-        "retry-codifier-sync" => retry_codifier_sync(&mut state)?,
+        "retry-codifier-sync" => retry_codifier_sync(&mut state, payload)?,
         "mark-code-stale" => mark_code_stale(&mut state, payload)?,
         "draft-code-guidance" => draft_code_guidance(&mut state, payload)?,
-        "approve-code-guidance" => approve_code_guidance(&mut state)?,
-        "publish-code-source" => publish_code_source(&mut state)?,
-        "unpublish-code-source" => unpublish_code_source(&mut state)?,
+        "approve-code-guidance" => approve_code_guidance(&mut state, payload)?,
+        "publish-code-source" => publish_code_source(&mut state, payload)?,
+        "unpublish-code-source" => unpublish_code_source(&mut state, payload)?,
         "create-code-handoff" => create_code_handoff(&mut state, payload)?,
         "search-city-knowledge" => {
             let query = payload_string(payload, "query")?;
@@ -1819,6 +1925,195 @@ mod tests {
                 .audit_entries
                 .iter()
                 .any(|entry| entry.action == "unpublish-code-source"));
+            assert_valid_audit_chain(&state.audit_entries);
+        });
+    }
+
+    #[test]
+    fn workflow_actions_target_selected_records_when_ids_are_supplied() {
+        with_temp_state_dir(|_| {
+            let budget_meeting = serde_json::json!({
+                "title": "Budget Meeting",
+                "meetingDate": "2026-07-01",
+                "summary": "Budget agenda",
+                "agendaTitle": "Open budget hearing"
+            });
+            let planning_meeting = serde_json::json!({
+                "title": "Planning Meeting",
+                "meetingDate": "2026-07-02",
+                "summary": "Planning agenda",
+                "agendaTitle": "Open planning hearing"
+            });
+            city_work_action("create-meeting", Some(&budget_meeting))
+                .expect("budget meeting created");
+            city_work_action("create-meeting", Some(&planning_meeting))
+                .expect("planning meeting created");
+            let state = city_work_state().expect("state reads");
+            let budget_meeting_id = state
+                .meetings
+                .iter()
+                .find(|meeting| meeting.title == "Budget Meeting")
+                .expect("budget meeting exists")
+                .id
+                .clone();
+            let planning_meeting_id = state
+                .meetings
+                .iter()
+                .find(|meeting| meeting.title == "Planning Meeting")
+                .expect("planning meeting exists")
+                .id
+                .clone();
+            let selected_agenda = serde_json::json!({
+                "meetingId": budget_meeting_id,
+                "agendaTitle": "Adopt selected budget item"
+            });
+            city_work_action("add-agenda-item", Some(&selected_agenda))
+                .expect("selected meeting receives agenda item");
+            let state = city_work_state().expect("state reads");
+            let budget_meeting = state
+                .meetings
+                .iter()
+                .find(|meeting| meeting.title == "Budget Meeting")
+                .expect("budget meeting exists");
+            let planning_meeting = state
+                .meetings
+                .iter()
+                .find(|meeting| meeting.title == "Planning Meeting")
+                .expect("planning meeting exists");
+            assert_eq!(budget_meeting.agenda_items.len(), 2);
+            assert_eq!(planning_meeting.agenda_items.len(), 1);
+            assert!(budget_meeting
+                .agenda_items
+                .iter()
+                .any(|item| item.title == "Adopt selected budget item"));
+            assert_eq!(planning_meeting.id, planning_meeting_id);
+
+            let alex_request = serde_json::json!({
+                "requester": "Alex Rivera",
+                "summary": "Park contract emails",
+                "deadline": "2026-07-10"
+            });
+            let blake_request = serde_json::json!({
+                "requester": "Blake Chen",
+                "summary": "Permit files",
+                "deadline": "2026-07-11"
+            });
+            city_work_action("create-records-request", Some(&alex_request))
+                .expect("alex request created");
+            city_work_action("create-records-request", Some(&blake_request))
+                .expect("blake request created");
+            let state = city_work_state().expect("state reads");
+            let alex_request_id = state
+                .records_requests
+                .iter()
+                .find(|request| request.requester == "Alex Rivera")
+                .expect("alex request exists")
+                .id
+                .clone();
+            let assign_alex = serde_json::json!({
+                "recordsRequestId": alex_request_id,
+                "assignedTo": "Records Officer A"
+            });
+            city_work_action("assign-records-request", Some(&assign_alex))
+                .expect("selected request assigned");
+            let state = city_work_state().expect("state reads");
+            let alex = state
+                .records_requests
+                .iter()
+                .find(|request| request.requester == "Alex Rivera")
+                .expect("alex request exists");
+            let blake = state
+                .records_requests
+                .iter()
+                .find(|request| request.requester == "Blake Chen")
+                .expect("blake request exists");
+            assert_eq!(alex.assigned_to, "Records Officer A");
+            assert!(blake.assigned_to.is_empty());
+
+            let noise_source = serde_json::json!({
+                "title": "Noise Ordinance",
+                "citation": "CMC 8.12",
+                "body": "Quiet hours begin at 10 PM."
+            });
+            let signs_source = serde_json::json!({
+                "title": "Sign Code",
+                "citation": "CMC 17.48",
+                "body": "Temporary signs require review."
+            });
+            city_work_action("import-code-source", Some(&noise_source))
+                .expect("noise source imported");
+            city_work_action("import-code-source", Some(&signs_source))
+                .expect("sign source imported");
+            let state = city_work_state().expect("state reads");
+            let noise_source_id = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Noise Ordinance")
+                .expect("noise source exists")
+                .id
+                .clone();
+            let noise_guidance = serde_json::json!({
+                "codeSourceId": noise_source_id.clone(),
+                "guidanceDraft": "Confirm special event permits before enforcement.",
+                "summaryDraft": "Quiet hours may vary for permitted events."
+            });
+            city_work_action("draft-code-guidance", Some(&noise_guidance))
+                .expect("selected source receives guidance");
+            let handoff_payload = serde_json::json!({
+                "codeSourceId": noise_source_id,
+                "summary": "Bring selected noise ordinance to council."
+            });
+            city_work_action("create-code-handoff", Some(&handoff_payload))
+                .expect("handoff created from selected source");
+            let state = city_work_state().expect("state reads");
+            let noise = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Noise Ordinance")
+                .expect("noise source exists");
+            let signs = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Sign Code")
+                .expect("sign source exists");
+            assert_eq!(
+                noise.staff_guidance,
+                "Confirm special event permits before enforcement."
+            );
+            assert!(signs.staff_guidance.is_empty());
+            let handoff = state.code_handoffs.first().expect("handoff exists");
+            assert_eq!(handoff.source_id, noise.id);
+            let handoff_id = handoff.id.clone();
+
+            let selected_handoff = serde_json::json!({
+                "meetingId": budget_meeting.id.clone(),
+                "codeHandoffId": handoff_id
+            });
+            city_work_action("add-code-handoff-agenda", Some(&selected_handoff))
+                .expect("selected handoff added to selected meeting");
+            let state = city_work_state().expect("state reads");
+            let budget_meeting = state
+                .meetings
+                .iter()
+                .find(|meeting| meeting.title == "Budget Meeting")
+                .expect("budget meeting exists");
+            let planning_meeting = state
+                .meetings
+                .iter()
+                .find(|meeting| meeting.title == "Planning Meeting")
+                .expect("planning meeting exists");
+            assert!(budget_meeting
+                .agenda_items
+                .iter()
+                .any(|item| item.title.contains("Noise Ordinance")));
+            assert!(!planning_meeting
+                .agenda_items
+                .iter()
+                .any(|item| item.title.contains("Noise Ordinance")));
+            assert_eq!(
+                state.code_handoffs[0].status,
+                "sent to clerk agenda".to_string()
+            );
             assert_valid_audit_chain(&state.audit_entries);
         });
     }

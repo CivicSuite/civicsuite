@@ -276,6 +276,19 @@ main {
   gap: 8px;
 }
 
+.record-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.record-actions .secondary-action {
+  min-height: 32px;
+  padding-bottom: 5px;
+  padding-top: 5px;
+}
+
 .guided-review {
   background: #fffaf0;
   border: 1px solid #d8a42b;

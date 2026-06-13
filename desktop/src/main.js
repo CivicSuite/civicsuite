@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+﻿import { invoke } from "@tauri-apps/api/core";
 import "./styles.css";
 
 const fallbackState = {
@@ -364,6 +364,12 @@ const state = {
   authActionResult: null,
   searchResults: [],
   pendingWorkReviewAction: null,
+  workSelection: {
+    meetingId: "",
+    recordsRequestId: "",
+    codeSourceId: "",
+    codeHandoffId: ""
+  },
   setupDraft: {
     cityName: "",
     state: "",
@@ -889,20 +895,28 @@ const GUIDED_WORK_ACTIONS = new Set([
   "create-code-handoff"
 ]);
 
+function selectedFrom(collection, selectedId) {
+  return collection.find((record) => record.id === selectedId) || collection[0] || null;
+}
+
 function currentMeeting(work = cityWork()) {
-  return work.meetings[0] || null;
+  return selectedFrom(work.meetings || [], state.workSelection.meetingId);
 }
 
 function currentRecordsRequest(work = cityWork()) {
-  return work.records_requests[0] || null;
+  return selectedFrom(work.records_requests || [], state.workSelection.recordsRequestId);
 }
 
 function currentCodeSource(work = cityWork()) {
-  return work.code_sources[0] || null;
+  return selectedFrom(work.code_sources || [], state.workSelection.codeSourceId);
 }
 
 function currentCodeHandoff(work = cityWork()) {
-  return work.code_handoffs.find((handoff) => handoff.status !== "sent to clerk agenda") || work.code_handoffs[0] || null;
+  const handoffs = work.code_handoffs || [];
+  return handoffs.find((handoff) => handoff.id === state.workSelection.codeHandoffId) ||
+    handoffs.find((handoff) => handoff.status !== "sent to clerk agenda") ||
+    handoffs[0] ||
+    null;
 }
 
 function detailOrFallback(value, fallback) {
@@ -1217,6 +1231,7 @@ function renderPublicMeetingsWorkflow() {
 function renderMeetingsWorkflow() {
   if (isPublicSurface()) return renderPublicMeetingsWorkflow();
   const work = cityWork();
+  const selectedMeeting = currentMeeting(work);
   const pendingCodeHandoffs = work.code_handoffs.filter((handoff) => handoff.status !== "sent to clerk agenda");
   return `
     <section class="page-heading">
@@ -1266,7 +1281,10 @@ function renderMeetingsWorkflow() {
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
-          <small>${meeting.meeting_date} · ${meeting.notice_status} · ${(meeting.agenda_items || []).length} agenda items · ${(meeting.votes || []).length} outcomes · ${(meeting.action_items || []).length} action items · ${(meeting.exports || []).length} exports</small>
+          <div class="record-actions">
+            ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
+          </div>
+          <small>${meeting.meeting_date} Â· ${meeting.notice_status} Â· ${(meeting.agenda_items || []).length} agenda items Â· ${(meeting.votes || []).length} outcomes Â· ${(meeting.action_items || []).length} action items Â· ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -1319,6 +1337,7 @@ function renderPublicRecordsWorkflow() {
 function renderRecordsWorkflow() {
   if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
+  const selectedRequest = currentRecordsRequest(work);
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
@@ -1374,6 +1393,9 @@ function renderRecordsWorkflow() {
           ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
+          <div class="record-actions">
+            ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
+          </div>
           <small>Due ${request.deadline} - ${(request.citations || []).length} citations - ${(request.exemption_reviews || []).length} exemption notes - ${(request.exports || []).length} exports</small>
         </article>
       `).join("")}
@@ -1407,6 +1429,8 @@ function renderPublicCodeWorkflow() {
 function renderCodeWorkflow() {
   if (isPublicSurface()) return renderPublicCodeWorkflow();
   const work = cityWork();
+  const selectedSource = currentCodeSource(work);
+  const selectedHandoff = currentCodeHandoff(work);
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
@@ -1465,6 +1489,9 @@ function renderCodeWorkflow() {
           ${source.codifier_name ? `<p><strong>Codifier:</strong> ${source.codifier_name}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Stale:</strong> codifier update pending</p>" : ""}
           ${source.staff_guidance ? `<p><strong>Staff guidance:</strong> ${source.staff_guidance}</p>` : ""}
+          <div class="record-actions">
+            ${selectedSource?.id === source.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="codeSource" data-record-id="${source.id}">Work On This</button>`}
+          </div>
           <small>${source.citation} - ${source.public_status || "internal draft"} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports</small>
         </article>
       `).join("")}
@@ -1473,6 +1500,9 @@ function renderCodeWorkflow() {
           <span class="status-warn">${handoff.status}</span>
           <h3>${handoff.title}</h3>
           <p>${handoff.summary}</p>
+          <div class="record-actions">
+            ${selectedHandoff?.id === handoff.id ? `<span class="status-ok">Selected for agenda action</span>` : `<button type="button" class="secondary-action" data-select-work-record="codeHandoff" data-record-id="${handoff.id}">Work On This</button>`}
+          </div>
         </article>
       `).join("")}
     </section>
@@ -1566,7 +1596,7 @@ function renderSearchWorkflow() {
           <span class="status-ok">${result.module_id}</span>
           <h3>${result.title}</h3>
           <p>${result.snippet || "No snippet available."}</p>
-          <small>${result.citation} · ${result.status}</small>
+          <small>${result.citation} Â· ${result.status}</small>
         </article>
       `).join("")}
     </section>
@@ -1832,6 +1862,14 @@ function bindEvents() {
       }
     });
   });
+  document.querySelectorAll("[data-select-work-record]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = `${button.dataset.selectWorkRecord}Id`;
+      state.workSelection[key] = button.dataset.recordId;
+      state.pendingWorkReviewAction = null;
+      render();
+    });
+  });
   document.querySelectorAll("[data-work-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleCityWorkAction(button.dataset.workAction);
@@ -1993,6 +2031,12 @@ async function handleAuthAction(action) {
 
 function workPayloadForAction(action) {
   const draft = state.workDraft;
+  const selected = {
+    meetingId: currentMeeting()?.id || "",
+    recordsRequestId: currentRecordsRequest()?.id || "",
+    codeSourceId: currentCodeSource()?.id || "",
+    codeHandoffId: currentCodeHandoff()?.id || ""
+  };
   const payloads = {
     "create-meeting": {
       title: draft.meetingTitle,
@@ -2000,54 +2044,62 @@ function workPayloadForAction(action) {
       summary: draft.meetingSummary,
       agendaTitle: draft.agendaTitle
     },
-    "add-agenda-item": { agendaTitle: draft.agendaTitle },
-    "record-minutes": { minutes: draft.minutes },
-    "record-vote": { vote: draft.vote },
-    "add-action-item": { actionItem: draft.actionItem },
-    "record-resident-comment": { residentComment: draft.residentComment },
-    "adopt-minutes": {},
-    "archive-meeting": {},
+    "add-agenda-item": { ...selected, agendaTitle: draft.agendaTitle },
+    "add-code-handoff-agenda": selected,
+    "post-notice": selected,
+    "export-meeting-packet": selected,
+    "record-minutes": { ...selected, minutes: draft.minutes },
+    "record-vote": { ...selected, vote: draft.vote },
+    "add-action-item": { ...selected, actionItem: draft.actionItem },
+    "record-resident-comment": { ...selected, residentComment: draft.residentComment },
+    "adopt-minutes": selected,
+    "archive-meeting": selected,
     "create-records-request": {
       requester: draft.requester,
       summary: draft.recordsSummary,
       deadline: draft.deadline
     },
-    "request-records-clarification": { clarificationNote: draft.clarificationNote },
-    "assign-records-request": { assignedTo: draft.assignedTo },
+    "request-records-clarification": { ...selected, clarificationNote: draft.clarificationNote },
+    "assign-records-request": { ...selected, assignedTo: draft.assignedTo },
     "record-records-search": {
+      ...selected,
       sourceNote: draft.sourceNote,
       citation: draft.citation
     },
-    "add-records-exemption-review": { exemptionNote: draft.exemptionNote },
-    "estimate-records-fee": { feeEstimate: draft.feeEstimate },
+    "add-records-exemption-review": { ...selected, exemptionNote: draft.exemptionNote },
+    "estimate-records-fee": { ...selected, feeEstimate: draft.feeEstimate },
     "draft-records-response": {
+      ...selected,
       responseDraft: draft.responseDraft,
       citation: draft.citation
     },
-    "approve-records-response": { approvalNote: draft.approvalNote },
-    "fulfill-records-request": {},
-    "close-records-request": {},
+    "approve-records-response": { ...selected, approvalNote: draft.approvalNote },
+    "export-records-response": selected,
+    "fulfill-records-request": selected,
+    "close-records-request": selected,
     "import-code-source": {
       title: draft.codeTitle,
       citation: draft.codeCitation,
       body: draft.codeBody
     },
     "record-codifier-sync": {
+      ...selected,
       codifierName: draft.codifierName,
       authoritativeUrl: draft.authoritativeUrl,
       versionLabel: draft.versionLabel
     },
-    "record-codifier-sync-failure": { syncError: draft.syncError },
-    "retry-codifier-sync": {},
-    "mark-code-stale": { amendmentNote: draft.amendmentNote },
+    "record-codifier-sync-failure": { ...selected, syncError: draft.syncError },
+    "retry-codifier-sync": selected,
+    "mark-code-stale": { ...selected, amendmentNote: draft.amendmentNote },
     "draft-code-guidance": {
+      ...selected,
       guidanceDraft: draft.guidanceDraft,
       summaryDraft: draft.summaryDraft
     },
-    "approve-code-guidance": {},
-    "publish-code-source": {},
-    "unpublish-code-source": {},
-    "create-code-handoff": { summary: draft.handoffSummary },
+    "approve-code-guidance": selected,
+    "publish-code-source": selected,
+    "unpublish-code-source": selected,
+    "create-code-handoff": { ...selected, summary: draft.handoffSummary },
     "search-city-knowledge": { query: draft.searchQuery }
   };
   return payloads[action] || {};
