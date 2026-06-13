@@ -5,6 +5,7 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json");
 const REQUIRED_ACTIONS: [&str; 5] = [
@@ -150,9 +151,33 @@ pub struct ModelActionResult {
     pub next_action: String,
 }
 
+#[derive(Deserialize, Serialize, Default)]
+struct LocalModelRegistry {
+    models: Vec<RegisteredModel>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+struct RegisteredModel {
+    model_id: String,
+    display_name: String,
+    provider: String,
+    runtime: String,
+    ollama_model: String,
+    artifact_path: String,
+    sha256: String,
+    registered_at_unix_seconds: u64,
+}
+
 fn parse_manifest() -> Result<ModelManifest, String> {
     serde_json::from_str(MODEL_MANIFEST_JSON)
         .map_err(|error| format!("Could not parse Gemma model manifest: {error}"))
+}
+
+fn now_unix_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0)
 }
 
 fn is_sha256(value: &str) -> bool {
@@ -239,12 +264,27 @@ fn windows_data_root() -> PathBuf {
         .join("Data")
 }
 
+fn windows_config_root() -> PathBuf {
+    if let Ok(root) = env::var("CIVICSUITE_DESKTOP_STATE_DIR") {
+        return PathBuf::from(root).join("config");
+    }
+    env::var("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
+        .join("CivicSuite")
+        .join("config")
+}
+
 fn model_path(artifact: &ArtifactDefinition) -> PathBuf {
     let mut path = windows_data_root();
     for part in artifact.relative_path.split('/') {
         path.push(part);
     }
     path
+}
+
+fn model_registry_path() -> PathBuf {
+    windows_config_root().join("model-registry.json")
 }
 
 fn checksum_marker_path(local_path: &Path) -> PathBuf {
@@ -334,6 +374,75 @@ fn verify_model_artifact(local_path: &Path, artifact: &ArtifactDefinition) -> Re
     verify_file_checksum(local_path, artifact.size_bytes, &artifact.sha256)
 }
 
+fn read_model_registry() -> Result<LocalModelRegistry, String> {
+    let path = model_registry_path();
+    if !path.is_file() {
+        return Ok(LocalModelRegistry::default());
+    }
+    let contents = fs::read_to_string(&path)
+        .map_err(|error| format!("Could not read model registry: {error}"))?;
+    serde_json::from_str(&contents)
+        .map_err(|error| format!("Could not parse model registry: {error}"))
+}
+
+fn write_model_registry(registry: &LocalModelRegistry) -> Result<(), String> {
+    let path = model_registry_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Could not create model registry folder: {error}"))?;
+    }
+    let contents = serde_json::to_string_pretty(registry)
+        .map_err(|error| format!("Could not serialize model registry: {error}"))?;
+    fs::write(&path, format!("{contents}\n"))
+        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+}
+
+fn register_verified_model(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
+    let mut registry = read_model_registry()?;
+    let entry = RegisteredModel {
+        model_id: manifest.model.id.clone(),
+        display_name: manifest.model.display_name.clone(),
+        provider: manifest.model.provider.clone(),
+        runtime: manifest.model.runtime.clone(),
+        ollama_model: manifest.model.ollama_model.clone(),
+        artifact_path: local_path.to_string_lossy().to_string(),
+        sha256: manifest.model.artifact.sha256.clone(),
+        registered_at_unix_seconds: now_unix_seconds(),
+    };
+    if let Some(existing) = registry
+        .models
+        .iter_mut()
+        .find(|candidate| candidate.model_id == entry.model_id)
+    {
+        *existing = entry;
+    } else {
+        registry.models.push(entry);
+    }
+    write_model_registry(&registry)
+}
+
+fn verify_and_register_model_artifact(
+    manifest: &ModelManifest,
+    local_path: &Path,
+) -> Result<(), String> {
+    verify_model_artifact(local_path, &manifest.model.artifact)?;
+    register_verified_model(manifest, local_path)
+}
+
+fn model_registry_matches(manifest: &ModelManifest, local_path: &Path) -> bool {
+    read_model_registry()
+        .map(|registry| {
+            registry.models.iter().any(|entry| {
+                entry.model_id == manifest.model.id
+                    && entry
+                        .sha256
+                        .eq_ignore_ascii_case(&manifest.model.artifact.sha256)
+                    && entry.artifact_path == local_path.to_string_lossy().as_ref()
+            })
+        })
+        .unwrap_or(false)
+}
+
 fn model_artifact_verified(local_path: &Path, artifact: &ArtifactDefinition) -> bool {
     file_size_matches(local_path, artifact.size_bytes)
         && checksum_marker_matches(local_path, &artifact.sha256)
@@ -401,7 +510,7 @@ fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Resul
     }
     fs::rename(&partial_path, local_path)
         .map_err(|error| format!("Could not move verified model into place: {error}"))?;
-    verify_model_artifact(local_path, &manifest.model.artifact)
+    verify_and_register_model_artifact(manifest, local_path)
 }
 
 fn readiness_items(manifest: &ModelManifest, local_path: &Path) -> Vec<ModelReadinessItem> {
@@ -459,11 +568,25 @@ fn readiness_items(manifest: &ModelManifest, local_path: &Path) -> Vec<ModelRead
                     "The bundled local model runtime has not been started by the installer yet."
                         .to_string(),
                 ),
-                "registered-model" => (
-                    false,
-                    "Needs setup",
-                    "CivicCore has not registered this verified local model yet.".to_string(),
-                ),
+                "registered-model" => {
+                    if model_artifact_verified(local_path, &manifest.model.artifact)
+                        && model_registry_matches(manifest, local_path)
+                    {
+                        (
+                            true,
+                            "Registered",
+                            "CivicCore has a local registry entry for this verified model."
+                                .to_string(),
+                        )
+                    } else {
+                        (
+                            false,
+                            "Needs registration",
+                            "CivicCore has not registered this verified local model yet."
+                                .to_string(),
+                        )
+                    }
+                }
                 _ => (
                     false,
                     "Unknown",
@@ -547,23 +670,20 @@ pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
                 "Place or download the pinned GGUF file there, then verify checksum.".to_string(),
             )
         }),
-        "verify-checksum" => {
-            verify_model_artifact(&local_path, &manifest.model.artifact).map(|()| {
-                (
-                    "Verified",
-                    "The local Gemma model file matches the pinned size and SHA-256.".to_string(),
-                    "Start the bundled model runtime and register the model with CivicCore."
-                        .to_string(),
-                )
-            })
-        }
+        "verify-checksum" => verify_and_register_model_artifact(&manifest, &local_path).map(|()| {
+            (
+                "Verified",
+                "The local Gemma model file matches the pinned size and SHA-256.".to_string(),
+                "Start the bundled model runtime before staff workflows use local AI.".to_string(),
+            )
+        }),
         "download" | "resume-download" | "retry" => download_model_artifact(&manifest, &local_path)
             .map(|()| {
                 (
                     "Verified",
                     "The pinned Gemma model downloaded and passed checksum verification."
                         .to_string(),
-                    "Start the bundled model runtime and register the model with CivicCore."
+                    "Start the bundled model runtime before staff workflows use local AI."
                         .to_string(),
                 )
             }),
@@ -702,6 +822,26 @@ mod tests {
             let expected = sha256_file(&model_path).expect("hash");
             verify_file_checksum(&model_path, 10, &expected).expect("verify");
             assert!(checksum_marker_matches(&model_path, &expected));
+        });
+    }
+
+    #[test]
+    fn register_verified_model_writes_civiccore_registry() {
+        with_temp_state_dir(|root| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let model_path = root
+                .join("Data")
+                .join("models")
+                .join("gemma-4-12b-it-qat-q4_0.gguf");
+
+            register_verified_model(&manifest, &model_path).expect("registry write");
+
+            assert!(root.join("config").join("model-registry.json").is_file());
+            assert!(model_registry_matches(&manifest, &model_path));
+            let registry = read_model_registry().expect("registry reads");
+            assert_eq!(registry.models.len(), 1);
+            assert_eq!(registry.models[0].model_id, manifest.model.id);
+            assert_eq!(registry.models[0].ollama_model, manifest.model.ollama_model);
         });
     }
 
