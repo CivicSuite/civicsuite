@@ -10,6 +10,7 @@ const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows",
 const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
+const firstRunRust = readFileSync(join(root, "src-tauri", "src", "first_run.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
 const runtimePayloadManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-runtime-payloads.json"), "utf8"));
 const runtimeSourcesManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-runtime-sources.json"), "utf8"));
@@ -32,7 +33,8 @@ const requiredUiPhrases = [
   "Checksum required",
   "No silent download",
   "Official Google weights",
-  "Download / Resume Model"
+  "Download / Resume Model",
+  "Set Up Services and Model"
 ];
 
 for (const phrase of requiredUiPhrases) {
@@ -129,6 +131,15 @@ if (!rustMain.includes('include_str!("../../../installer/modules.json")')) {
 
 if (!rustMain.includes('mod model;') || !rustMain.includes('get_model_state')) {
   throw new Error("desktop shell must expose model readiness state");
+}
+
+for (const phrase of [
+  'model::model_action("resume-download")',
+  'model::model_action("load-runtime-model")'
+]) {
+  if (!firstRunRust.includes(phrase)) {
+    throw new Error(`Windows first-run setup must call the real model action: ${phrase}`);
+  }
 }
 
 if (runtimeManifest.local_only !== true) {

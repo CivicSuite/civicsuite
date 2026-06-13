@@ -612,6 +612,17 @@ pub fn first_run_action(
                 next_action: bootstrap.next_action,
             });
         }
+        let model_load = model::model_action("load-runtime-model")?;
+        if !model_load.accepted {
+            return Ok(FirstRunActionResult {
+                accepted: false,
+                action: action.to_string(),
+                step_id: Some(target_step_id),
+                status: model_load.status,
+                message: model_load.message,
+                next_action: model_load.next_action,
+            });
+        }
         if !model::local_model_ready()? {
             return Ok(FirstRunActionResult {
                 accepted: false,
@@ -626,6 +637,11 @@ pub fn first_run_action(
                         .to_string(),
             });
         }
+        action_completion = Some((
+            "Ready",
+            format!("{} {}", bootstrap.message, model_load.message),
+            "Continue to finish setup.".to_string(),
+        ));
     }
 
     let locations = resolve_locations(&manifest.default_locations);
