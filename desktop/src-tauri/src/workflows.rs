@@ -4,6 +4,7 @@ use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -244,6 +245,29 @@ fn workflows_path() -> PathBuf {
 
 fn exports_dir() -> PathBuf {
     civic_suite_root().join("Data").join("exports")
+}
+
+fn open_local_folder(path: &Path) -> Result<(), String> {
+    fs::create_dir_all(path)
+        .map_err(|error| format!("Could not create folder {}: {error}", path.display()))?;
+    if cfg!(test) || env::var("CIVICSUITE_SUPPRESS_OPEN_FOLDER").ok().as_deref() == Some("1") {
+        return Ok(());
+    }
+
+    let mut command = if cfg!(target_os = "windows") {
+        Command::new("explorer.exe")
+    } else if cfg!(target_os = "macos") {
+        Command::new("open")
+    } else {
+        Command::new("xdg-open")
+    };
+    command.arg(path).spawn().map_err(|error| {
+        format!(
+            "Could not open folder {} from the desktop app: {error}",
+            path.display()
+        )
+    })?;
+    Ok(())
 }
 
 fn now_unix_seconds() -> u64 {
@@ -1388,6 +1412,26 @@ fn export_records_response(
     Ok(format!("Records response export written to {export_path}."))
 }
 
+fn open_exports_folder(payload: Option<&Value>) -> Result<String, String> {
+    let folder = payload_optional_string(payload, "folder");
+    let (path, label) = match folder.as_str() {
+        "" | "all" => (exports_dir(), "all exports"),
+        "meetings" => (exports_dir().join("meetings"), "meeting exports"),
+        "records" => (exports_dir().join("records"), "records exports"),
+        "code" => (exports_dir().join("code"), "code exports"),
+        _ => {
+            return Err(
+                "Choose a valid export folder: all, meetings, records, or code.".to_string(),
+            )
+        }
+    };
+    open_local_folder(&path)?;
+    Ok(format!(
+        "Opened the local {label} folder: {}",
+        path.to_string_lossy()
+    ))
+}
+
 fn fulfill_records_request(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -2201,6 +2245,7 @@ pub fn city_work_action(
         "export-records-response" => export_records_response(&mut state, payload)?,
         "fulfill-records-request" => fulfill_records_request(&mut state, payload)?,
         "close-records-request" => close_records_request(&mut state, payload)?,
+        "open-exports-folder" => open_exports_folder(payload)?,
         "import-code-source" => import_code_source(&mut state, payload)?,
         "record-codifier-sync" => record_codifier_sync(&mut state, payload)?,
         "record-codifier-sync-failure" => record_codifier_sync_failure(&mut state, payload)?,
@@ -2321,6 +2366,25 @@ mod tests {
             manifest["generated_by"].as_str(),
             Some("CivicSuite Windows Local")
         );
+    }
+
+    #[test]
+    fn export_folder_action_opens_only_allowlisted_local_export_folders() {
+        with_temp_state_dir(|root| {
+            let records_folder = serde_json::json!({ "folder": "records" });
+            let result = city_work_action("open-exports-folder", Some(&records_folder))
+                .expect("exports folder opens");
+            assert!(result.accepted);
+            assert!(result.message.contains("records exports"));
+            assert!(root.join("Data").join("exports").join("records").is_dir());
+
+            let blocked_folder = serde_json::json!({ "folder": "..\\Windows" });
+            let error = match city_work_action("open-exports-folder", Some(&blocked_folder)) {
+                Ok(_) => panic!("unexpectedly opened a non-allowlisted export folder"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Choose a valid export folder"));
+        });
     }
 
     #[test]

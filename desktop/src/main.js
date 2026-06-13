@@ -1132,6 +1132,13 @@ function cityWork() {
   return state.app.city_work || fallbackState.city_work;
 }
 
+function exportFolderForActiveArea() {
+  if (state.activeArea === "meetings") return "meetings";
+  if (state.activeArea === "records") return "records";
+  if (state.activeArea === "code") return "code";
+  return "all";
+}
+
 function workflowEmpty(label) {
   return `<p class="empty-note">${label}</p>`;
 }
@@ -1602,6 +1609,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="add-code-handoff-agenda">Add Code Handoff</button>
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
           <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Packet</button>
+          <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
         </div>
       </div>
       <div class="workflow-form">
@@ -1823,6 +1831,7 @@ function renderRecordsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="export-records-response">Export Response</button>
           <button type="button" class="secondary-action" data-work-action="fulfill-records-request">Mark Fulfilled</button>
           <button type="button" class="secondary-action" data-work-action="close-records-request">Close Request</button>
+          <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
         </div>
       </div>
     </section>
@@ -1916,6 +1925,7 @@ function renderCodeWorkflow() {
           <button type="button" class="primary-action" data-work-action="import-code-source">Import Source</button>
           <button type="button" class="secondary-action" data-work-action="publish-code-source">Publish Source</button>
           <button type="button" class="secondary-action" data-work-action="unpublish-code-source">Unpublish Source</button>
+          <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
         </div>
       </div>
       <div class="workflow-form">
@@ -2879,6 +2889,7 @@ function workPayloadForAction(action) {
     "export-records-response": selected,
     "fulfill-records-request": selected,
     "close-records-request": selected,
+    "open-exports-folder": { folder: exportFolderForActiveArea() },
     "import-code-source": {
       title: draft.codeTitle,
       citation: draft.codeCitation,

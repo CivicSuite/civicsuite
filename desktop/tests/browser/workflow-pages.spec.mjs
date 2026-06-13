@@ -9,6 +9,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Notice Ready" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Packet" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Action Item" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Adopt Minutes" })).toBeVisible();
@@ -33,12 +34,14 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Export Response" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Close Request" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Import Source" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Codifier Sync" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Sync", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Sync Failure" })).toBeVisible();
@@ -73,6 +76,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Records Requests/ }).click();
   await expect(page.getByRole("heading", { name: "Public Records Requests" })).toBeVisible();
@@ -87,6 +91,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Export Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
   await page.getByLabel("Your name").fill("Morgan Lee");
   await page.getByLabel("Email or phone").fill("morgan@example.gov");
   await page.getByLabel("Records requested").fill("Emails and invoices about the river trail grant");
@@ -104,6 +109,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Record Sync", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Approve Guidance" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();
   await expect(page.getByRole("heading", { name: "Public Search" })).toBeVisible();
