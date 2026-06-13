@@ -41,4 +41,17 @@ test("system health keeps full model readiness visible", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Local model runtime" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore model registry" })).toBeVisible();
   await expect(page.getByText("explicit setup consent required")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Install$/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Start$/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Repair$/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Logs$/ }).first()).toBeVisible();
+});
+
+test("browser preview explains supervisor actions require the desktop bridge", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /System Health/ }).click();
+  await page.getByRole("button", { name: /^Check$/ }).first().click();
+
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+  await expect(page.getByText("Runtime service changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
 });

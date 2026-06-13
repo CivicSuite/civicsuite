@@ -314,6 +314,7 @@ const state = {
   auditOpen: false,
   actionResult: null,
   modelActionResult: null,
+  supervisorActionResult: null,
   setupDraft: {
     cityName: "",
     state: "",
@@ -535,6 +536,18 @@ function renderModelActionResult() {
   `;
 }
 
+function renderSupervisorActionResult() {
+  if (!state.supervisorActionResult) return "";
+  const result = state.supervisorActionResult;
+  return `
+    <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
+      <strong>${result.status}</strong>
+      <span>${result.message}</span>
+      <small>${result.next_action}</small>
+    </div>
+  `;
+}
+
 function renderFirstRunWizard({ compact = false } = {}) {
   const firstRun = state.app.first_run;
   if (!firstRun || firstRun.finished) return "";
@@ -736,9 +749,20 @@ function renderHealth() {
           <p>${item.message}</p>
           ${item.next_action ? `<p class="next-action"><strong>Next:</strong> ${item.next_action}</p>` : ""}
           ${item.admin_detail ? `<small>${item.admin_detail}</small>` : ""}
+          ${item.id !== "desktop-shell" ? `
+            <div class="health-actions" aria-label="${item.label} actions">
+              <button type="button" class="secondary-action" data-supervisor-action="health" data-service-id="${item.id}">Check</button>
+              <button type="button" class="secondary-action" data-supervisor-action="install" data-service-id="${item.id}">Install</button>
+              <button type="button" class="secondary-action" data-supervisor-action="start" data-service-id="${item.id}">Start</button>
+              <button type="button" class="secondary-action" data-supervisor-action="repair" data-service-id="${item.id}">Repair</button>
+              <button type="button" class="secondary-action" data-supervisor-action="logs" data-service-id="${item.id}">Logs</button>
+              <button type="button" class="secondary-action" data-supervisor-action="stop" data-service-id="${item.id}">Stop</button>
+            </div>
+          ` : ""}
         </article>
       `).join("")}
     </section>
+    ${renderSupervisorActionResult()}
     ${renderFirstRunWizard()}
   `;
 }
@@ -838,6 +862,11 @@ function bindEvents() {
       await handleModelAction(button.dataset.modelAction);
     });
   });
+  document.querySelectorAll("[data-supervisor-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleSupervisorAction(button.dataset.supervisorAction, button.dataset.serviceId);
+    });
+  });
 }
 
 function setupPayloadForStep(stepId) {
@@ -908,6 +937,34 @@ async function handleModelAction(action) {
       status: "Needs attention",
       message: String(error),
       next_action: "Check the local model file, network connection, and available disk space, then retry."
+    };
+  }
+  render();
+}
+
+async function handleSupervisorAction(action, serviceId) {
+  if (!hasTauriBridge()) {
+    state.supervisorActionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Runtime service changes are saved by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to manage local runtime services."
+    };
+    render();
+    return;
+  }
+  try {
+    state.supervisorActionResult = await invoke("supervisor_action", {
+      action,
+      serviceId
+    });
+    await loadAppState();
+  } catch (error) {
+    state.supervisorActionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Review System Health and try the action again."
     };
   }
   render();

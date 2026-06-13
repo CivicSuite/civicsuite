@@ -5,7 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::model;
+use crate::{model, supervisor};
 
 const FIRST_RUN_MANIFEST_JSON: &str = include_str!("../../runtime/windows-first-run.json");
 const REQUIRED_STEP_IDS: [&str; 10] = [
@@ -406,14 +406,6 @@ fn create_local_locations(locations: &FirstRunLocations) -> Result<(), String> {
 
 fn action_blocks_until_runtime(action: &str) -> Option<(&'static str, &'static str)> {
     match action {
-        "verify-health" => Some((
-            "Health verification cannot pass until the portable runtime services are installed and supervised.",
-            "Finish the runtime install slice, then run health verification again.",
-        )),
-        "open-app" => Some((
-            "CivicSuite cannot finish first-run while required setup and runtime checks are incomplete.",
-            "Complete all prior required setup steps and health verification first.",
-        )),
         _ => None,
     }
 }
@@ -475,13 +467,26 @@ pub fn first_run_action(
                     .to_string(),
         });
     }
+    if action == "verify-health" && !supervisor::required_runtime_ready()? {
+        return Ok(FirstRunActionResult {
+            accepted: false,
+            action: action.to_string(),
+            step_id: Some(target_step_id),
+            status: "Needs attention",
+            message: "Required local runtime services are not healthy yet.".to_string(),
+            next_action:
+                "Open System Health, install or repair the local runtime, then run health again."
+                    .to_string(),
+        });
+    }
 
     let locations = resolve_locations(&manifest.default_locations);
     match action {
         "choose-location" | "choose-backup" => create_local_locations(&locations)?,
         "create-city-profile" => persist_city_profile(payload)?,
         "create-admin" => persist_first_admin(payload)?,
-        "review" | "select-modules" | "download-model" | "repair" | "backup" | "uninstall" => {}
+        "review" | "select-modules" | "download-model" | "verify-health" | "open-app"
+        | "repair" | "backup" | "uninstall" => {}
         _ => {
             return Err(format!(
                 "First-run action {action} has no desktop executor yet"
@@ -557,6 +562,17 @@ mod tests {
             assert!(!result.accepted);
             assert_eq!(result.status, "Needs attention");
             assert!(result.message.contains("checksum verification"));
+        });
+    }
+
+    #[test]
+    fn first_run_health_action_waits_for_runtime_health() {
+        with_temp_state_dir(|_| {
+            let result = first_run_action("verify-health", Some("health"), None)
+                .expect("action response is structured");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs attention");
+            assert!(result.message.contains("runtime services"));
         });
     }
 

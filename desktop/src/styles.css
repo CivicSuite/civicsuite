@@ -531,6 +531,19 @@ main {
   margin-top: 10px;
 }
 
+.health-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.health-actions button {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
 .next-action {
   border-left: 3px solid #a97812;
   padding-left: 10px;
@@ -579,6 +592,7 @@ main {
   .task-grid,
   .module-columns,
   .health-grid,
+  .health-actions,
   .location-grid,
   .model-meta-grid,
   .module-list.compact,
