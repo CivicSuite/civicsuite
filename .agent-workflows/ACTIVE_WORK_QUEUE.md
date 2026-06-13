@@ -12,7 +12,7 @@ active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
 portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
 UX, city-core module completion, and future module package foundation.
 
-Current slice: Installer and first-run wizard without Docker/WSL.
+Current slice: Gemma 4 12B quantization-aware model download/readiness path.
 
 Closed Windows Local slices:
 
@@ -30,20 +30,23 @@ Closed Windows Local slices:
   Evidence: `desktop/runtime/windows-local-runtime.json`,
   `desktop/src-tauri/src/supervisor.rs`, System Health runtime rendering, and
   `docs/process/audits/audit-lite-windows-runtime-supervisor-2026-06-13.md`.
+- Installer and first-run wizard without Docker/WSL.
+  Evidence: `desktop/runtime/windows-first-run.json`,
+  `desktop/src-tauri/src/first_run.rs`, Home/System Health setup rendering, and
+  `docs/process/audits/audit-lite-windows-first-run-setup-2026-06-13.md`.
 
 Slice Definition of Done:
 
-- Add installer and first-run wizard surfaces for unsigned beta/SmartScreen,
-  install/data locations, runtime install, model download, city profile, first
-  admin user, health verification, backup, repair, and uninstall.
-- Keep the end-user path free of Docker, WSL, terminal, and developer tooling.
-- Connect installer steps to structured desktop state instead of static copy.
-- Add tests for first-run state transitions and installer readiness.
+- Define pinned Gemma 4 12B quantization-aware model metadata and checksum
+  requirements for the Windows local profile.
+- Add local model download/readiness state to the desktop shell without
+  starting a network download silently.
+- Keep fallback/blocking UI honest when the model is unavailable.
+- Add tests for model metadata validation, readiness state, and setup copy.
 - Run audit-lite and fix all slice findings.
 
-Next slices after this installer/first-run foundation:
+Next slices after this model-readiness foundation:
 
-5. Gemma 4 12B quantization-aware model download/readiness path.
 6. CivicCore local platform completion for auth, audit, module registry, model
    registry, queue, health, backup/restore, and installer APIs.
 7. CivicRecords AI Windows local persistence and workflow closure.

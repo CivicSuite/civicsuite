@@ -16,6 +16,152 @@ const fallbackState = {
   ].map(([id, label, description]) => ({ id, label, description })),
   modules: [],
   installer_steps: [],
+  first_run: {
+    profile: "windows-local-1.0",
+    profile_label: "City Core",
+    local_only: true,
+    finished: false,
+    status: "Needs setup",
+    current_step_id: "unsigned-beta",
+    locations: {
+      install_root: "%LOCALAPPDATA%\\CivicSuite",
+      data_root: "%LOCALAPPDATA%\\CivicSuite\\Data",
+      backup_root: "%USERPROFILE%\\Documents\\CivicSuite Backups"
+    },
+    available_actions: ["review", "choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"],
+    steps: [
+      {
+        id: "unsigned-beta",
+        label: "Welcome and unsigned beta notice",
+        surface: "Installer",
+        required: true,
+        completed: false,
+        current: true,
+        status: "Current",
+        summary: "CivicSuite is beta software from an unsigned open-source build.",
+        detail: "Install only from the official CivicSuite release source after checksum verification.",
+        next_action: "Review the unsigned beta notice before continuing.",
+        action: "review"
+      },
+      {
+        id: "smartscreen",
+        label: "Windows SmartScreen explanation",
+        surface: "Installer",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Windows may show an Unknown Publisher warning for this beta.",
+        detail: "The installer explains More info and Run anyway for this verified unsigned beta.",
+        next_action: "Confirm the warning text matches the CivicSuite guidance.",
+        action: "review"
+      },
+      {
+        id: "locations",
+        label: "Install and local data locations",
+        surface: "Installer",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Choose where the app and city data live on this machine.",
+        detail: "Defaults stay under the current Windows user profile.",
+        next_action: "Choose install, data, and backup folders.",
+        action: "choose-location"
+      },
+      {
+        id: "modules",
+        label: "Module selection",
+        surface: "Installer",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "City Core is selected by default and CivicCore is locked on.",
+        detail: "Future modules appear only after their package and proof gates pass.",
+        next_action: "Review the City Core module set.",
+        action: "select-modules"
+      },
+      {
+        id: "model",
+        label: "Local AI model download",
+        surface: "Installer",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Download Gemma 4 12B quantization-aware weights for local AI.",
+        detail: "Model setup must verify pinned metadata and checksums.",
+        next_action: "Download and verify the pinned local model weights.",
+        action: "download-model"
+      },
+      {
+        id: "city-profile",
+        label: "City profile",
+        surface: "First run",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Enter city profile and contact details.",
+        detail: "The city profile personalizes notices, records responses, code guidance, and audit context.",
+        next_action: "Create the city profile.",
+        action: "create-city-profile"
+      },
+      {
+        id: "first-admin",
+        label: "First admin user",
+        surface: "First run",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Create the first local administrator before staff work begins.",
+        detail: "The first admin owns users, roles, backups, and recovery contact information.",
+        next_action: "Create the first admin user.",
+        action: "create-admin"
+      },
+      {
+        id: "backup",
+        label: "Backup default",
+        surface: "First run",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Choose the default local backup folder.",
+        detail: "Backup is configured before city work begins.",
+        next_action: "Choose the default backup folder.",
+        action: "choose-backup"
+      },
+      {
+        id: "health",
+        label: "Health verification",
+        surface: "First run",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Verify local services, storage, backup, and the local model.",
+        detail: "Health checks cover the desktop shell, local data store, workflow services, task queue, local AI model, and document storage.",
+        next_action: "Run local health verification.",
+        action: "verify-health"
+      },
+      {
+        id: "finish",
+        label: "Finish and lifecycle entry points",
+        surface: "First run",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Open CivicSuite and keep repair, backup, and uninstall reachable.",
+        detail: "The same product surface owns lifecycle actions.",
+        next_action: "Open CivicSuite after all setup checks pass.",
+        action: "open-app"
+      }
+    ]
+  },
   health: [
     {
       id: "desktop-shell",
@@ -131,6 +277,7 @@ function renderHome() {
       <h2>Work that needs attention</h2>
       <p>Start with the task, not the module. City-core workflows stay local on this machine.</p>
     </section>
+    ${renderFirstRunWizard()}
     <section class="task-grid" aria-label="Primary work areas">
       ${state.app.navigation.filter((item) => item.id !== "home" && item.id !== "settings").slice(0, 5).map((item) => `
         <article class="task-card">
@@ -151,6 +298,64 @@ function renderHome() {
       <div class="module-list compact">
         ${installed.map(renderModuleRow).join("")}
       </div>
+    </section>
+  `;
+}
+
+function firstRunStatusClass(step) {
+  if (step.completed) return "status-ok";
+  if (step.current) return "status-warn";
+  return "status-muted";
+}
+
+function renderFirstRunStep(step, index) {
+  return `
+    <article class="first-run-step ${step.current ? "current" : ""}">
+      <strong>${index + 1}</strong>
+      <div>
+        <div class="step-header">
+          <h3>${step.label}</h3>
+          <span class="${firstRunStatusClass(step)}">${step.status}</span>
+        </div>
+        <p>${step.summary}</p>
+        <small>${step.detail}</small>
+        ${step.current ? `<p class="next-action"><strong>Next:</strong> ${step.next_action}</p>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function renderFirstRunWizard({ compact = false } = {}) {
+  const firstRun = state.app.first_run;
+  if (!firstRun || firstRun.finished) return "";
+  const steps = compact ? firstRun.steps.slice(0, 5) : firstRun.steps;
+  return `
+    <section class="section-band first-run-panel" aria-label="First-run setup">
+      <div class="section-title">
+        <p class="eyebrow">First-run setup</p>
+        <h3>${firstRun.profile_label} setup checklist</h3>
+        <p>Install stays local to this Windows machine. No Docker, WSL, terminal, or developer tooling is part of the clerk path.</p>
+      </div>
+      <div class="location-grid" aria-label="Default local locations">
+        <div>
+          <span>Install</span>
+          <strong>${firstRun.locations.install_root}</strong>
+        </div>
+        <div>
+          <span>City data</span>
+          <strong>${firstRun.locations.data_root}</strong>
+        </div>
+        <div>
+          <span>Backups</span>
+          <strong>${firstRun.locations.backup_root}</strong>
+        </div>
+      </div>
+      <div class="first-run-list">
+        ${steps.map(renderFirstRunStep).join("")}
+      </div>
+      ${compact && firstRun.steps.length > steps.length ? `
+        <button type="button" class="text-link" data-area="health">View all setup and health steps</button>
+      ` : ""}
     </section>
   `;
 }
@@ -246,15 +451,7 @@ function renderHealth() {
         </article>
       `).join("")}
     </section>
-    <section class="section-band">
-      <div class="section-title">
-        <h3>Installer path</h3>
-        <p>The first-run flow stays local and does not ask clerks to use developer tools.</p>
-      </div>
-      <ol class="step-list">
-        ${state.app.installer_steps.map((step) => `<li>${step}</li>`).join("")}
-      </ol>
-    </section>
+    ${renderFirstRunWizard()}
   `;
 }
 

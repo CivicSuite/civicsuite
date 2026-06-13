@@ -8,6 +8,7 @@ const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
+const firstRunManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-first-run.json"), "utf8"));
 
 const requiredUiPhrases = [
   "Meetings & Notices",
@@ -16,7 +17,10 @@ const requiredUiPhrases = [
   "Search City Knowledge",
   "System Health",
   "Audit Trail",
-  "module manager"
+  "module manager",
+  "Windows SmartScreen explanation",
+  "First admin user",
+  "repair, backup, and uninstall"
 ];
 
 for (const phrase of requiredUiPhrases) {
@@ -47,6 +51,9 @@ for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   if (runtimeManifest.operator_path[key] !== false) {
     throw new Error(`Windows runtime operator path cannot require ${key}`);
   }
+  if (firstRunManifest.operator_path[key] !== false) {
+    throw new Error(`Windows first-run operator path cannot require ${key}`);
+  }
 }
 
 for (const action of ["install", "start", "stop", "health", "repair", "logs", "backup", "restore", "uninstall"]) {
@@ -58,6 +65,18 @@ for (const action of ["install", "start", "stop", "health", "repair", "logs", "b
 for (const serviceId of ["postgres", "python-services", "task-queue", "model-runtime", "file-storage"]) {
   if (!runtimeManifest.services.some((service) => service.id === serviceId)) {
     throw new Error(`Windows runtime manifest missing service: ${serviceId}`);
+  }
+}
+
+for (const stepId of ["unsigned-beta", "smartscreen", "locations", "modules", "model", "city-profile", "first-admin", "backup", "health", "finish"]) {
+  if (!firstRunManifest.steps.some((step) => step.id === stepId)) {
+    throw new Error(`Windows first-run manifest missing step: ${stepId}`);
+  }
+}
+
+for (const action of ["review", "choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"]) {
+  if (!firstRunManifest.actions.includes(action)) {
+    throw new Error(`Windows first-run manifest missing action: ${action}`);
   }
 }
 

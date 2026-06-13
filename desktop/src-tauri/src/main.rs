@@ -1,5 +1,7 @@
+mod first_run;
 mod supervisor;
 
+use first_run::{FirstRunActionResult, FirstRunState};
 use serde::Serialize;
 use serde_json::Value;
 use supervisor::{RuntimeHealthItem, SupervisorActionResult};
@@ -32,6 +34,7 @@ struct AppState {
     navigation: Vec<NavigationItem>,
     modules: Vec<ModuleSummary>,
     installer_steps: Vec<&'static str>,
+    first_run: FirstRunState,
     health: Vec<RuntimeHealthItem>,
 }
 
@@ -146,8 +149,22 @@ fn get_app_state() -> Result<AppState, String> {
         navigation: navigation(),
         modules: module_summaries()?,
         installer_steps: installer_steps(),
+        first_run: first_run::first_run_state(&[])?,
         health: supervisor::runtime_health()?,
     })
+}
+
+#[tauri::command]
+fn preview_first_run_state(completed_step_ids: Vec<String>) -> Result<FirstRunState, String> {
+    first_run::first_run_state(&completed_step_ids)
+}
+
+#[tauri::command]
+fn first_run_action(
+    action: String,
+    step_id: Option<String>,
+) -> Result<FirstRunActionResult, String> {
+    first_run::first_run_action(&action, step_id.as_deref())
 }
 
 #[tauri::command]
@@ -161,7 +178,12 @@ fn supervisor_action(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_app_state, supervisor_action])
+        .invoke_handler(tauri::generate_handler![
+            get_app_state,
+            preview_first_run_state,
+            first_run_action,
+            supervisor_action
+        ])
         .run(tauri::generate_context!())
         .expect("failed to run CivicSuite desktop");
 }
@@ -205,5 +227,16 @@ mod tests {
         assert!(state.health.iter().any(|item| item.id == "desktop-shell"));
         assert!(state.health.iter().any(|item| item.id == "postgres"));
         assert!(state.health.iter().any(|item| item.id == "model-runtime"));
+    }
+
+    #[test]
+    fn app_state_reports_first_run_setup_contract() {
+        let state = get_app_state().expect("app state builds");
+        assert_eq!(state.first_run.status, "Needs setup");
+        assert_eq!(
+            state.first_run.current_step_id.as_deref(),
+            Some("unsigned-beta")
+        );
+        assert!(state.first_run.local_only);
     }
 }

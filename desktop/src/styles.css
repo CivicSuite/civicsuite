@@ -42,6 +42,7 @@ main:focus-visible {
 .section-title h3,
 .task-card h3,
 .workflow-step h3,
+.first-run-step h3,
 .module-row h3,
 .health-card h3 {
   margin: 0;
@@ -161,7 +162,8 @@ main {
 .workflow-panel,
 .section-band,
 .health-card,
-.module-row {
+.module-row,
+.first-run-step {
   background: #ffffff;
   border: 1px solid #d7e0e7;
   border-radius: 8px;
@@ -179,6 +181,7 @@ main {
 
 .task-card p,
 .workflow-step p,
+.first-run-step p,
 .module-row p,
 .health-card p,
 .section-title p {
@@ -223,6 +226,84 @@ main {
   height: 32px;
   justify-content: center;
   width: 32px;
+}
+
+.first-run-panel {
+  margin-bottom: 18px;
+}
+
+.location-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.location-grid div {
+  background: #f5f8fa;
+  border: 1px solid #dbe4ea;
+  border-radius: 6px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.location-grid span,
+.first-run-step small {
+  color: #6b7885;
+  display: block;
+  font-size: 0.78rem;
+}
+
+.location-grid strong {
+  display: block;
+  font-size: 0.86rem;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.first-run-list {
+  display: grid;
+  gap: 8px;
+}
+
+.first-run-step {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 38px minmax(0, 1fr);
+  padding: 14px;
+}
+
+.first-run-step.current {
+  border-color: #d8a42b;
+}
+
+.first-run-step > strong {
+  align-items: center;
+  background: #eef3f6;
+  border-radius: 50%;
+  color: #1e5f74;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.step-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.text-link {
+  background: transparent;
+  border: 0;
+  color: #1e5f74;
+  cursor: pointer;
+  font-weight: 800;
+  margin-top: 12px;
+  padding: 0;
+  text-align: left;
 }
 
 .module-columns {
@@ -354,6 +435,7 @@ main {
   .task-grid,
   .module-columns,
   .health-grid,
+  .location-grid,
   .module-list.compact {
     grid-template-columns: 1fr;
   }

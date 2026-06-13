@@ -13,16 +13,18 @@ non-technical installer, Gemma 4 12B quantization-aware local model path,
 CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
 contract that lets future modules plug into the existing app one at a time.
 
-Current working slice: Installer and first-run wizard without Docker/WSL.
+Current working slice: Gemma 4 12B quantization-aware model download/readiness
+path.
 
 Definition of Done for this slice:
 
-- Desktop installer and first-run surfaces explain unsigned beta/SmartScreen,
-  install/data locations, local runtime install, model download, city profile,
-  first admin user, health verification, backup, repair, and uninstall.
-- First-run state is structured and testable, not static copy.
-- The clerk path stays free of terminal, Docker, WSL, and developer tooling.
-- Tests cover first-run state transitions and installer readiness.
+- Pinned Gemma 4 12B quantization-aware model metadata and checksum
+  requirements are defined for the Windows local profile.
+- Desktop model state shows download/readiness/blocking state without silent
+  network or host mutation.
+- Setup and health copy remain local-only and plain-English when the model is
+  unavailable.
+- Tests cover model metadata validation, readiness state, and setup copy.
 - audit-lite runs for this slice and findings are fixed before push.
 
 Closed Windows Local slices:
@@ -41,6 +43,10 @@ Closed Windows Local slices:
   Evidence: `desktop/runtime/windows-local-runtime.json`,
   `desktop/src-tauri/src/supervisor.rs`, System Health runtime rendering, and
   `docs/process/audits/audit-lite-windows-runtime-supervisor-2026-06-13.md`.
+- Installer and first-run wizard without Docker/WSL.
+  Evidence: `desktop/runtime/windows-first-run.json`,
+  `desktop/src-tauri/src/first_run.rs`, Home/System Health setup rendering, and
+  `docs/process/audits/audit-lite-windows-first-run-setup-2026-06-13.md`.
 
 Stop conditions:
 

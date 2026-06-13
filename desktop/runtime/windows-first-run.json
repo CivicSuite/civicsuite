@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "profile": "windows-local-1.0",
+  "profile_label": "City Core",
+  "local_only": true,
+  "operator_path": {
+    "requires_docker": false,
+    "requires_wsl": false,
+    "requires_terminal": false
+  },
+  "default_locations": {
+    "install_root": "{local_app_data}/CivicSuite",
+    "data_root": "{local_app_data}/CivicSuite/Data",
+    "backup_root": "{documents}/CivicSuite Backups"
+  },
+  "actions": [
+    "review",
+    "choose-location",
+    "select-modules",
+    "download-model",
+    "create-city-profile",
+    "create-admin",
+    "choose-backup",
+    "verify-health",
+    "open-app",
+    "repair",
+    "backup",
+    "uninstall"
+  ],
+  "steps": [
+    {
+      "id": "unsigned-beta",
+      "label": "Welcome and unsigned beta notice",
+      "surface": "Installer",
+      "required": true,
+      "summary": "CivicSuite is beta software from an unsigned open-source build.",
+      "detail": "The installer explains that this build is not code-signed yet and should be installed only from the official CivicSuite release source after checksum verification.",
+      "next_action": "Review the unsigned beta notice before continuing.",
+      "action": "review"
+    },
+    {
+      "id": "smartscreen",
+      "label": "Windows SmartScreen explanation",
+      "surface": "Installer",
+      "required": true,
+      "summary": "Windows may show an Unknown Publisher warning for this beta.",
+      "detail": "The installer explains why the warning appears and how More info and Run anyway apply to this verified unsigned beta.",
+      "next_action": "Confirm the warning text matches the CivicSuite guidance.",
+      "action": "review"
+    },
+    {
+      "id": "locations",
+      "label": "Install and local data locations",
+      "surface": "Installer",
+      "required": true,
+      "summary": "Choose where the app and city data live on this machine.",
+      "detail": "The default locations stay under the current Windows user profile and can be changed before local services are installed.",
+      "next_action": "Choose install, data, and backup folders.",
+      "action": "choose-location"
+    },
+    {
+      "id": "modules",
+      "label": "Module selection",
+      "surface": "Installer",
+      "required": true,
+      "summary": "City Core is selected by default and CivicCore is locked on.",
+      "detail": "Custom selection is part of the architecture, but only modules with passing package and proof contracts can be installed from the clerk path.",
+      "next_action": "Review the City Core module set.",
+      "action": "select-modules"
+    },
+    {
+      "id": "model",
+      "label": "Local AI model download",
+      "surface": "Installer",
+      "required": true,
+      "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
+      "detail": "The model step must use pinned metadata, resumable download, checksum verification, and local-only default behavior.",
+      "next_action": "Download and verify the pinned local model weights.",
+      "action": "download-model"
+    },
+    {
+      "id": "city-profile",
+      "label": "City profile",
+      "surface": "First run",
+      "required": true,
+      "summary": "Enter the city name, state, time zone, records contact, and clerk contact.",
+      "detail": "The city profile personalizes notices, records responses, code guidance, and audit context.",
+      "next_action": "Create the city profile.",
+      "action": "create-city-profile"
+    },
+    {
+      "id": "first-admin",
+      "label": "First admin user",
+      "surface": "First run",
+      "required": true,
+      "summary": "Create the first local administrator before staff work begins.",
+      "detail": "The first admin owns initial user setup, roles, backup settings, and recovery contact information.",
+      "next_action": "Create the first admin user.",
+      "action": "create-admin"
+    },
+    {
+      "id": "backup",
+      "label": "Backup default",
+      "surface": "First run",
+      "required": true,
+      "summary": "Choose the default local backup folder.",
+      "detail": "Backup is configured before city work begins so records, packets, notices, code imports, and audit entries have a recovery path.",
+      "next_action": "Choose the default backup folder.",
+      "action": "choose-backup"
+    },
+    {
+      "id": "health",
+      "label": "Health verification",
+      "surface": "First run",
+      "required": true,
+      "summary": "Verify local services, storage, backup, and the local model before staff work.",
+      "detail": "The health step checks the desktop shell, local data store, workflow services, task queue, local AI model, and document storage.",
+      "next_action": "Run local health verification.",
+      "action": "verify-health"
+    },
+    {
+      "id": "finish",
+      "label": "Finish and lifecycle entry points",
+      "surface": "First run",
+      "required": true,
+      "summary": "Open CivicSuite and keep repair, backup, and uninstall reachable.",
+      "detail": "The finish screen links the app, System Health, repair, backup, and uninstall so the same product surface owns the lifecycle.",
+      "next_action": "Open CivicSuite after all setup checks pass.",
+      "action": "open-app"
+    }
+  ]
+}
