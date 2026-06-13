@@ -874,7 +874,13 @@ def wait_for_url(url: str, *, timeout_seconds: int = 360) -> dict[str, object]:
 
 
 def decode_json(body: str) -> dict[str, object]:
-    return json.loads(body) if body else {}
+    if not body:
+        return {}
+    try:
+        value = json.loads(body)
+    except json.JSONDecodeError:
+        return {"detail": {"message": "Received non-JSON HTTP response.", "raw_body": body[:1000]}}
+    return value if isinstance(value, dict) else {"detail": value}
 
 
 def get_json(
@@ -932,13 +938,21 @@ def post_json_from_compose_service(
         "headers.setdefault('Content-Type', 'application/json')\n"
         "headers.setdefault('Accept', 'application/json')\n"
         "request = urllib.request.Request(url, data=payload, headers=headers, method='POST')\n"
+        "def decode_body(body):\n"
+        "    if not body:\n"
+        "        return {}\n"
+        "    try:\n"
+        "        value = json.loads(body)\n"
+        "    except json.JSONDecodeError:\n"
+        "        return {'detail': {'message': 'Received non-JSON HTTP response.', 'raw_body': body[:1000]}}\n"
+        "    return value if isinstance(value, dict) else {'detail': value}\n"
         "try:\n"
         "    with urllib.request.urlopen(request, timeout=30) as response:\n"
         "        body = response.read().decode('utf-8')\n"
-        "        print(json.dumps({'status': response.status, 'body': json.loads(body) if body else {}}))\n"
+        "        print(json.dumps({'status': response.status, 'body': decode_body(body)}))\n"
         "except urllib.error.HTTPError as exc:\n"
         "    body = exc.read().decode('utf-8')\n"
-        "    print(json.dumps({'status': exc.code, 'body': json.loads(body) if body else {}}))\n"
+        "    print(json.dumps({'status': exc.code, 'body': decode_body(body)}))\n"
     )
     command = compose(
         project,
