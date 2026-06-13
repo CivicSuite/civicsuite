@@ -850,6 +850,63 @@ def compose(project: str, source: Path, *args: str) -> list[str]:
     return command
 
 
+def docker_ids_by_compose_project(project: str, resource: str) -> list[str]:
+    proc = run(
+        [
+            docker_command(),
+            resource,
+            "ls",
+            "-q",
+            "--filter",
+            f"label=com.docker.compose.project={project}",
+        ],
+        cwd=ROOT,
+        timeout=120,
+    )
+    if proc.returncode != 0:
+        return []
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def remove_docker_resources(command: list[str]) -> dict[str, object]:
+    proc = run(command, cwd=ROOT, timeout=300)
+    return {
+        "command": command,
+        "returncode": proc.returncode,
+        "stdout": proc.stdout[-4000:],
+        "stderr": proc.stderr[-4000:],
+    }
+
+
+def cleanup_orphan_compose_project(project: str) -> dict[str, object]:
+    steps: list[dict[str, object]] = []
+    container_ids = docker_ids_by_compose_project(project, "container")
+    volume_ids = docker_ids_by_compose_project(project, "volume")
+    network_ids = docker_ids_by_compose_project(project, "network")
+
+    if container_ids:
+        steps.append(remove_docker_resources([docker_command(), "rm", "-f", *container_ids]))
+    if volume_ids:
+        steps.append(remove_docker_resources([docker_command(), "volume", "rm", "-f", *volume_ids]))
+    if network_ids:
+        steps.append(remove_docker_resources([docker_command(), "network", "rm", *network_ids]))
+
+    failed = [
+        step
+        for step in steps
+        if int(step.get("returncode", 0)) != 0
+        and "No such" not in str(step.get("stderr", ""))
+    ]
+    return {
+        "project": project,
+        "containers": container_ids,
+        "volumes": volume_ids,
+        "networks": network_ids,
+        "steps": steps,
+        "status": "failed" if failed else "removed_or_absent",
+    }
+
+
 def remove_tree_allowing_readonly(path: Path) -> None:
     def _on_error(function, target, exc_info):  # type: ignore[no-untyped-def]
         try:
@@ -2227,10 +2284,30 @@ def uninstall(
             continue
         source = ctx[source_key]  # type: ignore[index]
         if not Path(source).exists():
-            steps.append({"module": name, "step": "compose_down", "status": "skipped_missing_source"})
+            cleanup = cleanup_orphan_compose_project(str(ctx[project_key]))
+            steps.append(
+                {
+                    "module": name,
+                    "step": "compose_down",
+                    "status": "source_missing_orphan_cleanup",
+                    "orphan_cleanup": cleanup,
+                }
+            )
+            if cleanup["status"] == "failed":
+                return {"status": "failed", "steps": steps}
             continue
         if not (Path(source) / "docker-compose.yml").is_file():
-            steps.append({"module": name, "step": "compose_down", "status": "skipped_missing_compose_file"})
+            cleanup = cleanup_orphan_compose_project(str(ctx[project_key]))
+            steps.append(
+                {
+                    "module": name,
+                    "step": "compose_down",
+                    "status": "compose_file_missing_orphan_cleanup",
+                    "orphan_cleanup": cleanup,
+                }
+            )
+            if cleanup["status"] == "failed":
+                return {"status": "failed", "steps": steps}
             continue
         down = run(compose(str(ctx[project_key]), source, "down", "-v"), cwd=source, timeout=600)  # type: ignore[arg-type]
         steps.append({"module": name, "step": "compose_down", "returncode": down.returncode, "stdout": down.stdout[-4000:], "stderr": down.stderr[-4000:]})

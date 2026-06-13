@@ -695,7 +695,13 @@ function renderSetupFields(step) {
   return "";
 }
 
+function setupActionLockedByAdmin() {
+  const access = accessState();
+  return access.configured && !access.signed_in;
+}
+
 function renderFirstRunStep(step, index) {
+  const actionLocked = step.current && setupActionLockedByAdmin();
   return `
     <article class="first-run-step ${step.current ? "current" : ""}">
       <strong>${index + 1}</strong>
@@ -710,9 +716,10 @@ function renderFirstRunStep(step, index) {
         ${renderSetupFields(step)}
         ${step.current ? `
           <div class="setup-actions">
-            <button type="button" class="primary-action" data-first-run-action="${step.action}" data-step-id="${step.id}">
+            <button type="button" class="primary-action" data-first-run-action="${step.action}" data-step-id="${step.id}" ${actionLocked ? "disabled" : ""}>
               ${setupActionLabel(step)}
             </button>
+            ${actionLocked ? `<small>Sign in with the local administrator passcode before continuing setup.</small>` : ""}
           </div>
         ` : ""}
       </div>
@@ -802,7 +809,7 @@ function renderAccessPanel() {
       <div class="section-title">
         <p class="eyebrow">Local access</p>
         <h3>Sign In</h3>
-        <p>Use the local administrator passcode before changing city work, settings, backups, restore, repair, or runtime services.</p>
+        <p>Use the local administrator passcode before changing city work, setup, model setup, settings, backups, restore, repair, or runtime services.</p>
       </div>
       <div class="workflow-form compact-form">
         <label>Email <input type="email" data-access-field="email" value="${state.accessDraft.email}" autocomplete="email" /></label>

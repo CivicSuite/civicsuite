@@ -37,7 +37,9 @@ const requiredUiPhrases = [
   "Set Up Services and Model",
   "Package Profiles",
   "Module Catalog",
-  "Sign in as local administrator to change local model setup."
+  "Sign in as local administrator to change local model setup.",
+  "Sign in with the local administrator passcode before continuing setup.",
+  "before changing city work, setup, model setup, settings, backups, restore, repair, or runtime services"
 ];
 
 for (const phrase of requiredUiPhrases) {
@@ -140,8 +142,8 @@ if (!rustMain.includes("before changing local model setup")) {
   throw new Error("desktop shell must require local admin access before model setup mutations");
 }
 
-if (!rustMain.includes("before running repair, backup, or uninstall")) {
-  throw new Error("desktop shell must require local admin access before first-run lifecycle actions");
+if (!rustMain.includes("before changing CivicSuite setup, profile, model, backup, or runtime settings")) {
+  throw new Error("desktop shell must require local admin access before first-run setup/profile/model/runtime mutations");
 }
 
 for (const phrase of [

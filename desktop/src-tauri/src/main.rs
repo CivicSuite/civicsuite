@@ -115,8 +115,22 @@ fn public_runtime_health(mut health: Vec<RuntimeHealthItem>) -> Vec<RuntimeHealt
     health
 }
 
-fn first_run_lifecycle_action_requires_admin(action: &str) -> bool {
-    matches!(action, "repair" | "backup" | "uninstall")
+fn first_run_action_requires_admin_after_setup(action: &str) -> bool {
+    matches!(
+        action,
+        "review"
+            | "choose-location"
+            | "select-modules"
+            | "download-model"
+            | "create-city-profile"
+            | "create-admin"
+            | "choose-backup"
+            | "verify-health"
+            | "open-app"
+            | "repair"
+            | "backup"
+            | "uninstall"
+    )
 }
 
 #[tauri::command]
@@ -198,10 +212,10 @@ fn first_run_action(
     let access = auth::access_state()?;
     if access.configured
         && !access_is_local_admin(&access)
-        && first_run_lifecycle_action_requires_admin(&action)
+        && first_run_action_requires_admin_after_setup(&action)
     {
         return Err(
-            "Sign in as the local administrator before running repair, backup, or uninstall."
+            "Sign in as the local administrator before changing CivicSuite setup, profile, model, backup, or runtime settings."
                 .to_string(),
         );
     }
@@ -417,9 +431,38 @@ mod tests {
     }
 
     #[test]
-    fn first_run_lifecycle_actions_require_admin_after_first_admin_exists() {
+    fn first_run_setup_actions_require_admin_after_first_admin_exists() {
         with_clean_first_run_state(|_| {
             create_first_admin();
+
+            let city_payload = serde_json::json!({
+                "cityName": "Brookfield",
+                "state": "CO",
+                "timeZone": "America/Denver",
+                "recordsContact": "records@example.gov",
+                "clerkContact": "clerk@example.gov"
+            });
+            let signed_out_profile_result = first_run_action(
+                "create-city-profile".to_string(),
+                Some("city-profile".to_string()),
+                Some(city_payload),
+            );
+            assert!(signed_out_profile_result.is_err());
+            assert!(signed_out_profile_result
+                .err()
+                .expect("first-run profile auth error")
+                .contains("Sign in as the local administrator"));
+
+            let signed_out_model_result = first_run_action(
+                "download-model".to_string(),
+                Some("model".to_string()),
+                None,
+            );
+            assert!(signed_out_model_result.is_err());
+            assert!(signed_out_model_result
+                .err()
+                .expect("first-run model auth error")
+                .contains("Sign in as the local administrator"));
 
             let signed_out_result = first_run_action("backup".to_string(), None, None);
 
@@ -434,6 +477,39 @@ mod tests {
                 first_run_action("backup".to_string(), None, None).expect("backup allowed");
             assert!(signed_in_result.accepted);
             assert_eq!(signed_in_result.action, "backup");
+        });
+    }
+
+    #[test]
+    fn first_run_setup_actions_can_bootstrap_before_admin_exists() {
+        with_clean_first_run_state(|_| {
+            let city_payload = serde_json::json!({
+                "cityName": "Brookfield",
+                "state": "CO",
+                "timeZone": "America/Denver",
+                "recordsContact": "records@example.gov",
+                "clerkContact": "clerk@example.gov"
+            });
+            let city_result = first_run_action(
+                "create-city-profile".to_string(),
+                Some("city-profile".to_string()),
+                Some(city_payload),
+            )
+            .expect("city profile can bootstrap before admin exists");
+            assert!(city_result.accepted);
+
+            let admin_payload = serde_json::json!({
+                "adminName": "Alex Clerk",
+                "adminEmail": "alex@example.gov",
+                "adminPasscode": "correct horse battery staple"
+            });
+            let admin_result = first_run_action(
+                "create-admin".to_string(),
+                Some("first-admin".to_string()),
+                Some(admin_payload),
+            )
+            .expect("first admin can bootstrap local access");
+            assert!(admin_result.accepted);
         });
     }
 
