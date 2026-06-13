@@ -326,6 +326,17 @@ for (const phrase of [
   }
 }
 
+for (const phrase of [
+  "CivicSuite Local Logs",
+  "Use these files when IT or CivicSuite support asks for local runtime evidence.",
+  "Prepared and opened the CivicSuite logs folder under the selected city data folder",
+  "Share README.txt and the relevant service log with IT or CivicSuite support."
+]) {
+  if (!supervisorRust.includes(phrase)) {
+    throw new Error(`Windows supervisor missing local logs support phrase: ${phrase}`);
+  }
+}
+
 for (const requiredPayload of [
   ["postgres-17-pgvector", "bin/pg_ctl.exe", "share/extension/vector.control"],
   [

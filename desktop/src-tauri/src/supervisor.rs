@@ -1664,20 +1664,66 @@ fn stop_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResu
     })
 }
 
-fn log_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult, String> {
+fn prepare_log_artifacts(services: &[&ServiceDefinition]) -> Result<PathBuf, String> {
+    let logs_dir = data_root().join("logs");
+    fs::create_dir_all(&logs_dir).map_err(|error| {
+        format!(
+            "Could not create logs folder {}: {error}",
+            logs_dir.display()
+        )
+    })?;
+    let mut service_lines = Vec::new();
     for service in services {
         ensure_runtime_dirs(service)?;
+        let log_path = service_log_path(service);
+        if let Some(parent) = log_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
+        }
+        if !log_path.is_file() {
+            fs::write(
+                &log_path,
+                format!(
+                    "{} log file prepared by CivicSuite System Health.\nService id: {}\n",
+                    service.label, service.id
+                ),
+            )
+            .map_err(|error| format!("Could not prepare {}: {error}", log_path.display()))?;
+        }
+        service_lines.push(format!(
+            "- {} (`{}`): {}",
+            service.label,
+            service.id,
+            log_path
+                .file_name()
+                .map(|name| name.to_string_lossy().to_string())
+                .unwrap_or_else(|| log_path.display().to_string())
+        ));
     }
+    let readme = format!(
+        "CivicSuite Local Logs\n\nThis folder is stored inside the selected city data folder.\nUse these files when IT or CivicSuite support asks for local runtime evidence.\n\nSelected service logs:\n{}\n\nCity data folder:\n{}\n",
+        service_lines.join("\n"),
+        data_root().display()
+    );
+    fs::write(logs_dir.join("README.txt"), readme)
+        .map_err(|error| format!("Could not write logs README: {error}"))?;
+    Ok(logs_dir)
+}
+
+fn log_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult, String> {
+    let logs_dir = prepare_log_artifacts(services)?;
+    crate::local_shell::open_local_folder(&logs_dir)?;
     Ok(SupervisorActionResult {
         accepted: true,
         action: "logs".to_string(),
         service_id: services.first().map(|service| service.id.clone()),
-        status: "Ready",
+        status: "Logs folder open",
         message: format!(
-            "Runtime logs are stored under {}.",
-            data_root().join("logs").display()
+            "Prepared and opened the CivicSuite logs folder under the selected city data folder: {}.",
+            logs_dir.display()
         ),
-        next_action: "Open System Health repair details to inspect service logs.".to_string(),
+        next_action: "Share README.txt and the relevant service log with IT or CivicSuite support."
+            .to_string(),
     })
 }
 
@@ -2424,6 +2470,34 @@ mod tests {
             assert!(result.accepted);
             assert_eq!(result.status, "Backup folder open");
             assert!(root.join("Backups").is_dir());
+        });
+    }
+
+    #[test]
+    fn logs_action_prepares_selected_logs_folder() {
+        with_temp_state_dir(|root| {
+            let custom_data = root.join("selected-city-data");
+            let custom_backups = root.join("selected-backups");
+            crate::local_paths::save_locations(&crate::local_paths::LocalLocations {
+                install_root: root.to_string_lossy().to_string(),
+                data_root: custom_data.to_string_lossy().to_string(),
+                backup_root: custom_backups.to_string_lossy().to_string(),
+            })
+            .expect("custom locations save");
+
+            let result = supervisor_action("logs", Some("postgres")).expect("logs action");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Logs folder open");
+            assert!(result.message.contains("selected-city-data"));
+            assert!(result.next_action.contains("README.txt"));
+            let logs = custom_data.join("logs");
+            assert!(logs.join("README.txt").is_file());
+            assert!(logs.join("postgres.log").is_file());
+            let readme = fs::read_to_string(logs.join("README.txt")).expect("readme");
+            assert!(readme.contains("CivicSuite Local Logs"));
+            assert!(readme.contains("Local data store"));
+            assert!(readme.contains("postgres.log"));
         });
     }
 
