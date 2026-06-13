@@ -548,17 +548,31 @@ pub fn first_run_action(
                     .to_string(),
         });
     }
-    if action == "verify-health" && !supervisor::required_runtime_ready()? {
-        return Ok(FirstRunActionResult {
-            accepted: false,
-            action: action.to_string(),
-            step_id: Some(target_step_id),
-            status: "Needs attention",
-            message: "Required local runtime services are not healthy yet.".to_string(),
-            next_action:
-                "Open System Health, install or repair the local runtime, then run health again."
+    if action == "verify-health" {
+        if !model::local_model_artifact_verified()? {
+            return Ok(FirstRunActionResult {
+                accepted: false,
+                action: action.to_string(),
+                step_id: Some(target_step_id),
+                status: "Needs attention",
+                message: "The pinned Gemma model has not passed local checksum verification yet."
                     .to_string(),
-        });
+                next_action:
+                    "Finish Local AI model setup before running final health verification."
+                        .to_string(),
+            });
+        }
+        let bootstrap = supervisor::bootstrap_required_runtime()?;
+        if !bootstrap.accepted {
+            return Ok(FirstRunActionResult {
+                accepted: false,
+                action: action.to_string(),
+                step_id: Some(target_step_id),
+                status: bootstrap.status,
+                message: bootstrap.message,
+                next_action: bootstrap.next_action,
+            });
+        }
     }
 
     let locations = resolve_locations(&manifest.default_locations);
@@ -650,13 +664,27 @@ mod tests {
     }
 
     #[test]
-    fn first_run_health_action_waits_for_runtime_health() {
+    fn first_run_health_action_requires_verified_model() {
         with_temp_state_dir(|_| {
             let result = first_run_action("verify-health", Some("health"), None)
                 .expect("action response is structured");
             assert!(!result.accepted);
             assert_eq!(result.status, "Needs attention");
-            assert!(result.message.contains("runtime services"));
+            assert!(result.message.contains("checksum verification"));
+        });
+    }
+
+    #[test]
+    fn first_run_health_action_bootstraps_runtime_before_completion() {
+        with_temp_state_dir(|root| {
+            env::set_var("CIVICSUITE_TEST_MODEL_VERIFIED", "1");
+            let result = first_run_action("verify-health", Some("health"), None)
+                .expect("action response is structured");
+            env::remove_var("CIVICSUITE_TEST_MODEL_VERIFIED");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs runtime files");
+            assert!(result.message.contains("local runtime files"));
+            assert!(root.join("config").join("runtime-state.json").is_file());
         });
     }
 

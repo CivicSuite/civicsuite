@@ -519,6 +519,10 @@ fn model_artifact_verified(local_path: &Path, artifact: &ArtifactDefinition) -> 
 }
 
 pub(crate) fn local_model_artifact_verified() -> Result<bool, String> {
+    #[cfg(test)]
+    if env::var("CIVICSUITE_TEST_MODEL_VERIFIED").ok().as_deref() == Some("1") {
+        return Ok(true);
+    }
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
     let local_path = model_path(&manifest.model.artifact);

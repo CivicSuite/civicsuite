@@ -1073,13 +1073,6 @@ pub fn runtime_health() -> Result<Vec<RuntimeHealthItem>, String> {
     Ok(health)
 }
 
-pub(crate) fn required_runtime_ready() -> Result<bool, String> {
-    Ok(runtime_health()?
-        .into_iter()
-        .filter(|item| item.id != "desktop-shell")
-        .all(|item| item.ok))
-}
-
 fn target_services<'a>(
     manifest: &'a RuntimeManifest,
     service_id: Option<&str>,
@@ -1175,6 +1168,12 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
     let mut started = Vec::new();
     for service in services {
         ensure_runtime_dirs(service)?;
+        if probe_service_health(service, &state) {
+            let existing_pid = service_state(&state, service).and_then(|entry| entry.pid);
+            update_service_state(&mut state, &service.id, true, existing_pid, "start");
+            started.push(service.label.clone());
+            continue;
+        }
         if service.id == "postgres" {
             let binary = service_binary_path(service);
             if !binary.is_file() {
@@ -1244,7 +1243,7 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
         service_id: None,
         status: "Started",
         message: format!(
-            "Started local runtime service state for {}.",
+            "Started or verified local runtime service state for {}.",
             started.join(", ")
         ),
         next_action: "Run health verification after services finish warming up.".to_string(),
@@ -1357,6 +1356,67 @@ fn health_action(service_id: Option<&str>) -> Result<SupervisorActionResult, Str
             "Install, start, or repair the local runtime services, then run health again."
                 .to_string()
         },
+    })
+}
+
+pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, String> {
+    let manifest = parse_manifest()?;
+    validate_manifest(&manifest)?;
+    let services = target_services(&manifest, None)?;
+
+    let install = install_or_repair("install", &manifest, &services)?;
+    if !install.accepted {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "bootstrap".to_string(),
+            service_id: None,
+            status: install.status,
+            message: format!(
+                "CivicSuite could not prepare the required local runtime files. {}",
+                install.message
+            ),
+            next_action: install.next_action,
+        });
+    }
+
+    let start = start_services(&services)?;
+    if !start.accepted {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "bootstrap".to_string(),
+            service_id: start.service_id,
+            status: start.status,
+            message: format!(
+                "CivicSuite prepared the runtime files, but a required service did not start. {}",
+                start.message
+            ),
+            next_action: start.next_action,
+        });
+    }
+
+    let health = health_action(None)?;
+    if !health.accepted {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "bootstrap".to_string(),
+            service_id: None,
+            status: health.status,
+            message: format!(
+                "CivicSuite started local services, but health verification is not complete. {}",
+                health.message
+            ),
+            next_action: health.next_action,
+        });
+    }
+
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "bootstrap".to_string(),
+        service_id: None,
+        status: "Ready",
+        message: "CivicSuite prepared, started, and verified the required local runtime services."
+            .to_string(),
+        next_action: "Finish first-run setup and begin local city work.".to_string(),
     })
 }
 

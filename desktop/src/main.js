@@ -548,7 +548,7 @@ function setupActionLabel(step) {
     "create-city-profile": "Save city profile",
     "create-admin": "Save first admin",
     "choose-backup": "Create backup folder",
-    "verify-health": "Run health check",
+    "verify-health": "Set Up and Check Services",
     "open-app": "Finish setup"
   };
   return labels[step.action] || "Continue setup";
