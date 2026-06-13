@@ -26,7 +26,7 @@
       "kind": "postgres",
       "required": true,
       "binary": "runtime/postgres/bin/pg_ctl.exe",
-      "args": ["start", "-D", "{data_dir}/postgres"],
+      "args": ["start", "-D", "{data_dir}/postgres", "-l", "{data_dir}/logs/postgres.log", "-w"],
       "health": {
         "kind": "tcp",
         "host": "127.0.0.1",

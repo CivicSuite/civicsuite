@@ -358,11 +358,31 @@ import os
 os.environ.setdefault('TESTING', 'true')
 os.environ.setdefault('PORTAL_MODE', 'private')
 os.environ.setdefault('DATABASE_URL', 'postgresql+asyncpg://civicsuite:civicsuite@127.0.0.1:15432/civicsuite')
-for name in ['civiccore', 'app.main', 'civicclerk.main', 'civiccode.main', 'civicsuite_runtime.services']:
+for name in ['civiccore', 'app.main', 'civicclerk.main', 'civiccode.main', 'civicsuite_runtime.services', 'civicsuite_runtime.migrate']:
     importlib.import_module(name)
 print('CivicSuite embedded Python service imports verified')
 "@
     Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @("-c", $ImportScript)
+}
+
+function Copy-CivicRecordsMigrations {
+    param(
+        [string]$PythonRoot,
+        [string]$RepoRoot
+    )
+    $SourceRoot = (Resolve-Path (Join-Path $RepoRoot "..\civicrecords-ai\backend")).Path
+    $Destination = Join-Path $PythonRoot "Lib\site-packages\civicsuite_runtime\civicrecords_alembic"
+    $DestinationRoot = [System.IO.Path]::GetFullPath((Join-Path $PythonRoot "Lib\site-packages\civicsuite_runtime"))
+    $DestinationPath = [System.IO.Path]::GetFullPath($Destination)
+    if (-not $DestinationPath.StartsWith($DestinationRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to reset CivicRecords migration payload outside embedded runtime: $DestinationPath"
+    }
+    if (Test-Path -LiteralPath $DestinationPath) {
+        Remove-Item -LiteralPath $DestinationPath -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path $DestinationPath | Out-Null
+    Copy-Item -LiteralPath (Join-Path $SourceRoot "alembic.ini") -Destination (Join-Path $DestinationPath "alembic.ini") -Force
+    Copy-Item -LiteralPath (Join-Path $SourceRoot "alembic") -Destination (Join-Path $DestinationPath "alembic") -Recurse -Force
 }
 
 function Install-PythonServicePackages {
@@ -408,6 +428,7 @@ function Install-PythonServicePackages {
         $CivicCode,
         $RuntimeBridge
     )
+    Copy-CivicRecordsMigrations -PythonRoot $PythonRoot -RepoRoot $RepoRoot
     Test-PythonServiceImports -PythonRoot $PythonRoot
     return @{
         pip = $PipStatus

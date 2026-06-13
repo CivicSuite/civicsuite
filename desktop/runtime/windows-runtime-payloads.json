@@ -31,7 +31,10 @@
         "Lib/site-packages/app",
         "Lib/site-packages/civicclerk",
         "Lib/site-packages/civiccode",
-        "Lib/site-packages/civicsuite_runtime"
+        "Lib/site-packages/civicsuite_runtime",
+        "Lib/site-packages/civicsuite_runtime/migrate.py",
+        "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic.ini",
+        "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic/env.py"
       ]
     },
     {

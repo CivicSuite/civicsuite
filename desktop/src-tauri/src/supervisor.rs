@@ -5,6 +5,7 @@ use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const RUNTIME_MANIFEST_JSON: &str = include_str!("../../runtime/windows-local-runtime.json");
@@ -20,6 +21,9 @@ const REQUIRED_ACTIONS: [&str; 9] = [
     "restore",
     "uninstall",
 ];
+const LOCAL_DB_NAME: &str = "civicsuite";
+const LOCAL_DB_USER: &str = "civicsuite";
+const LOCAL_DB_PORT: u16 = 15432;
 
 #[derive(Deserialize)]
 struct OperatorPath {
@@ -233,6 +237,10 @@ fn config_dir() -> PathBuf {
     civic_suite_root().join("config")
 }
 
+fn secrets_dir() -> PathBuf {
+    config_dir().join("secrets")
+}
+
 fn backup_root() -> PathBuf {
     env::var("CIVICSUITE_BACKUP_DIR")
         .map(PathBuf::from)
@@ -252,6 +260,39 @@ fn runtime_root() -> PathBuf {
     env::var("CIVICSUITE_RUNTIME_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|_| civic_suite_root())
+}
+
+fn random_hex_secret(byte_count: usize) -> Result<String, String> {
+    let mut bytes = vec![0_u8; byte_count];
+    getrandom::getrandom(&mut bytes)
+        .map_err(|error| format!("Could not generate local runtime secret: {error}"))?;
+    Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
+fn read_or_create_secret(file_name: &str, byte_count: usize) -> Result<String, String> {
+    let path = secrets_dir().join(file_name);
+    if path.is_file() {
+        return fs::read_to_string(&path)
+            .map(|value| value.trim().to_string())
+            .map_err(|error| format!("Could not read {}: {error}", path.display()));
+    }
+    fs::create_dir_all(secrets_dir())
+        .map_err(|error| format!("Could not create local secret folder: {error}"))?;
+    let value = random_hex_secret(byte_count)?;
+    fs::write(&path, format!("{value}\n"))
+        .map_err(|error| format!("Could not write {}: {error}", path.display()))?;
+    Ok(value)
+}
+
+fn postgres_password() -> Result<String, String> {
+    read_or_create_secret("postgres-password.txt", 32)
+}
+
+fn local_database_url(driver: &str) -> Result<String, String> {
+    Ok(format!(
+        "{driver}://{LOCAL_DB_USER}:{}@127.0.0.1:{LOCAL_DB_PORT}/{LOCAL_DB_NAME}",
+        postgres_password()?
+    ))
 }
 
 fn runtime_payload_roots() -> Vec<PathBuf> {
@@ -567,9 +608,251 @@ fn service_arg_values(service: &ServiceDefinition) -> Vec<String> {
         .collect()
 }
 
-fn service_environment(service: &ServiceDefinition) -> Vec<(String, String)> {
+fn postgres_data_dir() -> PathBuf {
+    data_root().join("postgres")
+}
+
+fn postgres_binary(service: &ServiceDefinition, file_name: &str) -> Result<PathBuf, String> {
+    let Some(bin_dir) = service_binary_path(service).parent().map(Path::to_path_buf) else {
+        return Err(format!(
+            "Could not resolve local data store binary folder for {}.",
+            service.label
+        ));
+    };
+    Ok(bin_dir.join(file_name))
+}
+
+fn command_output(command: &mut Command, label: &str) -> Result<String, String> {
+    let output = command
+        .output()
+        .map_err(|error| format!("{label} could not start: {error}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    if output.status.success() {
+        return Ok(stdout);
+    }
+    let detail = [stdout.as_str(), stderr.as_str()]
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("; ");
+    Err(if detail.is_empty() {
+        format!("{label} failed with status {}.", output.status)
+    } else {
+        format!("{label} failed with status {}: {detail}", output.status)
+    })
+}
+
+fn command_status(command: &mut Command, label: &str) -> Result<(), String> {
+    let status = command
+        .status()
+        .map_err(|error| format!("{label} could not start: {error}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("{label} failed with status {status}."))
+    }
+}
+
+fn ensure_postgres_initialized(service: &ServiceDefinition) -> Result<(), String> {
+    let data_dir = postgres_data_dir();
+    if data_dir.join("PG_VERSION").is_file() {
+        return Ok(());
+    }
+    if data_dir.exists() {
+        let mut entries = fs::read_dir(&data_dir)
+            .map_err(|error| format!("Could not inspect local data store folder: {error}"))?;
+        if entries.next().is_some() {
+            return Err(format!(
+                "The local data store folder {} exists but is not initialized. Use repair after backing up this profile.",
+                data_dir.display()
+            ));
+        }
+    } else {
+        fs::create_dir_all(&data_dir)
+            .map_err(|error| format!("Could not create local data store folder: {error}"))?;
+    }
+
+    let _ = postgres_password()?;
+    let password_file = secrets_dir().join("postgres-password.txt");
+
+    let initdb = postgres_binary(service, "initdb.exe")?;
+    if !initdb.is_file() {
+        return Err(format!(
+            "Local data store initializer is missing: {}",
+            initdb.display()
+        ));
+    }
+    command_output(
+        Command::new(initdb)
+            .arg("-D")
+            .arg(&data_dir)
+            .arg("--username")
+            .arg(LOCAL_DB_USER)
+            .arg("--pwfile")
+            .arg(&password_file)
+            .arg("--auth-host")
+            .arg("scram-sha-256")
+            .arg("--auth-local")
+            .arg("trust")
+            .arg("--encoding")
+            .arg("UTF8"),
+        "Local data store initialization",
+    )?;
+
+    fs::write(
+        data_dir.join("postgresql.auto.conf"),
+        format!(
+            "# CivicSuite Windows local runtime\nlisten_addresses = '127.0.0.1'\nport = {LOCAL_DB_PORT}\n"
+        ),
+    )
+    .map_err(|error| format!("Could not write local data store configuration: {error}"))?;
+    Ok(())
+}
+
+fn postgres_tcp_ready() -> bool {
+    tcp_health_ok("127.0.0.1", LOCAL_DB_PORT)
+}
+
+fn run_postgres_with_password(
+    service: &ServiceDefinition,
+    binary_name: &str,
+    args: &[&str],
+    label: &str,
+) -> Result<String, String> {
+    let password = postgres_password()?;
+    let binary = postgres_binary(service, binary_name)?;
+    if !binary.is_file() {
+        return Err(format!(
+            "Local data store tool is missing: {}",
+            binary.display()
+        ));
+    }
+    let mut command = Command::new(binary);
+    command.env("PGPASSWORD", password);
+    for arg in args {
+        command.arg(arg);
+    }
+    command_output(&mut command, label)
+}
+
+fn ensure_postgres_database(service: &ServiceDefinition) -> Result<(), String> {
+    let port = LOCAL_DB_PORT.to_string();
+    let existing = run_postgres_with_password(
+        service,
+        "psql.exe",
+        &[
+            "-h",
+            "127.0.0.1",
+            "-p",
+            port.as_str(),
+            "-U",
+            LOCAL_DB_USER,
+            "-d",
+            "postgres",
+            "-At",
+            "-c",
+            "SELECT 1 FROM pg_database WHERE datname = 'civicsuite';",
+        ],
+        "Local data store database check",
+    )?;
+    if existing.trim() != "1" {
+        run_postgres_with_password(
+            service,
+            "createdb.exe",
+            &[
+                "-h",
+                "127.0.0.1",
+                "-p",
+                port.as_str(),
+                "-U",
+                LOCAL_DB_USER,
+                LOCAL_DB_NAME,
+            ],
+            "Local data store database creation",
+        )?;
+    }
+    run_postgres_with_password(
+        service,
+        "psql.exe",
+        &[
+            "-h",
+            "127.0.0.1",
+            "-p",
+            port.as_str(),
+            "-U",
+            LOCAL_DB_USER,
+            "-d",
+            LOCAL_DB_NAME,
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            "CREATE EXTENSION IF NOT EXISTS vector;",
+        ],
+        "Local data store extension setup",
+    )?;
+    Ok(())
+}
+
+fn run_python_migrations() -> Result<(), String> {
+    let python = runtime_root()
+        .join("runtime")
+        .join("python")
+        .join("python.exe");
+    if !python.is_file() {
+        return Ok(());
+    }
+    let mut command = Command::new(python);
+    for (name, value) in service_environment(&ServiceDefinition {
+        id: "python-services".to_string(),
+        label: "City workflow services".to_string(),
+        admin_label: "Bundled CPython module services".to_string(),
+        kind: "python-services".to_string(),
+        required: true,
+        binary: "runtime/python/python.exe".to_string(),
+        args: Vec::new(),
+        health: HealthDefinition::Supervisor {
+            service: "python-services".to_string(),
+        },
+        log_path: "{data_dir}/logs/python-services.log".to_string(),
+        next_action: String::new(),
+    })? {
+        command.env(name, value);
+    }
+    command.arg("-m").arg("civicsuite_runtime.migrate");
+    command_output(&mut command, "City-core database migrations")?;
+    Ok(())
+}
+
+fn start_postgres_service(service: &ServiceDefinition) -> Result<(), String> {
+    ensure_postgres_initialized(service)?;
+    if !postgres_tcp_ready() {
+        let binary = service_binary_path(service);
+        command_status(
+            Command::new(binary)
+                .args(service_arg_values(service))
+                .stdout(Stdio::null())
+                .stderr(Stdio::null()),
+            "Local data store start",
+        )?;
+        for _ in 0..40 {
+            if postgres_tcp_ready() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(500));
+        }
+        if !postgres_tcp_ready() {
+            return Err("Local data store did not become ready on localhost.".to_string());
+        }
+    }
+    ensure_postgres_database(service)?;
+    run_python_migrations()?;
+    Ok(())
+}
+
+fn service_environment(service: &ServiceDefinition) -> Result<Vec<(String, String)>, String> {
     let data = data_root();
-    let db_url = "postgresql+asyncpg://civicsuite:civicsuite@127.0.0.1:15432/civicsuite";
+    let db_url = local_database_url("postgresql+asyncpg")?;
     let mut env = vec![
         (
             "CIVICSUITE_DATA_DIR".to_string(),
@@ -597,7 +880,7 @@ fn service_environment(service: &ServiceDefinition) -> Vec<(String, String)> {
     if service.id == "model-runtime" {
         env.push(("OLLAMA_HOST".to_string(), "127.0.0.1:15434".to_string()));
     }
-    env
+    Ok(env)
 }
 
 fn health_detail(health: &HealthDefinition) -> String {
@@ -892,6 +1175,28 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
     let mut started = Vec::new();
     for service in services {
         ensure_runtime_dirs(service)?;
+        if service.id == "postgres" {
+            let binary = service_binary_path(service);
+            if !binary.is_file() {
+                return Ok(SupervisorActionResult {
+                    accepted: false,
+                    action: "start".to_string(),
+                    service_id: Some(service.id.clone()),
+                    status: "Needs install",
+                    message: format!(
+                        "{} cannot start because {} is missing.",
+                        service.label,
+                        binary.display()
+                    ),
+                    next_action: "Install or repair the bundled Windows runtime files, then retry."
+                        .to_string(),
+                });
+            }
+            start_postgres_service(service)?;
+            update_service_state(&mut state, &service.id, true, None, "start");
+            started.push(service.label.clone());
+            continue;
+        }
         if !service_needs_binary(service) {
             update_service_state(&mut state, &service.id, true, None, "start");
             started.push(service.label.clone());
@@ -921,7 +1226,7 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             .map_err(|error| format!("Could not open {}: {error}", log_path.display()))?;
         let child = Command::new(&binary)
             .args(service_arg_values(service))
-            .envs(service_environment(service))
+            .envs(service_environment(service)?)
             .stdout(Stdio::from(log.try_clone().map_err(|error| {
                 format!("Could not prepare service log: {error}")
             })?))
@@ -969,6 +1274,28 @@ fn stop_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResu
     let mut state = read_state()?;
     let mut stopped = Vec::new();
     for service in services {
+        if service.id == "postgres" {
+            if postgres_tcp_ready() {
+                let binary = service_binary_path(service);
+                if binary.is_file() {
+                    let _ = command_status(
+                        Command::new(binary)
+                            .arg("stop")
+                            .arg("-D")
+                            .arg(postgres_data_dir())
+                            .arg("-m")
+                            .arg("fast")
+                            .arg("-w")
+                            .stdout(Stdio::null())
+                            .stderr(Stdio::null()),
+                        "Local data store stop",
+                    );
+                }
+            }
+            update_service_state(&mut state, &service.id, true, None, "stop");
+            stopped.push(service.label.clone());
+            continue;
+        }
         if let Some(pid) = service_state(&state, service).and_then(|entry| entry.pid) {
             let _ = stop_pid(pid);
         }
@@ -1159,6 +1486,72 @@ mod tests {
         result
     }
 
+    fn with_temp_state_dir_and_payload<T>(
+        payload_dir: PathBuf,
+        test: impl FnOnce(PathBuf) -> T,
+    ) -> T {
+        let _guard = crate::first_run::test_env_lock()
+            .lock()
+            .expect("test env lock");
+        let root = env::temp_dir().join(format!(
+            "civicsuite-desktop-supervisor-real-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
+        env::set_var("CIVICSUITE_RUNTIME_ROOT", root.join("Runtime"));
+        env::set_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR", &payload_dir);
+        env::set_var("CIVICSUITE_BACKUP_DIR", root.join("Backups"));
+        let result = test(root.clone());
+        env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
+        env::remove_var("CIVICSUITE_RUNTIME_ROOT");
+        env::remove_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR");
+        env::remove_var("CIVICSUITE_BACKUP_DIR");
+        remove_payload_runtime_links(&root);
+        let _ = fs::remove_dir_all(root);
+        result
+    }
+
+    #[cfg(windows)]
+    fn link_payload_runtime(root: &Path, payload_dir: &Path) {
+        let runtime_dir = root.join("Runtime").join("runtime");
+        fs::create_dir_all(&runtime_dir).expect("runtime dir");
+        for payload in ["postgres", "python"] {
+            let source = payload_dir.join(payload);
+            assert!(
+                source.is_dir(),
+                "payload source exists: {}",
+                source.display()
+            );
+            let destination = runtime_dir.join(payload);
+            let _ = fs::remove_dir(&destination);
+            if let Err(symlink_error) = std::os::windows::fs::symlink_dir(&source, &destination) {
+                let status = Command::new("cmd")
+                    .arg("/C")
+                    .arg("mklink")
+                    .arg("/J")
+                    .arg(&destination)
+                    .arg(&source)
+                    .status()
+                    .expect("junction fallback starts");
+                assert!(
+                    status.success(),
+                    "payload link failed for {}: symlink error {}; junction status {}",
+                    payload,
+                    symlink_error,
+                    status
+                );
+            }
+        }
+    }
+
+    fn remove_payload_runtime_links(root: &Path) {
+        let runtime_dir = root.join("Runtime").join("runtime");
+        for payload in ["postgres", "python"] {
+            let _ = fs::remove_dir(runtime_dir.join(payload));
+        }
+    }
+
     #[test]
     fn manifest_declares_no_developer_tooling_on_operator_path() {
         let manifest = parse_manifest().expect("manifest parses");
@@ -1267,6 +1660,29 @@ mod tests {
             assert!(health
                 .iter()
                 .any(|item| item.id == "file-storage" && item.ok));
+        });
+    }
+
+    #[test]
+    fn real_postgres_payload_initializes_and_migrates_when_enabled() {
+        if env::var("CIVICSUITE_RUN_REAL_RUNTIME_TEST").ok().as_deref() != Some("1") {
+            return;
+        }
+        let payload_dir = env::var("CIVICSUITE_RUNTIME_PAYLOAD_DIR")
+            .map(PathBuf::from)
+            .expect("CIVICSUITE_RUNTIME_PAYLOAD_DIR points at prepared desktop runtime payload");
+        let linked_payload_dir = payload_dir.clone();
+        with_temp_state_dir_and_payload(payload_dir, |root| {
+            #[cfg(windows)]
+            link_payload_runtime(&root, &linked_payload_dir);
+            supervisor_action("install", Some("postgres")).expect("install postgres payload");
+            supervisor_action("install", Some("python-services"))
+                .expect("install python service payload");
+            let start = supervisor_action("start", Some("postgres")).expect("start postgres");
+            assert!(start.accepted);
+            let health = runtime_health().expect("health builds");
+            assert!(health.iter().any(|item| item.id == "postgres" && item.ok));
+            supervisor_action("stop", Some("postgres")).expect("stop postgres");
         });
     }
 
