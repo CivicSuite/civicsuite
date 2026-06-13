@@ -18,11 +18,22 @@ pub struct AgendaItem {
 pub struct PublicComment {
     pub id: String,
     pub commenter_name: String,
+    #[serde(default)]
     pub commenter_contact: String,
+    #[serde(default)]
     pub mode: String,
+    #[serde(default)]
     pub topic: String,
     pub body: String,
     pub status: String,
+    #[serde(default)]
+    pub redacted_body: String,
+    #[serde(default)]
+    pub redaction_basis: String,
+    #[serde(default)]
+    pub reviewed_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub redacted_at_unix_seconds: Option<u64>,
     pub submitted_at_unix_seconds: u64,
 }
 
@@ -750,6 +761,10 @@ fn submit_public_comment(
         },
         body,
         status: "received for clerk review".to_string(),
+        redacted_body: String::new(),
+        redaction_basis: String::new(),
+        reviewed_at_unix_seconds: None,
+        redacted_at_unix_seconds: None,
         submitted_at_unix_seconds: now_unix_seconds(),
     });
     meeting.status = "public comments received".to_string();
@@ -761,6 +776,85 @@ fn submit_public_comment(
     );
     Ok(format!(
         "Public comment {comment_id} saved for clerk review and packet/archive preservation."
+    ))
+}
+
+fn selected_public_comment_indexes(
+    state: &CityWorkState,
+    payload: Option<&Value>,
+) -> Result<(usize, usize), String> {
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let comment_id = payload_optional_string(payload, "publicCommentId");
+    let meeting = &state.meetings[meeting_index];
+    if meeting.public_comments.is_empty() {
+        return Err("Select a submitted public comment before review.".to_string());
+    }
+    let comment_index = if comment_id.is_empty() {
+        meeting
+            .public_comments
+            .iter()
+            .position(|comment| comment.status == "received for clerk review")
+            .unwrap_or(0)
+    } else {
+        meeting
+            .public_comments
+            .iter()
+            .position(|comment| comment.id == comment_id)
+            .ok_or_else(|| "Selected public comment was not found for this meeting.".to_string())?
+    };
+    Ok((meeting_index, comment_index))
+}
+
+fn review_public_comment(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let (meeting_index, comment_index) = selected_public_comment_indexes(state, payload)?;
+    let meeting = &mut state.meetings[meeting_index];
+    ensure_meeting_can_change(meeting)?;
+    let comment = &mut meeting.public_comments[comment_index];
+    comment.status = "reviewed for public record".to_string();
+    comment.reviewed_at_unix_seconds = Some(now_unix_seconds());
+    let comment_id = comment.id.clone();
+    let commenter_name = comment.commenter_name.clone();
+    push_audit(
+        state,
+        "civicclerk",
+        "review-public-comment",
+        format!("Reviewed public comment {comment_id} from: {commenter_name}"),
+    );
+    Ok(format!(
+        "Public comment {comment_id} marked reviewed for the public record."
+    ))
+}
+
+fn redact_public_comment(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let redacted_body = payload_string(payload, "redactedBody")?;
+    let redaction_basis = payload_string(payload, "redactionBasis")?;
+    let (meeting_index, comment_index) = selected_public_comment_indexes(state, payload)?;
+    let meeting = &mut state.meetings[meeting_index];
+    ensure_meeting_can_change(meeting)?;
+    let comment = &mut meeting.public_comments[comment_index];
+    comment.status = "redacted for public record".to_string();
+    comment.redacted_body = redacted_body;
+    comment.redaction_basis = redaction_basis.clone();
+    comment.reviewed_at_unix_seconds = Some(now_unix_seconds());
+    comment.redacted_at_unix_seconds = Some(now_unix_seconds());
+    let comment_id = comment.id.clone();
+    let commenter_name = comment.commenter_name.clone();
+    push_audit(
+        state,
+        "civicclerk",
+        "redact-public-comment",
+        format!(
+            "Redacted public comment {comment_id} from {commenter_name}; basis: {redaction_basis}"
+        ),
+    );
+    Ok(format!(
+        "Public comment {comment_id} redacted with statutory basis recorded."
     ))
 }
 
@@ -816,9 +910,19 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
             .public_comments
             .iter()
             .map(|comment| {
+                let body = if comment.status == "redacted for public record"
+                    && !comment.redacted_body.is_empty()
+                {
+                    format!(
+                        "{} (Redaction basis: {})",
+                        comment.redacted_body, comment.redaction_basis
+                    )
+                } else {
+                    comment.body.clone()
+                };
                 format!(
                     "- {} [{} / {}]: {}",
-                    comment.commenter_name, comment.mode, comment.status, comment.body
+                    comment.commenter_name, comment.mode, comment.status, body
                 )
             })
             .collect::<Vec<_>>()
@@ -1776,6 +1880,8 @@ pub fn city_work_action(
         "add-action-item" => add_action_item(&mut state, payload)?,
         "record-resident-comment" => record_resident_comment(&mut state, payload)?,
         "submit-public-comment" => submit_public_comment(&mut state, payload)?,
+        "review-public-comment" => review_public_comment(&mut state, payload)?,
+        "redact-public-comment" => redact_public_comment(&mut state, payload)?,
         "adopt-minutes" => adopt_minutes(&mut state, payload)?,
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
@@ -1977,6 +2083,28 @@ mod tests {
             .expect("notice posted");
             city_work_action("submit-public-comment", Some(&public_comment))
                 .expect("public comment saved");
+            let state = city_work_state().expect("state reads after comment");
+            let comment_id = state
+                .meetings
+                .first()
+                .expect("meeting exists")
+                .public_comments
+                .first()
+                .expect("comment exists")
+                .id
+                .clone();
+            let review = serde_json::json!({
+                "meetingId": meeting_id.clone(),
+                "publicCommentId": comment_id.clone()
+            });
+            city_work_action("review-public-comment", Some(&review)).expect("comment reviewed");
+            let redaction = serde_json::json!({
+                "meetingId": meeting_id.clone(),
+                "publicCommentId": comment_id,
+                "redactedBody": "Please preserve the mature street trees.",
+                "redactionBasis": "Personally identifying information"
+            });
+            city_work_action("redact-public-comment", Some(&redaction)).expect("comment redacted");
             city_work_action(
                 "export-meeting-packet",
                 Some(&serde_json::json!({ "meetingId": meeting_id })),
@@ -1990,15 +2118,35 @@ mod tests {
             assert_eq!(comment.commenter_name, "Jordan Smith");
             assert_eq!(comment.commenter_contact, "jordan@example.gov");
             assert_eq!(comment.mode, "remote");
-            assert_eq!(comment.status, "received for clerk review");
+            assert_eq!(comment.status, "redacted for public record");
+            assert_eq!(
+                comment.redacted_body,
+                "Please preserve the mature street trees."
+            );
+            assert_eq!(
+                comment.redaction_basis,
+                "Personally identifying information"
+            );
+            assert!(comment.reviewed_at_unix_seconds.is_some());
+            assert!(comment.redacted_at_unix_seconds.is_some());
             let exported = fs::read_to_string(meeting.exports.first().expect("export exists"))
                 .expect("export reads");
             assert!(exported.contains("## Public Comments"));
-            assert!(exported.contains("Please preserve the mature trees"));
-            let results = search_city_work(&state, "mature trees");
+            assert!(exported.contains("Please preserve the mature street trees."));
+            assert!(exported.contains("Redaction basis: Personally identifying information"));
+            assert!(!exported.contains("Maple Avenue"));
+            let results = search_city_work(&state, "Maple Avenue");
             assert_eq!(results.len(), 1);
             assert!(state.audit_entries.iter().any(|entry| {
                 entry.module_id == "civicclerk" && entry.action == "submit-public-comment"
+            }));
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "review-public-comment"));
+            assert!(state.audit_entries.iter().any(|entry| {
+                entry.action == "redact-public-comment"
+                    && entry.summary.contains("Personally identifying information")
             }));
             assert_valid_audit_chain(&state.audit_entries);
         });

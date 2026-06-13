@@ -366,6 +366,7 @@ const state = {
   pendingWorkReviewAction: null,
   workSelection: {
     meetingId: "",
+    publicCommentId: "",
     recordsRequestId: "",
     codeSourceId: "",
     codeHandoffId: ""
@@ -399,6 +400,8 @@ const state = {
     publicCommentMode: "written",
     publicCommentTopic: "",
     publicCommentBody: "",
+    publicCommentRedactedBody: "",
+    publicCommentRedactionBasis: "",
     requester: "",
     publicRequester: "",
     publicRequesterContact: "",
@@ -893,6 +896,8 @@ const GUIDED_WORK_ACTIONS = new Set([
   "add-code-handoff-agenda",
   "post-notice",
   "export-meeting-packet",
+  "review-public-comment",
+  "redact-public-comment",
   "adopt-minutes",
   "archive-meeting",
   "approve-records-response",
@@ -911,6 +916,11 @@ function selectedFrom(collection, selectedId) {
 
 function currentMeeting(work = cityWork()) {
   return selectedFrom(work.meetings || [], state.workSelection.meetingId);
+}
+
+function currentPublicComment(work = cityWork()) {
+  const meeting = currentMeeting(work);
+  return selectedFrom(meeting?.public_comments || [], state.workSelection.publicCommentId);
 }
 
 function currentRecordsRequest(work = cityWork()) {
@@ -946,10 +956,12 @@ function escapeHtml(value) {
 function guidedReviewForAction(action) {
   const work = cityWork();
   const meeting = currentMeeting(work);
+  const publicComment = currentPublicComment(work);
   const request = currentRecordsRequest(work);
   const source = currentCodeSource(work);
   const handoff = currentCodeHandoff(work);
   const meetingSubject = meeting ? `${meeting.title} (${meeting.meeting_date})` : "Current meeting";
+  const publicCommentSubject = publicComment ? `${publicComment.commenter_name}: ${publicComment.topic || "Public comment"}` : "Current public comment";
   const requestSubject = request ? `${request.requester}: ${request.summary}` : "Current records request";
   const sourceSubject = source ? `${source.title} (${source.citation})` : "Current code source";
   const handoffSubject = handoff ? handoff.title : "Current code handoff";
@@ -1028,6 +1040,36 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates CivicClerk audit and CivicCore publication-gate entries.",
       retry: "If minutes are not adopted, the desktop app blocks archive and leaves the meeting editable."
+    },
+    "review-public-comment": {
+      title: "Review Before Marking Public Comment Reviewed",
+      confirmLabel: "Mark Reviewed",
+      module: "CivicClerk",
+      subject: publicCommentSubject,
+      status: publicComment ? publicComment.status : "No public comment selected yet.",
+      changes: "Marks the selected submitted public comment as reviewed for the public record.",
+      visibility: "Reviewed comments can be included in packet/archive material and public search for public meetings.",
+      sources: [
+        publicComment ? detailOrFallback(publicComment.body, "No comment body is recorded.") : "The desktop app will require a submitted comment before saving.",
+        meeting ? `Meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving."
+      ],
+      audit: "Creates a CivicClerk audit entry for public comment review.",
+      retry: "If the selected meeting is archived or the comment is missing, the desktop app blocks the review."
+    },
+    "redact-public-comment": {
+      title: "Review Before Redacting Public Comment",
+      confirmLabel: "Redact Comment",
+      module: "CivicClerk",
+      subject: publicCommentSubject,
+      status: publicComment ? publicComment.status : "No public comment selected yet.",
+      changes: "Stores redacted public text while preserving the original comment internally.",
+      visibility: "Public packet/archive material and public search use the redacted text, not the original.",
+      sources: [
+        detailOrFallback(state.workDraft.publicCommentRedactedBody, "No redacted public text has been typed yet."),
+        detailOrFallback(state.workDraft.publicCommentRedactionBasis, "No statutory redaction basis has been typed yet.")
+      ],
+      audit: "Creates a CivicClerk audit entry with the redaction basis.",
+      retry: "If redacted text or statutory basis is missing, the desktop app blocks the redaction."
     },
     "approve-records-response": {
       title: "Review Before Approving Records Response",
@@ -1229,6 +1271,13 @@ function publicCommentMeetings(work) {
   ));
 }
 
+function publicReadyCommentCount(meeting) {
+  return (meeting.public_comments || []).filter((comment) => (
+    comment.status === "reviewed for public record" ||
+    comment.status === "redacted for public record"
+  )).length;
+}
+
 function renderPublicMeetingsWorkflow() {
   const work = cityWork();
   const meetings = publicMeetings(work);
@@ -1271,7 +1320,7 @@ function renderPublicMeetingsWorkflow() {
           <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : meeting.notice_status}</span>
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No public summary recorded."}</p>
-          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${(meeting.public_comments || []).length} public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -1282,6 +1331,7 @@ function renderMeetingsWorkflow() {
   if (isPublicSurface()) return renderPublicMeetingsWorkflow();
   const work = cityWork();
   const selectedMeeting = currentMeeting(work);
+  const selectedPublicComment = currentPublicComment(work);
   const pendingCodeHandoffs = work.code_handoffs.filter((handoff) => handoff.status !== "sent to clerk agenda");
   return `
     <section class="page-heading">
@@ -1319,6 +1369,16 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="archive-meeting">Archive Public Record</button>
         </div>
       </div>
+      <div class="workflow-form">
+        <h3>Public Comment Review</h3>
+        <p class="form-help">${selectedPublicComment ? `${selectedPublicComment.commenter_name} - ${selectedPublicComment.status}` : "No submitted public comment is selected for review."}</p>
+        <label>Redacted public text <textarea data-work-field="publicCommentRedactedBody">${state.workDraft.publicCommentRedactedBody}</textarea></label>
+        <label>Statutory redaction basis <input type="text" data-work-field="publicCommentRedactionBasis" value="${state.workDraft.publicCommentRedactionBasis}" /></label>
+        <div class="workflow-actions">
+          ${selectedPublicComment ? `<button type="button" class="secondary-action" data-work-action="review-public-comment">Mark Reviewed</button>` : `<button type="button" class="secondary-action" disabled>Mark Reviewed</button>`}
+          ${selectedPublicComment ? `<button type="button" class="secondary-action" data-work-action="redact-public-comment">Redact Comment</button>` : `<button type="button" class="secondary-action" disabled>Redact Comment</button>`}
+        </div>
+      </div>
     </section>
     ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
@@ -1332,6 +1392,16 @@ function renderMeetingsWorkflow() {
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
           ${(meeting.public_comments || []).length > 0 ? `<p><strong>Public comments:</strong> ${(meeting.public_comments || []).length} received for clerk review</p>` : ""}
+          ${(meeting.public_comments || []).map((comment) => `
+            <div class="comment-review-item">
+              <strong>${comment.commenter_name}</strong>
+              <span>${comment.status}</span>
+              <p>${comment.status === "redacted for public record" && comment.redacted_body ? comment.redacted_body : comment.body}</p>
+              <div class="record-actions">
+                ${selectedPublicComment?.id === comment.id ? `<span class="status-ok">Selected for review</span>` : `<button type="button" class="secondary-action" data-select-work-record="publicComment" data-record-id="${comment.id}" data-parent-meeting-id="${meeting.id}">Review This</button>`}
+              </div>
+            </div>
+          `).join("")}
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
@@ -1597,13 +1667,25 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const outcomes = (meeting.votes || []).join(" ");
     const actionItems = (meeting.action_items || []).join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
-    const publicComments = (meeting.public_comments || []).map((comment) => [
-      comment.commenter_name,
-      comment.commenter_contact,
-      comment.mode,
-      comment.topic,
-      comment.body
-    ].join(" ")).join(" ");
+    const publicComments = (meeting.public_comments || [])
+      .filter((comment) => !publicOnly || ["reviewed for public record", "redacted for public record"].includes(comment.status))
+      .map((comment) => {
+        const publicBody = comment.status === "redacted for public record" && comment.redacted_body
+          ? comment.redacted_body
+          : comment.body;
+        const fields = publicOnly
+          ? [comment.mode, comment.topic, publicBody]
+          : [
+              comment.commenter_name,
+              comment.commenter_contact,
+              comment.mode,
+              comment.topic,
+              comment.body,
+              comment.redacted_body,
+              comment.redaction_basis
+            ];
+        return fields.join(" ");
+      }).join(" ");
     if ([meeting.title, meeting.summary, meeting.status, meeting.minutes, agendaTitles, outcomes, actionItems, residentComments, publicComments].some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -1955,6 +2037,9 @@ function bindEvents() {
     button.addEventListener("click", () => {
       const key = `${button.dataset.selectWorkRecord}Id`;
       state.workSelection[key] = button.dataset.recordId;
+      if (button.dataset.parentMeetingId) {
+        state.workSelection.meetingId = button.dataset.parentMeetingId;
+      }
       state.pendingWorkReviewAction = null;
       render();
     });
@@ -2122,6 +2207,7 @@ function workPayloadForAction(action) {
   const draft = state.workDraft;
   const selected = {
     meetingId: currentMeeting()?.id || "",
+    publicCommentId: currentPublicComment()?.id || "",
     recordsRequestId: currentRecordsRequest()?.id || "",
     codeSourceId: currentCodeSource()?.id || "",
     codeHandoffId: currentCodeHandoff()?.id || ""
@@ -2148,6 +2234,16 @@ function workPayloadForAction(action) {
       commentMode: draft.publicCommentMode,
       commentTopic: draft.publicCommentTopic,
       commentBody: draft.publicCommentBody
+    },
+    "review-public-comment": {
+      ...selected,
+      publicCommentId: currentPublicComment()?.id || ""
+    },
+    "redact-public-comment": {
+      ...selected,
+      publicCommentId: currentPublicComment()?.id || "",
+      redactedBody: draft.publicCommentRedactedBody,
+      redactionBasis: draft.publicCommentRedactionBasis
     },
     "adopt-minutes": selected,
     "archive-meeting": selected,

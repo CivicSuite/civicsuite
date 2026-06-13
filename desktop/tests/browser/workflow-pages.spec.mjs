@@ -13,6 +13,9 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Adopt Minutes" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Public Comment Review" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Reviewed" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Redact Comment" })).toBeDisabled();
   await expect(page.getByText("No local meetings have been created yet.")).toBeVisible();
   await expect(page.getByText("No CivicCode handoffs are waiting for the clerk.")).toBeVisible();
 
@@ -63,6 +66,8 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Submit Public Comment" })).toBeDisabled();
   await expect(page.getByText("No posted public meeting is open for comment")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Public Comment Review" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Redact Comment" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
