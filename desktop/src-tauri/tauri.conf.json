@@ -26,12 +26,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": ["msi"],
     "publisher": "CivicSuite",
+    "icon": ["icons/icon.ico"],
     "licenseFile": "../installer/windows/unsigned-beta-install-notice.txt",
     "resources": ["../runtime/payload/"],
     "windows": {
       "nsis": {
+        "compression": "zlib",
         "displayLanguageSelector": false,
         "installMode": "currentUser",
         "installerHooks": "../installer/windows/nsis-hooks.nsh",

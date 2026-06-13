@@ -49,6 +49,14 @@ if (!tauriConfig.includes('"identifier": "org.civicsuite.desktop"')) {
   throw new Error("Tauri identifier is missing");
 }
 
+if (!tauriConfig.includes('"icon": ["icons/icon.ico"]')) {
+  throw new Error("Tauri bundle must declare the Windows .ico icon");
+}
+
+if (!tauriConfig.includes('"targets": ["msi"]')) {
+  throw new Error("Tauri bundle must default to the MSI target for the full Windows runtime payload");
+}
+
 if (!tauriConfig.includes('"licenseFile": "../installer/windows/unsigned-beta-install-notice.txt"')) {
   throw new Error("Tauri NSIS installer must include the unsigned beta install notice");
 }
