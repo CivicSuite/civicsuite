@@ -140,6 +140,10 @@ if (!rustMain.includes("before changing local model setup")) {
   throw new Error("desktop shell must require local admin access before model setup mutations");
 }
 
+if (!rustMain.includes("before running repair, backup, or uninstall")) {
+  throw new Error("desktop shell must require local admin access before first-run lifecycle actions");
+}
+
 for (const phrase of [
   'model::model_action("resume-download")',
   'model::model_action("load-runtime-model")'

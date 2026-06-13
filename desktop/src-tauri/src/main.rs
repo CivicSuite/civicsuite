@@ -115,6 +115,10 @@ fn public_runtime_health(mut health: Vec<RuntimeHealthItem>) -> Vec<RuntimeHealt
     health
 }
 
+fn first_run_lifecycle_action_requires_admin(action: &str) -> bool {
+    matches!(action, "repair" | "backup" | "uninstall")
+}
+
 #[tauri::command]
 fn get_app_state() -> Result<AppState, String> {
     let access = auth::access_state()?;
@@ -191,6 +195,16 @@ fn first_run_action(
     step_id: Option<String>,
     payload: Option<Value>,
 ) -> Result<FirstRunActionResult, String> {
+    let access = auth::access_state()?;
+    if access.configured
+        && !access_is_local_admin(&access)
+        && first_run_lifecycle_action_requires_admin(&action)
+    {
+        return Err(
+            "Sign in as the local administrator before running repair, backup, or uninstall."
+                .to_string(),
+        );
+    }
     first_run::first_run_action(&action, step_id.as_deref(), payload.as_ref())
 }
 
@@ -399,6 +413,27 @@ mod tests {
             let signed_in_result =
                 model_action("open-model-folder".to_string()).expect("model action allowed");
             assert!(signed_in_result.accepted);
+        });
+    }
+
+    #[test]
+    fn first_run_lifecycle_actions_require_admin_after_first_admin_exists() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+
+            let signed_out_result = first_run_action("backup".to_string(), None, None);
+
+            assert!(signed_out_result.is_err());
+            assert!(signed_out_result
+                .err()
+                .expect("first-run lifecycle auth error")
+                .contains("Sign in as the local administrator"));
+
+            sign_in_as_first_admin();
+            let signed_in_result =
+                first_run_action("backup".to_string(), None, None).expect("backup allowed");
+            assert!(signed_in_result.accepted);
+            assert_eq!(signed_in_result.action, "backup");
         });
     }
 
