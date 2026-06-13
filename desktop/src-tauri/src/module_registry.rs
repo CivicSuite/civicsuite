@@ -104,6 +104,7 @@ pub struct ModuleSummary {
     pub blocked_reason: Option<String>,
     pub dependencies: Vec<String>,
     pub proof_required: Vec<String>,
+    pub backup_restore_hooks: Vec<String>,
     pub route_count: usize,
     pub service_count: usize,
     pub permission_count: usize,
@@ -908,6 +909,7 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
                 blocked_reason,
                 dependencies: module.dependencies.clone(),
                 proof_required: module.proof_required.clone(),
+                backup_restore_hooks: module.backup_restore_hooks.clone().unwrap_or_default(),
                 route_count: module.routes.as_ref().map_or(0, Vec::len),
                 service_count: module.services.as_ref().map_or(0, Vec::len),
                 permission_count: module.permissions.as_ref().map_or(0, Vec::len),
@@ -1184,6 +1186,14 @@ mod tests {
                 civiccode.lifecycle_update.as_deref(),
                 Some("manifest-versioned")
             );
+            assert!(civiccode
+                .backup_restore_hooks
+                .iter()
+                .any(|hook| hook == "Data/workflows/code"));
+            assert!(civiccode
+                .backup_restore_hooks
+                .iter()
+                .any(|hook| hook == "Data/exports/code"));
             assert!(civiccode.route_count > 0);
             assert!(civiccode.service_count > 0);
             assert!(civiccode.permission_count > 0);

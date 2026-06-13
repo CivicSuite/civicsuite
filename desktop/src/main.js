@@ -34,6 +34,7 @@ const fallbackState = {
       enabled: true,
       contract_ready: true,
       blocked_reason: null,
+      backup_restore_hooks: ["config", "Data", "audit-log", "model-registry"],
       lifecycle_install: "always-installed-with-profile",
       lifecycle_update: "manifest-versioned",
       lifecycle_disable: "not-allowed-required-foundation",
@@ -55,6 +56,7 @@ const fallbackState = {
       route_count: 2,
       service_count: 2,
       task_count: 6,
+      backup_restore_hooks: ["Data/workflows/records", "Data/exports/records", "Data/files/records"],
       model_required: true,
       lifecycle_install: "profile-selected",
       lifecycle_update: "manifest-versioned",
@@ -77,6 +79,7 @@ const fallbackState = {
       route_count: 2,
       service_count: 2,
       task_count: 6,
+      backup_restore_hooks: ["Data/workflows/meetings", "Data/exports/meetings", "Data/files/meetings"],
       model_required: true,
       lifecycle_install: "profile-selected",
       lifecycle_update: "manifest-versioned",
@@ -99,6 +102,7 @@ const fallbackState = {
       route_count: 2,
       service_count: 2,
       task_count: 4,
+      backup_restore_hooks: ["Data/workflows/code", "Data/exports/code", "Data/files/code"],
       model_required: true,
       lifecycle_install: "profile-selected",
       lifecycle_update: "manifest-versioned",
@@ -2376,9 +2380,29 @@ function moduleLifecycleItems(module) {
 
 const MODULE_EXPORTS_AVAILABLE = new Set(["civicrecords-ai", "civicclerk", "civiccode"]);
 
+function backupHookLabel(hook) {
+  const labels = {
+    "config": "city setup",
+    "Data": "city data",
+    "audit-log": "audit log",
+    "model-registry": "local model registry",
+    "Data/workflows/records": "records workflow history",
+    "Data/exports/records": "records exports",
+    "Data/files/records": "records files",
+    "Data/workflows/meetings": "meeting workflow history",
+    "Data/exports/meetings": "meeting exports",
+    "Data/files/meetings": "meeting files",
+    "Data/workflows/code": "code workflow history",
+    "Data/exports/code": "code exports",
+    "Data/files/code": "code files"
+  };
+  return labels[hook] || String(hook || "").replace(/^Data\//, "").replaceAll("/", " ");
+}
+
 function renderModuleRow(module, { actions = false } = {}) {
   const proofCount = module.proof_required?.length || 0;
   const lifecycle = moduleLifecycleItems(module);
+  const backupHooks = module.backup_restore_hooks || [];
   const disabled = module.installed && module.enabled === false;
   const canToggle = actions && module.installed && !module.required;
   const canInstall = actions && !module.installed && module.selectable && module.contract_ready;
@@ -2410,6 +2434,7 @@ function renderModuleRow(module, { actions = false } = {}) {
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
         <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
+        ${backupHooks.length ? `<small><strong>Backup includes:</strong> ${backupHooks.map((hook) => escapeHtml(backupHookLabel(hook))).join(", ")}</small>` : ""}
         ${disabled ? `<small>Data remains installed. Re-enable this module to show its work area.</small>` : ""}
         ${lifecycle.map((item) => `<small><strong>${item.label}:</strong> ${item.value}</small>`).join("")}
         ${actionButtons.length ? `

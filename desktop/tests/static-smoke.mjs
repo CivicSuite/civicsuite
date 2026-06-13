@@ -10,6 +10,7 @@ const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows",
 const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
+const moduleRegistryRust = readFileSync(join(root, "src-tauri", "src", "module_registry.rs"), "utf8");
 const supervisorRust = readFileSync(join(root, "src-tauri", "src", "supervisor.rs"), "utf8");
 const firstRunRust = readFileSync(join(root, "src-tauri", "src", "first_run.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
@@ -49,6 +50,8 @@ const requiredUiPhrases = [
   "The Windows installer owns the app folder.",
   "Enabled modules:",
   "Data remains installed. Re-enable this module to show its work area.",
+  "Backup includes:",
+  "code workflow history",
   "Module actions are handled by the Windows desktop app",
   "Source history:",
   "Sign in as local administrator to change local model setup.",
@@ -303,10 +306,11 @@ for (const phrase of [
   "remove-module",
   "update-module",
   "open-module-exports",
+  "backup_restore_hooks",
   "Module exports opened",
   "Existing module data was not deleted"
 ]) {
-  if (!rustMain.includes(phrase)) {
+  if (!rustMain.includes(phrase) && !moduleRegistryRust.includes(phrase)) {
     throw new Error(`desktop command boundary missing module lifecycle phrase: ${phrase}`);
   }
 }

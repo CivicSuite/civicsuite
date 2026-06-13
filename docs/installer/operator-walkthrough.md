@@ -68,7 +68,7 @@ Use the module manager in Settings to confirm:
 
 - City Core profile is selected.
 - CivicCore, CivicRecords AI, CivicClerk, and CivicCode are installed.
-- Each installed module shows install, update, disable, and remove lifecycle state.
+- Each installed module shows install, update, disable, remove, backup coverage, and export access state.
 - Future modules are not presented as installed.
 
 ## Clerk Smoke Test

@@ -207,6 +207,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
+  await expect(page.getByText("Backup includes: code workflow history, code exports, code files")).toBeVisible();
   await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Check Update CivicCode" })).toBeVisible();
