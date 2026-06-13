@@ -84,12 +84,12 @@ def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bo
         "cleanup_approved": allow_host_cleanup,
         "cleanup_steps": [],
     }
-    if before["passed"]:
+    if before["passed"] and not allow_host_cleanup:
         evidence["status"] = "passed"
         evidence["after"] = before
         return True, evidence
 
-    if not allow_host_cleanup:
+    if not before["passed"] and not allow_host_cleanup:
         evidence["status"] = "blocked"
         evidence["message"] = (
             "Cleanroom lifecycle requires at least 60 GB free. Global Docker/WSL cleanup "
@@ -102,8 +102,10 @@ def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bo
     docker = shutil.which("docker")
     if docker:
         steps.append(run_cleanup_command([docker, "system", "prune", "-af"], timeout=1800))
+        steps.append(run_cleanup_command([docker, "network", "prune", "-f"], timeout=300))
     else:
         steps.append({"command": ["docker", "system", "prune", "-af"], "returncode": 127, "stdout": "", "stderr": "docker was not found"})
+        steps.append({"command": ["docker", "network", "prune", "-f"], "returncode": 127, "stdout": "", "stderr": "docker was not found"})
 
     if sys.platform.startswith("win"):
         wsl = shutil.which("wsl.exe") or shutil.which("wsl")
@@ -128,9 +130,12 @@ def cleanroom_hygiene(*, report_dir: Path, allow_host_cleanup: bool) -> tuple[bo
     after = disk_snapshot()
     evidence["cleanup_steps"] = steps
     evidence["after"] = after
-    evidence["status"] = "passed" if after["passed"] else "blocked"
+    cleanup_failed = any(int(step.get("returncode", 1)) != 0 for step in steps)
+    evidence["status"] = "warning" if after["passed"] and cleanup_failed else "passed" if after["passed"] else "blocked"
     if not after["passed"]:
         evidence["message"] = "Cleanroom lifecycle remains below 60 GB free after approved cleanup."
+    elif cleanup_failed:
+        evidence["message"] = "Cleanroom lifecycle has enough free disk, but approved Docker cleanup reported a warning."
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "cleanroom-hygiene-evidence.json").write_text(
         json.dumps(evidence, indent=2, sort_keys=True) + "\n",

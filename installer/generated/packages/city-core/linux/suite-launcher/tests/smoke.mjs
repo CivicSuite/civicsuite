@@ -41,7 +41,7 @@ const requiredSnippets = [
 const missing = requiredSnippets.filter(([file, snippet]) => !files[file].includes(snippet));
 if (missing.length) {
   for (const [file, snippet] of missing) {
-    console.error(`missing required launcher scaffold text in ${file}: ${snippet}`);
+    console.error(`missing required launcher text in ${file}: ${snippet}`);
   }
   process.exit(1);
 }

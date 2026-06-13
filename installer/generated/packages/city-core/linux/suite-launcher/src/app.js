@@ -72,7 +72,7 @@ const states = {
     label: "Records service unavailable",
     badge: "error",
     summary: "CivicRecords AI did not report ready. Clerk and Code remain listed so staff can keep orienting.",
-    next: "Run the city-core installer verify command, confirm Docker is running, then refresh this launcher.",
+    next: "Run the city-core local runtime verify action, confirm required services are healthy, then refresh this launcher.",
     statuses: { records: "error", clerk: "ready", code: "ready" },
     audit: [
       { time: "09:44", action: "CivicRecords AI health check failed", source: "http://127.0.0.1:18080/" },
@@ -285,7 +285,7 @@ function surfaceWork(state) {
             <span class="state-dot ${status}" aria-hidden="true"></span>
             <div>
               <strong>${module.name}</strong>
-              <span>${status === "ready" ? "Endpoint listed for local runtime." : status === "degraded" ? "Investigate logs before staff work continues." : status === "error" ? "Run installer verify and confirm Docker is running." : "Waiting for health check."}</span>
+              <span>${status === "ready" ? "Endpoint listed for local runtime." : status === "degraded" ? "Investigate logs before staff work continues." : status === "error" ? "Run the local runtime verify action and confirm required services are healthy." : "Waiting for health check."}</span>
             </div>
             <code>${module.href}</code>
           </div>`;

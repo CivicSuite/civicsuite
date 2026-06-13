@@ -168,18 +168,35 @@ function Invoke-PgvectorBuild {
 
     Push-Location $SourceDir
     try {
+        $StdoutPath = [System.IO.Path]::GetTempFileName()
+        $StderrPath = [System.IO.Path]::GetTempFileName()
         if ($DevCmd) {
             $BuildCommand = "call `"$DevCmd`" -arch=x64 -host_arch=x64 >nul && set `"PGROOT=$PostgresRoot`" && nmake /F Makefile.win && nmake /F Makefile.win install"
         } else {
             $BuildCommand = "set `"PGROOT=$PostgresRoot`" && nmake /F Makefile.win && nmake /F Makefile.win install"
         }
-        $BuildOutput = cmd.exe /D /S /C $BuildCommand 2>&1
-        $BuildExitCode = $LASTEXITCODE
-        $BuildOutput | ForEach-Object { Write-Host $_ }
+        $Process = Start-Process `
+            -FilePath "cmd.exe" `
+            -ArgumentList @("/D", "/S", "/C", $BuildCommand) `
+            -WorkingDirectory $SourceDir `
+            -NoNewWindow `
+            -Wait `
+            -PassThru `
+            -RedirectStandardOutput $StdoutPath `
+            -RedirectStandardError $StderrPath
+        $BuildExitCode = $Process.ExitCode
+        Get-Content -LiteralPath $StdoutPath -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ }
+        Get-Content -LiteralPath $StderrPath -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ }
         if ($BuildExitCode -ne 0) {
             throw "pgvector build failed with exit code $BuildExitCode"
         }
     } finally {
+        if ($StdoutPath -and (Test-Path -LiteralPath $StdoutPath)) {
+            Remove-Item -LiteralPath $StdoutPath -Force -ErrorAction SilentlyContinue
+        }
+        if ($StderrPath -and (Test-Path -LiteralPath $StderrPath)) {
+            Remove-Item -LiteralPath $StderrPath -Force -ErrorAction SilentlyContinue
+        }
         Pop-Location
     }
 }
