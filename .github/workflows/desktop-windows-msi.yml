@@ -1,0 +1,120 @@
+name: desktop-windows-msi
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/desktop-windows-msi.yml"
+      - "desktop/**"
+      - "installer/module-manifest-contract.json"
+      - "installer/modules.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-local-msi:
+    name: build Windows Local MSI
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out CivicSuite
+        uses: actions/checkout@v5
+        with:
+          path: civicsuite
+
+      - name: Check out CivicCore runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civiccore
+          ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c
+          path: civiccore
+
+      - name: Check out CivicRecords AI runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicrecords-ai
+          ref: 538766523ad90ee7553b0ffa75b626d3d4850b17
+          path: civicrecords-ai
+
+      - name: Check out CivicClerk runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicclerk
+          ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5
+          path: civicclerk
+
+      - name: Check out CivicCode runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civiccode
+          ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
+          path: civiccode
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: civicsuite/desktop/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install desktop dependencies
+        working-directory: civicsuite/desktop
+        run: npm ci
+
+      - name: Run desktop static contract checks
+        working-directory: civicsuite/desktop
+        run: npm test
+
+      - name: Prepare portable Windows runtime payload
+        working-directory: civicsuite/desktop
+        shell: pwsh
+        run: npm run prepare-runtime-payload
+
+      - name: Run Tauri Rust tests
+        working-directory: civicsuite/desktop/src-tauri
+        run: cargo test
+
+      - name: Check Rust formatting
+        working-directory: civicsuite/desktop/src-tauri
+        run: cargo fmt --check
+
+      - name: Build Windows Local MSI
+        working-directory: civicsuite/desktop
+        run: npm run tauri -- build
+
+      - name: Write MSI evidence
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
+          if (-not $msi) {
+            throw "CivicSuite Windows Local MSI was not produced."
+          }
+          $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $msi.FullName
+          $evidence = @(
+            "CivicSuite Windows Local MSI build evidence"
+            "GeneratedAtUtc=$((Get-Date).ToUniversalTime().ToString('o'))"
+            "File=$($msi.Name)"
+            "Bytes=$($msi.Length)"
+            "SHA256=$($hash.Hash.ToLowerInvariant())"
+            "NoDockerPrerequisite=true"
+            "NoWslPrerequisite=true"
+            "RuntimePayload=desktop/runtime/payload"
+          )
+          $evidence | Set-Content -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi/CivicSuite-msi-evidence.txt" -Encoding UTF8
+
+      - name: Upload Windows Local MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: civicsuite-windows-local-msi
+          path: |
+            civicsuite/desktop/src-tauri/target/release/bundle/msi/*.msi
+            civicsuite/desktop/src-tauri/target/release/bundle/msi/*evidence*.txt
+          retention-days: 7

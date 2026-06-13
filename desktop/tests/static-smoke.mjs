@@ -6,6 +6,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const main = readFileSync(join(root, "src", "main.js"), "utf8");
 const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
+const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows", "desktop-windows-msi.yml"), "utf8");
 const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
@@ -58,15 +59,38 @@ if (!tauriConfig.includes('"targets": ["msi"]')) {
 }
 
 if (!tauriConfig.includes('"licenseFile": "../installer/windows/unsigned-beta-install-notice.txt"')) {
-  throw new Error("Tauri NSIS installer must include the unsigned beta install notice");
+  throw new Error("Tauri bundle must include the unsigned beta install notice");
 }
 
 if (!tauriConfig.includes('"installerHooks": "../installer/windows/nsis-hooks.nsh"')) {
-  throw new Error("Tauri NSIS installer must include the CivicSuite install hook");
+  throw new Error("Tauri Windows installer must include the CivicSuite install hook");
 }
 
 if (!tauriConfig.includes('"resources": ["../runtime/payload/"]')) {
   throw new Error("Tauri bundle must include the Windows runtime payload resource folder");
+}
+
+for (const phrase of [
+  "name: desktop-windows-msi",
+  "runs-on: windows-latest",
+  "path: civicsuite",
+  "path: civiccore",
+  "ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c",
+  "path: civicrecords-ai",
+  "ref: 538766523ad90ee7553b0ffa75b626d3d4850b17",
+  "path: civicclerk",
+  "ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5",
+  "path: civiccode",
+  "ref: a960bba0a2249d118b593dd61bee3a65a69a9d77",
+  "npm run prepare-runtime-payload",
+  "npm run tauri -- build",
+  "desktop/src-tauri/target/release/bundle/msi/*.msi",
+  "NoDockerPrerequisite=true",
+  "NoWslPrerequisite=true"
+]) {
+  if (!desktopMsiWorkflow.includes(phrase)) {
+    throw new Error(`desktop MSI workflow missing phrase: ${phrase}`);
+  }
 }
 
 for (const phrase of [
