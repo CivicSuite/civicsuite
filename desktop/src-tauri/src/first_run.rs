@@ -5,6 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::model;
+
 const FIRST_RUN_MANIFEST_JSON: &str = include_str!("../../runtime/windows-first-run.json");
 const REQUIRED_STEP_IDS: [&str; 10] = [
     "unsigned-beta",
@@ -404,10 +406,6 @@ fn create_local_locations(locations: &FirstRunLocations) -> Result<(), String> {
 
 fn action_blocks_until_runtime(action: &str) -> Option<(&'static str, &'static str)> {
     match action {
-        "download-model" => Some((
-            "The native model downloader is the next runtime slice and is not safe to mark complete before checksum and resume handling exists.",
-            "Keep the pinned model visible, then use the model download step after the downloader lands.",
-        )),
         "verify-health" => Some((
             "Health verification cannot pass until the portable runtime services are installed and supervised.",
             "Finish the runtime install slice, then run health verification again.",
@@ -464,12 +462,26 @@ pub fn first_run_action(
         ));
     }
 
+    if action == "download-model" && !model::local_model_artifact_verified()? {
+        return Ok(FirstRunActionResult {
+            accepted: false,
+            action: action.to_string(),
+            step_id: Some(target_step_id),
+            status: "Needs attention",
+            message: "The pinned Gemma model has not passed local checksum verification yet."
+                .to_string(),
+            next_action:
+                "Use Local AI model setup to download or place the GGUF file, then verify checksum."
+                    .to_string(),
+        });
+    }
+
     let locations = resolve_locations(&manifest.default_locations);
     match action {
         "choose-location" | "choose-backup" => create_local_locations(&locations)?,
         "create-city-profile" => persist_city_profile(payload)?,
         "create-admin" => persist_first_admin(payload)?,
-        "review" | "select-modules" | "repair" | "backup" | "uninstall" => {}
+        "review" | "select-modules" | "download-model" | "repair" | "backup" | "uninstall" => {}
         _ => {
             return Err(format!(
                 "First-run action {action} has no desktop executor yet"
@@ -538,12 +550,14 @@ mod tests {
     }
 
     #[test]
-    fn first_run_action_is_blocked_until_installer_executor_exists() {
-        let result = first_run_action("download-model", Some("model"), None)
-            .expect("action response is structured");
-        assert!(!result.accepted);
-        assert_eq!(result.status, "Blocked");
-        assert!(result.message.contains("native model downloader"));
+    fn first_run_model_action_waits_for_verified_artifact() {
+        with_temp_state_dir(|_| {
+            let result = first_run_action("download-model", Some("model"), None)
+                .expect("action response is structured");
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Needs attention");
+            assert!(result.message.contains("checksum verification"));
+        });
     }
 
     fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {

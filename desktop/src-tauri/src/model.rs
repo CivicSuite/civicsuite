@@ -334,6 +334,21 @@ fn verify_model_artifact(local_path: &Path, artifact: &ArtifactDefinition) -> Re
     verify_file_checksum(local_path, artifact.size_bytes, &artifact.sha256)
 }
 
+fn model_artifact_verified(local_path: &Path, artifact: &ArtifactDefinition) -> bool {
+    file_size_matches(local_path, artifact.size_bytes)
+        && checksum_marker_matches(local_path, &artifact.sha256)
+}
+
+pub(crate) fn local_model_artifact_verified() -> Result<bool, String> {
+    let manifest = parse_manifest()?;
+    validate_manifest(&manifest)?;
+    let local_path = model_path(&manifest.model.artifact);
+    Ok(model_artifact_verified(
+        &local_path,
+        &manifest.model.artifact,
+    ))
+}
+
 fn curl_executable() -> String {
     env::var("CIVICSUITE_CURL_PATH").unwrap_or_else(|_| {
         if cfg!(target_os = "windows") {
@@ -653,13 +668,10 @@ mod tests {
         let _ = std::fs::remove_file(marker_path);
     }
 
-    fn test_env_lock() -> &'static std::sync::Mutex<()> {
-        static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
-        LOCK.get_or_init(|| std::sync::Mutex::new(()))
-    }
-
     fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
-        let _guard = test_env_lock().lock().expect("test env lock");
+        let _guard = crate::first_run::test_env_lock()
+            .lock()
+            .expect("test env lock");
         let root = env::temp_dir().join(format!(
             "civicsuite-desktop-model-test-{}",
             std::process::id()
@@ -690,6 +702,16 @@ mod tests {
             let expected = sha256_file(&model_path).expect("hash");
             verify_file_checksum(&model_path, 10, &expected).expect("verify");
             assert!(checksum_marker_matches(&model_path, &expected));
+        });
+    }
+
+    #[test]
+    fn local_model_artifact_verified_is_false_without_artifact() {
+        with_temp_state_dir(|_| {
+            assert!(
+                !local_model_artifact_verified().expect("verification state resolves"),
+                "missing model artifact cannot satisfy the first-run gate"
+            );
         });
     }
 }
