@@ -1155,7 +1155,7 @@ mod tests {
     }
 
     #[test]
-    fn runtime_health_is_plain_english_and_honest_before_install() {
+    fn runtime_health_is_plain_english_before_install() {
         with_temp_state_dir(|_| {
             let health = runtime_health().expect("health builds from manifest");
             assert!(health

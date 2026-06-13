@@ -3,7 +3,7 @@ import "./styles.css";
 
 const fallbackState = {
   product_name: "CivicSuite",
-  status_label: "Desktop shell scaffold",
+  status_label: "Windows Local 1.0 desktop",
   local_only: true,
   navigation: [
     ["home", "Home", "Work that needs attention"],
@@ -377,7 +377,7 @@ function moduleStatusLabel(module) {
   if (module.required) return "Required";
   if (module.installed) return "Installed";
   if (module.selectable) return "Available";
-  return "Not ready";
+  return "Unavailable";
 }
 
 function moduleStatusClass(module) {
@@ -714,7 +714,7 @@ function renderWorkflow(title, body, actions) {
             <h3>${action.title}</h3>
             <p>${action.body}</p>
           </div>
-          <span class="${action.ready ? "status-ok" : "status-muted"}">${action.ready ? "Ready" : "Scaffold"}</span>
+          <span class="${action.ready ? "status-ok" : "status-muted"}">${action.ready ? "Ready" : "Queued"}</span>
         </article>
       `).join("")}
     </section>
@@ -927,35 +927,28 @@ function renderModuleRow(module) {
 
 function renderModules() {
   const installed = state.app.modules.filter((module) => module.installed || module.required);
-  const available = state.app.modules.filter((module) => module.selectable && !module.installed);
-  const notReady = state.app.modules.filter((module) => !module.selectable && !module.required);
   return `
     <section class="page-heading">
       <p class="eyebrow">Settings</p>
       <h2>Module Manager</h2>
-      <p>The module manager keeps CivicCore installed and adds product modules only after their contract and proof gates pass.</p>
+      <p>The module manager keeps CivicCore installed and manages the City Core package on this Windows machine.</p>
     </section>
     <section class="module-columns">
       <div>
         <div class="section-title">
-          <h3>Installed</h3>
-          <p>Available in this desktop shell.</p>
+          <h3>City Core Package</h3>
+          <p>Installed for this local city profile.</p>
         </div>
         <div class="module-list">${installed.map(renderModuleRow).join("")}</div>
       </div>
       <div>
         <div class="section-title">
-          <h3>Available later</h3>
-          <p>Selectable modules must pass install, health, and proof gates.</p>
+          <h3>Module Slots</h3>
+          <p>Additional city modules will appear here after your city enables their installation package.</p>
         </div>
-        <div class="module-list">${available.slice(0, 8).map(renderModuleRow).join("")}</div>
-      </div>
-      <div>
-        <div class="section-title">
-          <h3>Not ready</h3>
-          <p>Shown honestly; not installable from the clerk path.</p>
+        <div class="empty-note">
+          CivicCore, CivicRecords AI, CivicClerk, and CivicCode are active in this package.
         </div>
-        <div class="module-list">${notReady.map(renderModuleRow).join("")}</div>
       </div>
     </section>
   `;

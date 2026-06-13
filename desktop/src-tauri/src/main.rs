@@ -150,7 +150,7 @@ fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
 fn get_app_state() -> Result<AppState, String> {
     Ok(AppState {
         product_name: "CivicSuite",
-        status_label: "Windows Local 1.0 desktop shell scaffold",
+        status_label: "Windows Local 1.0 desktop",
         local_only: true,
         navigation: navigation(),
         modules: module_summaries()?,

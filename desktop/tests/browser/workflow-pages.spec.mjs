@@ -43,3 +43,18 @@ test("audit drawer uses local workflow audit language instead of placeholder tex
   await expect(page.getByText("No local workflow actions have been recorded yet.")).toBeVisible();
   await expect(page.getByText("Scaffold")).toHaveCount(0);
 });
+
+test("module manager presents the installed city-core package", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Settings/ }).click();
+
+  await expect(page.getByRole("heading", { name: "Module Manager" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Module Slots" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
+  await expect(page.getByText("Not ready")).toHaveCount(0);
+  await expect(page.getByText("Scaffold")).toHaveCount(0);
+});
