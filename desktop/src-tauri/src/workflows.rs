@@ -3,7 +3,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -180,6 +180,18 @@ pub struct PublicationEvent {
     pub retracted_by: String,
 }
 
+#[derive(Deserialize, Serialize)]
+struct ExportIntegrityManifest {
+    schema_version: u16,
+    export_file: String,
+    export_path: String,
+    format: String,
+    size_bytes: u64,
+    sha256: String,
+    created_at_unix_seconds: u64,
+    generated_by: String,
+}
+
 #[derive(Serialize, Clone)]
 pub struct SearchResult {
     pub module_id: String,
@@ -297,6 +309,44 @@ fn safe_file_stem(value: &str) -> String {
         .join("-")
 }
 
+fn export_manifest_path(export_path: &Path) -> PathBuf {
+    let export_file = export_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "export.md".to_string());
+    export_path.with_file_name(format!("{export_file}.sha256.json"))
+}
+
+fn write_export_integrity_manifest(
+    export_path: &Path,
+    contents: &str,
+    created_at_unix_seconds: u64,
+) -> Result<(), String> {
+    let export_file = export_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "export.md".to_string());
+    let manifest = ExportIntegrityManifest {
+        schema_version: 1,
+        export_file,
+        export_path: export_path.to_string_lossy().to_string(),
+        format: "markdown".to_string(),
+        size_bytes: contents.len() as u64,
+        sha256: hash_public_payload(contents),
+        created_at_unix_seconds,
+        generated_by: "CivicSuite Windows Local".to_string(),
+    };
+    let manifest_path = export_manifest_path(export_path);
+    let manifest_contents = serde_json::to_string_pretty(&manifest)
+        .map_err(|error| format!("Could not serialize export integrity manifest: {error}"))?;
+    fs::write(&manifest_path, format!("{manifest_contents}\n")).map_err(|error| {
+        format!(
+            "Could not write export integrity manifest {}: {error}",
+            manifest_path.display()
+        )
+    })
+}
+
 fn write_export_file(folder: &str, stem: &str, contents: &str) -> Result<String, String> {
     let directory = exports_dir().join(folder);
     fs::create_dir_all(&directory)
@@ -311,6 +361,10 @@ fn write_export_file(folder: &str, stem: &str, contents: &str) -> Result<String,
     }
     fs::write(&path, contents)
         .map_err(|error| format!("Could not write export {}: {error}", path.display()))?;
+    if let Err(error) = write_export_integrity_manifest(&path, contents, timestamp) {
+        let _ = fs::remove_file(&path);
+        return Err(error);
+    }
     Ok(path.to_string_lossy().to_string())
 }
 
@@ -2246,6 +2300,29 @@ mod tests {
         }
     }
 
+    fn assert_export_integrity_manifest(export_path: &str, contents: &str) {
+        let export_path = PathBuf::from(export_path);
+        let manifest_path = export_manifest_path(&export_path);
+        assert!(manifest_path.is_file());
+        let manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(manifest_path).expect("manifest reads"))
+                .expect("manifest parses");
+        let expected_export_path = export_path.to_string_lossy().to_string();
+        let expected_hash = hash_public_payload(contents);
+        assert_eq!(manifest["schema_version"].as_u64(), Some(1));
+        assert_eq!(
+            manifest["export_path"].as_str(),
+            Some(expected_export_path.as_str())
+        );
+        assert_eq!(manifest["format"].as_str(), Some("markdown"));
+        assert_eq!(manifest["size_bytes"].as_u64(), Some(contents.len() as u64));
+        assert_eq!(manifest["sha256"].as_str(), Some(expected_hash.as_str()));
+        assert_eq!(
+            manifest["generated_by"].as_str(),
+            Some("CivicSuite Windows Local")
+        );
+    }
+
     #[test]
     fn meeting_workflow_persists_agenda_notice_minutes_votes_comments_actions_and_archive() {
         with_temp_state_dir(|_| {
@@ -2284,7 +2361,10 @@ mod tests {
             assert_ne!(meeting.exports[0], meeting.exports[1]);
             assert!(PathBuf::from(&meeting.exports[0]).is_file());
             assert!(PathBuf::from(&meeting.exports[1]).is_file());
+            let packet = fs::read_to_string(&meeting.exports[0]).expect("packet reads");
+            assert_export_integrity_manifest(&meeting.exports[0], &packet);
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
+            assert_export_integrity_manifest(&meeting.exports[1], &archive);
             assert!(archive.contains("## Action Items"));
             assert!(archive.contains("Finance staff to publish the adopted budget."));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
@@ -2479,6 +2559,7 @@ mod tests {
             assert_eq!(request.exports.len(), 1);
             assert!(PathBuf::from(&request.exports[0]).is_file());
             let exported = fs::read_to_string(&request.exports[0]).expect("export reads");
+            assert_export_integrity_manifest(&request.exports[0], &exported);
             assert!(exported.contains("## Exemption Review"));
             assert!(exported.contains("Reviewed attorney-client content"));
             assert!(exported.contains("## Approval Notes"));
@@ -2609,6 +2690,7 @@ mod tests {
             assert!(PathBuf::from(&source.public_exports[0]).is_file());
             let public_export =
                 fs::read_to_string(&source.public_exports[0]).expect("public code export reads");
+            assert_export_integrity_manifest(&source.public_exports[0], &public_export);
             assert!(public_export.contains("Non-Authoritative Plain-English Summary"));
             assert!(public_export.contains("contact city staff"));
             let publication = state
