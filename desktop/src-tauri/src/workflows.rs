@@ -108,6 +108,8 @@ pub struct RecordsRequest {
     pub submitted_via: String,
     pub summary: String,
     pub deadline: String,
+    #[serde(default)]
+    pub deadline_basis: String,
     pub status: String,
     #[serde(default)]
     pub assigned_to: String,
@@ -127,6 +129,8 @@ pub struct RecordsRequest {
     pub approval_notes: Vec<String>,
     #[serde(default)]
     pub exports: Vec<String>,
+    #[serde(default)]
+    pub deadline_reviewed_at_unix_seconds: Option<u64>,
     #[serde(default)]
     pub approved_at_unix_seconds: Option<u64>,
     #[serde(default)]
@@ -1461,6 +1465,13 @@ fn create_records_request(
     let requester = payload_string(payload, "requester")?;
     let summary = payload_string(payload, "summary")?;
     let deadline = payload_string(payload, "deadline")?;
+    parse_iso_date(&deadline, "records response deadline")?;
+    let deadline_basis = payload_optional_string(payload, "deadlineBasis");
+    let deadline_basis = if deadline_basis.is_empty() {
+        "Staff-entered deadline at intake.".to_string()
+    } else {
+        deadline_basis
+    };
     let id = new_id("records", state.records_requests.len());
     let tracking_number = records_tracking_number(state.records_requests.len());
     state.records_requests.insert(
@@ -1473,6 +1484,7 @@ fn create_records_request(
             submitted_via: "Staff intake".to_string(),
             summary,
             deadline,
+            deadline_basis,
             status: "received".to_string(),
             assigned_to: String::new(),
             clarification_notes: Vec::new(),
@@ -1483,6 +1495,7 @@ fn create_records_request(
             response_draft: String::new(),
             approval_notes: Vec::new(),
             exports: Vec::new(),
+            deadline_reviewed_at_unix_seconds: Some(now_unix_seconds()),
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
             closed_at_unix_seconds: None,
@@ -1525,6 +1538,7 @@ fn submit_public_records_request(
             submitted_via: "Resident/Public local intake".to_string(),
             summary,
             deadline,
+            deadline_basis: String::new(),
             status: "public intake received".to_string(),
             assigned_to: String::new(),
             clarification_notes: Vec::new(),
@@ -1535,6 +1549,7 @@ fn submit_public_records_request(
             response_draft: String::new(),
             approval_notes: Vec::new(),
             exports: Vec::new(),
+            deadline_reviewed_at_unix_seconds: None,
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
             closed_at_unix_seconds: None,
@@ -1550,6 +1565,33 @@ fn submit_public_records_request(
     Ok(format!(
         "Public records request {tracking_number} received. Staff can now review, assign, and track it locally."
     ))
+}
+
+fn set_records_deadline(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let deadline = payload_string(payload, "deadline")
+        .map_err(|_| "Enter the records response deadline as YYYY-MM-DD.".to_string())?;
+    let deadline_basis = payload_string(payload, "deadlineBasis")
+        .map_err(|_| "Enter the statutory or policy basis for the records deadline.".to_string())?;
+    parse_iso_date(&deadline, "records response deadline")?;
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    request.deadline = deadline.clone();
+    request.deadline_basis = deadline_basis.clone();
+    request.deadline_reviewed_at_unix_seconds = Some(now_unix_seconds());
+    request.status = "deadline reviewed".to_string();
+    let tracking_number = request.public_tracking_number.clone();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "set-records-deadline",
+        format!(
+            "Records request {tracking_number} deadline set to {deadline}; basis: {deadline_basis}"
+        ),
+    );
+    Ok("Records deadline reviewed and saved locally with basis evidence.".to_string())
 }
 
 fn request_records_clarification(
@@ -1763,7 +1805,7 @@ fn export_records_response(
     );
     let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -1781,6 +1823,11 @@ fn export_records_response(
             &request.submitted_via
         },
         request.deadline,
+        if request.deadline_basis.is_empty() {
+            "No deadline basis recorded."
+        } else {
+            &request.deadline_basis
+        },
         if request.assigned_to.is_empty() {
             "Unassigned"
         } else {
@@ -2499,6 +2546,8 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &request.summary,
                 &request.status,
                 &request.assigned_to,
+                &request.deadline,
+                &request.deadline_basis,
                 &request.fee_estimate,
                 &request.response_draft,
                 &citations,
@@ -2758,6 +2807,7 @@ pub fn city_work_action(
         "create-records-request" => create_records_request(&mut state, payload)?,
         "submit-public-records-request" => submit_public_records_request(&mut state, payload)?,
         "lookup-public-records-request" => return public_records_status_lookup(&state, payload),
+        "set-records-deadline" => set_records_deadline(&mut state, payload)?,
         "request-records-clarification" => request_records_clarification(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
         "record-records-search" => record_records_search(&mut state, payload)?,
@@ -3263,6 +3313,7 @@ mod tests {
             let state = city_work_state().expect("state reads");
             let request = state.records_requests.first().expect("request exists");
             assert_eq!(request.status, "closed");
+            assert_eq!(request.deadline_basis, "Staff-entered deadline at intake.");
             assert_eq!(request.assigned_to, "Records Officer");
             assert_eq!(request.clarification_notes.len(), 1);
             assert_eq!(request.search_notes.len(), 1);
@@ -3275,6 +3326,7 @@ mod tests {
             assert!(PathBuf::from(&request.exports[0]).is_file());
             let exported = fs::read_to_string(&request.exports[0]).expect("export reads");
             assert_export_integrity_manifest(&request.exports[0], &exported);
+            assert!(exported.contains("Deadline basis: Staff-entered deadline at intake."));
             assert!(exported.contains("## Exemption Review"));
             assert!(exported.contains("Reviewed attorney-client content"));
             assert!(exported.contains("## Approval Notes"));
@@ -3312,8 +3364,46 @@ mod tests {
             assert_eq!(request.submitted_via, "Resident/Public local intake");
             assert_eq!(request.status, "public intake received");
             assert_eq!(request.deadline, "Pending clerk deadline review");
+            assert!(request.deadline_basis.is_empty());
+            assert!(request.deadline_reviewed_at_unix_seconds.is_none());
             assert!(request.approved_at_unix_seconds.is_none());
             assert!(request.fulfilled_at_unix_seconds.is_none());
+
+            let missing_basis = serde_json::json!({
+                "recordsRequestId": request.id.clone(),
+                "deadline": "2026-07-20"
+            });
+            let error = match city_work_action("set-records-deadline", Some(&missing_basis)) {
+                Ok(_) => panic!("deadline cannot be reviewed without basis"),
+                Err(error) => error,
+            };
+            assert!(error.contains("statutory or policy basis"));
+            let bad_deadline = serde_json::json!({
+                "recordsRequestId": request.id.clone(),
+                "deadline": "2026-02-31",
+                "deadlineBasis": "Colorado CORA response deadline reviewed by clerk."
+            });
+            let error = match city_work_action("set-records-deadline", Some(&bad_deadline)) {
+                Ok(_) => panic!("deadline cannot be invalid calendar date"),
+                Err(error) => error,
+            };
+            assert!(error.contains("real calendar date"));
+            let deadline_review = serde_json::json!({
+                "recordsRequestId": request.id.clone(),
+                "deadline": "2026-07-20",
+                "deadlineBasis": "Colorado CORA response deadline reviewed by clerk."
+            });
+            city_work_action("set-records-deadline", Some(&deadline_review))
+                .expect("deadline reviewed");
+            let state = city_work_state().expect("state reads after deadline review");
+            let request = state.records_requests.first().expect("request exists");
+            assert_eq!(request.status, "deadline reviewed");
+            assert_eq!(request.deadline, "2026-07-20");
+            assert_eq!(
+                request.deadline_basis,
+                "Colorado CORA response deadline reviewed by clerk."
+            );
+            assert!(request.deadline_reviewed_at_unix_seconds.is_some());
             let public_state = public_city_work_state().expect("public state reads");
             assert!(public_state.records_requests.is_empty());
 
@@ -3327,7 +3417,12 @@ mod tests {
             assert_eq!(lookup_result.state.records_requests.len(), 1);
             let public_request = &lookup_result.state.records_requests[0];
             assert_eq!(public_request.public_tracking_number, "REQ-0001");
-            assert_eq!(public_request.status, "public intake received");
+            assert_eq!(public_request.status, "deadline reviewed");
+            assert_eq!(public_request.deadline, "2026-07-20");
+            assert_eq!(
+                public_request.deadline_basis,
+                "Colorado CORA response deadline reviewed by clerk."
+            );
             assert_eq!(public_request.requester_contact, "");
             assert_eq!(public_request.assigned_to, "");
             assert!(public_request.clarification_notes.is_empty());
@@ -3347,11 +3442,16 @@ mod tests {
             assert!(!wrong_lookup.accepted);
             assert_eq!(wrong_lookup.status, "No match");
             assert!(wrong_lookup.state.records_requests.is_empty());
+            let state = city_work_state().expect("state reads for audit");
             assert!(state.audit_entries.iter().any(|entry| {
                 entry.module_id == "civicrecords-ai"
                     && entry.action == "submit-public-records-request"
                     && entry.summary.contains("REQ-0001")
             }));
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "set-records-deadline"));
             assert_valid_audit_chain(&state.audit_entries);
         });
     }

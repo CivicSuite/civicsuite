@@ -562,6 +562,7 @@ const state = {
     publicRequestContact: "",
     recordsSummary: "",
     deadline: "",
+    recordsDeadlineBasis: "",
     assignedTo: "",
     clarificationNote: "",
     sourceNote: "",
@@ -1294,6 +1295,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "suggest-minutes-draft",
   "adopt-minutes",
   "archive-meeting",
+  "set-records-deadline",
   "approve-records-response",
   "suggest-records-response",
   "export-records-response",
@@ -1512,6 +1514,22 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry with the redaction basis.",
       retry: "If redacted text or statutory basis is missing, the desktop app blocks the redaction."
+    },
+    "set-records-deadline": {
+      title: "Review Before Setting Records Deadline",
+      confirmLabel: "Set Deadline",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Stores the reviewed response deadline and statutory or policy basis for the selected records request.",
+      visibility: "Requester status can show the reviewed deadline. Internal search, exemptions, drafts, and approvals remain staff-only.",
+      sources: [
+        request ? detailOrFallback(request.summary, "No request summary is recorded.") : "The desktop app will require a request before saving.",
+        detailOrFallback(state.workDraft.deadline, "Response deadline is required."),
+        detailOrFallback(state.workDraft.recordsDeadlineBasis, "Deadline basis is required.")
+      ],
+      audit: "Creates a CivicRecords AI audit entry for deadline review.",
+      retry: "If the deadline date or basis is missing or invalid, the desktop app leaves the request unchanged."
     },
     "approve-records-response": {
       title: "Review Before Approving Records Response",
@@ -2103,6 +2121,7 @@ function renderPublicRecordsWorkflow() {
           <h3>${request.public_tracking_number || "Tracking pending"}</h3>
           <p><strong>Requester:</strong> ${request.requester}</p>
           <p>${request.summary}</p>
+          ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
           <small>${request.submitted_via || "Staff intake"} - ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
         </article>
       `).join("")}
@@ -2125,6 +2144,7 @@ function renderRecordsWorkflow() {
         <h3>Request Intake</h3>
         <label>Requester <input type="text" data-work-field="requester" value="${state.workDraft.requester}" /></label>
         <label>Deadline <input type="date" data-work-field="deadline" value="${state.workDraft.deadline}" /></label>
+        <label>Deadline basis <input type="text" data-work-field="recordsDeadlineBasis" value="${state.workDraft.recordsDeadlineBasis}" placeholder="State records law or city policy basis" /></label>
         <label>Request summary <textarea data-work-field="recordsSummary">${state.workDraft.recordsSummary}</textarea></label>
         <button type="button" class="primary-action" data-work-action="create-records-request">Create Request</button>
       </div>
@@ -2137,6 +2157,7 @@ function renderRecordsWorkflow() {
         <label>Exemption review <textarea data-work-field="exemptionNote">${state.workDraft.exemptionNote}</textarea></label>
         <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${state.workDraft.feeEstimate}" /></label>
         <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="set-records-deadline">Set Deadline</button>
           <button type="button" class="secondary-action" data-work-action="assign-records-request">Assign</button>
           <button type="button" class="secondary-action" data-work-action="request-records-clarification">Request Clarification</button>
           <button type="button" class="secondary-action" data-work-action="record-records-search">Record Search</button>
@@ -2170,6 +2191,7 @@ function renderRecordsWorkflow() {
           ${request.public_tracking_number ? `<p><strong>Tracking:</strong> ${request.public_tracking_number}</p>` : ""}
           ${request.requester_contact ? `<p><strong>Contact:</strong> ${request.requester_contact}</p>` : ""}
           ${request.submitted_via ? `<p><strong>Submitted via:</strong> ${request.submitted_via}</p>` : ""}
+          ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
           ${request.assigned_to ? `<p><strong>Assigned:</strong> ${request.assigned_to}</p>` : ""}
           ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
@@ -2395,6 +2417,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       request.submitted_via,
       request.summary,
       request.status,
+      request.deadline,
+      request.deadline_basis,
       ...(request.citations || [])
     ];
     const recordsSearchText = publicOnly ? publicRecordFields : [
@@ -3492,7 +3516,8 @@ function workPayloadForAction(action) {
     "create-records-request": {
       requester: draft.requester,
       summary: draft.recordsSummary,
-      deadline: draft.deadline
+      deadline: draft.deadline,
+      deadlineBasis: draft.recordsDeadlineBasis
     },
     "submit-public-records-request": {
       requester: draft.publicRequester,
@@ -3502,6 +3527,11 @@ function workPayloadForAction(action) {
     "lookup-public-records-request": {
       trackingNumber: draft.publicRequestLookup,
       requesterContact: draft.publicRequestContact
+    },
+    "set-records-deadline": {
+      ...selected,
+      deadline: draft.deadline,
+      deadlineBasis: draft.recordsDeadlineBasis
     },
     "request-records-clarification": { ...selected, clarificationNote: draft.clarificationNote },
     "assign-records-request": { ...selected, assignedTo: draft.assignedTo },

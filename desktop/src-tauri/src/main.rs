@@ -152,6 +152,7 @@ fn city_work_action_module_requirement(
         "create-records-request"
         | "submit-public-records-request"
         | "lookup-public-records-request"
+        | "set-records-deadline"
         | "request-records-clarification"
         | "assign-records-request"
         | "record-records-search"

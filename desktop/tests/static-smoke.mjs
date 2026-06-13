@@ -51,6 +51,8 @@ const requiredUiPhrases = [
   "Generate Local AI Minutes",
   "Generate Local AI Draft",
   "Generate Local AI Guidance",
+  "Deadline basis",
+  "Set Deadline",
   "Set Up Services and Model",
   "Package Profiles",
   "Module Catalog",
@@ -356,6 +358,8 @@ for (const phrase of [
   "suggest-minutes-draft",
   "suggest-records-response",
   "suggest-code-guidance",
+  "set-records-deadline",
+  "deadlineBasis",
   "Generated local AI minutes draft",
   "Generated local AI records response draft",
   "Generated local AI code guidance draft"
