@@ -5,6 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::local_paths;
+
 pub const MODULES_JSON: &str = include_str!("../../../installer/modules.json");
 const DEFAULT_PROFILE_ID: &str = "city-core";
 
@@ -143,19 +145,8 @@ fn now_unix_seconds() -> u64 {
         .unwrap_or(0)
 }
 
-fn civic_suite_root() -> PathBuf {
-    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            env::var("LOCALAPPDATA")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-                .join("CivicSuite")
-        })
-}
-
 fn config_dir() -> PathBuf {
-    civic_suite_root().join("config")
+    local_paths::config_dir()
 }
 
 fn module_selection_path() -> PathBuf {

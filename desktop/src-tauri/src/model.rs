@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::local_paths;
+
 const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json");
 const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
 const REQUIRED_ACTIONS: [&str; 6] = [
@@ -307,25 +309,11 @@ fn validate_manifest(manifest: &ModelManifest) -> Result<(), String> {
 }
 
 fn windows_data_root() -> PathBuf {
-    if let Ok(root) = env::var("CIVICSUITE_DESKTOP_STATE_DIR") {
-        return PathBuf::from(root).join("Data");
-    }
-    env::var("LOCALAPPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-        .join("CivicSuite")
-        .join("Data")
+    local_paths::data_root()
 }
 
 fn windows_config_root() -> PathBuf {
-    if let Ok(root) = env::var("CIVICSUITE_DESKTOP_STATE_DIR") {
-        return PathBuf::from(root).join("config");
-    }
-    env::var("LOCALAPPDATA")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-        .join("CivicSuite")
-        .join("config")
+    local_paths::config_dir()
 }
 
 fn windows_runtime_root() -> PathBuf {

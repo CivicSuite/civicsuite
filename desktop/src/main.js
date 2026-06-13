@@ -481,6 +481,9 @@ const state = {
     codeHandoffId: ""
   },
   setupDraft: {
+    installRoot: "",
+    dataRoot: "",
+    backupRoot: "",
     cityName: "",
     state: "",
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
@@ -566,6 +569,10 @@ async function loadAppState() {
 }
 
 function hydrateSetupDraftFromApp() {
+  const locations = state.app.first_run?.locations || fallbackState.first_run.locations;
+  state.setupDraft.installRoot = locations.install_root || "";
+  state.setupDraft.dataRoot = locations.data_root || "";
+  state.setupDraft.backupRoot = locations.backup_root || "";
   const profile = state.app.city_profile;
   if (profile) {
     state.setupDraft.cityName = profile.city_name || "";
@@ -880,6 +887,16 @@ function renderSetupFields(step) {
   if (step.id === "modules") {
     return renderModuleSelectionControls();
   }
+  if (step.id === "locations") {
+    return `
+      <div class="setup-form" aria-label="Local folders">
+        <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
+        <label>City data folder <input type="text" data-setup-field="dataRoot" value="${state.setupDraft.dataRoot}" autocomplete="off" /></label>
+        <label>Backup folder <input type="text" data-setup-field="backupRoot" value="${state.setupDraft.backupRoot}" autocomplete="off" /></label>
+        <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
+      </div>
+    `;
+  }
   if (step.id === "city-profile") {
     return `
       <div class="setup-form" aria-label="City profile">
@@ -897,6 +914,13 @@ function renderSetupFields(step) {
         <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
         <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${state.setupDraft.adminPasscode}" autocomplete="new-password" /></label>
+      </div>
+    `;
+  }
+  if (step.id === "backup") {
+    return `
+      <div class="setup-form" aria-label="Backup folder">
+        <label>Backup folder <input type="text" data-setup-field="backupRoot" value="${state.setupDraft.backupRoot}" autocomplete="off" /></label>
       </div>
     `;
   }
@@ -2557,6 +2581,14 @@ function renderModules() {
         </div>
         <button type="button" class="secondary-action" data-first-run-action="create-admin" data-step-id="first-admin">Save First Admin</button>
       </div>
+      <div class="workflow-form">
+        <h3>Local Folders</h3>
+        <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
+        <label>City data folder <input type="text" data-setup-field="dataRoot" value="${state.setupDraft.dataRoot}" autocomplete="off" /></label>
+        <label>Backup folder <input type="text" data-setup-field="backupRoot" value="${state.setupDraft.backupRoot}" autocomplete="off" /></label>
+        <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
+        <button type="button" class="secondary-action" data-first-run-action="choose-location" data-step-id="locations">Save Local Folders</button>
+      </div>
     </section>
     ${renderActionResult()}
     <section class="page-heading compact-heading">
@@ -2870,6 +2902,13 @@ function bindEvents() {
 }
 
 function setupPayloadForStep(stepId) {
+  if (stepId === "locations") {
+    return {
+      installRoot: state.setupDraft.installRoot,
+      dataRoot: state.setupDraft.dataRoot,
+      backupRoot: state.setupDraft.backupRoot
+    };
+  }
   if (stepId === "city-profile") {
     return {
       cityName: state.setupDraft.cityName,
@@ -2888,6 +2927,13 @@ function setupPayloadForStep(stepId) {
   }
   if (stepId === "modules") {
     return moduleSelectionPayload();
+  }
+  if (stepId === "backup") {
+    return {
+      installRoot: state.setupDraft.installRoot,
+      dataRoot: state.setupDraft.dataRoot,
+      backupRoot: state.setupDraft.backupRoot
+    };
   }
   return {};
 }

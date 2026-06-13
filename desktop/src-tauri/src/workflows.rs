@@ -6,6 +6,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::local_paths;
+
 #[derive(Deserialize, Serialize, Clone)]
 pub struct AgendaItem {
     pub id: String,
@@ -237,26 +239,14 @@ pub struct CityWorkActionResult {
     pub search_results: Vec<SearchResult>,
 }
 
-fn civic_suite_root() -> PathBuf {
-    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            env::var("LOCALAPPDATA")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-                .join("CivicSuite")
-        })
-}
-
 fn workflows_path() -> PathBuf {
-    civic_suite_root()
-        .join("Data")
+    local_paths::data_root()
         .join("workflows")
         .join("city-work.json")
 }
 
 fn exports_dir() -> PathBuf {
-    civic_suite_root().join("Data").join("exports")
+    local_paths::data_root().join("exports")
 }
 
 fn now_unix_seconds() -> u64 {

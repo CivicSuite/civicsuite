@@ -9,6 +9,8 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::local_paths;
+
 const RUNTIME_MANIFEST_JSON: &str = include_str!("../../runtime/windows-local-runtime.json");
 const RUNTIME_PAYLOADS_JSON: &str = include_str!("../../runtime/windows-runtime-payloads.json");
 const REQUIRED_ACTIONS: [&str; 10] = [
@@ -251,22 +253,15 @@ fn validate_payload_manifest(
 }
 
 fn civic_suite_root() -> PathBuf {
-    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            env::var("LOCALAPPDATA")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-                .join("CivicSuite")
-        })
+    local_paths::civic_suite_root()
 }
 
 fn data_root() -> PathBuf {
-    civic_suite_root().join("Data")
+    local_paths::data_root()
 }
 
 fn config_dir() -> PathBuf {
-    civic_suite_root().join("config")
+    local_paths::config_dir()
 }
 
 fn secrets_dir() -> PathBuf {
@@ -274,18 +269,7 @@ fn secrets_dir() -> PathBuf {
 }
 
 fn backup_root() -> PathBuf {
-    env::var("CIVICSUITE_BACKUP_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            if env::var("CIVICSUITE_DESKTOP_STATE_DIR").is_ok() {
-                return civic_suite_root().join("Backups");
-            }
-            env::var("USERPROFILE")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("{documents}"))
-                .join("Documents")
-                .join("CivicSuite Backups")
-        })
+    local_paths::backup_root()
 }
 
 fn runtime_root() -> PathBuf {

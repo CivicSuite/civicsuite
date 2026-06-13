@@ -10,6 +10,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::local_paths;
 use crate::{model, module_registry, supervisor};
 
 const FIRST_RUN_MANIFEST_JSON: &str = include_str!("../../runtime/windows-first-run.json");
@@ -80,11 +81,21 @@ struct FirstRunStepDefinition {
     action: String,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct FirstRunLocations {
     pub install_root: String,
     pub data_root: String,
     pub backup_root: String,
+}
+
+impl From<local_paths::LocalLocations> for FirstRunLocations {
+    fn from(locations: local_paths::LocalLocations) -> Self {
+        Self {
+            install_root: locations.install_root,
+            data_root: locations.data_root,
+            backup_root: locations.backup_root,
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -238,19 +249,8 @@ fn windows_path_from_template(template: &str) -> String {
         .replace('/', "\\")
 }
 
-fn civic_suite_root() -> PathBuf {
-    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            env::var("LOCALAPPDATA")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-                .join("CivicSuite")
-        })
-}
-
 pub(crate) fn config_dir() -> PathBuf {
-    civic_suite_root().join("config")
+    local_paths::config_dir()
 }
 
 fn progress_path() -> PathBuf {
@@ -331,11 +331,13 @@ pub(crate) fn test_env_lock() -> &'static std::sync::Mutex<()> {
 }
 
 fn resolve_locations(defaults: &DefaultLocations) -> FirstRunLocations {
-    FirstRunLocations {
-        install_root: windows_path_from_template(&defaults.install_root),
-        data_root: windows_path_from_template(&defaults.data_root),
-        backup_root: windows_path_from_template(&defaults.backup_root),
-    }
+    local_paths::effective_locations()
+        .map(FirstRunLocations::from)
+        .unwrap_or_else(|_| FirstRunLocations {
+            install_root: windows_path_from_template(&defaults.install_root),
+            data_root: windows_path_from_template(&defaults.data_root),
+            backup_root: windows_path_from_template(&defaults.backup_root),
+        })
 }
 
 fn first_run_state_from_completed(completed_step_ids: &[String]) -> Result<FirstRunState, String> {
@@ -595,6 +597,24 @@ fn create_local_locations(locations: &FirstRunLocations) -> Result<(), String> {
     Ok(())
 }
 
+fn persist_locations(
+    payload: Option<&serde_json::Value>,
+    current: &FirstRunLocations,
+) -> Result<FirstRunLocations, String> {
+    let requested = local_paths::LocalLocations {
+        install_root: payload_optional_string(payload, "installRoot")
+            .unwrap_or_else(|| current.install_root.clone()),
+        data_root: payload_optional_string(payload, "dataRoot")
+            .unwrap_or_else(|| current.data_root.clone()),
+        backup_root: payload_optional_string(payload, "backupRoot")
+            .unwrap_or_else(|| current.backup_root.clone()),
+    };
+    let saved = local_paths::save_locations(&requested)?;
+    let locations = FirstRunLocations::from(saved);
+    create_local_locations(&locations)?;
+    Ok(locations)
+}
+
 fn action_blocks_until_runtime(action: &str) -> Option<(&'static str, &'static str)> {
     match action {
         _ => None,
@@ -756,7 +776,12 @@ pub fn first_run_action(
 
     let locations = resolve_locations(&manifest.default_locations);
     match action {
-        "choose-location" | "choose-backup" => create_local_locations(&locations)?,
+        "choose-location" => {
+            persist_locations(payload, &locations)?;
+        }
+        "choose-backup" => {
+            persist_locations(payload, &locations)?;
+        }
         "select-modules" => match payload_optional_string(payload, "profileId").as_deref() {
             None | Some("city-core") => {
                 module_registry::persist_profile_selection("city-core")?;
@@ -944,6 +969,35 @@ mod tests {
             assert!(root.join("Data").join("files").is_dir());
             assert!(root.join("Data").join("logs").is_dir());
             assert!(root.join("config").is_dir());
+        });
+    }
+
+    #[test]
+    fn first_run_location_action_persists_custom_runtime_folders() {
+        with_temp_state_dir(|root| {
+            let install = root.join("Program Files").join("CivicSuite");
+            let data = root.join("City Data");
+            let backups = root.join("City Backups");
+            let payload = serde_json::json!({
+                "installRoot": install.to_string_lossy(),
+                "dataRoot": data.to_string_lossy(),
+                "backupRoot": backups.to_string_lossy()
+            });
+
+            let result = first_run_action("choose-location", Some("locations"), Some(&payload))
+                .expect("custom locations can be saved");
+
+            assert!(result.accepted);
+            assert!(data.join("files").is_dir());
+            assert!(data.join("logs").is_dir());
+            assert!(backups.is_dir());
+            assert!(root.join("config").join("locations.json").is_file());
+            assert_eq!(crate::local_paths::data_root(), data);
+            assert_eq!(crate::local_paths::backup_root(), backups);
+
+            let state = first_run_state(&[]).expect("state reads saved locations");
+            assert_eq!(PathBuf::from(state.locations.data_root), data);
+            assert_eq!(PathBuf::from(state.locations.backup_root), backups);
         });
     }
 
