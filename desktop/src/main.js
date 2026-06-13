@@ -331,7 +331,16 @@ const fallbackState = {
     audit_entries: []
   },
   city_profile: null,
-  users: []
+  users: [],
+  access: {
+    configured: false,
+    signed_in: false,
+    operator_name: null,
+    operator_email: null,
+    role: null,
+    status: "Setup needed",
+    next_action: "Create the first local administrator."
+  }
 };
 
 const state = {
@@ -342,6 +351,7 @@ const state = {
   modelActionResult: null,
   supervisorActionResult: null,
   workActionResult: null,
+  authActionResult: null,
   searchResults: [],
   setupDraft: {
     cityName: "",
@@ -350,7 +360,12 @@ const state = {
     recordsContact: "",
     clerkContact: "",
     adminName: "",
-    adminEmail: ""
+    adminEmail: "",
+    adminPasscode: ""
+  },
+  accessDraft: {
+    email: "",
+    passcode: ""
   },
   workDraft: {
     meetingTitle: "",
@@ -403,10 +418,20 @@ function hydrateSetupDraftFromApp() {
     state.setupDraft.adminName = admin.display_name || "";
     state.setupDraft.adminEmail = admin.email || "";
   }
+  const access = accessState();
+  if (access.operator_email) {
+    state.accessDraft.email = access.operator_email;
+  } else if (admin?.email) {
+    state.accessDraft.email = admin.email;
+  }
 }
 
 function hasTauriBridge() {
   return "__TAURI_INTERNALS__" in window;
+}
+
+function accessState() {
+  return state.app.access || fallbackState.access;
 }
 
 function moduleStatusLabel(module) {
@@ -428,6 +453,7 @@ function formatBytes(bytes) {
 }
 
 function renderTopbar() {
+  const access = accessState();
   return `
     <header class="topbar">
       <div>
@@ -449,6 +475,7 @@ function renderTopbar() {
         <button type="button" class="icon-text" id="audit-toggle" aria-expanded="${state.auditOpen}">
           Audit Trail
         </button>
+        ${access.signed_in ? `<button type="button" class="icon-text" data-auth-action="sign-out">Sign Out</button>` : ""}
       </div>
     </header>
   `;
@@ -480,6 +507,7 @@ function renderHome() {
       <p>Start with the task, not the module. City-core workflows stay local on this machine.</p>
     </section>
     ${renderFirstRunWizard()}
+    ${renderAccessPanel()}
     ${renderModelReadiness({ compact: true })}
     <section class="task-grid" aria-label="Primary work areas">
       ${state.app.navigation.filter((item) => item.id !== "home" && item.id !== "settings").slice(0, 5).map((item) => `
@@ -544,6 +572,7 @@ function renderSetupFields(step) {
       <div class="setup-form two-column" aria-label="First admin">
         <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
+        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${state.setupDraft.adminPasscode}" autocomplete="new-password" /></label>
       </div>
     `;
   }
@@ -620,6 +649,52 @@ function renderWorkActionResult() {
       <span>${result.message}</span>
       <small>${result.next_action}</small>
     </div>
+  `;
+}
+
+function renderAuthActionResult() {
+  if (!state.authActionResult) return "";
+  const result = state.authActionResult;
+  return `
+    <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
+      <strong>${result.status}</strong>
+      <span>${result.message}</span>
+      <small>${result.next_action}</small>
+    </div>
+  `;
+}
+
+function renderAccessPanel() {
+  const access = accessState();
+  if (!access.configured) return "";
+  if (access.signed_in) {
+    return `
+      <section class="section-band access-panel" aria-label="Local access">
+        <div class="section-title">
+          <p class="eyebrow">Local access</p>
+          <h3>Signed in as ${access.operator_name || "local administrator"}</h3>
+          <p>${access.role || "local-admin"}</p>
+        </div>
+        <div class="health-actions">
+          <button type="button" class="secondary-action" data-auth-action="sign-out">Sign Out</button>
+        </div>
+      </section>
+    `;
+  }
+  return `
+    <section class="section-band access-panel" aria-label="Local administrator sign in">
+      <div class="section-title">
+        <p class="eyebrow">Local access</p>
+        <h3>Sign In</h3>
+        <p>Use the local administrator passcode before changing city work, settings, backups, restore, repair, or runtime services.</p>
+      </div>
+      <div class="workflow-form compact-form">
+        <label>Email <input type="email" data-access-field="email" value="${state.accessDraft.email}" autocomplete="email" /></label>
+        <label>Passcode <input type="password" data-access-field="passcode" value="${state.accessDraft.passcode}" autocomplete="current-password" /></label>
+        <button type="button" class="primary-action" data-auth-action="sign-in">Sign In</button>
+      </div>
+      ${renderAuthActionResult()}
+    </section>
   `;
 }
 
@@ -998,6 +1073,7 @@ function renderModules() {
         <h3>First Admin</h3>
         <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
+        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${state.setupDraft.adminPasscode}" autocomplete="new-password" /></label>
         <div class="module-meta">
           <span class="${admin ? "status-ok" : "status-warn"}">${admin ? admin.role : "Needed"}</span>
         </div>
@@ -1081,6 +1157,10 @@ function renderHealth() {
 }
 
 function renderActiveArea() {
+  const access = accessState();
+  if (state.activeArea !== "home" && access.configured && !access.signed_in) {
+    return renderAccessPanel();
+  }
   switch (state.activeArea) {
     case "meetings":
       return renderMeetingsWorkflow();
@@ -1165,6 +1245,16 @@ function bindEvents() {
       await handleFirstRunAction(button.dataset.firstRunAction, button.dataset.stepId);
     });
   });
+  document.querySelectorAll("[data-access-field]").forEach((input) => {
+    input.addEventListener("input", () => {
+      state.accessDraft[input.dataset.accessField] = input.value;
+    });
+  });
+  document.querySelectorAll("[data-auth-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleAuthAction(button.dataset.authAction);
+    });
+  });
   document.querySelectorAll("[data-model-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleModelAction(button.dataset.modelAction);
@@ -1203,7 +1293,8 @@ function setupPayloadForStep(stepId) {
   if (stepId === "first-admin") {
     return {
       adminName: state.setupDraft.adminName,
-      adminEmail: state.setupDraft.adminEmail
+      adminEmail: state.setupDraft.adminEmail,
+      adminPasscode: state.setupDraft.adminPasscode
     };
   }
   return {};
@@ -1286,6 +1377,45 @@ async function handleSupervisorAction(action, serviceId) {
       status: "Needs attention",
       message: String(error),
       next_action: "Review System Health and try the action again."
+    };
+  }
+  render();
+}
+
+function authPayloadForAction(action) {
+  if (action === "sign-in") {
+    return {
+      email: state.accessDraft.email,
+      passcode: state.accessDraft.passcode
+    };
+  }
+  return {};
+}
+
+async function handleAuthAction(action) {
+  if (!hasTauriBridge()) {
+    state.authActionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Local access is managed by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to sign in."
+    };
+    render();
+    return;
+  }
+  try {
+    state.authActionResult = await invoke("auth_action", {
+      action,
+      payload: authPayloadForAction(action)
+    });
+    state.accessDraft.passcode = "";
+    await loadAppState();
+  } catch (error) {
+    state.authActionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Check the email and local administrator passcode, then try again."
     };
   }
   render();

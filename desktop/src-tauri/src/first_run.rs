@@ -142,6 +142,15 @@ pub struct SavedFirstAdmin {
     pub role: String,
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub(crate) struct SavedFirstAdminRecord {
+    pub display_name: String,
+    pub email: String,
+    pub role: String,
+    pub passcode_salt: String,
+    pub passcode_hash: String,
+}
+
 fn parse_manifest() -> Result<FirstRunManifest, String> {
     serde_json::from_str(FIRST_RUN_MANIFEST_JSON)
         .map_err(|error| format!("Could not parse Windows first-run manifest: {error}"))
@@ -228,7 +237,7 @@ fn civic_suite_root() -> PathBuf {
         })
 }
 
-fn config_dir() -> PathBuf {
+pub(crate) fn config_dir() -> PathBuf {
     civic_suite_root().join("config")
 }
 
@@ -278,11 +287,18 @@ pub fn saved_city_profile() -> Result<Option<SavedCityProfile>, String> {
 }
 
 pub fn saved_users() -> Result<Vec<SavedFirstAdmin>, String> {
-    Ok(
-        read_optional_json_file(config_dir().join("first-admin.json"))?
-            .into_iter()
-            .collect(),
-    )
+    Ok(saved_admin_record()?
+        .into_iter()
+        .map(|record| SavedFirstAdmin {
+            display_name: record.display_name,
+            email: record.email,
+            role: record.role,
+        })
+        .collect())
+}
+
+pub(crate) fn saved_admin_record() -> Result<Option<SavedFirstAdminRecord>, String> {
+    read_optional_json_file(config_dir().join("first-admin.json"))
 }
 
 fn now_unix_seconds() -> u64 {
@@ -401,12 +417,53 @@ fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), Strin
 }
 
 fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String> {
-    let admin = SavedFirstAdmin {
+    let passcode = payload_string(payload, "adminPasscode")?;
+    let salt = format!("admin-{}-{}", now_unix_seconds(), std::process::id());
+    let admin = SavedFirstAdminRecord {
         display_name: payload_string(payload, "adminName")?,
         email: payload_string(payload, "adminEmail")?,
         role: "local-admin".to_string(),
+        passcode_hash: hash_admin_passcode(&salt, &passcode),
+        passcode_salt: salt,
     };
     write_json_file(config_dir().join("first-admin.json"), &admin)
+}
+
+pub(crate) fn hash_admin_passcode(salt: &str, passcode: &str) -> String {
+    use sha2::{Digest, Sha256};
+
+    let mut digest = Vec::new();
+    for round in 0..100_000u32 {
+        let mut hasher = Sha256::new();
+        hasher.update(salt.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(passcode.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(round.to_le_bytes());
+        hasher.update(&digest);
+        digest = hasher.finalize().to_vec();
+    }
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+pub(crate) fn verify_admin_passcode(
+    email: &str,
+    passcode: &str,
+) -> Result<SavedFirstAdmin, String> {
+    let record = saved_admin_record()?
+        .ok_or_else(|| "Create the first local administrator before signing in.".to_string())?;
+    if !record.email.eq_ignore_ascii_case(email.trim()) {
+        return Err("The local administrator email does not match.".to_string());
+    }
+    let candidate_hash = hash_admin_passcode(&record.passcode_salt, passcode);
+    if candidate_hash != record.passcode_hash {
+        return Err("The local administrator passcode did not match.".to_string());
+    }
+    Ok(SavedFirstAdmin {
+        display_name: record.display_name,
+        email: record.email,
+        role: record.role,
+    })
 }
 
 fn create_local_locations(locations: &FirstRunLocations) -> Result<(), String> {
@@ -654,6 +711,24 @@ mod tests {
                 .expect("module selection can be saved");
             assert!(result.accepted);
             assert!(root.join("config").join("module-selection.json").is_file());
+        });
+    }
+
+    #[test]
+    fn first_admin_passcode_verifies_local_admin() {
+        with_temp_state_dir(|_| {
+            let admin_payload = serde_json::json!({
+                "adminName": "Alex Clerk",
+                "adminEmail": "alex@example.gov",
+                "adminPasscode": "correct horse battery staple"
+            });
+            first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+                .expect("admin saved");
+
+            let admin = verify_admin_passcode("alex@example.gov", "correct horse battery staple")
+                .expect("passcode verifies");
+            assert_eq!(admin.role, "local-admin");
+            assert!(verify_admin_passcode("alex@example.gov", "wrong passcode").is_err());
         });
     }
 

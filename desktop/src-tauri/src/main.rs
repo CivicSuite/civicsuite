@@ -1,9 +1,11 @@
+mod auth;
 mod first_run;
 mod model;
 mod module_registry;
 mod supervisor;
 mod workflows;
 
+use auth::{AccessState, AuthActionResult};
 use first_run::{FirstRunActionResult, FirstRunState, SavedCityProfile, SavedFirstAdmin};
 use model::{ModelActionResult, ModelState};
 use module_registry::{ModuleProfileSummary, ModuleSelectionState, ModuleSummary};
@@ -34,6 +36,7 @@ struct AppState {
     first_run: FirstRunState,
     city_profile: Option<SavedCityProfile>,
     users: Vec<SavedFirstAdmin>,
+    access: AccessState,
     model: ModelState,
     health: Vec<RuntimeHealthItem>,
     city_work: CityWorkState,
@@ -109,6 +112,7 @@ fn get_app_state() -> Result<AppState, String> {
         first_run: first_run::first_run_state(&[])?,
         city_profile: first_run::saved_city_profile()?,
         users: first_run::saved_users()?,
+        access: auth::access_state()?,
         model: model::model_state()?,
         health: supervisor::runtime_health()?,
         city_work: workflows::city_work_state()?,
@@ -140,10 +144,18 @@ fn first_run_action(
 }
 
 #[tauri::command]
+fn auth_action(action: String, payload: Option<Value>) -> Result<AuthActionResult, String> {
+    auth::auth_action(&action, payload.as_ref())
+}
+
+#[tauri::command]
 fn supervisor_action(
     action: String,
     service_id: Option<String>,
 ) -> Result<SupervisorActionResult, String> {
+    if action != "health" {
+        auth::require_admin_session()?;
+    }
     supervisor::supervisor_action(&action, service_id.as_deref())
 }
 
@@ -157,6 +169,7 @@ fn city_work_action(
     action: String,
     payload: Option<Value>,
 ) -> Result<CityWorkActionResult, String> {
+    auth::require_admin_session()?;
     workflows::city_work_action(&action, payload.as_ref())
 }
 
@@ -169,6 +182,7 @@ pub fn run() {
             model_action,
             preview_first_run_state,
             first_run_action,
+            auth_action,
             supervisor_action,
             get_city_work_state,
             city_work_action
@@ -280,7 +294,8 @@ mod tests {
             .expect("city profile saved");
             let admin_payload = serde_json::json!({
                 "adminName": "Alex Clerk",
-                "adminEmail": "alex@example.gov"
+                "adminEmail": "alex@example.gov",
+                "adminPasscode": "correct horse battery staple"
             });
             first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
                 .expect("admin saved");

@@ -55,6 +55,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "First Admin" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save City Profile" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save First Admin" })).toBeVisible();
+  await expect(page.getByLabel("Local passcode")).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Modules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Module Slots" })).toBeVisible();
