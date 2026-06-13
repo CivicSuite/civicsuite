@@ -2374,12 +2374,15 @@ function moduleLifecycleItems(module) {
     .map(([label, value]) => ({ label, value: lifecycleStatusText(value) }));
 }
 
+const MODULE_EXPORTS_AVAILABLE = new Set(["civicrecords-ai", "civicclerk", "civiccode"]);
+
 function renderModuleRow(module, { actions = false } = {}) {
   const proofCount = module.proof_required?.length || 0;
   const lifecycle = moduleLifecycleItems(module);
   const disabled = module.installed && module.enabled === false;
   const canToggle = actions && module.installed && !module.required;
   const canInstall = actions && !module.installed && module.selectable && module.contract_ready;
+  const canOpenExports = actions && module.installed && MODULE_EXPORTS_AVAILABLE.has(module.id);
   const canUpdate = actions && module.installed;
   const canRemove = actions && module.installed && !module.required;
   const toggleAction = disabled ? "enable-module" : "disable-module";
@@ -2387,6 +2390,7 @@ function renderModuleRow(module, { actions = false } = {}) {
   const actionButtons = [
     canInstall ? ["install-module", "Install"] : null,
     canToggle ? [toggleAction, toggleLabel] : null,
+    canOpenExports ? ["open-module-exports", "Open Exports"] : null,
     canUpdate ? ["update-module", "Check Update"] : null,
     canRemove ? ["remove-module", "Remove From Profile"] : null
   ].filter(Boolean);
@@ -3168,8 +3172,8 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
     state.actionResult = {
       accepted: false,
       status: "Desktop app required",
-      message: "Module changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to install, update, enable, disable, or remove local modules."
+      message: "Module actions are handled by the Windows desktop app, not the browser preview.",
+      next_action: "Open the CivicSuite desktop app to install, update, enable, disable, remove modules, or open local module exports."
     };
     render();
     return;

@@ -208,6 +208,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Check Update CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Remove From Profile CivicCode" })).toBeVisible();
   await page.getByRole("button", { name: "Disable CivicCode" }).click();
@@ -216,10 +217,10 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(moduleReview.getByText("Existing module data remains installed.")).toBeVisible();
   await expect(moduleReview.getByText("Audit trail", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm Disable Module" })).toBeVisible();
-  await expect(page.getByText("Module changes are saved by the Windows desktop app")).toHaveCount(0);
+  await expect(page.getByText("Module actions are handled by the Windows desktop app")).toHaveCount(0);
   await page.getByRole("button", { name: "Confirm Disable Module" }).click();
-  await expect(page.getByText("Module changes are saved by the Windows desktop app")).toBeVisible();
-  await expect(page.getByText("install, update, enable, disable, or remove local modules")).toBeVisible();
+  await expect(page.getByText("Module actions are handled by the Windows desktop app")).toBeVisible();
+  await expect(page.getByText("install, update, enable, disable, remove modules, or open local module exports")).toBeVisible();
   await expect(page.getByText("Installed by selected package profile").first()).toBeVisible();
   await expect(page.getByText("Updated through the versioned module manifest").first()).toBeVisible();
   await expect(page.getByText("Allowed after a backup is created").first()).toBeVisible();

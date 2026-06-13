@@ -49,7 +49,7 @@ const requiredUiPhrases = [
   "The Windows installer owns the app folder.",
   "Enabled modules:",
   "Data remains installed. Re-enable this module to show its work area.",
-  "Module changes are saved by the Windows desktop app",
+  "Module actions are handled by the Windows desktop app",
   "Source history:",
   "Sign in as local administrator to change local model setup.",
   "Sign in with the local administrator passcode before continuing setup.",
@@ -302,6 +302,8 @@ for (const phrase of [
   "install-module",
   "remove-module",
   "update-module",
+  "open-module-exports",
+  "Module exports opened",
   "Existing module data was not deleted"
 ]) {
   if (!rustMain.includes(phrase)) {
@@ -313,7 +315,9 @@ for (const phrase of [
   "renderGuidedModuleReview",
   "Review Before Removing",
   "Existing module data is not deleted.",
-  "data-module-review-confirm"
+  "data-module-review-confirm",
+  "Open Exports",
+  "open local module exports"
 ]) {
   if (!main.includes(phrase)) {
     throw new Error(`desktop module manager missing guided review phrase: ${phrase}`);

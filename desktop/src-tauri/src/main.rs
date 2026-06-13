@@ -197,6 +197,15 @@ fn module_display_name(module_id: &str) -> String {
         .unwrap_or_else(|| module_id.to_string())
 }
 
+fn module_exports_folder(module_id: &str) -> Option<(&'static str, &'static str)> {
+    match module_id {
+        "civicclerk" => Some(("meetings", "meeting exports")),
+        "civicrecords-ai" => Some(("records", "records exports")),
+        "civiccode" => Some(("code", "code exports")),
+        _ => None,
+    }
+}
+
 fn require_enabled_city_modules(action: &str, payload: Option<&Value>) -> Result<(), String> {
     let Some((module_ids, allow_any)) = city_work_action_module_requirement(action, payload) else {
         return Ok(());
@@ -377,20 +386,31 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
         .installed_module_ids
         .iter()
         .any(|installed_id| installed_id == &module_id);
+    let display_name = module_display_name(&module_id);
     let selection = match action.as_str() {
         "enable-module" => module_registry::set_module_enabled(&module_id, true)?,
         "disable-module" => module_registry::set_module_enabled(&module_id, false)?,
         "install-module" => module_registry::set_module_installed(&module_id, true)?,
         "remove-module" => module_registry::set_module_installed(&module_id, false)?,
         "update-module" => previous_selection,
+        "open-module-exports" => {
+            if !was_installed {
+                return Err(format!(
+                    "{display_name} is not installed in this local profile. Install it before opening its exports folder."
+                ));
+            }
+            let Some((folder, _label)) = module_exports_folder(&module_id) else {
+                return Err(format!(
+                    "{display_name} does not have a module exports folder."
+                ));
+            };
+            let path = local_paths::data_root().join("exports").join(folder);
+            local_shell::open_local_folder(&path)?;
+            previous_selection
+        }
         _ => return Err(format!("Unsupported module action: {action}")),
     };
     let modules = module_summaries()?;
-    let display_name = modules
-        .iter()
-        .find(|module| module.id == module_id)
-        .map(|module| module.display_name.clone())
-        .unwrap_or_else(|| module_id.clone());
     let is_installed = selection
         .installed_module_ids
         .iter()
@@ -439,6 +459,19 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
             },
             "Review module versions in Settings.",
         ),
+        "open-module-exports" => {
+            let (folder, label) =
+                module_exports_folder(&module_id).expect("module export folder already checked");
+            let path = local_paths::data_root().join("exports").join(folder);
+            (
+                "Module exports opened",
+                format!(
+                    "Opened the local {label} folder for {display_name}: {}",
+                    path.display()
+                ),
+                "Use generated export files for clerk review, public records response, or local backup evidence.",
+            )
+        }
         _ => unreachable!("unsupported module action already returned"),
     };
     Ok(ModuleActionResult {
@@ -659,7 +692,7 @@ mod tests {
 
     #[test]
     fn module_actions_require_admin_after_first_admin_exists() {
-        with_clean_first_run_state(|_| {
+        with_clean_first_run_state(|root| {
             create_first_admin();
 
             let signed_out_result =
@@ -704,6 +737,13 @@ mod tests {
             assert_eq!(current.status, "Module current");
             assert!(current.message.contains("pinned version"));
 
+            let opened_exports =
+                module_action("open-module-exports".to_string(), "civiccode".to_string())
+                    .expect("module exports open");
+            assert_eq!(opened_exports.status, "Module exports opened");
+            assert!(opened_exports.message.contains("code exports"));
+            assert!(root.join("Data").join("exports").join("code").is_dir());
+
             let removed = module_action("remove-module".to_string(), "civiccode".to_string())
                 .expect("module remove allowed");
             assert_eq!(removed.status, "Module removed");
@@ -713,6 +753,14 @@ mod tests {
                 .installed_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+
+            let removed_exports =
+                module_action("open-module-exports".to_string(), "civiccode".to_string());
+            assert!(removed_exports.is_err());
+            assert!(removed_exports
+                .err()
+                .expect("removed module export error")
+                .contains("is not installed in this local profile"));
 
             let installed = module_action("install-module".to_string(), "civiccode".to_string())
                 .expect("module install allowed");

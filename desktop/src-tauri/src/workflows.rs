@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -2375,6 +2374,7 @@ pub fn city_work_action(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
 
     fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
         let _guard = crate::first_run::test_env_lock()

@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -944,6 +943,7 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
 mod tests {
     use super::*;
     use crate::first_run;
+    use std::env;
 
     fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
         let _guard = first_run::test_env_lock().lock().expect("test env lock");
