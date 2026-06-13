@@ -428,6 +428,7 @@ const state = {
     guidanceDraft: "",
     summaryDraft: "",
     handoffSummary: "",
+    codeQuestion: "",
     searchQuery: ""
   },
   app: fallbackState
@@ -1439,6 +1440,43 @@ function publicCodeSources(work) {
   return work.code_sources.filter((source) => source.public_status === "published");
 }
 
+function localCodeQuestionResults(query, { publicOnly = false } = {}) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return [];
+  const terms = normalized.split(/[^a-z0-9]+/).filter((term) => term.length > 2);
+  const matchesQuestion = (value) => {
+    const haystack = String(value || "").toLowerCase();
+    return haystack.includes(normalized) || terms.some((term) => haystack.includes(term));
+  };
+  const sources = publicOnly ? publicCodeSources(cityWork()) : cityWork().code_sources;
+  return sources
+    .filter((source) => !source.stale_since_unix_seconds)
+    .filter((source) => [
+      source.title,
+      source.citation,
+      source.body,
+      source.staff_guidance,
+      source.plain_language_summary
+    ].some(matchesQuestion))
+    .slice(0, 3)
+    .map((source) => {
+      const publicSummaryAllowed = source.guidance_approved_at_unix_seconds && source.plain_language_summary;
+      const staffDetailAllowed = !publicOnly && source.staff_guidance;
+      const answer = publicSummaryAllowed
+        ? source.plain_language_summary
+        : staffDetailAllowed
+          ? source.staff_guidance
+          : String(source.body || "").split(".")[0] || source.body;
+      return {
+        module_id: "civiccode",
+        title: `Code answer: ${source.title}`,
+        snippet: `${publicOnly ? "Non-authoritative public summary" : "Staff code guidance"}: ${answer}. This is not legal advice; confirm interpretation with city staff or counsel.`,
+        citation: source.citation,
+        status: source.public_status || source.status
+      };
+    });
+}
+
 function renderPublicRecordsWorkflow() {
   const requests = publicRecordsRequests(cityWork());
   return `
@@ -1552,11 +1590,31 @@ function renderRecordsWorkflow() {
 
 function renderPublicCodeWorkflow() {
   const sources = publicCodeSources(cityWork());
+  const answers = localCodeQuestionResults(state.workDraft.codeQuestion, { publicOnly: true });
   return `
     <section class="page-heading">
       <p class="eyebrow">Resident/Public</p>
       <h2>Municipal Code Search</h2>
       <p>Published code sources appear with citations. Staff handoffs and draft guidance stay in the Staff surface.</p>
+    </section>
+    <section class="workflow-editor single">
+      <div class="workflow-form">
+        <h3>Ask the Code</h3>
+        <p class="form-help">Answers use published local code sources and citations only. They are plain-language help, not legal advice.</p>
+        <label>Question <input type="search" data-work-field="codeQuestion" value="${state.workDraft.codeQuestion}" placeholder="Can I have chickens?" /></label>
+        <button type="button" class="primary-action" data-work-action="answer-code-question">Answer Code Question</button>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list">
+      ${answers.length === 0 ? workflowEmpty("Ask a question to see cited public code answers.") : answers.map((answer) => `
+        <article class="workflow-record">
+          <span class="status-ok">${answer.module_id}</span>
+          <h3>${answer.title}</h3>
+          <p>${answer.snippet}</p>
+          <small>${answer.citation} - ${answer.status}</small>
+        </article>
+      `).join("")}
     </section>
     <section class="workflow-list">
       ${sources.length === 0 ? workflowEmpty("No published municipal code sources are available yet.") : sources.map((source) => `
@@ -1578,6 +1636,7 @@ function renderCodeWorkflow() {
   const work = cityWork();
   const selectedSource = currentCodeSource(work);
   const selectedHandoff = currentCodeHandoff(work);
+  const codeAnswers = localCodeQuestionResults(state.workDraft.codeQuestion, { publicOnly: false });
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
@@ -1624,9 +1683,25 @@ function renderCodeWorkflow() {
         <label>Handoff summary <textarea data-work-field="handoffSummary">${state.workDraft.handoffSummary}</textarea></label>
         <button type="button" class="secondary-action" data-work-action="create-code-handoff">Create Clerk Handoff</button>
       </div>
+      <div class="workflow-form">
+        <h3>Ask Code Question</h3>
+        <p class="form-help">Staff answers can use internal guidance and citations, but still stay non-authoritative.</p>
+        <label>Question <input type="search" data-work-field="codeQuestion" value="${state.workDraft.codeQuestion}" placeholder="What does the code say about noise?" /></label>
+        <button type="button" class="secondary-action" data-work-action="answer-code-question">Answer Code Question</button>
+      </div>
     </section>
     ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
+    <section class="workflow-list">
+      ${codeAnswers.length === 0 ? workflowEmpty("Ask a code question to see cited staff answers.") : codeAnswers.map((answer) => `
+        <article class="workflow-record">
+          <span class="status-ok">${answer.module_id}</span>
+          <h3>${answer.title}</h3>
+          <p>${answer.snippet}</p>
+          <small>${answer.citation} - ${answer.status}</small>
+        </article>
+      `).join("")}
+    </section>
     <section class="workflow-list">
       ${work.code_sources.length === 0 ? workflowEmpty("No local code sources have been imported yet.") : work.code_sources.map((source) => `
         <article class="workflow-record">
@@ -2026,7 +2101,7 @@ function bindEvents() {
   document.querySelectorAll("[data-work-field]").forEach((input) => {
     const syncWorkField = () => {
       state.workDraft[input.dataset.workField] = input.value;
-      if (input.dataset.workField === "searchQuery") {
+      if (["searchQuery", "codeQuestion"].includes(input.dataset.workField)) {
         state.searchResults = [];
       }
     };
@@ -2298,6 +2373,10 @@ function workPayloadForAction(action) {
     "publish-code-source": selected,
     "unpublish-code-source": selected,
     "create-code-handoff": { ...selected, summary: draft.handoffSummary },
+    "answer-code-question": {
+      query: draft.codeQuestion,
+      publicOnly: isPublicSurface()
+    },
     "search-city-knowledge": { query: draft.searchQuery }
   };
   return payloads[action] || {};
@@ -2318,6 +2397,19 @@ async function handleCityWorkAction(action, { confirmed = false } = {}) {
       status: "Search complete",
       message: "Browser preview searched the local preview state. The desktop app records search audit events.",
       next_action: "Open a result or refine the search terms."
+    };
+    render();
+    return;
+  }
+  if (action === "answer-code-question" && !hasTauriBridge()) {
+    state.searchResults = localCodeQuestionResults(state.workDraft.codeQuestion, { publicOnly: isPublicSurface() });
+    state.workActionResult = {
+      accepted: true,
+      status: state.searchResults.length > 0 ? "Answer ready" : "No cited answer",
+      message: state.searchResults.length > 0
+        ? "Browser preview answered from local code source text. The desktop app records a CivicCode audit entry."
+        : "No current cited code source matched the question.",
+      next_action: "Review the cited source or refine the question."
     };
     render();
     return;

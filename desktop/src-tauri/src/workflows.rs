@@ -334,6 +334,13 @@ fn payload_optional_string(payload: Option<&Value>, key: &str) -> String {
         .unwrap_or_default()
 }
 
+fn payload_bool(payload: Option<&Value>, key: &str) -> bool {
+    payload
+        .and_then(|value| value.get(key))
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
 fn bytes_to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
@@ -1735,6 +1742,84 @@ fn contains_query(values: &[&str], query: &str) -> bool {
         .any(|value| value.to_lowercase().contains(&query))
 }
 
+fn contains_question_terms(values: &[&str], query: &str) -> bool {
+    if contains_query(values, query) {
+        return true;
+    }
+    let terms = query
+        .split(|character: char| !character.is_ascii_alphanumeric())
+        .map(str::to_lowercase)
+        .filter(|term| term.len() > 2)
+        .collect::<Vec<_>>();
+    values.iter().any(|value| {
+        let value = value.to_lowercase();
+        terms.iter().any(|term| value.contains(term))
+    })
+}
+
+fn answer_code_question(
+    state: &CityWorkState,
+    query: &str,
+    public_only: bool,
+) -> Vec<SearchResult> {
+    let query = query.trim();
+    if query.is_empty() {
+        return Vec::new();
+    }
+    state
+        .code_sources
+        .iter()
+        .filter(|source| !public_only || source.public_status == "published")
+        .filter(|source| source.stale_since_unix_seconds.is_none())
+        .filter(|source| {
+            contains_question_terms(
+                &[
+                    &source.title,
+                    &source.citation,
+                    &source.body,
+                    &source.plain_language_summary,
+                    &source.staff_guidance,
+                ],
+                query,
+            )
+        })
+        .take(3)
+        .map(|source| {
+            let public_summary_allowed = source.guidance_approved_at_unix_seconds.is_some()
+                && !source.plain_language_summary.trim().is_empty();
+            let staff_detail_allowed = !public_only && !source.staff_guidance.trim().is_empty();
+            let answer = if public_summary_allowed {
+                source.plain_language_summary.clone()
+            } else if staff_detail_allowed {
+                source.staff_guidance.clone()
+            } else {
+                source.body
+                    .split('.')
+                    .next()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(|value| format!("{value}."))
+                    .unwrap_or_else(|| source.body.clone())
+            };
+            let label = if public_only {
+                "Non-authoritative public summary"
+            } else {
+                "Staff code guidance"
+            };
+            SearchResult {
+                module_id: "civiccode".to_string(),
+                record_id: source.id.clone(),
+                title: format!("Code answer: {}", source.title),
+                snippet: format!(
+                    "{label}: {answer} This is not legal advice; confirm interpretation with city staff or counsel."
+                ),
+                citation: source.citation.clone(),
+                status: source.public_status.clone(),
+            }
+        })
+        .collect()
+}
+
 pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult> {
     let query = query.trim();
     if query.is_empty() {
@@ -1907,6 +1992,26 @@ pub fn city_work_action(
         "publish-code-source" => publish_code_source(&mut state, payload)?,
         "unpublish-code-source" => unpublish_code_source(&mut state, payload)?,
         "create-code-handoff" => create_code_handoff(&mut state, payload)?,
+        "answer-code-question" => {
+            let query = payload_string(payload, "query")?;
+            let public_only = payload_bool(payload, "publicOnly");
+            search_results = answer_code_question(&state, &query, public_only);
+            push_audit(
+                &mut state,
+                "civiccode",
+                "answer-code-question",
+                format!(
+                    "Answered {}code question with {} cited result(s): {query}",
+                    if public_only { "public " } else { "staff " },
+                    search_results.len()
+                ),
+            );
+            if search_results.is_empty() {
+                "No current cited code source matched the question. Import, sync, publish, or refine source text before answering.".to_string()
+            } else {
+                "CivicCode answer generated from local cited source text.".to_string()
+            }
+        }
         "search-city-knowledge" => {
             let query = payload_string(payload, "query")?;
             search_results = search_city_work(&state, &query);
@@ -2356,6 +2461,56 @@ mod tests {
                 .iter()
                 .any(|entry| entry.action == "unpublish-code-source"));
             assert_valid_audit_chain(&state.audit_entries);
+        });
+    }
+
+    #[test]
+    fn code_question_answers_use_published_current_citations() {
+        with_temp_state_dir(|_| {
+            let payload = serde_json::json!({
+                "title": "Backyard Chicken Rules",
+                "citation": "CMC 6.16.040",
+                "body": "Backyard chickens are allowed with a coop permit and no roosters."
+            });
+            city_work_action("import-code-source", Some(&payload)).expect("source imported");
+            let draft = serde_json::json!({
+                "guidanceDraft": "Staff should verify parcel-specific nuisance complaints before answering.",
+                "summaryDraft": "Backyard chickens are generally allowed with a coop permit, but roosters are not allowed."
+            });
+            city_work_action("draft-code-guidance", Some(&draft)).expect("guidance drafted");
+            city_work_action("approve-code-guidance", None).expect("guidance approved");
+            city_work_action("publish-code-source", None).expect("source published");
+
+            let question = serde_json::json!({
+                "query": "Can I have chickens?",
+                "publicOnly": true
+            });
+            let result = city_work_action("answer-code-question", Some(&question))
+                .expect("question answered");
+            assert_eq!(result.search_results.len(), 1);
+            assert_eq!(result.search_results[0].citation, "CMC 6.16.040");
+            assert!(result.search_results[0]
+                .snippet
+                .contains("Non-authoritative public summary"));
+            assert!(result.search_results[0]
+                .snippet
+                .contains("not legal advice"));
+            assert!(result
+                .state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "answer-code-question"));
+
+            let stale = serde_json::json!({
+                "amendmentNote": "Ordinance 2026-22 amended backyard animal rules."
+            });
+            city_work_action("mark-code-stale", Some(&stale)).expect("stale marked");
+            let stale_result = city_work_action("answer-code-question", Some(&question))
+                .expect("stale answer returns no cited result");
+            assert!(stale_result.search_results.is_empty());
+            assert!(stale_result
+                .message
+                .contains("No current cited code source matched"));
         });
     }
 
