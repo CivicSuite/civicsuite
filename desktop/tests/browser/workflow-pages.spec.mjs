@@ -36,6 +36,14 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Import Source" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Codifier Sync" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Sync", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Sync Failure" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry Sync" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Stale" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Guidance & Summary" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Guidance Draft" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve Guidance" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toBeVisible();
 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();
@@ -70,6 +78,8 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Import Source" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record Sync", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Approve Guidance" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Search City Knowledge/ }).click();

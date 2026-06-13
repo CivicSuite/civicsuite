@@ -399,6 +399,13 @@ const state = {
     codeTitle: "",
     codeCitation: "",
     codeBody: "",
+    codifierName: "",
+    authoritativeUrl: "",
+    versionLabel: "",
+    syncError: "",
+    amendmentNote: "",
+    guidanceDraft: "",
+    summaryDraft: "",
     handoffSummary: "",
     searchQuery: ""
   },
@@ -1081,7 +1088,9 @@ function renderPublicCodeWorkflow() {
           <span class="status-ok">${source.public_status}</span>
           <h3>${source.title}</h3>
           <p>${source.body}</p>
-          <small>${source.citation} - ${source.public_exports?.length || 0} public exports</small>
+          ${source.guidance_approved_at_unix_seconds && source.plain_language_summary ? `<p><strong>Plain-English summary:</strong> ${source.plain_language_summary}</p>` : ""}
+          ${source.stale_since_unix_seconds ? "<p><strong>Update status:</strong> codifier update pending</p>" : ""}
+          <small>${source.citation} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports - contact city staff for legal interpretation</small>
         </article>
       `).join("")}
     </section>
@@ -1110,6 +1119,29 @@ function renderCodeWorkflow() {
         </div>
       </div>
       <div class="workflow-form">
+        <h3>Codifier Sync</h3>
+        <label>Codifier <input type="text" data-work-field="codifierName" value="${state.workDraft.codifierName}" /></label>
+        <label>Authoritative URL <input type="url" data-work-field="authoritativeUrl" value="${state.workDraft.authoritativeUrl}" /></label>
+        <label>Version label <input type="text" data-work-field="versionLabel" value="${state.workDraft.versionLabel}" /></label>
+        <label>Sync error <input type="text" data-work-field="syncError" value="${state.workDraft.syncError}" /></label>
+        <label>Amendment or stale note <textarea data-work-field="amendmentNote">${state.workDraft.amendmentNote}</textarea></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="record-codifier-sync">Record Sync</button>
+          <button type="button" class="secondary-action" data-work-action="record-codifier-sync-failure">Record Sync Failure</button>
+          <button type="button" class="secondary-action" data-work-action="retry-codifier-sync">Retry Sync</button>
+          <button type="button" class="secondary-action" data-work-action="mark-code-stale">Mark Stale</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Guidance & Summary</h3>
+        <label>Staff guidance <textarea data-work-field="guidanceDraft">${state.workDraft.guidanceDraft}</textarea></label>
+        <label>Plain-English summary <textarea data-work-field="summaryDraft">${state.workDraft.summaryDraft}</textarea></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="draft-code-guidance">Save Guidance Draft</button>
+          <button type="button" class="secondary-action" data-work-action="approve-code-guidance">Approve Guidance</button>
+        </div>
+      </div>
+      <div class="workflow-form">
         <h3>Clerk Handoff</h3>
         <label>Handoff summary <textarea data-work-field="handoffSummary">${state.workDraft.handoffSummary}</textarea></label>
         <button type="button" class="secondary-action" data-work-action="create-code-handoff">Create Clerk Handoff</button>
@@ -1122,7 +1154,10 @@ function renderCodeWorkflow() {
           <span class="status-ok">${source.status}</span>
           <h3>${source.title}</h3>
           <p>${source.body}</p>
-          <small>${source.citation} - ${source.public_status || "internal draft"} - ${source.public_exports?.length || 0} public exports</small>
+          ${source.codifier_name ? `<p><strong>Codifier:</strong> ${source.codifier_name}</p>` : ""}
+          ${source.stale_since_unix_seconds ? "<p><strong>Stale:</strong> codifier update pending</p>" : ""}
+          ${source.staff_guidance ? `<p><strong>Staff guidance:</strong> ${source.staff_guidance}</p>` : ""}
+          <small>${source.citation} - ${source.public_status || "internal draft"} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports</small>
         </article>
       `).join("")}
       ${work.code_handoffs.map((handoff) => `
@@ -1172,7 +1207,22 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   });
   const codeSources = publicOnly ? publicCodeSources(work) : work.code_sources;
   codeSources.forEach((source) => {
-    if ([source.title, source.citation, source.body].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+    const codeSearchText = [
+      source.title,
+      source.citation,
+      source.body,
+      source.status,
+      source.public_status,
+      source.codifier_name,
+      source.authoritative_url,
+      source.version_label,
+      source.codifier_sync_status,
+      source.staff_guidance,
+      source.plain_language_summary,
+      ...(source.amendment_notes || []),
+      ...(source.codifier_sync_errors || [])
+    ];
+    if (codeSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civiccode", title: source.title, snippet: source.body, citation: source.citation, status: source.status });
     }
   });
@@ -1644,6 +1694,19 @@ function workPayloadForAction(action) {
       citation: draft.codeCitation,
       body: draft.codeBody
     },
+    "record-codifier-sync": {
+      codifierName: draft.codifierName,
+      authoritativeUrl: draft.authoritativeUrl,
+      versionLabel: draft.versionLabel
+    },
+    "record-codifier-sync-failure": { syncError: draft.syncError },
+    "retry-codifier-sync": {},
+    "mark-code-stale": { amendmentNote: draft.amendmentNote },
+    "draft-code-guidance": {
+      guidanceDraft: draft.guidanceDraft,
+      summaryDraft: draft.summaryDraft
+    },
+    "approve-code-guidance": {},
     "publish-code-source": {},
     "unpublish-code-source": {},
     "create-code-handoff": { summary: draft.handoffSummary },

@@ -80,6 +80,28 @@ pub struct CodeSource {
     pub citation: String,
     pub body: String,
     pub status: String,
+    #[serde(default)]
+    pub codifier_name: String,
+    #[serde(default)]
+    pub authoritative_url: String,
+    #[serde(default)]
+    pub version_label: String,
+    #[serde(default = "default_code_sync_status")]
+    pub codifier_sync_status: String,
+    #[serde(default)]
+    pub codifier_sync_errors: Vec<String>,
+    #[serde(default)]
+    pub last_codifier_sync_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub stale_since_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub amendment_notes: Vec<String>,
+    #[serde(default)]
+    pub staff_guidance: String,
+    #[serde(default)]
+    pub plain_language_summary: String,
+    #[serde(default)]
+    pub guidance_approved_at_unix_seconds: Option<u64>,
     #[serde(default = "default_code_public_status")]
     pub public_status: String,
     #[serde(default)]
@@ -177,6 +199,10 @@ fn new_id(prefix: &str, count: usize) -> String {
 
 fn default_code_public_status() -> String {
     "internal draft".to_string()
+}
+
+fn default_code_sync_status() -> String {
+    "not synced".to_string()
 }
 
 fn read_state() -> Result<CityWorkState, String> {
@@ -944,6 +970,17 @@ fn import_code_source(
             citation,
             body,
             status: "imported".to_string(),
+            codifier_name: String::new(),
+            authoritative_url: String::new(),
+            version_label: String::new(),
+            codifier_sync_status: default_code_sync_status(),
+            codifier_sync_errors: Vec::new(),
+            last_codifier_sync_at_unix_seconds: None,
+            stale_since_unix_seconds: None,
+            amendment_notes: Vec::new(),
+            staff_guidance: String::new(),
+            plain_language_summary: String::new(),
+            guidance_approved_at_unix_seconds: None,
             public_status: default_code_public_status(),
             public_exports: Vec::new(),
             published_at_unix_seconds: None,
@@ -966,12 +1003,172 @@ fn first_code_source_mut(state: &mut CityWorkState) -> Result<&mut CodeSource, S
         .ok_or_else(|| "Import a code source before changing its public status.".to_string())
 }
 
+fn record_codifier_sync(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let codifier_name = payload_string(payload, "codifierName")?;
+    let authoritative_url = payload_optional_string(payload, "authoritativeUrl");
+    let version_label = payload_optional_string(payload, "versionLabel");
+    let source = first_code_source_mut(state)?;
+    source.codifier_name = codifier_name.clone();
+    source.authoritative_url = authoritative_url;
+    source.version_label = version_label;
+    source.codifier_sync_status = "synced".to_string();
+    source.codifier_sync_errors.clear();
+    source.last_codifier_sync_at_unix_seconds = Some(now_unix_seconds());
+    source.stale_since_unix_seconds = None;
+    source.status = "codifier synced".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "record-codifier-sync",
+        format!("Recorded codifier sync from: {codifier_name}"),
+    );
+    Ok("Codifier sync recorded and stale flag cleared.".to_string())
+}
+
+fn record_codifier_sync_failure(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let sync_error = payload_string(payload, "syncError")?;
+    let source = first_code_source_mut(state)?;
+    source.codifier_sync_status = "sync failed".to_string();
+    source.codifier_sync_errors.push(sync_error.clone());
+    source.status = "codifier sync failed".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "record-codifier-sync-failure",
+        "Recorded codifier sync failure.".to_string(),
+    );
+    Ok("Codifier sync failure recorded for retry.".to_string())
+}
+
+fn retry_codifier_sync(state: &mut CityWorkState) -> Result<String, String> {
+    let source = first_code_source_mut(state)?;
+    if source.codifier_sync_errors.is_empty() && source.codifier_sync_status != "sync failed" {
+        return Err("Record a codifier sync failure before retrying.".to_string());
+    }
+    source.codifier_sync_status = "retry queued".to_string();
+    source.status = "codifier retry queued".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "retry-codifier-sync",
+        "Queued codifier sync retry.".to_string(),
+    );
+    Ok("Codifier sync retry queued locally.".to_string())
+}
+
+fn mark_code_stale(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let amendment_note = payload_string(payload, "amendmentNote")?;
+    let source = first_code_source_mut(state)?;
+    source.amendment_notes.push(amendment_note.clone());
+    source.stale_since_unix_seconds = Some(now_unix_seconds());
+    source.codifier_sync_status = "stale - codifier update pending".to_string();
+    source.status = "codifier update pending".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "mark-code-stale",
+        "Marked code source stale pending codifier update.".to_string(),
+    );
+    Ok("Code source marked stale until the codifier update is ingested.".to_string())
+}
+
+fn draft_code_guidance(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let guidance = payload_string(payload, "guidanceDraft")?;
+    let summary = payload_optional_string(payload, "summaryDraft");
+    let source = first_code_source_mut(state)?;
+    source.staff_guidance = guidance;
+    if !summary.is_empty() {
+        source.plain_language_summary = summary;
+    }
+    source.guidance_approved_at_unix_seconds = None;
+    source.status = "guidance drafted".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "draft-code-guidance",
+        "Drafted staff guidance and plain-language summary.".to_string(),
+    );
+    Ok("Code guidance draft saved for human approval.".to_string())
+}
+
+fn approve_code_guidance(state: &mut CityWorkState) -> Result<String, String> {
+    let source = first_code_source_mut(state)?;
+    if source.staff_guidance.trim().is_empty() && source.plain_language_summary.trim().is_empty() {
+        return Err(
+            "Draft staff guidance or a plain-language summary before approval.".to_string(),
+        );
+    }
+    source.guidance_approved_at_unix_seconds = Some(now_unix_seconds());
+    source.status = "guidance approved".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "approve-code-guidance",
+        "Approved code guidance by human reviewer.".to_string(),
+    );
+    Ok("Code guidance approved; public summaries remain labeled non-authoritative.".to_string())
+}
+
 fn publish_code_source(state: &mut CityWorkState) -> Result<String, String> {
     let (title, citation, export_path) = {
         let source = first_code_source_mut(state)?;
+        let codifier = if source.codifier_name.is_empty() {
+            "No codifier sync recorded.".to_string()
+        } else {
+            format!(
+                "{}{}{}",
+                source.codifier_name,
+                if source.version_label.is_empty() {
+                    ""
+                } else {
+                    " / "
+                },
+                source.version_label
+            )
+        };
+        let summary = if source.guidance_approved_at_unix_seconds.is_some()
+            && !source.plain_language_summary.trim().is_empty()
+        {
+            source.plain_language_summary.clone()
+        } else {
+            "No approved non-authoritative summary.".to_string()
+        };
+        let staff_guidance = if source.staff_guidance.trim().is_empty() {
+            "No internal staff guidance recorded.".to_string()
+        } else {
+            source.staff_guidance.clone()
+        };
+        let amendments =
+            list_or_default(&source.amendment_notes, "No pending amendments recorded.");
+        let sync_errors = list_or_default(
+            &source.codifier_sync_errors,
+            "No codifier sync errors recorded.",
+        );
         let contents = format!(
-            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\n\n{}\n",
-            source.title, source.citation, source.status, source.body
+            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\nCodifier sync: {}\nAuthoritative URL: {}\n\n## Authoritative Text\n{}\n\n## Non-Authoritative Plain-English Summary\n{}\n\n## Internal Staff Guidance\n{}\n\n## Amendment / Stale Notes\n{}\n\n## Sync Errors\n{}\n\nFor legal interpretation, contact city staff and rely on the authoritative codified ordinance text.\n",
+            source.title,
+            source.citation,
+            source.status,
+            codifier,
+            if source.authoritative_url.is_empty() {
+                "No authoritative URL recorded."
+            } else {
+                &source.authoritative_url
+            },
+            source.body,
+            summary,
+            staff_guidance,
+            amendments,
+            sync_errors
         );
         let export_path = write_export_file("code", &source.title, &contents)?;
         source.public_status = "published".to_string();
@@ -1126,7 +1323,26 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         }
     }
     for source in &state.code_sources {
-        if contains_query(&[&source.title, &source.citation, &source.body], query) {
+        let amendment_notes = source.amendment_notes.join(" ");
+        let sync_errors = source.codifier_sync_errors.join(" ");
+        if contains_query(
+            &[
+                &source.title,
+                &source.citation,
+                &source.body,
+                &source.status,
+                &source.public_status,
+                &source.codifier_name,
+                &source.authoritative_url,
+                &source.version_label,
+                &source.codifier_sync_status,
+                &source.staff_guidance,
+                &source.plain_language_summary,
+                &amendment_notes,
+                &sync_errors,
+            ],
+            query,
+        ) {
             results.push(SearchResult {
                 module_id: "civiccode".to_string(),
                 record_id: source.id.clone(),
@@ -1174,6 +1390,12 @@ pub fn city_work_action(
         "fulfill-records-request" => fulfill_records_request(&mut state)?,
         "close-records-request" => close_records_request(&mut state)?,
         "import-code-source" => import_code_source(&mut state, payload)?,
+        "record-codifier-sync" => record_codifier_sync(&mut state, payload)?,
+        "record-codifier-sync-failure" => record_codifier_sync_failure(&mut state, payload)?,
+        "retry-codifier-sync" => retry_codifier_sync(&mut state)?,
+        "mark-code-stale" => mark_code_stale(&mut state, payload)?,
+        "draft-code-guidance" => draft_code_guidance(&mut state, payload)?,
+        "approve-code-guidance" => approve_code_guidance(&mut state)?,
         "publish-code-source" => publish_code_source(&mut state)?,
         "unpublish-code-source" => unpublish_code_source(&mut state)?,
         "create-code-handoff" => create_code_handoff(&mut state, payload)?,
@@ -1385,16 +1607,50 @@ mod tests {
                 "body": "Quiet hours begin at 10 PM."
             });
             city_work_action("import-code-source", Some(&payload)).expect("source imported");
+            let failure = serde_json::json!({ "syncError": "Codifier export unavailable." });
+            city_work_action("record-codifier-sync-failure", Some(&failure))
+                .expect("sync failure recorded");
+            city_work_action("retry-codifier-sync", None).expect("sync retry queued");
+            let sync = serde_json::json!({
+                "codifierName": "Municode",
+                "authoritativeUrl": "https://example.gov/code/noise",
+                "versionLabel": "2026-07 codifier export"
+            });
+            city_work_action("record-codifier-sync", Some(&sync)).expect("sync recorded");
+            let stale = serde_json::json!({
+                "amendmentNote": "Ordinance 2026-14 amended quiet hours; codifier update pending."
+            });
+            city_work_action("mark-code-stale", Some(&stale)).expect("stale marked");
+            let guidance = serde_json::json!({
+                "guidanceDraft": "Staff should confirm event permits before interpreting quiet hours.",
+                "summaryDraft": "Quiet hours generally begin at 10 PM, but special event permits may change enforcement."
+            });
+            city_work_action("draft-code-guidance", Some(&guidance)).expect("guidance drafted");
+            city_work_action("approve-code-guidance", None).expect("guidance approved");
             city_work_action("publish-code-source", None).expect("source published");
             city_work_action("create-code-handoff", None).expect("handoff created");
             let state = city_work_state().expect("state reads");
             let source = state.code_sources.first().expect("source exists");
             assert_eq!(source.public_status, "published");
+            assert_eq!(source.codifier_name, "Municode");
+            assert_eq!(
+                source.codifier_sync_status,
+                "stale - codifier update pending"
+            );
+            assert_eq!(source.codifier_sync_errors.len(), 0);
+            assert_eq!(source.amendment_notes.len(), 1);
+            assert!(source.last_codifier_sync_at_unix_seconds.is_some());
+            assert!(source.stale_since_unix_seconds.is_some());
+            assert!(source.guidance_approved_at_unix_seconds.is_some());
             assert_eq!(source.public_exports.len(), 1);
             assert!(source.published_at_unix_seconds.is_some());
             assert!(PathBuf::from(&source.public_exports[0]).is_file());
+            let public_export =
+                fs::read_to_string(&source.public_exports[0]).expect("public code export reads");
+            assert!(public_export.contains("Non-Authoritative Plain-English Summary"));
+            assert!(public_export.contains("contact city staff"));
             assert_eq!(state.code_handoffs.len(), 1);
-            let results = search_city_work(&state, "quiet hours");
+            let results = search_city_work(&state, "event permits");
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].citation, "CMC 8.12");
         });
