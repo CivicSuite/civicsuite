@@ -112,6 +112,17 @@ if (!tauriConfig.includes('"resources": ["../runtime/payload/"]')) {
 }
 
 for (const phrase of [
+  '"wix": {',
+  '"upgradeCode": "a63fc1d3-5437-5f55-89a2-fef93fb1f930"',
+  '"language": "en-US"',
+  '"enableElevatedUpdateTask": false'
+]) {
+  if (!tauriConfig.includes(phrase)) {
+    throw new Error(`Tauri MSI WiX config missing phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
   "name: desktop-windows-msi",
   "runs-on: windows-latest",
   "path: civicsuite",
@@ -126,6 +137,9 @@ for (const phrase of [
   "npm run prepare-runtime-payload",
   "npm run tauri -- build",
   "desktop/src-tauri/target/release/bundle/msi/*.msi",
+  "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930",
+  "UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt",
+  "SmartScreenNoticeIncluded=true",
   "NoDockerPrerequisite=true",
   "NoWslPrerequisite=true"
 ]) {
