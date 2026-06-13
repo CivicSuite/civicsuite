@@ -1284,10 +1284,12 @@ const GUIDED_WORK_ACTIONS = new Set([
   "adopt-minutes",
   "archive-meeting",
   "approve-records-response",
+  "suggest-records-response",
   "export-records-response",
   "fulfill-records-request",
   "close-records-request",
   "approve-code-guidance",
+  "suggest-code-guidance",
   "publish-code-source",
   "unpublish-code-source",
   "create-code-handoff"
@@ -1477,6 +1479,21 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicRecords AI audit entry for human approval.",
       retry: "If the response draft is missing, the desktop app blocks approval before release steps."
     },
+    "suggest-records-response": {
+      title: "Review Before Generating Records Draft",
+      confirmLabel: "Generate Draft",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Uses the verified local AI model to draft an internal response for staff review. It does not approve, export, or fulfill the request.",
+      visibility: "Internal staff draft only. A human must review, edit, cite, and approve before any release step.",
+      sources: [
+        detailOrFallback(request?.summary, "No request summary has been saved yet."),
+        request ? `${(request.search_notes || []).length} search note(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before generating."
+      ],
+      audit: "Creates a CivicRecords AI audit entry naming the local model used for the draft.",
+      retry: "If the local AI model is not ready or no search/citation evidence exists, the desktop app stops before changing the draft."
+    },
     "export-records-response": {
       title: "Review Before Exporting Records Response",
       confirmLabel: "Export Response",
@@ -1536,6 +1553,21 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicCode audit entry for approving guidance.",
       retry: "If guidance is missing, the desktop app blocks approval and keeps the source internal."
+    },
+    "suggest-code-guidance": {
+      title: "Review Before Generating Code Guidance",
+      confirmLabel: "Generate Guidance",
+      module: "CivicCode",
+      subject: sourceSubject,
+      status: source ? source.status : "No code source selected yet.",
+      changes: "Uses the verified local AI model to draft internal staff guidance from the selected source text.",
+      visibility: "Internal staff draft only. A human must review and approve before it can support public summaries.",
+      sources: [
+        source ? `Citation: ${source.citation}` : "The desktop app will require a code source before generating.",
+        detailOrFallback(source?.body, "No source text has been imported yet.")
+      ],
+      audit: "Creates a CivicCode audit entry naming the local model used for the draft.",
+      retry: "If the local AI model is not ready or no source exists, the desktop app stops before changing guidance."
     },
     "publish-code-source": {
       title: "Review Before Publishing Code Source",
@@ -2055,6 +2087,7 @@ function renderRecordsWorkflow() {
         <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
         <label>Approval note <input type="text" data-work-field="approvalNote" value="${state.workDraft.approvalNote}" /></label>
         <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="suggest-records-response">Generate Local AI Draft</button>
           <button type="button" class="secondary-action" data-work-action="draft-records-response">Save Draft</button>
           <button type="button" class="secondary-action" data-work-action="approve-records-response">Approve Response</button>
           <button type="button" class="secondary-action" data-work-action="export-records-response">Export Response</button>
@@ -2177,6 +2210,7 @@ function renderCodeWorkflow() {
         <label>Staff guidance <textarea data-work-field="guidanceDraft">${state.workDraft.guidanceDraft}</textarea></label>
         <label>Plain-English summary <textarea data-work-field="summaryDraft">${state.workDraft.summaryDraft}</textarea></label>
         <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="suggest-code-guidance">Generate Local AI Guidance</button>
           <button type="button" class="secondary-action" data-work-action="draft-code-guidance">Save Guidance Draft</button>
           <button type="button" class="secondary-action" data-work-action="approve-code-guidance">Approve Guidance</button>
         </div>
@@ -3393,6 +3427,7 @@ function workPayloadForAction(action) {
     },
     "add-records-exemption-review": { ...selected, exemptionNote: draft.exemptionNote },
     "estimate-records-fee": { ...selected, feeEstimate: draft.feeEstimate },
+    "suggest-records-response": selected,
     "draft-records-response": {
       ...selected,
       responseDraft: draft.responseDraft,
@@ -3417,6 +3452,7 @@ function workPayloadForAction(action) {
     "record-codifier-sync-failure": { ...selected, syncError: draft.syncError },
     "retry-codifier-sync": selected,
     "mark-code-stale": { ...selected, amendmentNote: draft.amendmentNote },
+    "suggest-code-guidance": selected,
     "draft-code-guidance": {
       ...selected,
       guidanceDraft: draft.guidanceDraft,

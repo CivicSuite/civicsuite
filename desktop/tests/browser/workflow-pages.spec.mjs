@@ -30,6 +30,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Add Exemption Review" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Estimate Fee" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Response & Release" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Local AI Draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve Response" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Response" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toBeVisible();
@@ -48,6 +49,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Retry Sync" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Stale" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Guidance & Summary" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Local AI Guidance" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Guidance Draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve Guidance" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toBeVisible();
@@ -141,6 +143,10 @@ test("risky city workflow actions require guided review before mutation", async 
   await expect(page.getByText("Desktop app required")).toBeVisible();
 
   await page.getByRole("button", { name: /Records Requests/ }).click();
+  await page.getByRole("button", { name: "Generate Local AI Draft" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Generating Records Draft" })).toBeVisible();
+  await expect(page.getByText("Uses the verified local AI model to draft an internal response")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Approve Response" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Approving Records Response" })).toBeVisible();
   await expect(page.getByText("Internal staff status changes to human-approved")).toBeVisible();

@@ -111,6 +111,12 @@ struct OllamaTag {
     model: Option<String>,
 }
 
+#[derive(Deserialize, Default)]
+struct OllamaGenerateResponse {
+    #[serde(default)]
+    response: String,
+}
+
 #[derive(Default)]
 struct ModelRuntimeProbe {
     reachable: bool,
@@ -519,6 +525,48 @@ fn http_get_text(endpoint: &str) -> Result<String, String> {
         .split_once("\r\n\r\n")
         .map(|(_, body)| body.to_string())
         .unwrap_or_default())
+}
+
+fn http_post_json_text(endpoint: &str, body: &str, timeout_millis: u64) -> Result<String, String> {
+    let rest = endpoint.strip_prefix("http://").ok_or_else(|| {
+        format!("Only local http endpoints are supported for model generation: {endpoint}")
+    })?;
+    let (host_port, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let address = host_port
+        .to_socket_addrs()
+        .map_err(|error| format!("Could not resolve Ollama endpoint {host_port}: {error}"))?
+        .next()
+        .ok_or_else(|| format!("Could not resolve Ollama endpoint {host_port}"))?;
+    let timeout = Duration::from_millis(timeout_millis);
+    let mut stream = TcpStream::connect_timeout(&address, timeout)
+        .map_err(|error| format!("Ollama is not responding at {endpoint}: {error}"))?;
+    let _ = stream.set_read_timeout(Some(timeout));
+    let request = format!(
+        "POST /{path} HTTP/1.1\r\nHost: {host_port}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.as_bytes().len()
+    );
+    stream
+        .write_all(request.as_bytes())
+        .map_err(|error| format!("Could not send local AI request: {error}"))?;
+    let mut response = String::new();
+    stream
+        .read_to_string(&mut response)
+        .map_err(|error| format!("Could not read local AI response: {error}"))?;
+    let status_line = response.lines().next().unwrap_or_default();
+    if !(status_line.starts_with("HTTP/1.1 2") || status_line.starts_with("HTTP/1.0 2")) {
+        return Err(format!("Ollama generation endpoint returned {status_line}"));
+    }
+    Ok(response
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or_default())
+}
+
+fn json_object_slice(body: &str) -> &str {
+    match (body.find('{'), body.rfind('}')) {
+        (Some(start), Some(end)) if start <= end => &body[start..=end],
+        _ => body,
+    }
 }
 
 fn parse_ollama_model_names(body: &str) -> Vec<String> {
@@ -1219,6 +1267,43 @@ pub(crate) fn pinned_runtime_model() -> Result<String, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
     Ok(manifest.model.runtime_model)
+}
+
+pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), String> {
+    let manifest = parse_manifest()?;
+    validate_manifest(&manifest)?;
+    let runtime_model = manifest.model.runtime_model.clone();
+    if cfg!(test) {
+        if let Ok(fake_response) = env::var("CIVICSUITE_FAKE_MODEL_RESPONSE") {
+            if !fake_response.trim().is_empty() {
+                return Ok((runtime_model, fake_response.trim().to_string()));
+            }
+        }
+    }
+    if !model_state()?.ready {
+        return Err(
+            "Local AI model is not ready. Download, verify, and load the pinned Gemma model before generating drafts."
+                .to_string(),
+        );
+    }
+    let body = serde_json::json!({
+        "model": runtime_model.as_str(),
+        "prompt": prompt,
+        "stream": false,
+        "options": {
+            "temperature": 0.2
+        }
+    })
+    .to_string();
+    let endpoint = format!("{}/api/generate", ollama_base_url());
+    let response = http_post_json_text(&endpoint, &body, 180_000)?;
+    let payload: OllamaGenerateResponse = serde_json::from_str(json_object_slice(&response))
+        .map_err(|error| format!("Could not parse local AI response: {error}"))?;
+    let generated = payload.response.trim();
+    if generated.is_empty() {
+        return Err("Local AI returned an empty draft.".to_string());
+    }
+    Ok((runtime_model, generated.to_string()))
 }
 
 pub fn model_action(action: &str) -> Result<ModelActionResult, String> {

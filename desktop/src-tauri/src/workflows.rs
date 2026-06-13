@@ -1322,6 +1322,48 @@ fn draft_records_response(
     Ok("Records response draft saved with citation evidence.".to_string())
 }
 
+fn suggest_records_response(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    if request.search_notes.is_empty() && request.citations.is_empty() {
+        return Err(
+            "Record at least one search note or citation before generating a local AI records draft."
+                .to_string(),
+        );
+    }
+    let prompt = format!(
+        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nFee estimate: {}\nCitations/source notes: {}\n",
+        request.requester,
+        request.deadline,
+        request.summary,
+        list_or_default(&request.clarification_notes, "No clarification notes recorded."),
+        list_or_default(&request.search_notes, "No search notes recorded."),
+        list_or_default(&request.exemption_reviews, "No exemption review notes recorded."),
+        if request.fee_estimate.is_empty() {
+            "No fee estimate recorded."
+        } else {
+            &request.fee_estimate
+        },
+        list_or_default(&request.citations, "No citations recorded.")
+    );
+    let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
+    request.response_draft = generated;
+    request.status = "local AI draft ready for review".to_string();
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "suggest-records-response",
+        format!("Generated local AI records response draft with {runtime_model}; human approval still required."),
+    );
+    Ok(
+        "Local AI records draft generated. Review, edit, and approve with citations before export."
+            .to_string(),
+    )
+}
+
 fn approve_records_response(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -1741,6 +1783,37 @@ fn draft_code_guidance(
         "Drafted staff guidance and plain-language summary.".to_string(),
     );
     Ok("Code guidance draft saved for human approval.".to_string())
+}
+
+fn suggest_code_guidance(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let source = selected_code_source_mut(state, payload)?;
+    let prompt = format!(
+        "Draft internal municipal code staff guidance for human review. Use only the cited source text below. Do not provide legal advice. Include practical staff considerations and keep public-facing language non-authoritative.\n\nTitle: {}\nCitation: {}\nAuthoritative URL: {}\nCodifier sync status: {}\nCurrent public status: {}\nSource text:\n{}\n",
+        source.title,
+        source.citation,
+        if source.authoritative_url.is_empty() {
+            "No authoritative URL recorded."
+        } else {
+            &source.authoritative_url
+        },
+        source.codifier_sync_status,
+        source.public_status,
+        source.body
+    );
+    let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
+    source.staff_guidance = generated;
+    source.guidance_approved_at_unix_seconds = None;
+    source.status = "local AI guidance draft ready for review".to_string();
+    push_audit(
+        state,
+        "civiccode",
+        "suggest-code-guidance",
+        format!("Generated local AI code guidance draft with {runtime_model}; human approval still required."),
+    );
+    Ok("Local AI code guidance draft generated. Review and approve before publication or staff reliance.".to_string())
 }
 
 fn approve_code_guidance(
@@ -2310,6 +2383,7 @@ pub fn city_work_action(
         "record-records-search" => record_records_search(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
         "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
+        "suggest-records-response" => suggest_records_response(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "approve-records-response" => approve_records_response(&mut state, payload)?,
         "export-records-response" => export_records_response(&mut state, payload)?,
@@ -2321,6 +2395,7 @@ pub fn city_work_action(
         "record-codifier-sync-failure" => record_codifier_sync_failure(&mut state, payload)?,
         "retry-codifier-sync" => retry_codifier_sync(&mut state, payload)?,
         "mark-code-stale" => mark_code_stale(&mut state, payload)?,
+        "suggest-code-guidance" => suggest_code_guidance(&mut state, payload)?,
         "draft-code-guidance" => draft_code_guidance(&mut state, payload)?,
         "approve-code-guidance" => approve_code_guidance(&mut state, payload)?,
         "publish-code-source" => publish_code_source(&mut state, payload)?,
@@ -2658,6 +2733,18 @@ mod tests {
                 "citation": "PRA-2026-001"
             });
             city_work_action("record-records-search", Some(&search)).expect("search saved");
+            env::set_var(
+                "CIVICSUITE_FAKE_MODEL_RESPONSE",
+                "Local AI draft response for responsive park contract records.",
+            );
+            let suggested =
+                city_work_action("suggest-records-response", None).expect("AI draft generated");
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(suggested.message.contains("Local AI records draft"));
+            let suggested_state = city_work_state().expect("state reads after AI draft");
+            assert!(suggested_state.records_requests[0]
+                .response_draft
+                .contains("Local AI draft response"));
             let exemption = serde_json::json!({
                 "exemptionNote": "Reviewed attorney-client content; no auto-redaction applied."
             });
@@ -2799,6 +2886,18 @@ mod tests {
                 "amendmentNote": "Ordinance 2026-14 amended quiet hours; codifier update pending."
             });
             city_work_action("mark-code-stale", Some(&stale)).expect("stale marked");
+            env::set_var(
+                "CIVICSUITE_FAKE_MODEL_RESPONSE",
+                "Local AI guidance draft about quiet hours and permit checks.",
+            );
+            let suggested =
+                city_work_action("suggest-code-guidance", None).expect("AI guidance generated");
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(suggested.message.contains("Local AI code guidance"));
+            let suggested_state = city_work_state().expect("state reads after AI guidance");
+            assert!(suggested_state.code_sources[0]
+                .staff_guidance
+                .contains("Local AI guidance draft"));
             let guidance = serde_json::json!({
                 "guidanceDraft": "Staff should confirm event permits before interpreting quiet hours.",
                 "summaryDraft": "Quiet hours generally begin at 10 PM, but special event permits may change enforcement."

@@ -11,6 +11,8 @@ const installerNotice = readFileSync(join(root, "installer", "windows", "unsigne
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const moduleRegistryRust = readFileSync(join(root, "src-tauri", "src", "module_registry.rs"), "utf8");
+const workflowRust = readFileSync(join(root, "src-tauri", "src", "workflows.rs"), "utf8");
+const modelRust = readFileSync(join(root, "src-tauri", "src", "model.rs"), "utf8");
 const supervisorRust = readFileSync(join(root, "src-tauri", "src", "supervisor.rs"), "utf8");
 const firstRunRust = readFileSync(join(root, "src-tauri", "src", "first_run.rs"), "utf8");
 const runtimeManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-local-runtime.json"), "utf8"));
@@ -37,6 +39,8 @@ const requiredUiPhrases = [
   "Download progress",
   "Official Google weights",
   "Download / Resume Model",
+  "Generate Local AI Draft",
+  "Generate Local AI Guidance",
   "Set Up Services and Model",
   "Package Profiles",
   "Module Catalog",
@@ -327,6 +331,27 @@ for (const phrase of [
 ]) {
   if (!main.includes(phrase)) {
     throw new Error(`desktop module manager missing guided review phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "suggest-records-response",
+  "suggest-code-guidance",
+  "Generated local AI records response draft",
+  "Generated local AI code guidance draft"
+]) {
+  if (!workflowRust.includes(phrase)) {
+    throw new Error(`desktop workflow missing local AI action phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "generate_local_text",
+  "/api/generate",
+  "Local AI model is not ready"
+]) {
+  if (!modelRust.includes(phrase)) {
+    throw new Error(`desktop model runtime missing local generation phrase: ${phrase}`);
   }
 }
 
