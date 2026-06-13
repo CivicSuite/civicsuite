@@ -4,14 +4,14 @@
 
 Spec revision: 1.1  
 Status: Canonical planning specification (architectural intent only; STATUS.md is current-shipped truth)  
-Last revised: 2026-05-10
+Last revised: 2026-06-13
 License: Apache License 2.0 for code; CC BY 4.0 for documentation unless a repository-specific LICENSE says otherwise.  
 Supersedes: `CivicSuiteAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
 Preserves: Feature, workflow, schema, prompt, testing, and product requirements from the source documents unless explicitly marked superseded, deferred, or corrected here.
 
 ---
 
-> **Release recovery banner (updated 2026-05-25).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8. CivicAccess is OUT pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
+> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8. CivicAccess is OUT pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
 
 ---
 
@@ -291,7 +291,7 @@ Purpose: open-records intake, workflow, search, exemption review, response draft
 
 Owner: City Clerk / Council Support / City Manager's Office  
 Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
-Status: v1.0.3 city-core release car shipped on CivicCore v1.2.0; anonymous staff writes are denied by default.
+Status: v1.0.4 city-core release car shipped on CivicCore v1.2.0; anonymous staff writes are denied by default.
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
 Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
@@ -535,7 +535,7 @@ Canonical lifecycle:
 
 ## 9. CivicClerk Canonical Scope
 
-CivicClerk is Module 2. Current release truth is CivicClerk v1.0.1 with the QA-001 protected-default staff-auth recovery patch; current shipped CivicCore compatibility remains recorded in the compatibility matrix and installer metadata. The canonical scope below describes the product target that must be proven before any city-deployable clerk-core claim.
+CivicClerk is Module 2. Current release truth is CivicClerk v1.0.4 with the protected-default staff-auth recovery line retained; current shipped CivicCore compatibility remains recorded in the compatibility matrix and installer metadata. The canonical scope below describes the product target that must be proven before any city-deployable clerk-core claim.
 
 ### 9.1 Product Promise
 
@@ -1004,7 +1004,7 @@ This section previously enumerated per-module shipping prose. That prose drifted
 
 As of 2026-05-21, the clerk-core installer evidence includes installed-stack workflow proof for CivicRecords AI request/search-surface/review/response handling and CivicClerk agenda/packet/minutes/vote/notice/archive handling. That proof is starter-profile lifecycle evidence only; it does not supersede queued per-module release gates and does not prove live cross-module records exchange. `installer-clerk-core-v0.1.0` is the current public-use starter release after release-lockstep, suite verification, installer verification, docs verification, release-gate audit, and main CI passed. The release is bounded to CivicCore, CivicRecords AI, CivicClerk, and the `clerk-core` installer profile; it does not create a full-suite, procurement, production hosting, airgap, city-ready full-suite, or macOS lifecycle certification claim.
 
-As of 2026-05-27, the city-core profile has implementation evidence for non-technical Windows and Linux installability with CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8. The vendored-source installer artifacts remain installer version `0.1.2`; the evidence covers one-click wrapper smoke, the local suite launcher, Guided/Manual Docker prerequisite setup paths, Linux Docker signed-repository bootstrap where supported, first-run wizard smoke, first-run browser QA, 60 GB cleanroom hygiene, local Windows/Linux matching-host lifecycle runs, green PR CI, and audit-full with zero unresolved Blocker or Critical findings under `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks; exact volatile run IDs are recorded in the PR body and run evidence. The honest state is beta-ready truth-reconciled. This does not create public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or a full-suite release claim.
+As of 2026-06-13, the city-core profile has implementation evidence for non-technical Windows and Linux installability with CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8. The vendored-source installer artifacts remain installer version `0.1.2`; the evidence covers one-click wrapper smoke, the local suite launcher, Guided/Manual Docker prerequisite setup paths, Linux Docker signed-repository bootstrap where supported, first-run wizard smoke, first-run browser QA, 60 GB cleanroom hygiene, local Windows/Linux matching-host lifecycle runs, green PR CI, and audit-full with zero unresolved Blocker or Critical findings under `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks; exact volatile run IDs are recorded in the PR body and run evidence. CivicClerk v1.0.4 supersedes v1.0.3 as the clerk package/source truth, but the honest suite state remains beta-ready truth-reconciled. This does not create public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or a full-suite release claim.
 
 As of 2026-05-27, `installer/modules.json` is also the source-of-truth for city-core vendored-source commit pins. The installer generator must verify each local sibling checkout against that module's `source_commit` before packaging, and the lifecycle runner must verify bundled source through `SOURCE_COMMIT.txt` or a git HEAD match before use. This makes the vendored-source model reproducible without switching to published wheels. The operator trust path is live regenerated artifact evidence: generated `SHA256SUMS` or release-manifest hashes for the installer package, `source_commit` verification for vendored source, and published module hashes/attestations where applicable. Old committed `installer/dist` artifacts are not canonical unless Scott explicitly confirms restoration.
 
@@ -1013,8 +1013,8 @@ The suite launcher currently records local browser/runtime session state for ins
 | Repo | Current recovery label | CivicCore pin | Source commit pin | Status summary |
 |---|---:|---:|---:|---|
 | civiccore | 1.2.0 | n/a | 9f7e3a5a0156fca779b48076d49c13181d15151c | Real shared platform; v1.2.0 adds shared document ingestion, retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening, and carries the post-PR-#64 shared suite-session token helpers. |
-| civicrecords-ai | 1.7.3 | 1.2.0 | ae34a499c1e0794d3322146369f798f19bd0a146 | Developer-preview records release car consuming CivicCore shared ingestion; the post-PR-#101 default branch accepts shared suite sessions, refreshed OpenAPI output, and includes prototype-shell UX fixes without changing the published v1.7.3 release object. |
-| civicclerk | 1.0.3 | 1.2.0 | f39d0eeccc6804b86c542b4cdffe4fab0665d503 | Real meeting workflow release car with protected staff auth defaults retained, post-PR-#171 bearer handoff/session contracts, and a retry-hardened frontend dependency-audit gate. |
+| civicrecords-ai | 1.7.3 | 1.2.0 | 538766523ad90ee7553b0ffa75b626d3d4850b17 | Developer-preview records release car consuming CivicCore shared ingestion; the post-PR-#102 default branch keeps the published v1.7.3 release object while allowing services to boot without the Ollama health gate. |
+| civicclerk | 1.0.4 | 1.2.0 | dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5 | Real meeting workflow release car with protected staff auth defaults retained, persistence refresh, and a workflow-only release-upload repair on the pinned default-branch source head. |
 | civiccode | 1.0.8 | 1.2.0 | a960bba0a2249d118b593dd61bee3a65a69a9d77 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and post-PR-#76 uses `gemma4:e4b` as the suite installer default local model. |
 | civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
 | civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |

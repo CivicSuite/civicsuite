@@ -113,7 +113,7 @@ CivicRecords AI and CivicClerk. A passing verify run must prove:
 
 - CivicRecords AI API health returns `status=ok` and `version=1.7.3`.
 - CivicRecords AI web responds.
-- CivicClerk API health returns `status=ok`, `version=1.0.3`, and
+- CivicClerk API health returns `status=ok`, `version=1.0.4`, and
   `civiccore=1.2.0`.
 - CivicClerk web responds.
 - CivicClerk staff auth is protected by default and anonymous staff writes are

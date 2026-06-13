@@ -8,7 +8,7 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 ## Read Me First
 
-CivicSuite is **not procurement-ready** today. The active city-core promotion package is CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.3, CivicCode v1.0.8, and the suite installer. Those four module release cars exist, and the 2026-05-28 city-core engagement is closing the independent `audit-team-claude` findings required to make the beta-ready truth-reconciled label honest across UX, docs, tests, QA, SSO, and installer evidence. Until that independent package re-runs cleanly, the package remains beta-ready truth-reconciled, not public-use ready, city-ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
+CivicSuite is **not procurement-ready** today. The active city-core promotion package is CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, and the suite installer. Those four module release cars exist, and the 2026-05-28 city-core engagement is closing the independent `audit-team-claude` findings required to make the beta-ready truth-reconciled label honest across UX, docs, tests, QA, SSO, and installer evidence. Until that independent package re-runs cleanly, the package remains beta-ready truth-reconciled, not public-use ready, city-ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
 Why the freeze: in a five-day window between 2026-05-01 and 2026-05-06, the org pushed multiple v1.0.0 / v0.22.x release labels across 7+ repos as part of a coordination sweep that the project owner subsequently halted. Two follow-on lateral sweeps (2026-05-07 and 2026-05-08) put v1.0.0 tags on `civicinspect`, `civicgrants`, and `civicprocure` against the explicit halt. None of those tags constitute promotion. The recovery-status doc is the operating truth source for which labels are real.
 
@@ -18,11 +18,11 @@ If you are evaluating CivicSuite for a municipality, treat this state as *develo
 
 ## Suite Status
 
-Status snapshot: **2026-05-28**
+Status snapshot: **2026-06-13**
 
 | Tier | Count | What it means today |
 |---|---:|---|
-| City-core release cars | CivicCore plus 3 product repos | CivicCore v1.2.0 is the shared platform release. CivicRecords AI v1.7.3, CivicClerk v1.0.3, and CivicCode v1.0.8 are the city-core module cars. The 2026-05-28 engagement is closing all independent audit-team findings before the city-core installer can rely on the beta-ready truth-reconciled label. PR #183 evidence remains historical predecessor evidence; the active truth source is the current run at `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-28-city-core-real-non-technical-release\`. |
+| City-core release cars | CivicCore plus 3 product repos | CivicCore v1.2.0 is the shared platform release. CivicRecords AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8 are the city-core module cars. CivicClerk v1.0.4 supersedes v1.0.3 as the clerk package/source truth; the 2026-05-28 engagement is still closing all independent audit-team findings before the city-core installer can rely on the beta-ready truth-reconciled label. PR #183 evidence remains historical predecessor evidence; the active truth source is the current run at `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-28-city-core-real-non-technical-release\`. |
 | Queued / excluded modules | Tier 2 and CivicAccess | CivicAccess is out of city-core after a NEEDS-WORK depth probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued on demotion-truth labels, not city-core public-use releases. |
 | Foundation / planned | 17 named product modules | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The reconciled unified spec, installer metadata, and live GitHub org state now enumerate 27 product modules plus CivicCore. |
 
@@ -34,7 +34,7 @@ The most important distinction: **"all repos have releases" is not the same thin
 
 - **`civicrecords-ai`** (FOIA / public records) - v1.7.3 is the current developer-preview records release car on CivicCore v1.2.0. Repo: <https://github.com/CivicSuite/civicrecords-ai>
 - **`civiccore`** (shared platform) - v1.2.0 is the current shared-platform release for city-core. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk`** (meetings/agendas/minutes) - v1.0.3 is the current meeting workflow release car with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civicclerk`** (meetings/agendas/minutes) - v1.0.4 is the current meeting workflow release car with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`civiccode`** - v1.0.8 is the current municipal-code city-core release car on CivicCore v1.2.0.
 - **`civicaccess`** - accessibility and records-ready export module; out of city-core after the 2026-05-23 NEEDS-WORK depth probe.
 - **`civiczone`, `civicplan`, `civicpermit`, `civicinspect`** - queued Tier 2 modules on demotion-truth labels; not part of city-core.
@@ -89,7 +89,7 @@ If you are orienting yourself for the first time, read in this order:
 | `civicsuite` | Umbrella: roadmap, governance, specs, ADRs, compatibility matrix, suite-installer scaffolding |
 | `civiccore` | Shared platform package consumed by every module |
 | `civicrecords-ai` | v1.7.3 developer-preview city-core records release car |
-| `civicclerk` | v1.0.3 meeting workflow city-core release car |
+| `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
 | `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
 | `civiczone` | Queued Tier 2 land-use module on demotion-truth label |
