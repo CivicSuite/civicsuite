@@ -155,7 +155,72 @@
                                                "task_queue_worker"
                                            ],
                         "current_version":  "1.2.0",
-                        "source_commit":  "1a53f0680fffce34efeb939cbeb9915b6e208d6c"
+                        "source_commit":  "1a53f0680fffce34efeb939cbeb9915b6e208d6c",
+                        "routes":  [
+                                       {
+                                           "id":  "system-health",
+                                           "label":  "System Health",
+                                           "path":  "/health",
+                                           "surface":  "IT/Admin"
+                                       },
+                                       {
+                                           "id":  "settings",
+                                           "label":  "Settings",
+                                           "path":  "/settings",
+                                           "surface":  "IT/Admin"
+                                       }
+                                   ],
+                        "permissions":  [
+                                            "system.admin",
+                                            "audit.read",
+                                            "backup.manage",
+                                            "module.manage"
+                                        ],
+                        "services":  [
+                                         {
+                                             "id":  "desktop-shell",
+                                             "kind":  "tauri-webview",
+                                             "health_check":  "desktop-shell"
+                                         },
+                                         {
+                                             "id":  "postgres",
+                                             "kind":  "portable-postgres",
+                                             "health_check":  "postgres"
+                                         },
+                                         {
+                                             "id":  "task-queue",
+                                             "kind":  "local-worker",
+                                             "health_check":  "task-queue"
+                                         }
+                                     ],
+                        "migrations":  [
+                                           "civiccore-windows-local-state-v1"
+                                       ],
+                        "tasks":  [
+                                      "audit-chain",
+                                      "module-registry",
+                                      "backup-restore",
+                                      "health-checks"
+                                  ],
+                        "backup_restore_hooks":  [
+                                                     "config",
+                                                     "Data",
+                                                     "audit-log",
+                                                     "model-registry"
+                                                 ],
+                        "model_needs":  [
+                                            {
+                                                "id":  "gemma-4-12b-it-qat-q4_0",
+                                                "required":  false,
+                                                "purpose":  "local model registry and readiness"
+                                            }
+                                        ],
+                        "lifecycle":  {
+                                          "install":  "always-installed-with-profile",
+                                          "update":  "manifest-versioned",
+                                          "disable":  "not-allowed-required-foundation",
+                                          "uninstall":  "backup-first-profile-removal"
+                                      }
                     },
                     {
                         "id":  "civicrecords-ai",
@@ -180,7 +245,66 @@
                                                "restore"
                                            ],
                         "current_version":  "1.7.3",
-                        "source_commit":  "538766523ad90ee7553b0ffa75b626d3d4850b17"
+                        "source_commit":  "538766523ad90ee7553b0ffa75b626d3d4850b17",
+                        "routes":  [
+                                       {
+                                           "id":  "records-requests",
+                                           "label":  "Records Requests",
+                                           "path":  "/records",
+                                           "surface":  "Staff"
+                                       },
+                                       {
+                                           "id":  "search-city-knowledge",
+                                           "label":  "Search City Knowledge",
+                                           "path":  "/search",
+                                           "surface":  "Staff"
+                                       }
+                                   ],
+                        "permissions":  [
+                                            "records.intake",
+                                            "records.review",
+                                            "records.export",
+                                            "records.audit"
+                                        ],
+                        "services":  [
+                                         {
+                                             "id":  "python-services",
+                                             "kind":  "bundled-python",
+                                             "health_check":  "python-services"
+                                         },
+                                         {
+                                             "id":  "file-storage",
+                                             "kind":  "local-file-store",
+                                             "health_check":  "file-storage"
+                                         }
+                                     ],
+                        "migrations":  [
+                                           "civicrecords-windows-local-state-v1"
+                                       ],
+                        "tasks":  [
+                                      "records-intake",
+                                      "records-search",
+                                      "response-draft",
+                                      "response-export"
+                                  ],
+                        "backup_restore_hooks":  [
+                                                     "Data/workflows/records",
+                                                     "Data/exports/records",
+                                                     "Data/files/records"
+                                                 ],
+                        "model_needs":  [
+                                            {
+                                                "id":  "gemma-4-12b-it-qat-q4_0",
+                                                "required":  true,
+                                                "purpose":  "records search assistance and response drafting"
+                                            }
+                                        ],
+                        "lifecycle":  {
+                                          "install":  "profile-selected",
+                                          "update":  "manifest-versioned",
+                                          "disable":  "allowed-after-backup",
+                                          "uninstall":  "backup-first-module-data-removal"
+                                      }
                     },
                     {
                         "id":  "civicclerk",
@@ -205,7 +329,67 @@
                                                "restore"
                                            ],
                         "current_version":  "1.0.4",
-                        "source_commit":  "dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5"
+                        "source_commit":  "dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5",
+                        "routes":  [
+                                       {
+                                           "id":  "meetings-notices",
+                                           "label":  "Meetings & Notices",
+                                           "path":  "/meetings",
+                                           "surface":  "Staff"
+                                       },
+                                       {
+                                           "id":  "audit-trail",
+                                           "label":  "Audit Trail",
+                                           "path":  "/audit",
+                                           "surface":  "IT/Admin"
+                                       }
+                                   ],
+                        "permissions":  [
+                                            "clerk.meetings",
+                                            "clerk.notices",
+                                            "clerk.minutes",
+                                            "clerk.archive"
+                                        ],
+                        "services":  [
+                                         {
+                                             "id":  "python-services",
+                                             "kind":  "bundled-python",
+                                             "health_check":  "python-services"
+                                         },
+                                         {
+                                             "id":  "file-storage",
+                                             "kind":  "local-file-store",
+                                             "health_check":  "file-storage"
+                                         }
+                                     ],
+                        "migrations":  [
+                                           "civicclerk-windows-local-state-v1"
+                                       ],
+                        "tasks":  [
+                                      "meeting-agenda",
+                                      "public-notice",
+                                      "minutes-draft",
+                                      "vote-record",
+                                      "packet-export"
+                                  ],
+                        "backup_restore_hooks":  [
+                                                     "Data/workflows/meetings",
+                                                     "Data/exports/meetings",
+                                                     "Data/files/meetings"
+                                                 ],
+                        "model_needs":  [
+                                            {
+                                                "id":  "gemma-4-12b-it-qat-q4_0",
+                                                "required":  false,
+                                                "purpose":  "minutes drafting assistance after local model readiness"
+                                            }
+                                        ],
+                        "lifecycle":  {
+                                          "install":  "profile-selected",
+                                          "update":  "manifest-versioned",
+                                          "disable":  "allowed-after-backup",
+                                          "uninstall":  "backup-first-module-data-removal"
+                                      }
                     },
                     {
                         "id":  "civiccode",
@@ -232,7 +416,66 @@
                                                "release_attestation"
                                            ],
                         "current_version":  "1.0.8",
-                        "source_commit":  "a960bba0a2249d118b593dd61bee3a65a69a9d77"
+                        "source_commit":  "a960bba0a2249d118b593dd61bee3a65a69a9d77",
+                        "routes":  [
+                                       {
+                                           "id":  "code-ordinances",
+                                           "label":  "Code & Ordinances",
+                                           "path":  "/code",
+                                           "surface":  "Staff"
+                                       },
+                                       {
+                                           "id":  "search-city-knowledge",
+                                           "label":  "Search City Knowledge",
+                                           "path":  "/search",
+                                           "surface":  "Staff"
+                                       }
+                                   ],
+                        "permissions":  [
+                                            "code.import",
+                                            "code.search",
+                                            "code.guidance",
+                                            "code.handoff"
+                                        ],
+                        "services":  [
+                                         {
+                                             "id":  "python-services",
+                                             "kind":  "bundled-python",
+                                             "health_check":  "python-services"
+                                         },
+                                         {
+                                             "id":  "file-storage",
+                                             "kind":  "local-file-store",
+                                             "health_check":  "file-storage"
+                                         }
+                                     ],
+                        "migrations":  [
+                                           "civiccode-windows-local-state-v1"
+                                       ],
+                        "tasks":  [
+                                      "code-source-import",
+                                      "code-search",
+                                      "staff-guidance",
+                                      "clerk-handoff"
+                                  ],
+                        "backup_restore_hooks":  [
+                                                     "Data/workflows/code",
+                                                     "Data/exports/code",
+                                                     "Data/files/code"
+                                                 ],
+                        "model_needs":  [
+                                            {
+                                                "id":  "gemma-4-12b-it-qat-q4_0",
+                                                "required":  true,
+                                                "purpose":  "municipal code guidance and citation-aware search"
+                                            }
+                                        ],
+                        "lifecycle":  {
+                                          "install":  "profile-selected",
+                                          "update":  "manifest-versioned",
+                                          "disable":  "allowed-after-backup",
+                                          "uninstall":  "backup-first-module-data-removal"
+                                      }
                     },
                     {
                         "id":  "civiczone",

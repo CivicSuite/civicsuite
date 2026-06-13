@@ -52,6 +52,23 @@ const fallbackState = {
       installed: true
     }
   ],
+  module_profiles: [
+    {
+      id: "city-core",
+      label: "City Core",
+      description: "CivicCore, CivicRecords AI, CivicClerk, and CivicCode",
+      selected: true,
+      disabled: false,
+      module_count: 4
+    }
+  ],
+  module_selection: {
+    profile_id: "city-core",
+    profile_label: "City Core",
+    installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"],
+    disabled_module_ids: [],
+    last_updated_unix_seconds: 0
+  },
   installer_steps: [],
   first_run: {
     profile: "windows-local-1.0",
@@ -942,6 +959,7 @@ function renderSearchWorkflow() {
 }
 
 function renderModuleRow(module) {
+  const proofCount = module.proof_required?.length || 0;
   return `
     <article class="module-row">
       <div>
@@ -950,7 +968,7 @@ function renderModuleRow(module) {
       </div>
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
-        <small>${module.version || "No release yet"}</small>
+        <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
       </div>
     </article>
   `;
@@ -958,6 +976,7 @@ function renderModuleRow(module) {
 
 function renderModules() {
   const installed = state.app.modules.filter((module) => module.installed || module.required);
+  const selection = state.app.module_selection || fallbackState.module_selection;
   const admin = (state.app.users || [])[0];
   return `
     <section class="page-heading">
@@ -995,7 +1014,10 @@ function renderModules() {
       <div>
         <div class="section-title">
           <h3>City Core Package</h3>
-          <p>Installed for this local city profile.</p>
+          <p>Installed for the ${selection.profile_label} local profile.</p>
+        </div>
+        <div class="empty-note">
+          Selected profile: ${selection.profile_label}. Installed modules: ${selection.installed_module_ids.length}.
         </div>
         <div class="module-list">${installed.map(renderModuleRow).join("")}</div>
       </div>

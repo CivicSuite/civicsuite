@@ -6,7 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{model, supervisor};
+use crate::{model, module_registry, supervisor};
 
 const FIRST_RUN_MANIFEST_JSON: &str = include_str!("../../runtime/windows-first-run.json");
 const REQUIRED_STEP_IDS: [&str; 10] = [
@@ -507,10 +507,13 @@ pub fn first_run_action(
     let locations = resolve_locations(&manifest.default_locations);
     match action {
         "choose-location" | "choose-backup" => create_local_locations(&locations)?,
+        "select-modules" => {
+            module_registry::persist_profile_selection("city-core")?;
+        }
         "create-city-profile" => persist_city_profile(payload)?,
         "create-admin" => persist_first_admin(payload)?,
-        "review" | "select-modules" | "download-model" | "verify-health" | "open-app"
-        | "repair" | "backup" | "uninstall" => {}
+        "review" | "download-model" | "verify-health" | "open-app" | "repair" | "backup"
+        | "uninstall" => {}
         _ => {
             return Err(format!(
                 "First-run action {action} has no desktop executor yet"
@@ -641,6 +644,16 @@ mod tests {
             assert!(root.join("Data").join("files").is_dir());
             assert!(root.join("Data").join("logs").is_dir());
             assert!(root.join("config").is_dir());
+        });
+    }
+
+    #[test]
+    fn first_run_module_selection_persists_profile_state() {
+        with_temp_state_dir(|root| {
+            let result = first_run_action("select-modules", Some("modules"), None)
+                .expect("module selection can be saved");
+            assert!(result.accepted);
+            assert!(root.join("config").join("module-selection.json").is_file());
         });
     }
 

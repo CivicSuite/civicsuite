@@ -1,10 +1,12 @@
 mod first_run;
 mod model;
+mod module_registry;
 mod supervisor;
 mod workflows;
 
 use first_run::{FirstRunActionResult, FirstRunState, SavedCityProfile, SavedFirstAdmin};
 use model::{ModelActionResult, ModelState};
+use module_registry::{ModuleProfileSummary, ModuleSelectionState, ModuleSummary};
 use serde::Serialize;
 use serde_json::Value;
 use supervisor::{RuntimeHealthItem, SupervisorActionResult};
@@ -20,23 +22,14 @@ struct NavigationItem {
 }
 
 #[derive(Serialize)]
-struct ModuleSummary {
-    id: String,
-    display_name: String,
-    role: String,
-    version: Option<String>,
-    required: bool,
-    selectable: bool,
-    installed: bool,
-}
-
-#[derive(Serialize)]
 struct AppState {
     product_name: &'static str,
     status_label: &'static str,
     local_only: bool,
     navigation: Vec<NavigationItem>,
     modules: Vec<ModuleSummary>,
+    module_profiles: Vec<ModuleProfileSummary>,
+    module_selection: ModuleSelectionState,
     installer_steps: Vec<&'static str>,
     first_run: FirstRunState,
     city_profile: Option<SavedCityProfile>,
@@ -98,54 +91,8 @@ fn installer_steps() -> Vec<&'static str> {
 }
 
 fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
-    let registry: Value = serde_json::from_str(MODULES_JSON)
-        .map_err(|error| format!("Could not parse module registry: {error}"))?;
-    let city_core = registry
-        .get("profiles")
-        .and_then(Value::as_array)
-        .and_then(|profiles| {
-            profiles
-                .iter()
-                .find(|profile| profile.get("id").and_then(Value::as_str) == Some("city-core"))
-        })
-        .and_then(|profile| profile.get("modules"))
-        .and_then(Value::as_array)
-        .ok_or_else(|| "city-core profile is missing from module registry".to_string())?;
-    let installed_ids: Vec<String> = city_core
-        .iter()
-        .filter_map(Value::as_str)
-        .map(str::to_owned)
-        .collect();
-
-    let modules = registry
-        .get("modules")
-        .and_then(Value::as_array)
-        .ok_or_else(|| "module registry has no modules list".to_string())?;
-
-    Ok(modules
-        .iter()
-        .filter_map(|module| {
-            let id = module.get("id")?.as_str()?.to_owned();
-            Some(ModuleSummary {
-                installed: installed_ids.contains(&id),
-                id,
-                display_name: module.get("display_name")?.as_str()?.to_owned(),
-                role: module.get("role")?.as_str()?.to_owned(),
-                version: module
-                    .get("current_version")
-                    .and_then(Value::as_str)
-                    .map(str::to_owned),
-                required: module
-                    .get("required")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false),
-                selectable: module
-                    .get("selectable")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false),
-            })
-        })
-        .collect())
+    let _registry_source = MODULES_JSON;
+    module_registry::module_summaries()
 }
 
 #[tauri::command]
@@ -156,6 +103,8 @@ fn get_app_state() -> Result<AppState, String> {
         local_only: true,
         navigation: navigation(),
         modules: module_summaries()?,
+        module_profiles: module_registry::module_profiles()?,
+        module_selection: module_registry::module_selection_state()?,
         installer_steps: installer_steps(),
         first_run: first_run::first_run_state(&[])?,
         city_profile: first_run::saved_city_profile()?,
@@ -255,6 +204,7 @@ mod tests {
 
     #[test]
     fn city_core_modules_are_reported_installed() {
+        module_registry::validate_default_registry().expect("module registry contract validates");
         let modules = module_summaries().expect("module registry parses");
         for module_id in ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"] {
             let module = modules
@@ -343,6 +293,26 @@ mod tests {
             assert_eq!(state.users.len(), 1);
             assert_eq!(state.users[0].email, "alex@example.gov");
             assert_eq!(state.users[0].role, "local-admin");
+        });
+    }
+
+    #[test]
+    fn app_state_reports_module_selection_profile() {
+        with_clean_first_run_state(|_| {
+            module_registry::persist_profile_selection("city-core")
+                .expect("module selection persists");
+            let state = get_app_state().expect("app state");
+            assert_eq!(state.module_selection.profile_id, "city-core");
+            assert_eq!(state.module_selection.installed_module_ids.len(), 4);
+            assert!(state
+                .module_profiles
+                .iter()
+                .any(|profile| profile.id == "city-core" && profile.selected));
+            assert!(state
+                .modules
+                .iter()
+                .filter(|module| module.installed)
+                .all(|module| !module.proof_required.is_empty()));
         });
     }
 
