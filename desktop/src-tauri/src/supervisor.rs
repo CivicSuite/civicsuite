@@ -119,6 +119,7 @@ pub struct RuntimeHealthItem {
     pub message: String,
     pub next_action: String,
     pub admin_detail: String,
+    pub actionable: bool,
 }
 
 #[derive(Serialize)]
@@ -1301,6 +1302,40 @@ fn service_health(service: &ServiceDefinition, state: &RuntimeState) -> RuntimeH
                 .map(|pid| pid.to_string())
                 .unwrap_or_else(|| "none".to_string())
         ),
+        actionable: true,
+    }
+}
+
+fn local_folder_health(
+    id: &str,
+    label: &str,
+    path: PathBuf,
+    next_action: &str,
+) -> RuntimeHealthItem {
+    let ok = path.is_dir();
+    let (status, message, next_action) = if ok {
+        (
+            "OK",
+            format!("{label} is available on this Windows profile."),
+            "Continue local setup.".to_string(),
+        )
+    } else {
+        (
+            "Needs setup",
+            format!("{label} has not been created yet."),
+            next_action.to_string(),
+        )
+    };
+
+    RuntimeHealthItem {
+        id: id.to_string(),
+        label: label.to_string(),
+        ok,
+        status,
+        message,
+        next_action,
+        admin_detail: format!("kind local-folder; path {}; exists {}", path.display(), ok),
+        actionable: false,
     }
 }
 
@@ -1316,7 +1351,20 @@ pub fn runtime_health() -> Result<Vec<RuntimeHealthItem>, String> {
         message: "Tauri/WebView2 shell is running locally.".to_string(),
         next_action: "Continue the Windows local setup.".to_string(),
         admin_detail: "The desktop process is active.".to_string(),
+        actionable: false,
     }];
+    health.push(local_folder_health(
+        "local-data-folder",
+        "City data folder",
+        data_root(),
+        "Use First Run or Repair to create the city data folder.",
+    ));
+    health.push(local_folder_health(
+        "backup-folder",
+        "Backup folder",
+        backup_root(),
+        "Use First Run or Backup Now to create the backup folder.",
+    ));
     health.extend(
         manifest
             .services
@@ -1346,6 +1394,8 @@ fn ensure_runtime_dirs(service: &ServiceDefinition) -> Result<(), String> {
         .map_err(|error| format!("Could not create runtime log folder: {error}"))?;
     fs::create_dir_all(data_root().join("files"))
         .map_err(|error| format!("Could not create local document storage: {error}"))?;
+    fs::create_dir_all(backup_root())
+        .map_err(|error| format!("Could not create local backup folder: {error}"))?;
     if service.id == "postgres" {
         fs::create_dir_all(data_root().join("postgres"))
             .map_err(|error| format!("Could not create local database folder: {error}"))?;
@@ -2143,6 +2193,43 @@ mod tests {
             assert!(health
                 .iter()
                 .any(|item| item.id == "file-storage" && item.ok));
+        });
+    }
+
+    #[test]
+    fn runtime_health_reports_selected_local_folders() {
+        with_temp_state_dir(|root| {
+            let custom_data = root.join("custom-city-data");
+            let custom_backups = root.join("custom-backups");
+            crate::local_paths::save_locations(&crate::local_paths::LocalLocations {
+                install_root: root.to_string_lossy().to_string(),
+                data_root: custom_data.to_string_lossy().to_string(),
+                backup_root: custom_backups.to_string_lossy().to_string(),
+            })
+            .expect("custom locations save");
+
+            let initial = runtime_health().expect("health builds before folders exist");
+            let data_item = initial
+                .iter()
+                .find(|item| item.id == "local-data-folder")
+                .expect("data folder health exists");
+            assert_eq!(data_item.label, "City data folder");
+            assert!(!data_item.ok);
+            assert!(!data_item.actionable);
+            assert!(data_item.admin_detail.contains("custom-city-data"));
+
+            supervisor_action("install", Some("file-storage")).expect("install file storage");
+
+            let installed = runtime_health().expect("health builds after install");
+            assert!(installed
+                .iter()
+                .any(|item| { item.id == "local-data-folder" && item.ok && !item.actionable }));
+            assert!(installed.iter().any(|item| {
+                item.id == "backup-folder"
+                    && item.ok
+                    && !item.actionable
+                    && item.admin_detail.contains("custom-backups")
+            }));
         });
     }
 

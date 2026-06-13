@@ -413,7 +413,28 @@ const fallbackState = {
       status: "OK",
       message: "Tauri/WebView2 shell is running locally.",
       next_action: "Continue the Windows local setup.",
-      admin_detail: "Browser preview fallback; Tauri provides live state in the desktop app."
+      admin_detail: "Browser preview fallback; Tauri provides live state in the desktop app.",
+      actionable: false
+    },
+    {
+      id: "local-data-folder",
+      label: "City data folder",
+      ok: false,
+      status: "Needs setup",
+      message: "City data folder has not been created yet.",
+      next_action: "Use First Run or Repair to create the city data folder.",
+      admin_detail: "%LOCALAPPDATA%\\CivicSuite\\Data",
+      actionable: false
+    },
+    {
+      id: "backup-folder",
+      label: "Backup folder",
+      ok: false,
+      status: "Needs setup",
+      message: "Backup folder has not been created yet.",
+      next_action: "Use First Run or Backup Now to create the backup folder.",
+      admin_detail: "%USERPROFILE%\\Documents\\CivicSuite Backups",
+      actionable: false
     },
     {
       id: "postgres",
@@ -2663,19 +2684,19 @@ function renderHealth() {
     <section class="health-grid">
       ${state.app.health.map((item) => `
         <article class="health-card">
-          <span class="${item.ok ? "status-ok" : "status-warn"}">${item.status || (item.ok ? "OK" : "Needs setup")}</span>
-          <h3>${item.label}</h3>
-          <p>${item.message}</p>
-          ${item.next_action ? `<p class="next-action"><strong>Next:</strong> ${item.next_action}</p>` : ""}
-          ${item.admin_detail ? `<small>${item.admin_detail}</small>` : ""}
-          ${item.id !== "desktop-shell" ? `
-            <div class="health-actions" aria-label="${item.label} actions">
-              <button type="button" class="secondary-action" data-supervisor-action="health" data-service-id="${item.id}">Check</button>
-              <button type="button" class="secondary-action" data-supervisor-action="install" data-service-id="${item.id}">Install</button>
-              <button type="button" class="secondary-action" data-supervisor-action="start" data-service-id="${item.id}">Start</button>
-              <button type="button" class="secondary-action" data-supervisor-action="repair" data-service-id="${item.id}">Repair</button>
-              <button type="button" class="secondary-action" data-supervisor-action="logs" data-service-id="${item.id}">Logs</button>
-              <button type="button" class="secondary-action" data-supervisor-action="stop" data-service-id="${item.id}">Stop</button>
+          <span class="${item.ok ? "status-ok" : "status-warn"}">${escapeHtml(item.status || (item.ok ? "OK" : "Needs setup"))}</span>
+          <h3>${escapeHtml(item.label)}</h3>
+          <p>${escapeHtml(item.message)}</p>
+          ${item.next_action ? `<p class="next-action"><strong>Next:</strong> ${escapeHtml(item.next_action)}</p>` : ""}
+          ${item.admin_detail ? `<small>${escapeHtml(item.admin_detail)}</small>` : ""}
+          ${item.actionable !== false && item.id !== "desktop-shell" ? `
+            <div class="health-actions" aria-label="${escapeHtml(item.label)} actions">
+              <button type="button" class="secondary-action" data-supervisor-action="health" data-service-id="${escapeHtml(item.id)}">Check</button>
+              <button type="button" class="secondary-action" data-supervisor-action="install" data-service-id="${escapeHtml(item.id)}">Install</button>
+              <button type="button" class="secondary-action" data-supervisor-action="start" data-service-id="${escapeHtml(item.id)}">Start</button>
+              <button type="button" class="secondary-action" data-supervisor-action="repair" data-service-id="${escapeHtml(item.id)}">Repair</button>
+              <button type="button" class="secondary-action" data-supervisor-action="logs" data-service-id="${escapeHtml(item.id)}">Logs</button>
+              <button type="button" class="secondary-action" data-supervisor-action="stop" data-service-id="${escapeHtml(item.id)}">Stop</button>
             </div>
           ` : ""}
         </article>

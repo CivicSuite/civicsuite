@@ -304,6 +304,16 @@ for (const serviceId of ["postgres", "python-services", "task-queue", "model-run
   }
 }
 
+for (const phrase of [
+  "City data folder has not been created yet.",
+  "Backup folder has not been created yet.",
+  "item.actionable !== false"
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`Desktop health UI missing local folder health phrase: ${phrase}`);
+  }
+}
+
 for (const requiredPayload of [
   ["postgres-17-pgvector", "bin/pg_ctl.exe", "share/extension/vector.control"],
   [

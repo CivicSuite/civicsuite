@@ -44,6 +44,10 @@ test("system health keeps full model readiness visible", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "CivicCore model registry" })).toBeVisible();
   await expect(page.getByText("explicit setup consent required")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Backup, Restore, Uninstall" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "City data folder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Backup folder" })).toBeVisible();
+  await expect(page.locator('[aria-label="City data folder actions"]')).toHaveCount(0);
+  await expect(page.locator('[aria-label="Backup folder actions"]')).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Backup Now" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Backup Folder" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Restore Latest Backup" })).toBeVisible();
