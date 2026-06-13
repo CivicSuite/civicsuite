@@ -172,12 +172,16 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByLabel("Local passcode")).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Modules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Module Slots" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
   await expect(page.getByText("Selected profile: City Core. Installed modules: 4.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Full Suite" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
+  await expect(page.getByText("Package waiting")).toBeVisible();
   await expect(page.getByText("Not ready")).toHaveCount(0);
   await expect(page.getByText("Scaffold")).toHaveCount(0);
 });

@@ -34,7 +34,9 @@ const requiredUiPhrases = [
   "No silent download",
   "Official Google weights",
   "Download / Resume Model",
-  "Set Up Services and Model"
+  "Set Up Services and Model",
+  "Package Profiles",
+  "Module Catalog"
 ];
 
 for (const phrase of requiredUiPhrases) {

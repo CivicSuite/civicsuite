@@ -49,10 +49,35 @@ const fallbackState = {
       version: "1.0.8",
       required: false,
       selectable: true,
-      installed: true
+      installed: true,
+      route_count: 2,
+      service_count: 2,
+      task_count: 4,
+      model_required: true
+    },
+    {
+      id: "civiczone",
+      display_name: "CivicZone",
+      role: "zoning workflow",
+      version: "0.2.2",
+      required: false,
+      selectable: true,
+      installed: false,
+      route_count: 0,
+      service_count: 0,
+      task_count: 0,
+      model_required: true
     }
   ],
   module_profiles: [
+    {
+      id: "minimal",
+      label: "Minimal",
+      description: "CivicCore only",
+      selected: false,
+      disabled: false,
+      module_count: 1
+    },
     {
       id: "city-core",
       label: "City Core",
@@ -60,6 +85,15 @@ const fallbackState = {
       selected: true,
       disabled: false,
       module_count: 4
+    },
+    {
+      id: "full-suite",
+      label: "Full Suite",
+      description: "All tracked CivicSuite modules after CivicCore",
+      selected: false,
+      disabled: true,
+      disabled_reason: "Held until all module packages pass proof.",
+      module_count: 28
     }
   ],
   module_selection: {
@@ -483,14 +517,26 @@ function accessState() {
 function moduleStatusLabel(module) {
   if (module.required) return "Required";
   if (module.installed) return "Installed";
-  if (module.selectable) return "Available";
-  return "Unavailable";
+  if (module.selectable) return "Package waiting";
+  return "Locked";
 }
 
 function moduleStatusClass(module) {
   if (module.required || module.installed) return "status-ok";
-  if (module.selectable) return "status-warn";
+  if (module.selectable) return "status-muted";
   return "status-muted";
+}
+
+function profileStatusLabel(profile) {
+  if (profile.selected) return "Installed";
+  if (profile.disabled) return "Queued";
+  return "Profile option";
+}
+
+function profileStatusClass(profile) {
+  if (profile.selected) return "status-ok";
+  if (profile.disabled) return "status-muted";
+  return "status-warn";
 }
 
 function formatBytes(bytes) {
@@ -1849,15 +1895,39 @@ function renderSearchWorkflow() {
 
 function renderModuleRow(module) {
   const proofCount = module.proof_required?.length || 0;
+  const contractParts = [
+    module.route_count ? `${module.route_count} route${module.route_count === 1 ? "" : "s"}` : "",
+    module.service_count ? `${module.service_count} service${module.service_count === 1 ? "" : "s"}` : "",
+    module.task_count ? `${module.task_count} task${module.task_count === 1 ? "" : "s"}` : "",
+    module.model_required ? "local AI required" : ""
+  ].filter(Boolean);
   return `
     <article class="module-row">
       <div>
         <h3>${module.display_name}</h3>
         <p>${module.role}</p>
+        ${contractParts.length ? `<small>${contractParts.join(" · ")}</small>` : ""}
       </div>
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
         <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
+        ${module.lifecycle_uninstall ? `<small>${module.lifecycle_uninstall}</small>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function renderProfileRow(profile) {
+  return `
+    <article class="module-row">
+      <div>
+        <h3>${profile.label}</h3>
+        <p>${profile.description}</p>
+        <small>${profile.module_count} module${profile.module_count === 1 ? "" : "s"}</small>
+      </div>
+      <div class="module-meta">
+        <span class="${profileStatusClass(profile)}">${profileStatusLabel(profile)}</span>
+        ${profile.disabled ? `<small>${profile.disabled_reason || "Held until package proof is available."}</small>` : ""}
       </div>
     </article>
   `;
@@ -1865,6 +1935,8 @@ function renderModuleRow(module) {
 
 function renderModules() {
   const installed = state.app.modules.filter((module) => module.installed || module.required);
+  const catalog = state.app.modules.filter((module) => !module.installed && !module.required);
+  const profiles = state.app.module_profiles || [];
   const selection = state.app.module_selection || fallbackState.module_selection;
   const admin = (state.app.users || [])[0];
   return `
@@ -1913,12 +1985,17 @@ function renderModules() {
       </div>
       <div>
         <div class="section-title">
-          <h3>Module Slots</h3>
-          <p>Additional city modules will appear here after your city enables their installation package.</p>
+          <h3>Package Profiles</h3>
+          <p>Profiles come from the same module manifest the installer uses.</p>
         </div>
-        <div class="empty-note">
-          CivicCore, CivicRecords AI, CivicClerk, and CivicCode are active in this package.
+        <div class="module-list">${profiles.map(renderProfileRow).join("")}</div>
+      </div>
+      <div>
+        <div class="section-title">
+          <h3>Module Catalog</h3>
+          <p>Future modules keep their dependency, lifecycle, backup, service, and proof contract here before they can join an install profile.</p>
         </div>
+        <div class="module-list">${catalog.map(renderModuleRow).join("")}</div>
       </div>
     </section>
   `;

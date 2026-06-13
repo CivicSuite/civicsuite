@@ -24,6 +24,8 @@ struct ModuleProfileDefinition {
     modules: Vec<String>,
     #[serde(default)]
     disabled: bool,
+    #[serde(default)]
+    disabled_reason: Option<String>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -39,6 +41,8 @@ struct ModuleDefinition {
     selectable: bool,
     #[serde(default)]
     civiccore_requirement: Option<String>,
+    #[serde(default)]
+    installer_status: Option<String>,
     #[serde(default)]
     dependencies: Vec<String>,
     #[serde(default)]
@@ -89,11 +93,21 @@ pub struct ModuleSummary {
     pub display_name: String,
     pub role: String,
     pub version: Option<String>,
+    pub installer_status: Option<String>,
+    pub civiccore_requirement: Option<String>,
     pub required: bool,
     pub selectable: bool,
     pub installed: bool,
     pub dependencies: Vec<String>,
     pub proof_required: Vec<String>,
+    pub route_count: usize,
+    pub service_count: usize,
+    pub permission_count: usize,
+    pub task_count: usize,
+    pub lifecycle_install: Option<String>,
+    pub lifecycle_disable: Option<String>,
+    pub lifecycle_uninstall: Option<String>,
+    pub model_required: bool,
 }
 
 #[derive(Serialize, Clone)]
@@ -103,6 +117,7 @@ pub struct ModuleProfileSummary {
     pub description: String,
     pub selected: bool,
     pub disabled: bool,
+    pub disabled_reason: Option<String>,
     pub module_count: usize,
 }
 
@@ -445,6 +460,7 @@ pub fn module_profiles() -> Result<Vec<ModuleProfileSummary>, String> {
             description: profile.description.clone(),
             selected: profile.id == selection.profile_id,
             disabled: profile.disabled,
+            disabled_reason: profile.disabled_reason.clone(),
             module_count: profile.modules.len(),
         })
         .collect())
@@ -469,10 +485,33 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
             display_name: module.display_name.clone(),
             role: module.role.clone(),
             version: module.current_version.clone(),
+            installer_status: module.installer_status.clone(),
+            civiccore_requirement: module.civiccore_requirement.clone(),
             required: module.required,
             selectable: module.selectable,
             dependencies: module.dependencies.clone(),
             proof_required: module.proof_required.clone(),
+            route_count: module.routes.as_ref().map_or(0, Vec::len),
+            service_count: module.services.as_ref().map_or(0, Vec::len),
+            permission_count: module.permissions.as_ref().map_or(0, Vec::len),
+            task_count: module.tasks.as_ref().map_or(0, Vec::len),
+            lifecycle_install: module
+                .lifecycle
+                .as_ref()
+                .map(|lifecycle| lifecycle.install.clone()),
+            lifecycle_disable: module
+                .lifecycle
+                .as_ref()
+                .map(|lifecycle| lifecycle.disable.clone()),
+            lifecycle_uninstall: module
+                .lifecycle
+                .as_ref()
+                .map(|lifecycle| lifecycle.uninstall.clone()),
+            model_required: module
+                .model_needs
+                .as_ref()
+                .map(|needs| needs.iter().any(|need| need.required))
+                .unwrap_or(false),
         })
         .collect())
 }
@@ -536,6 +575,47 @@ mod tests {
             assert!(profiles
                 .iter()
                 .any(|profile| profile.id == "city-core" && profile.selected));
+            assert!(profiles.iter().any(|profile| {
+                profile.id == "full-suite"
+                    && profile.disabled
+                    && profile
+                        .disabled_reason
+                        .as_deref()
+                        .unwrap_or_default()
+                        .contains("not installable")
+            }));
+        });
+    }
+
+    #[test]
+    fn module_summaries_expose_contract_status_for_future_manager() {
+        with_temp_state_dir(|_| {
+            let modules = module_summaries().expect("module summaries build");
+            let civiccode = modules
+                .iter()
+                .find(|module| module.id == "civiccode")
+                .expect("civiccode module");
+            assert!(civiccode.installed);
+            assert_eq!(civiccode.civiccore_requirement.as_deref(), Some("1.2.0"));
+            assert_eq!(
+                civiccode.lifecycle_uninstall.as_deref(),
+                Some("backup-first-module-data-removal")
+            );
+            assert!(civiccode.route_count > 0);
+            assert!(civiccode.service_count > 0);
+            assert!(civiccode.permission_count > 0);
+            assert!(civiccode.task_count > 0);
+            assert!(civiccode.model_required);
+
+            let civiczone = modules
+                .iter()
+                .find(|module| module.id == "civiczone")
+                .expect("future module");
+            assert!(!civiczone.installed);
+            assert_eq!(
+                civiczone.installer_status.as_deref(),
+                Some("demoted_v0_2_2_truth_repair_no_functional_upgrade")
+            );
         });
     }
 }
