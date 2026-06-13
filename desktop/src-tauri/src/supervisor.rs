@@ -1826,6 +1826,22 @@ mod tests {
             fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
             fs::write(root.join("Data").join("files").join("record.txt"), "agenda")
                 .expect("data file");
+            fs::create_dir_all(root.join("Data").join("workflows")).expect("workflow folder");
+            fs::write(
+                root.join("Data").join("workflows").join("city-work.json"),
+                r#"{"meetings":[{"id":"meeting-1","title":"Council"}]}"#,
+            )
+            .expect("workflow state");
+            fs::create_dir_all(root.join("Data").join("exports").join("meetings"))
+                .expect("exports folder");
+            fs::write(
+                root.join("Data")
+                    .join("exports")
+                    .join("meetings")
+                    .join("packet.md"),
+                "meeting packet",
+            )
+            .expect("export file");
             fs::create_dir_all(root.join("config")).expect("config folder");
             fs::write(root.join("config").join("city.json"), "{}").expect("config file");
 
@@ -1842,6 +1858,17 @@ mod tests {
                 .join("files")
                 .join("record.txt")
                 .is_file());
+            assert!(backup
+                .join("Data")
+                .join("workflows")
+                .join("city-work.json")
+                .is_file());
+            assert!(backup
+                .join("Data")
+                .join("exports")
+                .join("meetings")
+                .join("packet.md")
+                .is_file());
             assert!(backup.join("config").join("city.json").is_file());
             assert!(backup.join("backup-manifest.json").is_file());
         });
@@ -1853,12 +1880,40 @@ mod tests {
             fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
             fs::write(root.join("Data").join("files").join("record.txt"), "before")
                 .expect("data file");
+            fs::create_dir_all(root.join("Data").join("workflows")).expect("workflow folder");
+            fs::write(
+                root.join("Data").join("workflows").join("city-work.json"),
+                r#"{"records_requests":[{"id":"records-1","status":"released"}]}"#,
+            )
+            .expect("workflow state");
+            fs::create_dir_all(root.join("Data").join("exports").join("records"))
+                .expect("exports folder");
+            fs::write(
+                root.join("Data")
+                    .join("exports")
+                    .join("records")
+                    .join("response.md"),
+                "released response",
+            )
+            .expect("export file");
             fs::create_dir_all(root.join("config")).expect("config folder");
             fs::write(root.join("config").join("city.json"), "before").expect("config file");
             supervisor_action("backup", None).expect("backup response");
 
             fs::write(root.join("Data").join("files").join("record.txt"), "after")
                 .expect("mutate data");
+            fs::write(
+                root.join("Data").join("workflows").join("city-work.json"),
+                r#"{"records_requests":[]}"#,
+            )
+            .expect("mutate workflow state");
+            fs::remove_file(
+                root.join("Data")
+                    .join("exports")
+                    .join("records")
+                    .join("response.md"),
+            )
+            .expect("remove export");
             fs::write(root.join("config").join("city.json"), "after").expect("mutate config");
 
             let result = supervisor_action("restore", None).expect("restore response");
@@ -1873,6 +1928,17 @@ mod tests {
                 fs::read_to_string(root.join("config").join("city.json")).expect("restored config"),
                 "before"
             );
+            assert!(
+                fs::read_to_string(root.join("Data").join("workflows").join("city-work.json"))
+                    .expect("restored workflow state")
+                    .contains("released")
+            );
+            assert!(root
+                .join("Data")
+                .join("exports")
+                .join("records")
+                .join("response.md")
+                .is_file());
             assert!(root
                 .join("Backups")
                 .read_dir()
