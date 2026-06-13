@@ -394,6 +394,10 @@ const state = {
     actionItem: "",
     residentComment: "",
     requester: "",
+    publicRequester: "",
+    publicRequesterContact: "",
+    publicRecordsSummary: "",
+    publicRequestLookup: "",
     recordsSummary: "",
     deadline: "",
     assignedTo: "",
@@ -1302,10 +1306,15 @@ function renderMeetingsWorkflow() {
 }
 
 function publicRecordsRequests(work) {
+  const lookup = state.workDraft.publicRequestLookup.trim().toLowerCase();
   return work.records_requests.filter((request) => (
     request.status === "fulfilled" ||
     request.status === "closed" ||
-    Boolean(request.fulfilled_at_unix_seconds)
+    Boolean(request.fulfilled_at_unix_seconds) ||
+    (
+      lookup &&
+      String(request.public_tracking_number || "").toLowerCase() === lookup
+    )
   ));
 }
 
@@ -1318,16 +1327,34 @@ function renderPublicRecordsWorkflow() {
   return `
     <section class="page-heading">
       <p class="eyebrow">Resident/Public</p>
-      <h2>Public Records Status</h2>
-      <p>Released records responses appear here without staff review drafts or internal citations.</p>
+      <h2>Public Records Requests</h2>
+      <p>Submit a records request or check local public status without staff review drafts or internal citations.</p>
     </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Submit Public Records Request</h3>
+        <p class="form-help">Describe the records clearly. Staff will review the request, set any statutory deadline, and work it in the Records staff queue.</p>
+        <label>Your name <input type="text" data-work-field="publicRequester" value="${state.workDraft.publicRequester}" autocomplete="name" /></label>
+        <label>Email or phone <input type="text" data-work-field="publicRequesterContact" value="${state.workDraft.publicRequesterContact}" autocomplete="email" /></label>
+        <label>Records requested <textarea data-work-field="publicRecordsSummary">${state.workDraft.publicRecordsSummary}</textarea></label>
+        <button type="button" class="primary-action" data-work-action="submit-public-records-request">Submit Records Request</button>
+      </div>
+      <div class="workflow-form">
+        <h3>Check Status</h3>
+        <p class="form-help">Use the request number returned after submission when asking staff for an update.</p>
+        <label>Request number <input type="text" data-work-field="publicRequestLookup" value="${state.workDraft.publicRequestLookup}" placeholder="REQ-0001" /></label>
+        <small>Released responses appear below after staff approval, export, and fulfillment. Pending public intake appears only for an exact request-number match.</small>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
     <section class="workflow-list">
-      ${requests.length === 0 ? workflowEmpty("No public records responses have been released yet.") : requests.map((request) => `
+      ${requests.length === 0 ? workflowEmpty("No released records responses or matching request number are available yet.") : requests.map((request) => `
         <article class="workflow-record">
-          <span class="status-ok">${request.status}</span>
-          <h3>${request.requester}</h3>
+          <span class="${request.fulfilled_at_unix_seconds || request.status === "fulfilled" || request.status === "closed" ? "status-ok" : "status-warn"}">${request.status}</span>
+          <h3>${request.public_tracking_number || "Tracking pending"}</h3>
+          <p><strong>Requester:</strong> ${request.requester}</p>
           <p>${request.summary}</p>
-          <small>Due ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
+          <small>${request.submitted_via || "Staff intake"} - ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
         </article>
       `).join("")}
     </section>
@@ -1389,6 +1416,9 @@ function renderRecordsWorkflow() {
           <span class="status-warn">${request.status}</span>
           <h3>${request.requester}</h3>
           <p>${request.summary}</p>
+          ${request.public_tracking_number ? `<p><strong>Tracking:</strong> ${request.public_tracking_number}</p>` : ""}
+          ${request.requester_contact ? `<p><strong>Contact:</strong> ${request.requester_contact}</p>` : ""}
+          ${request.submitted_via ? `<p><strong>Submitted via:</strong> ${request.submitted_via}</p>` : ""}
           ${request.assigned_to ? `<p><strong>Assigned:</strong> ${request.assigned_to}</p>` : ""}
           ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
@@ -1527,7 +1557,10 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
   recordsRequests.forEach((request) => {
     const recordsSearchText = [
+      request.public_tracking_number,
       request.requester,
+      request.requester_contact,
+      request.submitted_via,
       request.summary,
       request.status,
       request.assigned_to,
@@ -2058,6 +2091,11 @@ function workPayloadForAction(action) {
       requester: draft.requester,
       summary: draft.recordsSummary,
       deadline: draft.deadline
+    },
+    "submit-public-records-request": {
+      requester: draft.publicRequester,
+      requesterContact: draft.publicRequesterContact,
+      summary: draft.publicRecordsSummary
     },
     "request-records-clarification": { ...selected, clarificationNote: draft.clarificationNote },
     "assign-records-request": { ...selected, assignedTo: draft.assignedTo },

@@ -246,6 +246,13 @@ main {
   margin: 0;
 }
 
+.form-help {
+  color: #5c6b77;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .workflow-form label {
   color: #4b5b67;
   font-size: 0.82rem;

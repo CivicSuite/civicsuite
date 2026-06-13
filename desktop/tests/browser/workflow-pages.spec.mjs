@@ -65,12 +65,21 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Records Requests/ }).click();
-  await expect(page.getByRole("heading", { name: "Public Records Status" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Public Records Requests" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Submit Public Records Request" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit Records Request" })).toBeVisible();
+  await expect(page.getByLabel("Request number")).toBeVisible();
+  await expect(page.getByText("Pending public intake appears only for an exact request-number match.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Export Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toHaveCount(0);
+  await page.getByLabel("Your name").fill("Morgan Lee");
+  await page.getByLabel("Email or phone").fill("morgan@example.gov");
+  await page.getByLabel("Records requested").fill("Emails and invoices about the river trail grant");
+  await page.getByRole("button", { name: "Submit Records Request" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Municipal Code Search" })).toBeVisible();

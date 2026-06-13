@@ -42,7 +42,13 @@ pub struct Meeting {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsRequest {
     pub id: String,
+    #[serde(default)]
+    pub public_tracking_number: String,
     pub requester: String,
+    #[serde(default)]
+    pub requester_contact: String,
+    #[serde(default)]
+    pub submitted_via: String,
     pub summary: String,
     pub deadline: String,
     pub status: String,
@@ -212,6 +218,10 @@ fn now_unix_seconds() -> u64 {
 
 fn new_id(prefix: &str, count: usize) -> String {
     format!("{prefix}-{}-{}", now_unix_seconds(), count + 1)
+}
+
+fn records_tracking_number(count: usize) -> String {
+    format!("REQ-{:04}", count + 1)
 }
 
 fn default_code_public_status() -> String {
@@ -822,11 +832,15 @@ fn create_records_request(
     let summary = payload_string(payload, "summary")?;
     let deadline = payload_string(payload, "deadline")?;
     let id = new_id("records", state.records_requests.len());
+    let tracking_number = records_tracking_number(state.records_requests.len());
     state.records_requests.insert(
         0,
         RecordsRequest {
             id,
+            public_tracking_number: tracking_number.clone(),
             requester: requester.clone(),
+            requester_contact: String::new(),
+            submitted_via: "Staff intake".to_string(),
             summary,
             deadline,
             status: "received".to_string(),
@@ -849,9 +863,63 @@ fn create_records_request(
         state,
         "civicrecords-ai",
         "create-records-request",
-        format!("Created records request for: {requester}"),
+        format!("Created records request {tracking_number} for: {requester}"),
     );
-    Ok("Records request intake saved locally with deadline tracking.".to_string())
+    Ok(format!(
+        "Records request {tracking_number} saved locally with deadline tracking."
+    ))
+}
+
+fn submit_public_records_request(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let requester = payload_string(payload, "requester")?;
+    let requester_contact = payload_string(payload, "requesterContact")?;
+    let summary = payload_string(payload, "summary")?;
+    let deadline = payload_optional_string(payload, "deadline");
+    let deadline = if deadline.is_empty() {
+        "Pending clerk deadline review".to_string()
+    } else {
+        deadline
+    };
+    let id = new_id("records", state.records_requests.len());
+    let tracking_number = records_tracking_number(state.records_requests.len());
+    state.records_requests.insert(
+        0,
+        RecordsRequest {
+            id,
+            public_tracking_number: tracking_number.clone(),
+            requester: requester.clone(),
+            requester_contact,
+            submitted_via: "Resident/Public local intake".to_string(),
+            summary,
+            deadline,
+            status: "public intake received".to_string(),
+            assigned_to: String::new(),
+            clarification_notes: Vec::new(),
+            search_notes: Vec::new(),
+            exemption_reviews: Vec::new(),
+            fee_estimate: String::new(),
+            citations: Vec::new(),
+            response_draft: String::new(),
+            approval_notes: Vec::new(),
+            exports: Vec::new(),
+            approved_at_unix_seconds: None,
+            fulfilled_at_unix_seconds: None,
+            closed_at_unix_seconds: None,
+            created_at_unix_seconds: now_unix_seconds(),
+        },
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "submit-public-records-request",
+        format!("Received public records request {tracking_number} from: {requester}"),
+    );
+    Ok(format!(
+        "Public records request {tracking_number} received. Staff can now review, assign, and track it locally."
+    ))
 }
 
 fn request_records_clarification(
@@ -1023,8 +1091,23 @@ fn export_records_response(
     );
     let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
     let contents = format!(
-        "# Records Response\n\nRequester: {}\nDeadline: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        if request.public_tracking_number.is_empty() {
+            "Not assigned"
+        } else {
+            &request.public_tracking_number
+        },
         request.requester,
+        if request.requester_contact.is_empty() {
+            "No contact recorded."
+        } else {
+            &request.requester_contact
+        },
+        if request.submitted_via.is_empty() {
+            "Staff intake"
+        } else {
+            &request.submitted_via
+        },
         request.deadline,
         if request.assigned_to.is_empty() {
             "Unassigned"
@@ -1077,7 +1160,12 @@ fn fulfill_records_request(
         (
             request.id.clone(),
             format!(
-                "Records request fulfilled for {}. Deadline: {}. Exports: {}.",
+                "Records request {} fulfilled for {}. Deadline: {}. Exports: {}.",
+                if request.public_tracking_number.is_empty() {
+                    "without tracking number"
+                } else {
+                    &request.public_tracking_number
+                },
                 request.requester,
                 request.deadline,
                 request.exports.join("; ")
@@ -1590,6 +1678,7 @@ pub fn city_work_action(
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
+        "submit-public-records-request" => submit_public_records_request(&mut state, payload)?,
         "request-records-clarification" => request_records_clarification(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
         "record-records-search" => record_records_search(&mut state, payload)?,
@@ -1824,6 +1913,37 @@ mod tests {
             assert!(publication.retracted_at_unix_seconds.is_none());
             let results = search_city_work(&state, "attorney-client");
             assert_eq!(results.len(), 1);
+        });
+    }
+
+    #[test]
+    fn public_records_intake_creates_trackable_durable_request() {
+        with_temp_state_dir(|_| {
+            let payload = serde_json::json!({
+                "requester": "Morgan Lee",
+                "requesterContact": "morgan@example.gov",
+                "summary": "Emails and invoices about the river trail grant"
+            });
+            let result = city_work_action("submit-public-records-request", Some(&payload))
+                .expect("public request submitted");
+            assert!(result.message.contains("REQ-0001"));
+
+            let state = city_work_state().expect("state reads");
+            let request = state.records_requests.first().expect("request exists");
+            assert_eq!(request.public_tracking_number, "REQ-0001");
+            assert_eq!(request.requester, "Morgan Lee");
+            assert_eq!(request.requester_contact, "morgan@example.gov");
+            assert_eq!(request.submitted_via, "Resident/Public local intake");
+            assert_eq!(request.status, "public intake received");
+            assert_eq!(request.deadline, "Pending clerk deadline review");
+            assert!(request.approved_at_unix_seconds.is_none());
+            assert!(request.fulfilled_at_unix_seconds.is_none());
+            assert!(state.audit_entries.iter().any(|entry| {
+                entry.module_id == "civicrecords-ai"
+                    && entry.action == "submit-public-records-request"
+                    && entry.summary.contains("REQ-0001")
+            }));
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 
