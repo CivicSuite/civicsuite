@@ -969,6 +969,18 @@ function renderHealth() {
       <p>Plain-English local health first. Technical logs stay behind repair detail screens.</p>
     </section>
     ${renderModelReadiness()}
+    <section class="section-band lifecycle-panel" aria-label="Local lifecycle actions">
+      <div class="section-title">
+        <p class="eyebrow">Local profile lifecycle</p>
+        <h3>Backup, Restore, Uninstall</h3>
+        <p>These actions work on the local CivicSuite city profile. Uninstall creates a final backup before removing local data and setup state.</p>
+      </div>
+      <div class="health-actions lifecycle-actions">
+        <button type="button" class="secondary-action" data-supervisor-action="backup">Backup Now</button>
+        <button type="button" class="secondary-action" data-supervisor-action="restore">Restore Latest Backup</button>
+        <button type="button" class="secondary-action" data-supervisor-action="uninstall">Prepare Uninstall</button>
+      </div>
+    </section>
     <section class="health-grid">
       ${state.app.health.map((item) => `
         <article class="health-card">

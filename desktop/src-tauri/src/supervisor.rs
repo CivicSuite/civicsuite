@@ -3,7 +3,7 @@ use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -97,6 +97,19 @@ struct ServiceRuntimeState {
     last_updated_unix_seconds: u64,
 }
 
+#[derive(Serialize)]
+struct BackupManifest {
+    schema_version: u16,
+    kind: String,
+    created_unix_seconds: u64,
+    source_root: String,
+    data_source: String,
+    config_source: String,
+    backup_root: String,
+    contains_data: bool,
+    contains_config: bool,
+}
+
 fn parse_manifest() -> Result<RuntimeManifest, String> {
     serde_json::from_str(RUNTIME_MANIFEST_JSON)
         .map_err(|error| format!("Could not parse Windows runtime manifest: {error}"))
@@ -155,6 +168,21 @@ fn config_dir() -> PathBuf {
     civic_suite_root().join("config")
 }
 
+fn backup_root() -> PathBuf {
+    env::var("CIVICSUITE_BACKUP_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            if env::var("CIVICSUITE_DESKTOP_STATE_DIR").is_ok() {
+                return civic_suite_root().join("Backups");
+            }
+            env::var("USERPROFILE")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("{documents}"))
+                .join("Documents")
+                .join("CivicSuite Backups")
+        })
+}
+
 fn runtime_root() -> PathBuf {
     env::var("CIVICSUITE_RUNTIME_ROOT")
         .map(PathBuf::from)
@@ -170,6 +198,144 @@ fn now_unix_seconds() -> u64 {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_secs())
         .unwrap_or(0)
+}
+
+fn ensure_profile_child_for_delete(path: &Path) -> Result<(), String> {
+    if !path.exists() {
+        return Ok(());
+    }
+    let root = civic_suite_root();
+    fs::create_dir_all(&root)
+        .map_err(|error| format!("Could not create CivicSuite profile root: {error}"))?;
+    let canonical_root = fs::canonicalize(&root)
+        .map_err(|error| format!("Could not resolve {}: {error}", root.display()))?;
+    let canonical_path = fs::canonicalize(path)
+        .map_err(|error| format!("Could not resolve {}: {error}", path.display()))?;
+    if canonical_path == canonical_root || !canonical_path.starts_with(&canonical_root) {
+        return Err(format!(
+            "Refusing to remove {} because it is outside the CivicSuite profile.",
+            path.display()
+        ));
+    }
+    Ok(())
+}
+
+fn copy_path_recursive(source: &Path, destination: &Path) -> Result<(), String> {
+    if !source.exists() {
+        return Ok(());
+    }
+    let metadata = fs::symlink_metadata(source)
+        .map_err(|error| format!("Could not inspect {}: {error}", source.display()))?;
+    if metadata.file_type().is_symlink() {
+        return Err(format!(
+            "Refusing to follow symbolic link during backup: {}",
+            source.display()
+        ));
+    }
+    if metadata.is_dir() {
+        fs::create_dir_all(destination)
+            .map_err(|error| format!("Could not create {}: {error}", destination.display()))?;
+        for entry in fs::read_dir(source)
+            .map_err(|error| format!("Could not read {}: {error}", source.display()))?
+        {
+            let entry = entry.map_err(|error| format!("Could not read backup entry: {error}"))?;
+            let child_source = entry.path();
+            let child_destination = destination.join(entry.file_name());
+            copy_path_recursive(&child_source, &child_destination)?;
+        }
+    } else if metadata.is_file() {
+        if let Some(parent) = destination.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
+        }
+        fs::copy(source, destination).map_err(|error| {
+            format!(
+                "Could not copy {} to {}: {error}",
+                source.display(),
+                destination.display()
+            )
+        })?;
+    }
+    Ok(())
+}
+
+fn remove_profile_dir(path: &Path) -> Result<bool, String> {
+    if !path.exists() {
+        return Ok(false);
+    }
+    ensure_profile_child_for_delete(path)?;
+    fs::remove_dir_all(path)
+        .map_err(|error| format!("Could not remove {}: {error}", path.display()))?;
+    Ok(true)
+}
+
+fn create_backup(kind: &str) -> Result<PathBuf, String> {
+    let created = now_unix_seconds();
+    let root = backup_root();
+    fs::create_dir_all(&root)
+        .map_err(|error| format!("Could not create backup folder {}: {error}", root.display()))?;
+    let destination = root.join(format!(
+        "civicsuite-{kind}-backup-{created}-{}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&destination).map_err(|error| {
+        format!(
+            "Could not create backup destination {}: {error}",
+            destination.display()
+        )
+    })?;
+
+    let data = data_root();
+    let config = config_dir();
+    let contains_data = data.exists();
+    let contains_config = config.exists();
+    copy_path_recursive(&data, &destination.join("Data"))?;
+    copy_path_recursive(&config, &destination.join("config"))?;
+
+    let manifest = BackupManifest {
+        schema_version: 1,
+        kind: kind.to_string(),
+        created_unix_seconds: created,
+        source_root: civic_suite_root().display().to_string(),
+        data_source: data.display().to_string(),
+        config_source: config.display().to_string(),
+        backup_root: root.display().to_string(),
+        contains_data,
+        contains_config,
+    };
+    let contents = serde_json::to_string_pretty(&manifest)
+        .map_err(|error| format!("Could not serialize backup manifest: {error}"))?;
+    fs::write(
+        destination.join("backup-manifest.json"),
+        format!("{contents}\n"),
+    )
+    .map_err(|error| format!("Could not write backup manifest: {error}"))?;
+    Ok(destination)
+}
+
+fn latest_backup_dir() -> Result<Option<PathBuf>, String> {
+    let root = backup_root();
+    if !root.is_dir() {
+        return Ok(None);
+    }
+    let mut candidates = Vec::new();
+    for entry in fs::read_dir(&root)
+        .map_err(|error| format!("Could not read backup folder {}: {error}", root.display()))?
+    {
+        let entry = entry.map_err(|error| format!("Could not inspect backup folder: {error}"))?;
+        let path = entry.path();
+        if path.is_dir()
+            && path.join("backup-manifest.json").is_file()
+            && entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("civicsuite-")
+        {
+            candidates.push(path);
+        }
+    }
+    candidates.sort_by_key(|path| path.file_name().map(|name| name.to_os_string()));
+    Ok(candidates.pop())
 }
 
 fn read_state() -> Result<RuntimeState, String> {
@@ -674,15 +840,76 @@ fn health_action(service_id: Option<&str>) -> Result<SupervisorActionResult, Str
     })
 }
 
-fn blocked_lifecycle_action(action: &str, service_id: Option<&str>) -> SupervisorActionResult {
-    SupervisorActionResult {
-        accepted: false,
-        action: action.to_string(),
-        service_id: service_id.map(str::to_string),
-        status: "Needs implementation",
-        message: format!("{action} is reserved for the installer lifecycle executor."),
-        next_action: "Use install, start, health, logs, repair, or stop while backup/restore/uninstall executors are connected.".to_string(),
-    }
+fn backup_action() -> Result<SupervisorActionResult, String> {
+    let destination = create_backup("manual")?;
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "backup".to_string(),
+        service_id: None,
+        status: "Backup complete",
+        message: format!(
+            "CivicSuite local data and configuration were backed up to {}.",
+            destination.display()
+        ),
+        next_action: "Keep this backup folder available for restore or reinstall recovery."
+            .to_string(),
+    })
+}
+
+fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult, String> {
+    let Some(source) = latest_backup_dir()? else {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "restore".to_string(),
+            service_id: None,
+            status: "No backup found",
+            message: format!(
+                "No CivicSuite backup manifest was found under {}.",
+                backup_root().display()
+            ),
+            next_action: "Create a backup before using restore on this Windows profile."
+                .to_string(),
+        });
+    };
+    let safety_backup = create_backup("pre-restore")?;
+    let _ = stop_services(services)?;
+    remove_profile_dir(&data_root())?;
+    remove_profile_dir(&config_dir())?;
+    copy_path_recursive(&source.join("Data"), &data_root())?;
+    copy_path_recursive(&source.join("config"), &config_dir())?;
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "restore".to_string(),
+        service_id: None,
+        status: "Restore complete",
+        message: format!(
+            "Restored CivicSuite local data from {}. A pre-restore safety backup was saved to {}.",
+            source.display(),
+            safety_backup.display()
+        ),
+        next_action: "Run health checks, then start local services when staff are ready."
+            .to_string(),
+    })
+}
+
+fn uninstall_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult, String> {
+    let final_backup = create_backup("final-uninstall")?;
+    let _ = stop_services(services)?;
+    let removed_data = remove_profile_dir(&data_root())?;
+    let removed_config = remove_profile_dir(&config_dir())?;
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "uninstall".to_string(),
+        service_id: None,
+        status: "Local profile removed",
+        message: format!(
+            "Stopped local services, saved a final backup to {}, removed data: {}, removed setup/config: {}.",
+            final_backup.display(),
+            removed_data,
+            removed_config
+        ),
+        next_action: "Use the CivicSuite Windows uninstall entry to remove program files; reinstall can restore from the final backup.".to_string(),
+    })
 }
 
 pub fn supervisor_action(
@@ -706,7 +933,9 @@ pub fn supervisor_action(
         "stop" => stop_services(&services),
         "health" => health_action(service_id),
         "logs" => log_action(&services),
-        "backup" | "restore" | "uninstall" => Ok(blocked_lifecycle_action(action, service_id)),
+        "backup" => backup_action(),
+        "restore" => restore_action(&services),
+        "uninstall" => uninstall_action(&services),
         _ => Err(format!("Unsupported supervisor action: {action}")),
     }
 }
@@ -726,9 +955,11 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
         env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
         env::set_var("CIVICSUITE_RUNTIME_ROOT", root.join("Runtime"));
+        env::set_var("CIVICSUITE_BACKUP_DIR", root.join("Backups"));
         let result = test(root.clone());
         env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
         env::remove_var("CIVICSUITE_RUNTIME_ROOT");
+        env::remove_var("CIVICSUITE_BACKUP_DIR");
         let _ = fs::remove_dir_all(root);
         result
     }
@@ -801,6 +1032,97 @@ mod tests {
             assert!(health
                 .iter()
                 .any(|item| item.id == "file-storage" && item.ok));
+        });
+    }
+
+    #[test]
+    fn backup_copies_local_data_and_config() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(root.join("Data").join("files").join("record.txt"), "agenda")
+                .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "{}").expect("config file");
+
+            let result = supervisor_action("backup", None).expect("backup response");
+
+            assert!(result.accepted);
+            let backups = root.join("Backups");
+            let backup = latest_backup_dir()
+                .expect("latest backup lookup")
+                .expect("backup exists");
+            assert!(backup.starts_with(backups));
+            assert!(backup
+                .join("Data")
+                .join("files")
+                .join("record.txt")
+                .is_file());
+            assert!(backup.join("config").join("city.json").is_file());
+            assert!(backup.join("backup-manifest.json").is_file());
+        });
+    }
+
+    #[test]
+    fn restore_replaces_profile_from_latest_backup() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(root.join("Data").join("files").join("record.txt"), "before")
+                .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "before").expect("config file");
+            supervisor_action("backup", None).expect("backup response");
+
+            fs::write(root.join("Data").join("files").join("record.txt"), "after")
+                .expect("mutate data");
+            fs::write(root.join("config").join("city.json"), "after").expect("mutate config");
+
+            let result = supervisor_action("restore", None).expect("restore response");
+
+            assert!(result.accepted);
+            assert_eq!(
+                fs::read_to_string(root.join("Data").join("files").join("record.txt"))
+                    .expect("restored data"),
+                "before"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("config").join("city.json")).expect("restored config"),
+                "before"
+            );
+            assert!(root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .any(|entry| entry.file_name().to_string_lossy().contains("pre-restore")));
+        });
+    }
+
+    #[test]
+    fn uninstall_removes_profile_after_final_backup() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(
+                root.join("Data").join("files").join("record.txt"),
+                "official",
+            )
+            .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "{}").expect("config file");
+
+            let result = supervisor_action("uninstall", None).expect("uninstall response");
+
+            assert!(result.accepted);
+            assert!(!root.join("Data").exists());
+            assert!(!root.join("config").exists());
+            assert!(root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .any(|entry| entry
+                    .file_name()
+                    .to_string_lossy()
+                    .contains("final-uninstall")));
         });
     }
 }
