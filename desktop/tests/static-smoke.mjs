@@ -130,7 +130,9 @@ const requiredUiPhrases = [
   "Source history:",
   "Sign in as local administrator to change local model setup.",
   "Sign in with the local administrator passcode before continuing setup.",
-  "before changing city work, setup, model setup, settings, backups, restore, repair, or runtime services"
+  "Use a local staff or administrator passcode for city work.",
+  "Use a local administrator account for setup, users, modules, backups, restore, repair, model setup, or runtime services.",
+  "Check the email and local passcode, then try again."
 ];
 
 for (const phrase of requiredUiPhrases) {

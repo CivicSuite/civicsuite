@@ -1212,11 +1212,11 @@ function renderAccessPanel() {
     `;
   }
   return `
-    <section class="section-band access-panel" aria-label="Local administrator sign in">
+    <section class="section-band access-panel" aria-label="Local user sign in">
       <div class="section-title">
         <p class="eyebrow">Local access</p>
         <h3>Sign In</h3>
-        <p>Use the local administrator passcode before changing city work, setup, model setup, settings, backups, restore, repair, or runtime services.</p>
+        <p>Use a local staff or administrator passcode for city work. Use a local administrator account for setup, users, modules, backups, restore, repair, model setup, or runtime services.</p>
       </div>
       <div class="workflow-form compact-form">
         <label>Email <input type="email" data-access-field="email" value="${state.accessDraft.email}" autocomplete="email" /></label>
@@ -4977,7 +4977,7 @@ async function handleAuthAction(action, payloadOverride = null) {
       accepted: false,
       status: "Needs attention",
       message: String(error),
-      next_action: "Check the email and local administrator passcode, then try again."
+      next_action: "Check the email and local passcode, then try again."
     };
   }
   render();
