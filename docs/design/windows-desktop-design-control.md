@@ -79,12 +79,13 @@ The app keeps the prototype's three-surface commitment:
 Switching surfaces is always visible in the shell. A route must identify which
 surface the user is in.
 
-Local administrators manage staff users in Settings. Staff roles are plain
-municipal roles, not technical groups: City staff can work across the installed
-city-core modules; Clerk staff are limited to Meetings & Notices; Records staff
-to Records Requests; Code staff to Code & Ordinances. Staff users do not receive
-setup, runtime, backup, module-manager, or user-management authority unless they
-are the local administrator.
+Local administrators manage staff users in Settings, including add, disable,
+re-enable, and temporary-passcode reset actions. Staff roles are plain municipal
+roles, not technical groups: City staff can work across the installed city-core
+modules; Clerk staff are limited to Meetings & Notices; Records staff to Records
+Requests; Code staff to Code & Ordinances. Staff users do not receive setup,
+runtime, backup, module-manager, or user-management authority unless they are
+the local administrator.
 
 ## First-Run And Installer UX
 

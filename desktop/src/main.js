@@ -4040,14 +4040,31 @@ function renderLocalUsersCard() {
             </div>
             <div class="module-meta">
               <span class="${user.status === "Active" ? "status-ok" : "status-warn"}">${escapeHtml(user.status || "Active")}</span>
-              ${user.role !== "local-admin" && user.status === "Active" ? `
+              ${user.role !== "local-admin" ? `
+                ${user.status === "Active" ? `
+                  <button
+                    type="button"
+                    class="secondary-action"
+                    data-auth-action="deactivate-user"
+                    data-user-email="${escapeHtml(user.email)}"
+                    aria-label="Disable ${escapeHtml(user.display_name || user.email)}"
+                  >Disable</button>
+                ` : `
+                  <button
+                    type="button"
+                    class="secondary-action"
+                    data-auth-action="reactivate-user"
+                    data-user-email="${escapeHtml(user.email)}"
+                    aria-label="Enable ${escapeHtml(user.display_name || user.email)}"
+                  >Enable</button>
+                `}
                 <button
                   type="button"
                   class="secondary-action"
-                  data-auth-action="deactivate-user"
+                  data-auth-action="reset-user-passcode"
                   data-user-email="${escapeHtml(user.email)}"
-                  aria-label="Disable ${escapeHtml(user.display_name || user.email)}"
-                >Disable</button>
+                  aria-label="Reset passcode for ${escapeHtml(user.display_name || user.email)}"
+                >Reset Passcode</button>
               ` : ""}
             </div>
           </article>
@@ -4063,7 +4080,7 @@ function renderLocalUsersCard() {
         </select>
       </label>
       <label>Temporary local passcode <input type="password" data-user-field="userPasscode" value="${state.accessDraft.userPasscode}" autocomplete="new-password" /></label>
-      <small>Staff users can sign in on this Windows profile. Local administrators keep setup, runtime, backup, module, and user-management control.</small>
+      <small>Staff users can sign in on this Windows profile. Enter a temporary passcode, then use Reset Passcode on a staff row if someone is locked out. Local administrators keep setup, runtime, backup, module, and user-management control.</small>
       <button type="button" class="secondary-action" data-auth-action="create-user">Create Staff User</button>
       ${renderAuthActionResult()}
     </div>
@@ -4931,7 +4948,15 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
 }
 
 function authPayloadForAction(action, overridePayload = null) {
-  if (overridePayload) return overridePayload;
+  if (overridePayload) {
+    if (action === "reset-user-passcode") {
+      return {
+        ...overridePayload,
+        userPasscode: state.accessDraft.userPasscode
+      };
+    }
+    return overridePayload;
+  }
   if (action === "sign-in") {
     return {
       email: state.accessDraft.email,
@@ -4969,6 +4994,9 @@ async function handleAuthAction(action, payloadOverride = null) {
     if (action === "create-user") {
       state.accessDraft.userName = "";
       state.accessDraft.userEmail = "";
+      state.accessDraft.userPasscode = "";
+    }
+    if (action === "reset-user-passcode") {
       state.accessDraft.userPasscode = "";
     }
     await loadAppState();

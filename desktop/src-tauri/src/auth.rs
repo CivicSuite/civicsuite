@@ -472,6 +472,63 @@ fn deactivate_staff_user(payload: Option<&serde_json::Value>) -> Result<String, 
     Ok(format!("{display_name} was disabled for future sign-in."))
 }
 
+fn reactivate_staff_user(payload: Option<&serde_json::Value>) -> Result<String, String> {
+    require_admin_session()?;
+    let email = payload_string(payload, "userEmail")?;
+    let normalized_email = normalize_email(&email);
+    if first_run::saved_admin_record()?
+        .map(|admin| normalize_email(&admin.email) == normalized_email)
+        .unwrap_or(false)
+    {
+        return Err("The first local administrator is already active.".to_string());
+    }
+    let mut users = read_staff_users()?;
+    let Some(user) = users
+        .iter_mut()
+        .find(|user| normalize_email(&user.email) == normalized_email)
+    else {
+        return Err("No local staff user matched that email.".to_string());
+    };
+    user.active = true;
+    let display_name = user.display_name.clone();
+    write_staff_users(&users)?;
+    Ok(format!(
+        "{display_name} can sign in again on this Windows profile."
+    ))
+}
+
+fn reset_staff_passcode(payload: Option<&serde_json::Value>) -> Result<String, String> {
+    require_admin_session()?;
+    let email = payload_string(payload, "userEmail")?;
+    let normalized_email = normalize_email(&email);
+    if first_run::saved_admin_record()?
+        .map(|admin| normalize_email(&admin.email) == normalized_email)
+        .unwrap_or(false)
+    {
+        return Err("Reset the first local administrator through first-run recovery.".to_string());
+    }
+    let passcode = payload_string(payload, "userPasscode")?;
+    if passcode.len() < 10 {
+        return Err("Temporary local passcode must be at least 10 characters.".to_string());
+    }
+    let mut users = read_staff_users()?;
+    let Some(user) = users
+        .iter_mut()
+        .find(|user| normalize_email(&user.email) == normalized_email)
+    else {
+        return Err("No local staff user matched that email.".to_string());
+    };
+    let (passcode_salt, passcode_hash) = first_run::hash_argon2id_local_passcode(&passcode)?;
+    user.passcode_algorithm = "argon2id-v1".to_string();
+    user.passcode_salt = passcode_salt;
+    user.passcode_hash = passcode_hash;
+    let display_name = user.display_name.clone();
+    write_staff_users(&users)?;
+    Ok(format!(
+        "{display_name} has a new temporary local passcode."
+    ))
+}
+
 pub fn auth_action(
     action: &str,
     payload: Option<&serde_json::Value>,
@@ -531,6 +588,30 @@ pub fn auth_action(
                 status: "User disabled",
                 message,
                 next_action: "Create a replacement user if this staff member still needs access."
+                    .to_string(),
+                access: access_state()?,
+            })
+        }
+        "reactivate-user" => {
+            let message = reactivate_staff_user(payload)?;
+            Ok(AuthActionResult {
+                accepted: true,
+                action: action.to_string(),
+                status: "User enabled",
+                message,
+                next_action: "The staff user can sign in with their current local passcode."
+                    .to_string(),
+                access: access_state()?,
+            })
+        }
+        "reset-user-passcode" => {
+            let message = reset_staff_passcode(payload)?;
+            Ok(AuthActionResult {
+                accepted: true,
+                action: action.to_string(),
+                status: "Passcode reset",
+                message,
+                next_action: "Share the temporary local passcode with the staff user through an approved city channel."
                     .to_string(),
                 access: access_state()?,
             })
@@ -674,6 +755,47 @@ mod tests {
                 Err(error) => error,
             };
             assert!(error.contains("disabled"));
+        });
+    }
+
+    #[test]
+    fn local_admin_can_reset_and_reactivate_staff_user() {
+        with_temp_state_dir(|_| {
+            create_admin();
+            let admin_payload = serde_json::json!({
+                "email": "alex@example.gov",
+                "passcode": "correct horse battery staple"
+            });
+            auth_action("sign-in", Some(&admin_payload)).expect("admin sign-in succeeds");
+            let user_payload = serde_json::json!({
+                "userName": "Casey Clerk",
+                "userEmail": "casey@example.gov",
+                "userRole": "clerk",
+                "userPasscode": "clerk passcode 123"
+            });
+            auth_action("create-user", Some(&user_payload)).expect("user saved");
+            let disable_payload = serde_json::json!({ "userEmail": "casey@example.gov" });
+            auth_action("deactivate-user", Some(&disable_payload)).expect("user disabled");
+            let reset_payload = serde_json::json!({
+                "userEmail": "casey@example.gov",
+                "userPasscode": "new clerk passcode 456"
+            });
+            auth_action("reset-user-passcode", Some(&reset_payload)).expect("passcode reset");
+            auth_action("reactivate-user", Some(&disable_payload)).expect("user reactivated");
+            auth_action("sign-out", None).expect("sign out admin");
+
+            let old_staff_payload = serde_json::json!({
+                "email": "casey@example.gov",
+                "passcode": "clerk passcode 123"
+            });
+            assert!(auth_action("sign-in", Some(&old_staff_payload)).is_err());
+            let new_staff_payload = serde_json::json!({
+                "email": "casey@example.gov",
+                "passcode": "new clerk passcode 456"
+            });
+            let staff = auth_action("sign-in", Some(&new_staff_payload)).expect("staff sign-in");
+            assert!(staff.accepted);
+            assert_eq!(staff.access.role.as_deref(), Some("clerk"));
         });
     }
 }

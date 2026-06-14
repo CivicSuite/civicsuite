@@ -65,7 +65,7 @@ After first-run setup, open System Health. Verify:
 - Local AI model file is present, checksum-verified, loaded, and registered.
 - Backup folder is configured.
 - Local Users shows the first administrator and lets a signed-in local
-  administrator add or disable staff accounts.
+  administrator add, disable, re-enable, and reset passcodes for staff accounts.
 - Repair, backup, restore, logs, support bundle, and uninstall controls are visible behind local-admin access.
 
 Use the module manager in Settings to confirm:
@@ -78,6 +78,8 @@ Use the module manager in Settings to confirm:
 Use Local Users in Settings to confirm:
 
 - The first local administrator cannot be disabled from the staff-user list.
+- A staff passcode can be reset without hand-editing local files.
+- A disabled staff account can be re-enabled by the local administrator.
 - Clerk staff can work in Meetings & Notices.
 - Records staff can work in Records Requests.
 - Code staff can work in Code & Ordinances.
