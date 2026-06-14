@@ -56,6 +56,7 @@ const requiredUiPhrases = [
   "Notification Outbox",
   "Local notification log",
   "Log Notification Sent",
+  "Request Timeline",
   "Set Up Services and Model",
   "Package Profiles",
   "Module Catalog",

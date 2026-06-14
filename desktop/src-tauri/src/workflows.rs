@@ -97,6 +97,15 @@ pub struct Meeting {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsTimelineEntry {
+    pub id: String,
+    pub action: String,
+    pub actor: String,
+    pub note: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsRequest {
     pub id: String,
     #[serde(default)]
@@ -129,6 +138,8 @@ pub struct RecordsRequest {
     pub approval_notes: Vec<String>,
     #[serde(default)]
     pub exports: Vec<String>,
+    #[serde(default)]
+    pub timeline: Vec<RecordsTimelineEntry>,
     #[serde(default)]
     pub deadline_reviewed_at_unix_seconds: Option<u64>,
     #[serde(default)]
@@ -1319,6 +1330,32 @@ fn list_or_default(values: &[String], empty: &str) -> String {
     }
 }
 
+fn push_records_timeline(request: &mut RecordsRequest, action: &str, actor: &str, note: String) {
+    let id = format!(
+        "records-timeline-{}-{}",
+        now_unix_seconds(),
+        request.timeline.len() + 1
+    );
+    request.timeline.push(RecordsTimelineEntry {
+        id,
+        action: action.to_string(),
+        actor: actor.to_string(),
+        note,
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+}
+
+fn records_timeline_or_default(entries: &[RecordsTimelineEntry]) -> String {
+    if entries.is_empty() {
+        return "No request timeline entries recorded.".to_string();
+    }
+    entries
+        .iter()
+        .map(|entry| format!("- {} by {}: {}", entry.action, entry.actor, entry.note))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn code_version_history_or_default(entries: &[CodeVersionEntry]) -> String {
     if entries.is_empty() {
         return "No version or codifier history recorded.".to_string();
@@ -1560,12 +1597,19 @@ fn create_records_request(
             response_draft: String::new(),
             approval_notes: Vec::new(),
             exports: Vec::new(),
+            timeline: Vec::new(),
             deadline_reviewed_at_unix_seconds: Some(now_unix_seconds()),
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
             closed_at_unix_seconds: None,
             created_at_unix_seconds: now_unix_seconds(),
         },
+    );
+    push_records_timeline(
+        &mut state.records_requests[0],
+        "intake",
+        "records staff",
+        format!("Staff created request {tracking_number} with deadline {deadline}."),
     );
     let request_id = state.records_requests[0].id.clone();
     push_notification_event(
@@ -1623,12 +1667,19 @@ fn submit_public_records_request(
             response_draft: String::new(),
             approval_notes: Vec::new(),
             exports: Vec::new(),
+            timeline: Vec::new(),
             deadline_reviewed_at_unix_seconds: None,
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
             closed_at_unix_seconds: None,
             created_at_unix_seconds: now_unix_seconds(),
         },
+    );
+    push_records_timeline(
+        &mut state.records_requests[0],
+        "public intake",
+        "resident/public",
+        format!("Public request {tracking_number} received for staff review."),
     );
     let request_id = state.records_requests[0].id.clone();
     push_notification_event(
@@ -1678,6 +1729,12 @@ fn set_records_deadline(
         request.deadline_basis = deadline_basis.clone();
         request.deadline_reviewed_at_unix_seconds = Some(now_unix_seconds());
         request.status = "deadline reviewed".to_string();
+        push_records_timeline(
+            request,
+            "deadline reviewed",
+            "records staff",
+            format!("Response deadline set to {deadline}; basis: {deadline_basis}."),
+        );
         (
             request.id.clone(),
             request.public_tracking_number.clone(),
@@ -1715,6 +1772,12 @@ fn request_records_clarification(
         ensure_records_request_active(request)?;
         request.clarification_notes.push(note.clone());
         request.status = "clarification".to_string();
+        push_records_timeline(
+            request,
+            "clarification requested",
+            "records staff",
+            note.clone(),
+        );
         (request.id.clone(), request.public_tracking_number.clone())
     };
     push_notification_event(
@@ -1743,6 +1806,12 @@ fn assign_records_request(
     ensure_records_request_active(request)?;
     request.assigned_to = assigned_to.clone();
     request.status = "assigned".to_string();
+    push_records_timeline(
+        request,
+        "assigned",
+        "records staff",
+        format!("Assigned to {assigned_to}."),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1765,6 +1834,20 @@ fn record_records_search(
         request.citations.push(citation.clone());
     }
     request.status = "searching".to_string();
+    push_records_timeline(
+        request,
+        "search recorded",
+        "records staff",
+        format!(
+            "{}{}",
+            source_note,
+            if citation.is_empty() {
+                String::new()
+            } else {
+                format!(" Citation: {citation}.")
+            }
+        ),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1783,6 +1866,12 @@ fn add_records_exemption_review(
     ensure_records_request_active(request)?;
     request.exemption_reviews.push(exemption_note.clone());
     request.status = "in review".to_string();
+    push_records_timeline(
+        request,
+        "exemption review recorded",
+        "records staff",
+        exemption_note,
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1801,6 +1890,12 @@ fn estimate_records_fee(
     ensure_records_request_active(request)?;
     request.fee_estimate = fee_estimate.clone();
     request.status = "ready".to_string();
+    push_records_timeline(
+        request,
+        "fee estimate saved",
+        "records staff",
+        fee_estimate.clone(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1823,6 +1918,16 @@ fn draft_records_response(
     if !citation.is_empty() {
         request.citations.push(citation.clone());
     }
+    push_records_timeline(
+        request,
+        "response drafted",
+        "records staff",
+        if citation.is_empty() {
+            "Draft response saved.".to_string()
+        } else {
+            format!("Draft response saved with citation {citation}.")
+        },
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1862,6 +1967,12 @@ fn suggest_records_response(
     let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
     request.response_draft = generated;
     request.status = "local AI draft ready for review".to_string();
+    push_records_timeline(
+        request,
+        "local AI draft generated",
+        "local model",
+        format!("Draft generated with {runtime_model}; human approval still required."),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1892,6 +2003,16 @@ fn approve_records_response(
     }
     request.approved_at_unix_seconds = Some(now_unix_seconds());
     request.status = "approved".to_string();
+    push_records_timeline(
+        request,
+        "response approved",
+        "records staff",
+        if approval_note.is_empty() {
+            "Response approved by a human reviewer.".to_string()
+        } else {
+            approval_note
+        },
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1926,8 +2047,9 @@ fn export_records_response(
         "No clarification notes recorded.",
     );
     let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
+    let request_timeline = records_timeline_or_default(&request.timeline);
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -1962,6 +2084,7 @@ fn export_records_response(
             &request.fee_estimate
         },
         request.summary,
+        request_timeline,
         clarification_notes,
         search_notes,
         exemption_reviews,
@@ -1972,6 +2095,12 @@ fn export_records_response(
     let export_path = write_export_file("records", &request.requester, &contents)?;
     request.exports.push(export_path.clone());
     request.status = "response package exported".to_string();
+    push_records_timeline(
+        request,
+        "response package exported",
+        "records staff",
+        format!("Approved response package exported to {export_path}."),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -2018,6 +2147,12 @@ fn fulfill_records_request(
         }
         request.fulfilled_at_unix_seconds = Some(now_unix_seconds());
         request.status = "fulfilled".to_string();
+        push_records_timeline(
+            request,
+            "fulfilled",
+            "records staff",
+            "Approved response package marked fulfilled.".to_string(),
+        );
         (
             request.id.clone(),
             request.public_tracking_number.clone(),
@@ -2077,6 +2212,13 @@ fn close_records_request(
         }
         request.closed_at_unix_seconds = Some(now_unix_seconds());
         request.status = "closed".to_string();
+        push_records_timeline(
+            request,
+            "closed",
+            "records staff",
+            "Fulfilled request closed with audit, export, and notification evidence preserved."
+                .to_string(),
+        );
         (request.id.clone(), request.public_tracking_number.clone())
     };
     push_notification_event(
@@ -2709,6 +2851,12 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let search_notes = request.search_notes.join(" ");
         let exemption_reviews = request.exemption_reviews.join(" ");
         let approval_notes = request.approval_notes.join(" ");
+        let timeline = request
+            .timeline
+            .iter()
+            .map(|entry| format!("{} {} {}", entry.action, entry.actor, entry.note))
+            .collect::<Vec<_>>()
+            .join(" ");
         if contains_query(
             &[
                 &request.requester,
@@ -2724,6 +2872,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &search_notes,
                 &exemption_reviews,
                 &approval_notes,
+                &timeline,
             ],
             query,
         ) {
@@ -2863,6 +3012,7 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.fee_estimate.clear();
     public_request.response_draft.clear();
     public_request.approval_notes.clear();
+    public_request.timeline.clear();
     public_request
 }
 
@@ -3517,10 +3667,29 @@ mod tests {
             assert!(request.fulfilled_at_unix_seconds.is_some());
             assert!(request.closed_at_unix_seconds.is_some());
             assert_eq!(request.exports.len(), 1);
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "clarification requested"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "response approved"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "fulfilled"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "closed"));
             assert!(PathBuf::from(&request.exports[0]).is_file());
             let exported = fs::read_to_string(&request.exports[0]).expect("export reads");
             assert_export_integrity_manifest(&request.exports[0], &exported);
             assert!(exported.contains("Deadline basis: Staff-entered deadline at intake."));
+            assert!(exported.contains("## Request Timeline"));
+            assert!(exported.contains("clarification requested"));
+            assert!(exported.contains("response approved"));
             assert!(exported.contains("## Exemption Review"));
             assert!(exported.contains("Reviewed attorney-client content"));
             assert!(exported.contains("## Approval Notes"));
@@ -3545,6 +3714,8 @@ mod tests {
             }));
             let results = search_city_work(&state, "attorney-client");
             assert_eq!(results.len(), 1);
+            let timeline_results = search_city_work(&state, "clarification requested");
+            assert_eq!(timeline_results.len(), 1);
             let notification_results = search_city_work(&state, "response ready");
             assert_eq!(notification_results.len(), 1);
             assert_eq!(notification_results[0].module_id, "civiccore");
@@ -3575,6 +3746,8 @@ mod tests {
             assert!(request.deadline_reviewed_at_unix_seconds.is_none());
             assert!(request.approved_at_unix_seconds.is_none());
             assert!(request.fulfilled_at_unix_seconds.is_none());
+            assert_eq!(request.timeline.len(), 1);
+            assert_eq!(request.timeline[0].action, "public intake");
             assert_eq!(state.notification_events.len(), 2);
             assert!(state.notification_events.iter().any(|event| {
                 event.audience == "records staff"
@@ -3624,6 +3797,11 @@ mod tests {
                 "Colorado CORA response deadline reviewed by clerk."
             );
             assert!(request.deadline_reviewed_at_unix_seconds.is_some());
+            assert_eq!(request.timeline.len(), 2);
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "deadline reviewed"));
             assert_eq!(state.notification_events.len(), 3);
             let deadline_notification = state
                 .notification_events
@@ -3677,6 +3855,7 @@ mod tests {
             assert_eq!(public_request.fee_estimate, "");
             assert_eq!(public_request.response_draft, "");
             assert!(public_request.approval_notes.is_empty());
+            assert!(public_request.timeline.is_empty());
 
             let wrong_contact = serde_json::json!({
                 "trackingNumber": "REQ-0001",

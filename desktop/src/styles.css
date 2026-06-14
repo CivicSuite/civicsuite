@@ -391,6 +391,30 @@ main {
   overflow-wrap: anywhere;
 }
 
+.record-details {
+  background: #f7f9fb;
+  border: 1px solid #dce5eb;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.record-details summary {
+  color: #30404c;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.record-details ul {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.record-details li {
+  color: #536575;
+}
+
 .workflow-record.handoff {
   border-left: 4px solid #d8a42b;
 }

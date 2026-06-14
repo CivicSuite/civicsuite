@@ -2185,6 +2185,25 @@ function renderRecordsNotificationOutbox(work) {
   `;
 }
 
+function renderRecordsTimeline(request) {
+  const timeline = request.timeline || [];
+  if (timeline.length === 0) return "";
+  return `
+    <details class="record-details">
+      <summary>Request Timeline</summary>
+      <ul>
+        ${timeline.map((entry) => `
+          <li>
+            <strong>${escapeHtml(entry.action)}</strong> by ${escapeHtml(entry.actor)}:
+            ${escapeHtml(entry.note)}
+            <small>${new Date(entry.created_at_unix_seconds * 1000).toLocaleString()}</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
 function renderRecordsWorkflow() {
   if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
@@ -2253,6 +2272,7 @@ function renderRecordsWorkflow() {
           ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
+          ${renderRecordsTimeline(request)}
           <div class="record-actions">
             ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
           </div>
@@ -2487,7 +2507,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
       ...(request.exemption_reviews || []),
-      ...(request.approval_notes || [])
+      ...(request.approval_notes || []),
+      ...(request.timeline || []).map((entry) => [entry.action, entry.actor, entry.note].join(" "))
     ];
     if (recordsSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicrecords-ai", title: `Records request: ${request.requester}`, snippet: request.summary, citation: request.citations[0] || "Local records request", status: request.status });
