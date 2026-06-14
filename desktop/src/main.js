@@ -571,6 +571,8 @@ const state = {
     staffReportRevisionNote: "",
     noticeMeetingType: "",
     noticeStatutoryBasis: "",
+    noticeLeadDays: "3",
+    noticeDayType: "calendar days",
     noticeDeadline: "",
     noticeTimeZone: "America/Denver",
     noticeHumanApproval: false,
@@ -1418,6 +1420,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "add-meeting-attachment",
   "finalize-meeting-packet",
   "record-closed-session",
+  "calculate-notice-deadline",
   "complete-notice-checklist",
   "post-notice",
   "export-meeting-packet",
@@ -1725,6 +1728,27 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for the closed-session boundary and staff-only notes reference.",
       retry: "If required basis, topic, timing, or reconvene evidence is missing, the desktop app leaves the meeting unchanged."
+    },
+    "calculate-notice-deadline": {
+      title: "Review Before Calculating Notice Deadline",
+      confirmLabel: "Calculate Notice Deadline",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Calculates and stores the notice posting deadline from the selected meeting date, lead-day rule, day type, statutory basis, time zone, and clerk approval.",
+      visibility: "Internal checklist until the notice is posted or the meeting is archived. The saved calculation keeps the city/state holiday caveat with the source evidence.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "At least one agenda item is required.",
+        detailOrFallback(state.workDraft.noticeMeetingType, "Meeting type is required."),
+        detailOrFallback(state.workDraft.noticeStatutoryBasis, "Statutory notice basis is required."),
+        detailOrFallback(state.workDraft.noticeLeadDays, "Notice lead days are required."),
+        detailOrFallback(state.workDraft.noticeDayType, "Notice day type is required."),
+        detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
+        state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
+      ],
+      audit: "Creates a CivicClerk audit entry for the calculated notice deadline without claiming legal sufficiency.",
+      retry: "If required notice details are missing, the day count or time zone is invalid, approval is unchecked, or the meeting is archived, the desktop app leaves the notice unchanged."
     },
     "complete-notice-checklist": {
       title: "Review Before Approving Notice Checklist",
@@ -2597,6 +2621,14 @@ function renderMeetingsWorkflow() {
         <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${state.workDraft.agendaTitle}" /></label>
         <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${state.workDraft.noticeMeetingType}" placeholder="Regular council meeting" /></label>
         <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${state.workDraft.noticeStatutoryBasis}" placeholder="Municipal open meetings notice" /></label>
+        <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${state.workDraft.noticeLeadDays}" /></label>
+        <label>Notice day type
+          <select data-work-field="noticeDayType">
+            <option value="calendar days" ${state.workDraft.noticeDayType === "calendar days" ? "selected" : ""}>Calendar days</option>
+            <option value="business days" ${state.workDraft.noticeDayType === "business days" ? "selected" : ""}>Business days</option>
+          </select>
+        </label>
+        <p class="form-help">Business-day notice calculations skip weekends. Staff must still check city/state holidays before posting.</p>
         <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${state.workDraft.noticeDeadline}" /></label>
         <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${state.workDraft.noticeTimeZone}" placeholder="America/Denver" /></label>
         <label class="checkbox-row"><input type="checkbox" data-work-field="noticeHumanApproval" ${state.workDraft.noticeHumanApproval ? "checked" : ""} /> Clerk has reviewed and approved the notice checklist</label>
@@ -2608,6 +2640,7 @@ function renderMeetingsWorkflow() {
           ${bodies.length === 0 ? `<button type="button" class="primary-action" disabled>Create Meeting</button>` : `<button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>`}
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
           <button type="button" class="secondary-action" data-work-action="add-code-handoff-agenda">Add Code Handoff</button>
+          <button type="button" class="secondary-action" data-work-action="calculate-notice-deadline">Calculate Notice Deadline</button>
           <button type="button" class="secondary-action" data-work-action="complete-notice-checklist">Approve Notice Checklist</button>
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
           <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Records Bundle</button>
@@ -4939,6 +4972,15 @@ function workPayloadForAction(action) {
       closedSessionNotesReference: draft.closedSessionNotesReference
     },
     "add-code-handoff-agenda": selected,
+    "calculate-notice-deadline": {
+      ...selected,
+      noticeMeetingType: draft.noticeMeetingType,
+      noticeStatutoryBasis: draft.noticeStatutoryBasis,
+      noticeLeadDays: draft.noticeLeadDays,
+      noticeDayType: draft.noticeDayType,
+      noticeTimeZone: draft.noticeTimeZone,
+      noticeHumanApproval: draft.noticeHumanApproval
+    },
     "complete-notice-checklist": {
       ...selected,
       noticeMeetingType: draft.noticeMeetingType,

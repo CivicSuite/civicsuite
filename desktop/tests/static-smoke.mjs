@@ -41,6 +41,9 @@ const requiredUiPhrases = [
   "Download / Resume Model",
   "Notice meeting type",
   "Statutory notice basis",
+  "Notice lead days",
+  "Notice day type",
+  "Calculate Notice Deadline",
   "Notice deadline",
   "Notice time zone",
   "Clerk has reviewed and approved the notice checklist",
@@ -397,8 +400,11 @@ for (const phrase of [
 
 for (const phrase of [
   "Notice Checklist",
+  "calculate-notice-deadline",
   "complete-notice-checklist",
   "noticeStatutoryBasis",
+  "noticeLeadDays",
+  "noticeDayType",
   "noticeTimeZone",
   "Notice Posting Evidence",
   "postingLocation",

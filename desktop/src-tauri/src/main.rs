@@ -144,6 +144,7 @@ fn city_work_action_module_requirement(
         | "add-meeting-attachment"
         | "finalize-meeting-packet"
         | "add-code-handoff-agenda"
+        | "calculate-notice-deadline"
         | "complete-notice-checklist"
         | "post-notice"
         | "record-minutes"

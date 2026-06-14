@@ -1256,6 +1256,17 @@ fn next_iso_date(year: u32, month: u32, day: u32) -> (u32, u32, u32) {
     (year + 1, 1, 1)
 }
 
+fn previous_iso_date(year: u32, month: u32, day: u32) -> (u32, u32, u32) {
+    if day > 1 {
+        return (year, month, day - 1);
+    }
+    if month > 1 {
+        let previous_month = month - 1;
+        return (year, previous_month, days_in_month(year, previous_month));
+    }
+    (year - 1, 12, 31)
+}
+
 fn iso_weekday_sunday_zero(year: u32, month: u32, day: u32) -> u32 {
     const OFFSETS: [i32; 12] = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
     let mut year = year as i32;
@@ -1293,6 +1304,32 @@ fn add_records_deadline_days(
             continue;
         }
         added += 1;
+    }
+    Ok(iso_date_string(year, month, day))
+}
+
+fn subtract_notice_deadline_days(
+    meeting_date: &str,
+    day_count: u32,
+    day_type: &str,
+) -> Result<String, String> {
+    let (mut year, mut month, mut day) = parse_iso_date(meeting_date, "meeting date")?;
+    if day_count == 0 || day_count > 365 {
+        return Err("Notice lead day count must be between 1 and 365.".to_string());
+    }
+    let day_type = day_type.trim().to_lowercase();
+    let business_days = match day_type.as_str() {
+        "business" | "business day" | "business days" | "working" | "working days" => true,
+        "calendar" | "calendar day" | "calendar days" => false,
+        _ => return Err("Notice day type must be business days or calendar days.".to_string()),
+    };
+    let mut subtracted = 0;
+    while subtracted < day_count {
+        (year, month, day) = previous_iso_date(year, month, day);
+        if business_days && iso_date_is_weekend(year, month, day) {
+            continue;
+        }
+        subtracted += 1;
     }
     Ok(iso_date_string(year, month, day))
 }
@@ -2377,6 +2414,103 @@ fn complete_notice_checklist(
         ),
     );
     Ok("Notice checklist approved locally. Posting proof can now be recorded.".to_string())
+}
+
+fn calculate_notice_deadline(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let meeting_type = payload_string(payload, "noticeMeetingType")
+        .map_err(|_| "Enter the meeting type for the notice calculator.".to_string())?;
+    let statutory_basis = payload_string(payload, "noticeStatutoryBasis")
+        .map_err(|_| "Enter the statutory notice basis before calculating notice.".to_string())?;
+    let lead_days_text = payload_optional_string(payload, "noticeLeadDays");
+    let day_type = payload_string(payload, "noticeDayType")
+        .map_err(|_| "Choose business days or calendar days.".to_string())?;
+    let time_zone = payload_string(payload, "noticeTimeZone")
+        .map_err(|_| "Enter the notice time zone, such as America/Denver.".to_string())?;
+    ensure_notice_time_zone(&time_zone)?;
+    let human_approval = payload_bool(payload, "noticeHumanApproval");
+    if !human_approval {
+        return Err(
+            "A clerk must approve the calculated notice checklist before saving it.".to_string(),
+        );
+    }
+
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let default_notice_days = state
+        .meetings
+        .get(meeting_index)
+        .and_then(|meeting| {
+            state
+                .meeting_bodies
+                .iter()
+                .find(|body| body.id == meeting.body_id)
+                .map(|body| body.default_notice_days)
+        })
+        .unwrap_or(3);
+    let meeting = &mut state.meetings[meeting_index];
+    ensure_meeting_can_change(meeting)?;
+    parse_iso_date(&meeting.meeting_date, "meeting date")?;
+    if meeting.agenda_items.is_empty() {
+        return Err(
+            "Add at least one agenda item before calculating the notice deadline.".to_string(),
+        );
+    }
+    let lead_days = if lead_days_text.trim().is_empty() {
+        default_notice_days
+    } else {
+        lead_days_text
+            .parse::<u32>()
+            .map_err(|_| "Notice lead day count must be a whole number.".to_string())?
+    };
+    let posting_deadline =
+        subtract_notice_deadline_days(&meeting.meeting_date, lead_days, &day_type)?;
+    let normalized_day_type = if day_type.to_lowercase().contains("business")
+        || day_type.to_lowercase().contains("working")
+    {
+        "business days"
+    } else {
+        "calendar days"
+    };
+    let calculation_note = format!(
+        "{} Rule: {}; meeting date {}; calculated as {} {} before meeting; weekends {} automatically skipped; city/state holidays must be checked by staff.",
+        statutory_basis,
+        meeting_type,
+        meeting.meeting_date,
+        lead_days,
+        normalized_day_type,
+        if normalized_day_type == "business days" {
+            "are"
+        } else {
+            "are not"
+        }
+    );
+    let checklist_id = new_id("notice-checklist", meeting.notice_checklists.len());
+    meeting.notice_checklists.push(NoticeChecklist {
+        id: checklist_id,
+        meeting_type: meeting_type.clone(),
+        statutory_basis: calculation_note.clone(),
+        posting_deadline: posting_deadline.clone(),
+        time_zone: time_zone.clone(),
+        human_approval,
+        status: "ready for posting".to_string(),
+        checked_at_unix_seconds: now_unix_seconds(),
+    });
+    let title = meeting.title.clone();
+    meeting.notice_status = "notice checklist ready".to_string();
+    meeting.status = "notice checklist ready".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "calculate-notice-deadline",
+        format!(
+            "Notice deadline calculated for {title}; type: {meeting_type}; deadline: {posting_deadline}; {calculation_note}; time zone: {time_zone}"
+        ),
+    );
+    Ok(format!(
+        "Notice deadline calculated as {posting_deadline}. Posting proof can now be recorded."
+    ))
 }
 
 fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
@@ -7436,6 +7570,7 @@ pub fn city_work_action(
         "add-meeting-attachment" => add_meeting_attachment(&mut state, payload)?,
         "finalize-meeting-packet" => finalize_meeting_packet(&mut state, payload)?,
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
+        "calculate-notice-deadline" => calculate_notice_deadline(&mut state, payload)?,
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
@@ -7734,6 +7869,88 @@ mod tests {
                 Err(error) => error,
             };
             assert!(error.contains("Choose a valid export folder"));
+        });
+    }
+
+    #[test]
+    fn clerk_notice_deadline_calculator_skips_weekends_and_records_review_evidence() {
+        with_temp_state_dir(|_| {
+            let meeting_body = serde_json::json!({
+                "meetingBodyName": "City Council",
+                "meetingBodyType": "legislative",
+                "meetingBodyStatutoryBasis": "City Charter Section 2.1",
+                "meetingBodyCadence": "Third Wednesday",
+                "meetingBodyDefaultNoticeDays": "3",
+                "meetingBodyQuorumRule": "majority of seated members"
+            });
+            city_work_action("create-meeting-body", Some(&meeting_body))
+                .expect("meeting body saved");
+            let meeting_body_id = city_work_state()
+                .expect("state reads after meeting body")
+                .meeting_bodies
+                .first()
+                .expect("meeting body exists")
+                .id
+                .clone();
+            let meeting = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
+                "title": "Council Regular Meeting",
+                "meetingDate": "2026-07-15",
+                "summary": "Budget hearing",
+                "agendaTitle": "Adopt budget ordinance"
+            });
+            city_work_action("create-meeting", Some(&meeting)).expect("meeting created");
+
+            let zero_count = serde_json::json!({
+                "noticeMeetingType": "Regular council meeting",
+                "noticeStatutoryBasis": "Municipal open meetings notice",
+                "noticeLeadDays": "0",
+                "noticeDayType": "business days",
+                "noticeTimeZone": "America/Denver",
+                "noticeHumanApproval": true
+            });
+            let error = match city_work_action("calculate-notice-deadline", Some(&zero_count)) {
+                Ok(_) => panic!("zero notice lead day count cannot calculate"),
+                Err(error) => error,
+            };
+            assert!(error.contains("between 1 and 365"));
+
+            let calculation = serde_json::json!({
+                "noticeMeetingType": "Regular council meeting",
+                "noticeStatutoryBasis": "Municipal open meetings notice",
+                "noticeLeadDays": "3",
+                "noticeDayType": "business days",
+                "noticeTimeZone": "America/Denver",
+                "noticeHumanApproval": true
+            });
+            city_work_action("calculate-notice-deadline", Some(&calculation))
+                .expect("notice deadline calculated");
+            let state = city_work_state().expect("state reads after notice calculation");
+            let meeting = state.meetings.first().expect("meeting exists");
+            let checklist = meeting
+                .notice_checklists
+                .first()
+                .expect("notice checklist was recorded");
+            assert_eq!(checklist.posting_deadline, "2026-07-10");
+            assert_eq!(checklist.status, "ready for posting");
+            assert!(checklist
+                .statutory_basis
+                .contains("weekends are automatically skipped"));
+            assert!(checklist
+                .statutory_basis
+                .contains("city/state holidays must be checked by staff"));
+            assert_eq!(meeting.notice_status, "notice checklist ready");
+            assert!(state.audit_entries.iter().any(|entry| {
+                entry.action == "calculate-notice-deadline"
+                    && entry.summary.contains("deadline: 2026-07-10")
+                    && entry.summary.contains("Regular council meeting")
+            }));
+
+            assert_eq!(
+                subtract_notice_deadline_days("2026-07-15", 3, "calendar days")
+                    .expect("calendar notice deadline"),
+                "2026-07-12"
+            );
         });
     }
 
