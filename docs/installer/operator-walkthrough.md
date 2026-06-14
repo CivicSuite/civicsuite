@@ -123,6 +123,8 @@ Use **Prepare Uninstall** in System Health before removing CivicSuite:
 - The app creates a final uninstall backup.
 - The app stops local services.
 - The app removes local data and setup/config state.
+- After preparation succeeds, choose **Open Windows Uninstall** or use Windows
+  Settings > Installed apps, find CivicSuite, and choose Uninstall.
 - The Windows uninstall entry removes program files.
 
 Reinstall should be able to restore from the final backup when the backup folder is available.

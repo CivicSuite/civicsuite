@@ -1160,11 +1160,15 @@ function renderModelActionResult() {
 function renderSupervisorActionResult() {
   if (!state.supervisorActionResult) return "";
   const result = state.supervisorActionResult;
+  const uninstallFollowUp = result.accepted && result.action === "uninstall"
+    ? `<button type="button" class="secondary-action" data-supervisor-action="open-windows-uninstall">Open Windows Uninstall</button>`
+    : "";
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
       <strong>${result.status}</strong>
       <span>${result.message}</span>
       <small>${result.next_action}</small>
+      ${uninstallFollowUp}
     </div>
   `;
 }
@@ -4270,7 +4274,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
         "Safety: final-uninstall backup is written before profile removal."
       ],
       audit: "Creates a final uninstall backup manifest and returns an uninstall action result.",
-      retry: "If the final backup fails, uninstall stops before removing the profile."
+      retry: "If the final backup fails, uninstall stops before removing the profile. After preparation succeeds, use Open Windows Uninstall to remove program files from Installed apps."
     },
     "support-bundle": {
       title: "Review Before Creating Support Bundle",
@@ -4502,6 +4506,7 @@ function renderHealth() {
         <button type="button" class="secondary-action" data-supervisor-action="support-bundle">Create Support Bundle</button>
         <button type="button" class="secondary-action" data-supervisor-action="restore">Restore Latest Backup</button>
         <button type="button" class="secondary-action" data-supervisor-action="uninstall">Prepare Uninstall</button>
+        <button type="button" class="secondary-action" data-supervisor-action="open-windows-uninstall">Open Windows Uninstall</button>
       </div>
     </section>
     ${renderGuidedSupervisorReview()}

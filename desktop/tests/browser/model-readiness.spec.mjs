@@ -105,5 +105,6 @@ test("system health repair and uninstall actions require guided review", async (
   await page.getByRole("button", { name: "Prepare Uninstall" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Preparing Uninstall" })).toBeVisible();
   await expect(page.getByText("final-uninstall backup")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Windows Uninstall" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm Prepare Uninstall" })).toBeVisible();
 });

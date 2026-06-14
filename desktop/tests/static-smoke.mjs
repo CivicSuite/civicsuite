@@ -38,6 +38,8 @@ const requiredUiPhrases = [
   "Enable",
   "Temporary local passcode",
   "Enter a temporary passcode, then use Reset Passcode",
+  "Open Windows Uninstall",
+  "Installed apps",
   "Records staff",
   "Clerk staff",
   "Code staff",
@@ -450,7 +452,7 @@ for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   }
 }
 
-for (const action of ["install", "start", "stop", "health", "repair", "logs", "support-bundle", "backup", "open-backup-folder", "restore", "uninstall"]) {
+for (const action of ["install", "start", "stop", "health", "repair", "logs", "support-bundle", "backup", "open-backup-folder", "restore", "uninstall", "open-windows-uninstall"]) {
   if (!runtimeManifest.lifecycle_actions.includes(action)) {
     throw new Error(`Windows runtime manifest missing lifecycle action: ${action}`);
   }

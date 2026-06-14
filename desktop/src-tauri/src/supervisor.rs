@@ -13,7 +13,7 @@ use crate::local_paths;
 
 const RUNTIME_MANIFEST_JSON: &str = include_str!("../../runtime/windows-local-runtime.json");
 const RUNTIME_PAYLOADS_JSON: &str = include_str!("../../runtime/windows-runtime-payloads.json");
-const REQUIRED_ACTIONS: [&str; 11] = [
+const REQUIRED_ACTIONS: [&str; 12] = [
     "install",
     "start",
     "stop",
@@ -25,6 +25,7 @@ const REQUIRED_ACTIONS: [&str; 11] = [
     "open-backup-folder",
     "restore",
     "uninstall",
+    "open-windows-uninstall",
 ];
 const LOCAL_DB_NAME: &str = "civicsuite";
 const LOCAL_DB_USER: &str = "civicsuite";
@@ -2087,7 +2088,19 @@ fn uninstall_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionR
             removed_data,
             removed_config
         ),
-        next_action: "Use the CivicSuite Windows uninstall entry to remove program files; reinstall can restore from the final backup.".to_string(),
+        next_action: "Choose Open Windows Uninstall, find CivicSuite in Installed apps, and uninstall it. Reinstall can restore from the final backup.".to_string(),
+    })
+}
+
+fn open_windows_uninstall_action() -> Result<SupervisorActionResult, String> {
+    crate::local_shell::open_windows_uninstall_settings()?;
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "open-windows-uninstall".to_string(),
+        service_id: None,
+        status: "Windows uninstall opened",
+        message: "Opened Windows Installed apps so CivicSuite program files can be removed through the normal Windows uninstall entry.".to_string(),
+        next_action: "Find CivicSuite in Installed apps and choose Uninstall. Keep the final-uninstall backup if staff may reinstall later.".to_string(),
     })
 }
 
@@ -2117,6 +2130,7 @@ pub fn supervisor_action(
         "open-backup-folder" => open_backup_folder_action(),
         "restore" => restore_action(&services),
         "uninstall" => uninstall_action(&services),
+        "open-windows-uninstall" => open_windows_uninstall_action(),
         _ => Err(format!("Unsupported supervisor action: {action}")),
     }
 }
@@ -2873,6 +2887,20 @@ mod tests {
                     .file_name()
                     .to_string_lossy()
                     .contains("final-uninstall")));
+        });
+    }
+
+    #[test]
+    fn open_windows_uninstall_settings_returns_user_handoff() {
+        with_temp_state_dir(|_root| {
+            let result = supervisor_action("open-windows-uninstall", None)
+                .expect("open Windows uninstall response");
+
+            assert!(result.accepted);
+            assert_eq!(result.action, "open-windows-uninstall");
+            assert_eq!(result.status, "Windows uninstall opened");
+            assert!(result.message.contains("Installed apps"));
+            assert!(result.next_action.contains("Find CivicSuite"));
         });
     }
 }

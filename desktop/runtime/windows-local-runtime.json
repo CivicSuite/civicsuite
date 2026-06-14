@@ -18,7 +18,8 @@
     "backup",
     "open-backup-folder",
     "restore",
-    "uninstall"
+    "uninstall",
+    "open-windows-uninstall"
   ],
   "services": [
     {

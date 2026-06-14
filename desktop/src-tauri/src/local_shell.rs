@@ -25,3 +25,24 @@ pub(crate) fn open_local_folder(path: &Path) -> Result<(), String> {
     })?;
     Ok(())
 }
+
+pub(crate) fn open_windows_uninstall_settings() -> Result<(), String> {
+    if cfg!(test) || env::var("CIVICSUITE_SUPPRESS_OPEN_FOLDER").ok().as_deref() == Some("1") {
+        return Ok(());
+    }
+
+    if !cfg!(target_os = "windows") {
+        return Err(
+            "Windows uninstall settings can only be opened from the Windows desktop app."
+                .to_string(),
+        );
+    }
+
+    Command::new("explorer.exe")
+        .arg("ms-settings:appsfeatures")
+        .spawn()
+        .map_err(|error| {
+            format!("Could not open Windows Installed apps settings from the desktop app: {error}")
+        })?;
+    Ok(())
+}
