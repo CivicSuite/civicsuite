@@ -134,6 +134,7 @@ fn city_work_action_module_requirement(
 ) -> Option<(Vec<&'static str>, bool)> {
     match action {
         "create-meeting-body"
+        | "add-meeting-member"
         | "create-meeting"
         | "add-agenda-item"
         | "submit-agenda-intake"
@@ -149,6 +150,7 @@ fn city_work_action_module_requirement(
         | "add-minute-citation"
         | "suggest-minutes-draft"
         | "record-vote"
+        | "record-member-vote"
         | "add-action-item"
         | "record-resident-comment"
         | "submit-public-comment"

@@ -21,6 +21,23 @@ pub struct MeetingBody {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MeetingMember {
+    pub id: String,
+    pub body_id: String,
+    pub body_name: String,
+    pub name: String,
+    pub role: String,
+    #[serde(default)]
+    pub term_start: String,
+    #[serde(default)]
+    pub term_end: String,
+    #[serde(default)]
+    pub email: String,
+    pub status: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct AgendaItem {
     pub id: String,
     pub title: String,
@@ -167,6 +184,17 @@ pub struct MotionRecord {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MemberVoteRecord {
+    pub id: String,
+    pub motion_id: String,
+    pub motion_text: String,
+    pub member_id: String,
+    pub member_name: String,
+    pub vote: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct MeetingActionRecord {
     pub id: String,
     pub description: String,
@@ -248,6 +276,8 @@ pub struct Meeting {
     pub minute_citations: Vec<MinuteCitation>,
     #[serde(default)]
     pub motions: Vec<MotionRecord>,
+    #[serde(default)]
+    pub member_votes: Vec<MemberVoteRecord>,
     #[serde(default)]
     pub votes: Vec<String>,
     #[serde(default)]
@@ -554,6 +584,8 @@ pub struct SearchResult {
 pub struct CityWorkState {
     #[serde(default)]
     pub meeting_bodies: Vec<MeetingBody>,
+    #[serde(default)]
+    pub meeting_members: Vec<MeetingMember>,
     #[serde(default)]
     pub agenda_intakes: Vec<AgendaIntake>,
     pub meetings: Vec<Meeting>,
@@ -1266,6 +1298,66 @@ fn create_meeting_body(
     Ok(format!("Meeting body saved locally: {name}."))
 }
 
+fn add_meeting_member(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let name =
+        payload_string(payload, "memberName").map_err(|_| "Enter the member name.".to_string())?;
+    let role =
+        payload_string(payload, "memberRole").map_err(|_| "Enter the member role.".to_string())?;
+    let term_start = payload_optional_string(payload, "memberTermStart");
+    if !term_start.is_empty() {
+        parse_iso_date(&term_start, "member term start")?;
+    }
+    let term_end = payload_optional_string(payload, "memberTermEnd");
+    if !term_end.is_empty() {
+        parse_iso_date(&term_end, "member term end")?;
+    }
+    let email = payload_optional_string(payload, "memberEmail");
+    let status = {
+        let value = payload_optional_string(payload, "memberStatus").to_lowercase();
+        if value.is_empty() {
+            "active".to_string()
+        } else {
+            value
+        }
+    };
+    let (body_id, body_name) = selected_meeting_body_for_payload(state, payload)?;
+    if status == "active"
+        && state.meeting_members.iter().any(|member| {
+            member.body_id == body_id
+                && member.status == "active"
+                && member.name.eq_ignore_ascii_case(&name)
+        })
+    {
+        return Err("That active member is already on this meeting body roster.".to_string());
+    }
+    let id = new_id("meeting-member", state.meeting_members.len());
+    state.meeting_members.insert(
+        0,
+        MeetingMember {
+            id,
+            body_id,
+            body_name: body_name.clone(),
+            name: name.clone(),
+            role: role.clone(),
+            term_start,
+            term_end,
+            email,
+            status: status.clone(),
+            created_at_unix_seconds: now_unix_seconds(),
+        },
+    );
+    push_audit(
+        state,
+        "civicclerk",
+        "add-meeting-member",
+        format!("Added {name} ({role}) to {body_name}; status {status}."),
+    );
+    Ok("Meeting member saved to the body roster.".to_string())
+}
+
 fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let title = payload_string(payload, "title")?;
     let meeting_date = payload_string(payload, "meetingDate")?;
@@ -1290,6 +1382,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         minutes: String::new(),
         minute_citations: Vec::new(),
         motions: Vec::new(),
+        member_votes: Vec::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
         action_records: Vec::new(),
@@ -2011,16 +2104,17 @@ fn suggest_minutes_draft(
         || !meeting.agenda_items.is_empty()
         || !meeting.staff_reports.is_empty()
         || !meeting.motions.is_empty()
+        || !meeting.member_votes.is_empty()
         || !meeting.votes.is_empty()
         || !meeting.action_items.is_empty()
         || !meeting.resident_comments.is_empty()
         || !meeting.public_comments.is_empty()
         || !meeting.attachments.is_empty();
     if !has_meeting_evidence {
-        return Err("Add a summary, agenda item, attachment, motion, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
+        return Err("Add a summary, agenda item, attachment, motion, roll-call vote, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, motions, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, roll-call votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, motions, roll-call votes, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRoll-call votes:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -2041,6 +2135,7 @@ fn suggest_minutes_draft(
             &meeting.minutes
         },
         motion_records_or_default(&meeting.motions),
+        member_vote_records_or_default(&meeting.member_votes),
         list_or_default(&meeting.votes, "No outcomes recorded."),
         list_or_default(&meeting.action_items, "No action items recorded."),
         meeting_action_records_or_default(&meeting.action_records),
@@ -2116,6 +2211,95 @@ fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
         format!("Recorded vote/outcome: {vote}"),
     );
     Ok("Vote or action outcome saved locally.".to_string())
+}
+
+fn record_member_vote(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let vote = payload_string(payload, "memberVoteValue")
+        .map_err(|_| "Choose the roll-call vote value.".to_string())?
+        .to_lowercase();
+    let vote = match vote.as_str() {
+        "aye" => "aye",
+        "nay" => "nay",
+        "abstain" => "abstain",
+        "absent" => "absent",
+        "recused" => "recused",
+        _ => return Err("Vote must be aye, nay, abstain, absent, or recused.".to_string()),
+    };
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let (body_id, meeting_title, motion_id, motion_text, vote_count) = {
+        let meeting = &state.meetings[meeting_index];
+        ensure_meeting_can_change(meeting)?;
+        if meeting.motions.is_empty() {
+            return Err("Record a motion before recording roll-call votes.".to_string());
+        }
+        let requested_motion_id = payload_optional_string(payload, "memberVoteMotionId");
+        let motion = if requested_motion_id.is_empty() {
+            meeting
+                .motions
+                .last()
+                .expect("meeting motions are checked above")
+        } else {
+            meeting
+                .motions
+                .iter()
+                .find(|motion| motion.id == requested_motion_id)
+                .ok_or_else(|| "The selected motion was not found for this meeting.".to_string())?
+        };
+        (
+            meeting.body_id.clone(),
+            meeting.title.clone(),
+            motion.id.clone(),
+            motion.text.clone(),
+            meeting.member_votes.len(),
+        )
+    };
+    let requested_member_id = payload_optional_string(payload, "memberVoteMemberId");
+    let requested_member_name = payload_optional_string(payload, "memberVoteMemberName");
+    let member = if requested_member_id.is_empty() {
+        state.meeting_members.iter().find(|member| {
+            member.body_id == body_id && member.name.eq_ignore_ascii_case(&requested_member_name)
+        })
+    } else {
+        state
+            .meeting_members
+            .iter()
+            .find(|member| member.body_id == body_id && member.id == requested_member_id)
+    }
+    .cloned()
+    .ok_or_else(|| "Choose a member from the meeting body roster.".to_string())?;
+    if state.meetings[meeting_index]
+        .member_votes
+        .iter()
+        .any(|record| record.motion_id == motion_id && record.member_id == member.id)
+    {
+        return Err(
+            "This member already has a roll-call vote recorded for that motion.".to_string(),
+        );
+    }
+    let meeting = &mut state.meetings[meeting_index];
+    meeting.member_votes.push(MemberVoteRecord {
+        id: new_id("member-vote", vote_count),
+        motion_id: motion_id.clone(),
+        motion_text: motion_text.clone(),
+        member_id: member.id.clone(),
+        member_name: member.name.clone(),
+        vote: vote.to_string(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "roll-call vote recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-member-vote",
+        format!(
+            "Recorded roll-call vote for {meeting_title}: {} voted {vote} on {motion_text}.",
+            member.name
+        ),
+    );
+    Ok("Roll-call vote saved to the meeting record.".to_string())
 }
 
 fn add_action_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
@@ -2623,6 +2807,22 @@ fn motion_records_or_default(motions: &[MotionRecord]) -> String {
         .join("\n")
 }
 
+fn member_vote_records_or_default(votes: &[MemberVoteRecord]) -> String {
+    if votes.is_empty() {
+        return "No roll-call votes recorded.".to_string();
+    }
+    votes
+        .iter()
+        .map(|vote| {
+            format!(
+                "- {}: {} on \"{}\"",
+                vote.member_name, vote.vote, vote.motion_text
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn meeting_action_records_or_default(actions: &[MeetingActionRecord]) -> String {
     if actions.is_empty() {
         return "No detailed action item records.".to_string();
@@ -3039,6 +3239,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     };
     let votes = list_or_default(&meeting.votes, "No outcomes recorded.");
     let motions = motion_records_or_default(&meeting.motions);
+    let member_votes = member_vote_records_or_default(&meeting.member_votes);
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let action_records = meeting_action_records_or_default(&meeting.action_records);
     let staff_reports = staff_reports_or_default(&meeting.staff_reports);
@@ -3086,7 +3287,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Roll Call Votes\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -3113,6 +3314,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         minutes_signature,
         adopted_legislation,
         motions,
+        member_votes,
         votes,
         action_items,
         action_records,
@@ -4989,6 +5191,43 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             });
         }
     }
+    for member in &state.meeting_members {
+        if contains_query(
+            &[
+                &member.name,
+                &member.role,
+                &member.body_name,
+                &member.term_start,
+                &member.term_end,
+                &member.email,
+                &member.status,
+            ],
+            query,
+        ) {
+            results.push(SearchResult {
+                module_id: "civicclerk".to_string(),
+                record_id: member.id.clone(),
+                title: format!("Meeting member: {}", member.name),
+                snippet: format!(
+                    "{} on {}; term {} to {}",
+                    member.role,
+                    member.body_name,
+                    if member.term_start.is_empty() {
+                        "not recorded"
+                    } else {
+                        &member.term_start
+                    },
+                    if member.term_end.is_empty() {
+                        "not recorded"
+                    } else {
+                        &member.term_end
+                    }
+                ),
+                citation: member.body_name.clone(),
+                status: member.status.clone(),
+            });
+        }
+    }
     for intake in &state.agenda_intakes {
         if contains_query(
             &[
@@ -5068,6 +5307,17 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             .collect::<Vec<_>>()
             .join(" ");
         let votes = meeting.votes.join(" ");
+        let member_votes = meeting
+            .member_votes
+            .iter()
+            .map(|vote| {
+                format!(
+                    "{} {} {} {}",
+                    vote.member_name, vote.vote, vote.motion_text, vote.motion_id
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let action_items = meeting.action_items.join(" ");
         let action_records = meeting
             .action_records
@@ -5209,6 +5459,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &attachments,
                 &minute_citations,
                 &motions,
+                &member_votes,
                 &votes,
                 &action_items,
                 &action_records,
@@ -5511,6 +5762,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.minutes_signature_attestation.clear();
         public_meeting.minutes_signed_at_unix_seconds = None;
         public_meeting.motions.clear();
+        public_meeting.member_votes.clear();
         public_meeting.votes.clear();
         public_meeting.staff_reports.clear();
         public_meeting.action_items.clear();
@@ -5629,6 +5881,7 @@ fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
 pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkState {
     CityWorkState {
         meeting_bodies: state.meeting_bodies.clone(),
+        meeting_members: state.meeting_members.clone(),
         agenda_intakes: Vec::new(),
         meetings: state
             .meetings
@@ -5681,6 +5934,7 @@ pub fn city_work_action(
     let mut search_results = Vec::new();
     let message = match action {
         "create-meeting-body" => create_meeting_body(&mut state, payload)?,
+        "add-meeting-member" => add_meeting_member(&mut state, payload)?,
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
         "submit-agenda-intake" => submit_agenda_intake(&mut state, payload)?,
@@ -5696,6 +5950,7 @@ pub fn city_work_action(
         "add-minute-citation" => add_minute_citation(&mut state, payload)?,
         "suggest-minutes-draft" => suggest_minutes_draft(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
+        "record-member-vote" => record_member_vote(&mut state, payload)?,
         "add-action-item" => add_action_item(&mut state, payload)?,
         "record-resident-comment" => record_resident_comment(&mut state, payload)?,
         "submit-public-comment" => submit_public_comment(&mut state, payload)?,
@@ -5937,6 +6192,39 @@ mod tests {
                     Err(error) => error,
                 };
             assert!(duplicate_body_error.contains("already exists"));
+            let incomplete_member = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
+                "memberName": "Councilmember Lee"
+            });
+            let error = match city_work_action("add-meeting-member", Some(&incomplete_member)) {
+                Ok(_) => panic!("member cannot save without a role"),
+                Err(error) => error,
+            };
+            assert!(error.contains("member role"));
+            let member_lee = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
+                "memberName": "Councilmember Lee",
+                "memberRole": "Mayor Pro Tem",
+                "memberTermStart": "2025-01-01",
+                "memberTermEnd": "2028-12-31",
+                "memberEmail": "lee@example.gov"
+            });
+            city_work_action("add-meeting-member", Some(&member_lee)).expect("member saved");
+            let member_ortiz = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
+                "memberName": "Councilmember Ortiz",
+                "memberRole": "Councilmember",
+                "memberTermStart": "2023-01-01",
+                "memberTermEnd": "2026-12-31",
+                "memberEmail": "ortiz@example.gov"
+            });
+            city_work_action("add-meeting-member", Some(&member_ortiz)).expect("member saved");
+            let duplicate_member_error =
+                match city_work_action("add-meeting-member", Some(&member_lee)) {
+                    Ok(_) => panic!("duplicate active member cannot be created"),
+                    Err(error) => error,
+                };
+            assert!(duplicate_member_error.contains("already on this meeting body roster"));
             let payload = serde_json::json!({
                 "meetingBodyId": meeting_body_id,
                 "title": "Council Regular Meeting",
@@ -6105,6 +6393,56 @@ mod tests {
                 "motionVoteReference": "Budget ordinance passed 4-1."
             });
             city_work_action("record-motion", Some(&motion)).expect("motion saved");
+            let roster_state = city_work_state().expect("state reads for member votes");
+            let lee_id = roster_state
+                .meeting_members
+                .iter()
+                .find(|member| member.name == "Councilmember Lee")
+                .expect("Lee member exists")
+                .id
+                .clone();
+            let ortiz_id = roster_state
+                .meeting_members
+                .iter()
+                .find(|member| member.name == "Councilmember Ortiz")
+                .expect("Ortiz member exists")
+                .id
+                .clone();
+            let invalid_member_vote = serde_json::json!({
+                "memberVoteMemberId": lee_id.clone(),
+                "memberVoteValue": "yes"
+            });
+            let error = match city_work_action("record-member-vote", Some(&invalid_member_vote)) {
+                Ok(_) => panic!("invalid member vote cannot save"),
+                Err(error) => error,
+            };
+            assert!(error.contains("aye, nay, abstain, absent, or recused"));
+            let missing_member_vote = serde_json::json!({
+                "memberVoteMemberName": "Councilmember Unknown",
+                "memberVoteValue": "aye"
+            });
+            let error = match city_work_action("record-member-vote", Some(&missing_member_vote)) {
+                Ok(_) => panic!("unknown member vote cannot save"),
+                Err(error) => error,
+            };
+            assert!(error.contains("meeting body roster"));
+            let lee_vote = serde_json::json!({
+                "memberVoteMemberId": lee_id.clone(),
+                "memberVoteValue": "aye"
+            });
+            city_work_action("record-member-vote", Some(&lee_vote))
+                .expect("Lee roll-call vote saved");
+            let duplicate_lee_vote = match city_work_action("record-member-vote", Some(&lee_vote)) {
+                Ok(_) => panic!("duplicate member vote cannot save"),
+                Err(error) => error,
+            };
+            assert!(duplicate_lee_vote.contains("already has a roll-call vote"));
+            let ortiz_vote = serde_json::json!({
+                "memberVoteMemberId": ortiz_id.clone(),
+                "memberVoteValue": "nay"
+            });
+            city_work_action("record-member-vote", Some(&ortiz_vote))
+                .expect("Ortiz roll-call vote saved");
             let vote = serde_json::json!({ "vote": "Budget ordinance passed 4-1." });
             city_work_action("record-vote", Some(&vote)).expect("vote saved");
             let bad_action_item = serde_json::json!({
@@ -6208,6 +6546,24 @@ mod tests {
             assert_eq!(body.default_notice_days, 3);
             assert_eq!(body.quorum_rule, "majority of seated members");
             assert_eq!(body.status, "active");
+            assert_eq!(state.meeting_members.len(), 2);
+            let lee_member = state
+                .meeting_members
+                .iter()
+                .find(|member| member.name == "Councilmember Lee")
+                .expect("Lee member persisted");
+            assert_eq!(lee_member.body_id, body.id);
+            assert_eq!(lee_member.role, "Mayor Pro Tem");
+            assert_eq!(lee_member.term_start, "2025-01-01");
+            assert_eq!(lee_member.term_end, "2028-12-31");
+            assert_eq!(lee_member.email, "lee@example.gov");
+            let ortiz_member = state
+                .meeting_members
+                .iter()
+                .find(|member| member.name == "Councilmember Ortiz")
+                .expect("Ortiz member persisted");
+            assert_eq!(ortiz_member.body_id, body.id);
+            assert_eq!(ortiz_member.role, "Councilmember");
             let meeting = state.meetings.first().expect("meeting exists");
             assert_eq!(meeting.body_id, body.id);
             assert_eq!(meeting.body_name, "City Council");
@@ -6250,6 +6606,15 @@ mod tests {
                 meeting.motions[0].vote_reference,
                 "Budget ordinance passed 4-1."
             );
+            assert_eq!(meeting.member_votes.len(), 2);
+            assert_eq!(meeting.member_votes[0].member_name, "Councilmember Lee");
+            assert_eq!(meeting.member_votes[0].vote, "aye");
+            assert_eq!(
+                meeting.member_votes[0].motion_text,
+                "Approve the budget ordinance."
+            );
+            assert_eq!(meeting.member_votes[1].member_name, "Councilmember Ortiz");
+            assert_eq!(meeting.member_votes[1].vote, "nay");
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
             assert_eq!(meeting.action_records.len(), 1);
@@ -6340,6 +6705,9 @@ mod tests {
             assert!(packet.contains("## Motions"));
             assert!(packet.contains("Approve the budget ordinance."));
             assert!(packet.contains("Councilmember Lee"));
+            assert!(packet.contains("## Roll Call Votes"));
+            assert!(packet.contains("Councilmember Lee: aye"));
+            assert!(packet.contains("Councilmember Ortiz: nay"));
             assert!(packet.contains("## Minute Citations"));
             assert!(packet.contains("Executive session memo"));
             assert!(packet.contains("## Minutes Signature"));
@@ -6357,6 +6725,9 @@ mod tests {
             assert!(archive.contains("## Motions"));
             assert!(archive.contains("Approve the budget ordinance."));
             assert!(archive.contains("Councilmember Patel"));
+            assert!(archive.contains("## Roll Call Votes"));
+            assert!(archive.contains("Councilmember Lee: aye"));
+            assert!(archive.contains("Councilmember Ortiz: nay"));
             assert!(archive.contains("## Action Items"));
             assert!(archive.contains("## Action Item Details"));
             assert!(archive.contains("Finance staff to publish the adopted budget."));
@@ -6395,8 +6766,19 @@ mod tests {
             assert!(body_results
                 .iter()
                 .any(|result| result.title == "Meeting body: City Council"));
+            let member_role_results = search_city_work(&state, "Mayor Pro Tem");
+            assert!(member_role_results
+                .iter()
+                .any(|result| result.title == "Meeting member: Councilmember Lee"));
             let motion_results = search_city_work(&state, "Councilmember Patel");
             assert_eq!(motion_results.len(), 1);
+            let member_vote_results = search_city_work(&state, "Councilmember Ortiz");
+            assert!(member_vote_results
+                .iter()
+                .any(|result| result.title == "Meeting member: Councilmember Ortiz"));
+            assert!(member_vote_results
+                .iter()
+                .any(|result| result.title == "Council Regular Meeting"));
             let action_owner_results = search_city_work(&state, "Finance Director");
             assert_eq!(action_owner_results.len(), 1);
             let action_source_results = search_city_work(&state, "Budget ordinance motion");
@@ -6424,6 +6806,7 @@ mod tests {
             assert!(state.code_sources[0].citation.contains("Adopted ordinance"));
             let public_state = public_city_work_state().expect("public state reads");
             assert_eq!(public_state.meeting_bodies.len(), 1);
+            assert_eq!(public_state.meeting_members.len(), 2);
             assert_eq!(
                 public_state.meeting_bodies[0].statutory_basis,
                 "City Charter Section 2.1"
@@ -6435,6 +6818,12 @@ mod tests {
             assert_eq!(public_meeting.body_id, body.id);
             assert_eq!(public_meeting.body_name, "City Council");
             assert_eq!(public_meeting.motions.len(), 1);
+            assert_eq!(public_meeting.member_votes.len(), 2);
+            assert_eq!(
+                public_meeting.member_votes[0].member_name,
+                "Councilmember Lee"
+            );
+            assert_eq!(public_meeting.member_votes[0].vote, "aye");
             assert_eq!(public_meeting.staff_reports.len(), 1);
             assert_eq!(
                 public_meeting.staff_reports[0].recommendation,
@@ -6488,6 +6877,15 @@ mod tests {
             let late_vote = serde_json::json!({ "vote": "Late amendment after archive." });
             let error = match city_work_action("record-vote", Some(&late_vote)) {
                 Ok(_) => panic!("archived meeting cannot be mutated"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+            let late_member_vote = serde_json::json!({
+                "memberVoteMemberId": lee_member.id.clone(),
+                "memberVoteValue": "abstain"
+            });
+            let error = match city_work_action("record-member-vote", Some(&late_member_vote)) {
+                Ok(_) => panic!("archived meeting cannot record roll-call votes"),
                 Err(error) => error,
             };
             assert!(error.contains("archived as a public record"));
@@ -6552,6 +6950,8 @@ mod tests {
             .expect("public re-export reads");
             assert!(public_reexport.contains("Body: City Council"));
             assert!(public_reexport.contains("Fiscal note"));
+            assert!(public_reexport.contains("## Roll Call Votes"));
+            assert!(public_reexport.contains("Councilmember Lee: aye"));
             assert!(!public_reexport.contains("Closed-session attorney memo"));
             assert!(public_reexport.contains("Packet item 4 fiscal note"));
             assert!(!public_reexport.contains("Executive session memo"));

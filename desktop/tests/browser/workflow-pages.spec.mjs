@@ -12,6 +12,14 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Default notice days")).toBeVisible();
   await expect(page.getByLabel("Quorum rule")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Meeting Body" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Member Roster" })).toBeVisible();
+  await expect(page.getByLabel("Roster body")).toBeVisible();
+  await expect(page.getByLabel("Member name")).toBeVisible();
+  await expect(page.getByLabel("Member role")).toBeVisible();
+  await expect(page.getByLabel("Term start")).toBeVisible();
+  await expect(page.getByLabel("Term end")).toBeVisible();
+  await expect(page.getByLabel("Member email")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Member" })).toBeDisabled();
   await expect(page.getByRole("heading", { name: "Agenda Intake Queue" })).toBeVisible();
   await expect(page.getByLabel("Intake title")).toBeVisible();
   await expect(page.getByLabel("Submitted by")).toBeVisible();
@@ -72,7 +80,11 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Seconded by")).toBeVisible();
   await expect(page.getByLabel("Motion disposition")).toBeVisible();
   await expect(page.getByLabel("Linked vote reference")).toBeVisible();
+  await expect(page.getByLabel("Roll-call motion")).toBeVisible();
+  await expect(page.getByLabel("Roll-call member")).toBeVisible();
+  await expect(page.getByLabel("Roll-call vote")).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Motion" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Roll Call Vote" })).toBeDisabled();
   await expect(page.getByLabel("Action owner")).toBeVisible();
   await expect(page.getByLabel("Action due date")).toBeVisible();
   await expect(page.getByLabel("Action status")).toBeVisible();

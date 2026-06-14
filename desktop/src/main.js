@@ -461,6 +461,7 @@ const fallbackState = {
   ],
   city_work: {
     meeting_bodies: [],
+    meeting_members: [],
     agenda_intakes: [],
     meetings: [],
     records_requests: [],
@@ -542,6 +543,11 @@ const state = {
     meetingBodyCadence: "as scheduled",
     meetingBodyDefaultNoticeDays: "3",
     meetingBodyQuorumRule: "majority of seated members",
+    memberName: "",
+    memberRole: "",
+    memberTermStart: "",
+    memberTermEnd: "",
+    memberEmail: "",
     meetingTitle: "",
     meetingDate: "",
     meetingSummary: "",
@@ -602,6 +608,10 @@ const state = {
     motionSeconder: "",
     motionDisposition: "pending vote",
     motionVoteReference: "",
+    memberVoteMotionId: "",
+    memberVoteMemberId: "",
+    memberVoteMemberName: "",
+    memberVoteValue: "aye",
     vote: "",
     actionItem: "",
     actionItemOwner: "",
@@ -1379,6 +1389,7 @@ function workflowEmpty(label) {
 
 const GUIDED_WORK_ACTIONS = new Set([
   "create-meeting-body",
+  "add-meeting-member",
   "review-agenda-intake",
   "promote-agenda-intake",
   "record-staff-report",
@@ -1394,6 +1405,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "suggest-minutes-draft",
   "adopt-minutes",
   "sign-minutes",
+  "record-member-vote",
   "record-adopted-legislation",
   "archive-meeting",
   "set-records-deadline",
@@ -1430,6 +1442,10 @@ function selectedFrom(collection, selectedId) {
 
 function meetingBodies(work = cityWork()) {
   return work.meeting_bodies || [];
+}
+
+function meetingMembers(work = cityWork()) {
+  return work.meeting_members || [];
 }
 
 function agendaIntakes(work = cityWork()) {
@@ -1501,9 +1517,14 @@ function guidedReviewForAction(action) {
   const handoff = currentCodeHandoff(work);
   const notification = currentNotification(work);
   const meetingSubject = meeting ? `${meeting.title} (${meeting.meeting_date})` : "Current meeting";
+  const bodySubject = meetingBodies(work).find((body) => body.id === state.workDraft.meetingBodyId) || meetingBodies(work)[0] || null;
   const agendaIntakeSubject = agendaIntake ? `${agendaIntake.title} (${agendaIntake.department})` : "Current agenda intake item";
   const staffReportAgendaItem = meeting?.agenda_items?.find((item) => item.id === state.workDraft.staffReportAgendaItemId) || meeting?.agenda_items?.[0] || null;
   const staffReportSubject = staffReportAgendaItem ? staffReportAgendaItem.title : "Current agenda item";
+  const rosterMembers = meetingMembers(work).filter((member) => !meeting || !meeting.body_id || member.body_id === meeting.body_id);
+  const selectedMemberVoteMember = rosterMembers.find((member) => member.id === state.workDraft.memberVoteMemberId || member.name === state.workDraft.memberVoteMemberName) || rosterMembers[0] || null;
+  const meetingMotionsForVote = meeting?.motions || [];
+  const selectedMemberVoteMotion = meetingMotionsForVote.find((motion) => motion.id === state.workDraft.memberVoteMotionId) || meetingMotionsForVote[meetingMotionsForVote.length - 1] || null;
   const publicCommentSubject = publicComment ? `${publicComment.commenter_name}: ${publicComment.topic || "Public comment"}` : "Current public comment";
   const requestSubject = request ? `${request.requester}: ${request.summary}` : "Current records request";
   const sourceSubject = source ? `${source.title} (${source.citation})` : "Current code source";
@@ -1527,6 +1548,24 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for the meeting body setup record.",
       retry: "If the name, statutory basis, notice days, or duplicate check fails, the desktop app leaves local records unchanged."
+    },
+    "add-meeting-member": {
+      title: "Review Before Saving Member",
+      confirmLabel: "Save Member",
+      module: "CivicClerk",
+      subject: detailOrFallback(state.workDraft.memberName, "New meeting body member"),
+      status: "Roster record",
+      changes: "Adds this elected or appointed member to the selected meeting body roster for quorum and roll-call vote work.",
+      visibility: "Meeting body roster data. Member names and roles can appear in staff workflows, meeting records, archives, and search.",
+      sources: [
+        bodySubject ? `Body: ${bodySubject.name}` : "A meeting body is required.",
+        detailOrFallback(state.workDraft.memberName, "Member name is required."),
+        detailOrFallback(state.workDraft.memberRole, "Member role is required."),
+        detailOrFallback(state.workDraft.memberTermStart, "Term start is optional."),
+        detailOrFallback(state.workDraft.memberTermEnd, "Term end is optional.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the roster change.",
+      retry: "If the body is missing, dates are invalid, required fields are blank, or the active member already exists, the roster stays unchanged."
     },
     "review-agenda-intake": {
       title: "Review Before Updating Agenda Intake",
@@ -1678,10 +1717,10 @@ function guidedReviewForAction(action) {
       module: "CivicClerk",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
-      changes: "Writes a local packet export from the meeting agenda, packet attachments, minutes, votes, action items, and comments.",
+      changes: "Writes a local packet export from the meeting agenda, packet attachments, minutes, motions, roll-call votes, outcomes, action items, and comments.",
       visibility: "Exported packet material remains local staff work unless later posted or archived.",
       sources: [
-        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
       audit: "Creates a CivicClerk audit entry for the packet export.",
@@ -1693,10 +1732,10 @@ function guidedReviewForAction(action) {
       module: "CivicClerk",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
-      changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, packet attachments, outcomes, action items, and comments. It does not adopt or archive the minutes.",
+      changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, packet attachments, motions, roll-call votes, outcomes, action items, and comments. It does not adopt or archive the minutes.",
       visibility: "Internal staff draft only. A clerk must review, edit, and adopt minutes before the public archive step.",
       sources: [
-        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.votes || []).length} outcome(s); ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action item(s)` : "The desktop app will require a meeting before generating.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} outcome(s); ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action item(s)` : "The desktop app will require a meeting before generating.",
         detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
       ],
       audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
@@ -1732,7 +1771,7 @@ function guidedReviewForAction(action) {
       sources: [
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet."),
         meeting && (meeting.minute_citations || []).length > 0 ? `${(meeting.minute_citations || []).length} minute citation(s) recorded.` : "At least one minute citation is required.",
-        meeting ? `${(meeting.motions || []).length} motion(s); ${(meeting.votes || []).length} vote record(s)` : "The desktop app will require a meeting before saving."
+        meeting ? `${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} vote/outcome record(s)` : "The desktop app will require a meeting before saving."
       ],
       audit: "Creates a CivicClerk audit entry for adopting minutes.",
       retry: "If no minutes draft or citation evidence exists, the desktop app blocks adoption and asks staff to save minutes and add citations first."
@@ -1752,6 +1791,23 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for signing the adopted minutes.",
       retry: "If minutes are not adopted, already signed, or signer evidence is missing, the desktop app blocks signing and leaves the meeting unchanged."
+    },
+    "record-member-vote": {
+      title: "Review Before Recording Roll Call Vote",
+      confirmLabel: "Record Roll Call Vote",
+      module: "CivicClerk",
+      subject: selectedMemberVoteMotion ? selectedMemberVoteMotion.text : "Current motion",
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Records one member's individual roll-call vote against the selected motion.",
+      visibility: "Staff meeting record. Roll-call votes appear in the public archive after minutes signing and meeting archive.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        selectedMemberVoteMotion ? `Motion: ${selectedMemberVoteMotion.text}` : "A motion is required before recording roll-call votes.",
+        selectedMemberVoteMember ? `Member: ${selectedMemberVoteMember.name}` : "A member roster entry is required.",
+        detailOrFallback(state.workDraft.memberVoteValue, "Vote value is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the individual roll-call vote.",
+      retry: "If no motion, member, valid vote value, or editable meeting exists, the desktop app leaves the meeting unchanged."
     },
     "record-adopted-legislation": {
       title: "Review Before Recording Adopted Legislation",
@@ -2174,6 +2230,7 @@ function publicMeetingView(meeting) {
         added_by: ""
     })),
     staff_reports: meeting.staff_reports || [],
+    member_votes: meeting.member_votes || [],
     minute_citations: (meeting.minute_citations || [])
       .filter((citation) => citation.access_level === "public record"),
     closed_sessions: (meeting.closed_sessions || []).map((session) => ({
@@ -2189,6 +2246,7 @@ function publicMeetingView(meeting) {
     publicMeeting.minutes_signature_attestation = "";
     publicMeeting.minutes_signed_at_unix_seconds = null;
     publicMeeting.motions = [];
+    publicMeeting.member_votes = [];
     publicMeeting.votes = [];
     publicMeeting.staff_reports = [];
     publicMeeting.action_items = [];
@@ -2268,8 +2326,9 @@ function renderPublicMeetingsWorkflow() {
           <p>${meeting.summary || "No public summary recorded."}</p>
           ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
+          ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2284,6 +2343,14 @@ function renderMeetingsWorkflow() {
   const selectedMeeting = currentMeeting(work);
   const selectedMeetingAgendaItems = selectedMeeting?.agenda_items || [];
   const selectedStaffReportAgendaItemId = state.workDraft.staffReportAgendaItemId || selectedMeetingAgendaItems[0]?.id || "";
+  const rosterMembers = meetingMembers(work).filter((member) => !selectedMeeting || !selectedMeeting.body_id || member.body_id === selectedMeeting.body_id);
+  const selectedMeetingMotions = selectedMeeting?.motions || [];
+  const selectedMemberVoteMotionId = selectedMeetingMotions.some((motion) => motion.id === state.workDraft.memberVoteMotionId)
+    ? state.workDraft.memberVoteMotionId
+    : selectedMeetingMotions[selectedMeetingMotions.length - 1]?.id || "";
+  const selectedMemberVoteMemberId = rosterMembers.some((member) => member.id === state.workDraft.memberVoteMemberId)
+    ? state.workDraft.memberVoteMemberId
+    : rosterMembers[0]?.id || "";
   const selectedAgendaIntake = currentAgendaIntake(work);
   const selectedAgendaIntakeCanReview = selectedAgendaIntake && selectedAgendaIntake.status !== "promoted to agenda";
   const selectedAgendaIntakeCanPromote = selectedAgendaIntake && selectedMeeting && selectedAgendaIntake.status === "ready for agenda";
@@ -2309,6 +2376,24 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="create-meeting-body">Save Meeting Body</button>
         </div>
         <p class="form-help">${bodies.length === 0 ? "No meeting bodies saved yet." : `Saved bodies: ${bodies.map((body) => escapeHtml(body.name)).join(", ")}`}</p>
+      </div>
+      <div class="workflow-form">
+        <h3>Member Roster</h3>
+        <p class="form-help">Save council, board, commission, or authority members before recording roll-call votes.</p>
+        <label>Roster body
+          ${bodies.length > 0 ? `<select data-work-field="meetingBodyId">
+            ${bodies.map((body) => `<option value="${escapeHtml(body.id)}" ${body.id === selectedBodyId ? "selected" : ""}>${escapeHtml(body.name)} - ${escapeHtml(body.statutory_basis)}</option>`).join("")}
+          </select>` : `<input type="text" data-work-field="meetingBodyName" value="${state.workDraft.meetingBodyName}" placeholder="City Council" />`}
+        </label>
+        <label>Member name <input type="text" data-work-field="memberName" value="${state.workDraft.memberName}" /></label>
+        <label>Member role <input type="text" data-work-field="memberRole" value="${state.workDraft.memberRole}" placeholder="Mayor, Councilmember, Chair" /></label>
+        <label>Term start <input type="date" data-work-field="memberTermStart" value="${state.workDraft.memberTermStart}" /></label>
+        <label>Term end <input type="date" data-work-field="memberTermEnd" value="${state.workDraft.memberTermEnd}" /></label>
+        <label>Member email <input type="email" data-work-field="memberEmail" value="${state.workDraft.memberEmail}" /></label>
+        <div class="workflow-actions">
+          ${bodies.length === 0 ? `<button type="button" class="secondary-action" disabled>Save Member</button>` : `<button type="button" class="secondary-action" data-work-action="add-meeting-member">Save Member</button>`}
+        </div>
+        <p class="form-help">${meetingMembers(work).length === 0 ? "No roster members saved yet." : `Roster members: ${meetingMembers(work).map((member) => `${escapeHtml(member.name)} (${escapeHtml(member.role)})`).join(", ")}`}</p>
       </div>
       <div class="workflow-form">
         <h3>Agenda Intake Queue</h3>
@@ -2429,6 +2514,21 @@ function renderMeetingsWorkflow() {
           </select>
         </label>
         <label>Linked vote reference <input type="text" data-work-field="motionVoteReference" value="${state.workDraft.motionVoteReference}" placeholder="Optional vote or roll-call note" /></label>
+        <label>Roll-call motion
+          <select data-work-field="memberVoteMotionId" ${selectedMeetingMotions.length === 0 ? "disabled" : ""}>
+            ${selectedMeetingMotions.length === 0 ? `<option>No motion recorded</option>` : selectedMeetingMotions.map((motion) => `<option value="${escapeHtml(motion.id)}" ${motion.id === selectedMemberVoteMotionId ? "selected" : ""}>${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)})</option>`).join("")}
+          </select>
+        </label>
+        <label>Roll-call member
+          <select data-work-field="memberVoteMemberId" ${rosterMembers.length === 0 ? "disabled" : ""}>
+            ${rosterMembers.length === 0 ? `<option>No roster member available</option>` : rosterMembers.map((member) => `<option value="${escapeHtml(member.id)}" ${member.id === selectedMemberVoteMemberId ? "selected" : ""}>${escapeHtml(member.name)} - ${escapeHtml(member.role)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Roll-call vote
+          <select data-work-field="memberVoteValue">
+            ${["aye", "nay", "abstain", "absent", "recused"].map((voteValue) => `<option value="${voteValue}" ${state.workDraft.memberVoteValue === voteValue ? "selected" : ""}>${voteValue}</option>`).join("")}
+          </select>
+        </label>
         <label>Vote or outcome <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
         <label>Action item <input type="text" data-work-field="actionItem" value="${state.workDraft.actionItem}" /></label>
         <label>Action owner <input type="text" data-work-field="actionItemOwner" value="${state.workDraft.actionItemOwner}" /></label>
@@ -2455,6 +2555,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="suggest-minutes-draft">Generate Local AI Minutes</button>
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
           <button type="button" class="secondary-action" data-work-action="record-motion">Record Motion</button>
+          ${selectedMeetingMotions.length === 0 || rosterMembers.length === 0 ? `<button type="button" class="secondary-action" disabled>Record Roll Call Vote</button>` : `<button type="button" class="secondary-action" data-work-action="record-member-vote">Record Roll Call Vote</button>`}
           <button type="button" class="secondary-action" data-work-action="record-vote">Record Outcome</button>
           <button type="button" class="secondary-action" data-work-action="add-action-item">Add Action Item</button>
           <button type="button" class="secondary-action" data-work-action="record-resident-comment">Record Resident Comment</button>
@@ -2510,6 +2611,7 @@ function renderMeetingsWorkflow() {
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
           ${(meeting.closed_sessions || []).length > 0 ? `<p><strong>Closed sessions:</strong> ${(meeting.closed_sessions || []).map((session) => `${escapeHtml(session.statutory_basis)} (${escapeHtml((session.topics || []).join("; "))}; ${escapeHtml(session.entered_at)}-${escapeHtml(session.exited_at)})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
+          ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.adopted_legislation || []).length > 0 ? `<p><strong>Adopted legislation:</strong> ${(meeting.adopted_legislation || []).map((item) => `${escapeHtml(item.legislation_type)} ${escapeHtml(item.title)} (${escapeHtml(item.handoff_status)})`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.action_records || []).length > 0 ? `<p><strong>Action details:</strong> ${(meeting.action_records || []).map((action) => `${escapeHtml(action.description)} (${escapeHtml(action.status)}${action.owner ? `; owner ${escapeHtml(action.owner)}` : ""}${action.due_date ? `; due ${escapeHtml(action.due_date)}` : ""}${action.source_reference ? `; source ${escapeHtml(action.source_reference)}` : ""})`).join("; ")}</p>` : ""}
@@ -2528,7 +2630,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3201,6 +3303,20 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       });
     }
   });
+  meetingMembers(work).forEach((member) => {
+    const memberSearchText = publicOnly
+      ? [member.name, member.role, member.body_name, member.term_start, member.term_end, member.status]
+      : [member.name, member.role, member.body_name, member.term_start, member.term_end, member.email, member.status];
+    if (memberSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({
+        module_id: "civicclerk",
+        title: `Meeting member: ${member.name}`,
+        snippet: `${member.role}; ${member.body_name}`,
+        citation: member.body_name,
+        status: member.status
+      });
+    }
+  });
   const meetings = publicOnly ? publicMeetings(work) : work.meetings;
   meetings.forEach((meeting) => {
     const agendaTitles = (meeting.agenda_items || [])
@@ -3208,6 +3324,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       .join(" ");
     const motions = (meeting.motions || [])
       .map((motion) => [motion.text, motion.mover, motion.seconder, motion.disposition, motion.vote_reference].join(" "))
+      .join(" ");
+    const memberVotes = (meeting.member_votes || [])
+      .map((vote) => [vote.member_name, vote.vote, vote.motion_text, vote.motion_id].join(" "))
       .join(" ");
     const staffReports = (meeting.staff_reports || [])
       .map((report) => [report.agenda_item_title, report.recommendation, report.background, report.analysis, report.fiscal_impact, report.alternatives, report.prior_actions, report.prepared_by, report.revision_note].join(" "))
@@ -3275,9 +3394,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
-        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, staffReports, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
+        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, memberVotes, staffReports, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4399,8 +4518,14 @@ async function handleAuthAction(action) {
 
 function workPayloadForAction(action) {
   const draft = state.workDraft;
+  const work = cityWork();
+  const meeting = currentMeeting(work);
+  const rosterMembers = meetingMembers(work).filter((member) => !meeting || !meeting.body_id || member.body_id === meeting.body_id);
+  const selectedVoteMember = rosterMembers.find((member) => member.id === draft.memberVoteMemberId) || rosterMembers[0] || null;
+  const meetingMotions = meeting?.motions || [];
+  const selectedVoteMotion = meetingMotions.find((motion) => motion.id === draft.memberVoteMotionId) || meetingMotions[meetingMotions.length - 1] || null;
   const selected = {
-    meetingId: currentMeeting()?.id || "",
+    meetingId: meeting?.id || "",
     agendaIntakeId: currentAgendaIntake()?.id || "",
     publicCommentId: currentPublicComment()?.id || "",
     recordsRequestId: currentRecordsRequest()?.id || "",
@@ -4417,9 +4542,18 @@ function workPayloadForAction(action) {
       meetingBodyDefaultNoticeDays: draft.meetingBodyDefaultNoticeDays,
       meetingBodyQuorumRule: draft.meetingBodyQuorumRule
     },
+    "add-meeting-member": {
+      meetingBodyId: draft.meetingBodyId || meetingBodies(work)[0]?.id || "",
+      meetingBodyName: draft.meetingBodyName,
+      memberName: draft.memberName,
+      memberRole: draft.memberRole,
+      memberTermStart: draft.memberTermStart,
+      memberTermEnd: draft.memberTermEnd,
+      memberEmail: draft.memberEmail
+    },
     "create-meeting": {
       title: draft.meetingTitle,
-      meetingBodyId: draft.meetingBodyId || meetingBodies(cityWork())[0]?.id || "",
+      meetingBodyId: draft.meetingBodyId || meetingBodies(work)[0]?.id || "",
       meetingBodyName: draft.meetingBodyName,
       meetingDate: draft.meetingDate,
       summary: draft.meetingSummary,
@@ -4506,6 +4640,13 @@ function workPayloadForAction(action) {
       minutesCitationAccess: draft.minutesCitationAccess
     },
     "record-vote": { ...selected, vote: draft.vote },
+    "record-member-vote": {
+      ...selected,
+      memberVoteMotionId: selectedVoteMotion?.id || draft.memberVoteMotionId,
+      memberVoteMemberId: selectedVoteMember?.id || draft.memberVoteMemberId,
+      memberVoteMemberName: selectedVoteMember?.name || draft.memberVoteMemberName,
+      memberVoteValue: draft.memberVoteValue
+    },
     "add-action-item": {
       ...selected,
       actionItem: draft.actionItem,
