@@ -13,13 +13,14 @@ use crate::local_paths;
 
 const RUNTIME_MANIFEST_JSON: &str = include_str!("../../runtime/windows-local-runtime.json");
 const RUNTIME_PAYLOADS_JSON: &str = include_str!("../../runtime/windows-runtime-payloads.json");
-const REQUIRED_ACTIONS: [&str; 10] = [
+const REQUIRED_ACTIONS: [&str; 11] = [
     "install",
     "start",
     "stop",
     "health",
     "repair",
     "logs",
+    "support-bundle",
     "backup",
     "open-backup-folder",
     "restore",
@@ -170,6 +171,19 @@ struct BackupManifest {
     files: Vec<BackupFileEntry>,
 }
 
+#[derive(Serialize)]
+struct SupportBundleManifest {
+    schema_version: u16,
+    kind: String,
+    created_unix_seconds: u64,
+    source_root: String,
+    data_source: String,
+    backup_root: String,
+    selected_services: Vec<String>,
+    file_count: usize,
+    files: Vec<BackupFileEntry>,
+}
+
 fn parse_manifest() -> Result<RuntimeManifest, String> {
     serde_json::from_str(RUNTIME_MANIFEST_JSON)
         .map_err(|error| format!("Could not parse Windows runtime manifest: {error}"))
@@ -271,6 +285,10 @@ fn secrets_dir() -> PathBuf {
 
 fn backup_root() -> PathBuf {
     local_paths::backup_root()
+}
+
+fn support_bundle_root() -> PathBuf {
+    backup_root().join("support-bundles")
 }
 
 fn runtime_root() -> PathBuf {
@@ -1727,6 +1745,131 @@ fn log_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult,
     })
 }
 
+fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, String> {
+    let created = now_unix_seconds();
+    let bundle_root = support_bundle_root();
+    fs::create_dir_all(&bundle_root).map_err(|error| {
+        format!(
+            "Could not create support bundle folder {}: {error}",
+            bundle_root.display()
+        )
+    })?;
+    let destination = bundle_root.join(format!(
+        "civicsuite-support-bundle-{created}-{}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&destination).map_err(|error| {
+        format!(
+            "Could not create support bundle {}: {error}",
+            destination.display()
+        )
+    })?;
+
+    let _ = prepare_log_artifacts(services)?;
+    let bundle_logs = destination.join("logs");
+    fs::create_dir_all(&bundle_logs).map_err(|error| {
+        format!(
+            "Could not create support bundle logs folder {}: {error}",
+            bundle_logs.display()
+        )
+    })?;
+    for service in services {
+        let source = service_log_path(service);
+        if source.is_file() {
+            let file_name = source
+                .file_name()
+                .ok_or_else(|| format!("Could not name service log {}", source.display()))?;
+            fs::copy(&source, bundle_logs.join(file_name)).map_err(|error| {
+                format!(
+                    "Could not copy service log {} into support bundle: {error}",
+                    source.display()
+                )
+            })?;
+        }
+    }
+
+    let health = runtime_health()?;
+    fs::write(
+        destination.join("health-summary.json"),
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(&health)
+                .map_err(|error| format!("Could not serialize health summary: {error}"))?
+        ),
+    )
+    .map_err(|error| format!("Could not write support bundle health summary: {error}"))?;
+
+    fs::write(
+        destination.join("runtime-state.json"),
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(&read_state()?)
+                .map_err(|error| format!("Could not serialize runtime state: {error}"))?
+        ),
+    )
+    .map_err(|error| format!("Could not write support bundle runtime state: {error}"))?;
+
+    let selected_services = services
+        .iter()
+        .map(|service| format!("{} ({})", service.label, service.id))
+        .collect::<Vec<_>>();
+    let readme = format!(
+        "CivicSuite Support Bundle\n\nThis local package contains health, runtime-state, and selected service logs for CivicSuite support or local IT.\nIt does not copy city records, uploaded documents, backup contents, or local secrets.\n\nSelected services:\n{}\n\nCity data folder:\n{}\nBackup folder:\n{}\n\nShare this support bundle folder only with trusted CivicSuite support or city IT.\n",
+        selected_services.join("\n"),
+        data_root().display(),
+        backup_root().display()
+    );
+    fs::write(destination.join("README.txt"), readme)
+        .map_err(|error| format!("Could not write support bundle README: {error}"))?;
+
+    let files = collect_backup_files(&destination)?;
+    let manifest = SupportBundleManifest {
+        schema_version: 1,
+        kind: "support-bundle".to_string(),
+        created_unix_seconds: created,
+        source_root: civic_suite_root().display().to_string(),
+        data_source: data_root().display().to_string(),
+        backup_root: backup_root().display().to_string(),
+        selected_services: services.iter().map(|service| service.id.clone()).collect(),
+        file_count: files.len(),
+        files,
+    };
+    fs::write(
+        destination.join("support-manifest.json"),
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(&manifest)
+                .map_err(|error| format!("Could not serialize support manifest: {error}"))?
+        ),
+    )
+    .map_err(|error| format!("Could not write support bundle manifest: {error}"))?;
+
+    Ok(destination)
+}
+
+fn support_bundle_action(
+    services: &[&ServiceDefinition],
+) -> Result<SupervisorActionResult, String> {
+    let bundle = create_support_bundle(services)?;
+    crate::local_shell::open_local_folder(&bundle)?;
+    Ok(SupervisorActionResult {
+        accepted: true,
+        action: "support-bundle".to_string(),
+        service_id: if services.len() == 1 {
+            services.first().map(|service| service.id.clone())
+        } else {
+            None
+        },
+        status: "Support bundle ready",
+        message: format!(
+            "Created and opened a CivicSuite support bundle with health, runtime-state, and selected service logs: {}.",
+            bundle.display()
+        ),
+        next_action: "Share README.txt and support-manifest.json only with trusted CivicSuite support or city IT."
+            .to_string(),
+    })
+}
+
 fn health_action(service_id: Option<&str>) -> Result<SupervisorActionResult, String> {
     let health = runtime_health()?;
     let relevant: Vec<&RuntimeHealthItem> = health
@@ -1969,6 +2112,7 @@ pub fn supervisor_action(
         "stop" => stop_services(&services),
         "health" => health_action(service_id),
         "logs" => log_action(&services),
+        "support-bundle" => support_bundle_action(&services),
         "backup" => backup_action(),
         "open-backup-folder" => open_backup_folder_action(),
         "restore" => restore_action(&services),
@@ -2498,6 +2642,70 @@ mod tests {
             assert!(readme.contains("CivicSuite Local Logs"));
             assert!(readme.contains("Local data store"));
             assert!(readme.contains("postgres.log"));
+        });
+    }
+
+    #[test]
+    fn support_bundle_action_packages_selected_runtime_evidence() {
+        with_temp_state_dir(|root| {
+            let custom_data = root.join("selected-city-data");
+            let custom_backups = root.join("selected-backups");
+            crate::local_paths::save_locations(&crate::local_paths::LocalLocations {
+                install_root: root.to_string_lossy().to_string(),
+                data_root: custom_data.to_string_lossy().to_string(),
+                backup_root: custom_backups.to_string_lossy().to_string(),
+            })
+            .expect("custom locations save");
+
+            let result =
+                supervisor_action("support-bundle", Some("postgres")).expect("support bundle");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Support bundle ready");
+            assert_eq!(result.service_id.as_deref(), Some("postgres"));
+            assert!(result.message.contains("support-bundles"));
+            assert!(result.next_action.contains("support-manifest.json"));
+
+            let bundle_root = custom_backups.join("support-bundles");
+            let mut bundles = fs::read_dir(&bundle_root)
+                .expect("support bundle folder")
+                .collect::<Result<Vec<_>, _>>()
+                .expect("support bundle entries");
+            bundles.sort_by_key(|entry| entry.path());
+            assert_eq!(bundles.len(), 1);
+            let bundle = bundles[0].path();
+
+            assert!(bundle.join("README.txt").is_file());
+            assert!(bundle.join("health-summary.json").is_file());
+            assert!(bundle.join("runtime-state.json").is_file());
+            assert!(bundle.join("support-manifest.json").is_file());
+            assert!(bundle.join("logs").join("postgres.log").is_file());
+            assert!(!bundle.join("Data").exists());
+            assert!(!bundle.join("config").exists());
+
+            let readme = fs::read_to_string(bundle.join("README.txt")).expect("readme");
+            assert!(readme.contains("CivicSuite Support Bundle"));
+            assert!(readme.contains("does not copy city records"));
+            assert!(readme.contains("Local data store (postgres)"));
+
+            let manifest: serde_json::Value = serde_json::from_str(
+                &fs::read_to_string(bundle.join("support-manifest.json")).expect("manifest"),
+            )
+            .expect("support manifest json");
+            assert_eq!(manifest["kind"], "support-bundle");
+            assert_eq!(manifest["selected_services"][0], "postgres");
+            let files = manifest["files"].as_array().expect("manifest files");
+            assert!(files.iter().any(|file| file["path"] == "README.txt"));
+            assert!(files
+                .iter()
+                .any(|file| file["path"] == "health-summary.json"));
+            assert!(files
+                .iter()
+                .any(|file| file["path"] == "runtime-state.json"));
+            assert!(files.iter().any(|file| {
+                file["path"] == "logs/postgres.log"
+                    && file["sha256"].as_str().map(|value| value.len()) == Some(64)
+            }));
         });
     }
 

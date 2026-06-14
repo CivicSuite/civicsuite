@@ -1462,6 +1462,7 @@ const GUIDED_SUPERVISOR_ACTIONS = new Set([
   "backup",
   "restore",
   "uninstall",
+  "support-bundle",
   "repair",
   "stop"
 ]);
@@ -4194,6 +4195,21 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       audit: "Creates a final uninstall backup manifest and returns an uninstall action result.",
       retry: "If the final backup fails, uninstall stops before removing the profile."
     },
+    "support-bundle": {
+      title: "Review Before Creating Support Bundle",
+      confirmLabel: "Create Support Bundle",
+      module: "CivicCore local runtime",
+      subject: service ? serviceLabel : "Selected local runtime services",
+      status: serviceStatus,
+      changes: "Creates a local support bundle with health, runtime-state, and selected service logs.",
+      visibility: "Local administrator only. The bundle does not copy city records, uploaded documents, backups, or local secrets.",
+      sources: [
+        service ? `Service id: ${service.id}` : "All local runtime services.",
+        "Source: System Health checks, runtime service state, and local service log files."
+      ],
+      audit: "Creates a support-manifest.json with SHA-256 hashes for the bundle files.",
+      retry: "If the support bundle folder cannot be written, the desktop app reports the error and leaves city data unchanged."
+    },
     "repair": {
       title: `Review Before Repairing ${serviceLabel}`,
       confirmLabel: "Repair",
@@ -4405,6 +4421,7 @@ function renderHealth() {
       <div class="health-actions lifecycle-actions">
         <button type="button" class="secondary-action" data-supervisor-action="backup">Backup Now</button>
         <button type="button" class="secondary-action" data-supervisor-action="open-backup-folder">Open Backup Folder</button>
+        <button type="button" class="secondary-action" data-supervisor-action="support-bundle">Create Support Bundle</button>
         <button type="button" class="secondary-action" data-supervisor-action="restore">Restore Latest Backup</button>
         <button type="button" class="secondary-action" data-supervisor-action="uninstall">Prepare Uninstall</button>
       </div>
@@ -4425,6 +4442,7 @@ function renderHealth() {
               <button type="button" class="secondary-action" data-supervisor-action="start" data-service-id="${escapeHtml(item.id)}">Start</button>
               <button type="button" class="secondary-action" data-supervisor-action="repair" data-service-id="${escapeHtml(item.id)}">Repair</button>
               <button type="button" class="secondary-action" data-supervisor-action="logs" data-service-id="${escapeHtml(item.id)}">Logs</button>
+              <button type="button" class="secondary-action" data-supervisor-action="support-bundle" data-service-id="${escapeHtml(item.id)}">Support Bundle</button>
               <button type="button" class="secondary-action" data-supervisor-action="stop" data-service-id="${escapeHtml(item.id)}">Stop</button>
             </div>
           ` : ""}

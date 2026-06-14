@@ -60,7 +60,7 @@ The shell owns these top-level areas:
 | Records Requests | intake, search, review, response, exports | CivicRecords AI |
 | Code & Ordinances | code search, source imports, guidance, handoffs | CivicCode |
 | Search City Knowledge | cross-module local search with citations | CivicCore + modules |
-| System Health | local services, model, storage, backup, repair | CivicCore |
+| System Health | local services, model, storage, backup, support bundle, repair | CivicCore |
 | Settings | city profile, users, modules, data location, updates | CivicCore |
 
 The module names remain visible for trust and support, but primary navigation is
@@ -74,7 +74,7 @@ The app keeps the prototype's three-surface commitment:
 |---|---|---|
 | Staff | clerks and city employees | Default authenticated work surface |
 | Resident/Public | public-facing preview and local publication surfaces | Never exposes staff-only actions |
-| IT/Admin | health, repair, model, logs, modules, backups | Plain-English summary first; technical detail behind disclosure |
+| IT/Admin | health, repair, model, logs/support bundle, modules, backups | Plain-English summary first; technical detail behind disclosure |
 
 Switching surfaces is always visible in the shell. A route must identify which
 surface the user is in.
@@ -97,7 +97,8 @@ Required installer steps:
 7. First admin user.
 8. Backup default.
 9. Health verification.
-10. Finish screen with open app, repair, backup, and uninstall entry points.
+10. Finish screen with open app, repair, backup, support bundle, and uninstall
+    entry points.
 
 The installer must not ask clerks to open a terminal, edit environment files, or
 start Docker/WSL. If a technical failure happens, the installer gives a plain
@@ -119,7 +120,7 @@ Risky civic actions use guided review:
 - Generating a response letter
 - Importing code/source material
 - Creating an ordinance or resolution handoff
-- Running backup, restore, repair, disable, or uninstall
+- Running backup, restore, support bundle, repair, disable, or uninstall
 
 Guided review must show:
 

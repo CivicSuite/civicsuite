@@ -52,7 +52,7 @@ Do not install Docker Desktop or WSL for this product path. If the app asks for 
    - Create the first local administrator.
    - Run local health verification.
 
-The app should explain failures in plain English and keep repair, backup, restore, logs, and uninstall reachable from System Health.
+The app should explain failures in plain English and keep repair, backup, restore, logs, support bundle, and uninstall reachable from System Health.
 
 ## Verify The Install
 
@@ -62,7 +62,7 @@ After first-run setup, open System Health. Verify:
 - Local data store is installed and healthy.
 - Local AI model file is present, checksum-verified, loaded, and registered.
 - Backup folder is configured.
-- Repair, backup, restore, logs, and uninstall controls are visible behind local-admin access.
+- Repair, backup, restore, logs, support bundle, and uninstall controls are visible behind local-admin access.
 
 Use the module manager in Settings to confirm:
 
@@ -81,7 +81,7 @@ Use the app screens, not a terminal:
 - Code & Ordinances: import a code source with title/citation/searchable text, preserve the source file as local evidence when available, verify the saved source shows filename/hash evidence without publishing local workstation paths, record sync state, generate or type guidance, approve guidance, publish source, answer a code question with citations, and create a clerk handoff.
 - Search City Knowledge: search across local meeting, records, and code data with citations and module labels.
 
-Risky civic actions should open a review panel before saving. Backup, restore, repair, service stop, and uninstall should also open a review panel before running.
+Risky civic actions should open a review panel before saving. Backup, restore, support bundle, repair, service stop, and uninstall should also open a review panel before running.
 
 ## Backup And Restore
 
@@ -92,6 +92,14 @@ Use System Health before major changes:
 - Restore should stop safely if no backup manifest exists.
 
 Backups are local files. Keep backup folders somewhere the city can retain and protect according to its records and IT policy.
+
+## Support Bundle
+
+Use **Create Support Bundle** in System Health when city IT or CivicSuite
+support asks for local runtime evidence. The app creates a timestamped folder
+under the configured backup location with a README, support-manifest.json,
+health-summary.json, runtime-state.json, and selected service logs. It does not
+copy city records, uploaded documents, backup contents, or local secrets.
 
 ## Uninstall
 

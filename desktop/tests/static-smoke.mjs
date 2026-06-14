@@ -448,7 +448,7 @@ for (const key of ["requires_docker", "requires_wsl", "requires_terminal"]) {
   }
 }
 
-for (const action of ["install", "start", "stop", "health", "repair", "logs", "backup", "open-backup-folder", "restore", "uninstall"]) {
+for (const action of ["install", "start", "stop", "health", "repair", "logs", "support-bundle", "backup", "open-backup-folder", "restore", "uninstall"]) {
   if (!runtimeManifest.lifecycle_actions.includes(action)) {
     throw new Error(`Windows runtime manifest missing lifecycle action: ${action}`);
   }
@@ -489,7 +489,11 @@ for (const phrase of [
   "CivicSuite Local Logs",
   "Use these files when IT or CivicSuite support asks for local runtime evidence.",
   "Prepared and opened the CivicSuite logs folder under the selected city data folder",
-  "Share README.txt and the relevant service log with IT or CivicSuite support."
+  "Share README.txt and the relevant service log with IT or CivicSuite support.",
+  "CivicSuite Support Bundle",
+  "health, runtime-state, and selected service logs",
+  "support-manifest.json",
+  "does not copy city records, uploaded documents, backup contents, or local secrets"
 ]) {
   if (!supervisorRust.includes(phrase)) {
     throw new Error(`Windows supervisor missing local logs support phrase: ${phrase}`);

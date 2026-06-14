@@ -50,6 +50,7 @@ test("system health keeps full model readiness visible", async ({ page }) => {
   await expect(page.locator('[aria-label="Backup folder actions"]')).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Backup Now" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Backup Folder" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Support Bundle" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Restore Latest Backup" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Prepare Uninstall" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Install$/ }).first()).toBeVisible();
@@ -92,6 +93,13 @@ test("system health repair and uninstall actions require guided review", async (
   await page.getByRole("button", { name: /^Stop$/ }).first().click();
   await expect(page.getByRole("heading", { name: "Review Before Stopping Local data store" })).toBeVisible();
   await expect(page.getByText("Staff workflows may be unavailable until services restart.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Create Support Bundle" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Creating Support Bundle" })).toBeVisible();
+  await expect(page.getByText("health, runtime-state, and selected service logs")).toBeVisible();
+  await expect(page.getByText("does not copy city records")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Create Support Bundle" })).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Prepare Uninstall" }).click();
