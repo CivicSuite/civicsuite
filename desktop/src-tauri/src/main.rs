@@ -152,6 +152,8 @@ fn city_work_action_module_requirement(
         | "suggest-minutes-draft"
         | "record-vote"
         | "record-member-vote"
+        | "record-meeting-attendance"
+        | "record-quorum-check"
         | "add-action-item"
         | "record-resident-comment"
         | "submit-public-comment"

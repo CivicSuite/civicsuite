@@ -87,8 +87,16 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Roll-call motion")).toBeVisible();
   await expect(page.getByLabel("Roll-call member")).toBeVisible();
   await expect(page.getByLabel("Roll-call vote")).toBeVisible();
+  await expect(page.getByLabel("Attendance member")).toBeVisible();
+  await expect(page.getByLabel("Attendance status")).toBeVisible();
+  await expect(page.getByLabel("Attendance recorded by")).toBeVisible();
+  await expect(page.getByLabel("Attendance note")).toBeVisible();
+  await expect(page.getByLabel("Quorum required count")).toBeVisible();
+  await expect(page.getByLabel("Quorum review note")).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Motion" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Roll Call Vote" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Record Attendance" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save Quorum Check" })).toBeDisabled();
   await expect(page.getByLabel("Action owner")).toBeVisible();
   await expect(page.getByLabel("Action due date")).toBeVisible();
   await expect(page.getByLabel("Action status")).toBeVisible();
@@ -220,6 +228,8 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Finalize Packet" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Record Motion" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record Attendance" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save Quorum Check" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Minute Citation" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);

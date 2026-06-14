@@ -615,6 +615,13 @@ const state = {
     memberVoteMemberId: "",
     memberVoteMemberName: "",
     memberVoteValue: "aye",
+    attendanceMemberId: "",
+    attendanceMemberName: "",
+    attendanceStatus: "present",
+    attendanceRecordedBy: "",
+    attendanceNote: "",
+    quorumRequiredCount: "",
+    quorumReviewNote: "",
     vote: "",
     actionItem: "",
     actionItemOwner: "",
@@ -1410,6 +1417,8 @@ const GUIDED_WORK_ACTIONS = new Set([
   "adopt-minutes",
   "sign-minutes",
   "record-member-vote",
+  "record-meeting-attendance",
+  "record-quorum-check",
   "record-adopted-legislation",
   "archive-meeting",
   "set-records-deadline",
@@ -1527,6 +1536,7 @@ function guidedReviewForAction(action) {
   const staffReportSubject = staffReportAgendaItem ? staffReportAgendaItem.title : "Current agenda item";
   const rosterMembers = meetingMembers(work).filter((member) => !meeting || !meeting.body_id || member.body_id === meeting.body_id);
   const selectedMemberVoteMember = rosterMembers.find((member) => member.id === state.workDraft.memberVoteMemberId || member.name === state.workDraft.memberVoteMemberName) || rosterMembers[0] || null;
+  const selectedAttendanceMember = rosterMembers.find((member) => member.id === state.workDraft.attendanceMemberId || member.name === state.workDraft.attendanceMemberName) || rosterMembers[0] || null;
   const meetingMotionsForVote = meeting?.motions || [];
   const selectedMemberVoteMotion = meetingMotionsForVote.find((motion) => motion.id === state.workDraft.memberVoteMotionId) || meetingMotionsForVote[meetingMotionsForVote.length - 1] || null;
   const publicCommentSubject = publicComment ? `${publicComment.commenter_name}: ${publicComment.topic || "Public comment"}` : "Current public comment";
@@ -1831,6 +1841,42 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for the individual roll-call vote.",
       retry: "If no motion, member, valid vote value, or editable meeting exists, the desktop app leaves the meeting unchanged."
+    },
+    "record-meeting-attendance": {
+      title: "Review Before Recording Attendance",
+      confirmLabel: "Record Attendance",
+      module: "CivicClerk",
+      subject: selectedAttendanceMember ? selectedAttendanceMember.name : "Current roster member",
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Records one active roster member's attendance status for the selected meeting before quorum review.",
+      visibility: "Staff meeting record now. Attendance appears in public archive material only after minutes signing and meeting archive.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        selectedAttendanceMember ? `Member: ${selectedAttendanceMember.name}` : "A member roster entry is required.",
+        detailOrFallback(state.workDraft.attendanceStatus, "Attendance status is required."),
+        detailOrFallback(state.workDraft.attendanceRecordedBy, "Recorded-by name is required."),
+        detailOrFallback(state.workDraft.attendanceNote, "Attendance note is optional.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the individual attendance record.",
+      retry: "If no member, valid status, recorded-by evidence, or editable meeting exists, the desktop app leaves the meeting unchanged."
+    },
+    "record-quorum-check": {
+      title: "Review Before Saving Quorum Check",
+      confirmLabel: "Save Quorum Check",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Calculates and saves a quorum finding from the active roster and recorded attendance evidence.",
+      visibility: "Staff meeting record now. Quorum findings appear in public archive material only after minutes signing and meeting archive.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        `${rosterMembers.length} active roster member(s).`,
+        meeting ? `${(meeting.attendance_records || []).length} attendance record(s) saved.` : "Attendance must be recorded first.",
+        detailOrFallback(state.workDraft.quorumRequiredCount, "Required count will default to majority of the active roster if left blank."),
+        detailOrFallback(state.workDraft.quorumReviewNote, "Quorum review note is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry with roster count, present/remote count, required count, and quorum result.",
+      retry: "If attendance is missing, the required count is invalid, the review note is blank, or the meeting is archived, the desktop app leaves quorum records unchanged."
     },
     "record-adopted-legislation": {
       title: "Review Before Recording Adopted Legislation",
@@ -2280,6 +2326,8 @@ function publicMeetingView(meeting) {
     publicMeeting.minutes_signed_at_unix_seconds = null;
     publicMeeting.motions = [];
     publicMeeting.member_votes = [];
+    publicMeeting.attendance_records = [];
+    publicMeeting.quorum_checks = [];
     publicMeeting.votes = [];
     publicMeeting.staff_reports = [];
     publicMeeting.action_items = [];
@@ -2362,9 +2410,11 @@ function renderPublicMeetingsWorkflow() {
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
           ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)})`).join("; ")}</p>` : ""}
           ${(meeting.export_bundles || []).length > 0 ? `<p><strong>Records-ready bundles:</strong> ${(meeting.export_bundles || []).map((bundle) => `public archive bundle sha256 ${escapeHtml(String(bundle.export_hash || "").slice(0, 12))}; manifest ${escapeHtml(String(bundle.manifest_hash || "").slice(0, 12))}; ${bundle.agenda_item_count || 0} agenda items; ${bundle.notice_posting_count || 0} notice postings`).join("; ")}</p>` : ""}
+          ${(meeting.attendance_records || []).length > 0 ? `<p><strong>Attendance:</strong> ${(meeting.attendance_records || []).map((record) => `${escapeHtml(record.member_name)} ${escapeHtml(record.status)}`).join("; ")}</p>` : ""}
+          ${(meeting.quorum_checks || []).length > 0 ? `<p><strong>Quorum:</strong> ${(meeting.quorum_checks || []).map((record) => `${escapeHtml(record.status)} - ${Number(record.present_count || 0) + Number(record.remote_count || 0)} of ${escapeHtml(record.required_count || 0)} required`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.attendance_records || []).length} attendance records - ${(meeting.quorum_checks || []).length} quorum checks - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2386,6 +2436,9 @@ function renderMeetingsWorkflow() {
     : selectedMeetingMotions[selectedMeetingMotions.length - 1]?.id || "";
   const selectedMemberVoteMemberId = rosterMembers.some((member) => member.id === state.workDraft.memberVoteMemberId)
     ? state.workDraft.memberVoteMemberId
+    : rosterMembers[0]?.id || "";
+  const selectedAttendanceMemberId = rosterMembers.some((member) => member.id === state.workDraft.attendanceMemberId)
+    ? state.workDraft.attendanceMemberId
     : rosterMembers[0]?.id || "";
   const selectedAgendaIntake = currentAgendaIntake(work);
   const selectedAgendaIntakeCanReview = selectedAgendaIntake && selectedAgendaIntake.status !== "promoted to agenda";
@@ -2569,6 +2622,20 @@ function renderMeetingsWorkflow() {
             ${["aye", "nay", "abstain", "absent", "recused"].map((voteValue) => `<option value="${voteValue}" ${state.workDraft.memberVoteValue === voteValue ? "selected" : ""}>${voteValue}</option>`).join("")}
           </select>
         </label>
+        <label>Attendance member
+          <select data-work-field="attendanceMemberId" ${rosterMembers.length === 0 ? "disabled" : ""}>
+            ${rosterMembers.length === 0 ? `<option>No roster member available</option>` : rosterMembers.map((member) => `<option value="${escapeHtml(member.id)}" ${member.id === selectedAttendanceMemberId ? "selected" : ""}>${escapeHtml(member.name)} - ${escapeHtml(member.role)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Attendance status
+          <select data-work-field="attendanceStatus">
+            ${["present", "remote", "late", "absent", "recused"].map((status) => `<option value="${status}" ${state.workDraft.attendanceStatus === status ? "selected" : ""}>${status}</option>`).join("")}
+          </select>
+        </label>
+        <label>Attendance recorded by <input type="text" data-work-field="attendanceRecordedBy" value="${state.workDraft.attendanceRecordedBy}" placeholder="City Clerk or deputy clerk" /></label>
+        <label>Attendance note <input type="text" data-work-field="attendanceNote" value="${state.workDraft.attendanceNote}" placeholder="Optional roll-call or remote participation note" /></label>
+        <label>Quorum required count <input type="number" min="1" data-work-field="quorumRequiredCount" value="${state.workDraft.quorumRequiredCount}" placeholder="Defaults to majority of active roster" /></label>
+        <label>Quorum review note <textarea data-work-field="quorumReviewNote">${state.workDraft.quorumReviewNote}</textarea></label>
         <label>Vote or outcome <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
         <label>Action item <input type="text" data-work-field="actionItem" value="${state.workDraft.actionItem}" /></label>
         <label>Action owner <input type="text" data-work-field="actionItemOwner" value="${state.workDraft.actionItemOwner}" /></label>
@@ -2596,6 +2663,8 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
           <button type="button" class="secondary-action" data-work-action="record-motion">Record Motion</button>
           ${selectedMeetingMotions.length === 0 || rosterMembers.length === 0 ? `<button type="button" class="secondary-action" disabled>Record Roll Call Vote</button>` : `<button type="button" class="secondary-action" data-work-action="record-member-vote">Record Roll Call Vote</button>`}
+          ${rosterMembers.length === 0 ? `<button type="button" class="secondary-action" disabled>Record Attendance</button>` : `<button type="button" class="secondary-action" data-work-action="record-meeting-attendance">Record Attendance</button>`}
+          ${!selectedMeeting || (selectedMeeting.attendance_records || []).length === 0 ? `<button type="button" class="secondary-action" disabled>Save Quorum Check</button>` : `<button type="button" class="secondary-action" data-work-action="record-quorum-check">Save Quorum Check</button>`}
           <button type="button" class="secondary-action" data-work-action="record-vote">Record Outcome</button>
           <button type="button" class="secondary-action" data-work-action="add-action-item">Add Action Item</button>
           <button type="button" class="secondary-action" data-work-action="record-resident-comment">Record Resident Comment</button>
@@ -2652,6 +2721,8 @@ function renderMeetingsWorkflow() {
           ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)}; ${packet.agenda_item_count} agenda items; ${packet.public_attachment_count} public attachments; ${packet.closed_session_attachment_count} closed-session addenda)`).join("; ")}</p>` : ""}
           ${(meeting.export_bundles || []).length > 0 ? `<p><strong>Records-ready bundles:</strong> ${(meeting.export_bundles || []).map((bundle) => `${bundle.public_record ? "public archive" : "staff packet"} sha256 ${escapeHtml(String(bundle.export_hash || "").slice(0, 12))}; manifest ${escapeHtml(String(bundle.manifest_hash || "").slice(0, 12))}; ${bundle.agenda_item_count || 0} agenda items; ${bundle.public_attachment_count || 0} public attachments; ${bundle.closed_session_attachment_count || 0} closed-session addenda`).join("; ")}</p>` : ""}
           ${(meeting.closed_sessions || []).length > 0 ? `<p><strong>Closed sessions:</strong> ${(meeting.closed_sessions || []).map((session) => `${escapeHtml(session.statutory_basis)} (${escapeHtml((session.topics || []).join("; "))}; ${escapeHtml(session.entered_at)}-${escapeHtml(session.exited_at)})`).join("; ")}</p>` : ""}
+          ${(meeting.attendance_records || []).length > 0 ? `<p><strong>Attendance:</strong> ${(meeting.attendance_records || []).map((record) => `${escapeHtml(record.member_name)} ${escapeHtml(record.status)}${record.note ? ` (${escapeHtml(record.note)})` : ""}`).join("; ")}</p>` : ""}
+          ${(meeting.quorum_checks || []).length > 0 ? `<p><strong>Quorum checks:</strong> ${(meeting.quorum_checks || []).map((record) => `${escapeHtml(record.status)} - ${Number(record.present_count || 0) + Number(record.remote_count || 0)} of ${escapeHtml(record.required_count || 0)} required (${escapeHtml(record.quorum_rule || "majority of seated members")})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.adopted_legislation || []).length > 0 ? `<p><strong>Adopted legislation:</strong> ${(meeting.adopted_legislation || []).map((item) => `${escapeHtml(item.legislation_type)} ${escapeHtml(item.title)} (${escapeHtml(item.handoff_status)})`).join("; ")}</p>` : ""}
@@ -2672,7 +2743,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.attendance_records || []).length} attendance records - ${(meeting.quorum_checks || []).length} quorum checks - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3370,6 +3441,21 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const memberVotes = (meeting.member_votes || [])
       .map((vote) => [vote.member_name, vote.vote, vote.motion_text, vote.motion_id].join(" "))
       .join(" ");
+    const attendanceRecords = (meeting.attendance_records || [])
+      .map((record) => [record.member_name, record.status, record.note, record.recorded_by].join(" "))
+      .join(" ");
+    const quorumChecks = (meeting.quorum_checks || [])
+      .map((record) => [
+        record.status,
+        record.quorum_rule,
+        record.required_count,
+        record.roster_count,
+        record.present_count,
+        record.remote_count,
+        record.recused_count,
+        record.review_note
+      ].join(" "))
+      .join(" ");
     const staffReports = (meeting.staff_reports || [])
       .map((report) => [report.agenda_item_title, report.recommendation, report.background, report.analysis, report.fiscal_impact, report.alternatives, report.prior_actions, report.prepared_by, report.revision_note].join(" "))
       .join(" ");
@@ -3418,7 +3504,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
           bundle.agenda_item_count,
           bundle.notice_posting_count,
           bundle.public_attachment_count,
-          bundle.closed_session_attachment_count
+          bundle.closed_session_attachment_count,
+          bundle.attendance_record_count,
+          bundle.quorum_check_count
         ];
         if (publicOnly) return publicFields.join(" ");
         return [
@@ -3464,6 +3552,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       packetAttachments,
       packetAssemblies,
       exportBundles,
+      attendanceRecords,
+      quorumChecks,
       minuteCitations,
       publicComments
     ];
@@ -3471,7 +3561,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, memberVotes, staffReports, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, packetAssemblies, exportBundles, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, packetAssemblies, exportBundles, attendanceRecords, quorumChecks, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4597,6 +4687,7 @@ function workPayloadForAction(action) {
   const meeting = currentMeeting(work);
   const rosterMembers = meetingMembers(work).filter((member) => !meeting || !meeting.body_id || member.body_id === meeting.body_id);
   const selectedVoteMember = rosterMembers.find((member) => member.id === draft.memberVoteMemberId) || rosterMembers[0] || null;
+  const selectedAttendanceMember = rosterMembers.find((member) => member.id === draft.attendanceMemberId) || rosterMembers[0] || null;
   const meetingMotions = meeting?.motions || [];
   const selectedVoteMotion = meetingMotions.find((motion) => motion.id === draft.memberVoteMotionId) || meetingMotions[meetingMotions.length - 1] || null;
   const selected = {
@@ -4727,6 +4818,19 @@ function workPayloadForAction(action) {
       memberVoteMemberId: selectedVoteMember?.id || draft.memberVoteMemberId,
       memberVoteMemberName: selectedVoteMember?.name || draft.memberVoteMemberName,
       memberVoteValue: draft.memberVoteValue
+    },
+    "record-meeting-attendance": {
+      ...selected,
+      attendanceMemberId: selectedAttendanceMember?.id || draft.attendanceMemberId,
+      attendanceMemberName: selectedAttendanceMember?.name || draft.attendanceMemberName,
+      attendanceStatus: draft.attendanceStatus,
+      attendanceRecordedBy: draft.attendanceRecordedBy,
+      attendanceNote: draft.attendanceNote
+    },
+    "record-quorum-check": {
+      ...selected,
+      quorumRequiredCount: draft.quorumRequiredCount,
+      quorumReviewNote: draft.quorumReviewNote
     },
     "add-action-item": {
       ...selected,

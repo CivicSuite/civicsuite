@@ -188,6 +188,8 @@ pub struct MeetingExportBundle {
     pub public_attachment_count: usize,
     pub closed_session_attachment_count: usize,
     pub packet_finalization_count: usize,
+    pub attendance_record_count: usize,
+    pub quorum_check_count: usize,
     pub minute_citation_count: usize,
     pub motion_count: usize,
     pub roll_call_vote_count: usize,
@@ -229,6 +231,34 @@ pub struct MemberVoteRecord {
     pub member_id: String,
     pub member_name: String,
     pub vote: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct MeetingAttendanceRecord {
+    pub id: String,
+    pub member_id: String,
+    pub member_name: String,
+    pub status: String,
+    #[serde(default)]
+    pub note: String,
+    #[serde(default)]
+    pub recorded_by: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct QuorumCheckRecord {
+    pub id: String,
+    pub quorum_rule: String,
+    pub required_count: usize,
+    pub roster_count: usize,
+    pub present_count: usize,
+    pub remote_count: usize,
+    pub absent_count: usize,
+    pub recused_count: usize,
+    pub status: String,
+    pub review_note: String,
     pub created_at_unix_seconds: u64,
 }
 
@@ -318,6 +348,10 @@ pub struct Meeting {
     pub motions: Vec<MotionRecord>,
     #[serde(default)]
     pub member_votes: Vec<MemberVoteRecord>,
+    #[serde(default)]
+    pub attendance_records: Vec<MeetingAttendanceRecord>,
+    #[serde(default)]
+    pub quorum_checks: Vec<QuorumCheckRecord>,
     #[serde(default)]
     pub votes: Vec<String>,
     #[serde(default)]
@@ -643,6 +677,8 @@ struct MeetingExportBundleCounts {
     public_attachments: usize,
     closed_session_attachments: usize,
     packet_finalizations: usize,
+    attendance_records: usize,
+    quorum_checks: usize,
     minute_citations: usize,
     motions: usize,
     roll_call_votes: usize,
@@ -880,6 +916,8 @@ fn meeting_export_bundle_counts(meeting: &Meeting) -> MeetingExportBundleCounts 
             .filter(|attachment| attachment.access_level == "closed-session addendum")
             .count(),
         packet_finalizations: meeting.packet_assemblies.len(),
+        attendance_records: meeting.attendance_records.len(),
+        quorum_checks: meeting.quorum_checks.len(),
         minute_citations: meeting.minute_citations.len(),
         motions: meeting.motions.len(),
         roll_call_votes: meeting.member_votes.len(),
@@ -914,6 +952,17 @@ fn meeting_export_source_references(meeting: &Meeting) -> Vec<String> {
         push_export_source_reference(&mut references, &packet.packet_title);
         push_export_source_reference(&mut references, &packet.prepared_by);
         push_export_source_reference(&mut references, &packet.review_note);
+    }
+    for record in &meeting.attendance_records {
+        push_export_source_reference(&mut references, &record.member_name);
+        push_export_source_reference(&mut references, &record.status);
+        push_export_source_reference(&mut references, &record.note);
+        push_export_source_reference(&mut references, &record.recorded_by);
+    }
+    for record in &meeting.quorum_checks {
+        push_export_source_reference(&mut references, &record.quorum_rule);
+        push_export_source_reference(&mut references, &record.status);
+        push_export_source_reference(&mut references, &record.review_note);
     }
     for citation in &meeting.minute_citations {
         push_export_source_reference(&mut references, &citation.source_type);
@@ -1024,6 +1073,8 @@ fn write_meeting_export_bundle(
         public_attachment_count: counts.public_attachments,
         closed_session_attachment_count: counts.closed_session_attachments,
         packet_finalization_count: counts.packet_finalizations,
+        attendance_record_count: counts.attendance_records,
+        quorum_check_count: counts.quorum_checks,
         minute_citation_count: counts.minute_citations,
         motion_count: counts.motions,
         roll_call_vote_count: counts.roll_call_votes,
@@ -1674,6 +1725,8 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         minute_citations: Vec::new(),
         motions: Vec::new(),
         member_votes: Vec::new(),
+        attendance_records: Vec::new(),
+        quorum_checks: Vec::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
         action_records: Vec::new(),
@@ -2461,6 +2514,8 @@ fn suggest_minutes_draft(
         || !meeting.staff_reports.is_empty()
         || !meeting.motions.is_empty()
         || !meeting.member_votes.is_empty()
+        || !meeting.attendance_records.is_empty()
+        || !meeting.quorum_checks.is_empty()
         || !meeting.votes.is_empty()
         || !meeting.action_items.is_empty()
         || !meeting.resident_comments.is_empty()
@@ -2471,7 +2526,7 @@ fn suggest_minutes_draft(
         return Err("Add a summary, agenda item, attachment, motion, roll-call vote, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, roll-call votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, packet finalization, motions, roll-call votes, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nPacket finalization:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRoll-call votes:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, roll-call votes, attendance, quorum, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, packet finalization, attendance, quorum checks, motions, roll-call votes, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nPacket finalization:\n{}\nExisting minutes draft: {}\nAttendance:\n{}\nQuorum checks:\n{}\nRecorded motions:\n{}\nRoll-call votes:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -2492,6 +2547,8 @@ fn suggest_minutes_draft(
         } else {
             &meeting.minutes
         },
+        meeting_attendance_or_default(&meeting.attendance_records),
+        quorum_checks_or_default(&meeting.quorum_checks),
         motion_records_or_default(&meeting.motions),
         member_vote_records_or_default(&meeting.member_votes),
         list_or_default(&meeting.votes, "No outcomes recorded."),
@@ -2658,6 +2715,202 @@ fn record_member_vote(
         ),
     );
     Ok("Roll-call vote saved to the meeting record.".to_string())
+}
+
+fn normalize_attendance_status(value: &str) -> Result<&'static str, String> {
+    match value.trim().to_lowercase().as_str() {
+        "present" => Ok("present"),
+        "remote" => Ok("remote"),
+        "late" => Ok("late"),
+        "absent" => Ok("absent"),
+        "recused" => Ok("recused"),
+        _ => {
+            Err("Attendance status must be present, remote, late, absent, or recused.".to_string())
+        }
+    }
+}
+
+fn default_quorum_required_count(roster_count: usize) -> usize {
+    (roster_count / 2) + 1
+}
+
+fn parse_quorum_required_count(
+    payload: Option<&Value>,
+    roster_count: usize,
+) -> Result<usize, String> {
+    let raw = payload_optional_string(payload, "quorumRequiredCount");
+    if raw.is_empty() {
+        return Ok(default_quorum_required_count(roster_count));
+    }
+    let required = raw
+        .parse::<usize>()
+        .map_err(|_| "Enter quorum required count as a whole number.".to_string())?;
+    if required == 0 {
+        return Err("Quorum required count must be at least 1.".to_string());
+    }
+    if required > roster_count {
+        return Err("Quorum required count cannot exceed the active roster count.".to_string());
+    }
+    Ok(required)
+}
+
+fn record_meeting_attendance(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let status = normalize_attendance_status(
+        &payload_string(payload, "attendanceStatus")
+            .map_err(|_| "Choose the attendance status.".to_string())?,
+    )?;
+    let note = payload_optional_string(payload, "attendanceNote");
+    let recorded_by = payload_string(payload, "attendanceRecordedBy")
+        .map_err(|_| "Enter who recorded attendance.".to_string())?;
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let (body_id, meeting_title, attendance_count) = {
+        let meeting = &state.meetings[meeting_index];
+        ensure_meeting_can_change(meeting)?;
+        if meeting.body_id.is_empty() {
+            return Err("Choose a meeting with a saved meeting body roster.".to_string());
+        }
+        (
+            meeting.body_id.clone(),
+            meeting.title.clone(),
+            meeting.attendance_records.len(),
+        )
+    };
+    let requested_member_id = payload_optional_string(payload, "attendanceMemberId");
+    let requested_member_name = payload_optional_string(payload, "attendanceMemberName");
+    let member = if requested_member_id.is_empty() {
+        state.meeting_members.iter().find(|member| {
+            member.body_id == body_id
+                && member.status == "active"
+                && member.name.eq_ignore_ascii_case(&requested_member_name)
+        })
+    } else {
+        state.meeting_members.iter().find(|member| {
+            member.body_id == body_id
+                && member.status == "active"
+                && member.id == requested_member_id
+        })
+    }
+    .cloned()
+    .ok_or_else(|| "Choose an active member from the meeting body roster.".to_string())?;
+    if state.meetings[meeting_index]
+        .attendance_records
+        .iter()
+        .any(|record| record.member_id == member.id)
+    {
+        return Err("This member already has attendance recorded for this meeting.".to_string());
+    }
+    let meeting = &mut state.meetings[meeting_index];
+    meeting.attendance_records.push(MeetingAttendanceRecord {
+        id: new_id("meeting-attendance", attendance_count),
+        member_id: member.id.clone(),
+        member_name: member.name.clone(),
+        status: status.to_string(),
+        note: note.clone(),
+        recorded_by: recorded_by.clone(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "attendance recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-meeting-attendance",
+        format!(
+            "Recorded attendance for {meeting_title}: {} marked {status} by {recorded_by}.",
+            member.name
+        ),
+    );
+    Ok("Attendance saved to the meeting record.".to_string())
+}
+
+fn record_quorum_check(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let review_note = payload_string(payload, "quorumReviewNote")
+        .map_err(|_| "Enter a quorum review note.".to_string())?;
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let (body_id, meeting_title, attendance_records, quorum_count) = {
+        let meeting = &state.meetings[meeting_index];
+        ensure_meeting_can_change(meeting)?;
+        if meeting.body_id.is_empty() {
+            return Err("Choose a meeting with a saved meeting body roster.".to_string());
+        }
+        if meeting.attendance_records.is_empty() {
+            return Err("Record attendance before checking quorum.".to_string());
+        }
+        (
+            meeting.body_id.clone(),
+            meeting.title.clone(),
+            meeting.attendance_records.clone(),
+            meeting.quorum_checks.len(),
+        )
+    };
+    let roster_count = state
+        .meeting_members
+        .iter()
+        .filter(|member| member.body_id == body_id && member.status == "active")
+        .count();
+    if roster_count == 0 {
+        return Err("Save active meeting body members before checking quorum.".to_string());
+    }
+    let quorum_rule = state
+        .meeting_bodies
+        .iter()
+        .find(|body| body.id == body_id)
+        .map(|body| body.quorum_rule.clone())
+        .unwrap_or_else(|| "majority of seated members".to_string());
+    let required_count = parse_quorum_required_count(payload, roster_count)?;
+    let present_count = attendance_records
+        .iter()
+        .filter(|record| record.status == "present" || record.status == "late")
+        .count();
+    let remote_count = attendance_records
+        .iter()
+        .filter(|record| record.status == "remote")
+        .count();
+    let absent_count = attendance_records
+        .iter()
+        .filter(|record| record.status == "absent")
+        .count();
+    let recused_count = attendance_records
+        .iter()
+        .filter(|record| record.status == "recused")
+        .count();
+    let quorum_present_count = present_count + remote_count;
+    let status = if attendance_records.len() < roster_count {
+        "attendance incomplete"
+    } else if quorum_present_count >= required_count {
+        "quorum met"
+    } else {
+        "quorum not met"
+    };
+    let meeting = &mut state.meetings[meeting_index];
+    meeting.quorum_checks.push(QuorumCheckRecord {
+        id: new_id("quorum-check", quorum_count),
+        quorum_rule: quorum_rule.clone(),
+        required_count,
+        roster_count,
+        present_count,
+        remote_count,
+        absent_count,
+        recused_count,
+        status: status.to_string(),
+        review_note: review_note.clone(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "quorum checked".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-quorum-check",
+        format!(
+            "Recorded quorum check for {meeting_title}: {status}; present/remote {quorum_present_count} of required {required_count}; rule {quorum_rule}."
+        ),
+    );
+    Ok(format!("Quorum check saved: {status}."))
 }
 
 fn add_action_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
@@ -3181,6 +3434,50 @@ fn member_vote_records_or_default(votes: &[MemberVoteRecord]) -> String {
         .join("\n")
 }
 
+fn meeting_attendance_or_default(records: &[MeetingAttendanceRecord]) -> String {
+    if records.is_empty() {
+        return "No attendance records recorded.".to_string();
+    }
+    records
+        .iter()
+        .map(|record| {
+            let note = if record.note.is_empty() {
+                "no note recorded".to_string()
+            } else {
+                format!("note: {}", record.note)
+            };
+            format!(
+                "- {}: {} (recorded by {}; {})",
+                record.member_name, record.status, record.recorded_by, note
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn quorum_checks_or_default(records: &[QuorumCheckRecord]) -> String {
+    if records.is_empty() {
+        return "No quorum checks recorded.".to_string();
+    }
+    records
+        .iter()
+        .map(|record| {
+            format!(
+                "- {}: present/remote {} of required {}; roster {}; absent {}; recused {}; rule: {}; note: {}",
+                record.status,
+                record.present_count + record.remote_count,
+                record.required_count,
+                record.roster_count,
+                record.absent_count,
+                record.recused_count,
+                record.quorum_rule,
+                record.review_note
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn meeting_action_records_or_default(actions: &[MeetingActionRecord]) -> String {
     if actions.is_empty() {
         return "No detailed action item records.".to_string();
@@ -3620,6 +3917,8 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let votes = list_or_default(&meeting.votes, "No outcomes recorded.");
     let motions = motion_records_or_default(&meeting.motions);
     let member_votes = member_vote_records_or_default(&meeting.member_votes);
+    let attendance = meeting_attendance_or_default(&meeting.attendance_records);
+    let quorum_checks = quorum_checks_or_default(&meeting.quorum_checks);
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let action_records = meeting_action_records_or_default(&meeting.action_records);
     let staff_reports = staff_reports_or_default(&meeting.staff_reports);
@@ -3668,7 +3967,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Packet Finalization\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Roll Call Votes\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Packet Finalization\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Attendance\n{}\n\n## Quorum Checks\n{}\n\n## Motions\n{}\n\n## Roll Call Votes\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -3695,6 +3994,8 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         minutes_adoption,
         minutes_signature,
         adopted_legislation,
+        attendance,
+        quorum_checks,
         motions,
         member_votes,
         votes,
@@ -5738,6 +6039,35 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let attendance_records = meeting
+            .attendance_records
+            .iter()
+            .map(|record| {
+                format!(
+                    "{} {} {} {}",
+                    record.member_name, record.status, record.note, record.recorded_by
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        let quorum_checks = meeting
+            .quorum_checks
+            .iter()
+            .map(|record| {
+                format!(
+                    "{} {} {} {} {} {} {} {}",
+                    record.status,
+                    record.quorum_rule,
+                    record.required_count,
+                    record.roster_count,
+                    record.present_count,
+                    record.remote_count,
+                    record.recused_count,
+                    record.review_note
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let action_items = meeting.action_items.join(" ");
         let action_records = meeting
             .action_records
@@ -5857,7 +6187,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             .iter()
             .map(|bundle| {
                 format!(
-                    "{} {} {} {} {} {} {} {}",
+                    "{} {} {} {} {} {} {} {} {} {}",
                     bundle.export_path,
                     bundle.manifest_path,
                     bundle.integrity_manifest_path,
@@ -5869,7 +6199,9 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                         "staff packet"
                     },
                     bundle.agenda_item_count,
-                    bundle.notice_posting_count
+                    bundle.notice_posting_count,
+                    bundle.attendance_record_count,
+                    bundle.quorum_check_count
                 )
             })
             .collect::<Vec<_>>()
@@ -5921,6 +6253,8 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &minute_citations,
                 &motions,
                 &member_votes,
+                &attendance_records,
+                &quorum_checks,
                 &votes,
                 &action_items,
                 &action_records,
@@ -6237,6 +6571,8 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.minutes_signed_at_unix_seconds = None;
         public_meeting.motions.clear();
         public_meeting.member_votes.clear();
+        public_meeting.attendance_records.clear();
+        public_meeting.quorum_checks.clear();
         public_meeting.votes.clear();
         public_meeting.staff_reports.clear();
         public_meeting.action_items.clear();
@@ -6427,6 +6763,8 @@ pub fn city_work_action(
         "suggest-minutes-draft" => suggest_minutes_draft(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
         "record-member-vote" => record_member_vote(&mut state, payload)?,
+        "record-meeting-attendance" => record_meeting_attendance(&mut state, payload)?,
+        "record-quorum-check" => record_quorum_check(&mut state, payload)?,
         "add-action-item" => add_action_item(&mut state, payload)?,
         "record-resident-comment" => record_resident_comment(&mut state, payload)?,
         "submit-public-comment" => submit_public_comment(&mut state, payload)?,
@@ -6669,6 +7007,14 @@ mod tests {
         assert_eq!(
             manifest["counts"]["notice_postings"].as_u64(),
             Some(bundle.notice_posting_count as u64)
+        );
+        assert_eq!(
+            manifest["counts"]["attendance_records"].as_u64(),
+            Some(bundle.attendance_record_count as u64)
+        );
+        assert_eq!(
+            manifest["counts"]["quorum_checks"].as_u64(),
+            Some(bundle.quorum_check_count as u64)
         );
         assert!(manifest["source_references"]
             .as_array()
@@ -6983,6 +7329,48 @@ mod tests {
                 .expect("Ortiz member exists")
                 .id
                 .clone();
+            let invalid_attendance = serde_json::json!({
+                "attendanceMemberId": lee_id.clone(),
+                "attendanceStatus": "here",
+                "attendanceRecordedBy": "City Clerk Morgan"
+            });
+            let error =
+                match city_work_action("record-meeting-attendance", Some(&invalid_attendance)) {
+                    Ok(_) => panic!("invalid attendance status cannot save"),
+                    Err(error) => error,
+                };
+            assert!(error.contains("Attendance status"));
+            let lee_attendance = serde_json::json!({
+                "attendanceMemberId": lee_id.clone(),
+                "attendanceStatus": "present",
+                "attendanceRecordedBy": "City Clerk Morgan",
+                "attendanceNote": "Present at call to order."
+            });
+            city_work_action("record-meeting-attendance", Some(&lee_attendance))
+                .expect("Lee attendance saved");
+            let duplicate_lee_attendance =
+                match city_work_action("record-meeting-attendance", Some(&lee_attendance)) {
+                    Ok(_) => panic!("duplicate attendance cannot save"),
+                    Err(error) => error,
+                };
+            assert!(duplicate_lee_attendance.contains("already has attendance recorded"));
+            let ortiz_attendance = serde_json::json!({
+                "attendanceMemberId": ortiz_id.clone(),
+                "attendanceStatus": "remote",
+                "attendanceRecordedBy": "City Clerk Morgan",
+                "attendanceNote": "Attended remotely under city remote participation policy."
+            });
+            city_work_action("record-meeting-attendance", Some(&ortiz_attendance))
+                .expect("Ortiz attendance saved");
+            let missing_quorum_note = match city_work_action("record-quorum-check", None) {
+                Ok(_) => panic!("quorum check cannot save without review note"),
+                Err(error) => error,
+            };
+            assert!(missing_quorum_note.contains("quorum review note"));
+            let quorum = serde_json::json!({
+                "quorumReviewNote": "Two active members present or remote; quorum met under majority rule."
+            });
+            city_work_action("record-quorum-check", Some(&quorum)).expect("quorum check saved");
             let invalid_member_vote = serde_json::json!({
                 "memberVoteMemberId": lee_id.clone(),
                 "memberVoteValue": "yes"
@@ -7190,6 +7578,33 @@ mod tests {
             );
             assert_eq!(meeting.member_votes[1].member_name, "Councilmember Ortiz");
             assert_eq!(meeting.member_votes[1].vote, "nay");
+            assert_eq!(meeting.attendance_records.len(), 2);
+            assert_eq!(
+                meeting.attendance_records[0].member_name,
+                "Councilmember Lee"
+            );
+            assert_eq!(meeting.attendance_records[0].status, "present");
+            assert_eq!(
+                meeting.attendance_records[0].recorded_by,
+                "City Clerk Morgan"
+            );
+            assert_eq!(
+                meeting.attendance_records[1].member_name,
+                "Councilmember Ortiz"
+            );
+            assert_eq!(meeting.attendance_records[1].status, "remote");
+            assert!(meeting.attendance_records[1]
+                .note
+                .contains("remote participation"));
+            assert_eq!(meeting.quorum_checks.len(), 1);
+            assert_eq!(meeting.quorum_checks[0].status, "quorum met");
+            assert_eq!(meeting.quorum_checks[0].required_count, 2);
+            assert_eq!(meeting.quorum_checks[0].roster_count, 2);
+            assert_eq!(meeting.quorum_checks[0].present_count, 1);
+            assert_eq!(meeting.quorum_checks[0].remote_count, 1);
+            assert!(meeting.quorum_checks[0]
+                .review_note
+                .contains("quorum met under majority rule"));
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
             assert_eq!(meeting.action_records.len(), 1);
@@ -7293,6 +7708,10 @@ mod tests {
             assert_eq!(meeting.export_bundles[0].public_attachment_count, 1);
             assert_eq!(meeting.export_bundles[0].closed_session_attachment_count, 1);
             assert_eq!(meeting.export_bundles[0].packet_finalization_count, 1);
+            assert_eq!(meeting.export_bundles[0].attendance_record_count, 2);
+            assert_eq!(meeting.export_bundles[0].quorum_check_count, 1);
+            assert_eq!(meeting.export_bundles[1].attendance_record_count, 2);
+            assert_eq!(meeting.export_bundles[1].quorum_check_count, 1);
             assert_eq!(meeting.export_bundles[1].closed_session_attachment_count, 0);
             let packet = fs::read_to_string(&meeting.exports[0]).expect("packet reads");
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
@@ -7330,6 +7749,13 @@ mod tests {
             assert!(packet.contains("City Clerk Morgan"));
             assert!(packet.contains("## Adopted Ordinances And Resolutions"));
             assert!(packet.contains("Budget Publication Ordinance"));
+            assert!(packet.contains("## Attendance"));
+            assert!(packet.contains("Councilmember Lee: present"));
+            assert!(packet.contains("Councilmember Ortiz: remote"));
+            assert!(packet.contains("remote participation policy"));
+            assert!(packet.contains("## Quorum Checks"));
+            assert!(packet.contains("quorum met"));
+            assert!(packet.contains("present/remote 2 of required 2"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
             assert_meeting_export_bundle_manifest(
@@ -7363,6 +7789,12 @@ mod tests {
             assert!(archive.contains("## Adopted Ordinances And Resolutions"));
             assert!(archive.contains("Budget Publication Ordinance"));
             assert!(archive.contains("Title 2, Chapter 4"));
+            assert!(archive.contains("## Attendance"));
+            assert!(archive.contains("Councilmember Lee: present"));
+            assert!(archive.contains("Councilmember Ortiz: remote"));
+            assert!(archive.contains("## Quorum Checks"));
+            assert!(archive.contains("quorum met"));
+            assert!(archive.contains("present/remote 2 of required 2"));
             assert!(archive.contains("## Staff Reports"));
             assert!(archive.contains("Finance Director Rivera"));
             assert!(archive.contains("Enterprise fund reserve targets"));
@@ -7406,6 +7838,10 @@ mod tests {
             assert!(member_vote_results
                 .iter()
                 .any(|result| result.title == "Council Regular Meeting"));
+            let attendance_results = search_city_work(&state, "remote participation policy");
+            assert_eq!(attendance_results.len(), 1);
+            let quorum_results = search_city_work(&state, "quorum met under majority rule");
+            assert_eq!(quorum_results.len(), 1);
             let action_owner_results = search_city_work(&state, "Finance Director");
             assert_eq!(action_owner_results.len(), 1);
             let action_source_results = search_city_work(&state, "Budget ordinance motion");
@@ -7454,6 +7890,10 @@ mod tests {
                 "Councilmember Lee"
             );
             assert_eq!(public_meeting.member_votes[0].vote, "aye");
+            assert_eq!(public_meeting.attendance_records.len(), 2);
+            assert_eq!(public_meeting.attendance_records[0].status, "present");
+            assert_eq!(public_meeting.quorum_checks.len(), 1);
+            assert_eq!(public_meeting.quorum_checks[0].status, "quorum met");
             assert_eq!(public_meeting.staff_reports.len(), 1);
             assert_eq!(
                 public_meeting.staff_reports[0].recommendation,
@@ -7536,6 +7976,25 @@ mod tests {
             });
             let error = match city_work_action("record-member-vote", Some(&late_member_vote)) {
                 Ok(_) => panic!("archived meeting cannot record roll-call votes"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+            let late_attendance = serde_json::json!({
+                "attendanceMemberId": lee_member.id.clone(),
+                "attendanceStatus": "absent",
+                "attendanceRecordedBy": "City Clerk Morgan"
+            });
+            let error = match city_work_action("record-meeting-attendance", Some(&late_attendance))
+            {
+                Ok(_) => panic!("archived meeting cannot record attendance"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+            let late_quorum = serde_json::json!({
+                "quorumReviewNote": "Late quorum check after archive."
+            });
+            let error = match city_work_action("record-quorum-check", Some(&late_quorum)) {
+                Ok(_) => panic!("archived meeting cannot record quorum checks"),
                 Err(error) => error,
             };
             assert!(error.contains("archived as a public record"));
@@ -7630,6 +8089,10 @@ mod tests {
             assert!(public_reexport.contains("Deputy Clerk Avery"));
             assert!(public_reexport.contains("## Roll Call Votes"));
             assert!(public_reexport.contains("Councilmember Lee: aye"));
+            assert!(public_reexport.contains("## Attendance"));
+            assert!(public_reexport.contains("Councilmember Ortiz: remote"));
+            assert!(public_reexport.contains("## Quorum Checks"));
+            assert!(public_reexport.contains("quorum met"));
             assert!(!public_reexport.contains("Closed-session attorney memo"));
             assert!(public_reexport.contains("Packet item 4 fiscal note"));
             assert!(!public_reexport.contains("Executive session memo"));
