@@ -91,6 +91,8 @@ const requiredUiPhrases = [
   "Exemption reviewer",
   "Save Exemption Decision",
   "Exemption Decisions",
+  "Build Release Package",
+  "Release Packages",
   "Set Up Services and Model",
   "Package Profiles",
   "Module Catalog",

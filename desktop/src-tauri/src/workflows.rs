@@ -171,6 +171,19 @@ pub struct RecordsSearchSession {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsReleasePackage {
+    pub id: String,
+    pub export_path: String,
+    pub package_hash: String,
+    pub document_count: usize,
+    pub search_session_count: usize,
+    pub release_count: usize,
+    pub redacted_count: usize,
+    pub exempt_count: usize,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsRequest {
     pub id: String,
     #[serde(default)]
@@ -211,6 +224,8 @@ pub struct RecordsRequest {
     pub approval_notes: Vec<String>,
     #[serde(default)]
     pub exports: Vec<String>,
+    #[serde(default)]
+    pub release_packages: Vec<RecordsReleasePackage>,
     #[serde(default)]
     pub timeline: Vec<RecordsTimelineEntry>,
     #[serde(default)]
@@ -1585,6 +1600,28 @@ fn records_exemption_decisions_or_default(decisions: &[RecordsExemptionDecision]
         .join("\n")
 }
 
+fn records_release_packages_or_default(packages: &[RecordsReleasePackage]) -> String {
+    if packages.is_empty() {
+        return "No release package manifest built.".to_string();
+    }
+    packages
+        .iter()
+        .map(|package| {
+            format!(
+                "- {} (sha256 {}, documents {}, search sessions {}, release {}, redact {}, exempt {})",
+                package.export_path,
+                package.package_hash,
+                package.document_count,
+                package.search_session_count,
+                package.release_count,
+                package.redacted_count,
+                package.exempt_count
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn records_fee_total_cents(items: &[RecordsFeeLineItem]) -> i64 {
     items.iter().map(|item| item.amount_cents).sum()
 }
@@ -1857,6 +1894,7 @@ fn create_records_request(
             response_draft: String::new(),
             approval_notes: Vec::new(),
             exports: Vec::new(),
+            release_packages: Vec::new(),
             timeline: Vec::new(),
             messages: Vec::new(),
             documents: Vec::new(),
@@ -1933,6 +1971,7 @@ fn submit_public_records_request(
             response_draft: String::new(),
             approval_notes: Vec::new(),
             exports: Vec::new(),
+            release_packages: Vec::new(),
             timeline: Vec::new(),
             messages: Vec::new(),
             documents: Vec::new(),
@@ -2727,6 +2766,103 @@ fn approve_records_response(
     Ok("Records response approved by staff; export is now available.".to_string())
 }
 
+fn build_records_release_package(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    if request.documents.is_empty() && request.search_sessions.is_empty() {
+        return Err(
+            "Attach request documents or save a structured search session before building a release package."
+                .to_string(),
+        );
+    }
+    if request.exemption_decisions.is_empty() {
+        return Err(
+            "Save release, redact, or exempt decisions before building a release package."
+                .to_string(),
+        );
+    }
+    let release_count = request
+        .exemption_decisions
+        .iter()
+        .filter(|decision| decision.decision == "release")
+        .count();
+    let redacted_count = request
+        .exemption_decisions
+        .iter()
+        .filter(|decision| decision.decision == "redact")
+        .count();
+    let exempt_count = request
+        .exemption_decisions
+        .iter()
+        .filter(|decision| decision.decision == "exempt")
+        .count();
+    let contents = format!(
+        "# Records Release Package Manifest\n\nTracking number: {}\nRequester: {}\nRequest: {}\nStatus before package: {}\n\n## Package Counts\nDocuments: {}\nSearch sessions: {}\nRelease decisions: {}\nRedact decisions: {}\nExempt decisions: {}\n\n## Search Sessions\n{}\n\n## Request Documents\n{}\n\n## Exemption Decisions\n{}\n\n## Response Draft Snapshot\n{}\n",
+        if request.public_tracking_number.is_empty() {
+            "Not assigned"
+        } else {
+            &request.public_tracking_number
+        },
+        request.requester,
+        request.summary,
+        request.status,
+        request.documents.len(),
+        request.search_sessions.len(),
+        release_count,
+        redacted_count,
+        exempt_count,
+        records_search_sessions_or_default(&request.search_sessions),
+        records_documents_or_default(&request.documents),
+        records_exemption_decisions_or_default(&request.exemption_decisions),
+        if request.response_draft.is_empty() {
+            "No response draft saved at package build time."
+        } else {
+            &request.response_draft
+        }
+    );
+    let package_hash = hash_public_payload(&contents);
+    let export_path = write_export_file(
+        "records",
+        &format!("{} release package", request.requester),
+        &contents,
+    )?;
+    let package = RecordsReleasePackage {
+        id: format!(
+            "records-release-package-{}-{}",
+            now_unix_seconds(),
+            request.release_packages.len() + 1
+        ),
+        export_path: export_path.clone(),
+        package_hash: package_hash.clone(),
+        document_count: request.documents.len(),
+        search_session_count: request.search_sessions.len(),
+        release_count,
+        redacted_count,
+        exempt_count,
+        created_at_unix_seconds: now_unix_seconds(),
+    };
+    request.release_packages.push(package);
+    request.status = "release package built".to_string();
+    push_records_timeline(
+        request,
+        "release package built",
+        "records staff",
+        format!("Release package manifest written to {export_path}; sha256 {package_hash}."),
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "build-records-release-package",
+        format!("Built records release package {export_path}; sha256 {package_hash}."),
+    );
+    Ok(format!(
+        "Records release package manifest written to {export_path}."
+    ))
+}
+
 fn export_records_response(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -2757,10 +2893,11 @@ fn export_records_response(
     let request_timeline = records_timeline_or_default(&request.timeline);
     let request_messages = records_messages_or_default(&request.messages);
     let request_documents = records_documents_or_default(&request.documents);
+    let release_packages = records_release_packages_or_default(&request.release_packages);
     let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
     let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Search Sessions\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Release Packages\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Search Sessions\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -2798,6 +2935,7 @@ fn export_records_response(
         request_timeline,
         request_messages,
         request_documents,
+        release_packages,
         fee_total,
         if request.fee_waiver_reason.is_empty() {
             "No fee waiver recorded."
@@ -2866,6 +3004,9 @@ fn fulfill_records_request(
             return Err(
                 "Export the approved records response package before fulfillment.".to_string(),
             );
+        }
+        if request.release_packages.is_empty() {
+            return Err("Build the records release package before fulfillment.".to_string());
         }
         request.fulfilled_at_unix_seconds = Some(now_unix_seconds());
         request.status = "fulfilled".to_string();
@@ -3637,6 +3778,23 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let release_packages = request
+            .release_packages
+            .iter()
+            .map(|package| {
+                format!(
+                    "{} {} {} {} {} {} {}",
+                    package.export_path,
+                    package.package_hash,
+                    package.document_count,
+                    package.search_session_count,
+                    package.release_count,
+                    package.redacted_count,
+                    package.exempt_count
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let fee_lines = request
             .fee_line_items
             .iter()
@@ -3671,6 +3829,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &citations,
                 &request_messages,
                 &request_documents,
+                &release_packages,
                 &clarification_notes,
                 &search_notes,
                 &search_sessions,
@@ -3821,6 +3980,7 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.fee_waiver_reason.clear();
     public_request.response_draft.clear();
     public_request.approval_notes.clear();
+    public_request.release_packages.clear();
     public_request.timeline.clear();
     public_request.messages.clear();
     public_request.documents.clear();
@@ -3985,6 +4145,7 @@ pub fn city_work_action(
         "suggest-records-response" => suggest_records_response(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "approve-records-response" => approve_records_response(&mut state, payload)?,
+        "build-records-release-package" => build_records_release_package(&mut state, payload)?,
         "export-records-response" => export_records_response(&mut state, payload)?,
         "fulfill-records-request" => fulfill_records_request(&mut state, payload)?,
         "close-records-request" => close_records_request(&mut state, payload)?,
@@ -4548,6 +4709,7 @@ mod tests {
             assert!(error.contains("Approve the records response"));
             let approval = serde_json::json!({ "approvalNote": "Reviewed and approved by clerk." });
             city_work_action("approve-records-response", Some(&approval)).expect("approved");
+            city_work_action("build-records-release-package", None).expect("release package built");
             city_work_action("export-records-response", None).expect("export saved");
             city_work_action("fulfill-records-request", None).expect("fulfilled");
             city_work_action("close-records-request", None).expect("closed");
@@ -4608,6 +4770,12 @@ mod tests {
             assert!(request.approved_at_unix_seconds.is_some());
             assert!(request.fulfilled_at_unix_seconds.is_some());
             assert!(request.closed_at_unix_seconds.is_some());
+            assert_eq!(request.release_packages.len(), 1);
+            assert_eq!(request.release_packages[0].document_count, 1);
+            assert_eq!(request.release_packages[0].search_session_count, 1);
+            assert_eq!(request.release_packages[0].redacted_count, 1);
+            assert_eq!(request.release_packages[0].package_hash.len(), 64);
+            assert!(PathBuf::from(&request.release_packages[0].export_path).is_file());
             assert_eq!(request.exports.len(), 1);
             assert!(request
                 .timeline
@@ -4629,6 +4797,10 @@ mod tests {
                 .timeline
                 .iter()
                 .any(|entry| entry.action == "exemption decision recorded"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "release package built"));
             assert!(request
                 .timeline
                 .iter()
@@ -4659,6 +4831,8 @@ mod tests {
             assert!(exported.contains("## Request Documents"));
             assert!(exported.contains("Park contract email attachment"));
             assert!(exported.contains("PRA-2026-003"));
+            assert!(exported.contains("## Release Packages"));
+            assert!(exported.contains(&request.release_packages[0].package_hash));
             assert!(exported.contains("clarification requested"));
             assert!(exported.contains("fee line added"));
             assert!(exported.contains("fee waived"));
@@ -4713,6 +4887,9 @@ mod tests {
             let search_result_title_results =
                 search_city_work(&state, "Park contract approval email");
             assert_eq!(search_result_title_results.len(), 1);
+            let package_results =
+                search_city_work(&state, &request.release_packages[0].package_hash);
+            assert_eq!(package_results.len(), 1);
             let decision_results = search_city_work(&state, "CORA attorney-client privilege");
             assert_eq!(decision_results.len(), 1);
             let message_results = search_city_work(&state, "narrowed date range");
@@ -4867,6 +5044,7 @@ mod tests {
             assert_eq!(public_request.fee_waiver_reason, "");
             assert_eq!(public_request.response_draft, "");
             assert!(public_request.approval_notes.is_empty());
+            assert!(public_request.release_packages.is_empty());
             assert!(public_request.timeline.is_empty());
             assert!(public_request.messages.is_empty());
             assert!(public_request.documents.is_empty());

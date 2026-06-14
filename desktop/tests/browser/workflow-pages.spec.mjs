@@ -72,6 +72,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Response & Release" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate Local AI Draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve Response" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Build Release Package" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Response" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Close Request" })).toBeVisible();

@@ -168,6 +168,7 @@ fn city_work_action_module_requirement(
         | "suggest-records-response"
         | "draft-records-response"
         | "approve-records-response"
+        | "build-records-release-package"
         | "export-records-response"
         | "fulfill-records-request"
         | "close-records-request"

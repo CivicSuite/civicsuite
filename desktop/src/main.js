@@ -1333,6 +1333,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "export-records-response",
   "fulfill-records-request",
   "close-records-request",
+  "build-records-release-package",
   "mark-notification-sent",
   "add-records-message",
   "add-records-exemption-decision",
@@ -1701,6 +1702,21 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicRecords AI audit entry for exporting the response package.",
       retry: "If approval is missing, the desktop app blocks export and keeps the draft internal."
     },
+    "build-records-release-package": {
+      title: "Review Before Building Release Package",
+      confirmLabel: "Build Release Package",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Writes a checksummed release package manifest with search, document, and exemption decision evidence.",
+      visibility: "The manifest stays local staff evidence until the request is fulfilled; public status does not expose local file paths.",
+      sources: [
+        request ? `${(request.search_sessions || []).length} search session(s); ${(request.documents || []).length} attached document(s)` : "The desktop app will require a request before building.",
+        request ? `${(request.exemption_decisions || []).length} exemption decision(s)` : "The desktop app will require release/redact/exempt decisions."
+      ],
+      audit: "Creates a CivicRecords AI audit entry and request timeline entry with the package hash.",
+      retry: "If source evidence or exemption decisions are missing, the desktop app leaves release package state unchanged."
+    },
     "fulfill-records-request": {
       title: "Review Before Marking Records Fulfilled",
       confirmLabel: "Mark Fulfilled",
@@ -1711,10 +1727,10 @@ function guidedReviewForAction(action) {
       visibility: "Resident/Public records status can show the released response metadata.",
       sources: [
         request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
-        request ? `${(request.exports || []).length} export package(s)` : "The desktop app will require a request before saving."
+        request ? `${(request.exports || []).length} export package(s); ${(request.release_packages || []).length} release package manifest(s)` : "The desktop app will require a request before saving."
       ],
       audit: "Creates CivicRecords AI audit and CivicCore publication-gate entries.",
-      retry: "If approval or export is missing, the desktop app blocks fulfillment."
+      retry: "If approval, export, or release package evidence is missing, the desktop app blocks fulfillment."
     },
     "close-records-request": {
       title: "Review Before Closing Records Request",
@@ -2123,6 +2139,7 @@ function publicRecordsRequestView(request) {
     fee_waiver_reason: "",
     response_draft: "",
     approval_notes: [],
+    release_packages: [],
     timeline: [],
     messages: lookupVerified ? (request.messages || []) : [],
     documents: []
@@ -2387,6 +2404,25 @@ function renderRecordsSearchSessions(request) {
   `;
 }
 
+function renderRecordsReleasePackages(request) {
+  const packages = request.release_packages || [];
+  if (packages.length === 0) return "";
+  return `
+    <details class="record-details" open>
+      <summary>Release Packages</summary>
+      <ul>
+        ${packages.map((pkg) => `
+          <li>
+            <strong>${escapeHtml(pkg.export_path)}</strong>
+            <span>SHA-256 ${escapeHtml(pkg.package_hash)}</span>
+            <small>${pkg.document_count} document(s), ${pkg.search_session_count} search session(s), ${pkg.release_count} release, ${pkg.redacted_count} redact, ${pkg.exempt_count} exempt</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
 function renderRecordsExemptionDecisions(request) {
   const decisions = request.exemption_decisions || [];
   if (decisions.length === 0) return "";
@@ -2493,6 +2529,7 @@ function renderRecordsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="suggest-records-response">Generate Local AI Draft</button>
           <button type="button" class="secondary-action" data-work-action="draft-records-response">Save Draft</button>
           <button type="button" class="secondary-action" data-work-action="approve-records-response">Approve Response</button>
+          <button type="button" class="secondary-action" data-work-action="build-records-release-package">Build Release Package</button>
           <button type="button" class="secondary-action" data-work-action="export-records-response">Export Response</button>
           <button type="button" class="secondary-action" data-work-action="fulfill-records-request">Mark Fulfilled</button>
           <button type="button" class="secondary-action" data-work-action="close-records-request">Close Request</button>
@@ -2523,11 +2560,12 @@ function renderRecordsWorkflow() {
           ${renderRecordsDocuments(request)}
           ${renderRecordsSearchSessions(request)}
           ${renderRecordsExemptionDecisions(request)}
+          ${renderRecordsReleasePackages(request)}
           ${renderRecordsTimeline(request)}
           <div class="record-actions">
             ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
           </div>
-          <small>Due ${request.deadline} - ${(request.citations || []).length} citations - ${(request.exemption_reviews || []).length} exemption notes - ${(request.exports || []).length} exports</small>
+          <small>Due ${request.deadline} - ${(request.citations || []).length} citations - ${(request.exemption_reviews || []).length} exemption notes - ${(request.release_packages || []).length} release packages - ${(request.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -2752,6 +2790,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ].join(" "));
     const exemptionDecisionSearchText = (request.exemption_decisions || [])
       .map((decision) => [decision.source, decision.kind, decision.finding, decision.decision, decision.basis, decision.reviewer].join(" "));
+    const releasePackageSearchText = (request.release_packages || [])
+      .map((pkg) => [pkg.export_path, pkg.package_hash, pkg.document_count, pkg.search_session_count, pkg.release_count, pkg.redacted_count, pkg.exempt_count].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
       .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
     const publicRecordFields = [
@@ -2775,6 +2815,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ...requestDocumentSearchText,
       ...searchSessionSearchText,
       ...exemptionDecisionSearchText,
+      ...releasePackageSearchText,
       request.response_draft,
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
@@ -3963,6 +4004,7 @@ function workPayloadForAction(action) {
       citation: draft.citation
     },
     "approve-records-response": { ...selected, approvalNote: draft.approvalNote },
+    "build-records-release-package": selected,
     "export-records-response": selected,
     "fulfill-records-request": selected,
     "close-records-request": selected,
