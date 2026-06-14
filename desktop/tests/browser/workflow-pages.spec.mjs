@@ -36,12 +36,18 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Create Request" })).toBeVisible();
   await expect(page.getByLabel("Deadline basis")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Scope & Search" })).toBeVisible();
+  await expect(page.getByLabel("Fee line description")).toBeVisible();
+  await expect(page.getByLabel("Fee schedule or policy basis")).toBeVisible();
+  await expect(page.getByLabel("Fee line amount")).toBeVisible();
+  await expect(page.getByLabel("Fee waiver reason")).toBeVisible();
   await expect(page.getByRole("button", { name: "Set Deadline" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Exemption Review" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Estimate Fee" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Fee Line" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Waive Fee" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Response & Release" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate Local AI Draft" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve Response" })).toBeVisible();
@@ -176,6 +182,18 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Set Deadline" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Setting Records Deadline" })).toBeVisible();
   await expect(page.getByText("Deadline basis is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Add Fee Line" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Adding Records Fee Line" })).toBeVisible();
+  await expect(page.getByText("Fee line description is required.")).toBeVisible();
+  await expect(page.getByText("Fee schedule or policy basis is required.")).toBeVisible();
+  await expect(page.getByText("Fee line amount is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Waive Fee" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Waiving Records Fee" })).toBeVisible();
+  await expect(page.getByText("Fee waiver reason is required.")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Generate Local AI Draft" }).click();

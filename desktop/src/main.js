@@ -570,6 +570,10 @@ const state = {
     sourceNote: "",
     exemptionNote: "",
     feeEstimate: "",
+    feeLineDescription: "",
+    feeScheduleBasis: "",
+    feeLineAmount: "",
+    feeWaiverReason: "",
     responseDraft: "",
     citation: "",
     approvalNote: "",
@@ -736,6 +740,13 @@ function profileStatusClass(profile) {
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return "Unknown size";
   return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+}
+
+function formatFeeCents(amountCents) {
+  const cents = Number.isFinite(Number(amountCents)) ? Number(amountCents) : 0;
+  const dollars = Math.trunc(cents / 100);
+  const remainder = Math.abs(cents % 100);
+  return `$${dollars}.${String(remainder).padStart(2, "0")}`;
 }
 
 function renderTopbar() {
@@ -1304,6 +1315,8 @@ const GUIDED_WORK_ACTIONS = new Set([
   "fulfill-records-request",
   "close-records-request",
   "mark-notification-sent",
+  "add-records-fee-line",
+  "waive-records-fee",
   "approve-code-guidance",
   "suggest-code-guidance",
   "publish-code-source",
@@ -1543,6 +1556,37 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicRecords AI audit entry for deadline review.",
       retry: "If the deadline date or basis is missing or invalid, the desktop app leaves the request unchanged."
+    },
+    "add-records-fee-line": {
+      title: "Review Before Adding Records Fee Line",
+      confirmLabel: "Add Fee Line",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Adds a structured fee line item and updates the request fee estimate.",
+      visibility: "Staff-only fee evidence remains local and is included in the exported response package.",
+      sources: [
+        detailOrFallback(state.workDraft.feeLineDescription, "Fee line description is required."),
+        detailOrFallback(state.workDraft.feeScheduleBasis, "Fee schedule or policy basis is required."),
+        detailOrFallback(state.workDraft.feeLineAmount, "Fee line amount is required.")
+      ],
+      audit: "Creates a CivicRecords AI audit entry for the fee line.",
+      retry: "If the amount is missing, zero, negative, or not dollars/cents, the desktop app leaves the request unchanged."
+    },
+    "waive-records-fee": {
+      title: "Review Before Waiving Records Fee",
+      confirmLabel: "Waive Fee",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Records a fee waiver reason and updates the request fee estimate to waived.",
+      visibility: "Staff-only waiver evidence remains local and is included in the exported response package.",
+      sources: [
+        detailOrFallback(state.workDraft.feeWaiverReason, "Fee waiver reason is required."),
+        request ? `${(request.fee_line_items || []).length} fee line item(s) currently recorded.` : "The desktop app will require a request before saving."
+      ],
+      audit: "Creates a CivicRecords AI audit entry for the fee waiver.",
+      retry: "If no waiver reason is entered, the desktop app leaves the request fee state unchanged."
     },
     "approve-records-response": {
       title: "Review Before Approving Records Response",
@@ -2004,8 +2048,11 @@ function publicRecordsRequestView(request) {
     search_notes: [],
     exemption_reviews: [],
     fee_estimate: "",
+    fee_line_items: [],
+    fee_waiver_reason: "",
     response_draft: "",
-    approval_notes: []
+    approval_notes: [],
+    timeline: []
   };
 }
 
@@ -2231,6 +2278,10 @@ function renderRecordsWorkflow() {
         <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
         <label>Exemption review <textarea data-work-field="exemptionNote">${state.workDraft.exemptionNote}</textarea></label>
         <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${state.workDraft.feeEstimate}" /></label>
+        <label>Fee line description <input type="text" data-work-field="feeLineDescription" value="${state.workDraft.feeLineDescription}" placeholder="Search time, copies, media, or waived charge basis" /></label>
+        <label>Fee schedule or policy basis <input type="text" data-work-field="feeScheduleBasis" value="${state.workDraft.feeScheduleBasis}" placeholder="Adopted records fee schedule or waiver policy" /></label>
+        <label>Fee line amount <input type="text" inputmode="decimal" data-work-field="feeLineAmount" value="${state.workDraft.feeLineAmount}" placeholder="12.50" /></label>
+        <label>Fee waiver reason <textarea data-work-field="feeWaiverReason">${state.workDraft.feeWaiverReason}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="set-records-deadline">Set Deadline</button>
           <button type="button" class="secondary-action" data-work-action="assign-records-request">Assign</button>
@@ -2238,6 +2289,8 @@ function renderRecordsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="record-records-search">Record Search</button>
           <button type="button" class="secondary-action" data-work-action="add-records-exemption-review">Add Exemption Review</button>
           <button type="button" class="secondary-action" data-work-action="estimate-records-fee">Estimate Fee</button>
+          <button type="button" class="secondary-action" data-work-action="add-records-fee-line">Add Fee Line</button>
+          <button type="button" class="secondary-action" data-work-action="waive-records-fee">Waive Fee</button>
         </div>
       </div>
       <div class="workflow-form">
@@ -2270,6 +2323,8 @@ function renderRecordsWorkflow() {
           ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
           ${request.assigned_to ? `<p><strong>Assigned:</strong> ${request.assigned_to}</p>` : ""}
           ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
+          ${(request.fee_line_items || []).length > 0 ? `<p><strong>Fee lines:</strong> ${(request.fee_line_items || []).map((item) => `${escapeHtml(item.description)} ${escapeHtml(formatFeeCents(item.amount_cents))}${item.schedule_basis ? ` (${escapeHtml(item.schedule_basis)})` : ""}`).join("; ")}</p>` : ""}
+          ${request.fee_waiver_reason ? `<p><strong>Fee waiver:</strong> ${escapeHtml(request.fee_waiver_reason)}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
           ${renderRecordsTimeline(request)}
@@ -2488,6 +2543,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   });
   const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
   recordsRequests.forEach((request) => {
+    const feeLineSearchText = (request.fee_line_items || [])
+      .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
     const publicRecordFields = [
       request.public_tracking_number,
       request.requester,
@@ -2503,6 +2560,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       request.requester_contact,
       request.assigned_to,
       request.fee_estimate,
+      request.fee_waiver_reason,
+      ...feeLineSearchText,
       request.response_draft,
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
@@ -3643,6 +3702,16 @@ function workPayloadForAction(action) {
     },
     "add-records-exemption-review": { ...selected, exemptionNote: draft.exemptionNote },
     "estimate-records-fee": { ...selected, feeEstimate: draft.feeEstimate },
+    "add-records-fee-line": {
+      ...selected,
+      feeLineDescription: draft.feeLineDescription,
+      feeScheduleBasis: draft.feeScheduleBasis,
+      feeLineAmount: draft.feeLineAmount
+    },
+    "waive-records-fee": {
+      ...selected,
+      feeWaiverReason: draft.feeWaiverReason
+    },
     "suggest-records-response": selected,
     "draft-records-response": {
       ...selected,

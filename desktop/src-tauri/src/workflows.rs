@@ -106,6 +106,16 @@ pub struct RecordsTimelineEntry {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsFeeLineItem {
+    pub id: String,
+    pub description: String,
+    #[serde(default)]
+    pub schedule_basis: String,
+    pub amount_cents: i64,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsRequest {
     pub id: String,
     #[serde(default)]
@@ -130,6 +140,10 @@ pub struct RecordsRequest {
     pub exemption_reviews: Vec<String>,
     #[serde(default)]
     pub fee_estimate: String,
+    #[serde(default)]
+    pub fee_line_items: Vec<RecordsFeeLineItem>,
+    #[serde(default)]
+    pub fee_waiver_reason: String,
     #[serde(default)]
     pub citations: Vec<String>,
     #[serde(default)]
@@ -458,6 +472,45 @@ fn payload_bool(payload: Option<&Value>, key: &str) -> bool {
         .and_then(|value| value.get(key))
         .and_then(Value::as_bool)
         .unwrap_or(false)
+}
+
+fn parse_money_cents(value: &str) -> Result<i64, String> {
+    let value = value.trim().trim_start_matches('$').replace(',', "");
+    if value.is_empty() {
+        return Err("Enter a fee amount.".to_string());
+    }
+    if value.starts_with('-') {
+        return Err("Fee amounts must be zero or greater.".to_string());
+    }
+    let parts = value.split('.').collect::<Vec<_>>();
+    if parts.len() > 2
+        || parts[0].is_empty()
+        || !parts[0].chars().all(|character| character.is_ascii_digit())
+    {
+        return Err("Enter the fee amount as dollars and cents, such as 12.50.".to_string());
+    }
+    let dollars = parts[0]
+        .parse::<i64>()
+        .map_err(|_| "Enter the fee amount as dollars and cents, such as 12.50.".to_string())?;
+    let cents = if parts.len() == 2 {
+        let cents = parts[1];
+        if cents.is_empty()
+            || cents.len() > 2
+            || !cents.chars().all(|character| character.is_ascii_digit())
+        {
+            return Err("Enter the fee amount as dollars and cents, such as 12.50.".to_string());
+        }
+        format!("{cents:0<2}")
+            .parse::<i64>()
+            .map_err(|_| "Enter the fee amount as dollars and cents, such as 12.50.".to_string())?
+    } else {
+        0
+    };
+    Ok(dollars * 100 + cents)
+}
+
+fn format_money_cents(amount_cents: i64) -> String {
+    format!("${}.{:02}", amount_cents / 100, (amount_cents % 100).abs())
 }
 
 fn days_in_month(year: u32, month: u32) -> u32 {
@@ -1356,6 +1409,33 @@ fn records_timeline_or_default(entries: &[RecordsTimelineEntry]) -> String {
         .join("\n")
 }
 
+fn records_fee_total_cents(items: &[RecordsFeeLineItem]) -> i64 {
+    items.iter().map(|item| item.amount_cents).sum()
+}
+
+fn records_fee_lines_or_default(items: &[RecordsFeeLineItem]) -> String {
+    if items.is_empty() {
+        return "No fee line items recorded.".to_string();
+    }
+    items
+        .iter()
+        .map(|item| {
+            let basis = if item.schedule_basis.is_empty() {
+                "No fee schedule basis recorded.".to_string()
+            } else {
+                format!("Schedule/basis: {}", item.schedule_basis)
+            };
+            format!(
+                "- {}: {} ({})",
+                item.description,
+                format_money_cents(item.amount_cents),
+                basis
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn code_version_history_or_default(entries: &[CodeVersionEntry]) -> String {
     if entries.is_empty() {
         return "No version or codifier history recorded.".to_string();
@@ -1593,6 +1673,8 @@ fn create_records_request(
             search_notes: Vec::new(),
             exemption_reviews: Vec::new(),
             fee_estimate: String::new(),
+            fee_line_items: Vec::new(),
+            fee_waiver_reason: String::new(),
             citations: Vec::new(),
             response_draft: String::new(),
             approval_notes: Vec::new(),
@@ -1663,6 +1745,8 @@ fn submit_public_records_request(
             search_notes: Vec::new(),
             exemption_reviews: Vec::new(),
             fee_estimate: String::new(),
+            fee_line_items: Vec::new(),
+            fee_waiver_reason: String::new(),
             citations: Vec::new(),
             response_draft: String::new(),
             approval_notes: Vec::new(),
@@ -1905,6 +1989,86 @@ fn estimate_records_fee(
     Ok("Fee estimate saved before approval or fulfillment.".to_string())
 }
 
+fn add_records_fee_line(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let description = payload_string(payload, "feeLineDescription")?;
+    let schedule_basis = payload_string(payload, "feeScheduleBasis")
+        .map_err(|_| "Enter the fee schedule or policy basis for this line item.".to_string())?;
+    let amount = payload_string(payload, "feeLineAmount")
+        .map_err(|_| "Enter the fee line amount.".to_string())?;
+    let amount_cents = parse_money_cents(&amount)?;
+    if amount_cents <= 0 {
+        return Err("Fee line amount must be greater than zero.".to_string());
+    }
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    let item = RecordsFeeLineItem {
+        id: format!(
+            "records-fee-line-{}-{}",
+            now_unix_seconds(),
+            request.fee_line_items.len() + 1
+        ),
+        description: description.clone(),
+        schedule_basis: schedule_basis.clone(),
+        amount_cents,
+        created_at_unix_seconds: now_unix_seconds(),
+    };
+    request.fee_line_items.push(item);
+    let total = records_fee_total_cents(&request.fee_line_items);
+    request.fee_estimate = if request.fee_waiver_reason.is_empty() {
+        format!(
+            "{} estimated from {} fee line item(s).",
+            format_money_cents(total),
+            request.fee_line_items.len()
+        )
+    } else {
+        format!("$0.00 waived: {}", request.fee_waiver_reason)
+    };
+    request.status = "fee review".to_string();
+    push_records_timeline(
+        request,
+        "fee line added",
+        "records staff",
+        format!(
+            "{}: {} under {}",
+            description,
+            format_money_cents(amount_cents),
+            schedule_basis
+        ),
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-records-fee-line",
+        format!(
+            "Added records fee line: {} {} under {}",
+            description,
+            format_money_cents(amount_cents),
+            schedule_basis
+        ),
+    );
+    Ok("Records fee line item saved with local evidence.".to_string())
+}
+
+fn waive_records_fee(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let reason = payload_string(payload, "feeWaiverReason")?;
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    request.fee_waiver_reason = reason.clone();
+    request.fee_estimate = format!("$0.00 waived: {reason}");
+    request.status = "fee waived".to_string();
+    push_records_timeline(request, "fee waived", "records staff", reason.clone());
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "waive-records-fee",
+        format!("Recorded records fee waiver: {reason}"),
+    );
+    Ok("Records fee waiver saved with local evidence.".to_string())
+}
+
 fn draft_records_response(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -2048,8 +2212,10 @@ fn export_records_response(
     );
     let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
     let request_timeline = records_timeline_or_default(&request.timeline);
+    let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
+    let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -2085,6 +2251,13 @@ fn export_records_response(
         },
         request.summary,
         request_timeline,
+        fee_total,
+        if request.fee_waiver_reason.is_empty() {
+            "No fee waiver recorded."
+        } else {
+            &request.fee_waiver_reason
+        },
+        fee_lines,
         clarification_notes,
         search_notes,
         exemption_reviews,
@@ -2851,6 +3024,19 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let search_notes = request.search_notes.join(" ");
         let exemption_reviews = request.exemption_reviews.join(" ");
         let approval_notes = request.approval_notes.join(" ");
+        let fee_lines = request
+            .fee_line_items
+            .iter()
+            .map(|item| {
+                format!(
+                    "{} {} {}",
+                    item.description,
+                    item.schedule_basis,
+                    format_money_cents(item.amount_cents)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let timeline = request
             .timeline
             .iter()
@@ -2866,6 +3052,8 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &request.deadline,
                 &request.deadline_basis,
                 &request.fee_estimate,
+                &request.fee_waiver_reason,
+                &fee_lines,
                 &request.response_draft,
                 &citations,
                 &clarification_notes,
@@ -3010,6 +3198,8 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.search_notes.clear();
     public_request.exemption_reviews.clear();
     public_request.fee_estimate.clear();
+    public_request.fee_line_items.clear();
+    public_request.fee_waiver_reason.clear();
     public_request.response_draft.clear();
     public_request.approval_notes.clear();
     public_request.timeline.clear();
@@ -3156,6 +3346,8 @@ pub fn city_work_action(
         "record-records-search" => record_records_search(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
         "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
+        "add-records-fee-line" => add_records_fee_line(&mut state, payload)?,
+        "waive-records-fee" => waive_records_fee(&mut state, payload)?,
         "suggest-records-response" => suggest_records_response(&mut state, payload)?,
         "draft-records-response" => draft_records_response(&mut state, payload)?,
         "approve-records-response" => approve_records_response(&mut state, payload)?,
@@ -3637,8 +3829,26 @@ mod tests {
             });
             city_work_action("add-records-exemption-review", Some(&exemption))
                 .expect("exemption saved");
-            let fee = serde_json::json!({ "feeEstimate": "$12.50 staff time estimate" });
-            city_work_action("estimate-records-fee", Some(&fee)).expect("fee saved");
+            let bad_fee = serde_json::json!({
+                "feeLineDescription": "Search time",
+                "feeScheduleBasis": "Adopted records fee schedule",
+                "feeLineAmount": "free"
+            });
+            let error = match city_work_action("add-records-fee-line", Some(&bad_fee)) {
+                Ok(_) => panic!("fee line cannot save without dollars and cents"),
+                Err(error) => error,
+            };
+            assert!(error.contains("dollars and cents"));
+            let fee_line = serde_json::json!({
+                "feeLineDescription": "Search time and copies",
+                "feeScheduleBasis": "Adopted records fee schedule",
+                "feeLineAmount": "12.50"
+            });
+            city_work_action("add-records-fee-line", Some(&fee_line)).expect("fee line saved");
+            let fee_waiver = serde_json::json!({
+                "feeWaiverReason": "Public interest waiver approved by clerk."
+            });
+            city_work_action("waive-records-fee", Some(&fee_waiver)).expect("fee waiver saved");
             let draft = serde_json::json!({
                 "responseDraft": "Responsive records are attached for review.",
                 "citation": "PRA-2026-002"
@@ -3662,7 +3872,24 @@ mod tests {
             assert_eq!(request.clarification_notes.len(), 1);
             assert_eq!(request.search_notes.len(), 1);
             assert_eq!(request.exemption_reviews.len(), 1);
-            assert_eq!(request.fee_estimate, "$12.50 staff time estimate");
+            assert_eq!(request.fee_line_items.len(), 1);
+            assert_eq!(
+                request.fee_line_items[0].description,
+                "Search time and copies"
+            );
+            assert_eq!(
+                request.fee_line_items[0].schedule_basis,
+                "Adopted records fee schedule"
+            );
+            assert_eq!(request.fee_line_items[0].amount_cents, 1250);
+            assert_eq!(
+                request.fee_waiver_reason,
+                "Public interest waiver approved by clerk."
+            );
+            assert_eq!(
+                request.fee_estimate,
+                "$0.00 waived: Public interest waiver approved by clerk."
+            );
             assert!(request.approved_at_unix_seconds.is_some());
             assert!(request.fulfilled_at_unix_seconds.is_some());
             assert!(request.closed_at_unix_seconds.is_some());
@@ -3671,6 +3898,14 @@ mod tests {
                 .timeline
                 .iter()
                 .any(|entry| entry.action == "clarification requested"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "fee line added"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "fee waived"));
             assert!(request
                 .timeline
                 .iter()
@@ -3689,6 +3924,13 @@ mod tests {
             assert!(exported.contains("Deadline basis: Staff-entered deadline at intake."));
             assert!(exported.contains("## Request Timeline"));
             assert!(exported.contains("clarification requested"));
+            assert!(exported.contains("fee line added"));
+            assert!(exported.contains("fee waived"));
+            assert!(exported.contains("## Fee Review"));
+            assert!(exported.contains("Fee total: $12.50"));
+            assert!(exported.contains("Fee waiver: Public interest waiver approved by clerk."));
+            assert!(exported.contains("Search time and copies: $12.50"));
+            assert!(exported.contains("Schedule/basis: Adopted records fee schedule"));
             assert!(exported.contains("response approved"));
             assert!(exported.contains("## Exemption Review"));
             assert!(exported.contains("Reviewed attorney-client content"));
@@ -3716,6 +3958,12 @@ mod tests {
             assert_eq!(results.len(), 1);
             let timeline_results = search_city_work(&state, "clarification requested");
             assert_eq!(timeline_results.len(), 1);
+            let fee_results = search_city_work(&state, "Public interest waiver");
+            assert_eq!(fee_results.len(), 1);
+            let fee_line_results = search_city_work(&state, "Search time and copies");
+            assert_eq!(fee_line_results.len(), 1);
+            let fee_schedule_results = search_city_work(&state, "Adopted records fee schedule");
+            assert_eq!(fee_schedule_results.len(), 1);
             let notification_results = search_city_work(&state, "response ready");
             assert_eq!(notification_results.len(), 1);
             assert_eq!(notification_results[0].module_id, "civiccore");
@@ -3853,6 +4101,8 @@ mod tests {
             assert!(public_request.search_notes.is_empty());
             assert!(public_request.exemption_reviews.is_empty());
             assert_eq!(public_request.fee_estimate, "");
+            assert!(public_request.fee_line_items.is_empty());
+            assert_eq!(public_request.fee_waiver_reason, "");
             assert_eq!(public_request.response_draft, "");
             assert!(public_request.approval_notes.is_empty());
             assert!(public_request.timeline.is_empty());
