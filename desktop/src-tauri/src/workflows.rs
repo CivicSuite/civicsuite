@@ -66,6 +66,21 @@ pub struct NoticeChecklist {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MeetingAttachment {
+    pub id: String,
+    pub title: String,
+    pub original_path: String,
+    pub stored_path: String,
+    pub citation: String,
+    pub sha256: String,
+    pub size_bytes: u64,
+    pub packet_section: String,
+    pub access_level: String,
+    pub added_by: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     pub title: String,
@@ -78,6 +93,8 @@ pub struct Meeting {
     pub notice_postings: Vec<NoticePosting>,
     pub summary: String,
     pub agenda_items: Vec<AgendaItem>,
+    #[serde(default)]
+    pub attachments: Vec<MeetingAttachment>,
     pub minutes: String,
     #[serde(default)]
     pub votes: Vec<String>,
@@ -949,6 +966,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         notice_postings: Vec::new(),
         summary,
         agenda_items: Vec::new(),
+        attachments: Vec::new(),
         minutes: String::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
@@ -1000,6 +1018,109 @@ fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         format!("Added agenda item: {title}"),
     );
     Ok("Agenda item added to the current meeting draft.".to_string())
+}
+
+fn add_meeting_attachment(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let title = payload_string(payload, "meetingAttachmentTitle")?;
+    let source_path = payload_string(payload, "meetingAttachmentSourcePath")?;
+    let citation = payload_optional_string(payload, "meetingAttachmentCitation");
+    let packet_section = {
+        let value = payload_optional_string(payload, "meetingAttachmentSection");
+        if value.is_empty() {
+            "agenda packet".to_string()
+        } else {
+            value
+        }
+    };
+    let access_level = {
+        let value = payload_optional_string(payload, "meetingAttachmentAccess").to_lowercase();
+        if value.is_empty() {
+            "public packet".to_string()
+        } else if value == "public packet" || value == "closed-session addendum" {
+            value
+        } else {
+            return Err(
+                "Attachment access must be public packet or closed-session addendum.".to_string(),
+            );
+        }
+    };
+    let source_path = PathBuf::from(source_path);
+    if !source_path.is_file() {
+        return Err("Choose an existing local file to attach to the meeting packet.".to_string());
+    }
+    let original_path = source_path.to_string_lossy().to_string();
+    let source_file_name = source_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "meeting-attachment".to_string());
+    let extension = source_path
+        .extension()
+        .map(|value| format!(".{}", value.to_string_lossy()))
+        .unwrap_or_default();
+    let (stored_path, sha256, size_bytes) = {
+        let meeting = selected_meeting_mut(state, payload)?;
+        ensure_meeting_can_change(meeting)?;
+        let meeting_dir = local_paths::data_root()
+            .join("files")
+            .join("meetings")
+            .join(format!("{}-{}", meeting.id, safe_file_stem(&meeting.title)));
+        fs::create_dir_all(&meeting_dir)
+            .map_err(|error| format!("Could not create {}: {error}", meeting_dir.display()))?;
+        let stored_file_name = format!(
+            "{}-{}{}",
+            safe_file_stem(&title),
+            now_unix_seconds(),
+            extension
+        );
+        let stored_path = meeting_dir.join(stored_file_name);
+        fs::copy(&source_path, &stored_path).map_err(|error| {
+            format!(
+                "Could not copy {} into the local meeting packet file store: {error}",
+                source_path.display()
+            )
+        })?;
+        let metadata = fs::metadata(&stored_path)
+            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
+        let sha256 = hash_file(&stored_path)?;
+        let attachment = MeetingAttachment {
+            id: format!(
+                "meeting-attachment-{}-{}",
+                now_unix_seconds(),
+                meeting.attachments.len() + 1
+            ),
+            title: title.clone(),
+            original_path: original_path.clone(),
+            stored_path: stored_path.to_string_lossy().to_string(),
+            citation: citation.clone(),
+            sha256: sha256.clone(),
+            size_bytes: metadata.len(),
+            packet_section: packet_section.clone(),
+            access_level: access_level.clone(),
+            added_by: "clerk staff".to_string(),
+            created_at_unix_seconds: now_unix_seconds(),
+        };
+        meeting.attachments.push(attachment);
+        meeting.status = "packet attachments recorded".to_string();
+        (
+            stored_path.to_string_lossy().to_string(),
+            sha256,
+            metadata.len(),
+        )
+    };
+    push_audit(
+        state,
+        "civicclerk",
+        "add-meeting-attachment",
+        format!(
+            "Attached meeting packet file {title} from {source_file_name}; {access_level}; sha256 {sha256}; {size_bytes} bytes."
+        ),
+    );
+    Ok(format!(
+        "Meeting packet attachment copied into local profile: {stored_path}."
+    ))
 }
 
 fn add_code_handoff_agenda(
@@ -1225,12 +1346,13 @@ fn suggest_minutes_draft(
         || !meeting.votes.is_empty()
         || !meeting.action_items.is_empty()
         || !meeting.resident_comments.is_empty()
-        || !meeting.public_comments.is_empty();
+        || !meeting.public_comments.is_empty()
+        || !meeting.attachments.is_empty();
     if !has_meeting_evidence {
-        return Err("Add a summary, agenda item, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
+        return Err("Add a summary, agenda item, attachment, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, packet attachments, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -1243,6 +1365,7 @@ fn suggest_minutes_draft(
             &meeting.summary
         },
         agenda,
+        meeting_attachments_or_default(&meeting.attachments),
         if meeting.minutes.is_empty() {
             "No existing minutes draft recorded."
         } else {
@@ -1711,6 +1834,36 @@ fn notice_postings_or_default(entries: &[NoticePosting]) -> String {
         .join("\n")
 }
 
+fn meeting_attachments_or_default(attachments: &[MeetingAttachment]) -> String {
+    if attachments.is_empty() {
+        return "No packet attachments recorded.".to_string();
+    }
+    attachments
+        .iter()
+        .map(|attachment| {
+            let stored_location = if attachment.stored_path.is_empty() {
+                "local path hidden"
+            } else {
+                &attachment.stored_path
+            };
+            format!(
+                "- {} [{} / {}]: {} (sha256 {}, stored at {})",
+                attachment.title,
+                attachment.packet_section,
+                attachment.access_level,
+                if attachment.citation.is_empty() {
+                    "No citation recorded."
+                } else {
+                    &attachment.citation
+                },
+                attachment.sha256,
+                stored_location
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn code_version_history_search_text(entries: &[CodeVersionEntry]) -> String {
     entries
         .iter()
@@ -1770,8 +1923,9 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         .unwrap_or_else(|| "Minutes have not been adopted.".to_string());
     let notice_checklists = notice_checklists_or_default(&meeting.notice_checklists);
     let notice_postings = notice_postings_or_default(&meeting.notice_postings);
+    let attachments = meeting_attachments_or_default(&meeting.attachments);
     format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -1784,6 +1938,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
             &meeting.summary
         },
         agenda,
+        attachments,
         if meeting.minutes.is_empty() {
             "No minutes draft recorded."
         } else {
@@ -1802,7 +1957,14 @@ fn export_meeting_packet(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let meeting = selected_meeting_mut(state, payload)?;
-    let contents = meeting_packet_contents(meeting);
+    let contents = if meeting.archived_at_unix_seconds.is_some()
+        || meeting.status == "archived public record"
+    {
+        let public_meeting = public_meeting_projection(meeting).unwrap_or_else(|| meeting.clone());
+        meeting_packet_contents(&public_meeting)
+    } else {
+        meeting_packet_contents(meeting)
+    };
     let export_path = write_export_file("meetings", &meeting.title, &contents)?;
     meeting.exports.push(export_path.clone());
     if meeting.archived_at_unix_seconds.is_none() {
@@ -1827,7 +1989,8 @@ fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         }
         meeting.status = "archived public record".to_string();
         meeting.archived_at_unix_seconds = Some(now_unix_seconds());
-        let contents = meeting_packet_contents(meeting);
+        let public_meeting = public_meeting_projection(meeting).unwrap_or_else(|| meeting.clone());
+        let contents = meeting_packet_contents(&public_meeting);
         let export_path = write_export_file("meetings", &meeting.title, &contents)?;
         meeting.exports.push(export_path.clone());
         (
@@ -3667,6 +3830,22 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let attachments = meeting
+            .attachments
+            .iter()
+            .map(|attachment| {
+                format!(
+                    "{} {} {} {} {} {}",
+                    attachment.title,
+                    attachment.citation,
+                    attachment.sha256,
+                    attachment.packet_section,
+                    attachment.access_level,
+                    attachment.stored_path
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let public_comments = meeting
             .public_comments
             .iter()
@@ -3689,6 +3868,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &meeting.status,
                 &meeting.minutes,
                 &agenda_titles,
+                &attachments,
                 &votes,
                 &action_items,
                 &resident_comments,
@@ -3946,6 +4126,18 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         .iter()
         .filter_map(public_comment_projection)
         .collect();
+    public_meeting.attachments = meeting
+        .attachments
+        .iter()
+        .filter(|attachment| attachment.access_level == "public packet")
+        .cloned()
+        .map(|mut attachment| {
+            attachment.original_path.clear();
+            attachment.stored_path.clear();
+            attachment.added_by.clear();
+            attachment
+        })
+        .collect();
     if !is_public_archive {
         public_meeting.minutes.clear();
         public_meeting.votes.clear();
@@ -4112,6 +4304,7 @@ pub fn city_work_action(
     let message = match action {
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
+        "add-meeting-attachment" => add_meeting_attachment(&mut state, payload)?,
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
@@ -4296,7 +4489,7 @@ mod tests {
 
     #[test]
     fn meeting_workflow_persists_agenda_notice_minutes_votes_comments_actions_and_archive() {
-        with_temp_state_dir(|_| {
+        with_temp_state_dir(|root| {
             let payload = serde_json::json!({
                 "title": "Council Regular Meeting",
                 "meetingDate": "2026-07-01",
@@ -4304,6 +4497,36 @@ mod tests {
                 "agendaTitle": "Adopt budget ordinance"
             });
             city_work_action("create-meeting", Some(&payload)).expect("meeting created");
+            let public_attachment_path = root.join("public-fiscal-note.txt");
+            fs::write(
+                &public_attachment_path,
+                "Fiscal note for the budget ordinance packet.",
+            )
+            .expect("public attachment written");
+            let public_attachment = serde_json::json!({
+                "meetingAttachmentTitle": "Fiscal note",
+                "meetingAttachmentSourcePath": public_attachment_path.to_string_lossy(),
+                "meetingAttachmentCitation": "Packet item 4 fiscal note",
+                "meetingAttachmentSection": "Item 4",
+                "meetingAttachmentAccess": "public packet"
+            });
+            city_work_action("add-meeting-attachment", Some(&public_attachment))
+                .expect("public packet attachment saved");
+            let closed_attachment_path = root.join("closed-session-memo.txt");
+            fs::write(
+                &closed_attachment_path,
+                "Closed-session attorney memo for internal addendum only.",
+            )
+            .expect("closed attachment written");
+            let closed_attachment = serde_json::json!({
+                "meetingAttachmentTitle": "Closed-session attorney memo",
+                "meetingAttachmentSourcePath": closed_attachment_path.to_string_lossy(),
+                "meetingAttachmentCitation": "Executive session memo",
+                "meetingAttachmentSection": "Closed-session addendum",
+                "meetingAttachmentAccess": "closed-session addendum"
+            });
+            city_work_action("add-meeting-attachment", Some(&closed_attachment))
+                .expect("closed-session attachment saved");
             let missing_checklist = match city_work_action("complete-notice-checklist", None) {
                 Ok(_) => panic!("notice checklist cannot pass without evidence"),
                 Err(error) => error,
@@ -4416,6 +4639,15 @@ mod tests {
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
             assert_eq!(meeting.resident_comments.len(), 1);
+            assert_eq!(meeting.attachments.len(), 2);
+            assert_eq!(meeting.attachments[0].title, "Fiscal note");
+            assert_eq!(meeting.attachments[0].citation, "Packet item 4 fiscal note");
+            assert_eq!(meeting.attachments[0].sha256.len(), 64);
+            assert!(PathBuf::from(&meeting.attachments[0].stored_path).is_file());
+            assert_eq!(
+                meeting.attachments[1].access_level,
+                "closed-session addendum"
+            );
             assert!(meeting.minutes_adopted_at_unix_seconds.is_some());
             assert!(meeting.archived_at_unix_seconds.is_some());
             assert_eq!(meeting.exports.len(), 2);
@@ -4424,6 +4656,10 @@ mod tests {
             assert!(PathBuf::from(&meeting.exports[1]).is_file());
             let packet = fs::read_to_string(&meeting.exports[0]).expect("packet reads");
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
+            assert!(packet.contains("## Packet Attachments"));
+            assert!(packet.contains("Fiscal note"));
+            assert!(packet.contains("Packet item 4 fiscal note"));
+            assert!(packet.contains("Closed-session attorney memo"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
             assert!(archive.contains("## Notice Checklist"));
@@ -4435,6 +4671,22 @@ mod tests {
             assert!(archive.contains("Finance staff to publish the adopted budget."));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
             assert!(archive.contains("Resident asked for sidewalk funding."));
+            assert!(archive.contains("## Packet Attachments"));
+            assert!(archive.contains("Fiscal note"));
+            assert!(archive.contains("local path hidden"));
+            assert!(!archive.contains("Closed-session attorney memo"));
+            assert!(!archive.contains("closed-session-memo"));
+            let attachment_results = search_city_work(&state, "Packet item 4 fiscal note");
+            assert_eq!(attachment_results.len(), 1);
+            let public_state = public_city_work_state().expect("public state reads");
+            let public_meeting = public_state
+                .meetings
+                .first()
+                .expect("public meeting exists");
+            assert_eq!(public_meeting.attachments.len(), 1);
+            assert_eq!(public_meeting.attachments[0].title, "Fiscal note");
+            assert!(public_meeting.attachments[0].original_path.is_empty());
+            assert!(public_meeting.attachments[0].stored_path.is_empty());
             assert!(state
                 .audit_entries
                 .iter()
@@ -4463,6 +4715,15 @@ mod tests {
             let reloaded_meeting = reloaded.meetings.first().expect("meeting exists");
             assert_eq!(reloaded_meeting.status, "archived public record");
             assert_eq!(reloaded_meeting.exports.len(), 3);
+            let public_reexport = fs::read_to_string(
+                reloaded_meeting
+                    .exports
+                    .last()
+                    .expect("re-export path exists"),
+            )
+            .expect("public re-export reads");
+            assert!(public_reexport.contains("Fiscal note"));
+            assert!(!public_reexport.contains("Closed-session attorney memo"));
         });
     }
 

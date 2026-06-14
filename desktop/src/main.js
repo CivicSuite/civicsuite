@@ -545,6 +545,11 @@ const state = {
     noticeConfirmation: "",
     noticePostingDate: "",
     minutes: "",
+    meetingAttachmentTitle: "",
+    meetingAttachmentSourcePath: "",
+    meetingAttachmentCitation: "",
+    meetingAttachmentSection: "agenda packet",
+    meetingAttachmentAccess: "public packet",
     vote: "",
     actionItem: "",
     residentComment: "",
@@ -1318,6 +1323,7 @@ function workflowEmpty(label) {
 
 const GUIDED_WORK_ACTIONS = new Set([
   "add-code-handoff-agenda",
+  "add-meeting-attachment",
   "complete-notice-checklist",
   "post-notice",
   "export-meeting-packet",
@@ -1435,6 +1441,26 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicClerk audit entry for adding the code handoff to the agenda.",
       retry: "If no handoff or meeting exists, the desktop app stops before changing local records."
     },
+    "add-meeting-attachment": {
+      title: "Review Before Attaching Packet File",
+      confirmLabel: "Attach Packet File",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Copies the selected local file into the city profile, records its SHA-256 hash, and adds it to the meeting packet evidence list.",
+      visibility: state.workDraft.meetingAttachmentAccess === "closed-session addendum"
+        ? "Staff-only closed-session addendum. It will not appear in resident/public meeting materials."
+        : "Public packet attachment. Local Windows file paths remain hidden from resident/public materials.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        detailOrFallback(state.workDraft.meetingAttachmentTitle, "Attachment title is required."),
+        detailOrFallback(state.workDraft.meetingAttachmentSourcePath, "Attachment source file path is required."),
+        detailOrFallback(state.workDraft.meetingAttachmentCitation, "No citation has been recorded yet."),
+        detailOrFallback(state.workDraft.meetingAttachmentSection, "Packet section is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
+      retry: "If the file is missing, unreadable, or the meeting is archived, the desktop app leaves the meeting record unchanged."
+    },
     "complete-notice-checklist": {
       title: "Review Before Approving Notice Checklist",
       confirmLabel: "Approve Notice Checklist",
@@ -1479,10 +1505,10 @@ function guidedReviewForAction(action) {
       module: "CivicClerk",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
-      changes: "Writes a local packet export from the meeting agenda, minutes, votes, action items, and comments.",
+      changes: "Writes a local packet export from the meeting agenda, packet attachments, minutes, votes, action items, and comments.",
       visibility: "Exported packet material remains local staff work unless later posted or archived.",
       sources: [
-        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
       audit: "Creates a CivicClerk audit entry for the packet export.",
@@ -1494,10 +1520,10 @@ function guidedReviewForAction(action) {
       module: "CivicClerk",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
-      changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, outcomes, action items, and comments. It does not adopt or archive the minutes.",
+      changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, packet attachments, outcomes, action items, and comments. It does not adopt or archive the minutes.",
       visibility: "Internal staff draft only. A clerk must review, edit, and adopt minutes before the public archive step.",
       sources: [
-        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.votes || []).length} outcome(s); ${(meeting.action_items || []).length} action item(s)` : "The desktop app will require a meeting before generating.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.votes || []).length} outcome(s); ${(meeting.action_items || []).length} action item(s)` : "The desktop app will require a meeting before generating.",
         detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
       ],
       audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
@@ -1911,7 +1937,15 @@ function publicMeetingView(meeting) {
   if (!publicArchive && !publicNotice) return null;
   const publicMeeting = {
     ...meeting,
-    public_comments: (meeting.public_comments || []).map(publicCommentView).filter(Boolean)
+    public_comments: (meeting.public_comments || []).map(publicCommentView).filter(Boolean),
+    attachments: (meeting.attachments || [])
+      .filter((attachment) => attachment.access_level === "public packet")
+      .map((attachment) => ({
+        ...attachment,
+        original_path: "",
+        stored_path: "",
+        added_by: ""
+      }))
   };
   if (!publicArchive) {
     publicMeeting.minutes = "";
@@ -1987,7 +2021,8 @@ function renderPublicMeetingsWorkflow() {
           <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : meeting.notice_status}</span>
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No public summary recorded."}</p>
-          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
+          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} packet attachments - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2033,6 +2068,22 @@ function renderMeetingsWorkflow() {
         </div>
       </div>
       <div class="workflow-form">
+        <h3>Packet Attachments</h3>
+        <p class="form-help">Attach source files for the agenda packet. The desktop app copies each file into the city profile and records a SHA-256 hash.</p>
+        <label>Attachment title <input type="text" data-work-field="meetingAttachmentTitle" value="${state.workDraft.meetingAttachmentTitle}" /></label>
+        <label>Attachment source file path <input type="text" data-work-field="meetingAttachmentSourcePath" value="${state.workDraft.meetingAttachmentSourcePath}" placeholder="C:/City/Clerk/fiscal-note.pdf" /></label>
+        <label>Attachment citation <input type="text" data-work-field="meetingAttachmentCitation" value="${state.workDraft.meetingAttachmentCitation}" /></label>
+        <label>Packet section <input type="text" data-work-field="meetingAttachmentSection" value="${state.workDraft.meetingAttachmentSection}" placeholder="Item 6 fiscal note" /></label>
+        <label>Attachment access
+          <select data-work-field="meetingAttachmentAccess">
+            ${["public packet", "closed-session addendum"].map((access) => `<option value="${access}" ${state.workDraft.meetingAttachmentAccess === access ? "selected" : ""}>${access}</option>`).join("")}
+          </select>
+        </label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="add-meeting-attachment">Attach Packet File</button>
+        </div>
+      </div>
+      <div class="workflow-form">
         <h3>Capture Outcomes</h3>
         <label>Minutes draft <textarea data-work-field="minutes">${state.workDraft.minutes}</textarea></label>
         <label>Motion or vote <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
@@ -2070,6 +2121,7 @@ function renderMeetingsWorkflow() {
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
+          ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
           ${(meeting.public_comments || []).length > 0 ? `<p><strong>Public comments:</strong> ${(meeting.public_comments || []).length} received for clerk review</p>` : ""}
@@ -2086,7 +2138,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -2736,6 +2788,13 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const noticePostings = (meeting.notice_postings || [])
       .map((entry) => [entry.location, entry.method, entry.confirmation, entry.posted_on, entry.time_zone].join(" "))
       .join(" ");
+    const packetAttachments = (meeting.attachments || [])
+      .map((attachment) => {
+        const publicFields = [attachment.title, attachment.citation, attachment.packet_section, attachment.access_level, attachment.sha256];
+        if (publicOnly) return publicFields.join(" ");
+        return [...publicFields, attachment.original_path, attachment.stored_path, attachment.added_by].join(" ");
+      })
+      .join(" ");
     const publicComments = (meeting.public_comments || [])
       .filter((comment) => !publicOnly || ["reviewed for public record", "redacted for public record"].includes(comment.status))
       .map((comment) => {
@@ -2764,13 +2823,14 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       noticeChecklists,
       noticePostings,
       agendaTitles,
+      packetAttachments,
       publicComments
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, outcomes, actionItems, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, outcomes, actionItems, residentComments, publicComments];
+      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, outcomes, actionItems, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -3885,6 +3945,14 @@ function workPayloadForAction(action) {
       agendaTitle: draft.agendaTitle
     },
     "add-agenda-item": { ...selected, agendaTitle: draft.agendaTitle },
+    "add-meeting-attachment": {
+      ...selected,
+      meetingAttachmentTitle: draft.meetingAttachmentTitle,
+      meetingAttachmentSourcePath: draft.meetingAttachmentSourcePath,
+      meetingAttachmentCitation: draft.meetingAttachmentCitation,
+      meetingAttachmentSection: draft.meetingAttachmentSection,
+      meetingAttachmentAccess: draft.meetingAttachmentAccess
+    },
     "add-code-handoff-agenda": selected,
     "complete-notice-checklist": {
       ...selected,

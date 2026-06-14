@@ -19,6 +19,13 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Approve Notice Checklist" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mark Notice Ready" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Export Packet" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Packet Attachments" })).toBeVisible();
+  await expect(page.getByLabel("Attachment title")).toBeVisible();
+  await expect(page.getByLabel("Attachment source file path")).toBeVisible();
+  await expect(page.getByLabel("Attachment citation")).toBeVisible();
+  await expect(page.getByLabel("Packet section")).toBeVisible();
+  await expect(page.getByLabel("Attachment access")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Attach Packet File" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Action Item" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
@@ -121,6 +128,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Redact Comment" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
 
@@ -186,6 +194,13 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Generate Local AI Minutes" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Generating Minutes Draft" })).toBeVisible();
   await expect(page.getByText("Uses the verified local AI model to draft internal meeting minutes")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Attach Packet File" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Attaching Packet File" })).toBeVisible();
+  await expect(page.getByText("Attachment title is required.")).toBeVisible();
+  await expect(page.getByText("Attachment source file path is required.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Attach Packet File" })).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Approve Notice Checklist" }).click();

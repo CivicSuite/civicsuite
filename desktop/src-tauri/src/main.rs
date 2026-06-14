@@ -135,6 +135,7 @@ fn city_work_action_module_requirement(
     match action {
         "create-meeting"
         | "add-agenda-item"
+        | "add-meeting-attachment"
         | "add-code-handoff-agenda"
         | "complete-notice-checklist"
         | "post-notice"
