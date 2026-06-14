@@ -57,7 +57,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Fiscal impact")).toBeVisible();
   await expect(page.getByLabel("Alternatives considered")).toBeVisible();
   await expect(page.getByLabel("Prior actions")).toBeVisible();
-  await expect(page.getByLabel("Prepared by")).toBeVisible();
+  await expect(page.getByLabel("Staff report prepared by")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Staff Report" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Packet Attachments" })).toBeVisible();
   await expect(page.getByLabel("Attachment title")).toBeVisible();
@@ -65,7 +65,11 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Attachment citation")).toBeVisible();
   await expect(page.getByLabel("Packet section")).toBeVisible();
   await expect(page.getByLabel("Attachment access")).toBeVisible();
+  await expect(page.getByLabel("Packet title")).toBeVisible();
+  await expect(page.getByLabel("Packet prepared by")).toBeVisible();
+  await expect(page.getByLabel("Packet review note")).toBeVisible();
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Finalize Packet" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
   await expect(page.getByLabel("Closed-session statutory basis")).toBeVisible();
   await expect(page.getByLabel("Closed-session topics")).toBeVisible();
@@ -214,6 +218,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Finalize Packet" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Record Motion" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Minute Citation" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);

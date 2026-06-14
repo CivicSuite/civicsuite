@@ -584,6 +584,9 @@ const state = {
     meetingAttachmentCitation: "",
     meetingAttachmentSection: "agenda packet",
     meetingAttachmentAccess: "public packet",
+    packetTitle: "",
+    packetPreparedBy: "",
+    packetReviewNote: "",
     closedSessionBasis: "",
     closedSessionTopics: "",
     closedSessionAttendees: "",
@@ -1395,6 +1398,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "record-staff-report",
   "add-code-handoff-agenda",
   "add-meeting-attachment",
+  "finalize-meeting-packet",
   "record-closed-session",
   "complete-notice-checklist",
   "post-notice",
@@ -1654,6 +1658,25 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
       retry: "If the file is missing, unreadable, or the meeting is archived, the desktop app leaves the meeting record unchanged."
+    },
+    "finalize-meeting-packet": {
+      title: "Review Before Finalizing Packet",
+      confirmLabel: "Finalize Packet",
+      module: "CivicClerk",
+      subject: detailOrFallback(state.workDraft.packetTitle, meeting ? `${meeting.title} agenda packet` : "Current meeting packet"),
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Stores a durable packet-finalization record with the clerk review note, agenda item count, public attachment count, and closed-session addendum count.",
+      visibility: "Staff packet milestone now. It becomes part of the public meeting archive only after the meeting is archived as a public record.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda items ready for packet review.` : "At least one agenda item is required.",
+        meeting ? `${(meeting.attachments || []).filter((attachment) => attachment.access_level === "public packet").length} public packet attachments.` : "Attachment counts will be recorded from the selected meeting.",
+        meeting ? `${(meeting.attachments || []).filter((attachment) => attachment.access_level === "closed-session addendum").length} closed-session addenda.` : "Closed-session addendum counts will be recorded from the selected meeting.",
+        detailOrFallback(state.workDraft.packetPreparedBy, "Prepared-by or reviewer name is required."),
+        detailOrFallback(state.workDraft.packetReviewNote, "Packet review note is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the packet finalization milestone and counts.",
+      retry: "If no meeting exists, no agenda item exists, review fields are blank, or the meeting is archived, the desktop app leaves the packet unchanged."
     },
     "record-closed-session": {
       title: "Review Before Recording Closed Session",
@@ -2230,6 +2253,7 @@ function publicMeetingView(meeting) {
         added_by: ""
     })),
     staff_reports: meeting.staff_reports || [],
+    packet_assemblies: meeting.packet_assemblies || [],
     member_votes: meeting.member_votes || [],
     minute_citations: (meeting.minute_citations || [])
       .filter((citation) => citation.access_level === "public record"),
@@ -2253,6 +2277,7 @@ function publicMeetingView(meeting) {
     publicMeeting.action_records = [];
     publicMeeting.adopted_legislation = [];
     publicMeeting.closed_sessions = [];
+    publicMeeting.packet_assemblies = [];
     publicMeeting.resident_comments = [];
     publicMeeting.exports = [];
   }
@@ -2326,9 +2351,10 @@ function renderPublicMeetingsWorkflow() {
           <p>${meeting.summary || "No public summary recorded."}</p>
           ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
+          ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)})`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2467,7 +2493,7 @@ function renderMeetingsWorkflow() {
         <label>Fiscal impact <textarea data-work-field="staffReportFiscalImpact">${state.workDraft.staffReportFiscalImpact}</textarea></label>
         <label>Alternatives considered <textarea data-work-field="staffReportAlternatives">${state.workDraft.staffReportAlternatives}</textarea></label>
         <label>Prior actions <textarea data-work-field="staffReportPriorActions">${state.workDraft.staffReportPriorActions}</textarea></label>
-        <label>Prepared by <input type="text" data-work-field="staffReportPreparedBy" value="${state.workDraft.staffReportPreparedBy}" /></label>
+        <label>Staff report prepared by <input type="text" data-work-field="staffReportPreparedBy" value="${state.workDraft.staffReportPreparedBy}" /></label>
         <label>Revision note <input type="text" data-work-field="staffReportRevisionNote" value="${state.workDraft.staffReportRevisionNote}" /></label>
         <div class="workflow-actions">
           ${selectedMeetingAgendaItems.length === 0 ? `<button type="button" class="secondary-action" disabled>Save Staff Report</button>` : `<button type="button" class="secondary-action" data-work-action="record-staff-report">Save Staff Report</button>`}
@@ -2485,8 +2511,12 @@ function renderMeetingsWorkflow() {
             ${["public packet", "closed-session addendum"].map((access) => `<option value="${access}" ${state.workDraft.meetingAttachmentAccess === access ? "selected" : ""}>${access}</option>`).join("")}
           </select>
         </label>
+        <label>Packet title <input type="text" data-work-field="packetTitle" value="${state.workDraft.packetTitle}" placeholder="Council agenda packet" /></label>
+        <label>Packet prepared by <input type="text" data-work-field="packetPreparedBy" value="${state.workDraft.packetPreparedBy}" placeholder="Deputy Clerk" /></label>
+        <label>Packet review note <textarea data-work-field="packetReviewNote">${state.workDraft.packetReviewNote}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="add-meeting-attachment">Attach Packet File</button>
+          ${!selectedMeeting || selectedMeetingAgendaItems.length === 0 ? `<button type="button" class="secondary-action" disabled>Finalize Packet</button>` : `<button type="button" class="secondary-action" data-work-action="finalize-meeting-packet">Finalize Packet</button>`}
         </div>
       </div>
       <div class="workflow-form">
@@ -2609,6 +2639,7 @@ function renderMeetingsWorkflow() {
           ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
+          ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)}; ${packet.agenda_item_count} agenda items; ${packet.public_attachment_count} public attachments; ${packet.closed_session_attachment_count} closed-session addenda)`).join("; ")}</p>` : ""}
           ${(meeting.closed_sessions || []).length > 0 ? `<p><strong>Closed sessions:</strong> ${(meeting.closed_sessions || []).map((session) => `${escapeHtml(session.statutory_basis)} (${escapeHtml((session.topics || []).join("; "))}; ${escapeHtml(session.entered_at)}-${escapeHtml(session.exited_at)})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
@@ -2630,7 +2661,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3356,6 +3387,17 @@ function localSearchResults(query, { publicOnly = false } = {}) {
         return [...publicFields, attachment.original_path, attachment.stored_path, attachment.added_by].join(" ");
       })
       .join(" ");
+    const packetAssemblies = (meeting.packet_assemblies || [])
+      .map((packet) => [
+        packet.packet_title,
+        packet.prepared_by,
+        packet.review_note,
+        packet.status,
+        packet.agenda_item_count,
+        packet.public_attachment_count,
+        packet.closed_session_attachment_count
+      ].join(" "))
+      .join(" ");
     const minuteCitations = (meeting.minute_citations || [])
       .map((citation) => [citation.sentence, citation.source_type, citation.source_reference, citation.note, citation.access_level].join(" "))
       .join(" ");
@@ -3389,6 +3431,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       noticePostings,
       agendaTitles,
       packetAttachments,
+      packetAssemblies,
       minuteCitations,
       publicComments
     ];
@@ -3396,7 +3439,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, memberVotes, staffReports, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, packetAssemblies, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4593,6 +4636,12 @@ function workPayloadForAction(action) {
       meetingAttachmentCitation: draft.meetingAttachmentCitation,
       meetingAttachmentSection: draft.meetingAttachmentSection,
       meetingAttachmentAccess: draft.meetingAttachmentAccess
+    },
+    "finalize-meeting-packet": {
+      ...selected,
+      packetTitle: draft.packetTitle,
+      packetPreparedBy: draft.packetPreparedBy,
+      packetReviewNote: draft.packetReviewNote
     },
     "record-closed-session": {
       ...selected,

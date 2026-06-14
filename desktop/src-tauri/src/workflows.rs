@@ -160,6 +160,20 @@ pub struct MeetingAttachment {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct PacketAssemblyRecord {
+    pub id: String,
+    pub packet_title: String,
+    pub prepared_by: String,
+    pub review_note: String,
+    pub agenda_item_count: usize,
+    pub public_attachment_count: usize,
+    pub closed_session_attachment_count: usize,
+    pub status: String,
+    pub created_at_unix_seconds: u64,
+    pub finalized_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct MinuteCitation {
     pub id: String,
     pub sentence: String,
@@ -271,6 +285,8 @@ pub struct Meeting {
     pub staff_reports: Vec<StaffReportRecord>,
     #[serde(default)]
     pub attachments: Vec<MeetingAttachment>,
+    #[serde(default)]
+    pub packet_assemblies: Vec<PacketAssemblyRecord>,
     pub minutes: String,
     #[serde(default)]
     pub minute_citations: Vec<MinuteCitation>,
@@ -1379,6 +1395,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         agenda_items: Vec::new(),
         staff_reports: Vec::new(),
         attachments: Vec::new(),
+        packet_assemblies: Vec::new(),
         minutes: String::new(),
         minute_citations: Vec::new(),
         motions: Vec::new(),
@@ -1771,6 +1788,70 @@ fn add_meeting_attachment(
     ))
 }
 
+fn finalize_meeting_packet(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let prepared_by = payload_string(payload, "packetPreparedBy")
+        .map_err(|_| "Enter who prepared or reviewed the packet.".to_string())?;
+    let review_note = payload_string(payload, "packetReviewNote")
+        .map_err(|_| "Enter the packet review note.".to_string())?;
+    let requested_title = payload_optional_string(payload, "packetTitle");
+    let (meeting_title, packet_title, agenda_item_count, public_attachment_count, closed_count) = {
+        let meeting = selected_meeting_mut(state, payload)?;
+        ensure_meeting_can_change(meeting)?;
+        if meeting.agenda_items.is_empty() {
+            return Err("Add at least one agenda item before finalizing the packet.".to_string());
+        }
+        let packet_title = if requested_title.is_empty() {
+            format!("{} agenda packet", meeting.title)
+        } else {
+            requested_title.clone()
+        };
+        let public_attachment_count = meeting
+            .attachments
+            .iter()
+            .filter(|attachment| attachment.access_level == "public packet")
+            .count();
+        let closed_count = meeting
+            .attachments
+            .iter()
+            .filter(|attachment| attachment.access_level == "closed-session addendum")
+            .count();
+        let now = now_unix_seconds();
+        let record = PacketAssemblyRecord {
+            id: new_id("packet-assembly", meeting.packet_assemblies.len()),
+            packet_title: packet_title.clone(),
+            prepared_by: prepared_by.clone(),
+            review_note: review_note.clone(),
+            agenda_item_count: meeting.agenda_items.len(),
+            public_attachment_count,
+            closed_session_attachment_count: closed_count,
+            status: "finalized".to_string(),
+            created_at_unix_seconds: now,
+            finalized_at_unix_seconds: now,
+        };
+        meeting.packet_assemblies.push(record);
+        meeting.status = "packet finalized".to_string();
+        (
+            meeting.title.clone(),
+            packet_title,
+            meeting.agenda_items.len(),
+            public_attachment_count,
+            closed_count,
+        )
+    };
+    push_audit(
+        state,
+        "civicclerk",
+        "finalize-meeting-packet",
+        format!(
+            "Finalized packet {packet_title} for {meeting_title}: {agenda_item_count} agenda items, {public_attachment_count} public attachments, {closed_count} closed-session addenda; reviewed by {prepared_by}."
+        ),
+    );
+    Ok("Packet finalization saved for clerk review and export.".to_string())
+}
+
 fn add_code_handoff_agenda(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -2109,12 +2190,13 @@ fn suggest_minutes_draft(
         || !meeting.action_items.is_empty()
         || !meeting.resident_comments.is_empty()
         || !meeting.public_comments.is_empty()
-        || !meeting.attachments.is_empty();
+        || !meeting.attachments.is_empty()
+        || !meeting.packet_assemblies.is_empty();
     if !has_meeting_evidence {
         return Err("Add a summary, agenda item, attachment, motion, roll-call vote, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, roll-call votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, motions, roll-call votes, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRoll-call votes:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, roll-call votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, packet finalization, motions, roll-call votes, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nPacket finalization:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRoll-call votes:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -2129,6 +2211,7 @@ fn suggest_minutes_draft(
         agenda,
         staff_reports_or_default(&meeting.staff_reports),
         meeting_attachments_or_default(&meeting.attachments),
+        packet_assemblies_or_default(&meeting.packet_assemblies),
         if meeting.minutes.is_empty() {
             "No existing minutes draft recorded."
         } else {
@@ -3188,6 +3271,28 @@ fn meeting_attachments_or_default(attachments: &[MeetingAttachment]) -> String {
         .join("\n")
 }
 
+fn packet_assemblies_or_default(records: &[PacketAssemblyRecord]) -> String {
+    if records.is_empty() {
+        return "No packet finalization recorded.".to_string();
+    }
+    records
+        .iter()
+        .map(|record| {
+            format!(
+                "- {} [{}]: reviewed by {}; agenda items {}; public attachments {}; closed-session addenda {}; note: {}",
+                record.packet_title,
+                record.status,
+                record.prepared_by,
+                record.agenda_item_count,
+                record.public_attachment_count,
+                record.closed_session_attachment_count,
+                record.review_note
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn minute_citations_or_default(citations: &[MinuteCitation]) -> String {
     if citations.is_empty() {
         return "No minute citations recorded.".to_string();
@@ -3280,6 +3385,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let notice_checklists = notice_checklists_or_default(&meeting.notice_checklists);
     let notice_postings = notice_postings_or_default(&meeting.notice_postings);
     let attachments = meeting_attachments_or_default(&meeting.attachments);
+    let packet_assemblies = packet_assemblies_or_default(&meeting.packet_assemblies);
     let minute_citations = minute_citations_or_default(&meeting.minute_citations);
     let body_name = if meeting.body_name.is_empty() {
         "No meeting body recorded."
@@ -3287,7 +3393,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Roll Call Votes\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Packet Finalization\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Roll Call Votes\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -3303,6 +3409,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         agenda,
         staff_reports,
         attachments,
+        packet_assemblies,
         closed_sessions,
         if meeting.minutes.is_empty() {
             "No minutes draft recorded."
@@ -5415,6 +5522,23 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let packet_assemblies = meeting
+            .packet_assemblies
+            .iter()
+            .map(|record| {
+                format!(
+                    "{} {} {} {} {} {} {}",
+                    record.packet_title,
+                    record.prepared_by,
+                    record.review_note,
+                    record.status,
+                    record.agenda_item_count,
+                    record.public_attachment_count,
+                    record.closed_session_attachment_count
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let minute_citations = meeting
             .minute_citations
             .iter()
@@ -5457,6 +5581,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &agenda_titles,
                 &staff_reports,
                 &attachments,
+                &packet_assemblies,
                 &minute_citations,
                 &motions,
                 &member_votes,
@@ -5769,6 +5894,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.action_records.clear();
         public_meeting.adopted_legislation.clear();
         public_meeting.closed_sessions.clear();
+        public_meeting.packet_assemblies.clear();
         public_meeting.resident_comments.clear();
         public_meeting.exports.clear();
     }
@@ -5942,6 +6068,7 @@ pub fn city_work_action(
         "promote-agenda-intake" => promote_agenda_intake(&mut state, payload)?,
         "record-staff-report" => record_staff_report(&mut state, payload)?,
         "add-meeting-attachment" => add_meeting_attachment(&mut state, payload)?,
+        "finalize-meeting-packet" => finalize_meeting_packet(&mut state, payload)?,
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
@@ -6294,6 +6421,22 @@ mod tests {
             });
             city_work_action("add-meeting-attachment", Some(&closed_attachment))
                 .expect("closed-session attachment saved");
+            let incomplete_packet = serde_json::json!({
+                "packetTitle": "Council budget packet"
+            });
+            let error = match city_work_action("finalize-meeting-packet", Some(&incomplete_packet))
+            {
+                Ok(_) => panic!("packet cannot finalize without clerk reviewer"),
+                Err(error) => error,
+            };
+            assert!(error.contains("prepared or reviewed"));
+            let packet_finalization = serde_json::json!({
+                "packetTitle": "Council budget packet",
+                "packetPreparedBy": "Deputy Clerk Avery",
+                "packetReviewNote": "Packet reviewed against agenda, public fiscal note, and closed-session addendum boundaries."
+            });
+            city_work_action("finalize-meeting-packet", Some(&packet_finalization))
+                .expect("packet finalization saved");
             let closed_session = serde_json::json!({
                 "closedSessionBasis": "State open meetings law Section 24-6-402(4)(b)",
                 "closedSessionTopics": "Attorney advice on budget litigation",
@@ -6663,6 +6806,26 @@ mod tests {
                 meeting.attachments[1].access_level,
                 "closed-session addendum"
             );
+            assert_eq!(meeting.packet_assemblies.len(), 1);
+            assert_eq!(
+                meeting.packet_assemblies[0].packet_title,
+                "Council budget packet"
+            );
+            assert_eq!(
+                meeting.packet_assemblies[0].prepared_by,
+                "Deputy Clerk Avery"
+            );
+            assert_eq!(meeting.packet_assemblies[0].agenda_item_count, 1);
+            assert_eq!(meeting.packet_assemblies[0].public_attachment_count, 1);
+            assert_eq!(
+                meeting.packet_assemblies[0].closed_session_attachment_count,
+                1
+            );
+            assert_eq!(meeting.packet_assemblies[0].status, "finalized");
+            assert!(meeting.packet_assemblies[0]
+                .review_note
+                .contains("closed-session addendum boundaries"));
+            assert!(meeting.packet_assemblies[0].finalized_at_unix_seconds > 0);
             assert_eq!(meeting.closed_sessions.len(), 1);
             assert_eq!(
                 meeting.closed_sessions[0].statutory_basis,
@@ -6699,6 +6862,10 @@ mod tests {
             assert!(packet.contains("Fiscal note"));
             assert!(packet.contains("Packet item 4 fiscal note"));
             assert!(packet.contains("Closed-session attorney memo"));
+            assert!(packet.contains("## Packet Finalization"));
+            assert!(packet.contains("Council budget packet"));
+            assert!(packet.contains("Deputy Clerk Avery"));
+            assert!(packet.contains("closed-session addendum boundaries"));
             assert!(packet.contains("## Closed Sessions"));
             assert!(packet.contains("City Attorney"));
             assert!(packet.contains("closed-session-memo.txt"));
@@ -6748,6 +6915,10 @@ mod tests {
             assert!(archive.contains("## Packet Attachments"));
             assert!(archive.contains("Fiscal note"));
             assert!(archive.contains("local path hidden"));
+            assert!(archive.contains("## Packet Finalization"));
+            assert!(archive.contains("Council budget packet"));
+            assert!(archive.contains("Deputy Clerk Avery"));
+            assert!(archive.contains("closed-session addendum boundaries"));
             assert!(archive.contains("## Closed Sessions"));
             assert!(archive.contains("Attorney advice on budget litigation"));
             assert!(archive.contains("Council reconvened in open session"));
@@ -6785,6 +6956,8 @@ mod tests {
             assert_eq!(action_source_results.len(), 1);
             let staff_report_results = search_city_work(&state, "Enterprise fund reserve targets");
             assert_eq!(staff_report_results.len(), 1);
+            let packet_review_results = search_city_work(&state, "Deputy Clerk Avery");
+            assert_eq!(packet_review_results.len(), 1);
             let signature_results = search_city_work(&state, "City Clerk Morgan");
             assert_eq!(signature_results.len(), 1);
             let closed_session_results = search_city_work(&state, "budget litigation");
@@ -6853,6 +7026,15 @@ mod tests {
             assert_eq!(public_meeting.attachments[0].title, "Fiscal note");
             assert!(public_meeting.attachments[0].original_path.is_empty());
             assert!(public_meeting.attachments[0].stored_path.is_empty());
+            assert_eq!(public_meeting.packet_assemblies.len(), 1);
+            assert_eq!(
+                public_meeting.packet_assemblies[0].packet_title,
+                "Council budget packet"
+            );
+            assert_eq!(
+                public_meeting.packet_assemblies[0].prepared_by,
+                "Deputy Clerk Avery"
+            );
             assert_eq!(public_meeting.minute_citations.len(), 1);
             assert_eq!(
                 public_meeting.minute_citations[0].source_reference,
@@ -6935,6 +7117,18 @@ mod tests {
                 Err(error) => error,
             };
             assert!(error.contains("archived as a public record"));
+            let late_packet_finalization = serde_json::json!({
+                "packetPreparedBy": "Late Clerk",
+                "packetReviewNote": "Late review after archive."
+            });
+            let error = match city_work_action(
+                "finalize-meeting-packet",
+                Some(&late_packet_finalization),
+            ) {
+                Ok(_) => panic!("archived meeting cannot finalize a new packet record"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
 
             city_work_action("export-meeting-packet", None).expect("archived packet can re-export");
             let reloaded = city_work_state().expect("state reads after re-export");
@@ -6950,6 +7144,8 @@ mod tests {
             .expect("public re-export reads");
             assert!(public_reexport.contains("Body: City Council"));
             assert!(public_reexport.contains("Fiscal note"));
+            assert!(public_reexport.contains("## Packet Finalization"));
+            assert!(public_reexport.contains("Deputy Clerk Avery"));
             assert!(public_reexport.contains("## Roll Call Votes"));
             assert!(public_reexport.contains("Councilmember Lee: aye"));
             assert!(!public_reexport.contains("Closed-session attorney memo"));
