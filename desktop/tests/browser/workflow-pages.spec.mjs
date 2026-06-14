@@ -133,6 +133,10 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Request Intake" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Request" })).toBeVisible();
   await expect(page.getByLabel("Deadline basis")).toBeVisible();
+  await expect(page.getByLabel("Received date")).toBeVisible();
+  await expect(page.getByLabel("Deadline rule")).toBeVisible();
+  await expect(page.getByLabel("Deadline day count")).toBeVisible();
+  await expect(page.getByLabel("Deadline day type")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Scope & Search" })).toBeVisible();
   await expect(page.getByLabel("Fee line description")).toBeVisible();
   await expect(page.getByLabel("Fee schedule or policy basis")).toBeVisible();
@@ -164,6 +168,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Release copy reviewed by")).toBeVisible();
   await expect(page.getByRole("button", { name: "Attach Release Copy" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Set Deadline" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Calculate Deadline" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Search" })).toBeVisible();
@@ -257,6 +262,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByText("Pending public intake appears only after the request number and submitted contact match.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Calculate Deadline" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Attach Release Copy" })).toHaveCount(0);
   await expect(page.getByLabel("Release copy file path")).toHaveCount(0);
@@ -346,6 +352,13 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Set Deadline" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Setting Records Deadline" })).toBeVisible();
   await expect(page.getByText("Deadline basis is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Calculate Deadline" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Calculating Records Deadline" })).toBeVisible();
+  await expect(page.getByText("Received date is required.")).toBeVisible();
+  await expect(page.getByText("Deadline basis is required.")).toBeVisible();
+  await expect(page.getByText("The desktop app will require a request before saving.")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Add Request Message" }).click();

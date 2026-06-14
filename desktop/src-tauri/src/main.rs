@@ -170,6 +170,7 @@ fn city_work_action_module_requirement(
         | "lookup-public-records-request"
         | "add-public-records-message"
         | "set-records-deadline"
+        | "calculate-records-deadline"
         | "request-records-clarification"
         | "add-records-message"
         | "assign-records-request"

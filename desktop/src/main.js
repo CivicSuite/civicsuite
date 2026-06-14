@@ -647,6 +647,10 @@ const state = {
     recordsSummary: "",
     deadline: "",
     recordsDeadlineBasis: "",
+    deadlineReceivedDate: "",
+    deadlineRuleName: "Colorado CORA three working days",
+    deadlineDayCount: "3",
+    deadlineDayType: "business days",
     assignedTo: "",
     clarificationNote: "",
     requestMessageBody: "",
@@ -1429,6 +1433,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "record-adopted-legislation",
   "archive-meeting",
   "set-records-deadline",
+  "calculate-records-deadline",
   "record-records-search-session",
   "approve-records-response",
   "suggest-records-response",
@@ -1971,6 +1976,25 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicRecords AI audit entry for deadline review.",
       retry: "If the deadline date or basis is missing or invalid, the desktop app leaves the request unchanged."
+    },
+    "calculate-records-deadline": {
+      title: "Review Before Calculating Records Deadline",
+      confirmLabel: "Calculate Deadline",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Calculates and stores the response deadline for the selected records request from the received date, rule, day count, and day type.",
+      visibility: "Requester status can show the calculated deadline and basis. Staff-only notes, searches, and exemption work remain hidden.",
+      sources: [
+        request ? detailOrFallback(request.summary, "No request summary is recorded.") : "The desktop app will require a request before saving.",
+        detailOrFallback(state.workDraft.deadlineReceivedDate, "Received date is required."),
+        detailOrFallback(state.workDraft.deadlineRuleName, "Deadline rule name is required."),
+        detailOrFallback(state.workDraft.deadlineDayCount, "Deadline day count is required."),
+        detailOrFallback(state.workDraft.deadlineDayType, "Deadline day type is required."),
+        detailOrFallback(state.workDraft.recordsDeadlineBasis, "Deadline basis is required.")
+      ],
+      audit: "Creates CivicRecords AI audit, timeline, notification, and public status evidence for the calculated deadline.",
+      retry: "If the received date, day count, day type, basis, or active request is invalid, the desktop app leaves the request unchanged."
     },
     "add-records-message": {
       title: "Review Before Adding Request Message",
@@ -3227,6 +3251,16 @@ function renderRecordsWorkflow() {
         <label>Requester <input type="text" data-work-field="requester" value="${state.workDraft.requester}" /></label>
         <label>Deadline <input type="date" data-work-field="deadline" value="${state.workDraft.deadline}" /></label>
         <label>Deadline basis <input type="text" data-work-field="recordsDeadlineBasis" value="${state.workDraft.recordsDeadlineBasis}" placeholder="State records law or city policy basis" /></label>
+        <label>Received date <input type="date" data-work-field="deadlineReceivedDate" value="${state.workDraft.deadlineReceivedDate}" /></label>
+        <label>Deadline rule <input type="text" data-work-field="deadlineRuleName" value="${state.workDraft.deadlineRuleName}" placeholder="Colorado CORA three working days" /></label>
+        <label>Deadline day count <input type="number" min="1" max="365" step="1" data-work-field="deadlineDayCount" value="${state.workDraft.deadlineDayCount}" /></label>
+        <label>Deadline day type
+          <select aria-label="Deadline day type" data-work-field="deadlineDayType">
+            <option value="business days" ${state.workDraft.deadlineDayType === "business days" ? "selected" : ""}>Business days</option>
+            <option value="calendar days" ${state.workDraft.deadlineDayType === "calendar days" ? "selected" : ""}>Calendar days</option>
+          </select>
+        </label>
+        <p class="form-help">Business-day calculations skip weekends. Staff must still check city/state holidays before saving.</p>
         <label>Request summary <textarea data-work-field="recordsSummary">${state.workDraft.recordsSummary}</textarea></label>
         <button type="button" class="primary-action" data-work-action="create-records-request">Create Request</button>
       </div>
@@ -3263,6 +3297,7 @@ function renderRecordsWorkflow() {
         <label>Fee waiver reason <textarea data-work-field="feeWaiverReason">${state.workDraft.feeWaiverReason}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="set-records-deadline">Set Deadline</button>
+          <button type="button" class="secondary-action" data-work-action="calculate-records-deadline">Calculate Deadline</button>
           <button type="button" class="secondary-action" data-work-action="assign-records-request">Assign</button>
           <button type="button" class="secondary-action" data-work-action="request-records-clarification">Request Clarification</button>
           <button type="button" class="secondary-action" data-work-action="record-records-search">Record Search</button>
@@ -5024,6 +5059,14 @@ function workPayloadForAction(action) {
     "set-records-deadline": {
       ...selected,
       deadline: draft.deadline,
+      deadlineBasis: draft.recordsDeadlineBasis
+    },
+    "calculate-records-deadline": {
+      ...selected,
+      deadlineReceivedDate: draft.deadlineReceivedDate,
+      deadlineRuleName: draft.deadlineRuleName,
+      deadlineDayCount: draft.deadlineDayCount,
+      deadlineDayType: draft.deadlineDayType,
       deadlineBasis: draft.recordsDeadlineBasis
     },
     "request-records-clarification": { ...selected, clarificationNote: draft.clarificationNote },

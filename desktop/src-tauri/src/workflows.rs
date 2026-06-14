@@ -1241,6 +1241,62 @@ fn parse_iso_date(value: &str, label: &str) -> Result<(u32, u32, u32), String> {
     Ok((year, month, day))
 }
 
+fn iso_date_string(year: u32, month: u32, day: u32) -> String {
+    format!("{year:04}-{month:02}-{day:02}")
+}
+
+fn next_iso_date(year: u32, month: u32, day: u32) -> (u32, u32, u32) {
+    let max_day = days_in_month(year, month);
+    if day < max_day {
+        return (year, month, day + 1);
+    }
+    if month < 12 {
+        return (year, month + 1, 1);
+    }
+    (year + 1, 1, 1)
+}
+
+fn iso_weekday_sunday_zero(year: u32, month: u32, day: u32) -> u32 {
+    const OFFSETS: [i32; 12] = [0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4];
+    let mut year = year as i32;
+    let month = month as usize;
+    if month < 3 {
+        year -= 1;
+    }
+    ((year + year / 4 - year / 100 + year / 400 + OFFSETS[month - 1] + day as i32) % 7) as u32
+}
+
+fn iso_date_is_weekend(year: u32, month: u32, day: u32) -> bool {
+    matches!(iso_weekday_sunday_zero(year, month, day), 0 | 6)
+}
+
+fn add_records_deadline_days(
+    received_date: &str,
+    day_count: u32,
+    day_type: &str,
+) -> Result<String, String> {
+    let (mut year, mut month, mut day) =
+        parse_iso_date(received_date, "records request received date")?;
+    if day_count == 0 || day_count > 365 {
+        return Err("Deadline day count must be between 1 and 365.".to_string());
+    }
+    let day_type = day_type.trim().to_lowercase();
+    let business_days = match day_type.as_str() {
+        "business" | "business day" | "business days" | "working" | "working days" => true,
+        "calendar" | "calendar day" | "calendar days" => false,
+        _ => return Err("Deadline day type must be business days or calendar days.".to_string()),
+    };
+    let mut added = 0;
+    while added < day_count {
+        (year, month, day) = next_iso_date(year, month, day);
+        if business_days && iso_date_is_weekend(year, month, day) {
+            continue;
+        }
+        added += 1;
+    }
+    Ok(iso_date_string(year, month, day))
+}
+
 fn iso_date_after(
     left: &str,
     right: &str,
@@ -4446,6 +4502,90 @@ fn set_records_deadline(
     Ok("Records deadline reviewed and saved locally with basis evidence.".to_string())
 }
 
+fn calculate_records_deadline(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let received_date = payload_string(payload, "deadlineReceivedDate")
+        .map_err(|_| "Enter the records request received date as YYYY-MM-DD.".to_string())?;
+    let rule_name = payload_string(payload, "deadlineRuleName")
+        .map_err(|_| "Enter the deadline rule name.".to_string())?;
+    let day_count_text = payload_string(payload, "deadlineDayCount")
+        .map_err(|_| "Enter the deadline day count.".to_string())?;
+    let day_count = day_count_text
+        .parse::<u32>()
+        .map_err(|_| "Deadline day count must be a whole number.".to_string())?;
+    let day_type = payload_string(payload, "deadlineDayType")
+        .map_err(|_| "Choose business days or calendar days.".to_string())?;
+    let deadline_basis = payload_string(payload, "deadlineBasis")
+        .map_err(|_| "Enter the statutory or policy basis for the records deadline.".to_string())?;
+    let deadline = add_records_deadline_days(&received_date, day_count, &day_type)?;
+    let normalized_day_type = if day_type.to_lowercase().contains("business")
+        || day_type.to_lowercase().contains("working")
+    {
+        "business days"
+    } else {
+        "calendar days"
+    };
+    let calculation_basis = format!(
+        "{} Rule: {}; received {}; calculated as {} {} from receipt; weekends {} automatically skipped; city/state holidays must be checked by staff.",
+        deadline_basis,
+        rule_name,
+        received_date,
+        day_count,
+        normalized_day_type,
+        if normalized_day_type == "business days" {
+            "are"
+        } else {
+            "are not"
+        }
+    );
+    let (request_id, tracking_number, requester) = {
+        let request = selected_record_mut(state, payload)?;
+        ensure_records_request_active(request)?;
+        request.deadline = deadline.clone();
+        request.deadline_basis = calculation_basis.clone();
+        request.deadline_reviewed_at_unix_seconds = Some(now_unix_seconds());
+        request.status = "deadline calculated".to_string();
+        push_records_timeline(
+            request,
+            "deadline calculated",
+            "records staff",
+            format!("{rule_name}: received {received_date}; due {deadline}. {calculation_basis}"),
+        );
+        push_records_public_status(
+            request,
+            "Deadline calculated",
+            "deadline calculated",
+            format!("Staff calculated the response deadline as {deadline}."),
+        );
+        (
+            request.id.clone(),
+            request.public_tracking_number.clone(),
+            request.requester.clone(),
+        )
+    };
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "requester",
+        format!("Records request {tracking_number} deadline calculated"),
+        format!(
+            "Staff calculated the response deadline for {requester}: {deadline}. Basis: {calculation_basis}"
+        ),
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "calculate-records-deadline",
+        format!("Records request {tracking_number} deadline calculated as {deadline}: {calculation_basis}"),
+    );
+    Ok(format!(
+        "Records deadline calculated as {deadline} and saved locally with basis evidence."
+    ))
+}
+
 fn request_records_clarification(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -7322,6 +7462,7 @@ pub fn city_work_action(
         "lookup-public-records-request" => return public_records_status_lookup(&state, payload),
         "add-public-records-message" => return add_public_records_message(&mut state, payload),
         "set-records-deadline" => set_records_deadline(&mut state, payload)?,
+        "calculate-records-deadline" => calculate_records_deadline(&mut state, payload)?,
         "request-records-clarification" => request_records_clarification(&mut state, payload)?,
         "add-records-message" => add_records_message(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
@@ -9529,6 +9670,110 @@ mod tests {
             assert!(state.audit_entries.iter().any(|entry| {
                 entry.action == "mark-notification-sent"
                     && entry.summary.contains("deadline reviewed")
+            }));
+            assert_valid_audit_chain(&state.audit_entries);
+        });
+    }
+
+    #[test]
+    fn records_deadline_calculator_skips_weekends_and_preserves_public_boundary() {
+        with_temp_state_dir(|_| {
+            assert_eq!(
+                add_records_deadline_days("2026-07-02", 3, "business days")
+                    .expect("business deadline computes"),
+                "2026-07-07"
+            );
+            assert_eq!(
+                add_records_deadline_days("2026-07-02", 3, "calendar days")
+                    .expect("calendar deadline computes"),
+                "2026-07-05"
+            );
+            let payload = serde_json::json!({
+                "requester": "Casey Green",
+                "requesterContact": "casey@example.gov",
+                "summary": "Building permit records for 100 Main Street"
+            });
+            city_work_action("submit-public-records-request", Some(&payload))
+                .expect("public request submitted");
+            let request_id = city_work_state()
+                .expect("state reads")
+                .records_requests
+                .first()
+                .expect("request exists")
+                .id
+                .clone();
+
+            let zero_count = serde_json::json!({
+                "recordsRequestId": request_id,
+                "deadlineReceivedDate": "2026-07-02",
+                "deadlineRuleName": "Colorado CORA three working days",
+                "deadlineDayCount": "0",
+                "deadlineDayType": "business days",
+                "deadlineBasis": "Colorado CORA initial response deadline."
+            });
+            let error = match city_work_action("calculate-records-deadline", Some(&zero_count)) {
+                Ok(_) => panic!("zero-day deadline cannot be saved"),
+                Err(error) => error,
+            };
+            assert!(error.contains("between 1 and 365"));
+
+            let calculation = serde_json::json!({
+                "recordsRequestId": request_id,
+                "deadlineReceivedDate": "2026-07-02",
+                "deadlineRuleName": "Colorado CORA three working days",
+                "deadlineDayCount": "3",
+                "deadlineDayType": "business days",
+                "deadlineBasis": "Colorado CORA initial response deadline."
+            });
+            city_work_action("calculate-records-deadline", Some(&calculation))
+                .expect("deadline calculated");
+            let state = city_work_state().expect("state reads after calculation");
+            let request = state.records_requests.first().expect("request exists");
+            assert_eq!(request.status, "deadline calculated");
+            assert_eq!(request.deadline, "2026-07-07");
+            assert!(request
+                .deadline_basis
+                .contains("Colorado CORA three working days"));
+            assert!(request
+                .deadline_basis
+                .contains("weekends are automatically skipped"));
+            assert!(request
+                .deadline_basis
+                .contains("city/state holidays must be checked by staff"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "deadline calculated"));
+            assert!(request.public_status_events.iter().any(|entry| {
+                entry.label == "Deadline calculated"
+                    && entry.summary.contains("2026-07-07")
+                    && !entry.summary.contains("100 Main Street")
+            }));
+            assert!(state.notification_events.iter().any(|event| {
+                event.audience == "requester"
+                    && event.subject.contains("deadline calculated")
+                    && event.body.contains("2026-07-07")
+            }));
+
+            let lookup = serde_json::json!({
+                "trackingNumber": "REQ-0001",
+                "requesterContact": "casey@example.gov"
+            });
+            let lookup_result = city_work_action("lookup-public-records-request", Some(&lookup))
+                .expect("public lookup completes");
+            let public_request = &lookup_result.state.records_requests[0];
+            assert_eq!(public_request.deadline, "2026-07-07");
+            assert!(public_request.timeline.is_empty());
+            assert!(public_request.search_notes.is_empty());
+            assert!(public_request.exemption_reviews.is_empty());
+            assert!(public_request.public_status_events.iter().any(|entry| {
+                entry.label == "Deadline calculated"
+                    && entry.summary == "Staff calculated the response deadline as 2026-07-07."
+            }));
+            assert!(state.audit_entries.iter().any(|entry| {
+                entry.module_id == "civicrecords-ai"
+                    && entry.action == "calculate-records-deadline"
+                    && entry.summary.contains("2026-07-07")
             }));
             assert_valid_audit_chain(&state.audit_entries);
         });
