@@ -7,8 +7,8 @@ mod module_registry;
 mod supervisor;
 mod workflows;
 
-use auth::{AccessState, AuthActionResult};
-use first_run::{FirstRunActionResult, FirstRunState, SavedCityProfile, SavedFirstAdmin};
+use auth::{AccessState, AuthActionResult, LocalUserSummary};
+use first_run::{FirstRunActionResult, FirstRunState, SavedCityProfile};
 use model::{ModelActionResult, ModelState};
 use module_registry::{ModuleProfileSummary, ModuleSelectionState, ModuleSummary};
 use serde::Serialize;
@@ -37,7 +37,7 @@ struct AppState {
     installer_steps: Vec<&'static str>,
     first_run: FirstRunState,
     city_profile: Option<SavedCityProfile>,
-    users: Vec<SavedFirstAdmin>,
+    users: Vec<LocalUserSummary>,
     access: AccessState,
     model: ModelState,
     health: Vec<RuntimeHealthItem>,
@@ -113,6 +113,32 @@ fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
 
 fn access_is_local_admin(access: &AccessState) -> bool {
     access.signed_in && access.role.as_deref() == Some("local-admin")
+}
+
+fn access_is_signed_in(access: &AccessState) -> bool {
+    access.signed_in
+}
+
+fn require_role_for_city_work(
+    access: &AccessState,
+    action: &str,
+    payload: Option<&Value>,
+) -> Result<(), String> {
+    let Some(role) = access.role.as_deref() else {
+        return Err(
+            "Sign in with a local staff or administrator account before changing city work."
+                .to_string(),
+        );
+    };
+    let Some((module_ids, allow_any)) = city_work_action_module_requirement(action, payload) else {
+        return Ok(());
+    };
+    if auth::role_allows_modules(role, &module_ids, allow_any) {
+        return Ok(());
+    }
+    Err(format!(
+        "Your local role ({role}) is not allowed to use this module workflow. Ask a local administrator to adjust your account."
+    ))
 }
 
 fn public_model_state(mut model: ModelState) -> ModelState {
@@ -283,6 +309,15 @@ fn filter_search_results_for_enabled_modules(
     Ok(())
 }
 
+fn filter_search_results_for_access(result: &mut CityWorkActionResult, access: &AccessState) {
+    let Some(role) = access.role.as_deref() else {
+        return;
+    };
+    result
+        .search_results
+        .retain(|search_result| auth::role_allows_module(role, &search_result.module_id));
+}
+
 fn first_run_action_requires_admin_after_setup(action: &str) -> bool {
     matches!(
         action,
@@ -305,13 +340,14 @@ fn first_run_action_requires_admin_after_setup(action: &str) -> bool {
 fn get_app_state() -> Result<AppState, String> {
     let access = auth::access_state()?;
     let admin_signed_in = access_is_local_admin(&access);
-    let city_work = if admin_signed_in {
+    let signed_in = access_is_signed_in(&access);
+    let city_work = if signed_in {
         workflows::city_work_state()?
     } else {
         workflows::public_city_work_state()?
     };
     let users = if admin_signed_in {
-        first_run::saved_users()?
+        auth::saved_users()?
     } else {
         Vec::new()
     };
@@ -539,7 +575,7 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
 #[tauri::command]
 fn get_city_work_state() -> Result<CityWorkState, String> {
     let access = auth::access_state()?;
-    if access_is_local_admin(&access) {
+    if access_is_signed_in(&access) {
         workflows::city_work_state()
     } else {
         workflows::public_city_work_state()
@@ -553,16 +589,16 @@ fn city_work_action(
 ) -> Result<CityWorkActionResult, String> {
     let mut payload = payload;
     let access = auth::access_state()?;
-    let admin_signed_in = access_is_local_admin(&access);
+    let signed_in = access_is_signed_in(&access);
     let public_action = workflows::city_work_action_allows_public(&action);
-    if !admin_signed_in {
+    if !signed_in {
         if !access.configured {
             return Err(
                 "Finish first-run setup before public city workflows are available.".to_string(),
             );
         }
         if !public_action {
-            auth::require_admin_session()?;
+            auth::require_signed_in_session()?;
         }
         if action == "answer-code-question" {
             let mut public_payload = payload.unwrap_or_else(|| serde_json::json!({}));
@@ -572,17 +608,20 @@ fn city_work_action(
             fields.insert("publicOnly".to_string(), Value::Bool(true));
             payload = Some(public_payload);
         }
+    } else {
+        require_role_for_city_work(&access, &action, payload.as_ref())?;
     }
     require_enabled_city_modules(&action, payload.as_ref())?;
     let mut result = workflows::city_work_action(&action, payload.as_ref())?;
     if action == "search-city-knowledge" {
         filter_search_results_for_enabled_modules(&mut result)?;
+        filter_search_results_for_access(&mut result, &access);
         result.message = format!(
             "Local search completed across enabled modules with {} result(s).",
             result.search_results.len()
         );
     }
-    if !admin_signed_in
+    if !signed_in
         && public_action
         && action != "lookup-public-records-request"
         && action != "add-public-records-message"
@@ -652,6 +691,24 @@ mod tests {
             "passcode": "correct horse battery staple"
         });
         auth::auth_action("sign-in", Some(&sign_in_payload)).expect("admin signed in");
+    }
+
+    fn create_staff_user(name: &str, email: &str, role: &str, passcode: &str) {
+        let payload = serde_json::json!({
+            "userName": name,
+            "userEmail": email,
+            "userRole": role,
+            "userPasscode": passcode
+        });
+        auth::auth_action("create-user", Some(&payload)).expect("staff user saved");
+    }
+
+    fn sign_in_as_user(email: &str, passcode: &str) {
+        let payload = serde_json::json!({
+            "email": email,
+            "passcode": passcode
+        });
+        auth::auth_action("sign-in", Some(&payload)).expect("user signed in");
     }
 
     #[test]
@@ -832,6 +889,96 @@ mod tests {
                 .enabled_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+        });
+    }
+
+    #[test]
+    fn staff_user_roles_gate_city_work_modules() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+            sign_in_as_first_admin();
+            create_staff_user(
+                "Riley Records",
+                "riley@example.gov",
+                "records-staff",
+                "records passcode 123",
+            );
+            create_staff_user(
+                "Casey Clerk",
+                "casey@example.gov",
+                "clerk",
+                "clerk passcode 123",
+            );
+            create_staff_user(
+                "Jordan Code",
+                "jordan@example.gov",
+                "code-staff",
+                "code passcode 123",
+            );
+            auth::auth_action("sign-out", None).expect("admin signed out");
+
+            sign_in_as_user("riley@example.gov", "records passcode 123");
+            let records_payload = serde_json::json!({
+                "requester": "Alex Rivera",
+                "summary": "Emails about park contract",
+                "deadline": "2026-07-10"
+            });
+            city_work_action(
+                "create-records-request".to_string(),
+                Some(records_payload.clone()),
+            )
+            .expect("records staff can create records request");
+            let meeting_body = serde_json::json!({
+                "meetingBodyName": "City Council",
+                "meetingBodyType": "legislative",
+                "meetingBodyStatutoryBasis": "City Charter Section 2.1",
+                "meetingBodyCadence": "Third Wednesday",
+                "meetingBodyDefaultNoticeDays": "3",
+                "meetingBodyQuorumRule": "majority of seated members"
+            });
+            let records_error = match city_work_action(
+                "create-meeting-body".to_string(),
+                Some(meeting_body.clone()),
+            ) {
+                Ok(_) => panic!("records staff cannot create meeting body"),
+                Err(error) => error,
+            };
+            assert!(records_error.contains("not allowed"));
+            auth::auth_action("sign-out", None).expect("records staff signed out");
+
+            sign_in_as_user("casey@example.gov", "clerk passcode 123");
+            city_work_action("create-meeting-body".to_string(), Some(meeting_body))
+                .expect("clerk can create meeting body");
+            let clerk_error =
+                match city_work_action("create-records-request".to_string(), Some(records_payload))
+                {
+                    Ok(_) => panic!("clerk cannot create records request"),
+                    Err(error) => error,
+                };
+            assert!(clerk_error.contains("not allowed"));
+            auth::auth_action("sign-out", None).expect("clerk signed out");
+
+            sign_in_as_user("jordan@example.gov", "code passcode 123");
+            let code_payload = serde_json::json!({
+                "title": "Noise Ordinance",
+                "citation": "CMC 8.12",
+                "body": "Quiet hours begin at 10 PM.",
+                "importedBy": "Deputy Clerk"
+            });
+            city_work_action("import-code-source".to_string(), Some(code_payload))
+                .expect("code staff can import code source");
+            let code_error = match city_work_action(
+                "create-records-request".to_string(),
+                Some(serde_json::json!({
+                    "requester": "Blake Chen",
+                    "summary": "Permit logs",
+                    "deadline": "2026-07-12"
+                })),
+            ) {
+                Ok(_) => panic!("code staff cannot create records request"),
+                Err(error) => error,
+            };
+            assert!(code_error.contains("not allowed"));
         });
     }
 
@@ -1281,7 +1428,7 @@ mod tests {
             assert!(staff_result
                 .err()
                 .expect("staff error")
-                .contains("Sign in as the local administrator"));
+                .contains("Sign in with a local staff or administrator account"));
         });
     }
 }

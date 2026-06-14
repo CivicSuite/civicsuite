@@ -298,17 +298,6 @@ pub fn saved_city_profile() -> Result<Option<SavedCityProfile>, String> {
     read_optional_json_file(config_dir().join("city-profile.json"))
 }
 
-pub fn saved_users() -> Result<Vec<SavedFirstAdmin>, String> {
-    Ok(saved_admin_record()?
-        .into_iter()
-        .map(|record| SavedFirstAdmin {
-            display_name: record.display_name,
-            email: record.email,
-            role: record.role,
-        })
-        .collect())
-}
-
 pub(crate) fn saved_admin_record() -> Result<Option<SavedFirstAdminRecord>, String> {
     read_optional_json_file(config_dir().join("first-admin.json"))
 }
@@ -485,7 +474,7 @@ fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), Strin
 
 fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String> {
     let passcode = payload_string(payload, "adminPasscode")?;
-    let (passcode_salt, passcode_hash) = hash_argon2id_admin_passcode(&passcode)?;
+    let (passcode_salt, passcode_hash) = hash_argon2id_local_passcode(&passcode)?;
     let admin = SavedFirstAdminRecord {
         display_name: payload_string(payload, "adminName")?,
         email: payload_string(payload, "adminEmail")?,
@@ -528,7 +517,7 @@ fn random_salt() -> Result<SaltString, String> {
         .map_err(|error| format!("Could not encode local admin passcode salt: {error}"))
 }
 
-fn hash_argon2id_admin_passcode(passcode: &str) -> Result<(String, String), String> {
+pub(crate) fn hash_argon2id_local_passcode(passcode: &str) -> Result<(String, String), String> {
     let salt = random_salt()?;
     let hash = argon2id()?
         .hash_password(passcode.as_bytes(), &salt)
@@ -537,7 +526,10 @@ fn hash_argon2id_admin_passcode(passcode: &str) -> Result<(String, String), Stri
     Ok((salt.to_string(), hash))
 }
 
-fn verify_argon2id_admin_passcode(encoded_hash: &str, passcode: &str) -> Result<bool, String> {
+pub(crate) fn verify_argon2id_local_passcode(
+    encoded_hash: &str,
+    passcode: &str,
+) -> Result<bool, String> {
     let parsed = PasswordHash::new(encoded_hash)
         .map_err(|error| format!("Could not read local admin passcode hash: {error}"))?;
     Ok(argon2id()?
@@ -549,7 +541,7 @@ fn upgrade_legacy_admin_passcode(
     record: &SavedFirstAdminRecord,
     passcode: &str,
 ) -> Result<(), String> {
-    let (passcode_salt, passcode_hash) = hash_argon2id_admin_passcode(passcode)?;
+    let (passcode_salt, passcode_hash) = hash_argon2id_local_passcode(passcode)?;
     write_admin_record(&SavedFirstAdminRecord {
         display_name: record.display_name.clone(),
         email: record.email.clone(),
@@ -571,7 +563,7 @@ pub(crate) fn verify_admin_passcode(
     }
     let verified = match record.passcode_algorithm.as_str() {
         PASSCODE_ALGORITHM_ARGON2ID => {
-            verify_argon2id_admin_passcode(&record.passcode_hash, passcode)?
+            verify_argon2id_local_passcode(&record.passcode_hash, passcode)?
         }
         PASSCODE_ALGORITHM_LEGACY_SHA256 => {
             let candidate_hash = hash_admin_passcode(&record.passcode_salt, passcode);

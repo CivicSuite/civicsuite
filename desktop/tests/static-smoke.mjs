@@ -10,6 +10,7 @@ const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows",
 const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
 const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
+const authRust = readFileSync(join(root, "src-tauri", "src", "auth.rs"), "utf8");
 const moduleRegistryRust = readFileSync(join(root, "src-tauri", "src", "module_registry.rs"), "utf8");
 const workflowRust = readFileSync(join(root, "src-tauri", "src", "workflows.rs"), "utf8");
 const modelRust = readFileSync(join(root, "src-tauri", "src", "model.rs"), "utf8");
@@ -32,6 +33,12 @@ const requiredUiPhrases = [
   "module manager",
   "Windows SmartScreen explanation",
   "First admin user",
+  "Local Users",
+  "Create Staff User",
+  "Temporary local passcode",
+  "Records staff",
+  "Clerk staff",
+  "Code staff",
   "repair, backup, and uninstall",
   "Gemma 4 12B QAT Q4_0",
   "Checksum required",
@@ -482,6 +489,18 @@ for (const phrase of [
 ]) {
   if (!supervisorRust.includes(phrase)) {
     throw new Error(`Windows supervisor missing folder write-health phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "create-user",
+  "deactivate-user",
+  "records-staff",
+  "code-staff",
+  "Sign in with a local staff or administrator account before changing city work.",
+]) {
+  if (!rustMain.includes(phrase) && !authRust.includes(phrase) && !supervisorRust.includes(phrase) && !firstRunRust.includes(phrase)) {
+    throw new Error(`Desktop access/RBAC static guard missing phrase: ${phrase}`);
   }
 }
 

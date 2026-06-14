@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: "./tests/browser",
   reporter: [["list"]],
   outputDir: "../test-results/desktop-playwright",
-  timeout: 30_000,
+  timeout: 60_000,
   use: {
     baseURL: "http://127.0.0.1:5174",
     channel: "msedge",

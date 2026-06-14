@@ -3,7 +3,8 @@ import { expect, test } from "@playwright/test";
 test("city workflow pages expose real local task controls", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  const primaryNav = page.getByRole("navigation", { name: "Primary" });
+  await primaryNav.getByRole("button", { name: /Meetings & Notices/ }).click();
   await expect(page.getByRole("heading", { name: "Meeting Bodies" })).toBeVisible();
   await expect(page.getByLabel("Meeting body name")).toBeVisible();
   await expect(page.getByLabel("Body type")).toBeVisible();
@@ -447,6 +448,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Profile" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "First Admin" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Local Users" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Local Folders" })).toBeVisible();
   await expect(page.getByLabel("App install folder")).toBeVisible();
   await expect(page.getByLabel("City data folder")).toBeVisible();
@@ -454,7 +456,15 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("button", { name: "Save Local Folders" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save City Profile" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save First Admin" })).toBeVisible();
-  await expect(page.getByLabel("Local passcode")).toBeVisible();
+  await expect(page.getByLabel("Local passcode", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Staff name")).toBeVisible();
+  await expect(page.getByLabel("Staff email")).toBeVisible();
+  await expect(page.getByLabel("Role")).toBeVisible();
+  await expect(page.getByLabel("Temporary local passcode")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Staff User" })).toBeVisible();
+  await page.getByRole("button", { name: "Create Staff User" }).click();
+  await expect(page.getByText("Local access is managed by the Windows desktop app")).toBeVisible();
+  await expect(page.getByText("sign in or manage local users")).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Modules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Choose Product Modules" })).toBeVisible();
   await expect(page.getByLabel(/City Core/)).toBeChecked();

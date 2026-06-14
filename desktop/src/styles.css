@@ -775,6 +775,27 @@ main {
   text-align: right;
 }
 
+.mini-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mini-record {
+  align-items: center;
+  border: 1px solid #d8e0e6;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.mini-record small {
+  color: #536575;
+  display: block;
+  margin-top: 3px;
+}
+
 .module-actions {
   display: flex;
   flex-wrap: wrap;

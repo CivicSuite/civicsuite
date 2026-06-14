@@ -533,7 +533,11 @@ const state = {
   },
   accessDraft: {
     email: "",
-    passcode: ""
+    passcode: "",
+    userName: "",
+    userEmail: "",
+    userRole: "city-staff",
+    userPasscode: ""
   },
   workDraft: {
     meetingBodyId: "",
@@ -1199,6 +1203,7 @@ function renderAccessPanel() {
           <p class="eyebrow">Local access</p>
           <h3>Signed in as ${access.operator_name || "local administrator"}</h3>
           <p>${access.role || "local-admin"}</p>
+          ${access.role !== "local-admin" ? `<p>Sign out and use a local administrator account before changing setup, users, modules, backups, restore, repair, or runtime services.</p>` : ""}
         </div>
         <div class="health-actions">
           <button type="button" class="secondary-action" data-auth-action="sign-out">Sign Out</button>
@@ -4010,6 +4015,61 @@ function renderModuleRow(module, { actions = false } = {}) {
   `;
 }
 
+function localRoleLabel(role) {
+  const labels = {
+    "local-admin": "Local administrator",
+    "city-staff": "City staff",
+    "clerk": "Clerk staff",
+    "records-staff": "Records staff",
+    "code-staff": "Code staff"
+  };
+  return labels[role] || String(role || "").replace(/-/g, " ");
+}
+
+function renderLocalUsersCard() {
+  const users = state.app.users || [];
+  return `
+    <div class="workflow-form">
+      <h3>Local Users</h3>
+      <div class="mini-list">
+        ${users.length === 0 ? `<p class="empty-note">Create the first admin before adding staff users.</p>` : users.map((user) => `
+          <article class="mini-record">
+            <div>
+              <strong>${escapeHtml(user.display_name || user.email)}</strong>
+              <small>${escapeHtml(user.email)} - ${escapeHtml(localRoleLabel(user.role))}</small>
+            </div>
+            <div class="module-meta">
+              <span class="${user.status === "Active" ? "status-ok" : "status-warn"}">${escapeHtml(user.status || "Active")}</span>
+              ${user.role !== "local-admin" && user.status === "Active" ? `
+                <button
+                  type="button"
+                  class="secondary-action"
+                  data-auth-action="deactivate-user"
+                  data-user-email="${escapeHtml(user.email)}"
+                  aria-label="Disable ${escapeHtml(user.display_name || user.email)}"
+                >Disable</button>
+              ` : ""}
+            </div>
+          </article>
+        `).join("")}
+      </div>
+      <label>Staff name <input type="text" data-user-field="userName" value="${state.accessDraft.userName}" autocomplete="name" /></label>
+      <label>Staff email <input type="email" data-user-field="userEmail" value="${state.accessDraft.userEmail}" autocomplete="email" /></label>
+      <label>Role
+        <select data-user-field="userRole">
+          ${["city-staff", "clerk", "records-staff", "code-staff"].map((role) => `
+            <option value="${role}" ${state.accessDraft.userRole === role ? "selected" : ""}>${localRoleLabel(role)}</option>
+          `).join("")}
+        </select>
+      </label>
+      <label>Temporary local passcode <input type="password" data-user-field="userPasscode" value="${state.accessDraft.userPasscode}" autocomplete="new-password" /></label>
+      <small>Staff users can sign in on this Windows profile. Local administrators keep setup, runtime, backup, module, and user-management control.</small>
+      <button type="button" class="secondary-action" data-auth-action="create-user">Create Staff User</button>
+      ${renderAuthActionResult()}
+    </div>
+  `;
+}
+
 const GUIDED_MODULE_ACTIONS = new Set([
   "install-module",
   "enable-module",
@@ -4346,6 +4406,7 @@ function renderModules() {
         </div>
         <button type="button" class="secondary-action" data-first-run-action="create-admin" data-step-id="first-admin">Save First Admin</button>
       </div>
+      ${renderLocalUsersCard()}
       <div class="workflow-form">
         <h3>Local Folders</h3>
         <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
@@ -4457,6 +4518,9 @@ function renderHealth() {
 function renderActiveArea() {
   const access = accessState();
   if (state.activeArea !== "home" && access.configured && !access.signed_in && !isPublicReadableArea()) {
+    return renderAccessPanel();
+  }
+  if (state.activeArea === "settings" && access.configured && access.role !== "local-admin") {
     return renderAccessPanel();
   }
   switch (state.activeArea) {
@@ -4623,9 +4687,16 @@ function bindEvents() {
       state.accessDraft[input.dataset.accessField] = input.value;
     });
   });
+  document.querySelectorAll("[data-user-field]").forEach((input) => {
+    const syncUserField = () => {
+      state.accessDraft[input.dataset.userField] = input.value;
+    };
+    input.addEventListener("input", syncUserField);
+    input.addEventListener("change", syncUserField);
+  });
   document.querySelectorAll("[data-auth-action]").forEach((button) => {
     button.addEventListener("click", async () => {
-      await handleAuthAction(button.dataset.authAction);
+      await handleAuthAction(button.dataset.authAction, button.dataset.userEmail ? { userEmail: button.dataset.userEmail } : null);
     });
   });
   document.querySelectorAll("[data-model-action]").forEach((button) => {
@@ -4859,23 +4930,32 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
   render();
 }
 
-function authPayloadForAction(action) {
+function authPayloadForAction(action, overridePayload = null) {
+  if (overridePayload) return overridePayload;
   if (action === "sign-in") {
     return {
       email: state.accessDraft.email,
       passcode: state.accessDraft.passcode
     };
   }
+  if (action === "create-user") {
+    return {
+      userName: state.accessDraft.userName,
+      userEmail: state.accessDraft.userEmail,
+      userRole: state.accessDraft.userRole,
+      userPasscode: state.accessDraft.userPasscode
+    };
+  }
   return {};
 }
 
-async function handleAuthAction(action) {
+async function handleAuthAction(action, payloadOverride = null) {
   if (!hasTauriBridge()) {
     state.authActionResult = {
       accepted: false,
       status: "Desktop app required",
       message: "Local access is managed by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to sign in."
+      next_action: "Open the CivicSuite desktop app to sign in or manage local users."
     };
     render();
     return;
@@ -4883,9 +4963,14 @@ async function handleAuthAction(action) {
   try {
     state.authActionResult = await invoke("auth_action", {
       action,
-      payload: authPayloadForAction(action)
+      payload: authPayloadForAction(action, payloadOverride)
     });
     state.accessDraft.passcode = "";
+    if (action === "create-user") {
+      state.accessDraft.userName = "";
+      state.accessDraft.userEmail = "";
+      state.accessDraft.userPasscode = "";
+    }
     await loadAppState();
   } catch (error) {
     state.authActionResult = {

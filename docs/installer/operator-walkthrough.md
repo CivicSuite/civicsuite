@@ -50,6 +50,8 @@ Do not install Docker Desktop or WSL for this product path. If the app asks for 
    - Verify the model checksum before enabling AI workflows.
    - Create the city profile.
    - Create the first local administrator.
+   - Add clerk, records, code, or city-staff local users from Settings when staff
+     need separate sign-in.
    - Run local health verification.
 
 The app should explain failures in plain English and keep repair, backup, restore, logs, support bundle, and uninstall reachable from System Health.
@@ -62,6 +64,8 @@ After first-run setup, open System Health. Verify:
 - Local data store is installed and healthy.
 - Local AI model file is present, checksum-verified, loaded, and registered.
 - Backup folder is configured.
+- Local Users shows the first administrator and lets a signed-in local
+  administrator add or disable staff accounts.
 - Repair, backup, restore, logs, support bundle, and uninstall controls are visible behind local-admin access.
 
 Use the module manager in Settings to confirm:
@@ -70,6 +74,15 @@ Use the module manager in Settings to confirm:
 - CivicCore, CivicRecords AI, CivicClerk, and CivicCode are installed.
 - Each installed module shows install, update, disable, remove, backup coverage, and export access state.
 - Future modules are not presented as installed.
+
+Use Local Users in Settings to confirm:
+
+- The first local administrator cannot be disabled from the staff-user list.
+- Clerk staff can work in Meetings & Notices.
+- Records staff can work in Records Requests.
+- Code staff can work in Code & Ordinances.
+- City staff can work across the city-core module set without receiving setup,
+  runtime, backup, module-manager, or user-management authority.
 
 ## Clerk Smoke Test
 

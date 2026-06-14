@@ -5,7 +5,7 @@ test("home surface shows first-run setup and pinned local model readiness", asyn
 
   await expect(page.getByRole("heading", { name: "Work that needs attention" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core setup checklist" })).toBeVisible();
-  await expect(page.getByText("No Docker, WSL, terminal, or developer tooling is part of the clerk path.")).toBeVisible();
+  await expect(page.getByText(/No Docker, WSL, terminal, or developer tooling is part of the clerk path\./)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Gemma 4 12B QAT Q4_0" })).toBeVisible();
   await expect(page.getByText("No silent download starts from this screen.")).toBeVisible();
   await expect(page.getByText("faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1")).toBeVisible();
