@@ -50,6 +50,14 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Attachment access")).toBeVisible();
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
+  await expect(page.getByLabel("Closed-session statutory basis")).toBeVisible();
+  await expect(page.getByLabel("Closed-session topics")).toBeVisible();
+  await expect(page.getByLabel("Closed-session attendees")).toBeVisible();
+  await expect(page.getByLabel("Entered closed session")).toBeVisible();
+  await expect(page.getByLabel("Exited closed session")).toBeVisible();
+  await expect(page.getByLabel("Reconvene statement")).toBeVisible();
+  await expect(page.getByLabel("Staff-only notes reference")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Closed Session" })).toBeVisible();
   await expect(page.getByLabel("Motion text")).toBeVisible();
   await expect(page.getByLabel("Moved by")).toBeVisible();
   await expect(page.getByLabel("Seconded by")).toBeVisible();

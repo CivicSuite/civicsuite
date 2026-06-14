@@ -569,6 +569,13 @@ const state = {
     meetingAttachmentCitation: "",
     meetingAttachmentSection: "agenda packet",
     meetingAttachmentAccess: "public packet",
+    closedSessionBasis: "",
+    closedSessionTopics: "",
+    closedSessionAttendees: "",
+    closedSessionEnteredAt: "",
+    closedSessionExitedAt: "",
+    closedSessionReconvene: "",
+    closedSessionNotesReference: "",
     minutesCitationSentence: "",
     minutesCitationSourceType: "packet item",
     minutesCitationSourceRef: "",
@@ -1367,6 +1374,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "promote-agenda-intake",
   "add-code-handoff-agenda",
   "add-meeting-attachment",
+  "record-closed-session",
   "complete-notice-checklist",
   "post-notice",
   "export-meeting-packet",
@@ -1575,6 +1583,24 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
       retry: "If the file is missing, unreadable, or the meeting is archived, the desktop app leaves the meeting record unchanged."
+    },
+    "record-closed-session": {
+      title: "Review Before Recording Closed Session",
+      confirmLabel: "Record Closed Session",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Stores the statutory basis, general topics, timing, reconvene statement, and optional staff-only notes reference for a closed-session block.",
+      visibility: "Staff packets include the staff-only notes reference. Public archives keep only basis, topics, timing, and reconvene statement.",
+      sources: [
+        detailOrFallback(state.workDraft.closedSessionBasis, "Statutory basis is required."),
+        detailOrFallback(state.workDraft.closedSessionTopics, "At least one general topic is required."),
+        detailOrFallback(state.workDraft.closedSessionEnteredAt, "Entered time is required."),
+        detailOrFallback(state.workDraft.closedSessionExitedAt, "Exited time is required."),
+        detailOrFallback(state.workDraft.closedSessionReconvene, "Reconvene statement is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the closed-session boundary and staff-only notes reference.",
+      retry: "If required basis, topic, timing, or reconvene evidence is missing, the desktop app leaves the meeting unchanged."
     },
     "complete-notice-checklist": {
       title: "Review Before Approving Notice Checklist",
@@ -2116,7 +2142,12 @@ function publicMeetingView(meeting) {
         added_by: ""
       })),
     minute_citations: (meeting.minute_citations || [])
-      .filter((citation) => citation.access_level === "public record")
+      .filter((citation) => citation.access_level === "public record"),
+    closed_sessions: (meeting.closed_sessions || []).map((session) => ({
+      ...session,
+      attendees: [],
+      staff_notes_reference: ""
+    }))
   };
   if (!publicArchive) {
     publicMeeting.minutes = "";
@@ -2129,6 +2160,7 @@ function publicMeetingView(meeting) {
     publicMeeting.action_items = [];
     publicMeeting.action_records = [];
     publicMeeting.adopted_legislation = [];
+    publicMeeting.closed_sessions = [];
     publicMeeting.resident_comments = [];
     publicMeeting.exports = [];
   }
@@ -2316,6 +2348,19 @@ function renderMeetingsWorkflow() {
         </div>
       </div>
       <div class="workflow-form">
+        <h3>Closed Sessions</h3>
+        <label>Closed-session statutory basis <input type="text" data-work-field="closedSessionBasis" value="${state.workDraft.closedSessionBasis}" placeholder="Open meetings statute or ordinance section" /></label>
+        <label>Closed-session topics <textarea data-work-field="closedSessionTopics">${state.workDraft.closedSessionTopics}</textarea></label>
+        <label>Closed-session attendees <textarea data-work-field="closedSessionAttendees">${state.workDraft.closedSessionAttendees}</textarea></label>
+        <label>Entered closed session <input type="text" data-work-field="closedSessionEnteredAt" value="${state.workDraft.closedSessionEnteredAt}" placeholder="6:42 PM" /></label>
+        <label>Exited closed session <input type="text" data-work-field="closedSessionExitedAt" value="${state.workDraft.closedSessionExitedAt}" placeholder="7:05 PM" /></label>
+        <label>Reconvene statement <textarea data-work-field="closedSessionReconvene">${state.workDraft.closedSessionReconvene}</textarea></label>
+        <label>Staff-only notes reference <input type="text" data-work-field="closedSessionNotesReference" value="${state.workDraft.closedSessionNotesReference}" placeholder="Closed-session memo file, legal note, or clerk note id" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="record-closed-session">Record Closed Session</button>
+        </div>
+      </div>
+      <div class="workflow-form">
         <h3>Capture Outcomes</h3>
         <label>Minutes draft <textarea data-work-field="minutes">${state.workDraft.minutes}</textarea></label>
         <label>Motion text <textarea data-work-field="motionText">${state.workDraft.motionText}</textarea></label>
@@ -2405,6 +2450,7 @@ function renderMeetingsWorkflow() {
           ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
+          ${(meeting.closed_sessions || []).length > 0 ? `<p><strong>Closed sessions:</strong> ${(meeting.closed_sessions || []).map((session) => `${escapeHtml(session.statutory_basis)} (${escapeHtml((session.topics || []).join("; "))}; ${escapeHtml(session.entered_at)}-${escapeHtml(session.exited_at)})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.adopted_legislation || []).length > 0 ? `<p><strong>Adopted legislation:</strong> ${(meeting.adopted_legislation || []).map((item) => `${escapeHtml(item.legislation_type)} ${escapeHtml(item.title)} (${escapeHtml(item.handoff_status)})`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
@@ -3113,6 +3159,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const adoptedLegislation = (meeting.adopted_legislation || [])
       .map((item) => [item.legislation_type, item.title, item.text, item.effective_date, item.codification_section_hint, item.source_motion_text, item.source_agenda_item_title, item.handoff_status].join(" "))
       .join(" ");
+    const closedSessions = (meeting.closed_sessions || [])
+      .map((session) => [session.statutory_basis, (session.topics || []).join(" "), (session.attendees || []).join(" "), session.entered_at, session.exited_at, session.reconvene_statement, session.staff_notes_reference].join(" "))
+      .join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
     const noticeChecklists = (meeting.notice_checklists || [])
       .map((entry) => [entry.meeting_type, entry.statutory_basis, entry.posting_deadline, entry.time_zone, entry.status].join(" "))
@@ -3165,9 +3214,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
-        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, outcomes, actionItems, actionRecords, adoptedLegislation, residentComments]
+        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, adoptedLegislation, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4337,6 +4386,16 @@ function workPayloadForAction(action) {
       meetingAttachmentCitation: draft.meetingAttachmentCitation,
       meetingAttachmentSection: draft.meetingAttachmentSection,
       meetingAttachmentAccess: draft.meetingAttachmentAccess
+    },
+    "record-closed-session": {
+      ...selected,
+      closedSessionBasis: draft.closedSessionBasis,
+      closedSessionTopics: draft.closedSessionTopics,
+      closedSessionAttendees: draft.closedSessionAttendees,
+      closedSessionEnteredAt: draft.closedSessionEnteredAt,
+      closedSessionExitedAt: draft.closedSessionExitedAt,
+      closedSessionReconvene: draft.closedSessionReconvene,
+      closedSessionNotesReference: draft.closedSessionNotesReference
     },
     "add-code-handoff-agenda": selected,
     "complete-notice-checklist": {

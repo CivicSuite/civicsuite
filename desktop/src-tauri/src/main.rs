@@ -155,6 +155,7 @@ fn city_work_action_module_requirement(
         | "redact-public-comment"
         | "adopt-minutes"
         | "sign-minutes"
+        | "record-closed-session"
         | "export-meeting-packet"
         | "archive-meeting" => Some((vec!["civicclerk"], false)),
         "record-adopted-legislation" => Some((vec!["civicclerk", "civiccode"], false)),

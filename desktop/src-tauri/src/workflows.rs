@@ -190,6 +190,22 @@ pub struct AdoptedLegislationRecord {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct ClosedSessionRecord {
+    pub id: String,
+    pub statutory_basis: String,
+    #[serde(default)]
+    pub topics: Vec<String>,
+    #[serde(default)]
+    pub attendees: Vec<String>,
+    pub entered_at: String,
+    pub exited_at: String,
+    pub reconvene_statement: String,
+    #[serde(default)]
+    pub staff_notes_reference: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     #[serde(default)]
@@ -221,6 +237,8 @@ pub struct Meeting {
     pub action_records: Vec<MeetingActionRecord>,
     #[serde(default)]
     pub adopted_legislation: Vec<AdoptedLegislationRecord>,
+    #[serde(default)]
+    pub closed_sessions: Vec<ClosedSessionRecord>,
     #[serde(default)]
     pub resident_comments: Vec<String>,
     #[serde(default)]
@@ -693,6 +711,15 @@ fn payload_optional_string(payload: Option<&Value>, key: &str) -> String {
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .unwrap_or_default()
+}
+
+fn payload_text_list(payload: Option<&Value>, key: &str) -> Vec<String> {
+    payload_optional_string(payload, key)
+        .split(|character| character == '\n' || character == ';' || character == ',')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 fn payload_bool(payload: Option<&Value>, key: &str) -> bool {
@@ -1247,6 +1274,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         action_items: Vec::new(),
         action_records: Vec::new(),
         adopted_legislation: Vec::new(),
+        closed_sessions: Vec::new(),
         resident_comments: Vec::new(),
         public_comments: Vec::new(),
         exports: Vec::new(),
@@ -2376,6 +2404,59 @@ fn record_adopted_legislation(
     ))
 }
 
+fn record_closed_session(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let statutory_basis = payload_string(payload, "closedSessionBasis")
+        .map_err(|_| "Enter the statutory basis for the closed session.".to_string())?;
+    let topics = payload_text_list(payload, "closedSessionTopics");
+    if topics.is_empty() {
+        return Err("Enter at least one closed-session topic.".to_string());
+    }
+    let attendees = payload_text_list(payload, "closedSessionAttendees");
+    let entered_at = payload_string(payload, "closedSessionEnteredAt")
+        .map_err(|_| "Enter when the body entered closed session.".to_string())?;
+    let exited_at = payload_string(payload, "closedSessionExitedAt")
+        .map_err(|_| "Enter when the body exited closed session.".to_string())?;
+    let reconvene_statement = payload_string(payload, "closedSessionReconvene")
+        .map_err(|_| "Enter the open-session reconvene statement.".to_string())?;
+    let staff_notes_reference = payload_optional_string(payload, "closedSessionNotesReference");
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    let record_id = new_id("closed-session", meeting.closed_sessions.len());
+    meeting.closed_sessions.push(ClosedSessionRecord {
+        id: record_id.clone(),
+        statutory_basis: statutory_basis.clone(),
+        topics: topics.clone(),
+        attendees: attendees.clone(),
+        entered_at: entered_at.clone(),
+        exited_at: exited_at.clone(),
+        reconvene_statement: reconvene_statement.clone(),
+        staff_notes_reference: staff_notes_reference.clone(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "closed session recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-closed-session",
+        format!(
+            "Recorded closed session {record_id}; basis {statutory_basis}; topics {}; entered {entered_at}; exited {exited_at}; staff notes reference {}.",
+            topics.join("; "),
+            if staff_notes_reference.is_empty() {
+                "not recorded"
+            } else {
+                &staff_notes_reference
+            }
+        ),
+    );
+    Ok(
+        "Closed-session boundary saved with staff-only notes separated from the public record."
+            .to_string(),
+    )
+}
+
 fn list_or_default(values: &[String], empty: &str) -> String {
     if values.is_empty() {
         empty.to_string()
@@ -2480,6 +2561,40 @@ fn adopted_legislation_or_default(records: &[AdoptedLegislationRecord]) -> Strin
                 },
                 record.source_motion_text,
                 record.handoff_status
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn closed_sessions_or_default(records: &[ClosedSessionRecord]) -> String {
+    if records.is_empty() {
+        return "No closed sessions recorded.".to_string();
+    }
+    records
+        .iter()
+        .map(|record| {
+            format!(
+                "- Basis: {}; topics: {}; entered: {}; exited: {}; attendees: {}; reconvene: {}; staff notes: {}",
+                record.statutory_basis,
+                if record.topics.is_empty() {
+                    "not recorded".to_string()
+                } else {
+                    record.topics.join("; ")
+                },
+                record.entered_at,
+                record.exited_at,
+                if record.attendees.is_empty() {
+                    "hidden or not recorded".to_string()
+                } else {
+                    record.attendees.join("; ")
+                },
+                record.reconvene_statement,
+                if record.staff_notes_reference.is_empty() {
+                    "hidden or not recorded".to_string()
+                } else {
+                    record.staff_notes_reference.clone()
+                }
             )
         })
         .collect::<Vec<_>>()
@@ -2799,6 +2914,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let action_records = meeting_action_records_or_default(&meeting.action_records);
     let adopted_legislation = adopted_legislation_or_default(&meeting.adopted_legislation);
+    let closed_sessions = closed_sessions_or_default(&meeting.closed_sessions);
     let resident_comments =
         list_or_default(&meeting.resident_comments, "No resident comments recorded.");
     let public_comments = if meeting.public_comments.is_empty() {
@@ -2841,7 +2957,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -2856,6 +2972,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         },
         agenda,
         attachments,
+        closed_sessions,
         if meeting.minutes.is_empty() {
             "No minutes draft recorded."
         } else {
@@ -4835,6 +4952,22 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let closed_sessions = meeting
+            .closed_sessions
+            .iter()
+            .map(|record| {
+                format!(
+                    "{} {} {} {} {} {}",
+                    record.statutory_basis,
+                    record.topics.join(" "),
+                    record.attendees.join(" "),
+                    record.entered_at,
+                    record.exited_at,
+                    record.reconvene_statement
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let resident_comments = meeting.resident_comments.join(" ");
         let notice_checklists = meeting
             .notice_checklists
@@ -4929,6 +5062,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &action_items,
                 &action_records,
                 &adopted_legislation,
+                &closed_sessions,
                 &resident_comments,
                 &notice_checklists,
                 &notice_postings,
@@ -5208,6 +5342,16 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         .filter(|citation| citation.access_level == "public record")
         .cloned()
         .collect();
+    public_meeting.closed_sessions = meeting
+        .closed_sessions
+        .iter()
+        .cloned()
+        .map(|mut record| {
+            record.attendees.clear();
+            record.staff_notes_reference.clear();
+            record
+        })
+        .collect();
     if !is_public_archive {
         public_meeting.minutes.clear();
         public_meeting.minute_citations.clear();
@@ -5219,6 +5363,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.action_items.clear();
         public_meeting.action_records.clear();
         public_meeting.adopted_legislation.clear();
+        public_meeting.closed_sessions.clear();
         public_meeting.resident_comments.clear();
         public_meeting.exports.clear();
     }
@@ -5405,6 +5550,7 @@ pub fn city_work_action(
         "adopt-minutes" => adopt_minutes(&mut state, payload)?,
         "sign-minutes" => sign_minutes(&mut state, payload)?,
         "record-adopted-legislation" => record_adopted_legislation(&mut state, payload)?,
+        "record-closed-session" => record_closed_session(&mut state, payload)?,
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
@@ -5675,6 +5821,17 @@ mod tests {
             });
             city_work_action("add-meeting-attachment", Some(&closed_attachment))
                 .expect("closed-session attachment saved");
+            let closed_session = serde_json::json!({
+                "closedSessionBasis": "State open meetings law Section 24-6-402(4)(b)",
+                "closedSessionTopics": "Attorney advice on budget litigation",
+                "closedSessionAttendees": "City Council; City Attorney; City Manager",
+                "closedSessionEnteredAt": "6:42 PM",
+                "closedSessionExitedAt": "7:05 PM",
+                "closedSessionReconvene": "Council reconvened in open session at 7:05 PM and no action was taken in closed session.",
+                "closedSessionNotesReference": "closed-session-memo.txt"
+            });
+            city_work_action("record-closed-session", Some(&closed_session))
+                .expect("closed session recorded");
             let missing_checklist = match city_work_action("complete-notice-checklist", None) {
                 Ok(_) => panic!("notice checklist cannot pass without evidence"),
                 Err(error) => error,
@@ -5939,6 +6096,20 @@ mod tests {
                 meeting.attachments[1].access_level,
                 "closed-session addendum"
             );
+            assert_eq!(meeting.closed_sessions.len(), 1);
+            assert_eq!(
+                meeting.closed_sessions[0].statutory_basis,
+                "State open meetings law Section 24-6-402(4)(b)"
+            );
+            assert_eq!(
+                meeting.closed_sessions[0].topics,
+                vec!["Attorney advice on budget litigation".to_string()]
+            );
+            assert_eq!(meeting.closed_sessions[0].attendees.len(), 3);
+            assert_eq!(
+                meeting.closed_sessions[0].staff_notes_reference,
+                "closed-session-memo.txt"
+            );
             assert!(meeting.minutes_adopted_at_unix_seconds.is_some());
             assert_eq!(meeting.minutes_signed_by, "City Clerk Morgan");
             assert_eq!(
@@ -5958,6 +6129,9 @@ mod tests {
             assert!(packet.contains("Fiscal note"));
             assert!(packet.contains("Packet item 4 fiscal note"));
             assert!(packet.contains("Closed-session attorney memo"));
+            assert!(packet.contains("## Closed Sessions"));
+            assert!(packet.contains("City Attorney"));
+            assert!(packet.contains("closed-session-memo.txt"));
             assert!(packet.contains("## Motions"));
             assert!(packet.contains("Approve the budget ordinance."));
             assert!(packet.contains("Councilmember Lee"));
@@ -5995,6 +6169,11 @@ mod tests {
             assert!(archive.contains("## Packet Attachments"));
             assert!(archive.contains("Fiscal note"));
             assert!(archive.contains("local path hidden"));
+            assert!(archive.contains("## Closed Sessions"));
+            assert!(archive.contains("Attorney advice on budget litigation"));
+            assert!(archive.contains("Council reconvened in open session"));
+            assert!(!archive.contains("City Attorney"));
+            assert!(!archive.contains("closed-session-memo.txt"));
             assert!(!archive.contains("Closed-session attorney memo"));
             assert!(!archive.contains("closed-session-memo"));
             assert!(archive.contains("## Minute Citations"));
@@ -6016,6 +6195,8 @@ mod tests {
             assert_eq!(action_source_results.len(), 1);
             let signature_results = search_city_work(&state, "City Clerk Morgan");
             assert_eq!(signature_results.len(), 1);
+            let closed_session_results = search_city_work(&state, "budget litigation");
+            assert_eq!(closed_session_results.len(), 1);
             let adopted_legislation_results =
                 search_city_work(&state, "Budget Publication Ordinance");
             assert_eq!(adopted_legislation_results.len(), 2);
@@ -6050,6 +6231,15 @@ mod tests {
                 public_meeting.adopted_legislation[0].title,
                 "Budget Publication Ordinance"
             );
+            assert_eq!(public_meeting.closed_sessions.len(), 1);
+            assert_eq!(
+                public_meeting.closed_sessions[0].topics,
+                vec!["Attorney advice on budget litigation".to_string()]
+            );
+            assert!(public_meeting.closed_sessions[0].attendees.is_empty());
+            assert!(public_meeting.closed_sessions[0]
+                .staff_notes_reference
+                .is_empty());
             assert_eq!(public_meeting.minutes_signed_by, "City Clerk Morgan");
             assert!(public_meeting
                 .minutes_signature_attestation
@@ -6102,6 +6292,19 @@ mod tests {
             });
             let error = match city_work_action("add-action-item", Some(&late_action)) {
                 Ok(_) => panic!("archived meeting cannot record new action items"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+            let late_closed_session = serde_json::json!({
+                "closedSessionBasis": "Late basis",
+                "closedSessionTopics": "Late topic",
+                "closedSessionEnteredAt": "8:00 PM",
+                "closedSessionExitedAt": "8:10 PM",
+                "closedSessionReconvene": "Late reconvene statement."
+            });
+            let error = match city_work_action("record-closed-session", Some(&late_closed_session))
+            {
+                Ok(_) => panic!("archived meeting cannot record closed sessions"),
                 Err(error) => error,
             };
             assert!(error.contains("archived as a public record"));
