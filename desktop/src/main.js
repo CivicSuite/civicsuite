@@ -1735,19 +1735,19 @@ function guidedReviewForAction(action) {
       retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
     },
     "export-meeting-packet": {
-      title: "Review Before Exporting Packet",
-      confirmLabel: "Export Packet",
+      title: "Review Before Exporting Records Bundle",
+      confirmLabel: "Export Records Bundle",
       module: "CivicClerk",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
-      changes: "Writes a local packet export from the meeting agenda, packet attachments, minutes, motions, roll-call votes, outcomes, action items, and comments.",
-      visibility: "Exported packet material remains local staff work unless later posted or archived.",
+      changes: "Writes a local records-ready packet and notice bundle with a checksum manifest, source references, public/staff classification, and export counts.",
+      visibility: "Staff bundles remain local staff work unless later posted or archived. Public archive bundles hide local paths and staff-only material.",
       sources: [
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
-      audit: "Creates a CivicClerk audit entry for the packet export.",
-      retry: "If the export path is unavailable, the desktop app reports the failure and preserves the meeting record."
+      audit: "Creates a CivicClerk audit entry for the packet export and durable records-ready bundle manifest.",
+      retry: "If the packet, checksum sidecar, or bundle manifest cannot be written, the desktop app reports the failure and preserves the meeting record."
     },
     "suggest-minutes-draft": {
       title: "Review Before Generating Minutes Draft",
@@ -2243,6 +2243,7 @@ function publicMeetingView(meeting) {
   if (!publicArchive && !publicNotice) return null;
   const publicMeeting = {
     ...meeting,
+    exports: [],
     public_comments: (meeting.public_comments || []).map(publicCommentView).filter(Boolean),
     attachments: (meeting.attachments || [])
       .filter((attachment) => attachment.access_level === "public packet")
@@ -2254,6 +2255,14 @@ function publicMeetingView(meeting) {
     })),
     staff_reports: meeting.staff_reports || [],
     packet_assemblies: meeting.packet_assemblies || [],
+    export_bundles: (meeting.export_bundles || [])
+      .filter((bundle) => bundle.public_record)
+      .map((bundle) => ({
+        ...bundle,
+        export_path: "",
+        manifest_path: "",
+        integrity_manifest_path: ""
+      })),
     member_votes: meeting.member_votes || [],
     minute_citations: (meeting.minute_citations || [])
       .filter((citation) => citation.access_level === "public record"),
@@ -2278,8 +2287,8 @@ function publicMeetingView(meeting) {
     publicMeeting.adopted_legislation = [];
     publicMeeting.closed_sessions = [];
     publicMeeting.packet_assemblies = [];
+    publicMeeting.export_bundles = [];
     publicMeeting.resident_comments = [];
-    publicMeeting.exports = [];
   }
   return publicMeeting;
 }
@@ -2352,9 +2361,10 @@ function renderPublicMeetingsWorkflow() {
           ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
           ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)})`).join("; ")}</p>` : ""}
+          ${(meeting.export_bundles || []).length > 0 ? `<p><strong>Records-ready bundles:</strong> ${(meeting.export_bundles || []).map((bundle) => `public archive bundle sha256 ${escapeHtml(String(bundle.export_hash || "").slice(0, 12))}; manifest ${escapeHtml(String(bundle.manifest_hash || "").slice(0, 12))}; ${bundle.agenda_item_count || 0} agenda items; ${bundle.notice_posting_count || 0} notice postings`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2475,7 +2485,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="add-code-handoff-agenda">Add Code Handoff</button>
           <button type="button" class="secondary-action" data-work-action="complete-notice-checklist">Approve Notice Checklist</button>
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
-          <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Packet</button>
+          <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Records Bundle</button>
           <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
         </div>
       </div>
@@ -2640,6 +2650,7 @@ function renderMeetingsWorkflow() {
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
           ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)}; ${packet.agenda_item_count} agenda items; ${packet.public_attachment_count} public attachments; ${packet.closed_session_attachment_count} closed-session addenda)`).join("; ")}</p>` : ""}
+          ${(meeting.export_bundles || []).length > 0 ? `<p><strong>Records-ready bundles:</strong> ${(meeting.export_bundles || []).map((bundle) => `${bundle.public_record ? "public archive" : "staff packet"} sha256 ${escapeHtml(String(bundle.export_hash || "").slice(0, 12))}; manifest ${escapeHtml(String(bundle.manifest_hash || "").slice(0, 12))}; ${bundle.agenda_item_count || 0} agenda items; ${bundle.public_attachment_count || 0} public attachments; ${bundle.closed_session_attachment_count || 0} closed-session addenda`).join("; ")}</p>` : ""}
           ${(meeting.closed_sessions || []).length > 0 ? `<p><strong>Closed sessions:</strong> ${(meeting.closed_sessions || []).map((session) => `${escapeHtml(session.statutory_basis)} (${escapeHtml((session.topics || []).join("; "))}; ${escapeHtml(session.entered_at)}-${escapeHtml(session.exited_at)})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
@@ -2661,7 +2672,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3398,6 +3409,26 @@ function localSearchResults(query, { publicOnly = false } = {}) {
         packet.closed_session_attachment_count
       ].join(" "))
       .join(" ");
+    const exportBundles = (meeting.export_bundles || [])
+      .map((bundle) => {
+        const publicFields = [
+          bundle.export_hash,
+          bundle.manifest_hash,
+          bundle.public_record ? "public archive bundle" : "staff packet bundle",
+          bundle.agenda_item_count,
+          bundle.notice_posting_count,
+          bundle.public_attachment_count,
+          bundle.closed_session_attachment_count
+        ];
+        if (publicOnly) return publicFields.join(" ");
+        return [
+          ...publicFields,
+          bundle.export_path,
+          bundle.manifest_path,
+          bundle.integrity_manifest_path
+        ].join(" ");
+      })
+      .join(" ");
     const minuteCitations = (meeting.minute_citations || [])
       .map((citation) => [citation.sentence, citation.source_type, citation.source_reference, citation.note, citation.access_level].join(" "))
       .join(" ");
@@ -3432,6 +3463,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       agendaTitles,
       packetAttachments,
       packetAssemblies,
+      exportBundles,
       minuteCitations,
       publicComments
     ];
@@ -3439,7 +3471,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, memberVotes, staffReports, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, packetAssemblies, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, packetAssemblies, exportBundles, minuteCitations, motions, memberVotes, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }

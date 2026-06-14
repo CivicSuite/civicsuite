@@ -174,6 +174,30 @@ pub struct PacketAssemblyRecord {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MeetingExportBundle {
+    pub id: String,
+    pub export_path: String,
+    pub manifest_path: String,
+    pub integrity_manifest_path: String,
+    pub export_hash: String,
+    pub manifest_hash: String,
+    pub public_record: bool,
+    pub agenda_item_count: usize,
+    pub notice_checklist_count: usize,
+    pub notice_posting_count: usize,
+    pub public_attachment_count: usize,
+    pub closed_session_attachment_count: usize,
+    pub packet_finalization_count: usize,
+    pub minute_citation_count: usize,
+    pub motion_count: usize,
+    pub roll_call_vote_count: usize,
+    pub outcome_count: usize,
+    pub action_item_count: usize,
+    pub public_comment_count: usize,
+    pub generated_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct MinuteCitation {
     pub id: String,
     pub sentence: String,
@@ -310,6 +334,8 @@ pub struct Meeting {
     pub public_comments: Vec<PublicComment>,
     #[serde(default)]
     pub exports: Vec<String>,
+    #[serde(default)]
+    pub export_bundles: Vec<MeetingExportBundle>,
     #[serde(default)]
     pub minutes_adopted_at_unix_seconds: Option<u64>,
     #[serde(default)]
@@ -586,6 +612,45 @@ struct ExportIntegrityManifest {
     generated_by: String,
 }
 
+#[derive(Deserialize, Serialize)]
+struct MeetingExportBundleManifest {
+    schema_version: u16,
+    bundle_type: String,
+    meeting_id: String,
+    meeting_title: String,
+    meeting_date: String,
+    body_name: String,
+    public_record: bool,
+    packet_file: String,
+    packet_path: String,
+    packet_sha256: String,
+    packet_size_bytes: u64,
+    integrity_manifest_file: String,
+    integrity_manifest_path: String,
+    integrity_manifest_sha256: String,
+    counts: MeetingExportBundleCounts,
+    source_references: Vec<String>,
+    limitations: Vec<String>,
+    generated_by: String,
+    generated_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+struct MeetingExportBundleCounts {
+    agenda_items: usize,
+    notice_checklists: usize,
+    notice_postings: usize,
+    public_attachments: usize,
+    closed_session_attachments: usize,
+    packet_finalizations: usize,
+    minute_citations: usize,
+    motions: usize,
+    roll_call_votes: usize,
+    outcomes: usize,
+    action_items: usize,
+    public_comments: usize,
+}
+
 #[derive(Serialize, Clone)]
 pub struct SearchResult {
     pub module_id: String,
@@ -709,6 +774,26 @@ fn export_manifest_path(export_path: &Path) -> PathBuf {
     export_path.with_file_name(format!("{export_file}.sha256.json"))
 }
 
+fn export_bundle_manifest_path(export_path: &Path) -> PathBuf {
+    let export_file = export_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "export.md".to_string());
+    export_path.with_file_name(format!("{export_file}.records-ready-bundle.json"))
+}
+
+fn path_file_name(path: &Path, fallback: &str) -> String {
+    path.file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| fallback.to_string())
+}
+
+fn remove_export_artifacts(export_path: &Path) {
+    let _ = fs::remove_file(export_path);
+    let _ = fs::remove_file(export_manifest_path(export_path));
+    let _ = fs::remove_file(export_bundle_manifest_path(export_path));
+}
+
 fn write_export_integrity_manifest(
     export_path: &Path,
     contents: &str,
@@ -758,6 +843,195 @@ fn write_export_file(folder: &str, stem: &str, contents: &str) -> Result<String,
         return Err(error);
     }
     Ok(path.to_string_lossy().to_string())
+}
+
+fn push_export_source_reference(references: &mut Vec<String>, value: &str) {
+    let trimmed = value.trim();
+    if trimmed.is_empty() || references.iter().any(|reference| reference == trimmed) {
+        return;
+    }
+    references.push(trimmed.to_string());
+}
+
+fn meeting_public_comment_count(meeting: &Meeting) -> usize {
+    meeting
+        .public_comments
+        .iter()
+        .filter(|comment| {
+            comment.status == "reviewed for public record"
+                || comment.status == "redacted for public record"
+        })
+        .count()
+}
+
+fn meeting_export_bundle_counts(meeting: &Meeting) -> MeetingExportBundleCounts {
+    MeetingExportBundleCounts {
+        agenda_items: meeting.agenda_items.len(),
+        notice_checklists: meeting.notice_checklists.len(),
+        notice_postings: meeting.notice_postings.len(),
+        public_attachments: meeting
+            .attachments
+            .iter()
+            .filter(|attachment| attachment.access_level == "public packet")
+            .count(),
+        closed_session_attachments: meeting
+            .attachments
+            .iter()
+            .filter(|attachment| attachment.access_level == "closed-session addendum")
+            .count(),
+        packet_finalizations: meeting.packet_assemblies.len(),
+        minute_citations: meeting.minute_citations.len(),
+        motions: meeting.motions.len(),
+        roll_call_votes: meeting.member_votes.len(),
+        outcomes: meeting.votes.len(),
+        action_items: meeting.action_records.len().max(meeting.action_items.len()),
+        public_comments: meeting_public_comment_count(meeting),
+    }
+}
+
+fn meeting_export_source_references(meeting: &Meeting) -> Vec<String> {
+    let mut references = Vec::new();
+    for item in &meeting.agenda_items {
+        push_export_source_reference(&mut references, &item.source_reference);
+        push_export_source_reference(&mut references, &item.source_module);
+        push_export_source_reference(&mut references, &item.department);
+    }
+    for checklist in &meeting.notice_checklists {
+        push_export_source_reference(&mut references, &checklist.statutory_basis);
+        push_export_source_reference(&mut references, &checklist.posting_deadline);
+    }
+    for posting in &meeting.notice_postings {
+        push_export_source_reference(&mut references, &posting.location);
+        push_export_source_reference(&mut references, &posting.method);
+        push_export_source_reference(&mut references, &posting.confirmation);
+    }
+    for attachment in &meeting.attachments {
+        push_export_source_reference(&mut references, &attachment.title);
+        push_export_source_reference(&mut references, &attachment.citation);
+        push_export_source_reference(&mut references, &attachment.sha256);
+    }
+    for packet in &meeting.packet_assemblies {
+        push_export_source_reference(&mut references, &packet.packet_title);
+        push_export_source_reference(&mut references, &packet.prepared_by);
+        push_export_source_reference(&mut references, &packet.review_note);
+    }
+    for citation in &meeting.minute_citations {
+        push_export_source_reference(&mut references, &citation.source_type);
+        push_export_source_reference(&mut references, &citation.source_reference);
+        push_export_source_reference(&mut references, &citation.note);
+    }
+    for motion in &meeting.motions {
+        push_export_source_reference(&mut references, &motion.text);
+        push_export_source_reference(&mut references, &motion.vote_reference);
+    }
+    for action in &meeting.action_records {
+        push_export_source_reference(&mut references, &action.description);
+        push_export_source_reference(&mut references, &action.source_reference);
+    }
+    for item in &meeting.adopted_legislation {
+        push_export_source_reference(&mut references, &item.title);
+        push_export_source_reference(&mut references, &item.codification_section_hint);
+        push_export_source_reference(&mut references, &item.handoff_status);
+    }
+    references
+}
+
+fn meeting_export_limitations(public_record: bool) -> Vec<String> {
+    if public_record {
+        vec![
+            "Public archive projection omits local file paths, staff-only minute citations, and closed-session addendum files.".to_string(),
+            "City staff remain responsible for legal review before publication or external release.".to_string(),
+        ]
+    } else {
+        vec![
+            "Staff packet export may include closed-session addendum metadata and local evidence paths.".to_string(),
+            "Review the bundle before releasing it outside authorized city staff.".to_string(),
+        ]
+    }
+}
+
+fn write_meeting_export_bundle(
+    meeting: &Meeting,
+    export_path: &Path,
+    contents: &str,
+    public_record: bool,
+    bundle_sequence: usize,
+) -> Result<MeetingExportBundle, String> {
+    let integrity_manifest_path = export_manifest_path(export_path);
+    if !integrity_manifest_path.is_file() {
+        return Err(format!(
+            "Export integrity manifest is missing: {}",
+            integrity_manifest_path.display()
+        ));
+    }
+    let generated_at_unix_seconds = now_unix_seconds();
+    let export_hash = hash_public_payload(contents);
+    let integrity_manifest_hash = hash_file(&integrity_manifest_path)?;
+    let counts = meeting_export_bundle_counts(meeting);
+    let manifest = MeetingExportBundleManifest {
+        schema_version: 1,
+        bundle_type: "civicclerk-meeting-packet-notice".to_string(),
+        meeting_id: meeting.id.clone(),
+        meeting_title: meeting.title.clone(),
+        meeting_date: meeting.meeting_date.clone(),
+        body_name: meeting.body_name.clone(),
+        public_record,
+        packet_file: path_file_name(export_path, "meeting-packet.md"),
+        packet_path: if public_record {
+            path_file_name(export_path, "meeting-packet.md")
+        } else {
+            export_path.to_string_lossy().to_string()
+        },
+        packet_sha256: export_hash.clone(),
+        packet_size_bytes: contents.len() as u64,
+        integrity_manifest_file: path_file_name(&integrity_manifest_path, "packet.sha256.json"),
+        integrity_manifest_path: if public_record {
+            path_file_name(&integrity_manifest_path, "packet.sha256.json")
+        } else {
+            integrity_manifest_path.to_string_lossy().to_string()
+        },
+        integrity_manifest_sha256: integrity_manifest_hash,
+        counts: counts.clone(),
+        source_references: meeting_export_source_references(meeting),
+        limitations: meeting_export_limitations(public_record),
+        generated_by: "CivicSuite Windows Local".to_string(),
+        generated_at_unix_seconds,
+    };
+    let manifest_path = export_bundle_manifest_path(export_path);
+    let manifest_contents = serde_json::to_string_pretty(&manifest)
+        .map_err(|error| format!("Could not serialize meeting export bundle: {error}"))?;
+    fs::write(&manifest_path, format!("{manifest_contents}\n")).map_err(|error| {
+        format!(
+            "Could not write meeting export bundle {}: {error}",
+            manifest_path.display()
+        )
+    })?;
+    let manifest_hash = hash_file(&manifest_path)?;
+    Ok(MeetingExportBundle {
+        id: format!(
+            "meeting-export-bundle-{}-{}",
+            generated_at_unix_seconds, bundle_sequence
+        ),
+        export_path: export_path.to_string_lossy().to_string(),
+        manifest_path: manifest_path.to_string_lossy().to_string(),
+        integrity_manifest_path: integrity_manifest_path.to_string_lossy().to_string(),
+        export_hash,
+        manifest_hash,
+        public_record,
+        agenda_item_count: counts.agenda_items,
+        notice_checklist_count: counts.notice_checklists,
+        notice_posting_count: counts.notice_postings,
+        public_attachment_count: counts.public_attachments,
+        closed_session_attachment_count: counts.closed_session_attachments,
+        packet_finalization_count: counts.packet_finalizations,
+        minute_citation_count: counts.minute_citations,
+        motion_count: counts.motions,
+        roll_call_vote_count: counts.roll_call_votes,
+        outcome_count: counts.outcomes,
+        action_item_count: counts.action_items,
+        public_comment_count: counts.public_comments,
+        generated_at_unix_seconds,
+    })
 }
 
 fn payload_string(payload: Option<&Value>, key: &str) -> Result<String, String> {
@@ -1408,6 +1682,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         resident_comments: Vec::new(),
         public_comments: Vec::new(),
         exports: Vec::new(),
+        export_bundles: Vec::new(),
         minutes_adopted_at_unix_seconds: None,
         minutes_signed_by: String::new(),
         minutes_signature_attestation: String::new(),
@@ -3435,16 +3710,32 @@ fn export_meeting_packet(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let meeting = selected_meeting_mut(state, payload)?;
-    let contents = if meeting.archived_at_unix_seconds.is_some()
-        || meeting.status == "archived public record"
-    {
-        let public_meeting = public_meeting_projection(meeting).unwrap_or_else(|| meeting.clone());
-        meeting_packet_contents(&public_meeting)
+    let public_record =
+        meeting.archived_at_unix_seconds.is_some() || meeting.status == "archived public record";
+    let export_meeting = if public_record {
+        public_meeting_projection(meeting).unwrap_or_else(|| meeting.clone())
     } else {
-        meeting_packet_contents(meeting)
+        meeting.clone()
     };
+    let contents = meeting_packet_contents(&export_meeting);
     let export_path = write_export_file("meetings", &meeting.title, &contents)?;
+    let export_path_buf = PathBuf::from(&export_path);
+    let bundle_sequence = meeting.export_bundles.len() + 1;
+    let bundle = match write_meeting_export_bundle(
+        &export_meeting,
+        &export_path_buf,
+        &contents,
+        public_record,
+        bundle_sequence,
+    ) {
+        Ok(bundle) => bundle,
+        Err(error) => {
+            remove_export_artifacts(&export_path_buf);
+            return Err(error);
+        }
+    };
     meeting.exports.push(export_path.clone());
+    meeting.export_bundles.push(bundle);
     if meeting.archived_at_unix_seconds.is_none() {
         meeting.status = "packet exported".to_string();
     }
@@ -3452,13 +3743,15 @@ fn export_meeting_packet(
         state,
         "civicclerk",
         "export-meeting-packet",
-        format!("Exported meeting packet: {export_path}"),
+        format!("Exported records-ready meeting packet bundle: {export_path}"),
     );
-    Ok(format!("Meeting packet export written to {export_path}."))
+    Ok(format!(
+        "Records-ready meeting packet bundle written to {export_path}."
+    ))
 }
 
 fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
-    let (meeting_id, title, export_path, public_payload) = {
+    let (meeting_id, title, export_path, public_payload, manifest_path) = {
         let meeting = selected_meeting_mut(state, payload)?;
         if meeting.minutes_adopted_at_unix_seconds.is_none() {
             return Err(
@@ -3475,12 +3768,30 @@ fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         let public_meeting = public_meeting_projection(meeting).unwrap_or_else(|| meeting.clone());
         let contents = meeting_packet_contents(&public_meeting);
         let export_path = write_export_file("meetings", &meeting.title, &contents)?;
+        let export_path_buf = PathBuf::from(&export_path);
+        let bundle_sequence = meeting.export_bundles.len() + 1;
+        let bundle = match write_meeting_export_bundle(
+            &public_meeting,
+            &export_path_buf,
+            &contents,
+            true,
+            bundle_sequence,
+        ) {
+            Ok(bundle) => bundle,
+            Err(error) => {
+                remove_export_artifacts(&export_path_buf);
+                return Err(error);
+            }
+        };
+        let manifest_path = bundle.manifest_path.clone();
         meeting.exports.push(export_path.clone());
+        meeting.export_bundles.push(bundle);
         (
             meeting.id.clone(),
             meeting.title.clone(),
             export_path,
             contents,
+            manifest_path,
         )
     };
     push_publication_event(
@@ -3494,9 +3805,11 @@ fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         state,
         "civicclerk",
         "archive-meeting",
-        format!("Archived public meeting record for {title}: {export_path}"),
+        format!("Archived public meeting record for {title}: {export_path}; bundle manifest {manifest_path}"),
     );
-    Ok(format!("Public meeting archive written to {export_path}."))
+    Ok(format!(
+        "Public meeting archive and records-ready bundle written to {export_path}."
+    ))
 }
 
 fn create_records_request(
@@ -5539,6 +5852,28 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let export_bundles = meeting
+            .export_bundles
+            .iter()
+            .map(|bundle| {
+                format!(
+                    "{} {} {} {} {} {} {} {}",
+                    bundle.export_path,
+                    bundle.manifest_path,
+                    bundle.integrity_manifest_path,
+                    bundle.export_hash,
+                    bundle.manifest_hash,
+                    if bundle.public_record {
+                        "public record"
+                    } else {
+                        "staff packet"
+                    },
+                    bundle.agenda_item_count,
+                    bundle.notice_posting_count
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let minute_citations = meeting
             .minute_citations
             .iter()
@@ -5582,6 +5917,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &staff_reports,
                 &attachments,
                 &packet_assemblies,
+                &export_bundles,
                 &minute_citations,
                 &motions,
                 &member_votes,
@@ -5840,6 +6176,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         return None;
     }
     let mut public_meeting = meeting.clone();
+    public_meeting.exports.clear();
     public_meeting.agenda_items = meeting
         .agenda_items
         .iter()
@@ -5861,6 +6198,18 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
             attachment.stored_path.clear();
             attachment.added_by.clear();
             attachment
+        })
+        .collect();
+    public_meeting.export_bundles = meeting
+        .export_bundles
+        .iter()
+        .filter(|bundle| bundle.public_record)
+        .cloned()
+        .map(|mut bundle| {
+            bundle.export_path.clear();
+            bundle.manifest_path.clear();
+            bundle.integrity_manifest_path.clear();
+            bundle
         })
         .collect();
     public_meeting.staff_reports = meeting.staff_reports.clone();
@@ -5896,7 +6245,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.closed_sessions.clear();
         public_meeting.packet_assemblies.clear();
         public_meeting.resident_comments.clear();
-        public_meeting.exports.clear();
+        public_meeting.export_bundles.clear();
     }
     Some(public_meeting)
 }
@@ -6255,6 +6604,89 @@ mod tests {
             manifest["generated_by"].as_str(),
             Some("CivicSuite Windows Local")
         );
+    }
+
+    fn assert_meeting_export_bundle_manifest(
+        bundle: &MeetingExportBundle,
+        export_path: &str,
+        contents: &str,
+        public_record: bool,
+        closed_session_attachment_count: usize,
+    ) {
+        let expected_hash = hash_public_payload(contents);
+        assert_eq!(bundle.export_path, export_path);
+        assert_eq!(bundle.export_hash, expected_hash);
+        assert_eq!(bundle.public_record, public_record);
+        assert_eq!(
+            bundle.closed_session_attachment_count,
+            closed_session_attachment_count
+        );
+        assert_eq!(bundle.manifest_hash.len(), 64);
+        assert!(PathBuf::from(&bundle.manifest_path).is_file());
+        assert!(PathBuf::from(&bundle.integrity_manifest_path).is_file());
+        assert_eq!(
+            bundle.manifest_hash,
+            hash_file(&PathBuf::from(&bundle.manifest_path)).expect("manifest hashes")
+        );
+        let manifest: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(&bundle.manifest_path).expect("manifest reads"),
+        )
+        .expect("manifest parses");
+        assert_eq!(manifest["schema_version"].as_u64(), Some(1));
+        assert_eq!(
+            manifest["bundle_type"].as_str(),
+            Some("civicclerk-meeting-packet-notice")
+        );
+        let export_path_buf = PathBuf::from(export_path);
+        let expected_packet_path = if public_record {
+            path_file_name(&export_path_buf, "meeting-packet.md")
+        } else {
+            export_path.to_string()
+        };
+        assert_eq!(
+            manifest["packet_path"].as_str(),
+            Some(expected_packet_path.as_str())
+        );
+        assert_eq!(
+            manifest["packet_sha256"].as_str(),
+            Some(expected_hash.as_str())
+        );
+        assert_eq!(manifest["public_record"].as_bool(), Some(public_record));
+        if public_record {
+            assert!(!manifest["packet_path"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("\\"));
+            assert!(!manifest["integrity_manifest_path"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("\\"));
+        }
+        assert_eq!(
+            manifest["counts"]["closed_session_attachments"].as_u64(),
+            Some(closed_session_attachment_count as u64)
+        );
+        assert_eq!(
+            manifest["counts"]["notice_postings"].as_u64(),
+            Some(bundle.notice_posting_count as u64)
+        );
+        assert!(manifest["source_references"]
+            .as_array()
+            .expect("source references array")
+            .iter()
+            .any(|value| value.as_str() == Some("Municipal open meetings notice")));
+        assert!(manifest["limitations"]
+            .as_array()
+            .expect("limitations array")
+            .iter()
+            .any(|value| value
+                .as_str()
+                .unwrap_or_default()
+                .contains(if public_record {
+                    "Public archive projection"
+                } else {
+                    "Staff packet export"
+                })));
     }
 
     #[test]
@@ -6852,8 +7284,25 @@ mod tests {
             assert_ne!(meeting.exports[0], meeting.exports[1]);
             assert!(PathBuf::from(&meeting.exports[0]).is_file());
             assert!(PathBuf::from(&meeting.exports[1]).is_file());
+            assert_eq!(meeting.export_bundles.len(), 2);
+            assert!(!meeting.export_bundles[0].public_record);
+            assert!(meeting.export_bundles[1].public_record);
+            assert_eq!(meeting.export_bundles[0].agenda_item_count, 1);
+            assert_eq!(meeting.export_bundles[0].notice_checklist_count, 1);
+            assert_eq!(meeting.export_bundles[0].notice_posting_count, 1);
+            assert_eq!(meeting.export_bundles[0].public_attachment_count, 1);
+            assert_eq!(meeting.export_bundles[0].closed_session_attachment_count, 1);
+            assert_eq!(meeting.export_bundles[0].packet_finalization_count, 1);
+            assert_eq!(meeting.export_bundles[1].closed_session_attachment_count, 0);
             let packet = fs::read_to_string(&meeting.exports[0]).expect("packet reads");
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
+            assert_meeting_export_bundle_manifest(
+                &meeting.export_bundles[0],
+                &meeting.exports[0],
+                &packet,
+                false,
+                1,
+            );
             assert!(packet.contains("Body: City Council"));
             assert!(packet.contains("## Staff Reports"));
             assert!(packet.contains("Finance Director Rivera"));
@@ -6883,6 +7332,13 @@ mod tests {
             assert!(packet.contains("Budget Publication Ordinance"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
+            assert_meeting_export_bundle_manifest(
+                &meeting.export_bundles[1],
+                &meeting.exports[1],
+                &archive,
+                true,
+                0,
+            );
             assert!(archive.contains("Body: City Council"));
             assert!(archive.contains("## Notice Checklist"));
             assert!(archive.contains("Municipal open meetings notice"));
@@ -6990,6 +7446,7 @@ mod tests {
                 .expect("public meeting exists");
             assert_eq!(public_meeting.body_id, body.id);
             assert_eq!(public_meeting.body_name, "City Council");
+            assert!(public_meeting.exports.is_empty());
             assert_eq!(public_meeting.motions.len(), 1);
             assert_eq!(public_meeting.member_votes.len(), 2);
             assert_eq!(
@@ -7034,6 +7491,17 @@ mod tests {
             assert_eq!(
                 public_meeting.packet_assemblies[0].prepared_by,
                 "Deputy Clerk Avery"
+            );
+            assert_eq!(public_meeting.export_bundles.len(), 1);
+            assert!(public_meeting.export_bundles[0].public_record);
+            assert!(public_meeting.export_bundles[0].export_path.is_empty());
+            assert!(public_meeting.export_bundles[0].manifest_path.is_empty());
+            assert!(public_meeting.export_bundles[0]
+                .integrity_manifest_path
+                .is_empty());
+            assert_eq!(
+                public_meeting.export_bundles[0].closed_session_attachment_count,
+                0
             );
             assert_eq!(public_meeting.minute_citations.len(), 1);
             assert_eq!(
@@ -7135,6 +7603,7 @@ mod tests {
             let reloaded_meeting = reloaded.meetings.first().expect("meeting exists");
             assert_eq!(reloaded_meeting.status, "archived public record");
             assert_eq!(reloaded_meeting.exports.len(), 3);
+            assert_eq!(reloaded_meeting.export_bundles.len(), 3);
             let public_reexport = fs::read_to_string(
                 reloaded_meeting
                     .exports
@@ -7142,6 +7611,19 @@ mod tests {
                     .expect("re-export path exists"),
             )
             .expect("public re-export reads");
+            assert_meeting_export_bundle_manifest(
+                reloaded_meeting
+                    .export_bundles
+                    .last()
+                    .expect("re-export bundle exists"),
+                reloaded_meeting
+                    .exports
+                    .last()
+                    .expect("re-export path exists"),
+                &public_reexport,
+                true,
+                0,
+            );
             assert!(public_reexport.contains("Body: City Council"));
             assert!(public_reexport.contains("Fiscal note"));
             assert!(public_reexport.contains("## Packet Finalization"));
