@@ -105,6 +105,8 @@ const requiredUiPhrases = [
   "Source file path",
   "Choose File",
   "Native file selection is available in the Windows desktop app",
+  "Choose Folder",
+  "Native folder selection is available in the Windows desktop app",
   "Document citation",
   "Attach Document",
   "Exemption source",
@@ -272,6 +274,10 @@ if (!rustMain.includes("before changing local model setup")) {
 
 if (!rustMain.includes("fn module_action") || !main.includes('invoke("module_action"')) {
   throw new Error("desktop shell must expose and call module enable/disable actions");
+}
+
+if (!rustMain.includes("fn choose_folder_path") || !main.includes('invoke("choose_folder_path"')) {
+  throw new Error("desktop shell must expose and call the native folder picker");
 }
 
 if (!rustMain.includes("before changing CivicSuite setup, profile, model, backup, or runtime settings")) {

@@ -466,10 +466,45 @@ fn picked_file_path_for_desktop() -> Result<Option<String>, String> {
     }
 }
 
+fn picked_folder_path_for_desktop() -> Result<Option<String>, String> {
+    if let Ok(path) = std::env::var("CIVICSUITE_TEST_FOLDER_PICKER_PATH") {
+        let trimmed = path.trim();
+        return Ok(if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        });
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Ok(rfd::FileDialog::new()
+            .set_title("Choose CivicSuite folder")
+            .pick_folder()
+            .map(|path| path.display().to_string()))
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Native folder selection is only available in the Windows desktop app.".to_string())
+    }
+}
+
 #[tauri::command]
 fn choose_file_path() -> Result<Option<String>, String> {
     auth::require_signed_in_session()?;
     picked_file_path_for_desktop()
+}
+
+#[tauri::command]
+fn choose_folder_path() -> Result<Option<String>, String> {
+    let access = auth::access_state()?;
+    if access.configured && !access_is_local_admin(&access) {
+        return Err(
+            "Sign in as the local administrator before choosing CivicSuite folders.".to_string(),
+        );
+    }
+    picked_folder_path_for_desktop()
 }
 
 #[tauri::command]
@@ -673,6 +708,7 @@ pub fn run() {
             auth_action,
             supervisor_action,
             choose_file_path,
+            choose_folder_path,
             module_action,
             get_city_work_state,
             city_work_action
@@ -944,6 +980,38 @@ mod tests {
             env::remove_var("CIVICSUITE_TEST_FILE_PICKER_PATH");
 
             assert_eq!(picked.as_deref(), Some(r"C:\City\Records\packet.pdf"));
+        });
+    }
+
+    #[test]
+    fn choose_folder_path_allows_first_run_then_requires_local_admin() {
+        with_clean_first_run_state(|_| {
+            env::set_var(
+                "CIVICSUITE_TEST_FOLDER_PICKER_PATH",
+                r"C:\City\CivicSuiteData",
+            );
+            let first_run_folder = choose_folder_path().expect("pre-admin folder picker");
+            env::remove_var("CIVICSUITE_TEST_FOLDER_PICKER_PATH");
+            assert_eq!(first_run_folder.as_deref(), Some(r"C:\City\CivicSuiteData"));
+
+            create_first_admin();
+            env::set_var(
+                "CIVICSUITE_TEST_FOLDER_PICKER_PATH",
+                r"C:\City\CivicSuiteBackups",
+            );
+            let signed_out = choose_folder_path();
+            env::remove_var("CIVICSUITE_TEST_FOLDER_PICKER_PATH");
+            assert!(signed_out.is_err());
+
+            sign_in_as_first_admin();
+            env::set_var(
+                "CIVICSUITE_TEST_FOLDER_PICKER_PATH",
+                r"C:\City\CivicSuiteBackups",
+            );
+            let picked = choose_folder_path().expect("admin folder picker");
+            env::remove_var("CIVICSUITE_TEST_FOLDER_PICKER_PATH");
+
+            assert_eq!(picked.as_deref(), Some(r"C:\City\CivicSuiteBackups"));
         });
     }
 

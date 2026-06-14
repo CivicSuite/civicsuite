@@ -1058,8 +1058,8 @@ function renderSetupFields(step) {
     return `
       <div class="setup-form" aria-label="Local folders">
         <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
-        <label>City data folder <input type="text" data-setup-field="dataRoot" value="${state.setupDraft.dataRoot}" autocomplete="off" /></label>
-        <label>Backup folder <input type="text" data-setup-field="backupRoot" value="${state.setupDraft.backupRoot}" autocomplete="off" /></label>
+        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data")}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
       </div>
     `;
@@ -1087,7 +1087,7 @@ function renderSetupFields(step) {
   if (step.id === "backup") {
     return `
       <div class="setup-form" aria-label="Backup folder">
-        <label>Backup folder <input type="text" data-setup-field="backupRoot" value="${state.setupDraft.backupRoot}" autocomplete="off" /></label>
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
       </div>
     `;
   }
@@ -1180,6 +1180,17 @@ function renderFilePathField(label, field, value, placeholder) {
         <input type="text" data-work-field="${escapeHtml(field)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
       </label>
       <button type="button" class="secondary-action" data-file-path-field="${escapeHtml(field)}">Choose File</button>
+    </div>
+  `;
+}
+
+function renderFolderPathField(label, field, value, placeholder) {
+  return `
+    <div class="file-path-control">
+      <label>${escapeHtml(label)}
+        <input type="text" data-setup-field="${escapeHtml(field)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" autocomplete="off" />
+      </label>
+      <button type="button" class="secondary-action" data-folder-path-field="${escapeHtml(field)}">Choose Folder</button>
     </div>
   `;
 }
@@ -4442,8 +4453,8 @@ function renderModules() {
       <div class="workflow-form">
         <h3>Local Folders</h3>
         <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
-        <label>City data folder <input type="text" data-setup-field="dataRoot" value="${state.setupDraft.dataRoot}" autocomplete="off" /></label>
-        <label>Backup folder <input type="text" data-setup-field="backupRoot" value="${state.setupDraft.backupRoot}" autocomplete="off" /></label>
+        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data")}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
         <button type="button" class="secondary-action" data-first-run-action="choose-location" data-step-id="locations">Save Local Folders</button>
       </div>
@@ -4747,6 +4758,11 @@ function bindEvents() {
       await handleChooseFilePath(button.dataset.filePathField);
     });
   });
+  document.querySelectorAll("[data-folder-path-field]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleChooseFolderPath(button.dataset.folderPathField);
+    });
+  });
   document.querySelectorAll("[data-supervisor-review-confirm]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleSupervisorAction(button.dataset.supervisorReviewConfirm, button.dataset.serviceId, { confirmed: true });
@@ -5006,6 +5022,49 @@ async function handleChooseFilePath(field) {
       status: "Needs attention",
       message: String(error),
       next_action: "Sign in with a local staff account and choose the source file again."
+    };
+  }
+  render();
+}
+
+async function handleChooseFolderPath(field) {
+  if (!Object.prototype.hasOwnProperty.call(state.setupDraft, field)) {
+    return;
+  }
+  if (!hasTauriBridge()) {
+    state.actionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Native folder selection is available in the Windows desktop app, not the browser preview.",
+      next_action: "Open CivicSuite on Windows and choose the city data or backup folder from the folder picker."
+    };
+    render();
+    return;
+  }
+  try {
+    const pickedPath = await invoke("choose_folder_path");
+    if (pickedPath) {
+      state.setupDraft[field] = pickedPath;
+      state.actionResult = {
+        accepted: true,
+        status: "Folder selected",
+        message: "The selected local folder path was added to the setup field.",
+        next_action: "Review the folder path, then save local folders or continue setup."
+      };
+    } else {
+      state.actionResult = {
+        accepted: false,
+        status: "No folder selected",
+        message: "No local folder was selected.",
+        next_action: "Choose Folder again or type the path if IT has already supplied one."
+      };
+    }
+  } catch (error) {
+    state.actionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Sign in as the local administrator and choose the folder again."
     };
   }
   render();

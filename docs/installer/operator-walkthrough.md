@@ -54,6 +54,10 @@ Do not install Docker Desktop or WSL for this product path. If the app asks for 
      need separate sign-in.
    - Run local health verification.
 
+Use **Choose Folder** for the city data and backup locations. Staff may still
+type a folder path when IT has supplied one, but normal setup should not require
+manual Windows path copying.
+
 The app should explain failures in plain English and keep repair, backup, restore, logs, support bundle, and uninstall reachable from System Health.
 
 ## Verify The Install
