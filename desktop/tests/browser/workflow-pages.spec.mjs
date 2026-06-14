@@ -66,6 +66,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Packet Attachments" })).toBeVisible();
   await expect(page.getByLabel("Attachment title")).toBeVisible();
   await expect(page.getByLabel("Attachment source file path")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose File" })).toBeVisible();
   await expect(page.getByLabel("Attachment citation")).toBeVisible();
   await expect(page.getByLabel("Packet section")).toBeVisible();
   await expect(page.getByLabel("Attachment access")).toBeVisible();
@@ -163,6 +164,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Request Documents" })).toBeVisible();
   await expect(page.getByLabel("Document title")).toBeVisible();
   await expect(page.getByLabel("Source file path")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose File" })).toHaveCount(2);
   await expect(page.getByLabel("Document citation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Attach Document" })).toBeVisible();
   await expect(page.getByLabel("Release document")).toBeVisible();
@@ -192,6 +194,8 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Notification Outbox" })).toBeVisible();
   await expect(page.getByText("No local records notifications have been created yet.")).toBeVisible();
+  await page.getByRole("button", { name: "Choose File" }).first().click();
+  await expect(page.getByText("Native file selection is available in the Windows desktop app")).toBeVisible();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
@@ -199,6 +203,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Source title")).toBeVisible();
   await expect(page.getByLabel("Citation")).toBeVisible();
   await expect(page.getByLabel("Source file path")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose File" })).toBeVisible();
   await expect(page.getByLabel("Imported by")).toBeVisible();
   await expect(page.getByLabel("Source text")).toBeVisible();
   await expect(page.getByRole("button", { name: "Import Source" })).toBeVisible();

@@ -442,6 +442,36 @@ fn supervisor_action(
     supervisor::supervisor_action(&action, service_id.as_deref())
 }
 
+fn picked_file_path_for_desktop() -> Result<Option<String>, String> {
+    if let Ok(path) = std::env::var("CIVICSUITE_TEST_FILE_PICKER_PATH") {
+        let trimmed = path.trim();
+        return Ok(if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        });
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Ok(rfd::FileDialog::new()
+            .set_title("Choose CivicSuite evidence file")
+            .pick_file()
+            .map(|path| path.display().to_string()))
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("Native file selection is only available in the Windows desktop app.".to_string())
+    }
+}
+
+#[tauri::command]
+fn choose_file_path() -> Result<Option<String>, String> {
+    auth::require_signed_in_session()?;
+    picked_file_path_for_desktop()
+}
+
 #[tauri::command]
 fn module_action(action: String, module_id: String) -> Result<ModuleActionResult, String> {
     let access = auth::access_state()?;
@@ -642,6 +672,7 @@ pub fn run() {
             first_run_action,
             auth_action,
             supervisor_action,
+            choose_file_path,
             module_action,
             get_city_work_state,
             city_work_action
@@ -889,6 +920,30 @@ mod tests {
                 .enabled_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+        });
+    }
+
+    #[test]
+    fn choose_file_path_requires_signed_in_staff_and_uses_native_picker_result() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+            env::set_var(
+                "CIVICSUITE_TEST_FILE_PICKER_PATH",
+                r"C:\City\Records\packet.pdf",
+            );
+            let signed_out = choose_file_path();
+            env::remove_var("CIVICSUITE_TEST_FILE_PICKER_PATH");
+            assert!(signed_out.is_err());
+
+            sign_in_as_first_admin();
+            env::set_var(
+                "CIVICSUITE_TEST_FILE_PICKER_PATH",
+                r"C:\City\Records\packet.pdf",
+            );
+            let picked = choose_file_path().expect("signed-in file picker");
+            env::remove_var("CIVICSUITE_TEST_FILE_PICKER_PATH");
+
+            assert_eq!(picked.as_deref(), Some(r"C:\City\Records\packet.pdf"));
         });
     }
 

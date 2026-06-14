@@ -103,6 +103,8 @@ const requiredUiPhrases = [
   "Request Documents",
   "Document title",
   "Source file path",
+  "Choose File",
+  "Native file selection is available in the Windows desktop app",
   "Document citation",
   "Attach Document",
   "Exemption source",

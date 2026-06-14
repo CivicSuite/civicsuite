@@ -1173,6 +1173,17 @@ function renderSupervisorActionResult() {
   `;
 }
 
+function renderFilePathField(label, field, value, placeholder) {
+  return `
+    <div class="file-path-control">
+      <label>${escapeHtml(label)}
+        <input type="text" data-work-field="${escapeHtml(field)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+      </label>
+      <button type="button" class="secondary-action" data-file-path-field="${escapeHtml(field)}">Choose File</button>
+    </div>
+  `;
+}
+
 function renderWorkActionResult() {
   if (!state.workActionResult) return "";
   const result = state.workActionResult;
@@ -2681,7 +2692,7 @@ function renderMeetingsWorkflow() {
         <h3>Packet Attachments</h3>
         <p class="form-help">Attach source files for the agenda packet. The desktop app copies each file into the city profile and records a SHA-256 hash.</p>
         <label>Attachment title <input type="text" data-work-field="meetingAttachmentTitle" value="${state.workDraft.meetingAttachmentTitle}" /></label>
-        <label>Attachment source file path <input type="text" data-work-field="meetingAttachmentSourcePath" value="${state.workDraft.meetingAttachmentSourcePath}" placeholder="C:/City/Clerk/fiscal-note.pdf" /></label>
+        ${renderFilePathField("Attachment source file path", "meetingAttachmentSourcePath", state.workDraft.meetingAttachmentSourcePath, "C:/City/Clerk/fiscal-note.pdf")}
         <label>Attachment citation <input type="text" data-work-field="meetingAttachmentCitation" value="${state.workDraft.meetingAttachmentCitation}" /></label>
         <label>Packet section <input type="text" data-work-field="meetingAttachmentSection" value="${state.workDraft.meetingAttachmentSection}" placeholder="Item 6 fiscal note" /></label>
         <label>Attachment access
@@ -3362,7 +3373,7 @@ function renderRecordsWorkflow() {
         <h3>Request Documents</h3>
         <p class="form-help">Attach a local source file to this request. The desktop app copies it into the city profile and records a SHA-256 hash.</p>
         <label>Document title <input type="text" data-work-field="documentTitle" value="${state.workDraft.documentTitle}" /></label>
-        <label>Source file path <input type="text" data-work-field="documentSourcePath" value="${state.workDraft.documentSourcePath}" placeholder="C:/City/Records/responsive-email.pdf" /></label>
+        ${renderFilePathField("Source file path", "documentSourcePath", state.workDraft.documentSourcePath, "C:/City/Records/responsive-email.pdf")}
         <label>Document citation <input type="text" data-work-field="documentCitation" value="${state.workDraft.documentCitation}" /></label>
         <button type="button" class="secondary-action" data-work-action="add-records-document">Attach Document</button>
         <label>Release document
@@ -3370,7 +3381,7 @@ function renderRecordsWorkflow() {
             ${(selectedRequest.documents || []).map((document) => `<option value="${document.id}" ${selectedReleaseDocumentId === document.id ? "selected" : ""}>${escapeHtml(document.title)}</option>`).join("")}
           </select>` : `<input type="text" aria-label="Release document" value="Attach an original document first" disabled />`}
         </label>
-        <label>Release copy file path <input type="text" data-work-field="releaseCopyPath" value="${state.workDraft.releaseCopyPath}" placeholder="C:/City/Records/release/redacted-email.pdf" /></label>
+        ${renderFilePathField("Release copy file path", "releaseCopyPath", state.workDraft.releaseCopyPath, "C:/City/Records/release/redacted-email.pdf")}
         <label>Release copy status
           <select aria-label="Release copy status" data-work-field="releaseCopyStatus">
             ${["redacted copy", "release-ready copy"].map((status) => `<option value="${status}" ${state.workDraft.releaseCopyStatus === status ? "selected" : ""}>${status}</option>`).join("")}
@@ -3498,7 +3509,7 @@ function renderCodeWorkflow() {
         <h3>Import Code Source</h3>
         <label>Source title <input type="text" data-work-field="codeTitle" value="${state.workDraft.codeTitle}" /></label>
         <label>Citation <input type="text" data-work-field="codeCitation" value="${state.workDraft.codeCitation}" /></label>
-        <label>Source file path <input type="text" data-work-field="codeSourcePath" value="${state.workDraft.codeSourcePath}" placeholder="C:/City/Code/noise-ordinance.pdf" /></label>
+        ${renderFilePathField("Source file path", "codeSourcePath", state.workDraft.codeSourcePath, "C:/City/Code/noise-ordinance.pdf")}
         <label>Imported by <input type="text" data-work-field="codeImportedBy" value="${state.workDraft.codeImportedBy}" placeholder="City Clerk or deputy clerk" /></label>
         <label>Source text <textarea data-work-field="codeBody">${state.workDraft.codeBody}</textarea></label>
         <div class="workflow-actions">
@@ -4731,6 +4742,11 @@ function bindEvents() {
       await handleSupervisorAction(button.dataset.supervisorAction, button.dataset.serviceId);
     });
   });
+  document.querySelectorAll("[data-file-path-field]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await handleChooseFilePath(button.dataset.filePathField);
+    });
+  });
   document.querySelectorAll("[data-supervisor-review-confirm]").forEach((button) => {
     button.addEventListener("click", async () => {
       await handleSupervisorAction(button.dataset.supervisorReviewConfirm, button.dataset.serviceId, { confirmed: true });
@@ -4947,6 +4963,49 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
       status: "Needs attention",
       message: String(error),
       next_action: "Review System Health and try the action again."
+    };
+  }
+  render();
+}
+
+async function handleChooseFilePath(field) {
+  if (!Object.prototype.hasOwnProperty.call(state.workDraft, field)) {
+    return;
+  }
+  if (!hasTauriBridge()) {
+    state.workActionResult = {
+      accepted: false,
+      status: "Desktop app required",
+      message: "Native file selection is available in the Windows desktop app, not the browser preview.",
+      next_action: "Open CivicSuite on Windows and choose the source file from the file picker."
+    };
+    render();
+    return;
+  }
+  try {
+    const pickedPath = await invoke("choose_file_path");
+    if (pickedPath) {
+      state.workDraft[field] = pickedPath;
+      state.workActionResult = {
+        accepted: true,
+        status: "File selected",
+        message: "The selected local file path was added to the current workflow field.",
+        next_action: "Review the citation and access level before saving."
+      };
+    } else {
+      state.workActionResult = {
+        accepted: false,
+        status: "No file selected",
+        message: "No local file was selected.",
+        next_action: "Choose File again or type the path if staff already know it."
+      };
+    }
+  } catch (error) {
+    state.workActionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: String(error),
+      next_action: "Sign in with a local staff account and choose the source file again."
     };
   }
   render();

@@ -278,6 +278,21 @@ main {
   resize: vertical;
 }
 
+.file-path-control {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.file-path-control label {
+  min-width: 0;
+}
+
+.file-path-control .secondary-action {
+  white-space: nowrap;
+}
+
 .workflow-actions {
   display: flex;
   flex-wrap: wrap;
@@ -924,6 +939,7 @@ main {
   .module-list.compact,
   .profile-choice-grid,
   .review-grid,
+  .file-path-control,
   .setup-form,
   .setup-form.two-column {
     grid-template-columns: 1fr;
