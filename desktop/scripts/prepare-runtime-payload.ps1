@@ -121,8 +121,27 @@ function Invoke-CivicDownload {
     }
     $Parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $Parent | Out-Null
-    Invoke-WebRequest -Uri $Url -OutFile $Destination -UseBasicParsing -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
-    return Get-Sha256 -Path $Destination
+    $TempDestination = "$Destination.download"
+    if (Test-Path -LiteralPath $TempDestination) {
+        Remove-Item -LiteralPath $TempDestination -Force
+    }
+    $LastError = $null
+    for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
+        try {
+            Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+            Move-Item -LiteralPath $TempDestination -Destination $Destination -Force
+            return Get-Sha256 -Path $Destination
+        } catch {
+            $LastError = $_
+            if (Test-Path -LiteralPath $TempDestination) {
+                Remove-Item -LiteralPath $TempDestination -Force -ErrorAction SilentlyContinue
+            }
+            if ($Attempt -lt 3) {
+                Start-Sleep -Seconds ([Math]::Min(10, [Math]::Pow(2, $Attempt)))
+            }
+        }
+    }
+    throw $LastError
 }
 
 function Expand-CivicZip {
@@ -302,7 +321,20 @@ function Install-PostgresPayload {
     }
     $Url = Get-PostgresSourceUrl -Source $Source
     $Archive = Join-Path $CacheRoot "postgres-windows-binaries.zip"
-    $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
+    try {
+        $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
+    } catch {
+        if (-not $Source.download_page) {
+            throw
+        }
+        Write-Warning "Direct PostgreSQL binary download failed; falling back to PostgreSQL download-page discovery. $($_.Exception.Message)"
+        $FallbackUrl = Get-PostgresBinaryUrl -DownloadPage $Source.download_page -MajorVersion $Source.major_version
+        if ($FallbackUrl -eq $Url) {
+            throw
+        }
+        $Url = $FallbackUrl
+        $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
+    }
     Expand-PostgresServerPayload -Archive $Archive -Destination $Destination
     return @{ status = "installed"; url = $Url; sha256 = $Sha; path = $Destination }
 }

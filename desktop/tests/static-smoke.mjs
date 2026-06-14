@@ -297,6 +297,7 @@ for (const phrase of [
   "Install-OllamaPayload",
   "Install-PgvectorPayload",
   "Get-PostgresSourceUrl",
+  "falling back to PostgreSQL download-page discovery",
   "MSVC cl.exe and nmake.exe are required",
   "System.Security.Cryptography.SHA256",
   "PayloadManifestPath",
