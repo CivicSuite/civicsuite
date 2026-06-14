@@ -144,7 +144,9 @@ const requiredUiPhrases = [
   "Module actions are handled by the Windows desktop app",
   "Source history:",
   "Sign in as local administrator to change local model setup.",
+  "Sign in as local administrator to use local lifecycle actions.",
   "Sign in with the local administrator passcode before continuing setup.",
+  "Use a local administrator account before changing setup, model, backup, restore, repair, module, user, or runtime settings.",
   "Use a local staff or administrator passcode for city work.",
   "Use a local administrator account for setup, users, modules, backups, restore, repair, model setup, or runtime services.",
   "Check the email and local passcode, then try again."
@@ -168,6 +170,19 @@ for (const phrase of [
 ]) {
   if (!main.includes(phrase)) {
     throw new Error(`desktop public/staff boundary guard missing phrase: ${phrase}`);
+  }
+}
+
+for (const phrase of [
+  "function adminOnlyControlLocked",
+  "return access.configured && access.role !== \"local-admin\";",
+  "const lockMessage = adminOnlyLockMessage(\"Sign in as local administrator to use local lifecycle actions.\");",
+  "data-supervisor-action=\"backup\" ${adminDisabled}",
+  "data-supervisor-action=\"install\" data-service-id=\"${escapeHtml(item.id)}\" ${adminDisabled}",
+  "data-supervisor-review-confirm=\"${state.pendingSupervisorReviewAction}\"${serviceAttr} ${adminDisabled}"
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop admin-only UI guard missing phrase: ${phrase}`);
   }
 }
 

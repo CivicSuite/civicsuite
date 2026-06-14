@@ -1007,6 +1007,18 @@ function setupActionLabel(step) {
   return labels[step.action] || "Continue setup";
 }
 
+function adminOnlyControlLocked() {
+  const access = accessState();
+  return access.configured && access.role !== "local-admin";
+}
+
+function adminOnlyLockMessage(fallback) {
+  const access = accessState();
+  if (!adminOnlyControlLocked()) return "";
+  if (!access.signed_in) return fallback;
+  return "Use a local administrator account before changing setup, model, backup, restore, repair, module, user, or runtime settings.";
+}
+
 function renderModuleSelectionControls() {
   const modules = state.app.modules || [];
   const foundation = modules.find((module) => module.id === LOCKED_FOUNDATION_MODULE_ID);
@@ -1132,12 +1144,12 @@ function renderSetupFields(step) {
 }
 
 function setupActionLockedByAdmin() {
-  const access = accessState();
-  return access.configured && !access.signed_in;
+  return adminOnlyControlLocked();
 }
 
 function renderFirstRunStep(step, index) {
   const adminLocked = step.current && setupActionLockedByAdmin();
+  const adminLockMessage = adminOnlyLockMessage("Sign in with the local administrator passcode before continuing setup.");
   const moduleSelectionLocked =
     step.current &&
     step.id === "modules" &&
@@ -1161,7 +1173,7 @@ function renderFirstRunStep(step, index) {
             <button type="button" class="primary-action" data-first-run-action="${step.action}" data-step-id="${step.id}" ${actionLocked ? "disabled" : ""}>
               ${setupActionLabel(step)}
             </button>
-            ${adminLocked ? `<small>Sign in with the local administrator passcode before continuing setup.</small>` : ""}
+            ${adminLockMessage ? `<small>${adminLockMessage}</small>` : ""}
             ${moduleSelectionLocked ? `<small>Select at least one ready product module for a custom profile.</small>` : ""}
           </div>
         ` : ""}
@@ -1197,8 +1209,9 @@ function renderModelActionResult() {
 function renderSupervisorActionResult() {
   if (!state.supervisorActionResult) return "";
   const result = state.supervisorActionResult;
+  const adminDisabled = adminOnlyControlLocked() ? "disabled" : "";
   const uninstallFollowUp = result.accepted && result.action === "uninstall"
-    ? `<button type="button" class="secondary-action" data-supervisor-action="open-windows-uninstall">Open Windows Uninstall</button>`
+    ? `<button type="button" class="secondary-action" data-supervisor-action="open-windows-uninstall" ${adminDisabled}>Open Windows Uninstall</button>`
     : "";
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
@@ -1328,9 +1341,9 @@ function renderFirstRunWizard({ compact = false } = {}) {
 }
 
 function renderModelActions(model) {
-  const access = accessState();
-  const needsAdmin = access.configured && !access.signed_in;
-  const adminDisabled = needsAdmin ? "disabled" : "";
+  const adminLocked = adminOnlyControlLocked();
+  const adminDisabled = adminLocked ? "disabled" : "";
+  const lockMessage = adminOnlyLockMessage("Sign in as local administrator to change local model setup.");
   return `
     <div class="model-actions" aria-label="Local model setup actions">
       <button type="button" class="secondary-action" data-model-action="open-model-folder" ${adminDisabled}>
@@ -1348,7 +1361,7 @@ function renderModelActions(model) {
       <button type="button" class="secondary-action" data-model-action="retry" ${adminDisabled}>
         Retry Setup
       </button>
-      ${needsAdmin ? `<small>Sign in as local administrator to change local model setup.</small>` : ""}
+      ${lockMessage ? `<small>${lockMessage}</small>` : ""}
     </div>
   `;
 }
@@ -4395,6 +4408,9 @@ function renderGuidedSupervisorReview() {
   );
   if (!review) return "";
   const serviceAttr = state.pendingSupervisorReviewServiceId ? ` data-service-id="${escapeHtml(state.pendingSupervisorReviewServiceId)}"` : "";
+  const adminLocked = adminOnlyControlLocked();
+  const adminDisabled = adminLocked ? "disabled" : "";
+  const lockMessage = adminOnlyLockMessage("Sign in as local administrator to use local lifecycle actions.");
   return `
     <section class="guided-review" aria-labelledby="supervisor-review-title">
       <div>
@@ -4428,8 +4444,9 @@ function renderGuidedSupervisorReview() {
       </div>
       <p class="next-action">${escapeHtml(review.retry)}</p>
       <div class="review-actions">
-        <button type="button" class="primary-action" data-supervisor-review-confirm="${state.pendingSupervisorReviewAction}"${serviceAttr}>Confirm ${escapeHtml(review.confirmLabel)}</button>
+        <button type="button" class="primary-action" data-supervisor-review-confirm="${state.pendingSupervisorReviewAction}"${serviceAttr} ${adminDisabled}>Confirm ${escapeHtml(review.confirmLabel)}</button>
         <button type="button" class="secondary-action" data-supervisor-review-cancel>Cancel Review</button>
+        ${lockMessage ? `<small>${lockMessage}</small>` : ""}
       </div>
     </section>
   `;
@@ -4546,6 +4563,9 @@ function renderModules() {
 }
 
 function renderHealth() {
+  const adminLocked = adminOnlyControlLocked();
+  const adminDisabled = adminLocked ? "disabled" : "";
+  const lockMessage = adminOnlyLockMessage("Sign in as local administrator to use local lifecycle actions.");
   return `
     <section class="page-heading">
       <p class="eyebrow">IT/Admin</p>
@@ -4560,12 +4580,13 @@ function renderHealth() {
         <p>These actions work on the local CivicSuite city profile. Uninstall creates a final backup before removing local data and setup state.</p>
       </div>
       <div class="health-actions lifecycle-actions">
-        <button type="button" class="secondary-action" data-supervisor-action="backup">Backup Now</button>
-        <button type="button" class="secondary-action" data-supervisor-action="open-backup-folder">Open Backup Folder</button>
-        <button type="button" class="secondary-action" data-supervisor-action="support-bundle">Create Support Bundle</button>
-        <button type="button" class="secondary-action" data-supervisor-action="restore">Restore Latest Backup</button>
-        <button type="button" class="secondary-action" data-supervisor-action="uninstall">Prepare Uninstall</button>
-        <button type="button" class="secondary-action" data-supervisor-action="open-windows-uninstall">Open Windows Uninstall</button>
+        <button type="button" class="secondary-action" data-supervisor-action="backup" ${adminDisabled}>Backup Now</button>
+        <button type="button" class="secondary-action" data-supervisor-action="open-backup-folder" ${adminDisabled}>Open Backup Folder</button>
+        <button type="button" class="secondary-action" data-supervisor-action="support-bundle" ${adminDisabled}>Create Support Bundle</button>
+        <button type="button" class="secondary-action" data-supervisor-action="restore" ${adminDisabled}>Restore Latest Backup</button>
+        <button type="button" class="secondary-action" data-supervisor-action="uninstall" ${adminDisabled}>Prepare Uninstall</button>
+        <button type="button" class="secondary-action" data-supervisor-action="open-windows-uninstall" ${adminDisabled}>Open Windows Uninstall</button>
+        ${lockMessage ? `<small>${lockMessage}</small>` : ""}
       </div>
     </section>
     ${renderGuidedSupervisorReview()}
@@ -4579,13 +4600,13 @@ function renderHealth() {
           ${item.admin_detail ? `<small>${escapeHtml(item.admin_detail)}</small>` : ""}
           ${item.actionable !== false && item.id !== "desktop-shell" ? `
             <div class="health-actions" aria-label="${escapeHtml(item.label)} actions">
-              <button type="button" class="secondary-action" data-supervisor-action="health" data-service-id="${escapeHtml(item.id)}">Check</button>
-              <button type="button" class="secondary-action" data-supervisor-action="install" data-service-id="${escapeHtml(item.id)}">Install</button>
-              <button type="button" class="secondary-action" data-supervisor-action="start" data-service-id="${escapeHtml(item.id)}">Start</button>
-              <button type="button" class="secondary-action" data-supervisor-action="repair" data-service-id="${escapeHtml(item.id)}">Repair</button>
-              <button type="button" class="secondary-action" data-supervisor-action="logs" data-service-id="${escapeHtml(item.id)}">Logs</button>
-              <button type="button" class="secondary-action" data-supervisor-action="support-bundle" data-service-id="${escapeHtml(item.id)}">Support Bundle</button>
-              <button type="button" class="secondary-action" data-supervisor-action="stop" data-service-id="${escapeHtml(item.id)}">Stop</button>
+              <button type="button" class="secondary-action" data-supervisor-action="health" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Check</button>
+              <button type="button" class="secondary-action" data-supervisor-action="install" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Install</button>
+              <button type="button" class="secondary-action" data-supervisor-action="start" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Start</button>
+              <button type="button" class="secondary-action" data-supervisor-action="repair" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Repair</button>
+              <button type="button" class="secondary-action" data-supervisor-action="logs" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Logs</button>
+              <button type="button" class="secondary-action" data-supervisor-action="support-bundle" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Support Bundle</button>
+              <button type="button" class="secondary-action" data-supervisor-action="stop" data-service-id="${escapeHtml(item.id)}" ${adminDisabled}>Stop</button>
             </div>
           ` : ""}
         </article>
