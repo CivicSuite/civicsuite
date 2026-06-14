@@ -160,6 +160,7 @@ fn city_work_action_module_requirement(
         | "record-records-search"
         | "add-records-document"
         | "add-records-exemption-review"
+        | "add-records-exemption-decision"
         | "estimate-records-fee"
         | "add-records-fee-line"
         | "waive-records-fee"

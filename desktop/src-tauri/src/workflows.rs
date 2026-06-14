@@ -140,6 +140,18 @@ pub struct RecordsFeeLineItem {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsExemptionDecision {
+    pub id: String,
+    pub source: String,
+    pub kind: String,
+    pub finding: String,
+    pub decision: String,
+    pub basis: String,
+    pub reviewer: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsRequest {
     pub id: String,
     #[serde(default)]
@@ -162,6 +174,8 @@ pub struct RecordsRequest {
     pub search_notes: Vec<String>,
     #[serde(default)]
     pub exemption_reviews: Vec<String>,
+    #[serde(default)]
+    pub exemption_decisions: Vec<RecordsExemptionDecision>,
     #[serde(default)]
     pub fee_estimate: String,
     #[serde(default)]
@@ -1498,6 +1512,27 @@ fn records_documents_or_default(documents: &[RecordsDocument]) -> String {
         .join("\n")
 }
 
+fn records_exemption_decisions_or_default(decisions: &[RecordsExemptionDecision]) -> String {
+    if decisions.is_empty() {
+        return "No structured exemption decisions recorded.".to_string();
+    }
+    decisions
+        .iter()
+        .map(|decision| {
+            format!(
+                "- {} [{}] {}: {} under {} (reviewed by {})",
+                decision.source,
+                decision.kind,
+                decision.decision,
+                decision.finding,
+                decision.basis,
+                decision.reviewer
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn records_fee_total_cents(items: &[RecordsFeeLineItem]) -> i64 {
     items.iter().map(|item| item.amount_cents).sum()
 }
@@ -1761,6 +1796,7 @@ fn create_records_request(
             clarification_notes: Vec::new(),
             search_notes: Vec::new(),
             exemption_reviews: Vec::new(),
+            exemption_decisions: Vec::new(),
             fee_estimate: String::new(),
             fee_line_items: Vec::new(),
             fee_waiver_reason: String::new(),
@@ -1835,6 +1871,7 @@ fn submit_public_records_request(
             clarification_notes: Vec::new(),
             search_notes: Vec::new(),
             exemption_reviews: Vec::new(),
+            exemption_decisions: Vec::new(),
             fee_estimate: String::new(),
             fee_line_items: Vec::new(),
             fee_waiver_reason: String::new(),
@@ -2280,6 +2317,67 @@ fn add_records_exemption_review(
     Ok("Exemption review note saved for human approval.".to_string())
 }
 
+fn add_records_exemption_decision(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let source = payload_string(payload, "exemptionSource").map_err(|_| {
+        "Enter the source record, page, file, timestamp, or segment being reviewed.".to_string()
+    })?;
+    let kind = payload_string(payload, "exemptionKind")
+        .map_err(|_| "Enter the exemption category or flag type.".to_string())?;
+    let finding = payload_string(payload, "exemptionFinding")
+        .map_err(|_| "Enter the staff finding for this source segment.".to_string())?;
+    let decision = payload_string(payload, "exemptionDecision")
+        .map_err(|_| "Choose release, redact, or exempt for this source segment.".to_string())?
+        .to_lowercase();
+    if !matches!(decision.as_str(), "release" | "redact" | "exempt") {
+        return Err("Exemption decision must be release, redact, or exempt.".to_string());
+    }
+    let basis = payload_string(payload, "exemptionBasis").map_err(|_| {
+        "Enter the statute, ordinance, or city policy basis for the decision.".to_string()
+    })?;
+    let reviewer = payload_optional_string(payload, "exemptionReviewer");
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    let decision_record = RecordsExemptionDecision {
+        id: format!(
+            "records-exemption-decision-{}-{}",
+            now_unix_seconds(),
+            request.exemption_decisions.len() + 1
+        ),
+        source: source.clone(),
+        kind: kind.clone(),
+        finding: finding.clone(),
+        decision: decision.clone(),
+        basis: basis.clone(),
+        reviewer: if reviewer.is_empty() {
+            "records staff".to_string()
+        } else {
+            reviewer
+        },
+        created_at_unix_seconds: now_unix_seconds(),
+    };
+    request.exemption_decisions.push(decision_record);
+    if !request.citations.iter().any(|citation| citation == &basis) {
+        request.citations.push(basis.clone());
+    }
+    request.status = "exemption decision recorded".to_string();
+    push_records_timeline(
+        request,
+        "exemption decision recorded",
+        "records staff",
+        format!("{decision} decision for {source}: {finding} under {basis}."),
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-records-exemption-decision",
+        format!("Recorded {decision} exemption decision for {source} under {basis}."),
+    );
+    Ok("Structured exemption decision saved with source evidence.".to_string())
+}
+
 fn estimate_records_fee(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -2429,7 +2527,7 @@ fn suggest_records_response(
         );
     }
     let prompt = format!(
-        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nAttached documents: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nFee estimate: {}\nCitations/source notes: {}\n",
+        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nAttached documents: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nExemption decisions: {}\nFee estimate: {}\nCitations/source notes: {}\n",
         request.requester,
         request.deadline,
         request.summary,
@@ -2438,6 +2536,7 @@ fn suggest_records_response(
         list_or_default(&request.clarification_notes, "No clarification notes recorded."),
         list_or_default(&request.search_notes, "No search notes recorded."),
         list_or_default(&request.exemption_reviews, "No exemption review notes recorded."),
+        records_exemption_decisions_or_default(&request.exemption_decisions),
         if request.fee_estimate.is_empty() {
             "No fee estimate recorded."
         } else {
@@ -2523,6 +2622,7 @@ fn export_records_response(
         &request.exemption_reviews,
         "No exemption review notes recorded.",
     );
+    let exemption_decisions = records_exemption_decisions_or_default(&request.exemption_decisions);
     let clarification_notes = list_or_default(
         &request.clarification_notes,
         "No clarification notes recorded.",
@@ -2534,7 +2634,7 @@ fn export_records_response(
     let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
     let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -2582,6 +2682,7 @@ fn export_records_response(
         clarification_notes,
         search_notes,
         exemption_reviews,
+        exemption_decisions,
         request.response_draft,
         citations,
         approval_notes
@@ -3344,6 +3445,22 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let clarification_notes = request.clarification_notes.join(" ");
         let search_notes = request.search_notes.join(" ");
         let exemption_reviews = request.exemption_reviews.join(" ");
+        let exemption_decisions = request
+            .exemption_decisions
+            .iter()
+            .map(|decision| {
+                format!(
+                    "{} {} {} {} {} {}",
+                    decision.source,
+                    decision.kind,
+                    decision.finding,
+                    decision.decision,
+                    decision.basis,
+                    decision.reviewer
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let approval_notes = request.approval_notes.join(" ");
         let request_messages = request
             .messages
@@ -3408,6 +3525,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &clarification_notes,
                 &search_notes,
                 &exemption_reviews,
+                &exemption_decisions,
                 &approval_notes,
                 &timeline,
             ],
@@ -3546,6 +3664,7 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.clarification_notes.clear();
     public_request.search_notes.clear();
     public_request.exemption_reviews.clear();
+    public_request.exemption_decisions.clear();
     public_request.fee_estimate.clear();
     public_request.fee_line_items.clear();
     public_request.fee_waiver_reason.clear();
@@ -3707,6 +3826,7 @@ pub fn city_work_action(
         "record-records-search" => record_records_search(&mut state, payload)?,
         "add-records-document" => add_records_document(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
+        "add-records-exemption-decision" => add_records_exemption_decision(&mut state, payload)?,
         "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
         "add-records-fee-line" => add_records_fee_line(&mut state, payload)?,
         "waive-records-fee" => waive_records_fee(&mut state, payload)?,
@@ -4208,6 +4328,31 @@ mod tests {
             });
             city_work_action("add-records-exemption-review", Some(&exemption))
                 .expect("exemption saved");
+            let bad_exemption_decision = serde_json::json!({
+                "exemptionSource": "Email attachment page 2",
+                "exemptionKind": "Attorney-client",
+                "exemptionFinding": "One paragraph contains privileged legal advice.",
+                "exemptionDecision": "maybe",
+                "exemptionBasis": "CORA attorney-client privilege"
+            });
+            let error = match city_work_action(
+                "add-records-exemption-decision",
+                Some(&bad_exemption_decision),
+            ) {
+                Ok(_) => panic!("exemption decision cannot save ambiguous value"),
+                Err(error) => error,
+            };
+            assert!(error.contains("release, redact, or exempt"));
+            let exemption_decision = serde_json::json!({
+                "exemptionSource": "Email attachment page 2",
+                "exemptionKind": "Attorney-client",
+                "exemptionFinding": "One paragraph contains privileged legal advice.",
+                "exemptionDecision": "redact",
+                "exemptionBasis": "CORA attorney-client privilege",
+                "exemptionReviewer": "Records Officer"
+            });
+            city_work_action("add-records-exemption-decision", Some(&exemption_decision))
+                .expect("exemption decision saved");
             let bad_fee = serde_json::json!({
                 "feeLineDescription": "Search time",
                 "feeScheduleBasis": "Adopted records fee schedule",
@@ -4259,6 +4404,16 @@ mod tests {
             assert!(PathBuf::from(&request.documents[0].stored_path).is_file());
             assert_eq!(request.search_notes.len(), 1);
             assert_eq!(request.exemption_reviews.len(), 1);
+            assert_eq!(request.exemption_decisions.len(), 1);
+            assert_eq!(
+                request.exemption_decisions[0].source,
+                "Email attachment page 2"
+            );
+            assert_eq!(request.exemption_decisions[0].decision, "redact");
+            assert_eq!(
+                request.exemption_decisions[0].basis,
+                "CORA attorney-client privilege"
+            );
             assert_eq!(request.fee_line_items.len(), 1);
             assert_eq!(
                 request.fee_line_items[0].description,
@@ -4293,6 +4448,10 @@ mod tests {
                 .timeline
                 .iter()
                 .any(|entry| entry.action == "document attached"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "exemption decision recorded"));
             assert!(request
                 .timeline
                 .iter()
@@ -4332,8 +4491,12 @@ mod tests {
             assert!(exported.contains("Search time and copies: $12.50"));
             assert!(exported.contains("Schedule/basis: Adopted records fee schedule"));
             assert!(exported.contains("response approved"));
-            assert!(exported.contains("## Exemption Review"));
+            assert!(exported.contains("## Exemption Review Notes"));
             assert!(exported.contains("Reviewed attorney-client content"));
+            assert!(exported.contains("## Exemption Decisions"));
+            assert!(exported.contains("Email attachment page 2"));
+            assert!(exported.contains("CORA attorney-client privilege"));
+            assert!(exported.contains("redact"));
             assert!(exported.contains("## Approval Notes"));
             let publication = state
                 .publication_events
@@ -4364,6 +4527,8 @@ mod tests {
             assert_eq!(fee_line_results.len(), 1);
             let fee_schedule_results = search_city_work(&state, "Adopted records fee schedule");
             assert_eq!(fee_schedule_results.len(), 1);
+            let decision_results = search_city_work(&state, "CORA attorney-client privilege");
+            assert_eq!(decision_results.len(), 1);
             let message_results = search_city_work(&state, "narrowed date range");
             assert!(message_results
                 .iter()
@@ -4509,6 +4674,7 @@ mod tests {
             assert!(public_request.clarification_notes.is_empty());
             assert!(public_request.search_notes.is_empty());
             assert!(public_request.exemption_reviews.is_empty());
+            assert!(public_request.exemption_decisions.is_empty());
             assert_eq!(public_request.fee_estimate, "");
             assert!(public_request.fee_line_items.is_empty());
             assert_eq!(public_request.fee_waiver_reason, "");

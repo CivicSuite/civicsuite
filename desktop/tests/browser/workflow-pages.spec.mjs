@@ -40,6 +40,12 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Fee schedule or policy basis")).toBeVisible();
   await expect(page.getByLabel("Fee line amount")).toBeVisible();
   await expect(page.getByLabel("Fee waiver reason")).toBeVisible();
+  await expect(page.getByLabel("Exemption source")).toBeVisible();
+  await expect(page.getByLabel("Exemption category")).toBeVisible();
+  await expect(page.getByLabel("Staff finding")).toBeVisible();
+  await expect(page.getByLabel("Decision", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Decision basis")).toBeVisible();
+  await expect(page.getByLabel("Reviewer")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Messages" })).toBeVisible();
   await expect(page.getByLabel("Message to requester")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Request Message" })).toBeVisible();
@@ -53,6 +59,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Search" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Exemption Review" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Exemption Decision" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Estimate Fee" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Fee Line" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Waive Fee" })).toBeVisible();

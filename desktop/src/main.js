@@ -574,6 +574,12 @@ const state = {
     documentCitation: "",
     sourceNote: "",
     exemptionNote: "",
+    exemptionSource: "",
+    exemptionKind: "",
+    exemptionFinding: "",
+    exemptionDecision: "redact",
+    exemptionBasis: "",
+    exemptionReviewer: "",
     feeEstimate: "",
     feeLineDescription: "",
     feeScheduleBasis: "",
@@ -1321,6 +1327,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "close-records-request",
   "mark-notification-sent",
   "add-records-message",
+  "add-records-exemption-decision",
   "add-records-fee-line",
   "waive-records-fee",
   "approve-code-guidance",
@@ -1578,6 +1585,22 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicRecords AI audit entry and timeline entry for the request message.",
       retry: "If no message or active request exists, the desktop app leaves the request thread unchanged."
     },
+    "add-records-exemption-decision": {
+      title: "Review Before Saving Exemption Decision",
+      confirmLabel: "Save Exemption Decision",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Saves a structured release, redact, or exempt decision for one source segment.",
+      visibility: "Staff-only exemption evidence remains local and is included in the exported response package after approval.",
+      sources: [
+        detailOrFallback(state.workDraft.exemptionSource, "Source record, page, file, timestamp, or segment is required."),
+        detailOrFallback(state.workDraft.exemptionDecision, "Decision must be release, redact, or exempt."),
+        detailOrFallback(state.workDraft.exemptionBasis, "Statute, ordinance, or city policy basis is required.")
+      ],
+      audit: "Creates a CivicRecords AI audit entry and request timeline entry for the decision.",
+      retry: "If the source, finding, decision, or basis is missing, the desktop app leaves exemption evidence unchanged."
+    },
     "add-records-fee-line": {
       title: "Review Before Adding Records Fee Line",
       confirmLabel: "Add Fee Line",
@@ -1619,7 +1642,7 @@ function guidedReviewForAction(action) {
       visibility: "Internal staff status changes to human-approved; nothing is public until export and fulfillment.",
       sources: [
         detailOrFallback(request?.response_draft, "No response draft has been saved yet."),
-        request ? `${(request.exemption_reviews || []).length} exemption review note(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before saving."
+        request ? `${(request.exemption_reviews || []).length} exemption review note(s); ${(request.exemption_decisions || []).length} exemption decision(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before saving."
       ],
       audit: "Creates a CivicRecords AI audit entry for human approval.",
       retry: "If the response draft is missing, the desktop app blocks approval before release steps."
@@ -2069,6 +2092,7 @@ function publicRecordsRequestView(request) {
     clarification_notes: [],
     search_notes: [],
     exemption_reviews: [],
+    exemption_decisions: [],
     fee_estimate: "",
     fee_line_items: [],
     fee_waiver_reason: "",
@@ -2318,6 +2342,27 @@ function renderRecordsDocuments(request) {
   `;
 }
 
+function renderRecordsExemptionDecisions(request) {
+  const decisions = request.exemption_decisions || [];
+  if (decisions.length === 0) return "";
+  return `
+    <details class="record-details" open>
+      <summary>Exemption Decisions</summary>
+      <ul>
+        ${decisions.map((decision) => `
+          <li>
+            <strong>${escapeHtml(decision.source)}</strong>
+            <span>${escapeHtml(decision.decision)}</span>
+            <span>${escapeHtml(decision.kind)}</span>
+            ${escapeHtml(decision.finding)}
+            <small>${escapeHtml(decision.basis)} - ${escapeHtml(decision.reviewer || "records staff")}</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
 function renderRecordsWorkflow() {
   if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
@@ -2344,6 +2389,18 @@ function renderRecordsWorkflow() {
         <label>Search source note <textarea data-work-field="sourceNote">${state.workDraft.sourceNote}</textarea></label>
         <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
         <label>Exemption review <textarea data-work-field="exemptionNote">${state.workDraft.exemptionNote}</textarea></label>
+        <label>Exemption source <input type="text" data-work-field="exemptionSource" value="${state.workDraft.exemptionSource}" placeholder="File, page, timestamp, or segment" /></label>
+        <label>Exemption category <input type="text" data-work-field="exemptionKind" value="${state.workDraft.exemptionKind}" placeholder="PII, attorney-client, personnel, other" /></label>
+        <label>Staff finding <textarea data-work-field="exemptionFinding">${state.workDraft.exemptionFinding}</textarea></label>
+        <label>Decision
+          <select aria-label="Decision" data-work-field="exemptionDecision">
+            <option value="release" ${state.workDraft.exemptionDecision === "release" ? "selected" : ""}>Release</option>
+            <option value="redact" ${state.workDraft.exemptionDecision === "redact" ? "selected" : ""}>Redact</option>
+            <option value="exempt" ${state.workDraft.exemptionDecision === "exempt" ? "selected" : ""}>Exempt</option>
+          </select>
+        </label>
+        <label>Decision basis <input type="text" data-work-field="exemptionBasis" value="${state.workDraft.exemptionBasis}" placeholder="Statute, ordinance, or policy basis" /></label>
+        <label>Reviewer <input type="text" data-work-field="exemptionReviewer" value="${state.workDraft.exemptionReviewer}" placeholder="Records Officer" /></label>
         <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${state.workDraft.feeEstimate}" /></label>
         <label>Fee line description <input type="text" data-work-field="feeLineDescription" value="${state.workDraft.feeLineDescription}" placeholder="Search time, copies, media, or waived charge basis" /></label>
         <label>Fee schedule or policy basis <input type="text" data-work-field="feeScheduleBasis" value="${state.workDraft.feeScheduleBasis}" placeholder="Adopted records fee schedule or waiver policy" /></label>
@@ -2355,6 +2412,7 @@ function renderRecordsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="request-records-clarification">Request Clarification</button>
           <button type="button" class="secondary-action" data-work-action="record-records-search">Record Search</button>
           <button type="button" class="secondary-action" data-work-action="add-records-exemption-review">Add Exemption Review</button>
+          <button type="button" class="secondary-action" data-work-action="add-records-exemption-decision">Save Exemption Decision</button>
           <button type="button" class="secondary-action" data-work-action="estimate-records-fee">Estimate Fee</button>
           <button type="button" class="secondary-action" data-work-action="add-records-fee-line">Add Fee Line</button>
           <button type="button" class="secondary-action" data-work-action="waive-records-fee">Waive Fee</button>
@@ -2410,6 +2468,7 @@ function renderRecordsWorkflow() {
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
           ${renderRecordsMessages(request)}
           ${renderRecordsDocuments(request)}
+          ${renderRecordsExemptionDecisions(request)}
           ${renderRecordsTimeline(request)}
           <div class="record-actions">
             ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
@@ -2630,6 +2689,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       .map((message) => [message.author, message.author_role, message.body].join(" "));
     const requestDocumentSearchText = (request.documents || [])
       .map((document) => [document.title, document.citation, document.status, document.sha256].join(" "));
+    const exemptionDecisionSearchText = (request.exemption_decisions || [])
+      .map((decision) => [decision.source, decision.kind, decision.finding, decision.decision, decision.basis, decision.reviewer].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
       .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
     const publicRecordFields = [
@@ -2651,6 +2712,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ...feeLineSearchText,
       ...requestMessageSearchText,
       ...requestDocumentSearchText,
+      ...exemptionDecisionSearchText,
       request.response_draft,
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
@@ -3802,6 +3864,15 @@ function workPayloadForAction(action) {
       documentCitation: draft.documentCitation
     },
     "add-records-exemption-review": { ...selected, exemptionNote: draft.exemptionNote },
+    "add-records-exemption-decision": {
+      ...selected,
+      exemptionSource: draft.exemptionSource,
+      exemptionKind: draft.exemptionKind,
+      exemptionFinding: draft.exemptionFinding,
+      exemptionDecision: draft.exemptionDecision,
+      exemptionBasis: draft.exemptionBasis,
+      exemptionReviewer: draft.exemptionReviewer
+    },
     "estimate-records-fee": { ...selected, feeEstimate: draft.feeEstimate },
     "add-records-fee-line": {
       ...selected,
