@@ -26,6 +26,38 @@ pub struct AgendaItem {
     pub title: String,
     pub status: String,
     pub visibility: String,
+    #[serde(default)]
+    pub source_module: String,
+    #[serde(default)]
+    pub source_record_id: String,
+    #[serde(default)]
+    pub source_reference: String,
+    #[serde(default)]
+    pub department: String,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct AgendaIntake {
+    pub id: String,
+    pub title: String,
+    pub submitter: String,
+    pub department: String,
+    pub summary: String,
+    pub source_reference: String,
+    #[serde(default)]
+    pub requested_meeting_date: String,
+    pub status: String,
+    #[serde(default)]
+    pub review_note: String,
+    #[serde(default)]
+    pub meeting_id: String,
+    #[serde(default)]
+    pub agenda_item_id: String,
+    pub created_at_unix_seconds: u64,
+    #[serde(default)]
+    pub reviewed_at_unix_seconds: Option<u64>,
+    #[serde(default)]
+    pub promoted_at_unix_seconds: Option<u64>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -420,6 +452,8 @@ pub struct SearchResult {
 pub struct CityWorkState {
     #[serde(default)]
     pub meeting_bodies: Vec<MeetingBody>,
+    #[serde(default)]
+    pub agenda_intakes: Vec<AgendaIntake>,
     pub meetings: Vec<Meeting>,
     pub records_requests: Vec<RecordsRequest>,
     pub code_sources: Vec<CodeSource>,
@@ -1028,6 +1062,28 @@ fn selected_pending_code_handoff_index(
     Ok(index)
 }
 
+fn selected_agenda_intake_index(
+    state: &CityWorkState,
+    payload: Option<&Value>,
+) -> Result<usize, String> {
+    if state.agenda_intakes.is_empty() {
+        return Err("Submit an agenda intake item before reviewing the agenda queue.".to_string());
+    }
+    let intake_id = payload_optional_string(payload, "agendaIntakeId");
+    if intake_id.is_empty() {
+        return Ok(state
+            .agenda_intakes
+            .iter()
+            .position(|intake| intake.status != "promoted to agenda")
+            .unwrap_or(0));
+    }
+    state
+        .agenda_intakes
+        .iter()
+        .position(|intake| intake.id == intake_id)
+        .ok_or_else(|| "The selected agenda intake item was not found.".to_string())
+}
+
 fn create_meeting_body(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -1134,6 +1190,10 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
             title: agenda_title,
             status: "draft".to_string(),
             visibility: "public draft".to_string(),
+            source_module: "civicclerk".to_string(),
+            source_record_id: String::new(),
+            source_reference: "manual meeting draft".to_string(),
+            department: String::new(),
         });
     }
     state.meetings.insert(0, meeting);
@@ -1160,6 +1220,10 @@ fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         title: title.clone(),
         status: "draft".to_string(),
         visibility: "public draft".to_string(),
+        source_module: "civicclerk".to_string(),
+        source_record_id: String::new(),
+        source_reference: "manual clerk entry".to_string(),
+        department: String::new(),
     });
     meeting.status = "agenda drafting".to_string();
     push_audit(
@@ -1169,6 +1233,148 @@ fn add_agenda_item(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         format!("Added agenda item: {title}"),
     );
     Ok("Agenda item added to the current meeting draft.".to_string())
+}
+
+fn submit_agenda_intake(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let title = payload_string(payload, "agendaIntakeTitle")
+        .map_err(|_| "Enter the agenda intake title.".to_string())?;
+    let submitter = payload_string(payload, "agendaIntakeSubmitter")
+        .map_err(|_| "Enter the person submitting this agenda item.".to_string())?;
+    let department = payload_string(payload, "agendaIntakeDepartment")
+        .map_err(|_| "Enter the submitting department.".to_string())?;
+    let summary = payload_string(payload, "agendaIntakeSummary")
+        .map_err(|_| "Enter the agenda intake summary.".to_string())?;
+    let source_reference = payload_string(payload, "agendaIntakeSourceReference")
+        .map_err(|_| "Enter a source or citation for this agenda item.".to_string())?;
+    let requested_meeting_date = payload_optional_string(payload, "agendaIntakeMeetingDate");
+    if !requested_meeting_date.is_empty() {
+        parse_iso_date(&requested_meeting_date, "requested meeting date")?;
+    }
+    let id = new_id("agenda-intake", state.agenda_intakes.len());
+    state.agenda_intakes.insert(
+        0,
+        AgendaIntake {
+            id: id.clone(),
+            title: title.clone(),
+            submitter: submitter.clone(),
+            department: department.clone(),
+            summary: summary.clone(),
+            source_reference: source_reference.clone(),
+            requested_meeting_date: requested_meeting_date.clone(),
+            status: "submitted".to_string(),
+            review_note: String::new(),
+            meeting_id: String::new(),
+            agenda_item_id: String::new(),
+            created_at_unix_seconds: now_unix_seconds(),
+            reviewed_at_unix_seconds: None,
+            promoted_at_unix_seconds: None,
+        },
+    );
+    push_audit(
+        state,
+        "civicclerk",
+        "submit-agenda-intake",
+        format!(
+            "Submitted agenda intake {title} from {department}; source {source_reference}; requested meeting date {requested_meeting_date}."
+        ),
+    );
+    Ok(format!("Agenda intake saved for clerk review: {title}."))
+}
+
+fn review_agenda_intake(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let index = selected_agenda_intake_index(state, payload)?;
+    let decision = payload_string(payload, "agendaIntakeDecision")
+        .map_err(|_| "Choose ready for agenda or needs more information.".to_string())?
+        .to_lowercase();
+    let status = match decision.as_str() {
+        "ready for agenda" => "ready for agenda",
+        "needs more information" => "needs more information",
+        _ => return Err("Choose ready for agenda or needs more information.".to_string()),
+    };
+    let review_note = payload_string(payload, "agendaIntakeReviewNote")
+        .map_err(|_| "Enter the clerk review note.".to_string())?;
+    let title = {
+        let intake = &mut state.agenda_intakes[index];
+        if intake.status == "promoted to agenda" {
+            return Err("This agenda intake item has already been promoted.".to_string());
+        }
+        intake.status = status.to_string();
+        intake.review_note = review_note.clone();
+        intake.reviewed_at_unix_seconds = Some(now_unix_seconds());
+        intake.title.clone()
+    };
+    push_audit(
+        state,
+        "civicclerk",
+        "review-agenda-intake",
+        format!("Reviewed agenda intake {title}: {status}; {review_note}"),
+    );
+    Ok(format!("Agenda intake reviewed: {title} is {status}."))
+}
+
+fn promote_agenda_intake(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    if state.meetings.is_empty() {
+        return Err("Create a meeting before promoting an agenda intake item.".to_string());
+    }
+    let intake_index = selected_agenda_intake_index(state, payload)?;
+    if state.agenda_intakes[intake_index].status != "ready for agenda" {
+        return Err(
+            "Review the agenda intake item as ready for agenda before promoting it.".to_string(),
+        );
+    }
+    let meeting_index = selected_meeting_index(state, payload)?;
+    let agenda_count = {
+        let meeting = &state.meetings[meeting_index];
+        ensure_meeting_can_change(meeting)?;
+        meeting.agenda_items.len()
+    };
+    let intake_id = state.agenda_intakes[intake_index].id.clone();
+    let title = state.agenda_intakes[intake_index].title.clone();
+    let source_reference = state.agenda_intakes[intake_index].source_reference.clone();
+    let department = state.agenda_intakes[intake_index].department.clone();
+    let agenda_item_id = new_id("agenda", agenda_count);
+    let meeting_id = {
+        let meeting = &mut state.meetings[meeting_index];
+        meeting.agenda_items.push(AgendaItem {
+            id: agenda_item_id.clone(),
+            title: title.clone(),
+            status: "ready".to_string(),
+            visibility: "public draft".to_string(),
+            source_module: "civicclerk".to_string(),
+            source_record_id: intake_id.clone(),
+            source_reference: source_reference.clone(),
+            department: department.clone(),
+        });
+        meeting.status = "agenda drafting".to_string();
+        meeting.id.clone()
+    };
+    {
+        let intake = &mut state.agenda_intakes[intake_index];
+        intake.status = "promoted to agenda".to_string();
+        intake.meeting_id = meeting_id.clone();
+        intake.agenda_item_id = agenda_item_id.clone();
+        intake.promoted_at_unix_seconds = Some(now_unix_seconds());
+    }
+    push_audit(
+        state,
+        "civicclerk",
+        "promote-agenda-intake",
+        format!(
+            "Promoted agenda intake {title} to meeting {meeting_id}; source {source_reference}; department {department}."
+        ),
+    );
+    Ok(format!(
+        "Agenda intake promoted to the selected meeting agenda: {title}."
+    ))
 }
 
 fn add_meeting_attachment(
@@ -1283,6 +1489,7 @@ fn add_code_handoff_agenda(
     }
     let meeting_index = selected_meeting_index(state, payload)?;
     let handoff_index = selected_pending_code_handoff_index(state, payload)?;
+    let handoff_id = state.code_handoffs[handoff_index].id.clone();
     let handoff_title = state.code_handoffs[handoff_index].title.clone();
     let handoff_summary = state.code_handoffs[handoff_index].summary.clone();
     let agenda_count = state.meetings[meeting_index].agenda_items.len();
@@ -1294,6 +1501,10 @@ fn add_code_handoff_agenda(
         title: agenda_title,
         status: "draft".to_string(),
         visibility: "staff draft".to_string(),
+        source_module: "civiccode".to_string(),
+        source_record_id: handoff_id,
+        source_reference: handoff_title.clone(),
+        department: "CivicCode".to_string(),
     });
     meeting.status = "agenda drafting".to_string();
     state.code_handoffs[handoff_index].status = "sent to clerk agenda".to_string();
@@ -1429,6 +1640,17 @@ fn post_notice(state: &mut CityWorkState, payload: Option<&Value>) -> Result<Str
     Ok("Notice marked ready with posting evidence preserved locally.".to_string())
 }
 
+fn agenda_item_line(item: &AgendaItem) -> String {
+    let mut line = format!("- {} [{} / {}]", item.title, item.status, item.visibility);
+    if !item.department.is_empty() {
+        line.push_str(&format!("; department: {}", item.department));
+    }
+    if !item.source_reference.is_empty() {
+        line.push_str(&format!("; source: {}", item.source_reference));
+    }
+    line
+}
+
 fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let minutes = payload_string(payload, "minutes")?;
     let meeting = selected_meeting_mut(state, payload)?;
@@ -1546,7 +1768,7 @@ fn suggest_minutes_draft(
         meeting
             .agenda_items
             .iter()
-            .map(|item| format!("- {} [{} / {}]", item.title, item.status, item.visibility))
+            .map(agenda_item_line)
             .collect::<Vec<_>>()
             .join("\n")
     };
@@ -2122,7 +2344,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         meeting
             .agenda_items
             .iter()
-            .map(|item| format!("- {} [{} / {}]", item.title, item.status, item.visibility))
+            .map(agenda_item_line)
             .collect::<Vec<_>>()
             .join("\n")
     };
@@ -4061,11 +4283,47 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             });
         }
     }
+    for intake in &state.agenda_intakes {
+        if contains_query(
+            &[
+                &intake.title,
+                &intake.department,
+                &intake.submitter,
+                &intake.summary,
+                &intake.source_reference,
+                &intake.requested_meeting_date,
+                &intake.status,
+                &intake.review_note,
+            ],
+            query,
+        ) {
+            results.push(SearchResult {
+                module_id: "civicclerk".to_string(),
+                record_id: intake.id.clone(),
+                title: format!("Agenda intake: {}", intake.title),
+                snippet: format!(
+                    "{}; {}; {}",
+                    intake.department, intake.status, intake.summary
+                ),
+                citation: intake.source_reference.clone(),
+                status: intake.status.clone(),
+            });
+        }
+    }
     for meeting in &state.meetings {
         let agenda_titles = meeting
             .agenda_items
             .iter()
-            .map(|item| item.title.as_str())
+            .map(|item| {
+                format!(
+                    "{} {} {} {} {}",
+                    item.title,
+                    item.source_reference,
+                    item.department,
+                    item.source_module,
+                    item.status
+                )
+            })
             .collect::<Vec<_>>()
             .join(" ");
         let votes = meeting.votes.join(" ");
@@ -4409,6 +4667,12 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         return None;
     }
     let mut public_meeting = meeting.clone();
+    public_meeting.agenda_items = meeting
+        .agenda_items
+        .iter()
+        .filter(|item| item.visibility != "staff draft")
+        .cloned()
+        .collect();
     public_meeting.public_comments = meeting
         .public_comments
         .iter()
@@ -4549,6 +4813,7 @@ fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
 pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkState {
     CityWorkState {
         meeting_bodies: state.meeting_bodies.clone(),
+        agenda_intakes: Vec::new(),
         meetings: state
             .meetings
             .iter()
@@ -4601,6 +4866,9 @@ pub fn city_work_action(
         "create-meeting-body" => create_meeting_body(&mut state, payload)?,
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
+        "submit-agenda-intake" => submit_agenda_intake(&mut state, payload)?,
+        "review-agenda-intake" => review_agenda_intake(&mut state, payload)?,
+        "promote-agenda-intake" => promote_agenda_intake(&mut state, payload)?,
         "add-meeting-attachment" => add_meeting_attachment(&mut state, payload)?,
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
@@ -5150,6 +5418,160 @@ mod tests {
             assert!(!public_reexport.contains("Closed-session attorney memo"));
             assert!(public_reexport.contains("Packet item 4 fiscal note"));
             assert!(!public_reexport.contains("Executive session memo"));
+        });
+    }
+
+    #[test]
+    fn agenda_intake_requires_review_before_promotion_and_preserves_source() {
+        with_temp_state_dir(|_| {
+            let meeting_body_id = create_city_council_body();
+            let meeting = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
+                "title": "Council Regular Meeting",
+                "meetingDate": "2026-07-01",
+                "summary": "Review infrastructure requests"
+            });
+            city_work_action("create-meeting", Some(&meeting)).expect("meeting created");
+
+            let incomplete_intake = serde_json::json!({
+                "agendaIntakeTitle": "Bridge repair contract",
+                "agendaIntakeSubmitter": "Public Works Director",
+                "agendaIntakeDepartment": "Public Works",
+                "agendaIntakeSummary": "Request council review of the bridge repair contract."
+            });
+            let error = match city_work_action("submit-agenda-intake", Some(&incomplete_intake)) {
+                Ok(_) => panic!("agenda intake cannot save without source evidence"),
+                Err(error) => error,
+            };
+            assert!(error.contains("source or citation"));
+
+            let intake = serde_json::json!({
+                "agendaIntakeTitle": "Bridge repair contract",
+                "agendaIntakeSubmitter": "Public Works Director",
+                "agendaIntakeDepartment": "Public Works",
+                "agendaIntakeSummary": "Request council review of the bridge repair contract.",
+                "agendaIntakeSourceReference": "Public Works memo PW-2026-14",
+                "agendaIntakeMeetingDate": "2026-07-01"
+            });
+            city_work_action("submit-agenda-intake", Some(&intake)).expect("intake submitted");
+
+            let initial_state = city_work_state().expect("state reads after intake");
+            let meeting_id = initial_state
+                .meetings
+                .first()
+                .expect("meeting exists")
+                .id
+                .clone();
+            let intake_id = initial_state
+                .agenda_intakes
+                .first()
+                .expect("agenda intake exists")
+                .id
+                .clone();
+
+            let premature_promotion = serde_json::json!({
+                "meetingId": meeting_id,
+                "agendaIntakeId": intake_id
+            });
+            let error = match city_work_action("promote-agenda-intake", Some(&premature_promotion))
+            {
+                Ok(_) => panic!("agenda intake cannot promote before ready review"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Review the agenda intake item as ready"));
+
+            let missing_note = serde_json::json!({
+                "agendaIntakeId": intake_id,
+                "agendaIntakeDecision": "ready for agenda"
+            });
+            let error = match city_work_action("review-agenda-intake", Some(&missing_note)) {
+                Ok(_) => panic!("agenda intake review requires a note"),
+                Err(error) => error,
+            };
+            assert!(error.contains("review note"));
+
+            let review = serde_json::json!({
+                "agendaIntakeId": intake_id,
+                "agendaIntakeDecision": "ready for agenda",
+                "agendaIntakeReviewNote": "Clerk verified the source memo and meeting fit."
+            });
+            city_work_action("review-agenda-intake", Some(&review)).expect("intake reviewed");
+
+            let state_after_review = city_work_state().expect("state reads after review");
+            let intake_after_review = state_after_review
+                .agenda_intakes
+                .first()
+                .expect("agenda intake exists");
+            assert_eq!(intake_after_review.status, "ready for agenda");
+            assert!(intake_after_review.reviewed_at_unix_seconds.is_some());
+            let meeting_id = state_after_review
+                .meetings
+                .first()
+                .expect("meeting exists")
+                .id
+                .clone();
+            let intake_id = intake_after_review.id.clone();
+
+            city_work_action(
+                "promote-agenda-intake",
+                Some(&serde_json::json!({
+                    "meetingId": meeting_id,
+                    "agendaIntakeId": intake_id
+                })),
+            )
+            .expect("intake promoted");
+
+            let state = city_work_state().expect("state reads after promotion");
+            let intake = state.agenda_intakes.first().expect("agenda intake exists");
+            assert_eq!(intake.status, "promoted to agenda");
+            assert_eq!(intake.department, "Public Works");
+            assert_eq!(intake.source_reference, "Public Works memo PW-2026-14");
+            assert_eq!(intake.requested_meeting_date, "2026-07-01");
+            assert!(intake.promoted_at_unix_seconds.is_some());
+            assert!(!intake.meeting_id.is_empty());
+            assert!(!intake.agenda_item_id.is_empty());
+
+            let meeting = state.meetings.first().expect("meeting exists");
+            assert_eq!(meeting.agenda_items.len(), 1);
+            let agenda_item = meeting.agenda_items.first().expect("agenda item exists");
+            assert_eq!(agenda_item.title, "Bridge repair contract");
+            assert_eq!(agenda_item.status, "ready");
+            assert_eq!(agenda_item.visibility, "public draft");
+            assert_eq!(agenda_item.source_module, "civicclerk");
+            assert_eq!(agenda_item.source_record_id, intake.id);
+            assert_eq!(agenda_item.source_reference, "Public Works memo PW-2026-14");
+            assert_eq!(agenda_item.department, "Public Works");
+
+            let source_results = search_city_work(&state, "PW-2026-14");
+            assert!(source_results
+                .iter()
+                .any(|result| result.title == "Agenda intake: Bridge repair contract"));
+            assert!(source_results
+                .iter()
+                .any(|result| result.title == "Council Regular Meeting"));
+            let department_results = search_city_work(&state, "Public Works");
+            assert!(department_results
+                .iter()
+                .any(|result| result.title == "Agenda intake: Bridge repair contract"));
+            assert!(department_results
+                .iter()
+                .any(|result| result.title == "Council Regular Meeting"));
+
+            let public_state = city_work_public_projection(&state);
+            assert!(public_state.agenda_intakes.is_empty());
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "submit-agenda-intake"));
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "review-agenda-intake"));
+            assert!(state
+                .audit_entries
+                .iter()
+                .any(|entry| entry.action == "promote-agenda-intake"));
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 

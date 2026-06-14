@@ -461,6 +461,7 @@ const fallbackState = {
   ],
   city_work: {
     meeting_bodies: [],
+    agenda_intakes: [],
     meetings: [],
     records_requests: [],
     code_sources: [],
@@ -504,6 +505,7 @@ const state = {
   pendingWorkReviewAction: null,
   workSelection: {
     meetingId: "",
+    agendaIntakeId: "",
     publicCommentId: "",
     recordsRequestId: "",
     codeSourceId: "",
@@ -543,6 +545,14 @@ const state = {
     meetingDate: "",
     meetingSummary: "",
     agendaTitle: "",
+    agendaIntakeTitle: "",
+    agendaIntakeSubmitter: "",
+    agendaIntakeDepartment: "",
+    agendaIntakeSummary: "",
+    agendaIntakeSourceReference: "",
+    agendaIntakeMeetingDate: "",
+    agendaIntakeDecision: "ready for agenda",
+    agendaIntakeReviewNote: "",
     noticeMeetingType: "",
     noticeStatutoryBasis: "",
     noticeDeadline: "",
@@ -1336,6 +1346,8 @@ function workflowEmpty(label) {
 
 const GUIDED_WORK_ACTIONS = new Set([
   "create-meeting-body",
+  "review-agenda-intake",
+  "promote-agenda-intake",
   "add-code-handoff-agenda",
   "add-meeting-attachment",
   "complete-notice-checklist",
@@ -1383,8 +1395,20 @@ function meetingBodies(work = cityWork()) {
   return work.meeting_bodies || [];
 }
 
+function agendaIntakes(work = cityWork()) {
+  return work.agenda_intakes || [];
+}
+
 function currentMeeting(work = cityWork()) {
   return selectedFrom(work.meetings || [], state.workSelection.meetingId);
+}
+
+function currentAgendaIntake(work = cityWork()) {
+  const intakes = agendaIntakes(work);
+  return intakes.find((intake) => intake.id === state.workSelection.agendaIntakeId) ||
+    intakes.find((intake) => intake.status !== "promoted to agenda") ||
+    intakes[0] ||
+    null;
 }
 
 function currentPublicComment(work = cityWork()) {
@@ -1434,11 +1458,13 @@ function guidedReviewForAction(action) {
   const work = cityWork();
   const meeting = currentMeeting(work);
   const publicComment = currentPublicComment(work);
+  const agendaIntake = currentAgendaIntake(work);
   const request = currentRecordsRequest(work);
   const source = currentCodeSource(work);
   const handoff = currentCodeHandoff(work);
   const notification = currentNotification(work);
   const meetingSubject = meeting ? `${meeting.title} (${meeting.meeting_date})` : "Current meeting";
+  const agendaIntakeSubject = agendaIntake ? `${agendaIntake.title} (${agendaIntake.department})` : "Current agenda intake item";
   const publicCommentSubject = publicComment ? `${publicComment.commenter_name}: ${publicComment.topic || "Public comment"}` : "Current public comment";
   const requestSubject = request ? `${request.requester}: ${request.summary}` : "Current records request";
   const sourceSubject = source ? `${source.title} (${source.citation})` : "Current code source";
@@ -1462,6 +1488,39 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for the meeting body setup record.",
       retry: "If the name, statutory basis, notice days, or duplicate check fails, the desktop app leaves local records unchanged."
+    },
+    "review-agenda-intake": {
+      title: "Review Before Updating Agenda Intake",
+      confirmLabel: "Review Agenda Intake",
+      module: "CivicClerk",
+      subject: agendaIntakeSubject,
+      status: agendaIntake ? agendaIntake.status : "No agenda intake item selected yet.",
+      changes: "Records the clerk readiness decision for a submitted agenda item before it can be promoted to a meeting agenda.",
+      visibility: "Staff queue only. Resident/Public meeting materials do not show intake queue records.",
+      sources: [
+        agendaIntake ? detailOrFallback(agendaIntake.summary, "No intake summary is recorded.") : "The desktop app will require an intake item before saving.",
+        agendaIntake ? detailOrFallback(agendaIntake.source_reference, "No source or citation is recorded.") : "The desktop app will require source evidence before saving.",
+        detailOrFallback(state.workDraft.agendaIntakeDecision, "A readiness decision is required."),
+        detailOrFallback(state.workDraft.agendaIntakeReviewNote, "A clerk review note is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the agenda intake readiness decision.",
+      retry: "If no intake item is selected, the decision is invalid, or the review note is missing, the desktop app leaves the queue unchanged."
+    },
+    "promote-agenda-intake": {
+      title: "Review Before Promoting To Agenda",
+      confirmLabel: "Promote To Agenda",
+      module: "CivicClerk",
+      subject: agendaIntakeSubject,
+      status: agendaIntake ? agendaIntake.status : "No agenda intake item selected yet.",
+      changes: "Adds the reviewed-ready intake item to the selected meeting agenda with department and source metadata.",
+      visibility: "Meeting agenda draft. Public visibility follows the agenda item's visibility and public meeting/archive rules.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        agendaIntake ? detailOrFallback(agendaIntake.source_reference, "No source or citation is recorded.") : "The desktop app will require an intake item before saving.",
+        agendaIntake?.status === "ready for agenda" ? "Agenda intake is marked ready." : "Agenda intake must be reviewed as ready before promotion."
+      ],
+      audit: "Creates a CivicClerk audit entry linking the intake item to the selected meeting agenda.",
+      retry: "If the intake item is not ready, no meeting exists, or the meeting is archived, the desktop app leaves both records unchanged."
     },
     "add-code-handoff-agenda": {
       title: "Review Before Adding Code Handoff",
@@ -2097,6 +2156,9 @@ function renderMeetingsWorkflow() {
   const bodies = meetingBodies(work);
   const selectedBodyId = state.workDraft.meetingBodyId || bodies[0]?.id || "";
   const selectedMeeting = currentMeeting(work);
+  const selectedAgendaIntake = currentAgendaIntake(work);
+  const selectedAgendaIntakeCanReview = selectedAgendaIntake && selectedAgendaIntake.status !== "promoted to agenda";
+  const selectedAgendaIntakeCanPromote = selectedAgendaIntake && selectedMeeting && selectedAgendaIntake.status === "ready for agenda";
   const selectedPublicComment = currentPublicComment(work);
   const pendingCodeHandoffs = work.code_handoffs.filter((handoff) => handoff.status !== "sent to clerk agenda");
   return `
@@ -2119,6 +2181,33 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="create-meeting-body">Save Meeting Body</button>
         </div>
         <p class="form-help">${bodies.length === 0 ? "No meeting bodies saved yet." : `Saved bodies: ${bodies.map((body) => escapeHtml(body.name)).join(", ")}`}</p>
+      </div>
+      <div class="workflow-form">
+        <h3>Agenda Intake Queue</h3>
+        <p class="form-help">Capture department requests and source material before the clerk promotes an item to a meeting agenda.</p>
+        <label>Intake title <input type="text" data-work-field="agendaIntakeTitle" value="${state.workDraft.agendaIntakeTitle}" /></label>
+        <label>Submitted by <input type="text" data-work-field="agendaIntakeSubmitter" value="${state.workDraft.agendaIntakeSubmitter}" /></label>
+        <label>Department <input type="text" data-work-field="agendaIntakeDepartment" value="${state.workDraft.agendaIntakeDepartment}" /></label>
+        <label>Requested meeting date <input type="date" data-work-field="agendaIntakeMeetingDate" value="${state.workDraft.agendaIntakeMeetingDate}" /></label>
+        <label>Intake summary <textarea data-work-field="agendaIntakeSummary">${state.workDraft.agendaIntakeSummary}</textarea></label>
+        <label>Source or citation <input type="text" data-work-field="agendaIntakeSourceReference" value="${state.workDraft.agendaIntakeSourceReference}" placeholder="Department memo, staff report, code section, or file reference" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="submit-agenda-intake">Submit Agenda Intake</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Review Agenda Intake</h3>
+        <p class="form-help">${selectedAgendaIntake ? `${selectedAgendaIntake.title} - ${selectedAgendaIntake.status}` : "No agenda intake item is selected for review."}</p>
+        <label>Readiness decision
+          <select data-work-field="agendaIntakeDecision">
+            ${["ready for agenda", "needs more information"].map((decision) => `<option value="${decision}" ${state.workDraft.agendaIntakeDecision === decision ? "selected" : ""}>${decision}</option>`).join("")}
+          </select>
+        </label>
+        <label>Clerk review note <textarea data-work-field="agendaIntakeReviewNote">${state.workDraft.agendaIntakeReviewNote}</textarea></label>
+        <div class="workflow-actions">
+          ${selectedAgendaIntakeCanReview ? `<button type="button" class="secondary-action" data-work-action="review-agenda-intake">Review Agenda Intake</button>` : `<button type="button" class="secondary-action" disabled>Review Agenda Intake</button>`}
+          ${selectedAgendaIntakeCanPromote ? `<button type="button" class="secondary-action" data-work-action="promote-agenda-intake">Promote To Agenda</button>` : `<button type="button" class="secondary-action" disabled>Promote To Agenda</button>`}
+        </div>
       </div>
       <div class="workflow-form">
         <h3>Prepare Meeting</h3>
@@ -2219,6 +2308,7 @@ function renderMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
           <p>${meeting.summary || "No summary yet."}</p>
+          ${(meeting.agenda_items || []).length > 0 ? `<p><strong>Agenda:</strong> ${(meeting.agenda_items || []).map((item) => `${escapeHtml(item.title)}${item.source_reference ? ` (${escapeHtml(item.source_reference)})` : ""}`).join("; ")}</p>` : ""}
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)} (${escapeHtml(citation.access_level)})`).join("; ")}</p>` : ""}
           ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
@@ -2241,6 +2331,21 @@ function renderMeetingsWorkflow() {
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
           <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
+        </article>
+      `).join("")}
+    </section>
+    <section class="workflow-list" aria-label="Agenda intake queue">
+      ${agendaIntakes(work).length === 0 ? workflowEmpty("No agenda intake items are waiting for clerk review.") : agendaIntakes(work).map((intake) => `
+        <article class="workflow-record">
+          <span class="status-warn">${escapeHtml(intake.status)}</span>
+          <h3>${escapeHtml(intake.title)}</h3>
+          <p>${escapeHtml(intake.summary)}</p>
+          <p><strong>Source:</strong> ${escapeHtml(intake.source_reference)}</p>
+          <small>${escapeHtml(intake.department)} - submitted by ${escapeHtml(intake.submitter)}${intake.requested_meeting_date ? ` - requested ${escapeHtml(intake.requested_meeting_date)}` : ""}</small>
+          ${intake.review_note ? `<p><strong>Review note:</strong> ${escapeHtml(intake.review_note)}</p>` : ""}
+          <div class="record-actions">
+            ${selectedAgendaIntake?.id === intake.id ? `<span class="status-ok">Selected for review</span>` : `<button type="button" class="secondary-action" data-select-work-record="agendaIntake" data-record-id="${intake.id}">Review This</button>`}
+          </div>
         </article>
       `).join("")}
     </section>
@@ -2892,7 +2997,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   });
   const meetings = publicOnly ? publicMeetings(work) : work.meetings;
   meetings.forEach((meeting) => {
-    const agendaTitles = (meeting.agenda_items || []).map((item) => item.title).join(" ");
+    const agendaTitles = (meeting.agenda_items || [])
+      .map((item) => [item.title, item.status, item.visibility, item.source_reference, item.source_module, item.department].join(" "))
+      .join(" ");
     const outcomes = (meeting.votes || []).join(" ");
     const actionItems = (meeting.action_items || []).join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
@@ -2954,6 +3061,29 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
   });
+  if (!publicOnly) {
+    agendaIntakes(work).forEach((intake) => {
+      const intakeSearchText = [
+        intake.title,
+        intake.submitter,
+        intake.department,
+        intake.summary,
+        intake.source_reference,
+        intake.requested_meeting_date,
+        intake.status,
+        intake.review_note
+      ];
+      if (intakeSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
+        results.push({
+          module_id: "civicclerk",
+          title: `Agenda intake: ${intake.title}`,
+          snippet: `${intake.department}; ${intake.summary}`,
+          citation: intake.source_reference,
+          status: intake.status
+        });
+      }
+    });
+  }
   const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
   recordsRequests.forEach((request) => {
     const requestMessageSearchText = (request.messages || [])
@@ -4050,6 +4180,7 @@ function workPayloadForAction(action) {
   const draft = state.workDraft;
   const selected = {
     meetingId: currentMeeting()?.id || "",
+    agendaIntakeId: currentAgendaIntake()?.id || "",
     publicCommentId: currentPublicComment()?.id || "",
     recordsRequestId: currentRecordsRequest()?.id || "",
     codeSourceId: currentCodeSource()?.id || "",
@@ -4074,6 +4205,20 @@ function workPayloadForAction(action) {
       agendaTitle: draft.agendaTitle
     },
     "add-agenda-item": { ...selected, agendaTitle: draft.agendaTitle },
+    "submit-agenda-intake": {
+      agendaIntakeTitle: draft.agendaIntakeTitle,
+      agendaIntakeSubmitter: draft.agendaIntakeSubmitter,
+      agendaIntakeDepartment: draft.agendaIntakeDepartment,
+      agendaIntakeSummary: draft.agendaIntakeSummary,
+      agendaIntakeSourceReference: draft.agendaIntakeSourceReference,
+      agendaIntakeMeetingDate: draft.agendaIntakeMeetingDate
+    },
+    "review-agenda-intake": {
+      ...selected,
+      agendaIntakeDecision: draft.agendaIntakeDecision,
+      agendaIntakeReviewNote: draft.agendaIntakeReviewNote
+    },
+    "promote-agenda-intake": selected,
     "add-meeting-attachment": {
       ...selected,
       meetingAttachmentTitle: draft.meetingAttachmentTitle,

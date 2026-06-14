@@ -12,6 +12,19 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Default notice days")).toBeVisible();
   await expect(page.getByLabel("Quorum rule")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Meeting Body" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Agenda Intake Queue" })).toBeVisible();
+  await expect(page.getByLabel("Intake title")).toBeVisible();
+  await expect(page.getByLabel("Submitted by")).toBeVisible();
+  await expect(page.getByLabel("Department")).toBeVisible();
+  await expect(page.getByLabel("Requested meeting date")).toBeVisible();
+  await expect(page.getByLabel("Intake summary")).toBeVisible();
+  await expect(page.getByLabel("Source or citation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit Agenda Intake" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review Agenda Intake" })).toBeVisible();
+  await expect(page.getByLabel("Readiness decision")).toBeVisible();
+  await expect(page.getByLabel("Clerk review note")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Review Agenda Intake" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Promote To Agenda" })).toBeDisabled();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toBeVisible();
   await expect(page.getByLabel("Meeting body", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Meeting" })).toBeVisible();
@@ -53,6 +66,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Mark Reviewed" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Redact Comment" })).toBeDisabled();
   await expect(page.getByText("No local meetings have been created yet.")).toBeVisible();
+  await expect(page.getByText("No agenda intake items are waiting for clerk review.")).toBeVisible();
   await expect(page.getByText("No CivicCode handoffs are waiting for the clerk.")).toBeVisible();
 
   await page.getByRole("button", { name: /Records Requests/ }).click();
@@ -141,6 +155,11 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Submit Public Comment" })).toBeDisabled();
   await expect(page.getByText("No posted public meeting is open for comment")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Agenda Intake Queue" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Review Agenda Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Submit Agenda Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Review Agenda Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Promote To Agenda" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Public Comment Review" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Redact Comment" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Save Meeting Body" })).toHaveCount(0);
