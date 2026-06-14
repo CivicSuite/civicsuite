@@ -562,11 +562,13 @@ const state = {
     publicRecordsSummary: "",
     publicRequestLookup: "",
     publicRequestContact: "",
+    publicRequestMessage: "",
     recordsSummary: "",
     deadline: "",
     recordsDeadlineBasis: "",
     assignedTo: "",
     clarificationNote: "",
+    requestMessageBody: "",
     sourceNote: "",
     exemptionNote: "",
     feeEstimate: "",
@@ -1315,6 +1317,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "fulfill-records-request",
   "close-records-request",
   "mark-notification-sent",
+  "add-records-message",
   "add-records-fee-line",
   "waive-records-fee",
   "approve-code-guidance",
@@ -1556,6 +1559,21 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicRecords AI audit entry for deadline review.",
       retry: "If the deadline date or basis is missing or invalid, the desktop app leaves the request unchanged."
+    },
+    "add-records-message": {
+      title: "Review Before Adding Request Message",
+      confirmLabel: "Add Request Message",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Adds a requester-visible message to the selected request thread and queues a local notification log entry.",
+      visibility: "Visible to staff and to the requester after a matching request-number/contact lookup. It is not exposed in general public search.",
+      sources: [
+        request ? detailOrFallback(request.public_tracking_number, "No public tracking number is recorded.") : "The desktop app will require a request before saving.",
+        detailOrFallback(state.workDraft.requestMessageBody, "Request message is required.")
+      ],
+      audit: "Creates a CivicRecords AI audit entry and timeline entry for the request message.",
+      retry: "If no message or active request exists, the desktop app leaves the request thread unchanged."
     },
     "add-records-fee-line": {
       title: "Review Before Adding Records Fee Line",
@@ -2039,7 +2057,8 @@ function publicRecordsLookupVerifiedFor(request) {
 }
 
 function publicRecordsRequestView(request) {
-  if (!recordsRequestIsReleased(request) && !publicRecordsLookupVerifiedFor(request)) return null;
+  const lookupVerified = publicRecordsLookupVerifiedFor(request);
+  if (!recordsRequestIsReleased(request) && !lookupVerified) return null;
   return {
     ...request,
     requester_contact: "",
@@ -2052,7 +2071,8 @@ function publicRecordsRequestView(request) {
     fee_waiver_reason: "",
     response_draft: "",
     approval_notes: [],
-    timeline: []
+    timeline: [],
+    messages: lookupVerified ? (request.messages || []) : []
   };
 }
 
@@ -2184,7 +2204,9 @@ function renderPublicRecordsWorkflow() {
         <p class="form-help">Use the request number returned after submission and the same email or phone you gave staff.</p>
         <label>Request number <input type="text" data-work-field="publicRequestLookup" value="${state.workDraft.publicRequestLookup}" placeholder="REQ-0001" /></label>
         <label>Submitted contact <input type="text" data-work-field="publicRequestContact" value="${state.workDraft.publicRequestContact}" autocomplete="email" /></label>
+        <label>Message to records staff <textarea data-work-field="publicRequestMessage">${state.workDraft.publicRequestMessage}</textarea></label>
         <button type="button" class="secondary-action" data-work-action="lookup-public-records-request">Check Request Status</button>
+        <button type="button" class="secondary-action" data-work-action="add-public-records-message">Send Request Message</button>
         <small>Released responses appear below after staff approval, export, and fulfillment. Pending public intake appears only after the request number and submitted contact match.</small>
       </div>
     </section>
@@ -2197,6 +2219,7 @@ function renderPublicRecordsWorkflow() {
           <p><strong>Requester:</strong> ${request.requester}</p>
           <p>${request.summary}</p>
           ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
+          ${renderRecordsMessages(request)}
           <small>${request.submitted_via || "Staff intake"} - ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
         </article>
       `).join("")}
@@ -2251,6 +2274,26 @@ function renderRecordsTimeline(request) {
   `;
 }
 
+function renderRecordsMessages(request) {
+  const messages = request.messages || [];
+  if (messages.length === 0) return "";
+  return `
+    <details class="record-details" open>
+      <summary>Request Messages</summary>
+      <ul>
+        ${messages.map((message) => `
+          <li>
+            <strong>${escapeHtml(message.author || message.author_role)}</strong>
+            <span>${escapeHtml(message.author_role)}</span>
+            ${escapeHtml(message.body)}
+            <small>${new Date(message.created_at_unix_seconds * 1000).toLocaleString()}</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
 function renderRecordsWorkflow() {
   if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
@@ -2294,6 +2337,12 @@ function renderRecordsWorkflow() {
         </div>
       </div>
       <div class="workflow-form">
+        <h3>Request Messages</h3>
+        <p class="form-help">Add requester-visible communication to the request thread. Staff-only notes stay in clarification, search, exemption, and approval fields.</p>
+        <label>Message to requester <textarea data-work-field="requestMessageBody">${state.workDraft.requestMessageBody}</textarea></label>
+        <button type="button" class="secondary-action" data-work-action="add-records-message">Add Request Message</button>
+      </div>
+      <div class="workflow-form">
         <h3>Response & Release</h3>
         <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
         <label>Approval note <input type="text" data-work-field="approvalNote" value="${state.workDraft.approvalNote}" /></label>
@@ -2327,6 +2376,7 @@ function renderRecordsWorkflow() {
           ${request.fee_waiver_reason ? `<p><strong>Fee waiver:</strong> ${escapeHtml(request.fee_waiver_reason)}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
+          ${renderRecordsMessages(request)}
           ${renderRecordsTimeline(request)}
           <div class="record-actions">
             ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
@@ -2543,6 +2593,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   });
   const recordsRequests = publicOnly ? publicRecordsRequests(work) : work.records_requests;
   recordsRequests.forEach((request) => {
+    const requestMessageSearchText = (request.messages || [])
+      .map((message) => [message.author, message.author_role, message.body].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
       .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
     const publicRecordFields = [
@@ -2562,6 +2614,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       request.fee_estimate,
       request.fee_waiver_reason,
       ...feeLineSearchText,
+      ...requestMessageSearchText,
       request.response_draft,
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
@@ -3688,12 +3741,18 @@ function workPayloadForAction(action) {
       trackingNumber: draft.publicRequestLookup,
       requesterContact: draft.publicRequestContact
     },
+    "add-public-records-message": {
+      trackingNumber: draft.publicRequestLookup,
+      requesterContact: draft.publicRequestContact,
+      publicRequestMessage: draft.publicRequestMessage
+    },
     "set-records-deadline": {
       ...selected,
       deadline: draft.deadline,
       deadlineBasis: draft.recordsDeadlineBasis
     },
     "request-records-clarification": { ...selected, clarificationNote: draft.clarificationNote },
+    "add-records-message": { ...selected, requestMessageBody: draft.requestMessageBody },
     "assign-records-request": { ...selected, assignedTo: draft.assignedTo },
     "record-records-search": {
       ...selected,
@@ -3815,13 +3874,16 @@ async function handleCityWorkAction(action, { confirmed = false } = {}) {
       }
       state.publicRecordsLookup = { trackingNumber: "", requesterContact: "", found: false };
     }
-    if (action === "lookup-public-records-request") {
+    if (action === "lookup-public-records-request" || action === "add-public-records-message") {
       const trackingNumber = state.workDraft.publicRequestLookup.trim().toLowerCase();
       const requesterContact = state.workDraft.publicRequestContact.trim().toLowerCase();
       const found = Boolean((result.state.records_requests || []).some((request) => (
         String(request.public_tracking_number || "").toLowerCase() === trackingNumber
       )));
       state.publicRecordsLookup = { trackingNumber, requesterContact, found };
+      if (action === "add-public-records-message" && result.accepted) {
+        state.workDraft.publicRequestMessage = "";
+      }
     }
   } catch (error) {
     state.workActionResult = {

@@ -152,8 +152,10 @@ fn city_work_action_module_requirement(
         "create-records-request"
         | "submit-public-records-request"
         | "lookup-public-records-request"
+        | "add-public-records-message"
         | "set-records-deadline"
         | "request-records-clarification"
+        | "add-records-message"
         | "assign-records-request"
         | "record-records-search"
         | "add-records-exemption-review"
@@ -557,7 +559,11 @@ fn city_work_action(
             result.search_results.len()
         );
     }
-    if !admin_signed_in && public_action && action != "lookup-public-records-request" {
+    if !admin_signed_in
+        && public_action
+        && action != "lookup-public-records-request"
+        && action != "add-public-records-message"
+    {
         result.state = workflows::city_work_public_projection(&result.state);
     }
     Ok(result)

@@ -40,6 +40,9 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Fee schedule or policy basis")).toBeVisible();
   await expect(page.getByLabel("Fee line amount")).toBeVisible();
   await expect(page.getByLabel("Fee waiver reason")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Request Messages" })).toBeVisible();
+  await expect(page.getByLabel("Message to requester")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Request Message" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Set Deadline" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
@@ -108,7 +111,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Submit Records Request" })).toBeVisible();
   await expect(page.getByLabel("Request number")).toBeVisible();
   await expect(page.getByLabel("Submitted contact")).toBeVisible();
+  await expect(page.getByLabel("Message to records staff")).toBeVisible();
   await expect(page.getByRole("button", { name: "Check Request Status" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send Request Message" })).toBeVisible();
   await expect(page.getByText("Pending public intake appears only after the request number and submitted contact match.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
@@ -182,6 +187,11 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Set Deadline" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Setting Records Deadline" })).toBeVisible();
   await expect(page.getByText("Deadline basis is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Add Request Message" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Adding Request Message" })).toBeVisible();
+  await expect(page.getByText("Request message is required.")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Add Fee Line" }).click();

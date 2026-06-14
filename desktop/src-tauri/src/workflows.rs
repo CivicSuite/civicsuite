@@ -106,6 +106,16 @@ pub struct RecordsTimelineEntry {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsMessage {
+    pub id: String,
+    pub author: String,
+    pub author_role: String,
+    pub body: String,
+    pub visibility: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsFeeLineItem {
     pub id: String,
     pub description: String,
@@ -154,6 +164,8 @@ pub struct RecordsRequest {
     pub exports: Vec<String>,
     #[serde(default)]
     pub timeline: Vec<RecordsTimelineEntry>,
+    #[serde(default)]
+    pub messages: Vec<RecordsMessage>,
     #[serde(default)]
     pub deadline_reviewed_at_unix_seconds: Option<u64>,
     #[serde(default)]
@@ -765,6 +777,19 @@ fn selected_record_mut<'a>(
 ) -> Result<&'a mut RecordsRequest, String> {
     let index = selected_record_index(state, payload)?;
     Ok(&mut state.records_requests[index])
+}
+
+fn public_records_request_index(
+    state: &CityWorkState,
+    tracking_number: &str,
+    requester_contact: &str,
+) -> Option<usize> {
+    let normalized_tracking = tracking_number.trim().to_ascii_lowercase();
+    let normalized_contact = requester_contact.trim().to_ascii_lowercase();
+    state.records_requests.iter().position(|request| {
+        request.public_tracking_number.to_ascii_lowercase() == normalized_tracking
+            && request.requester_contact.to_ascii_lowercase() == normalized_contact
+    })
 }
 
 fn selected_notification_mut<'a>(
@@ -1409,6 +1434,22 @@ fn records_timeline_or_default(entries: &[RecordsTimelineEntry]) -> String {
         .join("\n")
 }
 
+fn records_messages_or_default(messages: &[RecordsMessage]) -> String {
+    if messages.is_empty() {
+        return "No request messages recorded.".to_string();
+    }
+    messages
+        .iter()
+        .map(|message| {
+            format!(
+                "- {} ({}): {}",
+                message.author, message.author_role, message.body
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn records_fee_total_cents(items: &[RecordsFeeLineItem]) -> i64 {
     items.iter().map(|item| item.amount_cents).sum()
 }
@@ -1680,6 +1721,7 @@ fn create_records_request(
             approval_notes: Vec::new(),
             exports: Vec::new(),
             timeline: Vec::new(),
+            messages: Vec::new(),
             deadline_reviewed_at_unix_seconds: Some(now_unix_seconds()),
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
@@ -1752,6 +1794,7 @@ fn submit_public_records_request(
             approval_notes: Vec::new(),
             exports: Vec::new(),
             timeline: Vec::new(),
+            messages: Vec::new(),
             deadline_reviewed_at_unix_seconds: None,
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
@@ -1879,6 +1922,134 @@ fn request_records_clarification(
         "Saved clarification note for records request.".to_string(),
     );
     Ok("Clarification note saved; no denial or release occurred.".to_string())
+}
+
+fn add_records_message(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let body = payload_string(payload, "requestMessageBody")?;
+    let (request_id, tracking_number) = {
+        let request = selected_record_mut(state, payload)?;
+        ensure_records_request_active(request)?;
+        let message = RecordsMessage {
+            id: format!(
+                "records-message-{}-{}",
+                now_unix_seconds(),
+                request.messages.len() + 1
+            ),
+            author: "Records staff".to_string(),
+            author_role: "staff".to_string(),
+            body: body.clone(),
+            visibility: "requester thread".to_string(),
+            created_at_unix_seconds: now_unix_seconds(),
+        };
+        request.messages.push(message);
+        request.status = "message sent".to_string();
+        push_records_timeline(request, "message sent", "records staff", body.clone());
+        (request.id.clone(), request.public_tracking_number.clone())
+    };
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "requester",
+        format!("Records request {tracking_number} message"),
+        body,
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-records-message",
+        format!("Added requester-visible message for records request {tracking_number}."),
+    );
+    Ok(
+        "Requester-visible records message saved and queued in the local notification log."
+            .to_string(),
+    )
+}
+
+fn add_public_records_message(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<CityWorkActionResult, String> {
+    let tracking_number = payload_string(payload, "trackingNumber")?;
+    let requester_contact = payload_string(payload, "requesterContact")?;
+    let body = payload_string(payload, "publicRequestMessage")?;
+    let Some(index) = public_records_request_index(state, &tracking_number, &requester_contact)
+    else {
+        return Ok(CityWorkActionResult {
+            accepted: false,
+            action: "add-public-records-message".to_string(),
+            status: "No match",
+            message: "No local request matched that request number and submitted contact."
+                .to_string(),
+            next_action:
+                "Check the request number and contact before sending a message to records staff."
+                    .to_string(),
+            state: city_work_public_projection(state),
+            search_results: Vec::new(),
+        });
+    };
+    let (request_id, requester) = {
+        let request = &mut state.records_requests[index];
+        ensure_records_request_active(request)?;
+        let message = RecordsMessage {
+            id: format!(
+                "records-message-{}-{}",
+                now_unix_seconds(),
+                request.messages.len() + 1
+            ),
+            author: request.requester.clone(),
+            author_role: "requester".to_string(),
+            body: body.clone(),
+            visibility: "requester thread".to_string(),
+            created_at_unix_seconds: now_unix_seconds(),
+        };
+        request.messages.push(message);
+        request.status = "requester message received".to_string();
+        push_records_timeline(
+            request,
+            "requester message received",
+            "resident/public",
+            body.clone(),
+        );
+        (request.id.clone(), request.requester.clone())
+    };
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "records staff",
+        format!("Records request {tracking_number} requester message"),
+        format!("{requester} sent a message on request {tracking_number}: {body}"),
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-public-records-message",
+        format!("Received requester message for records request {tracking_number}."),
+    );
+    write_state(state)?;
+    let mut public_state = city_work_public_projection(state);
+    let projected_request =
+        public_records_request_lookup_projection(&state.records_requests[index]);
+    if !public_state
+        .records_requests
+        .iter()
+        .any(|public_request| public_request.id == projected_request.id)
+    {
+        public_state.records_requests.insert(0, projected_request);
+    }
+    Ok(CityWorkActionResult {
+        accepted: true,
+        action: "add-public-records-message".to_string(),
+        status: "Message saved",
+        message: format!("Message added to request {tracking_number} for records staff."),
+        next_action: "Staff can review the message in the local Records workflow.".to_string(),
+        state: public_state,
+        search_results: Vec::new(),
+    })
 }
 
 fn assign_records_request(
@@ -2114,10 +2285,11 @@ fn suggest_records_response(
         );
     }
     let prompt = format!(
-        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nFee estimate: {}\nCitations/source notes: {}\n",
+        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nFee estimate: {}\nCitations/source notes: {}\n",
         request.requester,
         request.deadline,
         request.summary,
+        records_messages_or_default(&request.messages),
         list_or_default(&request.clarification_notes, "No clarification notes recorded."),
         list_or_default(&request.search_notes, "No search notes recorded."),
         list_or_default(&request.exemption_reviews, "No exemption review notes recorded."),
@@ -2212,10 +2384,11 @@ fn export_records_response(
     );
     let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
     let request_timeline = records_timeline_or_default(&request.timeline);
+    let request_messages = records_messages_or_default(&request.messages);
     let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
     let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -2251,6 +2424,7 @@ fn export_records_response(
         },
         request.summary,
         request_timeline,
+        request_messages,
         fee_total,
         if request.fee_waiver_reason.is_empty() {
             "No fee waiver recorded."
@@ -3024,6 +3198,17 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let search_notes = request.search_notes.join(" ");
         let exemption_reviews = request.exemption_reviews.join(" ");
         let approval_notes = request.approval_notes.join(" ");
+        let request_messages = request
+            .messages
+            .iter()
+            .map(|message| {
+                format!(
+                    "{} {} {}",
+                    message.author, message.author_role, message.body
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let fee_lines = request
             .fee_line_items
             .iter()
@@ -3056,6 +3241,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &fee_lines,
                 &request.response_draft,
                 &citations,
+                &request_messages,
                 &clarification_notes,
                 &search_notes,
                 &exemption_reviews,
@@ -3203,6 +3389,18 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.response_draft.clear();
     public_request.approval_notes.clear();
     public_request.timeline.clear();
+    public_request.messages.clear();
+    public_request
+}
+
+fn public_records_request_lookup_projection(request: &RecordsRequest) -> RecordsRequest {
+    let mut public_request = public_records_request_status_projection(request);
+    public_request.messages = request
+        .messages
+        .iter()
+        .filter(|message| message.visibility == "requester thread")
+        .cloned()
+        .collect();
     public_request
 }
 
@@ -3212,15 +3410,11 @@ fn public_records_status_lookup(
 ) -> Result<CityWorkActionResult, String> {
     let tracking_number = payload_string(payload, "trackingNumber")?;
     let requester_contact = payload_string(payload, "requesterContact")?;
-    let normalized_tracking = tracking_number.trim().to_ascii_lowercase();
-    let normalized_contact = requester_contact.trim().to_ascii_lowercase();
     let mut public_state = city_work_public_projection(state);
-    let found_request = state.records_requests.iter().find(|request| {
-        request.public_tracking_number.to_ascii_lowercase() == normalized_tracking
-            && request.requester_contact.to_ascii_lowercase() == normalized_contact
-    });
+    let found_request = public_records_request_index(state, &tracking_number, &requester_contact)
+        .map(|index| &state.records_requests[index]);
     if let Some(request) = found_request {
-        let projected_request = public_records_request_status_projection(request);
+        let projected_request = public_records_request_lookup_projection(request);
         if !public_state
             .records_requests
             .iter()
@@ -3310,6 +3504,7 @@ pub(crate) fn city_work_action_allows_public(action: &str) -> bool {
         "submit-public-comment"
             | "submit-public-records-request"
             | "lookup-public-records-request"
+            | "add-public-records-message"
             | "answer-code-question"
     )
 }
@@ -3340,8 +3535,10 @@ pub fn city_work_action(
         "create-records-request" => create_records_request(&mut state, payload)?,
         "submit-public-records-request" => submit_public_records_request(&mut state, payload)?,
         "lookup-public-records-request" => return public_records_status_lookup(&state, payload),
+        "add-public-records-message" => return add_public_records_message(&mut state, payload),
         "set-records-deadline" => set_records_deadline(&mut state, payload)?,
         "request-records-clarification" => request_records_clarification(&mut state, payload)?,
+        "add-records-message" => add_records_message(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
         "record-records-search" => record_records_search(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
@@ -3805,6 +4002,11 @@ mod tests {
             });
             city_work_action("request-records-clarification", Some(&clarification))
                 .expect("clarification saved");
+            let staff_message = serde_json::json!({
+                "requestMessageBody": "We received the narrowed date range and are searching responsive records."
+            });
+            city_work_action("add-records-message", Some(&staff_message))
+                .expect("request message saved");
             let assignment = serde_json::json!({ "assignedTo": "Records Officer" });
             city_work_action("assign-records-request", Some(&assignment)).expect("assigned");
             let search = serde_json::json!({
@@ -3870,6 +4072,9 @@ mod tests {
             assert_eq!(request.deadline_basis, "Staff-entered deadline at intake.");
             assert_eq!(request.assigned_to, "Records Officer");
             assert_eq!(request.clarification_notes.len(), 1);
+            assert_eq!(request.messages.len(), 1);
+            assert_eq!(request.messages[0].author_role, "staff");
+            assert!(request.messages[0].body.contains("narrowed date range"));
             assert_eq!(request.search_notes.len(), 1);
             assert_eq!(request.exemption_reviews.len(), 1);
             assert_eq!(request.fee_line_items.len(), 1);
@@ -3901,6 +4106,10 @@ mod tests {
             assert!(request
                 .timeline
                 .iter()
+                .any(|entry| entry.action == "message sent"));
+            assert!(request
+                .timeline
+                .iter()
                 .any(|entry| entry.action == "fee line added"));
             assert!(request
                 .timeline
@@ -3923,6 +4132,8 @@ mod tests {
             assert_export_integrity_manifest(&request.exports[0], &exported);
             assert!(exported.contains("Deadline basis: Staff-entered deadline at intake."));
             assert!(exported.contains("## Request Timeline"));
+            assert!(exported.contains("## Request Messages"));
+            assert!(exported.contains("narrowed date range"));
             assert!(exported.contains("clarification requested"));
             assert!(exported.contains("fee line added"));
             assert!(exported.contains("fee waived"));
@@ -3964,6 +4175,13 @@ mod tests {
             assert_eq!(fee_line_results.len(), 1);
             let fee_schedule_results = search_city_work(&state, "Adopted records fee schedule");
             assert_eq!(fee_schedule_results.len(), 1);
+            let message_results = search_city_work(&state, "narrowed date range");
+            assert!(message_results
+                .iter()
+                .any(|result| result.module_id == "civicrecords-ai"));
+            assert!(message_results
+                .iter()
+                .any(|result| result.module_id == "civiccore"));
             let notification_results = search_city_work(&state, "response ready");
             assert_eq!(notification_results.len(), 1);
             assert_eq!(notification_results[0].module_id, "civiccore");
@@ -4106,6 +4324,52 @@ mod tests {
             assert_eq!(public_request.response_draft, "");
             assert!(public_request.approval_notes.is_empty());
             assert!(public_request.timeline.is_empty());
+            assert!(public_request.messages.is_empty());
+
+            let public_message = serde_json::json!({
+                "trackingNumber": "REQ-0001",
+                "requesterContact": "morgan@example.gov",
+                "publicRequestMessage": "I can narrow the request to invoices from May."
+            });
+            let message_result =
+                city_work_action("add-public-records-message", Some(&public_message))
+                    .expect("public message saved");
+            assert!(message_result.accepted);
+            assert_eq!(message_result.status, "Message saved");
+            assert_eq!(message_result.state.records_requests.len(), 1);
+            let public_message_request = &message_result.state.records_requests[0];
+            assert_eq!(public_message_request.requester_contact, "");
+            assert_eq!(public_message_request.messages.len(), 1);
+            assert_eq!(public_message_request.messages[0].author_role, "requester");
+            assert!(public_message_request.messages[0]
+                .body
+                .contains("invoices from May"));
+            let public_state = public_city_work_state().expect("public state stays redacted");
+            assert!(public_state.records_requests.is_empty());
+
+            let state = city_work_state().expect("state reads after public message");
+            let request = state.records_requests.first().expect("request exists");
+            assert_eq!(request.messages.len(), 1);
+            assert_eq!(request.messages[0].author_role, "requester");
+            assert!(state.notification_events.iter().any(|event| {
+                event.audience == "records staff"
+                    && event.subject.contains("requester message")
+                    && event.body.contains("invoices from May")
+            }));
+
+            let staff_reply = serde_json::json!({
+                "requestMessageBody": "Thanks. Staff will search May invoices first."
+            });
+            city_work_action("add-records-message", Some(&staff_reply)).expect("staff reply saved");
+            let lookup_result = city_work_action("lookup-public-records-request", Some(&lookup))
+                .expect("public lookup includes message thread");
+            let public_request = &lookup_result.state.records_requests[0];
+            assert_eq!(public_request.messages.len(), 2);
+            assert!(public_request
+                .messages
+                .iter()
+                .any(|message| message.author_role == "staff"
+                    && message.body.contains("May invoices first")));
 
             let wrong_contact = serde_json::json!({
                 "trackingNumber": "REQ-0001",
