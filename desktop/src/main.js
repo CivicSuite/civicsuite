@@ -676,6 +676,11 @@ const state = {
     responseDraft: "",
     citation: "",
     approvalNote: "",
+    releaseDocumentId: "",
+    releaseCopyPath: "",
+    releaseCopyStatus: "redacted copy",
+    releaseCopyNote: "",
+    releaseCopyAddedBy: "",
     codeTitle: "",
     codeCitation: "",
     codeBody: "",
@@ -1433,6 +1438,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "build-records-release-package",
   "mark-notification-sent",
   "add-records-message",
+  "add-records-release-copy",
   "add-records-exemption-decision",
   "add-records-fee-line",
   "waive-records-fee",
@@ -1489,6 +1495,11 @@ function currentRecordsRequest(work = cityWork()) {
   return selectedFrom(work.records_requests || [], state.workSelection.recordsRequestId);
 }
 
+function currentRecordsDocument(work = cityWork()) {
+  const request = currentRecordsRequest(work);
+  return selectedFrom(request?.documents || [], state.workDraft.releaseDocumentId);
+}
+
 function currentCodeSource(work = cityWork()) {
   return selectedFrom(work.code_sources || [], state.workSelection.codeSourceId);
 }
@@ -1529,6 +1540,7 @@ function guidedReviewForAction(action) {
   const publicComment = currentPublicComment(work);
   const agendaIntake = currentAgendaIntake(work);
   const request = currentRecordsRequest(work);
+  const recordsDocument = currentRecordsDocument(work);
   const source = currentCodeSource(work);
   const handoff = currentCodeHandoff(work);
   const notification = currentNotification(work);
@@ -1990,6 +2002,23 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicRecords AI audit entry and request timeline entry for the decision.",
       retry: "If the source, finding, decision, or basis is missing, the desktop app leaves exemption evidence unchanged."
+    },
+    "add-records-release-copy": {
+      title: "Review Before Attaching Release Copy",
+      confirmLabel: "Attach Release Copy",
+      module: "CivicRecords AI",
+      subject: recordsDocument ? recordsDocument.title : "Current request document",
+      status: recordsDocument ? recordsDocument.status : "No request document selected yet.",
+      changes: "Copies the release-ready or redacted file into the CivicSuite local profile and records filename, size, SHA-256 hash, reviewer, and note.",
+      visibility: "Staff can see local release evidence. Requester/public status never exposes local workstation paths.",
+      sources: [
+        recordsDocument ? `Original document hash: ${recordsDocument.sha256 || "not recorded"}` : "The desktop app will require an attached request document before saving.",
+        detailOrFallback(state.workDraft.releaseCopyPath, "Release copy file path is required."),
+        detailOrFallback(state.workDraft.releaseCopyStatus, "Release copy status is required."),
+        detailOrFallback(state.workDraft.releaseCopyNote, "Release note is optional but recommended.")
+      ],
+      audit: "Creates a CivicRecords AI audit and request timeline entries for the release/redaction artifact.",
+      retry: "If the selected document or release file path is invalid, the desktop app stops before changing the request."
     },
     "record-records-search-session": {
       title: "Review Before Saving Search Session",
@@ -3088,6 +3117,8 @@ function renderRecordsDocuments(request) {
             ${document.citation ? `<span>${escapeHtml(document.citation)}</span>` : ""}
             <span>${escapeHtml(document.status)}</span>
             <small>SHA-256 ${escapeHtml(document.sha256)}</small>
+            ${document.release_sha256 ? `<small>Release artifact: ${escapeHtml(document.release_status || "release copy")} ${escapeHtml(document.release_file_name || "")}; SHA-256 ${escapeHtml(document.release_sha256)}; ${escapeHtml(String(document.release_size_bytes || 0))} bytes</small>` : ""}
+            ${document.release_note ? `<small>Release note: ${escapeHtml(document.release_note)}</small>` : ""}
           </li>
         `).join("")}
       </ul>
@@ -3159,6 +3190,9 @@ function renderRecordsWorkflow() {
   if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
   const selectedRequest = currentRecordsRequest(work);
+  const selectedReleaseDocumentId = selectedRequest?.documents?.some((document) => document.id === state.workDraft.releaseDocumentId)
+    ? state.workDraft.releaseDocumentId
+    : selectedRequest?.documents?.[0]?.id || "";
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
@@ -3231,6 +3265,20 @@ function renderRecordsWorkflow() {
         <label>Source file path <input type="text" data-work-field="documentSourcePath" value="${state.workDraft.documentSourcePath}" placeholder="C:/City/Records/responsive-email.pdf" /></label>
         <label>Document citation <input type="text" data-work-field="documentCitation" value="${state.workDraft.documentCitation}" /></label>
         <button type="button" class="secondary-action" data-work-action="add-records-document">Attach Document</button>
+        <label>Release document
+          ${selectedRequest?.documents?.length ? `<select aria-label="Release document" data-work-field="releaseDocumentId">
+            ${(selectedRequest.documents || []).map((document) => `<option value="${document.id}" ${selectedReleaseDocumentId === document.id ? "selected" : ""}>${escapeHtml(document.title)}</option>`).join("")}
+          </select>` : `<input type="text" aria-label="Release document" value="Attach an original document first" disabled />`}
+        </label>
+        <label>Release copy file path <input type="text" data-work-field="releaseCopyPath" value="${state.workDraft.releaseCopyPath}" placeholder="C:/City/Records/release/redacted-email.pdf" /></label>
+        <label>Release copy status
+          <select aria-label="Release copy status" data-work-field="releaseCopyStatus">
+            ${["redacted copy", "release-ready copy"].map((status) => `<option value="${status}" ${state.workDraft.releaseCopyStatus === status ? "selected" : ""}>${status}</option>`).join("")}
+          </select>
+        </label>
+        <label>Release copy note <textarea data-work-field="releaseCopyNote">${state.workDraft.releaseCopyNote}</textarea></label>
+        <label>Release copy reviewed by <input type="text" data-work-field="releaseCopyAddedBy" value="${state.workDraft.releaseCopyAddedBy}" placeholder="Records Officer" /></label>
+        <button type="button" class="secondary-action" data-work-action="add-records-release-copy">Attach Release Copy</button>
       </div>
       <div class="workflow-form">
         <h3>Response & Release</h3>
@@ -3637,7 +3685,17 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const requestMessageSearchText = (request.messages || [])
       .map((message) => [message.author, message.author_role, message.body].join(" "));
     const requestDocumentSearchText = (request.documents || [])
-      .map((document) => [document.title, document.citation, document.status, document.sha256].join(" "));
+      .map((document) => [
+        document.title,
+        document.citation,
+        document.status,
+        document.sha256,
+        document.release_file_name,
+        document.release_sha256,
+        document.release_status,
+        document.release_note,
+        document.release_added_by
+      ].join(" "));
     const searchSessionSearchText = (request.search_sessions || [])
       .map((session) => [
         session.query,
@@ -3648,7 +3706,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const exemptionDecisionSearchText = (request.exemption_decisions || [])
       .map((decision) => [decision.source, decision.kind, decision.finding, decision.decision, decision.basis, decision.reviewer].join(" "));
     const releasePackageSearchText = (request.release_packages || [])
-      .map((pkg) => [pkg.export_path, pkg.package_hash, pkg.document_count, pkg.search_session_count, pkg.release_count, pkg.redacted_count, pkg.exempt_count].join(" "));
+      .map((pkg) => [pkg.export_path, pkg.package_hash, pkg.document_count, pkg.release_artifact_count, pkg.search_session_count, pkg.release_count, pkg.redacted_count, pkg.exempt_count].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
       .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
     const publicRecordFields = [
@@ -4965,6 +5023,14 @@ function workPayloadForAction(action) {
       documentTitle: draft.documentTitle,
       documentSourcePath: draft.documentSourcePath,
       documentCitation: draft.documentCitation
+    },
+    "add-records-release-copy": {
+      ...selected,
+      releaseDocumentId: draft.releaseDocumentId,
+      releaseCopyPath: draft.releaseCopyPath,
+      releaseCopyStatus: draft.releaseCopyStatus,
+      releaseCopyNote: draft.releaseCopyNote,
+      releaseCopyAddedBy: draft.releaseCopyAddedBy
     },
     "add-records-exemption-review": { ...selected, exemptionNote: draft.exemptionNote },
     "add-records-exemption-decision": {

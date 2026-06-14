@@ -157,6 +157,12 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Source file path")).toBeVisible();
   await expect(page.getByLabel("Document citation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Attach Document" })).toBeVisible();
+  await expect(page.getByLabel("Release document")).toBeVisible();
+  await expect(page.getByLabel("Release copy file path")).toBeVisible();
+  await expect(page.getByLabel("Release copy status")).toBeVisible();
+  await expect(page.getByLabel("Release copy note")).toBeVisible();
+  await expect(page.getByLabel("Release copy reviewed by")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Attach Release Copy" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Set Deadline" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
@@ -252,6 +258,9 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Attach Release Copy" })).toHaveCount(0);
+  await expect(page.getByLabel("Release copy file path")).toHaveCount(0);
+  await expect(page.getByLabel("Release copy status")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Export Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
@@ -363,6 +372,14 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Approve Response" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Approving Records Response" })).toBeVisible();
   await expect(page.getByText("Internal staff status changes to human-approved")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Attach Release Copy" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Attaching Release Copy" })).toBeVisible();
+  await expect(page.getByText("Release copy file path is required.")).toBeVisible();
+  await expect(page.getByText("Release copy status is required.")).toHaveCount(0);
+  await expect(page.getByText("The desktop app will require an attached request document before saving.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await page.getByRole("button", { name: "Import Source" }).click();

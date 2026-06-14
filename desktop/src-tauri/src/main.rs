@@ -176,6 +176,7 @@ fn city_work_action_module_requirement(
         | "record-records-search"
         | "record-records-search-session"
         | "add-records-document"
+        | "add-records-release-copy"
         | "add-records-exemption-review"
         | "add-records-exemption-decision"
         | "estimate-records-fee"

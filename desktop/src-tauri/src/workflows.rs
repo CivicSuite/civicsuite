@@ -411,6 +411,24 @@ pub struct RecordsDocument {
     pub citation: String,
     pub sha256: String,
     pub size_bytes: u64,
+    #[serde(default)]
+    pub release_original_path: String,
+    #[serde(default)]
+    pub release_stored_path: String,
+    #[serde(default)]
+    pub release_file_name: String,
+    #[serde(default)]
+    pub release_sha256: String,
+    #[serde(default)]
+    pub release_size_bytes: u64,
+    #[serde(default)]
+    pub release_status: String,
+    #[serde(default)]
+    pub release_note: String,
+    #[serde(default)]
+    pub release_added_by: String,
+    #[serde(default)]
+    pub release_added_at_unix_seconds: Option<u64>,
     pub status: String,
     pub added_by: String,
     pub created_at_unix_seconds: u64,
@@ -463,6 +481,8 @@ pub struct RecordsReleasePackage {
     pub export_path: String,
     pub package_hash: String,
     pub document_count: usize,
+    #[serde(default)]
+    pub release_artifact_count: usize,
     pub search_session_count: usize,
     pub release_count: usize,
     pub redacted_count: usize,
@@ -3651,8 +3671,32 @@ fn records_documents_or_default(documents: &[RecordsDocument]) -> String {
     documents
         .iter()
         .map(|document| {
+            let release_copy = if document.release_sha256.is_empty() {
+                "No release-ready or redacted copy attached.".to_string()
+            } else {
+                format!(
+                    "{}: {} (sha256 {}, {} bytes, stored in the local release file store; note: {})",
+                    if document.release_status.is_empty() {
+                        "release copy"
+                    } else {
+                        &document.release_status
+                    },
+                    if document.release_file_name.is_empty() {
+                        "records-release-copy"
+                    } else {
+                        &document.release_file_name
+                    },
+                    document.release_sha256,
+                    document.release_size_bytes,
+                    if document.release_note.is_empty() {
+                        "No release note recorded."
+                    } else {
+                        &document.release_note
+                    }
+                )
+            };
             format!(
-                "- {} [{}]: {} (sha256 {}, stored at {})",
+                "- {} [{}]: {} (sha256 {}, stored at {})\n  Release artifact: {}",
                 document.title,
                 document.status,
                 if document.citation.is_empty() {
@@ -3661,7 +3705,8 @@ fn records_documents_or_default(documents: &[RecordsDocument]) -> String {
                     &document.citation
                 },
                 document.sha256,
-                document.stored_path
+                document.stored_path,
+                release_copy
             )
         })
         .collect::<Vec<_>>()
@@ -3728,10 +3773,11 @@ fn records_release_packages_or_default(packages: &[RecordsReleasePackage]) -> St
         .iter()
         .map(|package| {
             format!(
-                "- {} (sha256 {}, documents {}, search sessions {}, release {}, redact {}, exempt {})",
+                "- {} (sha256 {}, documents {}, release artifacts {}, search sessions {}, release {}, redact {}, exempt {})",
                 package.export_path,
                 package.package_hash,
                 package.document_count,
+                package.release_artifact_count,
                 package.search_session_count,
                 package.release_count,
                 package.redacted_count,
@@ -4702,6 +4748,15 @@ fn add_records_document(
             citation: citation.clone(),
             sha256: sha256.clone(),
             size_bytes: metadata.len(),
+            release_original_path: String::new(),
+            release_stored_path: String::new(),
+            release_file_name: String::new(),
+            release_sha256: String::new(),
+            release_size_bytes: 0,
+            release_status: String::new(),
+            release_note: String::new(),
+            release_added_by: String::new(),
+            release_added_at_unix_seconds: None,
             status: "attached for response review".to_string(),
             added_by: "records staff".to_string(),
             created_at_unix_seconds: now_unix_seconds(),
@@ -4731,6 +4786,136 @@ fn add_records_document(
     );
     Ok(format!(
         "Records document copied into local profile: {stored_path}."
+    ))
+}
+
+fn add_records_release_copy(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let release_path = payload_string(payload, "releaseCopyPath")?;
+    let release_status = payload_string(payload, "releaseCopyStatus")?;
+    if release_status != "release-ready copy" && release_status != "redacted copy" {
+        return Err("Release copy status must be release-ready copy or redacted copy.".to_string());
+    }
+    let release_note = payload_optional_string(payload, "releaseCopyNote");
+    let release_added_by = payload_optional_string(payload, "releaseCopyAddedBy");
+    let document_id = payload_optional_string(payload, "releaseDocumentId");
+    let release_path = PathBuf::from(release_path);
+    if !release_path.is_file() {
+        return Err(
+            "Choose an existing local release-ready or redacted file to attach.".to_string(),
+        );
+    }
+    let original_path = release_path.to_string_lossy().to_string();
+    let release_file_name = release_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "records-release-copy".to_string());
+    let extension = release_path
+        .extension()
+        .map(|value| format!(".{}", value.to_string_lossy()))
+        .unwrap_or_default();
+    let (document_title, stored_path, sha256, size_bytes, added_by, release_note_for_audit) = {
+        let request = selected_record_mut(state, payload)?;
+        ensure_records_request_active(request)?;
+        if request.documents.is_empty() {
+            return Err(
+                "Attach an original request document before adding a release copy.".to_string(),
+            );
+        }
+        let document_index = if document_id.is_empty() {
+            0
+        } else {
+            request
+                .documents
+                .iter()
+                .position(|document| document.id == document_id)
+                .ok_or_else(|| {
+                    "The selected records document was not found in the local request.".to_string()
+                })?
+        };
+        let tracking_or_id = if request.public_tracking_number.is_empty() {
+            request.id.clone()
+        } else {
+            request.public_tracking_number.clone()
+        };
+        let document_title = request.documents[document_index].title.clone();
+        let release_dir = local_paths::data_root()
+            .join("files")
+            .join("records")
+            .join(safe_file_stem(&tracking_or_id))
+            .join("release");
+        fs::create_dir_all(&release_dir)
+            .map_err(|error| format!("Could not create {}: {error}", release_dir.display()))?;
+        let stored_file_name = format!(
+            "{}-{}{}",
+            safe_file_stem(&document_title),
+            now_unix_seconds(),
+            extension
+        );
+        let stored_path = release_dir.join(stored_file_name);
+        fs::copy(&release_path, &stored_path).map_err(|error| {
+            format!(
+                "Could not copy {} into the local records release file store: {error}",
+                release_path.display()
+            )
+        })?;
+        let metadata = fs::metadata(&stored_path)
+            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
+        let sha256 = hash_file(&stored_path)?;
+        let added_by = if release_added_by.is_empty() {
+            "records staff".to_string()
+        } else {
+            release_added_by.clone()
+        };
+        let document = &mut request.documents[document_index];
+        document.release_original_path = original_path.clone();
+        document.release_stored_path = stored_path.to_string_lossy().to_string();
+        document.release_file_name = release_file_name.clone();
+        document.release_sha256 = sha256.clone();
+        document.release_size_bytes = metadata.len();
+        document.release_status = release_status.clone();
+        document.release_note = release_note.clone();
+        document.release_added_by = added_by.clone();
+        document.release_added_at_unix_seconds = Some(now_unix_seconds());
+        document.status = format!("{release_status} attached");
+        request.status = "release copy attached".to_string();
+        push_records_timeline(
+            request,
+            "release copy attached",
+            "records staff",
+            format!(
+                "{} attached for {}; sha256 {}. {}",
+                release_status,
+                document_title,
+                sha256,
+                if release_note.is_empty() {
+                    "No release note recorded.".to_string()
+                } else {
+                    release_note.clone()
+                }
+            ),
+        );
+        (
+            document_title,
+            stored_path.to_string_lossy().to_string(),
+            sha256,
+            metadata.len(),
+            added_by,
+            release_note,
+        )
+    };
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-records-release-copy",
+        format!(
+            "Attached {release_status} for {document_title}; sha256 {sha256}; {size_bytes} bytes; by {added_by}. {release_note_for_audit}"
+        ),
+    );
+    Ok(format!(
+        "Records {release_status} copied into local profile: {stored_path}."
     ))
 }
 
@@ -5077,8 +5262,39 @@ fn build_records_release_package(
         .iter()
         .filter(|decision| decision.decision == "exempt")
         .count();
+    let release_artifact_count = request
+        .documents
+        .iter()
+        .filter(|document| !document.release_sha256.is_empty())
+        .count();
+    if !request.documents.is_empty() && (release_count > 0 || redacted_count > 0) {
+        if release_artifact_count == 0 {
+            return Err(
+                "Attach at least one release-ready or redacted copy before building this release package."
+                    .to_string(),
+            );
+        }
+        if redacted_count > 0
+            && !request
+                .documents
+                .iter()
+                .any(|document| document.release_status == "redacted copy")
+        {
+            return Err("Attach a redacted copy before packaging redaction decisions.".to_string());
+        }
+        if release_count > 0
+            && !request
+                .documents
+                .iter()
+                .any(|document| document.release_status == "release-ready copy")
+        {
+            return Err(
+                "Attach a release-ready copy before packaging release decisions.".to_string(),
+            );
+        }
+    }
     let contents = format!(
-        "# Records Release Package Manifest\n\nTracking number: {}\nRequester: {}\nRequest: {}\nStatus before package: {}\n\n## Package Counts\nDocuments: {}\nSearch sessions: {}\nRelease decisions: {}\nRedact decisions: {}\nExempt decisions: {}\n\n## Search Sessions\n{}\n\n## Request Documents\n{}\n\n## Exemption Decisions\n{}\n\n## Response Draft Snapshot\n{}\n",
+        "# Records Release Package Manifest\n\nTracking number: {}\nRequester: {}\nRequest: {}\nStatus before package: {}\n\n## Package Counts\nDocuments: {}\nRelease artifacts: {}\nSearch sessions: {}\nRelease decisions: {}\nRedact decisions: {}\nExempt decisions: {}\n\n## Search Sessions\n{}\n\n## Request Documents\n{}\n\n## Exemption Decisions\n{}\n\n## Response Draft Snapshot\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -5088,6 +5304,7 @@ fn build_records_release_package(
         request.summary,
         request.status,
         request.documents.len(),
+        release_artifact_count,
         request.search_sessions.len(),
         release_count,
         redacted_count,
@@ -5116,6 +5333,7 @@ fn build_records_release_package(
         export_path: export_path.clone(),
         package_hash: package_hash.clone(),
         document_count: request.documents.len(),
+        release_artifact_count,
         search_session_count: request.search_sessions.len(),
         release_count,
         redacted_count,
@@ -6456,12 +6674,21 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             .iter()
             .map(|document| {
                 format!(
-                    "{} {} {} {} {}",
+                    "{} {} {} {} {} {} {} {} {} {} {} {} {} {}",
                     document.title,
                     document.citation,
                     document.status,
                     document.sha256,
-                    document.stored_path
+                    document.stored_path,
+                    document.release_original_path,
+                    document.release_stored_path,
+                    document.release_file_name,
+                    document.release_sha256,
+                    document.release_size_bytes,
+                    document.release_status,
+                    document.release_note,
+                    document.release_added_by,
+                    document.release_added_at_unix_seconds.unwrap_or_default()
                 )
             })
             .collect::<Vec<_>>()
@@ -6471,10 +6698,11 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             .iter()
             .map(|package| {
                 format!(
-                    "{} {} {} {} {} {} {}",
+                    "{} {} {} {} {} {} {} {}",
                     package.export_path,
                     package.package_hash,
                     package.document_count,
+                    package.release_artifact_count,
                     package.search_session_count,
                     package.release_count,
                     package.redacted_count,
@@ -6920,6 +7148,7 @@ pub fn city_work_action(
         "record-records-search" => record_records_search(&mut state, payload)?,
         "record-records-search-session" => record_records_search_session(&mut state, payload)?,
         "add-records-document" => add_records_document(&mut state, payload)?,
+        "add-records-release-copy" => add_records_release_copy(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
         "add-records-exemption-decision" => add_records_exemption_decision(&mut state, payload)?,
         "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
@@ -8631,6 +8860,26 @@ mod tests {
             assert!(error.contains("Approve the records response"));
             let approval = serde_json::json!({ "approvalNote": "Reviewed and approved by clerk." });
             city_work_action("approve-records-response", Some(&approval)).expect("approved");
+            let package_without_release_copy =
+                match city_work_action("build-records-release-package", None) {
+                    Ok(_) => panic!("release package cannot build without redacted release copy"),
+                    Err(error) => error,
+                };
+            assert!(package_without_release_copy.contains("Attach at least one release-ready"));
+            let redacted_document = root.join("redacted-park-contract-email.txt");
+            fs::write(
+                &redacted_document,
+                "Responsive park contract email attachment with privileged paragraph redacted.",
+            )
+            .expect("redacted release copy writes");
+            let release_copy = serde_json::json!({
+                "releaseCopyPath": redacted_document.to_string_lossy(),
+                "releaseCopyStatus": "redacted copy",
+                "releaseCopyNote": "Privileged paragraph removed under CORA attorney-client privilege.",
+                "releaseCopyAddedBy": "Records Officer"
+            });
+            city_work_action("add-records-release-copy", Some(&release_copy))
+                .expect("redacted copy attached");
             city_work_action("build-records-release-package", None).expect("release package built");
             city_work_action("export-records-response", None).expect("export saved");
             city_work_action("fulfill-records-request", None).expect("fulfilled");
@@ -8649,6 +8898,20 @@ mod tests {
             assert_eq!(request.documents[0].citation, "PRA-2026-003");
             assert_eq!(request.documents[0].sha256.len(), 64);
             assert!(PathBuf::from(&request.documents[0].stored_path).is_file());
+            assert_eq!(request.documents[0].release_status, "redacted copy");
+            assert_eq!(
+                request.documents[0].release_file_name,
+                "redacted-park-contract-email.txt"
+            );
+            assert_eq!(request.documents[0].release_sha256.len(), 64);
+            assert!(request.documents[0].release_size_bytes > 0);
+            assert_eq!(
+                request.documents[0].release_note,
+                "Privileged paragraph removed under CORA attorney-client privilege."
+            );
+            assert_eq!(request.documents[0].release_added_by, "Records Officer");
+            assert!(request.documents[0].release_added_at_unix_seconds.is_some());
+            assert!(PathBuf::from(&request.documents[0].release_stored_path).is_file());
             assert_eq!(request.search_notes.len(), 1);
             assert_eq!(request.search_sessions.len(), 1);
             assert_eq!(
@@ -8694,6 +8957,7 @@ mod tests {
             assert!(request.closed_at_unix_seconds.is_some());
             assert_eq!(request.release_packages.len(), 1);
             assert_eq!(request.release_packages[0].document_count, 1);
+            assert_eq!(request.release_packages[0].release_artifact_count, 1);
             assert_eq!(request.release_packages[0].search_session_count, 1);
             assert_eq!(request.release_packages[0].redacted_count, 1);
             assert_eq!(request.release_packages[0].package_hash.len(), 64);
@@ -8715,6 +8979,10 @@ mod tests {
                 .timeline
                 .iter()
                 .any(|entry| entry.action == "document attached"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "release copy attached"));
             assert!(request
                 .timeline
                 .iter()
@@ -8753,6 +9021,11 @@ mod tests {
             assert!(exported.contains("## Request Documents"));
             assert!(exported.contains("Park contract email attachment"));
             assert!(exported.contains("PRA-2026-003"));
+            assert!(exported.contains("redacted-park-contract-email.txt"));
+            assert!(exported.contains(&request.documents[0].release_sha256));
+            assert!(!exported.contains(&request.documents[0].release_stored_path));
+            assert!(exported.contains("Privileged paragraph removed"));
+            assert!(exported.contains("release copy attached"));
             assert!(exported.contains("## Release Packages"));
             assert!(exported.contains(&request.release_packages[0].package_hash));
             assert!(exported.contains("clarification requested"));
