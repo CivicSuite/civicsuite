@@ -180,6 +180,11 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
+  await expect(page.getByLabel("Source title")).toBeVisible();
+  await expect(page.getByLabel("Citation")).toBeVisible();
+  await expect(page.getByLabel("Source file path")).toBeVisible();
+  await expect(page.getByLabel("Imported by")).toBeVisible();
+  await expect(page.getByLabel("Source text")).toBeVisible();
   await expect(page.getByRole("button", { name: "Import Source" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toBeVisible();
@@ -262,6 +267,8 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Ask the Code" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Answer Code Question" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toHaveCount(0);
+  await expect(page.getByLabel("Source file path")).toHaveCount(0);
+  await expect(page.getByLabel("Imported by")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Import Source" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toHaveCount(0);
@@ -358,6 +365,12 @@ test("risky city workflow actions require guided review before mutation", async 
   await expect(page.getByText("Internal staff status changes to human-approved")).toBeVisible();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await page.getByRole("button", { name: "Import Source" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Importing Code Source" })).toBeVisible();
+  await expect(page.getByText("Citation is required.")).toBeVisible();
+  await expect(page.getByText("Source text is required for search, questions, and publication.")).toBeVisible();
+  await expect(page.getByText("Optional source file path has not been entered.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Publish Source", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Review Before Publishing Code Source" })).toBeVisible();
   await expect(page.getByText("Creates CivicCode audit and CivicCore publication-gate entries.")).toBeVisible();

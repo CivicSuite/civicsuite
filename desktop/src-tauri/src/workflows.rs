@@ -549,6 +549,18 @@ pub struct CodeSource {
     pub body: String,
     pub status: String,
     #[serde(default)]
+    pub source_original_path: String,
+    #[serde(default)]
+    pub source_stored_path: String,
+    #[serde(default)]
+    pub source_file_name: String,
+    #[serde(default)]
+    pub source_sha256: String,
+    #[serde(default)]
+    pub source_size_bytes: u64,
+    #[serde(default)]
+    pub imported_by: String,
+    #[serde(default)]
     pub codifier_name: String,
     #[serde(default)]
     pub authoritative_url: String,
@@ -3267,6 +3279,12 @@ fn record_adopted_legislation(
             citation: citation.clone(),
             body: text,
             status: "adopted pending codifier sync".to_string(),
+            source_original_path: String::new(),
+            source_stored_path: String::new(),
+            source_file_name: "CivicClerk adoption event".to_string(),
+            source_sha256: String::new(),
+            source_size_bytes: 0,
+            imported_by: "CivicClerk".to_string(),
             codifier_name: String::new(),
             authoritative_url: String::new(),
             version_label: effective_date.clone(),
@@ -5410,13 +5428,81 @@ fn import_code_source(
     let title = payload_string(payload, "title")?;
     let citation = payload_string(payload, "citation")?;
     let body = payload_string(payload, "body")?;
+    let source_path = payload_optional_string(payload, "codeSourcePath");
+    let imported_by = payload_optional_string(payload, "importedBy");
     let id = new_id("code", state.code_sources.len());
+    let (
+        source_original_path,
+        source_stored_path,
+        source_file_name,
+        source_sha256,
+        source_size_bytes,
+    ) = if source_path.is_empty() {
+        (
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            0,
+        )
+    } else {
+        let source_path = PathBuf::from(source_path);
+        if !source_path.is_file() {
+            return Err(
+                "Choose an existing local file to preserve as code source evidence.".to_string(),
+            );
+        }
+        let original_path = source_path.to_string_lossy().to_string();
+        let source_file_name = source_path
+            .file_name()
+            .map(|value| value.to_string_lossy().to_string())
+            .unwrap_or_else(|| "code-source".to_string());
+        let extension = source_path
+            .extension()
+            .map(|value| format!(".{}", value.to_string_lossy()))
+            .unwrap_or_default();
+        let code_dir = local_paths::data_root()
+            .join("files")
+            .join("code")
+            .join(safe_file_stem(&citation));
+        fs::create_dir_all(&code_dir)
+            .map_err(|error| format!("Could not create {}: {error}", code_dir.display()))?;
+        let stored_file_name = format!(
+            "{}-{}{}",
+            safe_file_stem(&title),
+            now_unix_seconds(),
+            extension
+        );
+        let stored_path = code_dir.join(stored_file_name);
+        fs::copy(&source_path, &stored_path).map_err(|error| {
+            format!(
+                "Could not copy {} into the local code source evidence store: {error}",
+                source_path.display()
+            )
+        })?;
+        let metadata = fs::metadata(&stored_path)
+            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
+        let sha256 = hash_file(&stored_path)?;
+        (
+            original_path,
+            stored_path.to_string_lossy().to_string(),
+            source_file_name,
+            sha256,
+            metadata.len(),
+        )
+    };
     let mut source = CodeSource {
         id,
         title: title.clone(),
         citation: citation.clone(),
         body,
         status: "imported".to_string(),
+        source_original_path: source_original_path.clone(),
+        source_stored_path: source_stored_path.clone(),
+        source_file_name: source_file_name.clone(),
+        source_sha256: source_sha256.clone(),
+        source_size_bytes,
+        imported_by: imported_by.clone(),
         codifier_name: String::new(),
         authoritative_url: String::new(),
         version_label: String::new(),
@@ -5440,16 +5526,34 @@ fn import_code_source(
         "Local import".to_string(),
         "CivicSuite local source".to_string(),
         String::new(),
-        format!("Imported with citation {citation}."),
+        if source_sha256.is_empty() {
+            format!("Imported with citation {citation}.")
+        } else {
+            format!(
+                "Imported with citation {citation}; source file {source_file_name}; sha256 {source_sha256}."
+            )
+        },
     );
     state.code_sources.insert(0, source);
     push_audit(
         state,
         "civiccode",
         "import-code-source",
-        format!("Imported code source: {title}"),
+        if source_sha256.is_empty() {
+            format!("Imported code source: {title}")
+        } else {
+            format!(
+                "Imported code source {title}; source evidence copied to {source_stored_path}; sha256 {source_sha256}; {source_size_bytes} bytes."
+            )
+        },
     );
-    Ok("Municipal code source imported locally with citation.".to_string())
+    if source_sha256.is_empty() {
+        Ok("Municipal code source imported locally with citation.".to_string())
+    } else {
+        Ok(format!(
+            "Municipal code source imported with local source evidence: {source_stored_path}."
+        ))
+    }
 }
 
 fn selected_code_source_index(
@@ -5697,8 +5801,22 @@ fn publish_code_source(
             "No public stale-code warning recorded."
         };
         let version_history = code_version_history_or_default(&source.version_history);
+        let source_evidence = if source.source_sha256.is_empty() {
+            "No preserved source file evidence recorded.".to_string()
+        } else {
+            format!(
+                "Source file: {}\nSHA-256: {}\nSize: {} bytes",
+                if source.source_file_name.is_empty() {
+                    "Recorded source file"
+                } else {
+                    &source.source_file_name
+                },
+                source.source_sha256,
+                source.source_size_bytes
+            )
+        };
         let contents = format!(
-            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\nCodifier sync: {}\nAuthoritative URL: {}\n\n## Authoritative Text\n{}\n\n## Non-Authoritative Plain-English Summary\n{}\n\n## Public Update Status\n{}\n\n## Version / Codifier History\n{}\n\n## Staff Boundary\nInternal staff guidance, operational sync errors, and staff amendment notes stay in the Staff surface and are not included in this public export.\n\nFor legal interpretation, contact city staff and rely on the authoritative codified ordinance text.\n",
+            "# Municipal Code Source\n\nTitle: {}\nCitation: {}\nStatus: {}\nPublic status: published\nCodifier sync: {}\nAuthoritative URL: {}\n\n## Source Evidence\n{}\n\n## Authoritative Text\n{}\n\n## Non-Authoritative Plain-English Summary\n{}\n\n## Public Update Status\n{}\n\n## Version / Codifier History\n{}\n\n## Staff Boundary\nInternal staff guidance, operational sync errors, staff amendment notes, and clerk workstation file paths stay in the Staff surface and are not included in this public export.\n\nFor legal interpretation, contact city staff and rely on the authoritative codified ordinance text.\n",
             source.title,
             source.citation,
             source.status,
@@ -5708,6 +5826,7 @@ fn publish_code_source(
             } else {
                 &source.authoritative_url
             },
+            source_evidence,
             source.body,
             summary,
             public_update_status,
@@ -6427,12 +6546,23 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let amendment_notes = source.amendment_notes.join(" ");
         let sync_errors = source.codifier_sync_errors.join(" ");
         let version_history = code_version_history_search_text(&source.version_history);
+        let source_size = if source.source_size_bytes == 0 {
+            String::new()
+        } else {
+            source.source_size_bytes.to_string()
+        };
         if contains_query(
             &[
                 &source.title,
                 &source.citation,
                 &source.body,
                 &source.status,
+                &source.source_original_path,
+                &source.source_stored_path,
+                &source.source_file_name,
+                &source.source_sha256,
+                &source_size,
+                &source.imported_by,
                 &source.public_status,
                 &source.codifier_name,
                 &source.authoritative_url,
@@ -6680,6 +6810,9 @@ fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
     public_source.staff_guidance.clear();
     public_source.codifier_sync_errors.clear();
     public_source.amendment_notes.clear();
+    public_source.source_original_path.clear();
+    public_source.source_stored_path.clear();
+    public_source.imported_by.clear();
     for entry in &mut public_source.version_history {
         entry.note.clear();
     }
@@ -8913,11 +9046,21 @@ mod tests {
 
     #[test]
     fn code_workflow_persists_source_handoff_and_search() {
-        with_temp_state_dir(|_| {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(&root).expect("temp workflow root exists");
+            let source_path = root.join("noise-ordinance-source.txt");
+            fs::write(
+                &source_path,
+                "Official source file for the adopted quiet-hours ordinance.",
+            )
+            .expect("source file writes");
+            let source_path_text = source_path.to_string_lossy().to_string();
             let payload = serde_json::json!({
                 "title": "Noise Ordinance",
                 "citation": "CMC 8.12",
-                "body": "Quiet hours begin at 10 PM."
+                "body": "Quiet hours begin at 10 PM.",
+                "codeSourcePath": source_path_text,
+                "importedBy": "Deputy Clerk"
             });
             city_work_action("import-code-source", Some(&payload)).expect("source imported");
             let failure = serde_json::json!({ "syncError": "Codifier export unavailable." });
@@ -8957,6 +9100,17 @@ mod tests {
             let state = city_work_state().expect("state reads");
             let source = state.code_sources.first().expect("source exists");
             assert_eq!(source.public_status, "published");
+            assert_eq!(source.source_original_path, source_path_text);
+            assert_eq!(source.source_file_name, "noise-ordinance-source.txt");
+            assert_eq!(source.imported_by, "Deputy Clerk");
+            assert_eq!(source.source_sha256.len(), 64);
+            assert!(source.source_size_bytes > 0);
+            assert!(PathBuf::from(&source.source_stored_path).is_file());
+            assert_eq!(
+                source.source_sha256,
+                hash_file(&PathBuf::from(&source.source_stored_path))
+                    .expect("stored source hashes")
+            );
             assert_eq!(source.codifier_name, "Municode");
             assert_eq!(
                 source.codifier_sync_status,
@@ -8977,6 +9131,12 @@ mod tests {
             let public_export =
                 fs::read_to_string(&source.public_exports[0]).expect("public code export reads");
             assert_export_integrity_manifest(&source.public_exports[0], &public_export);
+            assert!(public_export.contains("Source Evidence"));
+            assert!(public_export.contains("noise-ordinance-source.txt"));
+            assert!(public_export.contains(&source.source_sha256));
+            assert!(!public_export.contains(&source.source_original_path));
+            assert!(!public_export.contains(&source.source_stored_path));
+            assert!(!public_export.contains("Deputy Clerk"));
             assert!(public_export.contains("Non-Authoritative Plain-English Summary"));
             assert!(public_export.contains("Version / Codifier History"));
             assert!(public_export.contains("2026-07 codifier export"));
@@ -9000,6 +9160,24 @@ mod tests {
             let version_results = search_city_work(&state, "2026-07 codifier export");
             assert_eq!(version_results.len(), 1);
             assert_eq!(version_results[0].citation, "CMC 8.12");
+            let evidence_results = search_city_work(&state, "Deputy Clerk");
+            assert_eq!(evidence_results.len(), 1);
+            assert_eq!(evidence_results[0].citation, "CMC 8.12");
+            let public_state = city_work_public_projection(&state);
+            let public_source = public_state
+                .code_sources
+                .first()
+                .expect("public source exists");
+            assert!(public_source.source_original_path.is_empty());
+            assert!(public_source.source_stored_path.is_empty());
+            assert!(public_source.imported_by.is_empty());
+            assert_eq!(public_source.source_file_name, "noise-ordinance-source.txt");
+            assert_eq!(public_source.source_sha256, source.source_sha256);
+            assert_eq!(search_city_work(&public_state, "Deputy Clerk").len(), 0);
+            assert_eq!(
+                search_city_work(&public_state, &source.source_sha256).len(),
+                1
+            );
         });
     }
 

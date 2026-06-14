@@ -679,6 +679,8 @@ const state = {
     codeTitle: "",
     codeCitation: "",
     codeBody: "",
+    codeSourcePath: "",
+    codeImportedBy: "",
     codifierName: "",
     authoritativeUrl: "",
     versionLabel: "",
@@ -1436,6 +1438,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "waive-records-fee",
   "approve-code-guidance",
   "suggest-code-guidance",
+  "import-code-source",
   "publish-code-source",
   "unpublish-code-source",
   "create-code-handoff"
@@ -2140,6 +2143,22 @@ function guidedReviewForAction(action) {
       audit: "Creates an audit entry for the module that produced the notification.",
       retry: "If the notification is already logged as sent or no ready notification exists, the desktop app leaves the outbox unchanged."
     },
+    "import-code-source": {
+      title: "Review Before Importing Code Source",
+      confirmLabel: "Import Source",
+      module: "CivicCode",
+      subject: detailOrFallback(state.workDraft.codeTitle, "New municipal code source"),
+      status: "Not saved yet.",
+      changes: "Creates a durable local code source with citation text and, if provided, copies the source file into the CivicSuite local profile with a SHA-256 hash.",
+      visibility: "Staff can see local source evidence. Resident/Public views only see published code sources and never see clerk workstation paths.",
+      sources: [
+        detailOrFallback(state.workDraft.codeCitation, "Citation is required."),
+        detailOrFallback(state.workDraft.codeBody, "Source text is required for search, questions, and publication."),
+        detailOrFallback(state.workDraft.codeSourcePath, "Optional source file path has not been entered.")
+      ],
+      audit: "Creates a CivicCode audit entry recording the local import and any preserved source-file evidence.",
+      retry: "If title, citation, source text, or the optional file path is invalid, the desktop app stops before saving."
+    },
     "approve-code-guidance": {
       title: "Review Before Approving Code Guidance",
       confirmLabel: "Approve Guidance",
@@ -2829,6 +2848,9 @@ function publicCodeSourceView(source) {
     staff_guidance: "",
     codifier_sync_errors: [],
     amendment_notes: [],
+    source_original_path: "",
+    source_stored_path: "",
+    imported_by: "",
     version_history: (source.version_history || []).map((entry) => ({ ...entry, note: "" }))
   };
   if (!publicSource.guidance_approved_at_unix_seconds) publicSource.plain_language_summary = "";
@@ -2846,6 +2868,17 @@ function codeVersionHistorySummary(source) {
     .slice(0, 3)
     .map((entry) => [entry.label, entry.source, entry.status].filter(Boolean).join(" / "))
     .join("; ");
+}
+
+function codeSourceEvidenceSummary(source, { staff = true } = {}) {
+  if (!source) return "";
+  const parts = [];
+  if (source.source_file_name) parts.push(`file ${source.source_file_name}`);
+  if (source.source_sha256) parts.push(`sha256 ${String(source.source_sha256).slice(0, 12)}`);
+  if (source.source_size_bytes) parts.push(`${source.source_size_bytes} bytes`);
+  if (staff && source.source_stored_path) parts.push("stored in local profile");
+  if (staff && source.imported_by) parts.push(`imported by ${source.imported_by}`);
+  return parts.join("; ");
 }
 
 function codeVersionHistorySearchText(source, { publicOnly = false } = {}) {
@@ -2876,6 +2909,9 @@ function codeSourceSearchFields(source, { publicOnly = false } = {}) {
     source.citation,
     source.body,
     source.status,
+    source.source_file_name,
+    source.source_sha256,
+    source.source_size_bytes ? String(source.source_size_bytes) : "",
     source.public_status,
     source.codifier_name,
     source.authoritative_url,
@@ -2887,6 +2923,9 @@ function codeSourceSearchFields(source, { publicOnly = false } = {}) {
   if (publicOnly) return publicFields;
   return [
     ...publicFields,
+    source.source_original_path,
+    source.source_stored_path,
+    source.imported_by,
     source.staff_guidance,
     ...(source.amendment_notes || []),
     ...(source.codifier_sync_errors || [])
@@ -3279,6 +3318,7 @@ function renderPublicCodeWorkflow() {
           <h3>${source.title}</h3>
           <p>${source.body}</p>
           ${source.guidance_approved_at_unix_seconds && source.plain_language_summary ? `<p><strong>Plain-English summary:</strong> ${source.plain_language_summary}</p>` : ""}
+          ${codeSourceEvidenceSummary(source, { staff: false }) ? `<p><strong>Source evidence:</strong> ${escapeHtml(codeSourceEvidenceSummary(source, { staff: false }))}</p>` : ""}
           ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${codeVersionHistorySummary(source)}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Update status:</strong> codifier update pending</p>" : ""}
           <small>${source.citation} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports - contact city staff for legal interpretation</small>
@@ -3305,6 +3345,8 @@ function renderCodeWorkflow() {
         <h3>Import Code Source</h3>
         <label>Source title <input type="text" data-work-field="codeTitle" value="${state.workDraft.codeTitle}" /></label>
         <label>Citation <input type="text" data-work-field="codeCitation" value="${state.workDraft.codeCitation}" /></label>
+        <label>Source file path <input type="text" data-work-field="codeSourcePath" value="${state.workDraft.codeSourcePath}" placeholder="C:/City/Code/noise-ordinance.pdf" /></label>
+        <label>Imported by <input type="text" data-work-field="codeImportedBy" value="${state.workDraft.codeImportedBy}" placeholder="City Clerk or deputy clerk" /></label>
         <label>Source text <textarea data-work-field="codeBody">${state.workDraft.codeBody}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="primary-action" data-work-action="import-code-source">Import Source</button>
@@ -3367,6 +3409,7 @@ function renderCodeWorkflow() {
           <span class="status-ok">${source.status}</span>
           <h3>${source.title}</h3>
           <p>${source.body}</p>
+          ${codeSourceEvidenceSummary(source) ? `<p><strong>Source evidence:</strong> ${escapeHtml(codeSourceEvidenceSummary(source))}</p>` : ""}
           ${source.codifier_name ? `<p><strong>Codifier:</strong> ${source.codifier_name}</p>` : ""}
           ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${codeVersionHistorySummary(source)}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Stale:</strong> codifier update pending</p>" : ""}
@@ -4960,7 +5003,9 @@ function workPayloadForAction(action) {
     "import-code-source": {
       title: draft.codeTitle,
       citation: draft.codeCitation,
-      body: draft.codeBody
+      body: draft.codeBody,
+      codeSourcePath: draft.codeSourcePath,
+      importedBy: draft.codeImportedBy
     },
     "record-codifier-sync": {
       ...selected,
