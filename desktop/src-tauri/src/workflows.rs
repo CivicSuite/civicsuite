@@ -116,6 +116,20 @@ pub struct RecordsMessage {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsDocument {
+    pub id: String,
+    pub title: String,
+    pub original_path: String,
+    pub stored_path: String,
+    pub citation: String,
+    pub sha256: String,
+    pub size_bytes: u64,
+    pub status: String,
+    pub added_by: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsFeeLineItem {
     pub id: String,
     pub description: String,
@@ -166,6 +180,8 @@ pub struct RecordsRequest {
     pub timeline: Vec<RecordsTimelineEntry>,
     #[serde(default)]
     pub messages: Vec<RecordsMessage>,
+    #[serde(default)]
+    pub documents: Vec<RecordsDocument>,
     #[serde(default)]
     pub deadline_reviewed_at_unix_seconds: Option<u64>,
     #[serde(default)]
@@ -653,6 +669,14 @@ fn hash_public_payload(payload: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(payload.as_bytes());
     bytes_to_hex(&hasher.finalize())
+}
+
+fn hash_file(path: &Path) -> Result<String, String> {
+    let bytes =
+        fs::read(path).map_err(|error| format!("Could not read {}: {error}", path.display()))?;
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    Ok(bytes_to_hex(&hasher.finalize()))
 }
 
 fn push_publication_event(
@@ -1450,6 +1474,30 @@ fn records_messages_or_default(messages: &[RecordsMessage]) -> String {
         .join("\n")
 }
 
+fn records_documents_or_default(documents: &[RecordsDocument]) -> String {
+    if documents.is_empty() {
+        return "No request documents attached.".to_string();
+    }
+    documents
+        .iter()
+        .map(|document| {
+            format!(
+                "- {} [{}]: {} (sha256 {}, stored at {})",
+                document.title,
+                document.status,
+                if document.citation.is_empty() {
+                    "No citation recorded."
+                } else {
+                    &document.citation
+                },
+                document.sha256,
+                document.stored_path
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn records_fee_total_cents(items: &[RecordsFeeLineItem]) -> i64 {
     items.iter().map(|item| item.amount_cents).sum()
 }
@@ -1722,6 +1770,7 @@ fn create_records_request(
             exports: Vec::new(),
             timeline: Vec::new(),
             messages: Vec::new(),
+            documents: Vec::new(),
             deadline_reviewed_at_unix_seconds: Some(now_unix_seconds()),
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
@@ -1795,6 +1844,7 @@ fn submit_public_records_request(
             exports: Vec::new(),
             timeline: Vec::new(),
             messages: Vec::new(),
+            documents: Vec::new(),
             deadline_reviewed_at_unix_seconds: None,
             approved_at_unix_seconds: None,
             fulfilled_at_unix_seconds: None,
@@ -2112,6 +2162,100 @@ fn record_records_search(
     Ok("Search source note saved with citation evidence.".to_string())
 }
 
+fn add_records_document(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let title = payload_string(payload, "documentTitle")?;
+    let source_path = payload_string(payload, "documentSourcePath")?;
+    let citation = payload_optional_string(payload, "documentCitation");
+    let source_path = PathBuf::from(source_path);
+    if !source_path.is_file() {
+        return Err("Choose an existing local file to attach to the records request.".to_string());
+    }
+    let original_path = source_path.to_string_lossy().to_string();
+    let source_file_name = source_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .unwrap_or_else(|| "records-document".to_string());
+    let extension = source_path
+        .extension()
+        .map(|value| format!(".{}", value.to_string_lossy()))
+        .unwrap_or_default();
+    let (stored_path, sha256, size_bytes) = {
+        let request = selected_record_mut(state, payload)?;
+        ensure_records_request_active(request)?;
+        let tracking_or_id = if request.public_tracking_number.is_empty() {
+            request.id.clone()
+        } else {
+            request.public_tracking_number.clone()
+        };
+        let documents_dir = local_paths::data_root()
+            .join("files")
+            .join("records")
+            .join(safe_file_stem(&tracking_or_id));
+        fs::create_dir_all(&documents_dir)
+            .map_err(|error| format!("Could not create {}: {error}", documents_dir.display()))?;
+        let stored_file_name = format!(
+            "{}-{}{}",
+            safe_file_stem(&title),
+            now_unix_seconds(),
+            extension
+        );
+        let stored_path = documents_dir.join(stored_file_name);
+        fs::copy(&source_path, &stored_path).map_err(|error| {
+            format!(
+                "Could not copy {} into the local records file store: {error}",
+                source_path.display()
+            )
+        })?;
+        let metadata = fs::metadata(&stored_path)
+            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
+        let sha256 = hash_file(&stored_path)?;
+        let document = RecordsDocument {
+            id: format!(
+                "records-document-{}-{}",
+                now_unix_seconds(),
+                request.documents.len() + 1
+            ),
+            title: title.clone(),
+            original_path: original_path.clone(),
+            stored_path: stored_path.to_string_lossy().to_string(),
+            citation: citation.clone(),
+            sha256: sha256.clone(),
+            size_bytes: metadata.len(),
+            status: "attached for response review".to_string(),
+            added_by: "records staff".to_string(),
+            created_at_unix_seconds: now_unix_seconds(),
+        };
+        request.documents.push(document);
+        if !citation.is_empty() {
+            request.citations.push(citation.clone());
+        }
+        request.status = "document attached".to_string();
+        push_records_timeline(
+            request,
+            "document attached",
+            "records staff",
+            format!("Attached {title} from {source_file_name}; sha256 {sha256}."),
+        );
+        (
+            stored_path.to_string_lossy().to_string(),
+            sha256,
+            metadata.len(),
+        )
+    };
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "add-records-document",
+        format!("Attached records document {title}; sha256 {sha256}; {size_bytes} bytes."),
+    );
+    Ok(format!(
+        "Records document copied into local profile: {stored_path}."
+    ))
+}
+
 fn add_records_exemption_review(
     state: &mut CityWorkState,
     payload: Option<&Value>,
@@ -2285,11 +2429,12 @@ fn suggest_records_response(
         );
     }
     let prompt = format!(
-        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nFee estimate: {}\nCitations/source notes: {}\n",
+        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nAttached documents: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nFee estimate: {}\nCitations/source notes: {}\n",
         request.requester,
         request.deadline,
         request.summary,
         records_messages_or_default(&request.messages),
+        records_documents_or_default(&request.documents),
         list_or_default(&request.clarification_notes, "No clarification notes recorded."),
         list_or_default(&request.search_notes, "No search notes recorded."),
         list_or_default(&request.exemption_reviews, "No exemption review notes recorded."),
@@ -2385,10 +2530,11 @@ fn export_records_response(
     let approval_notes = list_or_default(&request.approval_notes, "No approval note recorded.");
     let request_timeline = records_timeline_or_default(&request.timeline);
     let request_messages = records_messages_or_default(&request.messages);
+    let request_documents = records_documents_or_default(&request.documents);
     let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
     let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -2425,6 +2571,7 @@ fn export_records_response(
         request.summary,
         request_timeline,
         request_messages,
+        request_documents,
         fee_total,
         if request.fee_waiver_reason.is_empty() {
             "No fee waiver recorded."
@@ -3209,6 +3356,21 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let request_documents = request
+            .documents
+            .iter()
+            .map(|document| {
+                format!(
+                    "{} {} {} {} {}",
+                    document.title,
+                    document.citation,
+                    document.status,
+                    document.sha256,
+                    document.stored_path
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let fee_lines = request
             .fee_line_items
             .iter()
@@ -3242,6 +3404,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &request.response_draft,
                 &citations,
                 &request_messages,
+                &request_documents,
                 &clarification_notes,
                 &search_notes,
                 &exemption_reviews,
@@ -3390,6 +3553,7 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.approval_notes.clear();
     public_request.timeline.clear();
     public_request.messages.clear();
+    public_request.documents.clear();
     public_request
 }
 
@@ -3541,6 +3705,7 @@ pub fn city_work_action(
         "add-records-message" => add_records_message(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
         "record-records-search" => record_records_search(&mut state, payload)?,
+        "add-records-document" => add_records_document(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
         "estimate-records-fee" => estimate_records_fee(&mut state, payload)?,
         "add-records-fee-line" => add_records_fee_line(&mut state, payload)?,
@@ -3990,7 +4155,7 @@ mod tests {
 
     #[test]
     fn records_workflow_requires_human_approval_before_release() {
-        with_temp_state_dir(|_| {
+        with_temp_state_dir(|root| {
             let payload = serde_json::json!({
                 "requester": "Alex Rivera",
                 "summary": "Emails about park contract",
@@ -4014,6 +4179,18 @@ mod tests {
                 "citation": "PRA-2026-001"
             });
             city_work_action("record-records-search", Some(&search)).expect("search saved");
+            let source_document = root.join("responsive-park-contract-email.txt");
+            fs::write(
+                &source_document,
+                "Responsive park contract email attachment for review.",
+            )
+            .expect("source document writes");
+            let document = serde_json::json!({
+                "documentTitle": "Park contract email attachment",
+                "documentSourcePath": source_document.to_string_lossy(),
+                "documentCitation": "PRA-2026-003"
+            });
+            city_work_action("add-records-document", Some(&document)).expect("document attached");
             env::set_var(
                 "CIVICSUITE_FAKE_MODEL_RESPONSE",
                 "Local AI draft response for responsive park contract records.",
@@ -4075,6 +4252,11 @@ mod tests {
             assert_eq!(request.messages.len(), 1);
             assert_eq!(request.messages[0].author_role, "staff");
             assert!(request.messages[0].body.contains("narrowed date range"));
+            assert_eq!(request.documents.len(), 1);
+            assert_eq!(request.documents[0].title, "Park contract email attachment");
+            assert_eq!(request.documents[0].citation, "PRA-2026-003");
+            assert_eq!(request.documents[0].sha256.len(), 64);
+            assert!(PathBuf::from(&request.documents[0].stored_path).is_file());
             assert_eq!(request.search_notes.len(), 1);
             assert_eq!(request.exemption_reviews.len(), 1);
             assert_eq!(request.fee_line_items.len(), 1);
@@ -4110,6 +4292,10 @@ mod tests {
             assert!(request
                 .timeline
                 .iter()
+                .any(|entry| entry.action == "document attached"));
+            assert!(request
+                .timeline
+                .iter()
                 .any(|entry| entry.action == "fee line added"));
             assert!(request
                 .timeline
@@ -4134,6 +4320,9 @@ mod tests {
             assert!(exported.contains("## Request Timeline"));
             assert!(exported.contains("## Request Messages"));
             assert!(exported.contains("narrowed date range"));
+            assert!(exported.contains("## Request Documents"));
+            assert!(exported.contains("Park contract email attachment"));
+            assert!(exported.contains("PRA-2026-003"));
             assert!(exported.contains("clarification requested"));
             assert!(exported.contains("fee line added"));
             assert!(exported.contains("fee waived"));
@@ -4182,6 +4371,8 @@ mod tests {
             assert!(message_results
                 .iter()
                 .any(|result| result.module_id == "civiccore"));
+            let document_results = search_city_work(&state, "Park contract email attachment");
+            assert_eq!(document_results.len(), 1);
             let notification_results = search_city_work(&state, "response ready");
             assert_eq!(notification_results.len(), 1);
             assert_eq!(notification_results[0].module_id, "civiccore");
@@ -4325,6 +4516,7 @@ mod tests {
             assert!(public_request.approval_notes.is_empty());
             assert!(public_request.timeline.is_empty());
             assert!(public_request.messages.is_empty());
+            assert!(public_request.documents.is_empty());
 
             let public_message = serde_json::json!({
                 "trackingNumber": "REQ-0001",

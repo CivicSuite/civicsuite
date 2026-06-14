@@ -569,6 +569,9 @@ const state = {
     assignedTo: "",
     clarificationNote: "",
     requestMessageBody: "",
+    documentTitle: "",
+    documentSourcePath: "",
+    documentCitation: "",
     sourceNote: "",
     exemptionNote: "",
     feeEstimate: "",
@@ -2072,7 +2075,8 @@ function publicRecordsRequestView(request) {
     response_draft: "",
     approval_notes: [],
     timeline: [],
-    messages: lookupVerified ? (request.messages || []) : []
+    messages: lookupVerified ? (request.messages || []) : [],
+    documents: []
   };
 }
 
@@ -2294,6 +2298,26 @@ function renderRecordsMessages(request) {
   `;
 }
 
+function renderRecordsDocuments(request) {
+  const documents = request.documents || [];
+  if (documents.length === 0) return "";
+  return `
+    <details class="record-details" open>
+      <summary>Request Documents</summary>
+      <ul>
+        ${documents.map((document) => `
+          <li>
+            <strong>${escapeHtml(document.title)}</strong>
+            ${document.citation ? `<span>${escapeHtml(document.citation)}</span>` : ""}
+            <span>${escapeHtml(document.status)}</span>
+            <small>SHA-256 ${escapeHtml(document.sha256)}</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
 function renderRecordsWorkflow() {
   if (isPublicSurface()) return renderPublicRecordsWorkflow();
   const work = cityWork();
@@ -2343,6 +2367,14 @@ function renderRecordsWorkflow() {
         <button type="button" class="secondary-action" data-work-action="add-records-message">Add Request Message</button>
       </div>
       <div class="workflow-form">
+        <h3>Request Documents</h3>
+        <p class="form-help">Attach a local source file to this request. The desktop app copies it into the city profile and records a SHA-256 hash.</p>
+        <label>Document title <input type="text" data-work-field="documentTitle" value="${state.workDraft.documentTitle}" /></label>
+        <label>Source file path <input type="text" data-work-field="documentSourcePath" value="${state.workDraft.documentSourcePath}" placeholder="C:/City/Records/responsive-email.pdf" /></label>
+        <label>Document citation <input type="text" data-work-field="documentCitation" value="${state.workDraft.documentCitation}" /></label>
+        <button type="button" class="secondary-action" data-work-action="add-records-document">Attach Document</button>
+      </div>
+      <div class="workflow-form">
         <h3>Response & Release</h3>
         <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
         <label>Approval note <input type="text" data-work-field="approvalNote" value="${state.workDraft.approvalNote}" /></label>
@@ -2377,6 +2409,7 @@ function renderRecordsWorkflow() {
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
           ${renderRecordsMessages(request)}
+          ${renderRecordsDocuments(request)}
           ${renderRecordsTimeline(request)}
           <div class="record-actions">
             ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
@@ -2595,6 +2628,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   recordsRequests.forEach((request) => {
     const requestMessageSearchText = (request.messages || [])
       .map((message) => [message.author, message.author_role, message.body].join(" "));
+    const requestDocumentSearchText = (request.documents || [])
+      .map((document) => [document.title, document.citation, document.status, document.sha256].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
       .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
     const publicRecordFields = [
@@ -2615,6 +2650,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       request.fee_waiver_reason,
       ...feeLineSearchText,
       ...requestMessageSearchText,
+      ...requestDocumentSearchText,
       request.response_draft,
       ...(request.clarification_notes || []),
       ...(request.search_notes || []),
@@ -3758,6 +3794,12 @@ function workPayloadForAction(action) {
       ...selected,
       sourceNote: draft.sourceNote,
       citation: draft.citation
+    },
+    "add-records-document": {
+      ...selected,
+      documentTitle: draft.documentTitle,
+      documentSourcePath: draft.documentSourcePath,
+      documentCitation: draft.documentCitation
     },
     "add-records-exemption-review": { ...selected, exemptionNote: draft.exemptionNote },
     "estimate-records-fee": { ...selected, feeEstimate: draft.feeEstimate },
