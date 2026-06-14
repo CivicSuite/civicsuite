@@ -139,6 +139,7 @@ fn city_work_action_module_requirement(
         | "submit-agenda-intake"
         | "review-agenda-intake"
         | "promote-agenda-intake"
+        | "record-staff-report"
         | "add-meeting-attachment"
         | "add-code-handoff-agenda"
         | "complete-notice-checklist"

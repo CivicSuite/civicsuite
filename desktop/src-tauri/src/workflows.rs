@@ -61,6 +61,23 @@ pub struct AgendaIntake {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct StaffReportRecord {
+    pub id: String,
+    pub agenda_item_id: String,
+    pub agenda_item_title: String,
+    pub recommendation: String,
+    pub background: String,
+    pub analysis: String,
+    pub fiscal_impact: String,
+    pub alternatives: String,
+    pub prior_actions: String,
+    pub prepared_by: String,
+    #[serde(default)]
+    pub revision_note: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct PublicComment {
     pub id: String,
     pub commenter_name: String,
@@ -222,6 +239,8 @@ pub struct Meeting {
     pub notice_postings: Vec<NoticePosting>,
     pub summary: String,
     pub agenda_items: Vec<AgendaItem>,
+    #[serde(default)]
+    pub staff_reports: Vec<StaffReportRecord>,
     #[serde(default)]
     pub attachments: Vec<MeetingAttachment>,
     pub minutes: String,
@@ -1266,6 +1285,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         notice_postings: Vec::new(),
         summary,
         agenda_items: Vec::new(),
+        staff_reports: Vec::new(),
         attachments: Vec::new(),
         minutes: String::new(),
         minute_citations: Vec::new(),
@@ -1476,6 +1496,83 @@ fn promote_agenda_intake(
     Ok(format!(
         "Agenda intake promoted to the selected meeting agenda: {title}."
     ))
+}
+
+fn selected_agenda_item_for_report(
+    meeting: &Meeting,
+    payload: Option<&Value>,
+) -> Result<(String, String), String> {
+    if meeting.agenda_items.is_empty() {
+        return Err("Add an agenda item before recording a staff report.".to_string());
+    }
+    let requested_id = payload_optional_string(payload, "staffReportAgendaItemId");
+    let agenda_item = if requested_id.is_empty() {
+        meeting
+            .agenda_items
+            .first()
+            .expect("agenda item exists after empty check")
+    } else {
+        meeting
+            .agenda_items
+            .iter()
+            .find(|item| item.id == requested_id)
+            .ok_or_else(|| "Choose an agenda item from the selected meeting.".to_string())?
+    };
+    Ok((agenda_item.id.clone(), agenda_item.title.clone()))
+}
+
+fn record_staff_report(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let recommendation = payload_string(payload, "staffReportRecommendation")
+        .map_err(|_| "Enter the staff recommendation.".to_string())?;
+    let background = payload_string(payload, "staffReportBackground")
+        .map_err(|_| "Enter the staff report background.".to_string())?;
+    let analysis = payload_string(payload, "staffReportAnalysis")
+        .map_err(|_| "Enter the staff analysis.".to_string())?;
+    let fiscal_impact = payload_string(payload, "staffReportFiscalImpact")
+        .map_err(|_| "Enter the fiscal impact or type none.".to_string())?;
+    let alternatives = payload_string(payload, "staffReportAlternatives")
+        .map_err(|_| "Enter alternatives considered or type none.".to_string())?;
+    let prior_actions = payload_string(payload, "staffReportPriorActions")
+        .map_err(|_| "Enter prior actions or type none.".to_string())?;
+    let prepared_by = payload_string(payload, "staffReportPreparedBy")
+        .map_err(|_| "Enter who prepared the staff report.".to_string())?;
+    let revision_note = payload_optional_string(payload, "staffReportRevisionNote");
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    let (agenda_item_id, agenda_item_title) = selected_agenda_item_for_report(meeting, payload)?;
+    let report_id = new_id("staff-report", meeting.staff_reports.len());
+    meeting.staff_reports.push(StaffReportRecord {
+        id: report_id.clone(),
+        agenda_item_id: agenda_item_id.clone(),
+        agenda_item_title: agenda_item_title.clone(),
+        recommendation: recommendation.clone(),
+        background,
+        analysis,
+        fiscal_impact,
+        alternatives,
+        prior_actions,
+        prepared_by: prepared_by.clone(),
+        revision_note: revision_note.clone(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "staff report recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-staff-report",
+        format!(
+            "Recorded staff report {report_id} for agenda item {agenda_item_title}; recommendation {recommendation}; prepared by {prepared_by}; revision note {}.",
+            if revision_note.is_empty() {
+                "not recorded"
+            } else {
+                &revision_note
+            }
+        ),
+    );
+    Ok("Staff report saved and linked to the selected agenda item.".to_string())
 }
 
 fn add_meeting_attachment(
@@ -1752,6 +1849,35 @@ fn agenda_item_line(item: &AgendaItem) -> String {
     line
 }
 
+fn staff_reports_or_default(reports: &[StaffReportRecord]) -> String {
+    if reports.is_empty() {
+        return "No staff reports recorded.".to_string();
+    }
+    reports
+        .iter()
+        .map(|report| {
+            format!(
+                "- {} ({})\n  Prepared by: {}\n  Recommendation: {}\n  Background: {}\n  Analysis: {}\n  Fiscal impact: {}\n  Alternatives: {}\n  Prior actions: {}\n  Revision note: {}",
+                report.agenda_item_title,
+                report.agenda_item_id,
+                report.prepared_by,
+                report.recommendation,
+                report.background,
+                report.analysis,
+                report.fiscal_impact,
+                report.alternatives,
+                report.prior_actions,
+                if report.revision_note.is_empty() {
+                    "No revision note recorded."
+                } else {
+                    &report.revision_note
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let minutes = payload_string(payload, "minutes")?;
     let meeting = selected_meeting_mut(state, payload)?;
@@ -1883,6 +2009,7 @@ fn suggest_minutes_draft(
     };
     let has_meeting_evidence = !meeting.summary.trim().is_empty()
         || !meeting.agenda_items.is_empty()
+        || !meeting.staff_reports.is_empty()
         || !meeting.motions.is_empty()
         || !meeting.votes.is_empty()
         || !meeting.action_items.is_empty()
@@ -1893,7 +2020,7 @@ fn suggest_minutes_draft(
         return Err("Add a summary, agenda item, attachment, motion, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, packet attachments, motions, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, staff reports, packet attachments, motions, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nStaff reports:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nDetailed action records:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -1906,6 +2033,7 @@ fn suggest_minutes_draft(
             &meeting.summary
         },
         agenda,
+        staff_reports_or_default(&meeting.staff_reports),
         meeting_attachments_or_default(&meeting.attachments),
         if meeting.minutes.is_empty() {
             "No existing minutes draft recorded."
@@ -2913,6 +3041,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let motions = motion_records_or_default(&meeting.motions);
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let action_records = meeting_action_records_or_default(&meeting.action_records);
+    let staff_reports = staff_reports_or_default(&meeting.staff_reports);
     let adopted_legislation = adopted_legislation_or_default(&meeting.adopted_legislation);
     let closed_sessions = closed_sessions_or_default(&meeting.closed_sessions);
     let resident_comments =
@@ -2957,7 +3086,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Staff Reports\n{}\n\n## Packet Attachments\n{}\n\n## Closed Sessions\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -2971,6 +3100,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
             &meeting.summary
         },
         agenda,
+        staff_reports,
         attachments,
         closed_sessions,
         if meeting.minutes.is_empty() {
@@ -4917,6 +5047,26 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let staff_reports = meeting
+            .staff_reports
+            .iter()
+            .map(|report| {
+                format!(
+                    "{} {} {} {} {} {} {} {} {} {}",
+                    report.agenda_item_title,
+                    report.recommendation,
+                    report.background,
+                    report.analysis,
+                    report.fiscal_impact,
+                    report.alternatives,
+                    report.prior_actions,
+                    report.prepared_by,
+                    report.revision_note,
+                    report.agenda_item_id
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let votes = meeting.votes.join(" ");
         let action_items = meeting.action_items.join(" ");
         let action_records = meeting
@@ -5055,6 +5205,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &meeting.minutes_signed_by,
                 &meeting.minutes_signature_attestation,
                 &agenda_titles,
+                &staff_reports,
                 &attachments,
                 &minute_citations,
                 &motions,
@@ -5336,6 +5487,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
             attachment
         })
         .collect();
+    public_meeting.staff_reports = meeting.staff_reports.clone();
     public_meeting.minute_citations = meeting
         .minute_citations
         .iter()
@@ -5360,6 +5512,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.minutes_signed_at_unix_seconds = None;
         public_meeting.motions.clear();
         public_meeting.votes.clear();
+        public_meeting.staff_reports.clear();
         public_meeting.action_items.clear();
         public_meeting.action_records.clear();
         public_meeting.adopted_legislation.clear();
@@ -5533,6 +5686,7 @@ pub fn city_work_action(
         "submit-agenda-intake" => submit_agenda_intake(&mut state, payload)?,
         "review-agenda-intake" => review_agenda_intake(&mut state, payload)?,
         "promote-agenda-intake" => promote_agenda_intake(&mut state, payload)?,
+        "record-staff-report" => record_staff_report(&mut state, payload)?,
         "add-meeting-attachment" => add_meeting_attachment(&mut state, payload)?,
         "add-code-handoff-agenda" => add_code_handoff_agenda(&mut state, payload)?,
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
@@ -5791,6 +5945,37 @@ mod tests {
                 "agendaTitle": "Adopt budget ordinance"
             });
             city_work_action("create-meeting", Some(&payload)).expect("meeting created");
+            let missing_staff_report = serde_json::json!({
+                "staffReportRecommendation": "Approve the budget ordinance"
+            });
+            let error = match city_work_action("record-staff-report", Some(&missing_staff_report)) {
+                Ok(_) => panic!("staff report cannot save without required sections"),
+                Err(error) => error,
+            };
+            assert!(error.contains("staff report background"));
+            let staff_report_agenda_item_id = city_work_state()
+                .expect("state reads for staff report agenda item")
+                .meetings
+                .first()
+                .expect("meeting exists")
+                .agenda_items
+                .first()
+                .expect("agenda item exists")
+                .id
+                .clone();
+            let staff_report = serde_json::json!({
+                "staffReportAgendaItemId": staff_report_agenda_item_id,
+                "staffReportRecommendation": "Approve the budget ordinance",
+                "staffReportBackground": "The finance department prepared the annual budget package.",
+                "staffReportAnalysis": "Enterprise fund reserve targets remain above policy minimums.",
+                "staffReportFiscalImpact": "Appropriates the annual operating budget.",
+                "staffReportAlternatives": "Continue the hearing or adopt a reduced appropriation.",
+                "staffReportPriorActions": "Budget workshop held on 2026-06-15.",
+                "staffReportPreparedBy": "Finance Director Rivera",
+                "staffReportRevisionNote": "Initial packet version"
+            });
+            city_work_action("record-staff-report", Some(&staff_report))
+                .expect("staff report saved");
             let public_attachment_path = root.join("public-fiscal-note.txt");
             fs::write(
                 &public_attachment_path,
@@ -6039,6 +6224,23 @@ mod tests {
             );
             assert_eq!(meeting.notice_postings[0].posted_on, "2026-06-30");
             assert_eq!(meeting.status, "archived public record");
+            assert_eq!(meeting.staff_reports.len(), 1);
+            assert_eq!(
+                meeting.staff_reports[0].recommendation,
+                "Approve the budget ordinance"
+            );
+            assert_eq!(
+                meeting.staff_reports[0].analysis,
+                "Enterprise fund reserve targets remain above policy minimums."
+            );
+            assert_eq!(
+                meeting.staff_reports[0].prepared_by,
+                "Finance Director Rivera"
+            );
+            assert_eq!(
+                meeting.staff_reports[0].revision_note,
+                "Initial packet version"
+            );
             assert_eq!(meeting.motions.len(), 1);
             assert_eq!(meeting.motions[0].text, "Approve the budget ordinance.");
             assert_eq!(meeting.motions[0].mover, "Councilmember Lee");
@@ -6125,6 +6327,9 @@ mod tests {
             let packet = fs::read_to_string(&meeting.exports[0]).expect("packet reads");
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
             assert!(packet.contains("Body: City Council"));
+            assert!(packet.contains("## Staff Reports"));
+            assert!(packet.contains("Finance Director Rivera"));
+            assert!(packet.contains("Enterprise fund reserve targets"));
             assert!(packet.contains("## Packet Attachments"));
             assert!(packet.contains("Fiscal note"));
             assert!(packet.contains("Packet item 4 fiscal note"));
@@ -6164,6 +6369,9 @@ mod tests {
             assert!(archive.contains("## Adopted Ordinances And Resolutions"));
             assert!(archive.contains("Budget Publication Ordinance"));
             assert!(archive.contains("Title 2, Chapter 4"));
+            assert!(archive.contains("## Staff Reports"));
+            assert!(archive.contains("Finance Director Rivera"));
+            assert!(archive.contains("Enterprise fund reserve targets"));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
             assert!(archive.contains("Resident asked for sidewalk funding."));
             assert!(archive.contains("## Packet Attachments"));
@@ -6193,6 +6401,8 @@ mod tests {
             assert_eq!(action_owner_results.len(), 1);
             let action_source_results = search_city_work(&state, "Budget ordinance motion");
             assert_eq!(action_source_results.len(), 1);
+            let staff_report_results = search_city_work(&state, "Enterprise fund reserve targets");
+            assert_eq!(staff_report_results.len(), 1);
             let signature_results = search_city_work(&state, "City Clerk Morgan");
             assert_eq!(signature_results.len(), 1);
             let closed_session_results = search_city_work(&state, "budget litigation");
@@ -6225,6 +6435,11 @@ mod tests {
             assert_eq!(public_meeting.body_id, body.id);
             assert_eq!(public_meeting.body_name, "City Council");
             assert_eq!(public_meeting.motions.len(), 1);
+            assert_eq!(public_meeting.staff_reports.len(), 1);
+            assert_eq!(
+                public_meeting.staff_reports[0].recommendation,
+                "Approve the budget ordinance"
+            );
             assert_eq!(public_meeting.action_records.len(), 1);
             assert_eq!(public_meeting.adopted_legislation.len(), 1);
             assert_eq!(
@@ -6292,6 +6507,20 @@ mod tests {
             });
             let error = match city_work_action("add-action-item", Some(&late_action)) {
                 Ok(_) => panic!("archived meeting cannot record new action items"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+            let late_staff_report = serde_json::json!({
+                "staffReportRecommendation": "Late recommendation",
+                "staffReportBackground": "Late background",
+                "staffReportAnalysis": "Late analysis",
+                "staffReportFiscalImpact": "Late fiscal impact",
+                "staffReportAlternatives": "Late alternatives",
+                "staffReportPriorActions": "Late prior action",
+                "staffReportPreparedBy": "Late preparer"
+            });
+            let error = match city_work_action("record-staff-report", Some(&late_staff_report)) {
+                Ok(_) => panic!("archived meeting cannot record staff reports"),
                 Err(error) => error,
             };
             assert!(error.contains("archived as a public record"));

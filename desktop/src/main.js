@@ -554,6 +554,15 @@ const state = {
     agendaIntakeMeetingDate: "",
     agendaIntakeDecision: "ready for agenda",
     agendaIntakeReviewNote: "",
+    staffReportAgendaItemId: "",
+    staffReportRecommendation: "",
+    staffReportBackground: "",
+    staffReportAnalysis: "",
+    staffReportFiscalImpact: "",
+    staffReportAlternatives: "",
+    staffReportPriorActions: "",
+    staffReportPreparedBy: "",
+    staffReportRevisionNote: "",
     noticeMeetingType: "",
     noticeStatutoryBasis: "",
     noticeDeadline: "",
@@ -1372,6 +1381,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "create-meeting-body",
   "review-agenda-intake",
   "promote-agenda-intake",
+  "record-staff-report",
   "add-code-handoff-agenda",
   "add-meeting-attachment",
   "record-closed-session",
@@ -1492,6 +1502,8 @@ function guidedReviewForAction(action) {
   const notification = currentNotification(work);
   const meetingSubject = meeting ? `${meeting.title} (${meeting.meeting_date})` : "Current meeting";
   const agendaIntakeSubject = agendaIntake ? `${agendaIntake.title} (${agendaIntake.department})` : "Current agenda intake item";
+  const staffReportAgendaItem = meeting?.agenda_items?.find((item) => item.id === state.workDraft.staffReportAgendaItemId) || meeting?.agenda_items?.[0] || null;
+  const staffReportSubject = staffReportAgendaItem ? staffReportAgendaItem.title : "Current agenda item";
   const publicCommentSubject = publicComment ? `${publicComment.commenter_name}: ${publicComment.topic || "Public comment"}` : "Current public comment";
   const requestSubject = request ? `${request.requester}: ${request.summary}` : "Current records request";
   const sourceSubject = source ? `${source.title} (${source.citation})` : "Current code source";
@@ -1548,6 +1560,26 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry linking the intake item to the selected meeting agenda.",
       retry: "If the intake item is not ready, no meeting exists, or the meeting is archived, the desktop app leaves both records unchanged."
+    },
+    "record-staff-report": {
+      title: "Review Before Saving Staff Report",
+      confirmLabel: "Save Staff Report",
+      module: "CivicClerk",
+      subject: staffReportSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Stores a structured staff report for the selected agenda item with recommendation, background, analysis, fiscal impact, alternatives, prior actions, preparer, and revision note.",
+      visibility: "Staff packet material. It becomes part of the public archive only after the meeting is archived as a public record.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        staffReportAgendaItem ? `Agenda item: ${staffReportAgendaItem.title}` : "An agenda item is required.",
+        detailOrFallback(state.workDraft.staffReportRecommendation, "Recommendation is required."),
+        detailOrFallback(state.workDraft.staffReportBackground, "Background is required."),
+        detailOrFallback(state.workDraft.staffReportAnalysis, "Analysis is required."),
+        detailOrFallback(state.workDraft.staffReportFiscalImpact, "Fiscal impact is required."),
+        detailOrFallback(state.workDraft.staffReportPreparedBy, "Prepared-by name is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry linking the staff report to the agenda item.",
+      retry: "If required sections are missing, no agenda item exists, or the meeting is archived, the desktop app leaves the meeting unchanged."
     },
     "add-code-handoff-agenda": {
       title: "Review Before Adding Code Handoff",
@@ -2140,7 +2172,8 @@ function publicMeetingView(meeting) {
         original_path: "",
         stored_path: "",
         added_by: ""
-      })),
+    })),
+    staff_reports: meeting.staff_reports || [],
     minute_citations: (meeting.minute_citations || [])
       .filter((citation) => citation.access_level === "public record"),
     closed_sessions: (meeting.closed_sessions || []).map((session) => ({
@@ -2157,6 +2190,7 @@ function publicMeetingView(meeting) {
     publicMeeting.minutes_signed_at_unix_seconds = null;
     publicMeeting.motions = [];
     publicMeeting.votes = [];
+    publicMeeting.staff_reports = [];
     publicMeeting.action_items = [];
     publicMeeting.action_records = [];
     publicMeeting.adopted_legislation = [];
@@ -2232,9 +2266,10 @@ function renderPublicMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
           <p>${meeting.summary || "No public summary recorded."}</p>
+          ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2247,6 +2282,8 @@ function renderMeetingsWorkflow() {
   const bodies = meetingBodies(work);
   const selectedBodyId = state.workDraft.meetingBodyId || bodies[0]?.id || "";
   const selectedMeeting = currentMeeting(work);
+  const selectedMeetingAgendaItems = selectedMeeting?.agenda_items || [];
+  const selectedStaffReportAgendaItemId = state.workDraft.staffReportAgendaItemId || selectedMeetingAgendaItems[0]?.id || "";
   const selectedAgendaIntake = currentAgendaIntake(work);
   const selectedAgendaIntakeCanReview = selectedAgendaIntake && selectedAgendaIntake.status !== "promoted to agenda";
   const selectedAgendaIntakeCanPromote = selectedAgendaIntake && selectedMeeting && selectedAgendaIntake.status === "ready for agenda";
@@ -2329,6 +2366,26 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="post-notice">Mark Notice Ready</button>
           <button type="button" class="secondary-action" data-work-action="export-meeting-packet">Export Packet</button>
           <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Staff Reports</h3>
+        <p class="form-help">Save structured staff analysis for an agenda item. Each save creates a new report record so prior versions remain in the local audit trail.</p>
+        <label>Agenda item
+          <select data-work-field="staffReportAgendaItemId" ${selectedMeetingAgendaItems.length === 0 ? "disabled" : ""}>
+            ${selectedMeetingAgendaItems.length === 0 ? `<option>No agenda item available</option>` : selectedMeetingAgendaItems.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === selectedStaffReportAgendaItemId ? "selected" : ""}>${escapeHtml(item.title)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Recommendation <textarea data-work-field="staffReportRecommendation">${state.workDraft.staffReportRecommendation}</textarea></label>
+        <label>Background <textarea data-work-field="staffReportBackground">${state.workDraft.staffReportBackground}</textarea></label>
+        <label>Analysis <textarea data-work-field="staffReportAnalysis">${state.workDraft.staffReportAnalysis}</textarea></label>
+        <label>Fiscal impact <textarea data-work-field="staffReportFiscalImpact">${state.workDraft.staffReportFiscalImpact}</textarea></label>
+        <label>Alternatives considered <textarea data-work-field="staffReportAlternatives">${state.workDraft.staffReportAlternatives}</textarea></label>
+        <label>Prior actions <textarea data-work-field="staffReportPriorActions">${state.workDraft.staffReportPriorActions}</textarea></label>
+        <label>Prepared by <input type="text" data-work-field="staffReportPreparedBy" value="${state.workDraft.staffReportPreparedBy}" /></label>
+        <label>Revision note <input type="text" data-work-field="staffReportRevisionNote" value="${state.workDraft.staffReportRevisionNote}" /></label>
+        <div class="workflow-actions">
+          ${selectedMeetingAgendaItems.length === 0 ? `<button type="button" class="secondary-action" disabled>Save Staff Report</button>` : `<button type="button" class="secondary-action" data-work-action="record-staff-report">Save Staff Report</button>`}
         </div>
       </div>
       <div class="workflow-form">
@@ -2444,6 +2501,7 @@ function renderMeetingsWorkflow() {
           <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
           <p>${meeting.summary || "No summary yet."}</p>
           ${(meeting.agenda_items || []).length > 0 ? `<p><strong>Agenda:</strong> ${(meeting.agenda_items || []).map((item) => `${escapeHtml(item.title)}${item.source_reference ? ` (${escapeHtml(item.source_reference)})` : ""}`).join("; ")}</p>` : ""}
+          ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)} (${escapeHtml(report.prepared_by)})`).join("; ")}</p>` : ""}
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${meeting.minutes_signed_at_unix_seconds ? `<p><strong>Minutes signature:</strong> signed by ${escapeHtml(meeting.minutes_signed_by || "authorized signer")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)} (${escapeHtml(citation.access_level)})`).join("; ")}</p>` : ""}
@@ -2470,7 +2528,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3151,6 +3209,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const motions = (meeting.motions || [])
       .map((motion) => [motion.text, motion.mover, motion.seconder, motion.disposition, motion.vote_reference].join(" "))
       .join(" ");
+    const staffReports = (meeting.staff_reports || [])
+      .map((report) => [report.agenda_item_title, report.recommendation, report.background, report.analysis, report.fiscal_impact, report.alternatives, report.prior_actions, report.prepared_by, report.revision_note].join(" "))
+      .join(" ");
     const outcomes = (meeting.votes || []).join(" ");
     const actionItems = (meeting.action_items || []).join(" ");
     const actionRecords = (meeting.action_records || [])
@@ -3214,9 +3275,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
-        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
+        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, staffReports, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, staffReports, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, adoptedLegislation, closedSessions, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4379,6 +4440,18 @@ function workPayloadForAction(action) {
       agendaIntakeReviewNote: draft.agendaIntakeReviewNote
     },
     "promote-agenda-intake": selected,
+    "record-staff-report": {
+      ...selected,
+      staffReportAgendaItemId: draft.staffReportAgendaItemId,
+      staffReportRecommendation: draft.staffReportRecommendation,
+      staffReportBackground: draft.staffReportBackground,
+      staffReportAnalysis: draft.staffReportAnalysis,
+      staffReportFiscalImpact: draft.staffReportFiscalImpact,
+      staffReportAlternatives: draft.staffReportAlternatives,
+      staffReportPriorActions: draft.staffReportPriorActions,
+      staffReportPreparedBy: draft.staffReportPreparedBy,
+      staffReportRevisionNote: draft.staffReportRevisionNote
+    },
     "add-meeting-attachment": {
       ...selected,
       meetingAttachmentTitle: draft.meetingAttachmentTitle,
