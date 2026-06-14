@@ -49,6 +49,8 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Close Request" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Notification Outbox" })).toBeVisible();
+  await expect(page.getByText("No local records notifications have been created yet.")).toBeVisible();
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
@@ -108,6 +110,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Export Response" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Notification Outbox" })).toHaveCount(0);
   await page.getByLabel("Your name").fill("Morgan Lee");
   await page.getByLabel("Email or phone").fill("morgan@example.gov");
   await page.getByLabel("Records requested").fill("Emails and invoices about the river trail grant");

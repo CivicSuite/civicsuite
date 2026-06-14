@@ -163,7 +163,8 @@ fn city_work_action_module_requirement(
         | "approve-records-response"
         | "export-records-response"
         | "fulfill-records-request"
-        | "close-records-request" => Some((vec!["civicrecords-ai"], false)),
+        | "close-records-request"
+        | "mark-notification-sent" => Some((vec!["civicrecords-ai"], false)),
         "import-code-source"
         | "record-codifier-sync"
         | "record-codifier-sync-failure"
@@ -1108,6 +1109,7 @@ mod tests {
             assert!(public_state.code_sources.is_empty());
             assert!(public_state.code_handoffs.is_empty());
             assert!(public_state.audit_entries.is_empty());
+            assert!(public_state.notification_events.is_empty());
             let public_app_state = get_app_state().expect("public app state");
             assert!(public_app_state.users.is_empty());
             assert_eq!(
@@ -1148,6 +1150,7 @@ mod tests {
             assert_eq!(staff_state.records_requests.len(), 1);
             assert_eq!(staff_state.code_sources.len(), 1);
             assert!(!staff_state.audit_entries.is_empty());
+            assert!(!staff_state.notification_events.is_empty());
         });
     }
 

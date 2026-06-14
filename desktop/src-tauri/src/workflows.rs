@@ -229,6 +229,21 @@ pub struct PublicationEvent {
     pub retracted_by: String,
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct NotificationEvent {
+    pub id: String,
+    pub module_id: String,
+    pub record_id: String,
+    pub audience: String,
+    pub channel: String,
+    pub subject: String,
+    pub body: String,
+    pub status: String,
+    pub created_at_unix_seconds: u64,
+    #[serde(default)]
+    pub sent_at_unix_seconds: Option<u64>,
+}
+
 #[derive(Deserialize, Serialize)]
 struct ExportIntegrityManifest {
     schema_version: u16,
@@ -260,6 +275,8 @@ pub struct CityWorkState {
     pub audit_entries: Vec<AuditEntry>,
     #[serde(default)]
     pub publication_events: Vec<PublicationEvent>,
+    #[serde(default)]
+    pub notification_events: Vec<NotificationEvent>,
 }
 
 #[derive(Serialize)]
@@ -584,6 +601,32 @@ fn push_publication_event(
     });
 }
 
+fn push_notification_event(
+    state: &mut CityWorkState,
+    module_id: &str,
+    record_id: String,
+    audience: &str,
+    subject: String,
+    body: String,
+) {
+    let id = new_id("notification", state.notification_events.len());
+    state.notification_events.insert(
+        0,
+        NotificationEvent {
+            id,
+            module_id: module_id.to_string(),
+            record_id,
+            audience: audience.to_string(),
+            channel: "local notification outbox".to_string(),
+            subject,
+            body,
+            status: "ready to send".to_string(),
+            created_at_unix_seconds: now_unix_seconds(),
+            sent_at_unix_seconds: None,
+        },
+    );
+}
+
 fn retract_publication_event(
     state: &mut CityWorkState,
     source_module: &str,
@@ -658,6 +701,28 @@ fn selected_record_mut<'a>(
 ) -> Result<&'a mut RecordsRequest, String> {
     let index = selected_record_index(state, payload)?;
     Ok(&mut state.records_requests[index])
+}
+
+fn selected_notification_mut<'a>(
+    state: &'a mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<&'a mut NotificationEvent, String> {
+    let notification_id = payload_optional_string(payload, "notificationId");
+    if notification_id.is_empty() {
+        return state
+            .notification_events
+            .iter_mut()
+            .find(|event| event.status == "ready to send")
+            .ok_or_else(|| {
+                "No ready local notification exists yet. Create or select a notification first."
+                    .to_string()
+            });
+    }
+    state
+        .notification_events
+        .iter_mut()
+        .find(|event| event.id == notification_id)
+        .ok_or_else(|| "The selected local notification could not be found.".to_string())
 }
 
 fn ensure_records_request_active(request: &RecordsRequest) -> Result<(), String> {
@@ -1483,7 +1548,7 @@ fn create_records_request(
             requester_contact: String::new(),
             submitted_via: "Staff intake".to_string(),
             summary,
-            deadline,
+            deadline: deadline.clone(),
             deadline_basis,
             status: "received".to_string(),
             assigned_to: String::new(),
@@ -1501,6 +1566,15 @@ fn create_records_request(
             closed_at_unix_seconds: None,
             created_at_unix_seconds: now_unix_seconds(),
         },
+    );
+    let request_id = state.records_requests[0].id.clone();
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "records staff",
+        format!("Records request {tracking_number} created"),
+        format!("Staff-created request for {requester} is saved locally with deadline {deadline}."),
     );
     push_audit(
         state,
@@ -1534,7 +1608,7 @@ fn submit_public_records_request(
             id,
             public_tracking_number: tracking_number.clone(),
             requester: requester.clone(),
-            requester_contact,
+            requester_contact: requester_contact.clone(),
             submitted_via: "Resident/Public local intake".to_string(),
             summary,
             deadline,
@@ -1556,6 +1630,27 @@ fn submit_public_records_request(
             created_at_unix_seconds: now_unix_seconds(),
         },
     );
+    let request_id = state.records_requests[0].id.clone();
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id.clone(),
+        "records staff",
+        format!("New public records request {tracking_number}"),
+        format!(
+            "{requester} submitted request {tracking_number}. Review the deadline, scope, assignment, and contact path in the local Records workflow."
+        ),
+    );
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "requester",
+        format!("Records request {tracking_number} received"),
+        format!(
+            "Request {tracking_number} was received locally. Staff will review the deadline and response path. Contact on file: {requester_contact}."
+        ),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1576,13 +1671,29 @@ fn set_records_deadline(
     let deadline_basis = payload_string(payload, "deadlineBasis")
         .map_err(|_| "Enter the statutory or policy basis for the records deadline.".to_string())?;
     parse_iso_date(&deadline, "records response deadline")?;
-    let request = selected_record_mut(state, payload)?;
-    ensure_records_request_active(request)?;
-    request.deadline = deadline.clone();
-    request.deadline_basis = deadline_basis.clone();
-    request.deadline_reviewed_at_unix_seconds = Some(now_unix_seconds());
-    request.status = "deadline reviewed".to_string();
-    let tracking_number = request.public_tracking_number.clone();
+    let (request_id, tracking_number, requester) = {
+        let request = selected_record_mut(state, payload)?;
+        ensure_records_request_active(request)?;
+        request.deadline = deadline.clone();
+        request.deadline_basis = deadline_basis.clone();
+        request.deadline_reviewed_at_unix_seconds = Some(now_unix_seconds());
+        request.status = "deadline reviewed".to_string();
+        (
+            request.id.clone(),
+            request.public_tracking_number.clone(),
+            request.requester.clone(),
+        )
+    };
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "requester",
+        format!("Records request {tracking_number} deadline reviewed"),
+        format!(
+            "Staff reviewed the response deadline for {requester}: {deadline}. Basis: {deadline_basis}."
+        ),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1599,10 +1710,21 @@ fn request_records_clarification(
     payload: Option<&Value>,
 ) -> Result<String, String> {
     let note = payload_string(payload, "clarificationNote")?;
-    let request = selected_record_mut(state, payload)?;
-    ensure_records_request_active(request)?;
-    request.clarification_notes.push(note.clone());
-    request.status = "clarification".to_string();
+    let (request_id, tracking_number) = {
+        let request = selected_record_mut(state, payload)?;
+        ensure_records_request_active(request)?;
+        request.clarification_notes.push(note.clone());
+        request.status = "clarification".to_string();
+        (request.id.clone(), request.public_tracking_number.clone())
+    };
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "requester",
+        format!("Records request {tracking_number} needs clarification"),
+        format!("Staff requested clarification before completing the records search: {note}"),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1883,7 +2005,7 @@ fn fulfill_records_request(
     state: &mut CityWorkState,
     payload: Option<&Value>,
 ) -> Result<String, String> {
-    let (request_id, public_payload) = {
+    let (request_id, tracking_number, requester, deadline, exports, public_payload) = {
         let request = selected_record_mut(state, payload)?;
         ensure_records_request_active(request)?;
         if request.approved_at_unix_seconds.is_none() {
@@ -1898,6 +2020,10 @@ fn fulfill_records_request(
         request.status = "fulfilled".to_string();
         (
             request.id.clone(),
+            request.public_tracking_number.clone(),
+            request.requester.clone(),
+            request.deadline.clone(),
+            request.exports.join("; "),
             format!(
                 "Records request {} fulfilled for {}. Deadline: {}. Exports: {}.",
                 if request.public_tracking_number.is_empty() {
@@ -1914,9 +2040,19 @@ fn fulfill_records_request(
     push_publication_event(
         state,
         "civicrecords-ai",
-        request_id,
+        request_id.clone(),
         "records-response",
         public_payload,
+    );
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "requester",
+        format!("Records request {tracking_number} response ready"),
+        format!(
+            "The approved response for {requester} has been marked fulfilled. Deadline: {deadline}. Export package: {exports}."
+        ),
     );
     push_audit(
         state,
@@ -1931,15 +2067,26 @@ fn close_records_request(
     state: &mut CityWorkState,
     payload: Option<&Value>,
 ) -> Result<String, String> {
-    let request = selected_record_mut(state, payload)?;
-    if request.closed_at_unix_seconds.is_some() || request.status == "closed" {
-        return Err("This records request is already closed.".to_string());
-    }
-    if request.fulfilled_at_unix_seconds.is_none() {
-        return Err("Fulfill the records request before closing it.".to_string());
-    }
-    request.closed_at_unix_seconds = Some(now_unix_seconds());
-    request.status = "closed".to_string();
+    let (request_id, tracking_number) = {
+        let request = selected_record_mut(state, payload)?;
+        if request.closed_at_unix_seconds.is_some() || request.status == "closed" {
+            return Err("This records request is already closed.".to_string());
+        }
+        if request.fulfilled_at_unix_seconds.is_none() {
+            return Err("Fulfill the records request before closing it.".to_string());
+        }
+        request.closed_at_unix_seconds = Some(now_unix_seconds());
+        request.status = "closed".to_string();
+        (request.id.clone(), request.public_tracking_number.clone())
+    };
+    push_notification_event(
+        state,
+        "civicrecords-ai",
+        request_id,
+        "records staff",
+        format!("Records request {tracking_number} closed"),
+        "The fulfilled records request is closed. Audit, export, publication, and notification evidence remain in the local profile.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -1947,6 +2094,28 @@ fn close_records_request(
         "Closed fulfilled records request.".to_string(),
     );
     Ok("Records request closed with audit evidence preserved.".to_string())
+}
+
+fn mark_notification_sent(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let (module_id, subject) = {
+        let notification = selected_notification_mut(state, payload)?;
+        if notification.status == "sent / logged" || notification.sent_at_unix_seconds.is_some() {
+            return Err("This local notification is already marked sent.".to_string());
+        }
+        notification.status = "sent / logged".to_string();
+        notification.sent_at_unix_seconds = Some(now_unix_seconds());
+        (notification.module_id.clone(), notification.subject.clone())
+    };
+    push_audit(
+        state,
+        &module_id,
+        "mark-notification-sent",
+        format!("Marked local notification sent: {subject}"),
+    );
+    Ok("Notification marked sent in the local notification outbox.".to_string())
 }
 
 fn append_code_version_history(
@@ -2605,6 +2774,29 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             });
         }
     }
+    for event in &state.notification_events {
+        if contains_query(
+            &[
+                &event.module_id,
+                &event.record_id,
+                &event.audience,
+                &event.channel,
+                &event.subject,
+                &event.body,
+                &event.status,
+            ],
+            query,
+        ) {
+            results.push(SearchResult {
+                module_id: "civiccore".to_string(),
+                record_id: event.id.clone(),
+                title: format!("Notification: {}", event.subject),
+                snippet: event.body.clone(),
+                citation: event.channel.clone(),
+                status: event.status.clone(),
+            });
+        }
+    }
     results
 }
 
@@ -2764,6 +2956,7 @@ pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkStat
             .filter(|event| event.retracted_at_unix_seconds.is_none())
             .cloned()
             .collect(),
+        notification_events: Vec::new(),
     }
 }
 
@@ -2819,6 +3012,7 @@ pub fn city_work_action(
         "export-records-response" => export_records_response(&mut state, payload)?,
         "fulfill-records-request" => fulfill_records_request(&mut state, payload)?,
         "close-records-request" => close_records_request(&mut state, payload)?,
+        "mark-notification-sent" => mark_notification_sent(&mut state, payload)?,
         "open-exports-folder" => open_exports_folder(payload)?,
         "import-code-source" => import_code_source(&mut state, payload)?,
         "record-codifier-sync" => record_codifier_sync(&mut state, payload)?,
@@ -3339,8 +3533,21 @@ mod tests {
             assert_eq!(publication.source_record_id, request.id);
             assert_eq!(publication.payload_hash.len(), 64);
             assert!(publication.retracted_at_unix_seconds.is_none());
+            assert!(state.notification_events.iter().any(|event| {
+                event.audience == "requester"
+                    && event.subject.contains("response ready")
+                    && event.body.contains("Export package")
+            }));
+            assert!(state.notification_events.iter().any(|event| {
+                event.audience == "records staff"
+                    && event.subject.contains("closed")
+                    && event.status == "ready to send"
+            }));
             let results = search_city_work(&state, "attorney-client");
             assert_eq!(results.len(), 1);
+            let notification_results = search_city_work(&state, "response ready");
+            assert_eq!(notification_results.len(), 1);
+            assert_eq!(notification_results[0].module_id, "civiccore");
         });
     }
 
@@ -3368,6 +3575,19 @@ mod tests {
             assert!(request.deadline_reviewed_at_unix_seconds.is_none());
             assert!(request.approved_at_unix_seconds.is_none());
             assert!(request.fulfilled_at_unix_seconds.is_none());
+            assert_eq!(state.notification_events.len(), 2);
+            assert!(state.notification_events.iter().any(|event| {
+                event.audience == "records staff"
+                    && event
+                        .subject
+                        .contains("New public records request REQ-0001")
+                    && event.status == "ready to send"
+            }));
+            assert!(state.notification_events.iter().any(|event| {
+                event.audience == "requester"
+                    && event.subject.contains("Records request REQ-0001 received")
+                    && event.body.contains("morgan@example.gov")
+            }));
 
             let missing_basis = serde_json::json!({
                 "recordsRequestId": request.id.clone(),
@@ -3404,8 +3624,34 @@ mod tests {
                 "Colorado CORA response deadline reviewed by clerk."
             );
             assert!(request.deadline_reviewed_at_unix_seconds.is_some());
+            assert_eq!(state.notification_events.len(), 3);
+            let deadline_notification = state
+                .notification_events
+                .iter()
+                .find(|event| event.subject.contains("deadline reviewed"))
+                .expect("deadline notification exists");
+            assert_eq!(deadline_notification.audience, "requester");
+            assert_eq!(deadline_notification.status, "ready to send");
+            let deadline_notification_id = deadline_notification.id.clone();
             let public_state = public_city_work_state().expect("public state reads");
             assert!(public_state.records_requests.is_empty());
+            assert!(public_state.notification_events.is_empty());
+
+            city_work_action(
+                "mark-notification-sent",
+                Some(&serde_json::json!({
+                    "notificationId": deadline_notification_id
+                })),
+            )
+            .expect("notification marked sent");
+            let state = city_work_state().expect("state reads after notification log");
+            let deadline_notification = state
+                .notification_events
+                .iter()
+                .find(|event| event.subject.contains("deadline reviewed"))
+                .expect("deadline notification exists");
+            assert_eq!(deadline_notification.status, "sent / logged");
+            assert!(deadline_notification.sent_at_unix_seconds.is_some());
 
             let lookup = serde_json::json!({
                 "trackingNumber": "REQ-0001",
@@ -3452,6 +3698,10 @@ mod tests {
                 .audit_entries
                 .iter()
                 .any(|entry| entry.action == "set-records-deadline"));
+            assert!(state.audit_entries.iter().any(|entry| {
+                entry.action == "mark-notification-sent"
+                    && entry.summary.contains("deadline reviewed")
+            }));
             assert_valid_audit_chain(&state.audit_entries);
         });
     }
