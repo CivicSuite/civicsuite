@@ -36,14 +36,6 @@
         "upgradeCode": "a63fc1d3-5437-5f55-89a2-fef93fb1f930",
         "language": "en-US",
         "enableElevatedUpdateTask": false
-      },
-      "nsis": {
-        "compression": "zlib",
-        "displayLanguageSelector": false,
-        "installMode": "currentUser",
-        "installerHooks": "../installer/windows/nsis-hooks.nsh",
-        "languages": ["English"],
-        "startMenuFolder": "CivicSuite"
       }
     }
   }

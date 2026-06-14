@@ -8,7 +8,6 @@ const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
 const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows", "desktop-windows-msi.yml"), "utf8");
 const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
-const nsisHooks = readFileSync(join(root, "installer", "windows", "nsis-hooks.nsh"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const authRust = readFileSync(join(root, "src-tauri", "src", "auth.rs"), "utf8");
 const moduleRegistryRust = readFileSync(join(root, "src-tauri", "src", "module_registry.rs"), "utf8");
@@ -190,8 +189,8 @@ if (!tauriConfig.includes('"licenseFile": "../installer/windows/unsigned-beta-in
   throw new Error("Tauri bundle must include the unsigned beta install notice");
 }
 
-if (!tauriConfig.includes('"installerHooks": "../installer/windows/nsis-hooks.nsh"')) {
-  throw new Error("Tauri Windows installer must include the CivicSuite install hook");
+if (tauriConfig.includes('"installerHooks"') || tauriConfig.includes('"nsis"')) {
+  throw new Error("Tauri MSI packaging must not rely on NSIS installer hooks");
 }
 
 if (!tauriConfig.includes('"resources": ["../runtime/payload/"]')) {
@@ -225,8 +224,10 @@ for (const phrase of [
   "npm run tauri -- build",
   "desktop/src-tauri/target/release/bundle/msi/*.msi",
   "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930",
+  "InstallerBundle=msi",
   "UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt",
-  "SmartScreenNoticeIncluded=true",
+  "UnsignedBetaNoticeSurface=msi-license-file",
+  "SmartScreenGuidance=More info -> Run anyway",
   "NoDockerPrerequisite=true",
   "NoWslPrerequisite=true"
 ]) {
@@ -236,6 +237,8 @@ for (const phrase of [
 }
 
 for (const phrase of [
+  "Windows Beta MSI Install Notice",
+  "MSI installer",
   "not code-signed",
   "Microsoft Defender SmartScreen",
   "More info",
@@ -248,19 +251,6 @@ for (const phrase of [
 ]) {
   if (!installerNotice.includes(phrase)) {
     throw new Error(`installer notice missing phrase: ${phrase}`);
-  }
-}
-
-for (const phrase of [
-  "NSIS_HOOK_PREINSTALL",
-  "unsigned beta software",
-  "Microsoft Defender SmartScreen",
-  "More info",
-  "Run anyway",
-  "does not require Docker, WSL, or a terminal"
-]) {
-  if (!nsisHooks.includes(phrase)) {
-    throw new Error(`NSIS hook missing phrase: ${phrase}`);
   }
 }
 

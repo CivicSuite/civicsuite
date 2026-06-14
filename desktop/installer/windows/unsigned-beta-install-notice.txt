@@ -1,6 +1,8 @@
-CivicSuite Windows Beta Install Notice
+CivicSuite Windows Beta MSI Install Notice
 
 CivicSuite is beta-level open-source municipal software. This Windows installer is not code-signed yet, so Windows may show a Microsoft Defender SmartScreen warning before the installer opens.
+
+This notice is the unsigned beta notice for the CivicSuite MSI installer. The same guidance is repeated in first-run setup and the operator walkthrough so a clerk or local IT helper can recognize the expected warning before continuing.
 
 If SmartScreen appears:
 

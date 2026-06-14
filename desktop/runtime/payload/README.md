@@ -2,7 +2,7 @@
 
 This directory is the build-time payload root for the Windows Local 1.0 desktop
 installer. Release packaging places portable runtime files here before the
-Tauri/NSIS bundle is built:
+Tauri MSI bundle is built:
 
 - `postgres/` contains portable PostgreSQL 17 with pgvector.
 - `python/` contains bundled CPython plus CivicCore and city-core services.
