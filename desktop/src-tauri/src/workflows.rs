@@ -202,6 +202,12 @@ pub struct Meeting {
     #[serde(default)]
     pub minutes_adopted_at_unix_seconds: Option<u64>,
     #[serde(default)]
+    pub minutes_signed_by: String,
+    #[serde(default)]
+    pub minutes_signature_attestation: String,
+    #[serde(default)]
+    pub minutes_signed_at_unix_seconds: Option<u64>,
+    #[serde(default)]
     pub archived_at_unix_seconds: Option<u64>,
     pub created_at_unix_seconds: u64,
 }
@@ -1214,6 +1220,9 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         public_comments: Vec::new(),
         exports: Vec::new(),
         minutes_adopted_at_unix_seconds: None,
+        minutes_signed_by: String::new(),
+        minutes_signature_attestation: String::new(),
+        minutes_signed_at_unix_seconds: None,
         archived_at_unix_seconds: None,
         created_at_unix_seconds: now_unix_seconds(),
     };
@@ -1688,6 +1697,14 @@ fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
     let minutes = payload_string(payload, "minutes")?;
     let meeting = selected_meeting_mut(state, payload)?;
     ensure_meeting_can_change(meeting)?;
+    if meeting.minutes_adopted_at_unix_seconds.is_some()
+        || meeting.minutes_signed_at_unix_seconds.is_some()
+    {
+        return Err(
+            "Minutes are already adopted. Create a correction record before replacing them."
+                .to_string(),
+        );
+    }
     let title = meeting.title.clone();
     meeting.minutes = minutes;
     meeting.minute_citations.clear();
@@ -2121,6 +2138,11 @@ fn adopt_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<S
     if meeting.minute_citations.is_empty() {
         return Err("Add at least one minute citation before adopting minutes.".to_string());
     }
+    if meeting.minutes_adopted_at_unix_seconds.is_some() {
+        return Err(
+            "Minutes are already adopted. Sign the adopted minutes before archive.".to_string(),
+        );
+    }
     let title = meeting.title.clone();
     meeting.minutes_adopted_at_unix_seconds = Some(now_unix_seconds());
     meeting.status = "minutes adopted".to_string();
@@ -2131,6 +2153,33 @@ fn adopt_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<S
         format!("Adopted minutes for: {title}"),
     );
     Ok("Minutes marked adopted with audit evidence.".to_string())
+}
+
+fn sign_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let signer = payload_string(payload, "minutesSignedBy")
+        .map_err(|_| "Enter the clerk or authorized signer name.".to_string())?;
+    let attestation = payload_string(payload, "minutesSignatureAttestation")
+        .map_err(|_| "Enter the signature attestation.".to_string())?;
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    if meeting.minutes_adopted_at_unix_seconds.is_none() {
+        return Err("Adopt the minutes before signing them.".to_string());
+    }
+    if meeting.minutes_signed_at_unix_seconds.is_some() {
+        return Err("Minutes are already signed and ready for archive.".to_string());
+    }
+    let title = meeting.title.clone();
+    meeting.minutes_signed_by = signer.clone();
+    meeting.minutes_signature_attestation = attestation.clone();
+    meeting.minutes_signed_at_unix_seconds = Some(now_unix_seconds());
+    meeting.status = "minutes signed".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "sign-minutes",
+        format!("Signed adopted minutes for {title}; signer {signer}; attestation: {attestation}"),
+    );
+    Ok("Adopted minutes signed and ready for public archive.".to_string())
 }
 
 fn list_or_default(values: &[String], empty: &str) -> String {
@@ -2200,6 +2249,18 @@ fn meeting_action_records_or_default(actions: &[MeetingActionRecord]) -> String 
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn minutes_signature_or_default(meeting: &Meeting) -> String {
+    meeting
+        .minutes_signed_at_unix_seconds
+        .map(|timestamp| {
+            format!(
+                "Signed by {} at Unix timestamp {}. Attestation: {}",
+                meeting.minutes_signed_by, timestamp, meeting.minutes_signature_attestation
+            )
+        })
+        .unwrap_or_else(|| "Minutes have not been signed.".to_string())
 }
 
 fn push_records_timeline(request: &mut RecordsRequest, action: &str, actor: &str, note: String) {
@@ -2545,6 +2606,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         .minutes_adopted_at_unix_seconds
         .map(|timestamp| format!("Adopted at Unix timestamp {timestamp}."))
         .unwrap_or_else(|| "Minutes have not been adopted.".to_string());
+    let minutes_signature = minutes_signature_or_default(meeting);
     let notice_checklists = notice_checklists_or_default(&meeting.notice_checklists);
     let notice_postings = notice_postings_or_default(&meeting.notice_postings);
     let attachments = meeting_attachments_or_default(&meeting.attachments);
@@ -2555,7 +2617,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -2577,6 +2639,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         },
         minute_citations,
         minutes_adoption,
+        minutes_signature,
         motions,
         votes,
         action_items,
@@ -2619,6 +2682,11 @@ fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result
         if meeting.minutes_adopted_at_unix_seconds.is_none() {
             return Err(
                 "Adopt the minutes before archiving the public meeting record.".to_string(),
+            );
+        }
+        if meeting.minutes_signed_at_unix_seconds.is_none() {
+            return Err(
+                "Sign the adopted minutes before archiving the public meeting record.".to_string(),
             );
         }
         meeting.status = "archived public record".to_string();
@@ -4608,6 +4676,8 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &meeting.summary,
                 &meeting.status,
                 &meeting.minutes,
+                &meeting.minutes_signed_by,
+                &meeting.minutes_signature_attestation,
                 &agenda_titles,
                 &attachments,
                 &minute_citations,
@@ -4897,6 +4967,9 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
     if !is_public_archive {
         public_meeting.minutes.clear();
         public_meeting.minute_citations.clear();
+        public_meeting.minutes_signed_by.clear();
+        public_meeting.minutes_signature_attestation.clear();
+        public_meeting.minutes_signed_at_unix_seconds = None;
         public_meeting.motions.clear();
         public_meeting.votes.clear();
         public_meeting.action_items.clear();
@@ -5084,6 +5157,7 @@ pub fn city_work_action(
         "review-public-comment" => review_public_comment(&mut state, payload)?,
         "redact-public-comment" => redact_public_comment(&mut state, payload)?,
         "adopt-minutes" => adopt_minutes(&mut state, payload)?,
+        "sign-minutes" => sign_minutes(&mut state, payload)?,
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
@@ -5501,6 +5575,23 @@ mod tests {
             city_work_action("add-minute-citation", Some(&staff_only_citation))
                 .expect("staff-only minute citation saved");
             city_work_action("adopt-minutes", None).expect("minutes adopted");
+            let archive_before_signature = match city_work_action("archive-meeting", None) {
+                Ok(_) => panic!("meeting cannot archive before signed minutes"),
+                Err(error) => error,
+            };
+            assert!(archive_before_signature.contains("Sign the adopted minutes"));
+            let replacement_minutes =
+                serde_json::json!({ "minutes": "Replacement after adoption." });
+            let error = match city_work_action("record-minutes", Some(&replacement_minutes)) {
+                Ok(_) => panic!("adopted minutes cannot be overwritten"),
+                Err(error) => error,
+            };
+            assert!(error.contains("already adopted"));
+            let signature = serde_json::json!({
+                "minutesSignedBy": "City Clerk Morgan",
+                "minutesSignatureAttestation": "I attest these adopted minutes are ready for the official public record."
+            });
+            city_work_action("sign-minutes", Some(&signature)).expect("minutes signed");
             city_work_action("export-meeting-packet", None).expect("packet exported");
             city_work_action("archive-meeting", None).expect("meeting archived");
             let state = city_work_state().expect("state reads");
@@ -5569,6 +5660,12 @@ mod tests {
                 "closed-session addendum"
             );
             assert!(meeting.minutes_adopted_at_unix_seconds.is_some());
+            assert_eq!(meeting.minutes_signed_by, "City Clerk Morgan");
+            assert_eq!(
+                meeting.minutes_signature_attestation,
+                "I attest these adopted minutes are ready for the official public record."
+            );
+            assert!(meeting.minutes_signed_at_unix_seconds.is_some());
             assert!(meeting.archived_at_unix_seconds.is_some());
             assert_eq!(meeting.exports.len(), 2);
             assert_ne!(meeting.exports[0], meeting.exports[1]);
@@ -5586,6 +5683,8 @@ mod tests {
             assert!(packet.contains("Councilmember Lee"));
             assert!(packet.contains("## Minute Citations"));
             assert!(packet.contains("Executive session memo"));
+            assert!(packet.contains("## Minutes Signature"));
+            assert!(packet.contains("City Clerk Morgan"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
             assert!(archive.contains("Body: City Council"));
@@ -5603,6 +5702,9 @@ mod tests {
             assert!(archive.contains("Finance Director"));
             assert!(archive.contains("2026-07-08"));
             assert!(archive.contains("Budget ordinance motion"));
+            assert!(archive.contains("## Minutes Signature"));
+            assert!(archive.contains("City Clerk Morgan"));
+            assert!(archive.contains("official public record"));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
             assert!(archive.contains("Resident asked for sidewalk funding."));
             assert!(archive.contains("## Packet Attachments"));
@@ -5627,6 +5729,8 @@ mod tests {
             assert_eq!(action_owner_results.len(), 1);
             let action_source_results = search_city_work(&state, "Budget ordinance motion");
             assert_eq!(action_source_results.len(), 1);
+            let signature_results = search_city_work(&state, "City Clerk Morgan");
+            assert_eq!(signature_results.len(), 1);
             let public_state = public_city_work_state().expect("public state reads");
             assert_eq!(public_state.meeting_bodies.len(), 1);
             assert_eq!(
@@ -5641,6 +5745,11 @@ mod tests {
             assert_eq!(public_meeting.body_name, "City Council");
             assert_eq!(public_meeting.motions.len(), 1);
             assert_eq!(public_meeting.action_records.len(), 1);
+            assert_eq!(public_meeting.minutes_signed_by, "City Clerk Morgan");
+            assert!(public_meeting
+                .minutes_signature_attestation
+                .contains("official public record"));
+            assert!(public_meeting.minutes_signed_at_unix_seconds.is_some());
             assert_eq!(public_meeting.attachments.len(), 1);
             assert_eq!(public_meeting.attachments[0].title, "Fiscal note");
             assert!(public_meeting.attachments[0].original_path.is_empty());

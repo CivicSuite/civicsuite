@@ -573,6 +573,8 @@ const state = {
     minutesCitationSourceRef: "",
     minutesCitationNote: "",
     minutesCitationAccess: "public record",
+    minutesSignedBy: "",
+    minutesSignatureAttestation: "",
     motionText: "",
     motionMover: "",
     motionSeconder: "",
@@ -1367,6 +1369,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "redact-public-comment",
   "suggest-minutes-draft",
   "adopt-minutes",
+  "sign-minutes",
   "archive-meeting",
   "set-records-deadline",
   "record-records-search-session",
@@ -1669,6 +1672,22 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicClerk audit entry for adopting minutes.",
       retry: "If no minutes draft or citation evidence exists, the desktop app blocks adoption and asks staff to save minutes and add citations first."
     },
+    "sign-minutes": {
+      title: "Review Before Signing Minutes",
+      confirmLabel: "Sign Minutes",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Records the clerk or authorized signer attestation for the adopted minutes before they can become an archived public record.",
+      visibility: "Signed minutes remain local staff records until archive/publication. The signer and attestation appear in the public archive after publication.",
+      sources: [
+        meeting?.minutes_adopted_at_unix_seconds ? "Minutes have been adopted." : "Minutes must be adopted before signing.",
+        detailOrFallback(state.workDraft.minutesSignedBy, "Signer name is required."),
+        detailOrFallback(state.workDraft.minutesSignatureAttestation, "Signature attestation is required.")
+      ],
+      audit: "Creates a CivicClerk audit entry for signing the adopted minutes.",
+      retry: "If minutes are not adopted, already signed, or signer evidence is missing, the desktop app blocks signing and leaves the meeting unchanged."
+    },
     "archive-meeting": {
       title: "Review Before Archiving Public Record",
       confirmLabel: "Archive Public Record",
@@ -1679,10 +1698,11 @@ function guidedReviewForAction(action) {
       visibility: "Resident/Public meeting materials can show this archived public record.",
       sources: [
         meeting?.minutes_adopted_at_unix_seconds ? "Minutes have been adopted." : "Minutes are not marked adopted yet.",
+        meeting?.minutes_signed_at_unix_seconds ? `Signed by ${meeting.minutes_signed_by || "authorized signer"}.` : "Minutes are not signed yet.",
         meeting ? `${(meeting.exports || []).length} existing export(s)` : "The desktop app will require a meeting before saving."
       ],
       audit: "Creates CivicClerk audit and CivicCore publication-gate entries.",
-      retry: "If minutes are not adopted, the desktop app blocks archive and leaves the meeting editable."
+      retry: "If minutes are not adopted or signed, the desktop app blocks archive and leaves the meeting editable."
     },
     "review-public-comment": {
       title: "Review Before Marking Public Comment Reviewed",
@@ -2077,6 +2097,9 @@ function publicMeetingView(meeting) {
   if (!publicArchive) {
     publicMeeting.minutes = "";
     publicMeeting.minute_citations = [];
+    publicMeeting.minutes_signed_by = "";
+    publicMeeting.minutes_signature_attestation = "";
+    publicMeeting.minutes_signed_at_unix_seconds = null;
     publicMeeting.motions = [];
     publicMeeting.votes = [];
     publicMeeting.action_items = [];
@@ -2290,6 +2313,8 @@ function renderMeetingsWorkflow() {
         </label>
         <label>Action source <input type="text" data-work-field="actionItemSourceReference" value="${state.workDraft.actionItemSourceReference}" placeholder="Motion, vote, agenda item, or clerk note" /></label>
         <label>Resident comment <textarea data-work-field="residentComment">${state.workDraft.residentComment}</textarea></label>
+        <label>Minutes signed by <input type="text" data-work-field="minutesSignedBy" value="${state.workDraft.minutesSignedBy}" placeholder="City Clerk or authorized signer" /></label>
+        <label>Signature attestation <textarea data-work-field="minutesSignatureAttestation">${state.workDraft.minutesSignatureAttestation}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="suggest-minutes-draft">Generate Local AI Minutes</button>
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
@@ -2298,6 +2323,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="add-action-item">Add Action Item</button>
           <button type="button" class="secondary-action" data-work-action="record-resident-comment">Record Resident Comment</button>
           <button type="button" class="secondary-action" data-work-action="adopt-minutes">Adopt Minutes</button>
+          <button type="button" class="secondary-action" data-work-action="sign-minutes">Sign Minutes</button>
           <button type="button" class="secondary-action" data-work-action="archive-meeting">Archive Public Record</button>
         </div>
       </div>
@@ -2339,6 +2365,7 @@ function renderMeetingsWorkflow() {
           <p>${meeting.summary || "No summary yet."}</p>
           ${(meeting.agenda_items || []).length > 0 ? `<p><strong>Agenda:</strong> ${(meeting.agenda_items || []).map((item) => `${escapeHtml(item.title)}${item.source_reference ? ` (${escapeHtml(item.source_reference)})` : ""}`).join("; ")}</p>` : ""}
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
+          ${meeting.minutes_signed_at_unix_seconds ? `<p><strong>Minutes signature:</strong> signed by ${escapeHtml(meeting.minutes_signed_by || "authorized signer")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)} (${escapeHtml(citation.access_level)})`).join("; ")}</p>` : ""}
           ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
@@ -3091,9 +3118,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
-        ? [...publicMeetingFields, meeting.minutes, motions, outcomes, actionItems, actionRecords, residentComments]
+        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, outcomes, actionItems, actionRecords, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4307,6 +4334,11 @@ function workPayloadForAction(action) {
       actionItemDueDate: draft.actionItemDueDate,
       actionItemStatus: draft.actionItemStatus,
       actionItemSourceReference: draft.actionItemSourceReference
+    },
+    "sign-minutes": {
+      ...selected,
+      minutesSignedBy: draft.minutesSignedBy,
+      minutesSignatureAttestation: draft.minutesSignatureAttestation
     },
     "record-resident-comment": { ...selected, residentComment: draft.residentComment },
     "submit-public-comment": {
