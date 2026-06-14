@@ -46,6 +46,8 @@ test("system health keeps full model readiness visible", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Backup, Restore, Uninstall" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City data folder" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Backup folder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Task queue schema" })).toBeVisible();
+  await expect(page.getByText("City workflow services are not running yet")).toBeVisible();
   await expect(page.locator('[aria-label="City data folder actions"]')).toHaveCount(0);
   await expect(page.locator('[aria-label="Backup folder actions"]')).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Backup Now" })).toBeVisible();

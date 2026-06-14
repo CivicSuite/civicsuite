@@ -66,6 +66,9 @@ After first-run setup, open System Health. Verify:
 
 - Desktop shell is running locally.
 - Local data store is installed and healthy.
+- Task queue schema explains whether the PostgreSQL-backed CivicCore queue is
+  ready, needs migrations, or cannot be checked because workflow services are
+  not running.
 - Local AI model file is present, checksum-verified, loaded, and registered.
 - Backup folder is configured.
 - Local Users shows the first administrator and lets a signed-in local

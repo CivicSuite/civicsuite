@@ -1176,8 +1176,14 @@ fn tcp_health_ok(host: &str, port: u16) -> bool {
 }
 
 fn http_health_ok(endpoint: &str) -> bool {
+    http_get_response(endpoint)
+        .map(|(status_code, _)| (200..300).contains(&status_code))
+        .unwrap_or(false)
+}
+
+fn http_get_response(endpoint: &str) -> Option<(u16, String)> {
     let Some(rest) = endpoint.strip_prefix("http://") else {
-        return false;
+        return None;
     };
     let (host_port, path) = rest.split_once('/').unwrap_or((rest, ""));
     let path = format!("/{path}");
@@ -1190,19 +1196,27 @@ fn http_health_ok(endpoint: &str) -> bool {
         Duration::from_millis(500),
     ) {
         Ok(stream) => stream,
-        Err(_) => return false,
+        Err(_) => return None,
     };
     let _ = stream.set_read_timeout(Some(Duration::from_millis(500)));
     let request = format!("GET {path} HTTP/1.1\r\nHost: {host_port}\r\nConnection: close\r\n\r\n");
     if stream.write_all(request.as_bytes()).is_err() {
-        return false;
+        return None;
     }
-    let mut response = [0_u8; 16];
-    let Ok(size) = stream.read(&mut response) else {
-        return false;
-    };
-    let status = String::from_utf8_lossy(&response[..size]);
-    status.starts_with("HTTP/1.1 2") || status.starts_with("HTTP/1.0 2")
+    let mut response = String::new();
+    if stream.read_to_string(&mut response).is_err() {
+        return None;
+    }
+    let status_code = response
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())?;
+    let body = response
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or_default();
+    Some((status_code, body))
 }
 
 fn process_running(pid: u32) -> bool {
@@ -1381,6 +1395,93 @@ fn local_folder_health(
     }
 }
 
+fn task_queue_schema_unreachable_health(endpoint: &str) -> RuntimeHealthItem {
+    RuntimeHealthItem {
+        id: "task-queue-schema".to_string(),
+        label: "Task queue schema".to_string(),
+        ok: false,
+        status: "Needs services",
+        message: "City workflow services are not running yet, so CivicSuite cannot verify the PostgreSQL task queue schema.".to_string(),
+        next_action: "Start or repair City workflow services after the local data store is installed.".to_string(),
+        admin_detail: format!("kind postgres-task-queue-schema; endpoint {endpoint}; http_status none"),
+        actionable: false,
+    }
+}
+
+fn task_queue_schema_health_from_response(
+    endpoint: &str,
+    http_status: u16,
+    body: &str,
+) -> RuntimeHealthItem {
+    let parsed = serde_json::from_str::<serde_json::Value>(body).ok();
+    let database = parsed.as_ref().and_then(|value| value.get("database"));
+    let ok = database
+        .and_then(|value| value.get("ok"))
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+    let database_status = database
+        .and_then(|value| value.get("status"))
+        .and_then(|value| value.as_str())
+        .unwrap_or("unknown");
+    let detail_message = database
+        .and_then(|value| value.get("message"))
+        .and_then(|value| value.as_str())
+        .unwrap_or("City workflow services did not report database queue schema detail.");
+    let (status, next_action) = if ok {
+        ("OK", "Continue local setup.")
+    } else {
+        match database_status {
+            "migrations-needed" => (
+                "Needs migrations",
+                "Run Install or Repair for City workflow services after the local data store is ready.",
+            ),
+            "missing" => (
+                "Needs configuration",
+                "Repair City workflow services so they receive the local database connection.",
+            ),
+            "unavailable" => (
+                "Needs data store",
+                "Start or repair the Local data store, then check City workflow services again.",
+            ),
+            _ => (
+                "Needs attention",
+                "Check City workflow services and repair the local runtime if the status does not clear.",
+            ),
+        }
+    };
+
+    RuntimeHealthItem {
+        id: "task-queue-schema".to_string(),
+        label: "Task queue schema".to_string(),
+        ok,
+        status,
+        message: detail_message.to_string(),
+        next_action: next_action.to_string(),
+        admin_detail: format!(
+            "kind postgres-task-queue-schema; endpoint {endpoint}; http_status {http_status}; database_status {database_status}"
+        ),
+        actionable: false,
+    }
+}
+
+fn task_queue_schema_health(manifest: &RuntimeManifest) -> Option<RuntimeHealthItem> {
+    let endpoint = manifest.services.iter().find_map(|service| {
+        if service.id == "python-services" {
+            if let HealthDefinition::Http { endpoint } = &service.health {
+                return Some(endpoint.as_str());
+            }
+        }
+        None
+    })?;
+    Some(
+        http_get_response(endpoint)
+            .map(|(status_code, body)| {
+                task_queue_schema_health_from_response(endpoint, status_code, &body)
+            })
+            .unwrap_or_else(|| task_queue_schema_unreachable_health(endpoint)),
+    )
+}
+
 fn folder_write_probe(path: &Path) -> Result<(), String> {
     let check_path = path.join(format!(
         ".civicsuite-health-check-{}-{}.tmp",
@@ -1430,6 +1531,9 @@ pub fn runtime_health() -> Result<Vec<RuntimeHealthItem>, String> {
         "Use First Run or Backup Now to create the backup folder.",
         "Choose another backup folder in Settings or ask IT to grant write access.",
     ));
+    if let Some(queue_health) = task_queue_schema_health(&manifest) {
+        health.push(queue_health);
+    }
     health.extend(
         manifest
             .services
@@ -2314,6 +2418,30 @@ mod tests {
                 .iter()
                 .any(|candidate| candidate == action));
         }
+    }
+
+    #[test]
+    fn task_queue_schema_health_reports_runtime_database_detail() {
+        let ready = task_queue_schema_health_from_response(
+            "http://127.0.0.1:15480/health",
+            200,
+            r#"{"database":{"ok":true,"status":"ready","message":"Local database and task queue schema are ready."}}"#,
+        );
+        assert!(ready.ok);
+        assert_eq!(ready.status, "OK");
+        assert!(ready.message.contains("task queue schema are ready"));
+        assert!(!ready.actionable);
+
+        let needs_migrations = task_queue_schema_health_from_response(
+            "http://127.0.0.1:15480/health",
+            503,
+            r#"{"database":{"ok":false,"status":"migrations-needed","message":"Local database is reachable but task queue migrations are not applied."}}"#,
+        );
+        assert!(!needs_migrations.ok);
+        assert_eq!(needs_migrations.status, "Needs migrations");
+        assert!(needs_migrations
+            .next_action
+            .contains("Run Install or Repair"));
     }
 
     #[test]

@@ -441,6 +441,16 @@ const fallbackState = {
       actionable: false
     },
     {
+      id: "task-queue-schema",
+      label: "Task queue schema",
+      ok: false,
+      status: "Needs services",
+      message: "City workflow services are not running yet, so CivicSuite cannot verify the PostgreSQL task queue schema.",
+      next_action: "Start or repair City workflow services after the local data store is installed.",
+      admin_detail: "PostgreSQL-backed CivicCore task queue schema",
+      actionable: false
+    },
+    {
       id: "postgres",
       label: "Local data store",
       ok: false,
@@ -450,6 +460,24 @@ const fallbackState = {
       admin_detail: "Portable PostgreSQL 17 + pgvector"
     },
     {
+      id: "python-services",
+      label: "City workflow services",
+      ok: false,
+      status: "Needs setup",
+      message: "City workflow services are defined for the Windows local runtime but have not been installed yet.",
+      next_action: "Install CivicCore and the selected city-core module services.",
+      admin_detail: "Bundled CPython module services"
+    },
+    {
+      id: "task-queue",
+      label: "Background work queue",
+      ok: false,
+      status: "Needs setup",
+      message: "Background work queue is defined for the Windows local runtime but has not been installed yet.",
+      next_action: "Create the local task queue after the local data store is ready.",
+      admin_detail: "PostgreSQL-backed CivicCore task queue"
+    },
+    {
       id: "model-runtime",
       label: "Local AI model",
       ok: false,
@@ -457,6 +485,15 @@ const fallbackState = {
       message: "Local AI model is defined for the Windows local runtime but has not been installed yet.",
       next_action: "Download and verify the pinned local model weights.",
       admin_detail: "Ollama runtime with Gemma 4 12B quantization-aware weights"
+    },
+    {
+      id: "file-storage",
+      label: "Local document storage",
+      ok: false,
+      status: "Needs setup",
+      message: "Local document storage is defined for the Windows local runtime but has not been installed yet.",
+      next_action: "Create the local document storage folders during first run.",
+      admin_detail: "CivicSuite local file storage"
     }
   ],
   city_work: {

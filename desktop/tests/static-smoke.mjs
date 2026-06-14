@@ -128,6 +128,10 @@ const requiredUiPhrases = [
   "Save Local Folders",
   "City data folder",
   "Backup folder",
+  "Task queue schema",
+  "City workflow services",
+  "Background work queue",
+  "Local document storage",
   "The Windows installer owns the app folder.",
   "Enabled modules:",
   "Data remains installed. Re-enable this module to show its work area.",
@@ -490,7 +494,10 @@ for (const phrase of [
   "CivicSuite cannot save files there.",
   "Choose another city data folder in Settings or ask IT to grant write access.",
   "Choose another backup folder in Settings or ask IT to grant write access.",
-  "writable {}; write_check {}"
+  "writable {}; write_check {}",
+  "Task queue schema",
+  "City workflow services are not running yet",
+  "Run Install or Repair for City workflow services"
 ]) {
   if (!supervisorRust.includes(phrase)) {
     throw new Error(`Windows supervisor missing folder write-health phrase: ${phrase}`);
