@@ -158,6 +158,7 @@ fn city_work_action_module_requirement(
         | "add-records-message"
         | "assign-records-request"
         | "record-records-search"
+        | "record-records-search-session"
         | "add-records-document"
         | "add-records-exemption-review"
         | "add-records-exemption-decision"

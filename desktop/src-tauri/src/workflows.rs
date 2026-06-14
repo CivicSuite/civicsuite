@@ -152,6 +152,25 @@ pub struct RecordsExemptionDecision {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsSearchResult {
+    pub id: String,
+    pub title: String,
+    pub citation: String,
+    pub summary: String,
+    pub status: String,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsSearchSession {
+    pub id: String,
+    pub query: String,
+    pub locations: String,
+    pub reviewer: String,
+    pub results: Vec<RecordsSearchResult>,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsRequest {
     pub id: String,
     #[serde(default)]
@@ -172,6 +191,8 @@ pub struct RecordsRequest {
     pub clarification_notes: Vec<String>,
     #[serde(default)]
     pub search_notes: Vec<String>,
+    #[serde(default)]
+    pub search_sessions: Vec<RecordsSearchSession>,
     #[serde(default)]
     pub exemption_reviews: Vec<String>,
     #[serde(default)]
@@ -1512,6 +1533,37 @@ fn records_documents_or_default(documents: &[RecordsDocument]) -> String {
         .join("\n")
 }
 
+fn records_search_sessions_or_default(sessions: &[RecordsSearchSession]) -> String {
+    if sessions.is_empty() {
+        return "No structured search sessions recorded.".to_string();
+    }
+    sessions
+        .iter()
+        .map(|session| {
+            let results = if session.results.is_empty() {
+                "  - No search results recorded.".to_string()
+            } else {
+                session
+                    .results
+                    .iter()
+                    .map(|result| {
+                        format!(
+                            "  - {} [{}] {}: {}",
+                            result.title, result.status, result.citation, result.summary
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            format!(
+                "- Query: {}\n  Locations: {}\n  Reviewer: {}\n{}",
+                session.query, session.locations, session.reviewer, results
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn records_exemption_decisions_or_default(decisions: &[RecordsExemptionDecision]) -> String {
     if decisions.is_empty() {
         return "No structured exemption decisions recorded.".to_string();
@@ -1795,6 +1847,7 @@ fn create_records_request(
             assigned_to: String::new(),
             clarification_notes: Vec::new(),
             search_notes: Vec::new(),
+            search_sessions: Vec::new(),
             exemption_reviews: Vec::new(),
             exemption_decisions: Vec::new(),
             fee_estimate: String::new(),
@@ -1870,6 +1923,7 @@ fn submit_public_records_request(
             assigned_to: String::new(),
             clarification_notes: Vec::new(),
             search_notes: Vec::new(),
+            search_sessions: Vec::new(),
             exemption_reviews: Vec::new(),
             exemption_decisions: Vec::new(),
             fee_estimate: String::new(),
@@ -2197,6 +2251,76 @@ fn record_records_search(
         "Recorded records search source note.".to_string(),
     );
     Ok("Search source note saved with citation evidence.".to_string())
+}
+
+fn record_records_search_session(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let query = payload_string(payload, "searchQuery")
+        .map_err(|_| "Enter the records search query or scope.".to_string())?;
+    let locations = payload_string(payload, "searchLocations")
+        .map_err(|_| "Enter the systems, folders, or source locations searched.".to_string())?;
+    let result_title = payload_string(payload, "searchResultTitle")
+        .map_err(|_| "Enter a title for at least one search result.".to_string())?;
+    let result_citation = payload_string(payload, "searchResultCitation").map_err(|_| {
+        "Enter the citation, file id, or source reference for this result.".to_string()
+    })?;
+    let result_summary = payload_string(payload, "searchResultSummary")
+        .map_err(|_| "Enter a short summary of the search result.".to_string())?;
+    let result_status = payload_optional_string(payload, "searchResultStatus");
+    let reviewer = payload_optional_string(payload, "searchReviewer");
+    let request = selected_record_mut(state, payload)?;
+    ensure_records_request_active(request)?;
+    let result = RecordsSearchResult {
+        id: format!("records-search-result-{}", now_unix_seconds()),
+        title: result_title.clone(),
+        citation: result_citation.clone(),
+        summary: result_summary.clone(),
+        status: if result_status.is_empty() {
+            "responsive".to_string()
+        } else {
+            result_status
+        },
+    };
+    let session = RecordsSearchSession {
+        id: format!(
+            "records-search-session-{}-{}",
+            now_unix_seconds(),
+            request.search_sessions.len() + 1
+        ),
+        query: query.clone(),
+        locations: locations.clone(),
+        reviewer: if reviewer.is_empty() {
+            "records staff".to_string()
+        } else {
+            reviewer
+        },
+        results: vec![result],
+        created_at_unix_seconds: now_unix_seconds(),
+    };
+    request.search_sessions.push(session);
+    if !request
+        .citations
+        .iter()
+        .any(|citation| citation == &result_citation)
+    {
+        request.citations.push(result_citation.clone());
+    }
+    request.status = "search session recorded".to_string();
+    push_records_timeline(
+        request,
+        "search session recorded",
+        "records staff",
+        format!("{query} across {locations}; result {result_title}."),
+    );
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "record-records-search-session",
+        format!("Recorded records search session {query} with result {result_citation}."),
+    );
+    Ok("Records search session saved with source-result evidence.".to_string())
 }
 
 fn add_records_document(
@@ -2527,7 +2651,7 @@ fn suggest_records_response(
         );
     }
     let prompt = format!(
-        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nAttached documents: {}\nClarification notes: {}\nSearch notes: {}\nExemption review notes: {}\nExemption decisions: {}\nFee estimate: {}\nCitations/source notes: {}\n",
+        "Draft an internal public records response for staff review. Use only the facts below. Do not claim legal authority beyond the cited notes. Keep the response concise and leave placeholders for attachments if needed.\n\nRequester: {}\nDeadline: {}\nRequest summary: {}\nRequest messages: {}\nAttached documents: {}\nClarification notes: {}\nSearch notes: {}\nSearch sessions: {}\nExemption review notes: {}\nExemption decisions: {}\nFee estimate: {}\nCitations/source notes: {}\n",
         request.requester,
         request.deadline,
         request.summary,
@@ -2535,6 +2659,7 @@ fn suggest_records_response(
         records_documents_or_default(&request.documents),
         list_or_default(&request.clarification_notes, "No clarification notes recorded."),
         list_or_default(&request.search_notes, "No search notes recorded."),
+        records_search_sessions_or_default(&request.search_sessions),
         list_or_default(&request.exemption_reviews, "No exemption review notes recorded."),
         records_exemption_decisions_or_default(&request.exemption_decisions),
         if request.fee_estimate.is_empty() {
@@ -2618,6 +2743,7 @@ fn export_records_response(
     }
     let citations = list_or_default(&request.citations, "No citations recorded.");
     let search_notes = list_or_default(&request.search_notes, "No search notes recorded.");
+    let search_sessions = records_search_sessions_or_default(&request.search_sessions);
     let exemption_reviews = list_or_default(
         &request.exemption_reviews,
         "No exemption review notes recorded.",
@@ -2634,7 +2760,7 @@ fn export_records_response(
     let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
     let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Search Sessions\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -2681,6 +2807,7 @@ fn export_records_response(
         fee_lines,
         clarification_notes,
         search_notes,
+        search_sessions,
         exemption_reviews,
         exemption_decisions,
         request.response_draft,
@@ -3444,6 +3571,28 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         let citations = request.citations.join(" ");
         let clarification_notes = request.clarification_notes.join(" ");
         let search_notes = request.search_notes.join(" ");
+        let search_sessions = request
+            .search_sessions
+            .iter()
+            .map(|session| {
+                let results = session
+                    .results
+                    .iter()
+                    .map(|result| {
+                        format!(
+                            "{} {} {} {}",
+                            result.title, result.citation, result.summary, result.status
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                format!(
+                    "{} {} {} {}",
+                    session.query, session.locations, session.reviewer, results
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let exemption_reviews = request.exemption_reviews.join(" ");
         let exemption_decisions = request
             .exemption_decisions
@@ -3524,6 +3673,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &request_documents,
                 &clarification_notes,
                 &search_notes,
+                &search_sessions,
                 &exemption_reviews,
                 &exemption_decisions,
                 &approval_notes,
@@ -3663,6 +3813,7 @@ fn public_records_request_status_projection(request: &RecordsRequest) -> Records
     public_request.assigned_to.clear();
     public_request.clarification_notes.clear();
     public_request.search_notes.clear();
+    public_request.search_sessions.clear();
     public_request.exemption_reviews.clear();
     public_request.exemption_decisions.clear();
     public_request.fee_estimate.clear();
@@ -3824,6 +3975,7 @@ pub fn city_work_action(
         "add-records-message" => add_records_message(&mut state, payload)?,
         "assign-records-request" => assign_records_request(&mut state, payload)?,
         "record-records-search" => record_records_search(&mut state, payload)?,
+        "record-records-search-session" => record_records_search_session(&mut state, payload)?,
         "add-records-document" => add_records_document(&mut state, payload)?,
         "add-records-exemption-review" => add_records_exemption_review(&mut state, payload)?,
         "add-records-exemption-decision" => add_records_exemption_decision(&mut state, payload)?,
@@ -4299,6 +4451,17 @@ mod tests {
                 "citation": "PRA-2026-001"
             });
             city_work_action("record-records-search", Some(&search)).expect("search saved");
+            let search_session = serde_json::json!({
+                "searchQuery": "park contract emails June 2026",
+                "searchLocations": "Parks shared drive; clerk email journal",
+                "searchResultTitle": "Park contract approval email",
+                "searchResultCitation": "PRA-2026-004",
+                "searchResultSummary": "Responsive approval email located in clerk journal.",
+                "searchResultStatus": "responsive",
+                "searchReviewer": "Records Officer"
+            });
+            city_work_action("record-records-search-session", Some(&search_session))
+                .expect("search session saved");
             let source_document = root.join("responsive-park-contract-email.txt");
             fs::write(
                 &source_document,
@@ -4403,6 +4566,16 @@ mod tests {
             assert_eq!(request.documents[0].sha256.len(), 64);
             assert!(PathBuf::from(&request.documents[0].stored_path).is_file());
             assert_eq!(request.search_notes.len(), 1);
+            assert_eq!(request.search_sessions.len(), 1);
+            assert_eq!(
+                request.search_sessions[0].query,
+                "park contract emails June 2026"
+            );
+            assert_eq!(request.search_sessions[0].results.len(), 1);
+            assert_eq!(
+                request.search_sessions[0].results[0].citation,
+                "PRA-2026-004"
+            );
             assert_eq!(request.exemption_reviews.len(), 1);
             assert_eq!(request.exemption_decisions.len(), 1);
             assert_eq!(
@@ -4444,6 +4617,10 @@ mod tests {
                 .timeline
                 .iter()
                 .any(|entry| entry.action == "message sent"));
+            assert!(request
+                .timeline
+                .iter()
+                .any(|entry| entry.action == "search session recorded"));
             assert!(request
                 .timeline
                 .iter()
@@ -4491,6 +4668,10 @@ mod tests {
             assert!(exported.contains("Search time and copies: $12.50"));
             assert!(exported.contains("Schedule/basis: Adopted records fee schedule"));
             assert!(exported.contains("response approved"));
+            assert!(exported.contains("## Search Sessions"));
+            assert!(exported.contains("park contract emails June 2026"));
+            assert!(exported.contains("Park contract approval email"));
+            assert!(exported.contains("PRA-2026-004"));
             assert!(exported.contains("## Exemption Review Notes"));
             assert!(exported.contains("Reviewed attorney-client content"));
             assert!(exported.contains("## Exemption Decisions"));
@@ -4527,6 +4708,11 @@ mod tests {
             assert_eq!(fee_line_results.len(), 1);
             let fee_schedule_results = search_city_work(&state, "Adopted records fee schedule");
             assert_eq!(fee_schedule_results.len(), 1);
+            let search_session_results = search_city_work(&state, "clerk email journal");
+            assert_eq!(search_session_results.len(), 1);
+            let search_result_title_results =
+                search_city_work(&state, "Park contract approval email");
+            assert_eq!(search_result_title_results.len(), 1);
             let decision_results = search_city_work(&state, "CORA attorney-client privilege");
             assert_eq!(decision_results.len(), 1);
             let message_results = search_city_work(&state, "narrowed date range");
@@ -4673,6 +4859,7 @@ mod tests {
             assert_eq!(public_request.assigned_to, "");
             assert!(public_request.clarification_notes.is_empty());
             assert!(public_request.search_notes.is_empty());
+            assert!(public_request.search_sessions.is_empty());
             assert!(public_request.exemption_reviews.is_empty());
             assert!(public_request.exemption_decisions.is_empty());
             assert_eq!(public_request.fee_estimate, "");

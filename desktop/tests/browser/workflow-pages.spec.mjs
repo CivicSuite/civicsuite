@@ -40,12 +40,17 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Fee schedule or policy basis")).toBeVisible();
   await expect(page.getByLabel("Fee line amount")).toBeVisible();
   await expect(page.getByLabel("Fee waiver reason")).toBeVisible();
+  await expect(page.getByLabel("Records search query")).toBeVisible();
+  await expect(page.getByLabel("Searched locations")).toBeVisible();
+  await expect(page.getByLabel("Search result title")).toBeVisible();
+  await expect(page.getByLabel("Search result citation")).toBeVisible();
+  await expect(page.getByLabel("Search result summary")).toBeVisible();
   await expect(page.getByLabel("Exemption source")).toBeVisible();
   await expect(page.getByLabel("Exemption category")).toBeVisible();
   await expect(page.getByLabel("Staff finding")).toBeVisible();
   await expect(page.getByLabel("Decision", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Decision basis")).toBeVisible();
-  await expect(page.getByLabel("Reviewer")).toBeVisible();
+  await expect(page.getByLabel("Exemption reviewer")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Request Messages" })).toBeVisible();
   await expect(page.getByLabel("Message to requester")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Request Message" })).toBeVisible();
@@ -58,6 +63,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Search" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Search Session" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Exemption Review" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Exemption Decision" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Estimate Fee" })).toBeVisible();

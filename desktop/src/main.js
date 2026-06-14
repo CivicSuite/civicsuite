@@ -573,6 +573,13 @@ const state = {
     documentSourcePath: "",
     documentCitation: "",
     sourceNote: "",
+    recordsSearchQuery: "",
+    searchLocations: "",
+    searchResultTitle: "",
+    searchResultCitation: "",
+    searchResultSummary: "",
+    searchResultStatus: "responsive",
+    searchReviewer: "",
     exemptionNote: "",
     exemptionSource: "",
     exemptionKind: "",
@@ -1320,6 +1327,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "adopt-minutes",
   "archive-meeting",
   "set-records-deadline",
+  "record-records-search-session",
   "approve-records-response",
   "suggest-records-response",
   "export-records-response",
@@ -1600,6 +1608,22 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicRecords AI audit entry and request timeline entry for the decision.",
       retry: "If the source, finding, decision, or basis is missing, the desktop app leaves exemption evidence unchanged."
+    },
+    "record-records-search-session": {
+      title: "Review Before Saving Search Session",
+      confirmLabel: "Save Search Session",
+      module: "CivicRecords AI",
+      subject: requestSubject,
+      status: request ? request.status : "No records request selected yet.",
+      changes: "Saves a durable query, searched locations, and source-result evidence for the selected records request.",
+      visibility: "Staff-only search evidence remains local and is included in the exported response package after approval.",
+      sources: [
+        detailOrFallback(state.workDraft.recordsSearchQuery, "Records search query or scope is required."),
+        detailOrFallback(state.workDraft.searchLocations, "Searched systems, folders, or source locations are required."),
+        detailOrFallback(state.workDraft.searchResultCitation, "Result citation or source reference is required.")
+      ],
+      audit: "Creates a CivicRecords AI audit entry and request timeline entry for the search session.",
+      retry: "If query, locations, result title, citation, or summary are missing, the desktop app leaves search evidence unchanged."
     },
     "add-records-fee-line": {
       title: "Review Before Adding Records Fee Line",
@@ -2091,6 +2115,7 @@ function publicRecordsRequestView(request) {
     assigned_to: "",
     clarification_notes: [],
     search_notes: [],
+    search_sessions: [],
     exemption_reviews: [],
     exemption_decisions: [],
     fee_estimate: "",
@@ -2342,6 +2367,26 @@ function renderRecordsDocuments(request) {
   `;
 }
 
+function renderRecordsSearchSessions(request) {
+  const sessions = request.search_sessions || [];
+  if (sessions.length === 0) return "";
+  return `
+    <details class="record-details" open>
+      <summary>Search Sessions</summary>
+      <ul>
+        ${sessions.map((session) => `
+          <li>
+            <strong>${escapeHtml(session.query)}</strong>
+            <span>${escapeHtml(session.locations)}</span>
+            ${(session.results || []).map((result) => `${escapeHtml(result.title)} (${escapeHtml(result.citation)})`).join("; ")}
+            <small>${escapeHtml(session.reviewer || "records staff")}</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
 function renderRecordsExemptionDecisions(request) {
   const decisions = request.exemption_decisions || [];
   if (decisions.length === 0) return "";
@@ -2387,6 +2432,13 @@ function renderRecordsWorkflow() {
         <label>Assign to <input type="text" data-work-field="assignedTo" value="${state.workDraft.assignedTo}" /></label>
         <label>Clarification note <textarea data-work-field="clarificationNote">${state.workDraft.clarificationNote}</textarea></label>
         <label>Search source note <textarea data-work-field="sourceNote">${state.workDraft.sourceNote}</textarea></label>
+        <label>Records search query <input type="text" data-work-field="recordsSearchQuery" value="${state.workDraft.recordsSearchQuery}" placeholder="Subject, date range, requester scope" /></label>
+        <label>Searched locations <textarea data-work-field="searchLocations">${state.workDraft.searchLocations}</textarea></label>
+        <label>Search result title <input type="text" data-work-field="searchResultTitle" value="${state.workDraft.searchResultTitle}" /></label>
+        <label>Search result citation <input type="text" data-work-field="searchResultCitation" value="${state.workDraft.searchResultCitation}" /></label>
+        <label>Search result summary <textarea data-work-field="searchResultSummary">${state.workDraft.searchResultSummary}</textarea></label>
+        <label>Search result status <input type="text" data-work-field="searchResultStatus" value="${state.workDraft.searchResultStatus}" /></label>
+        <label>Search reviewer <input type="text" data-work-field="searchReviewer" value="${state.workDraft.searchReviewer}" placeholder="Records Officer" /></label>
         <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
         <label>Exemption review <textarea data-work-field="exemptionNote">${state.workDraft.exemptionNote}</textarea></label>
         <label>Exemption source <input type="text" data-work-field="exemptionSource" value="${state.workDraft.exemptionSource}" placeholder="File, page, timestamp, or segment" /></label>
@@ -2400,7 +2452,7 @@ function renderRecordsWorkflow() {
           </select>
         </label>
         <label>Decision basis <input type="text" data-work-field="exemptionBasis" value="${state.workDraft.exemptionBasis}" placeholder="Statute, ordinance, or policy basis" /></label>
-        <label>Reviewer <input type="text" data-work-field="exemptionReviewer" value="${state.workDraft.exemptionReviewer}" placeholder="Records Officer" /></label>
+        <label>Exemption reviewer <input type="text" data-work-field="exemptionReviewer" value="${state.workDraft.exemptionReviewer}" placeholder="Records Officer" /></label>
         <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${state.workDraft.feeEstimate}" /></label>
         <label>Fee line description <input type="text" data-work-field="feeLineDescription" value="${state.workDraft.feeLineDescription}" placeholder="Search time, copies, media, or waived charge basis" /></label>
         <label>Fee schedule or policy basis <input type="text" data-work-field="feeScheduleBasis" value="${state.workDraft.feeScheduleBasis}" placeholder="Adopted records fee schedule or waiver policy" /></label>
@@ -2411,6 +2463,7 @@ function renderRecordsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="assign-records-request">Assign</button>
           <button type="button" class="secondary-action" data-work-action="request-records-clarification">Request Clarification</button>
           <button type="button" class="secondary-action" data-work-action="record-records-search">Record Search</button>
+          <button type="button" class="secondary-action" data-work-action="record-records-search-session">Save Search Session</button>
           <button type="button" class="secondary-action" data-work-action="add-records-exemption-review">Add Exemption Review</button>
           <button type="button" class="secondary-action" data-work-action="add-records-exemption-decision">Save Exemption Decision</button>
           <button type="button" class="secondary-action" data-work-action="estimate-records-fee">Estimate Fee</button>
@@ -2468,6 +2521,7 @@ function renderRecordsWorkflow() {
           ${request.fulfilled_at_unix_seconds ? "<p><strong>Fulfillment:</strong> released to requester</p>" : ""}
           ${renderRecordsMessages(request)}
           ${renderRecordsDocuments(request)}
+          ${renderRecordsSearchSessions(request)}
           ${renderRecordsExemptionDecisions(request)}
           ${renderRecordsTimeline(request)}
           <div class="record-actions">
@@ -2689,6 +2743,13 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       .map((message) => [message.author, message.author_role, message.body].join(" "));
     const requestDocumentSearchText = (request.documents || [])
       .map((document) => [document.title, document.citation, document.status, document.sha256].join(" "));
+    const searchSessionSearchText = (request.search_sessions || [])
+      .map((session) => [
+        session.query,
+        session.locations,
+        session.reviewer,
+        ...(session.results || []).map((result) => [result.title, result.citation, result.summary, result.status].join(" "))
+      ].join(" "));
     const exemptionDecisionSearchText = (request.exemption_decisions || [])
       .map((decision) => [decision.source, decision.kind, decision.finding, decision.decision, decision.basis, decision.reviewer].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
@@ -2712,6 +2773,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ...feeLineSearchText,
       ...requestMessageSearchText,
       ...requestDocumentSearchText,
+      ...searchSessionSearchText,
       ...exemptionDecisionSearchText,
       request.response_draft,
       ...(request.clarification_notes || []),
@@ -3856,6 +3918,16 @@ function workPayloadForAction(action) {
       ...selected,
       sourceNote: draft.sourceNote,
       citation: draft.citation
+    },
+    "record-records-search-session": {
+      ...selected,
+      searchQuery: draft.recordsSearchQuery,
+      searchLocations: draft.searchLocations,
+      searchResultTitle: draft.searchResultTitle,
+      searchResultCitation: draft.searchResultCitation,
+      searchResultSummary: draft.searchResultSummary,
+      searchResultStatus: draft.searchResultStatus,
+      searchReviewer: draft.searchReviewer
     },
     "add-records-document": {
       ...selected,
