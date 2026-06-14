@@ -580,6 +580,10 @@ const state = {
     motionVoteReference: "",
     vote: "",
     actionItem: "",
+    actionItemOwner: "",
+    actionItemDueDate: "",
+    actionItemStatus: "open",
+    actionItemSourceReference: "",
     residentComment: "",
     publicCommentMeetingId: "",
     publicCommentName: "",
@@ -1624,7 +1628,7 @@ function guidedReviewForAction(action) {
       changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, packet attachments, outcomes, action items, and comments. It does not adopt or archive the minutes.",
       visibility: "Internal staff draft only. A clerk must review, edit, and adopt minutes before the public archive step.",
       sources: [
-        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.votes || []).length} outcome(s); ${(meeting.action_items || []).length} action item(s)` : "The desktop app will require a meeting before generating.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.votes || []).length} outcome(s); ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action item(s)` : "The desktop app will require a meeting before generating.",
         detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
       ],
       audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
@@ -2076,6 +2080,7 @@ function publicMeetingView(meeting) {
     publicMeeting.motions = [];
     publicMeeting.votes = [];
     publicMeeting.action_items = [];
+    publicMeeting.action_records = [];
     publicMeeting.resident_comments = [];
     publicMeeting.exports = [];
   }
@@ -2276,6 +2281,14 @@ function renderMeetingsWorkflow() {
         <label>Linked vote reference <input type="text" data-work-field="motionVoteReference" value="${state.workDraft.motionVoteReference}" placeholder="Optional vote or roll-call note" /></label>
         <label>Vote or outcome <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
         <label>Action item <input type="text" data-work-field="actionItem" value="${state.workDraft.actionItem}" /></label>
+        <label>Action owner <input type="text" data-work-field="actionItemOwner" value="${state.workDraft.actionItemOwner}" /></label>
+        <label>Action due date <input type="date" data-work-field="actionItemDueDate" value="${state.workDraft.actionItemDueDate}" /></label>
+        <label>Action status
+          <select data-work-field="actionItemStatus">
+            ${["open", "in progress", "completed", "blocked"].map((status) => `<option value="${status}" ${state.workDraft.actionItemStatus === status ? "selected" : ""}>${status}</option>`).join("")}
+          </select>
+        </label>
+        <label>Action source <input type="text" data-work-field="actionItemSourceReference" value="${state.workDraft.actionItemSourceReference}" placeholder="Motion, vote, agenda item, or clerk note" /></label>
         <label>Resident comment <textarea data-work-field="residentComment">${state.workDraft.residentComment}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="suggest-minutes-draft">Generate Local AI Minutes</button>
@@ -2332,6 +2345,7 @@ function renderMeetingsWorkflow() {
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
+          ${(meeting.action_records || []).length > 0 ? `<p><strong>Action details:</strong> ${(meeting.action_records || []).map((action) => `${escapeHtml(action.description)} (${escapeHtml(action.status)}${action.owner ? `; owner ${escapeHtml(action.owner)}` : ""}${action.due_date ? `; due ${escapeHtml(action.due_date)}` : ""}${action.source_reference ? `; source ${escapeHtml(action.source_reference)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
           ${(meeting.public_comments || []).length > 0 ? `<p><strong>Public comments:</strong> ${(meeting.public_comments || []).length} received for clerk review</p>` : ""}
           ${(meeting.public_comments || []).map((comment) => `
@@ -2347,7 +2361,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3022,6 +3036,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       .join(" ");
     const outcomes = (meeting.votes || []).join(" ");
     const actionItems = (meeting.action_items || []).join(" ");
+    const actionRecords = (meeting.action_records || [])
+      .map((action) => [action.description, action.owner, action.due_date, action.status, action.source_reference].join(" "))
+      .join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
     const noticeChecklists = (meeting.notice_checklists || [])
       .map((entry) => [entry.meeting_type, entry.statutory_basis, entry.posting_deadline, entry.time_zone, entry.status].join(" "))
@@ -3074,9 +3091,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
-        ? [...publicMeetingFields, meeting.minutes, motions, outcomes, actionItems, residentComments]
+        ? [...publicMeetingFields, meeting.minutes, motions, outcomes, actionItems, actionRecords, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4283,7 +4300,14 @@ function workPayloadForAction(action) {
       minutesCitationAccess: draft.minutesCitationAccess
     },
     "record-vote": { ...selected, vote: draft.vote },
-    "add-action-item": { ...selected, actionItem: draft.actionItem },
+    "add-action-item": {
+      ...selected,
+      actionItem: draft.actionItem,
+      actionItemOwner: draft.actionItemOwner,
+      actionItemDueDate: draft.actionItemDueDate,
+      actionItemStatus: draft.actionItemStatus,
+      actionItemSourceReference: draft.actionItemSourceReference
+    },
     "record-resident-comment": { ...selected, residentComment: draft.residentComment },
     "submit-public-comment": {
       meetingId: draft.publicCommentMeetingId || publicCommentMeetings(cityWork())[0]?.id || "",
