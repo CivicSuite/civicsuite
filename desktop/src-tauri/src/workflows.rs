@@ -137,6 +137,19 @@ pub struct MinuteCitation {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MotionRecord {
+    pub id: String,
+    pub text: String,
+    pub mover: String,
+    #[serde(default)]
+    pub seconder: String,
+    pub disposition: String,
+    #[serde(default)]
+    pub vote_reference: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     #[serde(default)]
@@ -158,6 +171,8 @@ pub struct Meeting {
     pub minutes: String,
     #[serde(default)]
     pub minute_citations: Vec<MinuteCitation>,
+    #[serde(default)]
+    pub motions: Vec<MotionRecord>,
     #[serde(default)]
     pub votes: Vec<String>,
     #[serde(default)]
@@ -1175,6 +1190,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         attachments: Vec::new(),
         minutes: String::new(),
         minute_citations: Vec::new(),
+        motions: Vec::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
         resident_comments: Vec::new(),
@@ -1774,16 +1790,17 @@ fn suggest_minutes_draft(
     };
     let has_meeting_evidence = !meeting.summary.trim().is_empty()
         || !meeting.agenda_items.is_empty()
+        || !meeting.motions.is_empty()
         || !meeting.votes.is_empty()
         || !meeting.action_items.is_empty()
         || !meeting.resident_comments.is_empty()
         || !meeting.public_comments.is_empty()
         || !meeting.attachments.is_empty();
     if !has_meeting_evidence {
-        return Err("Add a summary, agenda item, attachment, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
+        return Err("Add a summary, agenda item, attachment, motion, outcome, action item, or comment before generating a local AI minutes draft.".to_string());
     }
     let prompt = format!(
-        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, packet attachments, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
+        "Draft internal city meeting minutes for clerk review. Use only the facts below. Do not mark the minutes adopted, official, or publicly archived. Do not invent motions, votes, speakers, attendees, or actions. Include clear sections for agenda, notice checklist, notice evidence, packet attachments, motions, outcomes, action items, and comments when present.\n\nMeeting title: {}\nDate: {}\nStatus: {}\nNotice status: {}\nNotice checklist:\n{}\nNotice posting evidence:\n{}\nSummary: {}\nAgenda:\n{}\nPacket attachments:\n{}\nExisting minutes draft: {}\nRecorded motions:\n{}\nRecorded outcomes:\n{}\nAction items:\n{}\nStaff-entered resident comments:\n{}\nPublic comments:\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -1802,6 +1819,7 @@ fn suggest_minutes_draft(
         } else {
             &meeting.minutes
         },
+        motion_records_or_default(&meeting.motions),
         list_or_default(&meeting.votes, "No outcomes recorded."),
         list_or_default(&meeting.action_items, "No action items recorded."),
         list_or_default(&meeting.resident_comments, "No resident comments recorded."),
@@ -1822,6 +1840,45 @@ fn suggest_minutes_draft(
         "Local AI minutes draft generated. Review, edit, and adopt minutes before archive."
             .to_string(),
     )
+}
+
+fn record_motion(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
+    let motion_text =
+        payload_string(payload, "motionText").map_err(|_| "Enter the motion text.".to_string())?;
+    let mover = payload_string(payload, "motionMover")
+        .map_err(|_| "Enter who moved the motion.".to_string())?;
+    let seconder = payload_optional_string(payload, "motionSeconder");
+    let disposition = payload_string(payload, "motionDisposition")
+        .map_err(|_| "Choose the motion disposition.".to_string())?
+        .to_lowercase();
+    let disposition = match disposition.as_str() {
+        "pending vote" => "pending vote",
+        "passed" => "passed",
+        "failed" => "failed",
+        "withdrawn" => "withdrawn",
+        "tabled" => "tabled",
+        _ => return Err("Choose pending vote, passed, failed, withdrawn, or tabled.".to_string()),
+    };
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    let motion_id = new_id("motion", meeting.motions.len());
+    meeting.motions.push(MotionRecord {
+        id: motion_id,
+        text: motion_text.clone(),
+        mover: mover.clone(),
+        seconder: seconder.clone(),
+        disposition: disposition.to_string(),
+        vote_reference: payload_optional_string(payload, "motionVoteReference"),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    meeting.status = "motions recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "record-motion",
+        format!("Recorded motion by {mover}: {motion_text}; disposition {disposition}."),
+    );
+    Ok("Motion saved to the meeting record.".to_string())
 }
 
 fn record_vote(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
@@ -2038,6 +2095,32 @@ fn list_or_default(values: &[String], empty: &str) -> String {
             .collect::<Vec<_>>()
             .join("\n")
     }
+}
+
+fn motion_records_or_default(motions: &[MotionRecord]) -> String {
+    if motions.is_empty() {
+        return "No motions recorded.".to_string();
+    }
+    motions
+        .iter()
+        .map(|motion| {
+            let second = if motion.seconder.is_empty() {
+                "no seconder recorded".to_string()
+            } else {
+                format!("seconded by {}", motion.seconder)
+            };
+            let vote_reference = if motion.vote_reference.is_empty() {
+                "no vote reference recorded".to_string()
+            } else {
+                format!("vote reference: {}", motion.vote_reference)
+            };
+            format!(
+                "- {} (moved by {}; {}; {}; {})",
+                motion.text, motion.mover, second, motion.disposition, vote_reference
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn push_records_timeline(request: &mut RecordsRequest, action: &str, actor: &str, note: String) {
@@ -2349,6 +2432,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
             .join("\n")
     };
     let votes = list_or_default(&meeting.votes, "No outcomes recorded.");
+    let motions = motion_records_or_default(&meeting.motions);
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let resident_comments =
         list_or_default(&meeting.resident_comments, "No resident comments recorded.");
@@ -2391,7 +2475,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -2413,6 +2497,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         },
         minute_citations,
         minutes_adoption,
+        motions,
         votes,
         action_items,
         resident_comments,
@@ -4326,6 +4411,21 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let motions = meeting
+            .motions
+            .iter()
+            .map(|motion| {
+                format!(
+                    "{} {} {} {} {}",
+                    motion.text,
+                    motion.mover,
+                    motion.seconder,
+                    motion.disposition,
+                    motion.vote_reference
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let votes = meeting.votes.join(" ");
         let action_items = meeting.action_items.join(" ");
         let resident_comments = meeting.resident_comments.join(" ");
@@ -4415,6 +4515,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &agenda_titles,
                 &attachments,
                 &minute_citations,
+                &motions,
                 &votes,
                 &action_items,
                 &resident_comments,
@@ -4699,6 +4800,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
     if !is_public_archive {
         public_meeting.minutes.clear();
         public_meeting.minute_citations.clear();
+        public_meeting.motions.clear();
         public_meeting.votes.clear();
         public_meeting.action_items.clear();
         public_meeting.resident_comments.clear();
@@ -4874,6 +4976,7 @@ pub fn city_work_action(
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
+        "record-motion" => record_motion(&mut state, payload)?,
         "add-minute-citation" => add_minute_citation(&mut state, payload)?,
         "suggest-minutes-draft" => suggest_minutes_draft(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
@@ -5223,6 +5326,24 @@ mod tests {
             city_work_action("post-notice", Some(&notice)).expect("notice prepared");
             let minutes = serde_json::json!({ "minutes": "Meeting called to order at 6:00 PM." });
             city_work_action("record-minutes", Some(&minutes)).expect("minutes saved");
+            let bad_motion = serde_json::json!({
+                "motionText": "Approve the budget ordinance.",
+                "motionMover": "Councilmember Lee",
+                "motionDisposition": "maybe"
+            });
+            let error = match city_work_action("record-motion", Some(&bad_motion)) {
+                Ok(_) => panic!("motion cannot save with invalid disposition"),
+                Err(error) => error,
+            };
+            assert!(error.contains("pending vote, passed, failed, withdrawn, or tabled"));
+            let motion = serde_json::json!({
+                "motionText": "Approve the budget ordinance.",
+                "motionMover": "Councilmember Lee",
+                "motionSeconder": "Councilmember Patel",
+                "motionDisposition": "passed",
+                "motionVoteReference": "Budget ordinance passed 4-1."
+            });
+            city_work_action("record-motion", Some(&motion)).expect("motion saved");
             let vote = serde_json::json!({ "vote": "Budget ordinance passed 4-1." });
             city_work_action("record-vote", Some(&vote)).expect("vote saved");
             let action_item =
@@ -5296,6 +5417,15 @@ mod tests {
             );
             assert_eq!(meeting.notice_postings[0].posted_on, "2026-06-30");
             assert_eq!(meeting.status, "archived public record");
+            assert_eq!(meeting.motions.len(), 1);
+            assert_eq!(meeting.motions[0].text, "Approve the budget ordinance.");
+            assert_eq!(meeting.motions[0].mover, "Councilmember Lee");
+            assert_eq!(meeting.motions[0].seconder, "Councilmember Patel");
+            assert_eq!(meeting.motions[0].disposition, "passed");
+            assert_eq!(
+                meeting.motions[0].vote_reference,
+                "Budget ordinance passed 4-1."
+            );
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
             assert_eq!(meeting.resident_comments.len(), 1);
@@ -5327,6 +5457,9 @@ mod tests {
             assert!(packet.contains("Fiscal note"));
             assert!(packet.contains("Packet item 4 fiscal note"));
             assert!(packet.contains("Closed-session attorney memo"));
+            assert!(packet.contains("## Motions"));
+            assert!(packet.contains("Approve the budget ordinance."));
+            assert!(packet.contains("Councilmember Lee"));
             assert!(packet.contains("## Minute Citations"));
             assert!(packet.contains("Executive session memo"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
@@ -5337,6 +5470,9 @@ mod tests {
             assert!(archive.contains("## Notice Posting Evidence"));
             assert!(archive.contains("City Hall bulletin board and city website"));
             assert!(archive.contains("Local AI minutes draft"));
+            assert!(archive.contains("## Motions"));
+            assert!(archive.contains("Approve the budget ordinance."));
+            assert!(archive.contains("Councilmember Patel"));
             assert!(archive.contains("## Action Items"));
             assert!(archive.contains("Finance staff to publish the adopted budget."));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
@@ -5357,6 +5493,8 @@ mod tests {
             assert!(body_results
                 .iter()
                 .any(|result| result.title == "Meeting body: City Council"));
+            let motion_results = search_city_work(&state, "Councilmember Patel");
+            assert_eq!(motion_results.len(), 1);
             let public_state = public_city_work_state().expect("public state reads");
             assert_eq!(public_state.meeting_bodies.len(), 1);
             assert_eq!(
@@ -5369,6 +5507,7 @@ mod tests {
                 .expect("public meeting exists");
             assert_eq!(public_meeting.body_id, body.id);
             assert_eq!(public_meeting.body_name, "City Council");
+            assert_eq!(public_meeting.motions.len(), 1);
             assert_eq!(public_meeting.attachments.len(), 1);
             assert_eq!(public_meeting.attachments[0].title, "Fiscal note");
             assert!(public_meeting.attachments[0].original_path.is_empty());
@@ -5397,6 +5536,16 @@ mod tests {
             let late_vote = serde_json::json!({ "vote": "Late amendment after archive." });
             let error = match city_work_action("record-vote", Some(&late_vote)) {
                 Ok(_) => panic!("archived meeting cannot be mutated"),
+                Err(error) => error,
+            };
+            assert!(error.contains("archived as a public record"));
+            let late_motion = serde_json::json!({
+                "motionText": "Late motion after archive.",
+                "motionMover": "Councilmember Lee",
+                "motionDisposition": "passed"
+            });
+            let error = match city_work_action("record-motion", Some(&late_motion)) {
+                Ok(_) => panic!("archived meeting cannot record new motions"),
                 Err(error) => error,
             };
             assert!(error.contains("archived as a public record"));

@@ -144,6 +144,7 @@ fn city_work_action_module_requirement(
         | "complete-notice-checklist"
         | "post-notice"
         | "record-minutes"
+        | "record-motion"
         | "add-minute-citation"
         | "suggest-minutes-draft"
         | "record-vote"

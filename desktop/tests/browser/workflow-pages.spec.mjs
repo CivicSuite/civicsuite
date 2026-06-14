@@ -50,6 +50,12 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Attachment access")).toBeVisible();
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
+  await expect(page.getByLabel("Motion text")).toBeVisible();
+  await expect(page.getByLabel("Moved by")).toBeVisible();
+  await expect(page.getByLabel("Seconded by")).toBeVisible();
+  await expect(page.getByLabel("Motion disposition")).toBeVisible();
+  await expect(page.getByLabel("Linked vote reference")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Motion" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add Action Item" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate Local AI Minutes" })).toBeVisible();
@@ -166,6 +172,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record Motion" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Minute Citation" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
