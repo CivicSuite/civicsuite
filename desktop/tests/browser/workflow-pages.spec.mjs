@@ -65,6 +65,12 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByLabel("Minutes signed by")).toBeVisible();
   await expect(page.getByLabel("Signature attestation")).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign Minutes" })).toBeVisible();
+  await expect(page.getByLabel("Adopted item type")).toBeVisible();
+  await expect(page.getByLabel("Adopted title")).toBeVisible();
+  await expect(page.getByLabel("Adopted text")).toBeVisible();
+  await expect(page.getByLabel("Effective date")).toBeVisible();
+  await expect(page.getByLabel("Codification section hint")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Adopted Ordinance/Resolution" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate Local AI Minutes" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Minute Citations" })).toBeVisible();
   await expect(page.getByLabel("Minutes sentence or excerpt")).toBeVisible();

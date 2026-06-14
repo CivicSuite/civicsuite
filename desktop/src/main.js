@@ -466,6 +466,7 @@ const fallbackState = {
     records_requests: [],
     code_sources: [],
     code_handoffs: [],
+    adopted_legislation: [],
     audit_entries: [],
     publication_events: [],
     notification_events: []
@@ -575,6 +576,11 @@ const state = {
     minutesCitationAccess: "public record",
     minutesSignedBy: "",
     minutesSignatureAttestation: "",
+    adoptedLegislationType: "ordinance",
+    adoptedLegislationTitle: "",
+    adoptedLegislationText: "",
+    adoptedLegislationEffectiveDate: "",
+    adoptedLegislationCodificationHint: "",
     motionText: "",
     motionMover: "",
     motionSeconder: "",
@@ -1370,6 +1376,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "suggest-minutes-draft",
   "adopt-minutes",
   "sign-minutes",
+  "record-adopted-legislation",
   "archive-meeting",
   "set-records-deadline",
   "record-records-search-session",
@@ -1687,6 +1694,23 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for signing the adopted minutes.",
       retry: "If minutes are not adopted, already signed, or signer evidence is missing, the desktop app blocks signing and leaves the meeting unchanged."
+    },
+    "record-adopted-legislation": {
+      title: "Review Before Recording Adopted Legislation",
+      confirmLabel: "Record Adoption",
+      module: "CivicClerk + CivicCode",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Creates a durable adopted ordinance or resolution record, links it to the meeting's passed motion, and queues a CivicCode draft source for codifier sync.",
+      visibility: "Staff workflow until the meeting archive and code publication gates are completed. CivicCode source publication remains a separate staff action.",
+      sources: [
+        meeting?.minutes_signed_at_unix_seconds ? "Minutes have been signed." : "Minutes must be signed before recording adopted legislation.",
+        meeting && (meeting.motions || []).some((motion) => motion.disposition === "passed") ? "Passed motion is available for traceability." : "A passed motion is required.",
+        detailOrFallback(state.workDraft.adoptedLegislationTitle, "Adopted title is required."),
+        detailOrFallback(state.workDraft.adoptedLegislationText, "Adopted text is required.")
+      ],
+      audit: "Creates CivicClerk and CivicCode audit entries linking the adoption event to the local code source queue.",
+      retry: "If minutes are not signed, no passed motion exists, or required adoption text is missing, the desktop app leaves Clerk and Code records unchanged."
     },
     "archive-meeting": {
       title: "Review Before Archiving Public Record",
@@ -2104,6 +2128,7 @@ function publicMeetingView(meeting) {
     publicMeeting.votes = [];
     publicMeeting.action_items = [];
     publicMeeting.action_records = [];
+    publicMeeting.adopted_legislation = [];
     publicMeeting.resident_comments = [];
     publicMeeting.exports = [];
   }
@@ -2315,6 +2340,15 @@ function renderMeetingsWorkflow() {
         <label>Resident comment <textarea data-work-field="residentComment">${state.workDraft.residentComment}</textarea></label>
         <label>Minutes signed by <input type="text" data-work-field="minutesSignedBy" value="${state.workDraft.minutesSignedBy}" placeholder="City Clerk or authorized signer" /></label>
         <label>Signature attestation <textarea data-work-field="minutesSignatureAttestation">${state.workDraft.minutesSignatureAttestation}</textarea></label>
+        <label>Adopted item type
+          <select data-work-field="adoptedLegislationType">
+            ${["ordinance", "resolution"].map((kind) => `<option value="${kind}" ${state.workDraft.adoptedLegislationType === kind ? "selected" : ""}>${kind}</option>`).join("")}
+          </select>
+        </label>
+        <label>Adopted title <input type="text" data-work-field="adoptedLegislationTitle" value="${state.workDraft.adoptedLegislationTitle}" /></label>
+        <label>Adopted text <textarea data-work-field="adoptedLegislationText">${state.workDraft.adoptedLegislationText}</textarea></label>
+        <label>Effective date <input type="date" data-work-field="adoptedLegislationEffectiveDate" value="${state.workDraft.adoptedLegislationEffectiveDate}" /></label>
+        <label>Codification section hint <input type="text" data-work-field="adoptedLegislationCodificationHint" value="${state.workDraft.adoptedLegislationCodificationHint}" placeholder="Title 2, Chapter 4, or uncodified" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="suggest-minutes-draft">Generate Local AI Minutes</button>
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
@@ -2324,6 +2358,7 @@ function renderMeetingsWorkflow() {
           <button type="button" class="secondary-action" data-work-action="record-resident-comment">Record Resident Comment</button>
           <button type="button" class="secondary-action" data-work-action="adopt-minutes">Adopt Minutes</button>
           <button type="button" class="secondary-action" data-work-action="sign-minutes">Sign Minutes</button>
+          <button type="button" class="secondary-action" data-work-action="record-adopted-legislation">Record Adopted Ordinance/Resolution</button>
           <button type="button" class="secondary-action" data-work-action="archive-meeting">Archive Public Record</button>
         </div>
       </div>
@@ -2371,6 +2406,7 @@ function renderMeetingsWorkflow() {
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
           ${(meeting.motions || []).length > 0 ? `<p><strong>Motions:</strong> ${(meeting.motions || []).map((motion) => `${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)}; moved by ${escapeHtml(motion.mover)}${motion.seconder ? `; seconded by ${escapeHtml(motion.seconder)}` : ""})`).join("; ")}</p>` : ""}
+          ${(meeting.adopted_legislation || []).length > 0 ? `<p><strong>Adopted legislation:</strong> ${(meeting.adopted_legislation || []).map((item) => `${escapeHtml(item.legislation_type)} ${escapeHtml(item.title)} (${escapeHtml(item.handoff_status)})`).join("; ")}</p>` : ""}
           ${(meeting.action_items || []).length > 0 ? `<p><strong>Action items:</strong> ${(meeting.action_items || []).join("; ")}</p>` : ""}
           ${(meeting.action_records || []).length > 0 ? `<p><strong>Action details:</strong> ${(meeting.action_records || []).map((action) => `${escapeHtml(action.description)} (${escapeHtml(action.status)}${action.owner ? `; owner ${escapeHtml(action.owner)}` : ""}${action.due_date ? `; due ${escapeHtml(action.due_date)}` : ""}${action.source_reference ? `; source ${escapeHtml(action.source_reference)}` : ""})`).join("; ")}</p>` : ""}
           ${(meeting.resident_comments || []).length > 0 ? `<p><strong>Resident comments:</strong> ${(meeting.resident_comments || []).length} logged</p>` : ""}
@@ -3032,6 +3068,14 @@ function renderCodeWorkflow() {
           </div>
         </article>
       `).join("")}
+      ${(work.adopted_legislation || []).map((item) => `
+        <article class="workflow-record handoff">
+          <span class="status-warn">${escapeHtml(item.handoff_status)}</span>
+          <h3>${escapeHtml(item.title)}</h3>
+          <p>${escapeHtml(item.legislation_type)} adopted from ${escapeHtml(item.meeting_title)}.</p>
+          <small>${escapeHtml(item.effective_date || "No effective date")} - ${escapeHtml(item.codification_section_hint || "No codification hint")} - CivicClerk adoption event</small>
+        </article>
+      `).join("")}
     </section>
   `;
 }
@@ -3065,6 +3109,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const actionItems = (meeting.action_items || []).join(" ");
     const actionRecords = (meeting.action_records || [])
       .map((action) => [action.description, action.owner, action.due_date, action.status, action.source_reference].join(" "))
+      .join(" ");
+    const adoptedLegislation = (meeting.adopted_legislation || [])
+      .map((item) => [item.legislation_type, item.title, item.text, item.effective_date, item.codification_section_hint, item.source_motion_text, item.source_agenda_item_title, item.handoff_status].join(" "))
       .join(" ");
     const residentComments = (meeting.resident_comments || []).join(" ");
     const noticeChecklists = (meeting.notice_checklists || [])
@@ -3118,9 +3165,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
-        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, outcomes, actionItems, actionRecords, residentComments]
+        ? [...publicMeetingFields, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, motions, outcomes, actionItems, actionRecords, adoptedLegislation, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, meeting.minutes_signed_by, meeting.minutes_signature_attestation, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, motions, outcomes, actionItems, actionRecords, adoptedLegislation, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -4339,6 +4386,14 @@ function workPayloadForAction(action) {
       ...selected,
       minutesSignedBy: draft.minutesSignedBy,
       minutesSignatureAttestation: draft.minutesSignatureAttestation
+    },
+    "record-adopted-legislation": {
+      ...selected,
+      adoptedLegislationType: draft.adoptedLegislationType,
+      adoptedLegislationTitle: draft.adoptedLegislationTitle,
+      adoptedLegislationText: draft.adoptedLegislationText,
+      adoptedLegislationEffectiveDate: draft.adoptedLegislationEffectiveDate,
+      adoptedLegislationCodificationHint: draft.adoptedLegislationCodificationHint
     },
     "record-resident-comment": { ...selected, residentComment: draft.residentComment },
     "submit-public-comment": {

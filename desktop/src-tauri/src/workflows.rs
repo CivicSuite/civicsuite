@@ -164,6 +164,32 @@ pub struct MeetingActionRecord {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct AdoptedLegislationRecord {
+    pub id: String,
+    #[serde(default)]
+    pub code_source_id: String,
+    pub meeting_id: String,
+    pub meeting_title: String,
+    pub legislation_type: String,
+    pub title: String,
+    pub text: String,
+    #[serde(default)]
+    pub effective_date: String,
+    #[serde(default)]
+    pub codification_section_hint: String,
+    #[serde(default)]
+    pub source_motion_id: String,
+    #[serde(default)]
+    pub source_motion_text: String,
+    #[serde(default)]
+    pub source_agenda_item_id: String,
+    #[serde(default)]
+    pub source_agenda_item_title: String,
+    pub handoff_status: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     #[serde(default)]
@@ -193,6 +219,8 @@ pub struct Meeting {
     pub action_items: Vec<String>,
     #[serde(default)]
     pub action_records: Vec<MeetingActionRecord>,
+    #[serde(default)]
+    pub adopted_legislation: Vec<AdoptedLegislationRecord>,
     #[serde(default)]
     pub resident_comments: Vec<String>,
     #[serde(default)]
@@ -495,6 +523,8 @@ pub struct CityWorkState {
     pub records_requests: Vec<RecordsRequest>,
     pub code_sources: Vec<CodeSource>,
     pub code_handoffs: Vec<CodeHandoff>,
+    #[serde(default)]
+    pub adopted_legislation: Vec<AdoptedLegislationRecord>,
     pub audit_entries: Vec<AuditEntry>,
     #[serde(default)]
     pub publication_events: Vec<PublicationEvent>,
@@ -1216,6 +1246,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         votes: Vec::new(),
         action_items: Vec::new(),
         action_records: Vec::new(),
+        adopted_legislation: Vec::new(),
         resident_comments: Vec::new(),
         public_comments: Vec::new(),
         exports: Vec::new(),
@@ -2182,6 +2213,169 @@ fn sign_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<St
     Ok("Adopted minutes signed and ready for public archive.".to_string())
 }
 
+fn record_adopted_legislation(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let legislation_type = payload_string(payload, "adoptedLegislationType")
+        .map_err(|_| "Choose ordinance or resolution.".to_string())?
+        .to_lowercase();
+    let legislation_type = match legislation_type.as_str() {
+        "ordinance" => "ordinance",
+        "resolution" => "resolution",
+        _ => return Err("Choose ordinance or resolution.".to_string()),
+    };
+    let title = payload_string(payload, "adoptedLegislationTitle")
+        .map_err(|_| "Enter the adopted ordinance or resolution title.".to_string())?;
+    let text = payload_string(payload, "adoptedLegislationText")
+        .map_err(|_| "Enter the adopted ordinance or resolution text.".to_string())?;
+    let effective_date = payload_optional_string(payload, "adoptedLegislationEffectiveDate");
+    if !effective_date.is_empty() {
+        parse_iso_date(&effective_date, "adopted legislation effective date")?;
+    }
+    let codification_section_hint =
+        payload_optional_string(payload, "adoptedLegislationCodificationHint");
+    let (
+        meeting_id,
+        meeting_title,
+        meeting_date,
+        source_motion_id,
+        source_motion_text,
+        source_agenda_item_id,
+        source_agenda_item_title,
+    ) = {
+        let meeting = selected_meeting_mut(state, payload)?;
+        ensure_meeting_can_change(meeting)?;
+        if meeting.minutes_signed_at_unix_seconds.is_none() {
+            return Err(
+                "Sign the adopted minutes before recording adopted legislation.".to_string(),
+            );
+        }
+        let (source_motion_id, source_motion_text) = meeting
+            .motions
+            .iter()
+            .rev()
+            .find(|motion| motion.disposition == "passed")
+            .map(|motion| (motion.id.clone(), motion.text.clone()))
+            .ok_or_else(|| {
+                "Record a passed motion before recording adopted legislation.".to_string()
+            })?;
+        let (source_agenda_item_id, source_agenda_item_title) = meeting
+            .agenda_items
+            .last()
+            .map(|item| (item.id.clone(), item.title.clone()))
+            .unwrap_or_default();
+        meeting.status = "adopted legislation recorded".to_string();
+        (
+            meeting.id.clone(),
+            meeting.title.clone(),
+            meeting.meeting_date.clone(),
+            source_motion_id,
+            source_motion_text,
+            source_agenda_item_id,
+            source_agenda_item_title,
+        )
+    };
+    let record_id = new_id("adopted-legislation", state.adopted_legislation.len());
+    let code_source_id = new_id("code-source", state.code_sources.len());
+    let created_at = now_unix_seconds();
+    let citation = format!(
+        "Adopted {} from {} on {}",
+        legislation_type, meeting_title, meeting_date
+    );
+    let record = AdoptedLegislationRecord {
+        id: record_id.clone(),
+        code_source_id: code_source_id.clone(),
+        meeting_id: meeting_id.clone(),
+        meeting_title: meeting_title.clone(),
+        legislation_type: legislation_type.to_string(),
+        title: title.clone(),
+        text: text.clone(),
+        effective_date: effective_date.clone(),
+        codification_section_hint: codification_section_hint.clone(),
+        source_motion_id: source_motion_id.clone(),
+        source_motion_text: source_motion_text.clone(),
+        source_agenda_item_id: source_agenda_item_id.clone(),
+        source_agenda_item_title: source_agenda_item_title.clone(),
+        handoff_status: "pending CivicCode sync".to_string(),
+        created_at_unix_seconds: created_at,
+    };
+    if let Some(meeting) = state
+        .meetings
+        .iter_mut()
+        .find(|meeting| meeting.id == meeting_id)
+    {
+        meeting.adopted_legislation.push(record.clone());
+    }
+    state.adopted_legislation.insert(0, record);
+    state.code_sources.insert(
+        0,
+        CodeSource {
+            id: code_source_id.clone(),
+            title: title.clone(),
+            citation: citation.clone(),
+            body: text,
+            status: "adopted pending codifier sync".to_string(),
+            codifier_name: String::new(),
+            authoritative_url: String::new(),
+            version_label: effective_date.clone(),
+            codifier_sync_status: "pending codifier sync".to_string(),
+            codifier_sync_errors: Vec::new(),
+            last_codifier_sync_at_unix_seconds: None,
+            stale_since_unix_seconds: None,
+            amendment_notes: vec![format!(
+                "Created from CivicClerk adoption event {record_id}; motion: {source_motion_text}; agenda item: {}",
+                if source_agenda_item_title.is_empty() {
+                    "not linked"
+                } else {
+                    &source_agenda_item_title
+                }
+            )],
+            version_history: vec![CodeVersionEntry {
+                id: new_id("code-version", 0),
+                label: format!("Adopted {}", legislation_type),
+                source: format!("CivicClerk adoption event {record_id}"),
+                authoritative_url: String::new(),
+                note: format!(
+                    "Motion: {}; codification hint: {}",
+                    source_motion_text,
+                    if codification_section_hint.is_empty() {
+                        "not recorded"
+                    } else {
+                        &codification_section_hint
+                    }
+                ),
+                status: "pending codifier sync".to_string(),
+                recorded_at_unix_seconds: created_at,
+            }],
+            staff_guidance: String::new(),
+            plain_language_summary: String::new(),
+            guidance_approved_at_unix_seconds: None,
+            public_status: default_code_public_status(),
+            public_exports: Vec::new(),
+            published_at_unix_seconds: None,
+            created_at_unix_seconds: created_at,
+        },
+    );
+    push_audit(
+        state,
+        "civicclerk",
+        "record-adopted-legislation",
+        format!(
+            "Recorded adopted {legislation_type} {title} from meeting {meeting_title}; handoff {record_id} created for CivicCode."
+        ),
+    );
+    push_audit(
+        state,
+        "civiccode",
+        "receive-adopted-legislation",
+        format!("Received adopted {legislation_type} {title} as code source {code_source_id}."),
+    );
+    Ok(format!(
+        "Adopted {legislation_type} recorded and queued for CivicCode codifier sync."
+    ))
+}
+
 fn list_or_default(values: &[String], empty: &str) -> String {
     if values.is_empty() {
         empty.to_string()
@@ -2261,6 +2455,35 @@ fn minutes_signature_or_default(meeting: &Meeting) -> String {
             )
         })
         .unwrap_or_else(|| "Minutes have not been signed.".to_string())
+}
+
+fn adopted_legislation_or_default(records: &[AdoptedLegislationRecord]) -> String {
+    if records.is_empty() {
+        return "No adopted ordinances or resolutions recorded.".to_string();
+    }
+    records
+        .iter()
+        .map(|record| {
+            format!(
+                "- {}: {} (effective {}; codification hint: {}; motion: {}; handoff: {})",
+                record.legislation_type,
+                record.title,
+                if record.effective_date.is_empty() {
+                    "not recorded"
+                } else {
+                    &record.effective_date
+                },
+                if record.codification_section_hint.is_empty() {
+                    "not recorded"
+                } else {
+                    &record.codification_section_hint
+                },
+                record.source_motion_text,
+                record.handoff_status
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn push_records_timeline(request: &mut RecordsRequest, action: &str, actor: &str, note: String) {
@@ -2575,6 +2798,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let motions = motion_records_or_default(&meeting.motions);
     let action_items = list_or_default(&meeting.action_items, "No action items recorded.");
     let action_records = meeting_action_records_or_default(&meeting.action_records);
+    let adopted_legislation = adopted_legislation_or_default(&meeting.adopted_legislation);
     let resident_comments =
         list_or_default(&meeting.resident_comments, "No resident comments recorded.");
     let public_comments = if meeting.public_comments.is_empty() {
@@ -2617,7 +2841,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         &meeting.body_name
     };
     format!(
-        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Minutes Signature\n{}\n\n## Adopted Ordinances And Resolutions\n{}\n\n## Motions\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Action Item Details\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         body_name,
         meeting.meeting_date,
@@ -2640,6 +2864,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         minute_citations,
         minutes_adoption,
         minutes_signature,
+        adopted_legislation,
         motions,
         votes,
         action_items,
@@ -4592,6 +4817,24 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let adopted_legislation = meeting
+            .adopted_legislation
+            .iter()
+            .map(|record| {
+                format!(
+                    "{} {} {} {} {} {} {} {}",
+                    record.legislation_type,
+                    record.title,
+                    record.text,
+                    record.effective_date,
+                    record.codification_section_hint,
+                    record.source_motion_text,
+                    record.source_agenda_item_title,
+                    record.handoff_status
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let resident_comments = meeting.resident_comments.join(" ");
         let notice_checklists = meeting
             .notice_checklists
@@ -4685,6 +4928,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &votes,
                 &action_items,
                 &action_records,
+                &adopted_legislation,
                 &resident_comments,
                 &notice_checklists,
                 &notice_postings,
@@ -4974,6 +5218,7 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
         public_meeting.votes.clear();
         public_meeting.action_items.clear();
         public_meeting.action_records.clear();
+        public_meeting.adopted_legislation.clear();
         public_meeting.resident_comments.clear();
         public_meeting.exports.clear();
     }
@@ -5103,6 +5348,7 @@ pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkStat
             .filter_map(public_code_source_projection)
             .collect(),
         code_handoffs: Vec::new(),
+        adopted_legislation: Vec::new(),
         audit_entries: Vec::new(),
         publication_events: state
             .publication_events
@@ -5158,6 +5404,7 @@ pub fn city_work_action(
         "redact-public-comment" => redact_public_comment(&mut state, payload)?,
         "adopt-minutes" => adopt_minutes(&mut state, payload)?,
         "sign-minutes" => sign_minutes(&mut state, payload)?,
+        "record-adopted-legislation" => record_adopted_legislation(&mut state, payload)?,
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
@@ -5587,11 +5834,26 @@ mod tests {
                 Err(error) => error,
             };
             assert!(error.contains("already adopted"));
+            let adopted_ordinance = serde_json::json!({
+                "adoptedLegislationType": "ordinance",
+                "adoptedLegislationTitle": "Budget Publication Ordinance",
+                "adoptedLegislationText": "An ordinance directing publication of the adopted budget.",
+                "adoptedLegislationEffectiveDate": "2026-07-15",
+                "adoptedLegislationCodificationHint": "Title 2, Chapter 4"
+            });
+            let error =
+                match city_work_action("record-adopted-legislation", Some(&adopted_ordinance)) {
+                    Ok(_) => panic!("adopted legislation cannot be recorded before signed minutes"),
+                    Err(error) => error,
+                };
+            assert!(error.contains("Sign the adopted minutes"));
             let signature = serde_json::json!({
                 "minutesSignedBy": "City Clerk Morgan",
                 "minutesSignatureAttestation": "I attest these adopted minutes are ready for the official public record."
             });
             city_work_action("sign-minutes", Some(&signature)).expect("minutes signed");
+            city_work_action("record-adopted-legislation", Some(&adopted_ordinance))
+                .expect("adopted legislation recorded");
             city_work_action("export-meeting-packet", None).expect("packet exported");
             city_work_action("archive-meeting", None).expect("meeting archived");
             let state = city_work_state().expect("state reads");
@@ -5643,6 +5905,24 @@ mod tests {
                 meeting.action_records[0].source_reference,
                 "Budget ordinance motion"
             );
+            assert_eq!(meeting.adopted_legislation.len(), 1);
+            assert_eq!(
+                meeting.adopted_legislation[0].title,
+                "Budget Publication Ordinance"
+            );
+            assert_eq!(meeting.adopted_legislation[0].legislation_type, "ordinance");
+            assert_eq!(
+                meeting.adopted_legislation[0].source_motion_text,
+                "Approve the budget ordinance."
+            );
+            assert_eq!(
+                meeting.adopted_legislation[0].codification_section_hint,
+                "Title 2, Chapter 4"
+            );
+            assert_eq!(
+                meeting.adopted_legislation[0].handoff_status,
+                "pending CivicCode sync"
+            );
             assert_eq!(meeting.resident_comments.len(), 1);
             assert_eq!(meeting.minute_citations.len(), 2);
             assert_eq!(
@@ -5685,6 +5965,8 @@ mod tests {
             assert!(packet.contains("Executive session memo"));
             assert!(packet.contains("## Minutes Signature"));
             assert!(packet.contains("City Clerk Morgan"));
+            assert!(packet.contains("## Adopted Ordinances And Resolutions"));
+            assert!(packet.contains("Budget Publication Ordinance"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
             assert!(archive.contains("Body: City Council"));
@@ -5705,6 +5987,9 @@ mod tests {
             assert!(archive.contains("## Minutes Signature"));
             assert!(archive.contains("City Clerk Morgan"));
             assert!(archive.contains("official public record"));
+            assert!(archive.contains("## Adopted Ordinances And Resolutions"));
+            assert!(archive.contains("Budget Publication Ordinance"));
+            assert!(archive.contains("Title 2, Chapter 4"));
             assert!(archive.contains("## Staff-Entered Resident Comments"));
             assert!(archive.contains("Resident asked for sidewalk funding."));
             assert!(archive.contains("## Packet Attachments"));
@@ -5731,6 +6016,21 @@ mod tests {
             assert_eq!(action_source_results.len(), 1);
             let signature_results = search_city_work(&state, "City Clerk Morgan");
             assert_eq!(signature_results.len(), 1);
+            let adopted_legislation_results =
+                search_city_work(&state, "Budget Publication Ordinance");
+            assert_eq!(adopted_legislation_results.len(), 2);
+            assert_eq!(state.adopted_legislation.len(), 1);
+            assert_eq!(
+                state.adopted_legislation[0].title,
+                "Budget Publication Ordinance"
+            );
+            assert_eq!(state.code_sources.len(), 1);
+            assert_eq!(state.code_sources[0].title, "Budget Publication Ordinance");
+            assert_eq!(
+                state.code_sources[0].codifier_sync_status,
+                "pending codifier sync"
+            );
+            assert!(state.code_sources[0].citation.contains("Adopted ordinance"));
             let public_state = public_city_work_state().expect("public state reads");
             assert_eq!(public_state.meeting_bodies.len(), 1);
             assert_eq!(
@@ -5745,6 +6045,11 @@ mod tests {
             assert_eq!(public_meeting.body_name, "City Council");
             assert_eq!(public_meeting.motions.len(), 1);
             assert_eq!(public_meeting.action_records.len(), 1);
+            assert_eq!(public_meeting.adopted_legislation.len(), 1);
+            assert_eq!(
+                public_meeting.adopted_legislation[0].title,
+                "Budget Publication Ordinance"
+            );
             assert_eq!(public_meeting.minutes_signed_by, "City Clerk Morgan");
             assert!(public_meeting
                 .minutes_signature_attestation
