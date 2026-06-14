@@ -30,6 +30,13 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Add Action Item" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate Local AI Minutes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Minute Citations" })).toBeVisible();
+  await expect(page.getByLabel("Minutes sentence or excerpt")).toBeVisible();
+  await expect(page.getByLabel("Citation source type")).toBeVisible();
+  await expect(page.getByLabel("Citation source reference")).toBeVisible();
+  await expect(page.getByLabel("Citation note")).toBeVisible();
+  await expect(page.getByLabel("Citation access")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Minute Citation" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Adopt Minutes" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Public Comment Review" })).toBeVisible();
@@ -129,6 +136,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add Minute Citation" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
 
@@ -201,6 +209,13 @@ test("risky city workflow actions require guided review before mutation", async 
   await expect(page.getByText("Attachment title is required.")).toBeVisible();
   await expect(page.getByText("Attachment source file path is required.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm Attach Packet File" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Add Minute Citation" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Adding Minute Citation" })).toBeVisible();
+  await expect(page.getByText("Minutes sentence or excerpt is required.")).toBeVisible();
+  await expect(page.getByText("Source reference is required.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Add Minute Citation" })).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
 
   await page.getByRole("button", { name: "Approve Notice Checklist" }).click();

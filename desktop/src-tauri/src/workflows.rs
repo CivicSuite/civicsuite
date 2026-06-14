@@ -81,6 +81,17 @@ pub struct MeetingAttachment {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MinuteCitation {
+    pub id: String,
+    pub sentence: String,
+    pub source_type: String,
+    pub source_reference: String,
+    pub note: String,
+    pub access_level: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
     pub title: String,
@@ -96,6 +107,8 @@ pub struct Meeting {
     #[serde(default)]
     pub attachments: Vec<MeetingAttachment>,
     pub minutes: String,
+    #[serde(default)]
+    pub minute_citations: Vec<MinuteCitation>,
     #[serde(default)]
     pub votes: Vec<String>,
     #[serde(default)]
@@ -968,6 +981,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         agenda_items: Vec::new(),
         attachments: Vec::new(),
         minutes: String::new(),
+        minute_citations: Vec::new(),
         votes: Vec::new(),
         action_items: Vec::new(),
         resident_comments: Vec::new(),
@@ -1284,14 +1298,72 @@ fn record_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
     ensure_meeting_can_change(meeting)?;
     let title = meeting.title.clone();
     meeting.minutes = minutes;
+    meeting.minute_citations.clear();
     meeting.status = "minutes drafted".to_string();
     push_audit(
         state,
         "civicclerk",
         "record-minutes",
-        format!("Drafted minutes for: {title}"),
+        format!("Drafted minutes for: {title}; minute citations reset for the new draft."),
     );
     Ok("Minutes draft saved locally and tied to the meeting audit trail.".to_string())
+}
+
+fn add_minute_citation(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let sentence = payload_string(payload, "minutesCitationSentence")
+        .map_err(|_| "Enter the minutes sentence or excerpt being cited.".to_string())?;
+    let source_type = payload_string(payload, "minutesCitationSourceType").map_err(|_| {
+        "Enter the citation source type, such as packet item or clerk note.".to_string()
+    })?;
+    let source_reference = payload_string(payload, "minutesCitationSourceRef").map_err(|_| {
+        "Enter the packet item, transcript segment, or clerk note reference.".to_string()
+    })?;
+    let note = payload_optional_string(payload, "minutesCitationNote");
+    let access_level = {
+        let value = payload_optional_string(payload, "minutesCitationAccess").to_lowercase();
+        if value.is_empty() {
+            "public record".to_string()
+        } else if value == "public record" || value == "staff-only" {
+            value
+        } else {
+            return Err("Minute citation access must be public record or staff-only.".to_string());
+        }
+    };
+    let meeting = selected_meeting_mut(state, payload)?;
+    ensure_meeting_can_change(meeting)?;
+    if meeting.minutes.trim().is_empty() {
+        return Err("Save or generate a minutes draft before adding minute citations.".to_string());
+    }
+    if !meeting.minutes.contains(&sentence) {
+        return Err(
+            "The cited sentence or excerpt must appear in the current minutes draft.".to_string(),
+        );
+    }
+    let citation = MinuteCitation {
+        id: format!(
+            "minute-citation-{}-{}",
+            now_unix_seconds(),
+            meeting.minute_citations.len() + 1
+        ),
+        sentence: sentence.clone(),
+        source_type: source_type.clone(),
+        source_reference: source_reference.clone(),
+        note: note.clone(),
+        access_level: access_level.clone(),
+        created_at_unix_seconds: now_unix_seconds(),
+    };
+    meeting.minute_citations.push(citation);
+    meeting.status = "minutes citations recorded".to_string();
+    push_audit(
+        state,
+        "civicclerk",
+        "add-minute-citation",
+        format!("Added minute citation for {source_type} {source_reference}; {access_level}."),
+    );
+    Ok("Minute citation saved for clerk review and archive evidence.".to_string())
 }
 
 fn suggest_minutes_draft(
@@ -1379,6 +1451,7 @@ fn suggest_minutes_draft(
     let title = meeting.title.clone();
     let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
     meeting.minutes = generated;
+    meeting.minute_citations.clear();
     meeting.status = "local AI minutes draft ready for review".to_string();
     push_audit(
         state,
@@ -1580,6 +1653,9 @@ fn adopt_minutes(state: &mut CityWorkState, payload: Option<&Value>) -> Result<S
     ensure_meeting_can_change(meeting)?;
     if meeting.minutes.trim().is_empty() {
         return Err("Save a minutes draft before adopting minutes.".to_string());
+    }
+    if meeting.minute_citations.is_empty() {
+        return Err("Add at least one minute citation before adopting minutes.".to_string());
     }
     let title = meeting.title.clone();
     meeting.minutes_adopted_at_unix_seconds = Some(now_unix_seconds());
@@ -1864,6 +1940,31 @@ fn meeting_attachments_or_default(attachments: &[MeetingAttachment]) -> String {
         .join("\n")
 }
 
+fn minute_citations_or_default(citations: &[MinuteCitation]) -> String {
+    if citations.is_empty() {
+        return "No minute citations recorded.".to_string();
+    }
+    citations
+        .iter()
+        .map(|citation| {
+            let note = if citation.note.is_empty() {
+                "No note recorded."
+            } else {
+                &citation.note
+            };
+            format!(
+                "- \"{}\" -> {}: {} [{}]. {}",
+                citation.sentence,
+                citation.source_type,
+                citation.source_reference,
+                citation.access_level,
+                note
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn code_version_history_search_text(entries: &[CodeVersionEntry]) -> String {
     entries
         .iter()
@@ -1924,8 +2025,9 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let notice_checklists = notice_checklists_or_default(&meeting.notice_checklists);
     let notice_postings = notice_postings_or_default(&meeting.notice_postings);
     let attachments = meeting_attachments_or_default(&meeting.attachments);
+    let minute_citations = minute_citations_or_default(&meeting.minute_citations);
     format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
         meeting.meeting_date,
         meeting.status,
@@ -1944,6 +2046,7 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
         } else {
             &meeting.minutes
         },
+        minute_citations,
         minutes_adoption,
         votes,
         action_items,
@@ -3846,6 +3949,21 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             })
             .collect::<Vec<_>>()
             .join(" ");
+        let minute_citations = meeting
+            .minute_citations
+            .iter()
+            .map(|citation| {
+                format!(
+                    "{} {} {} {} {}",
+                    citation.sentence,
+                    citation.source_type,
+                    citation.source_reference,
+                    citation.note,
+                    citation.access_level
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let public_comments = meeting
             .public_comments
             .iter()
@@ -3869,6 +3987,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &meeting.minutes,
                 &agenda_titles,
                 &attachments,
+                &minute_citations,
                 &votes,
                 &action_items,
                 &resident_comments,
@@ -4138,8 +4257,15 @@ fn public_meeting_projection(meeting: &Meeting) -> Option<Meeting> {
             attachment
         })
         .collect();
+    public_meeting.minute_citations = meeting
+        .minute_citations
+        .iter()
+        .filter(|citation| citation.access_level == "public record")
+        .cloned()
+        .collect();
     if !is_public_archive {
         public_meeting.minutes.clear();
+        public_meeting.minute_citations.clear();
         public_meeting.votes.clear();
         public_meeting.action_items.clear();
         public_meeting.resident_comments.clear();
@@ -4309,6 +4435,7 @@ pub fn city_work_action(
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
+        "add-minute-citation" => add_minute_citation(&mut state, payload)?,
         "suggest-minutes-draft" => suggest_minutes_draft(&mut state, payload)?,
         "record-vote" => record_vote(&mut state, payload)?,
         "add-action-item" => add_action_item(&mut state, payload)?,
@@ -4618,6 +4745,29 @@ mod tests {
             assert!(suggested_state.meetings[0]
                 .minutes
                 .contains("Local AI minutes draft"));
+            let adoption_without_citation = match city_work_action("adopt-minutes", None) {
+                Ok(_) => panic!("minutes cannot be adopted without citation evidence"),
+                Err(error) => error,
+            };
+            assert!(adoption_without_citation.contains("minute citation"));
+            let citation = serde_json::json!({
+                "minutesCitationSentence": "Local AI minutes draft: budget ordinance passed 4-1 with finance publication action.",
+                "minutesCitationSourceType": "packet item",
+                "minutesCitationSourceRef": "Packet item 4 fiscal note",
+                "minutesCitationNote": "Supports budget action and publication task.",
+                "minutesCitationAccess": "public record"
+            });
+            city_work_action("add-minute-citation", Some(&citation))
+                .expect("public minute citation saved");
+            let staff_only_citation = serde_json::json!({
+                "minutesCitationSentence": "Local AI minutes draft: budget ordinance passed 4-1 with finance publication action.",
+                "minutesCitationSourceType": "closed-session note",
+                "minutesCitationSourceRef": "Executive session memo",
+                "minutesCitationNote": "Staff-only attorney review source.",
+                "minutesCitationAccess": "staff-only"
+            });
+            city_work_action("add-minute-citation", Some(&staff_only_citation))
+                .expect("staff-only minute citation saved");
             city_work_action("adopt-minutes", None).expect("minutes adopted");
             city_work_action("export-meeting-packet", None).expect("packet exported");
             city_work_action("archive-meeting", None).expect("meeting archived");
@@ -4639,6 +4789,12 @@ mod tests {
             assert_eq!(meeting.votes.len(), 1);
             assert_eq!(meeting.action_items.len(), 1);
             assert_eq!(meeting.resident_comments.len(), 1);
+            assert_eq!(meeting.minute_citations.len(), 2);
+            assert_eq!(
+                meeting.minute_citations[0].source_reference,
+                "Packet item 4 fiscal note"
+            );
+            assert_eq!(meeting.minute_citations[1].access_level, "staff-only");
             assert_eq!(meeting.attachments.len(), 2);
             assert_eq!(meeting.attachments[0].title, "Fiscal note");
             assert_eq!(meeting.attachments[0].citation, "Packet item 4 fiscal note");
@@ -4660,6 +4816,8 @@ mod tests {
             assert!(packet.contains("Fiscal note"));
             assert!(packet.contains("Packet item 4 fiscal note"));
             assert!(packet.contains("Closed-session attorney memo"));
+            assert!(packet.contains("## Minute Citations"));
+            assert!(packet.contains("Executive session memo"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
             assert!(archive.contains("## Notice Checklist"));
@@ -4676,8 +4834,13 @@ mod tests {
             assert!(archive.contains("local path hidden"));
             assert!(!archive.contains("Closed-session attorney memo"));
             assert!(!archive.contains("closed-session-memo"));
+            assert!(archive.contains("## Minute Citations"));
+            assert!(archive.contains("Packet item 4 fiscal note"));
+            assert!(!archive.contains("Executive session memo"));
             let attachment_results = search_city_work(&state, "Packet item 4 fiscal note");
             assert_eq!(attachment_results.len(), 1);
+            let citation_results = search_city_work(&state, "Supports budget action");
+            assert_eq!(citation_results.len(), 1);
             let public_state = public_city_work_state().expect("public state reads");
             let public_meeting = public_state
                 .meetings
@@ -4687,6 +4850,11 @@ mod tests {
             assert_eq!(public_meeting.attachments[0].title, "Fiscal note");
             assert!(public_meeting.attachments[0].original_path.is_empty());
             assert!(public_meeting.attachments[0].stored_path.is_empty());
+            assert_eq!(public_meeting.minute_citations.len(), 1);
+            assert_eq!(
+                public_meeting.minute_citations[0].source_reference,
+                "Packet item 4 fiscal note"
+            );
             assert!(state
                 .audit_entries
                 .iter()
@@ -4724,6 +4892,8 @@ mod tests {
             .expect("public re-export reads");
             assert!(public_reexport.contains("Fiscal note"));
             assert!(!public_reexport.contains("Closed-session attorney memo"));
+            assert!(public_reexport.contains("Packet item 4 fiscal note"));
+            assert!(!public_reexport.contains("Executive session memo"));
         });
     }
 

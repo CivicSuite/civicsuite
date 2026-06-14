@@ -550,6 +550,11 @@ const state = {
     meetingAttachmentCitation: "",
     meetingAttachmentSection: "agenda packet",
     meetingAttachmentAccess: "public packet",
+    minutesCitationSentence: "",
+    minutesCitationSourceType: "packet item",
+    minutesCitationSourceRef: "",
+    minutesCitationNote: "",
+    minutesCitationAccess: "public record",
     vote: "",
     actionItem: "",
     residentComment: "",
@@ -1327,6 +1332,7 @@ const GUIDED_WORK_ACTIONS = new Set([
   "complete-notice-checklist",
   "post-notice",
   "export-meeting-packet",
+  "add-minute-citation",
   "review-public-comment",
   "redact-public-comment",
   "suggest-minutes-draft",
@@ -1529,6 +1535,25 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
       retry: "If the local AI model is not ready, the minutes are already adopted, or no meeting evidence exists, the desktop app stops before changing the draft."
     },
+    "add-minute-citation": {
+      title: "Review Before Adding Minute Citation",
+      confirmLabel: "Add Minute Citation",
+      module: "CivicClerk",
+      subject: meetingSubject,
+      status: meeting ? meeting.status : "No meeting selected yet.",
+      changes: "Adds source evidence for a specific sentence or excerpt in the current minutes draft.",
+      visibility: state.workDraft.minutesCitationAccess === "staff-only"
+        ? "Staff-only citation evidence. It will not appear in resident/public archive material."
+        : "Public record citation evidence can appear with archived minutes.",
+      sources: [
+        detailOrFallback(state.workDraft.minutesCitationSentence, "Minutes sentence or excerpt is required."),
+        detailOrFallback(state.workDraft.minutesCitationSourceType, "Source type is required."),
+        detailOrFallback(state.workDraft.minutesCitationSourceRef, "Source reference is required."),
+        detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the minute citation source reference.",
+      retry: "If the sentence is not in the current draft, the source reference is missing, or the meeting is archived, the desktop app leaves the minutes unchanged."
+    },
     "adopt-minutes": {
       title: "Review Before Adopting Minutes",
       confirmLabel: "Adopt Minutes",
@@ -1539,10 +1564,11 @@ function guidedReviewForAction(action) {
       visibility: "Adopted minutes remain local staff records until archive/publication.",
       sources: [
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet."),
+        meeting && (meeting.minute_citations || []).length > 0 ? `${(meeting.minute_citations || []).length} minute citation(s) recorded.` : "At least one minute citation is required.",
         meeting ? `${(meeting.votes || []).length} vote or motion record(s)` : "The desktop app will require a meeting before saving."
       ],
       audit: "Creates a CivicClerk audit entry for adopting minutes.",
-      retry: "If no minutes draft exists, the desktop app blocks adoption and asks staff to save minutes first."
+      retry: "If no minutes draft or citation evidence exists, the desktop app blocks adoption and asks staff to save minutes and add citations first."
     },
     "archive-meeting": {
       title: "Review Before Archiving Public Record",
@@ -1945,10 +1971,13 @@ function publicMeetingView(meeting) {
         original_path: "",
         stored_path: "",
         added_by: ""
-      }))
+      })),
+    minute_citations: (meeting.minute_citations || [])
+      .filter((citation) => citation.access_level === "public record")
   };
   if (!publicArchive) {
     publicMeeting.minutes = "";
+    publicMeeting.minute_citations = [];
     publicMeeting.votes = [];
     publicMeeting.action_items = [];
     publicMeeting.resident_comments = [];
@@ -2022,7 +2051,8 @@ function renderPublicMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No public summary recorded."}</p>
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} packet attachments - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
+          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2100,6 +2130,22 @@ function renderMeetingsWorkflow() {
         </div>
       </div>
       <div class="workflow-form">
+        <h3>Minute Citations</h3>
+        <p class="form-help">Tie each important minutes sentence to a packet item, clerk note, transcript segment, or vote record before adoption.</p>
+        <label>Minutes sentence or excerpt <textarea data-work-field="minutesCitationSentence">${state.workDraft.minutesCitationSentence}</textarea></label>
+        <label>Citation source type <input type="text" data-work-field="minutesCitationSourceType" value="${state.workDraft.minutesCitationSourceType}" placeholder="packet item, clerk note, transcript segment" /></label>
+        <label>Citation source reference <input type="text" data-work-field="minutesCitationSourceRef" value="${state.workDraft.minutesCitationSourceRef}" placeholder="Item 4 fiscal note, clerk note 2, transcript 00:14:03" /></label>
+        <label>Citation note <input type="text" data-work-field="minutesCitationNote" value="${state.workDraft.minutesCitationNote}" /></label>
+        <label>Citation access
+          <select data-work-field="minutesCitationAccess">
+            ${["public record", "staff-only"].map((access) => `<option value="${access}" ${state.workDraft.minutesCitationAccess === access ? "selected" : ""}>${access}</option>`).join("")}
+          </select>
+        </label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="add-minute-citation">Add Minute Citation</button>
+        </div>
+      </div>
+      <div class="workflow-form">
         <h3>Public Comment Review</h3>
         <p class="form-help">${selectedPublicComment ? `${selectedPublicComment.commenter_name} - ${selectedPublicComment.status}` : "No submitted public comment is selected for review."}</p>
         <label>Redacted public text <textarea data-work-field="publicCommentRedactedBody">${state.workDraft.publicCommentRedactedBody}</textarea></label>
@@ -2119,6 +2165,7 @@ function renderMeetingsWorkflow() {
           <h3>${meeting.title}</h3>
           <p>${meeting.summary || "No summary yet."}</p>
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
+          ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)} (${escapeHtml(citation.access_level)})`).join("; ")}</p>` : ""}
           ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
           ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
@@ -2138,7 +2185,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -2795,6 +2842,9 @@ function localSearchResults(query, { publicOnly = false } = {}) {
         return [...publicFields, attachment.original_path, attachment.stored_path, attachment.added_by].join(" ");
       })
       .join(" ");
+    const minuteCitations = (meeting.minute_citations || [])
+      .map((citation) => [citation.sentence, citation.source_type, citation.source_reference, citation.note, citation.access_level].join(" "))
+      .join(" ");
     const publicComments = (meeting.public_comments || [])
       .filter((comment) => !publicOnly || ["reviewed for public record", "redacted for public record"].includes(comment.status))
       .map((comment) => {
@@ -2824,13 +2874,14 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       noticePostings,
       agendaTitles,
       packetAttachments,
+      minuteCitations,
       publicComments
     ];
     const meetingSearchText = publicOnly
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, outcomes, actionItems, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, outcomes, actionItems, residentComments, publicComments];
+      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, outcomes, actionItems, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -3972,6 +4023,14 @@ function workPayloadForAction(action) {
     "export-meeting-packet": selected,
     "suggest-minutes-draft": selected,
     "record-minutes": { ...selected, minutes: draft.minutes },
+    "add-minute-citation": {
+      ...selected,
+      minutesCitationSentence: draft.minutesCitationSentence,
+      minutesCitationSourceType: draft.minutesCitationSourceType,
+      minutesCitationSourceRef: draft.minutesCitationSourceRef,
+      minutesCitationNote: draft.minutesCitationNote,
+      minutesCitationAccess: draft.minutesCitationAccess
+    },
     "record-vote": { ...selected, vote: draft.vote },
     "add-action-item": { ...selected, actionItem: draft.actionItem },
     "record-resident-comment": { ...selected, residentComment: draft.residentComment },
