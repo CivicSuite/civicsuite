@@ -393,6 +393,15 @@ pub struct RecordsTimelineEntry {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct RecordsPublicStatusEvent {
+    pub id: String,
+    pub label: String,
+    pub summary: String,
+    pub status: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct RecordsMessage {
     pub id: String,
     pub author: String,
@@ -535,6 +544,8 @@ pub struct RecordsRequest {
     pub release_packages: Vec<RecordsReleasePackage>,
     #[serde(default)]
     pub timeline: Vec<RecordsTimelineEntry>,
+    #[serde(default)]
+    pub public_status_events: Vec<RecordsPublicStatusEvent>,
     #[serde(default)]
     pub messages: Vec<RecordsMessage>,
     #[serde(default)]
@@ -3637,6 +3648,26 @@ fn push_records_timeline(request: &mut RecordsRequest, action: &str, actor: &str
     });
 }
 
+fn push_records_public_status(
+    request: &mut RecordsRequest,
+    label: &str,
+    status: &str,
+    summary: String,
+) {
+    let id = format!(
+        "records-public-status-{}-{}",
+        now_unix_seconds(),
+        request.public_status_events.len() + 1
+    );
+    request.public_status_events.push(RecordsPublicStatusEvent {
+        id,
+        label: label.to_string(),
+        summary,
+        status: status.to_string(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+}
+
 fn records_timeline_or_default(entries: &[RecordsTimelineEntry]) -> String {
     if entries.is_empty() {
         return "No request timeline entries recorded.".to_string();
@@ -4220,6 +4251,7 @@ fn create_records_request(
             exports: Vec::new(),
             release_packages: Vec::new(),
             timeline: Vec::new(),
+            public_status_events: Vec::new(),
             messages: Vec::new(),
             documents: Vec::new(),
             deadline_reviewed_at_unix_seconds: Some(now_unix_seconds()),
@@ -4234,6 +4266,12 @@ fn create_records_request(
         "intake",
         "records staff",
         format!("Staff created request {tracking_number} with deadline {deadline}."),
+    );
+    push_records_public_status(
+        &mut state.records_requests[0],
+        "Request received",
+        "received",
+        format!("Request {tracking_number} was created by staff and is being tracked locally."),
     );
     let request_id = state.records_requests[0].id.clone();
     push_notification_event(
@@ -4297,6 +4335,7 @@ fn submit_public_records_request(
             exports: Vec::new(),
             release_packages: Vec::new(),
             timeline: Vec::new(),
+            public_status_events: Vec::new(),
             messages: Vec::new(),
             documents: Vec::new(),
             deadline_reviewed_at_unix_seconds: None,
@@ -4311,6 +4350,14 @@ fn submit_public_records_request(
         "public intake",
         "resident/public",
         format!("Public request {tracking_number} received for staff review."),
+    );
+    push_records_public_status(
+        &mut state.records_requests[0],
+        "Request received",
+        "public intake received",
+        format!(
+            "Request {tracking_number} was received locally and is waiting for staff deadline review."
+        ),
     );
     let request_id = state.records_requests[0].id.clone();
     push_notification_event(
@@ -4366,6 +4413,12 @@ fn set_records_deadline(
             "records staff",
             format!("Response deadline set to {deadline}; basis: {deadline_basis}."),
         );
+        push_records_public_status(
+            request,
+            "Deadline reviewed",
+            "deadline reviewed",
+            format!("Staff reviewed the response deadline: {deadline}. Basis: {deadline_basis}."),
+        );
         (
             request.id.clone(),
             request.public_tracking_number.clone(),
@@ -4409,6 +4462,12 @@ fn request_records_clarification(
             "records staff",
             note.clone(),
         );
+        push_records_public_status(
+            request,
+            "Clarification requested",
+            "clarification",
+            "Staff requested clarification before completing the records review.".to_string(),
+        );
         (request.id.clone(), request.public_tracking_number.clone())
     };
     push_notification_event(
@@ -4451,6 +4510,12 @@ fn add_records_message(
         request.messages.push(message);
         request.status = "message sent".to_string();
         push_records_timeline(request, "message sent", "records staff", body.clone());
+        push_records_public_status(
+            request,
+            "Message added",
+            "message sent",
+            "Records staff added a requester-visible message to this request.".to_string(),
+        );
         (request.id.clone(), request.public_tracking_number.clone())
     };
     push_notification_event(
@@ -4518,6 +4583,12 @@ fn add_public_records_message(
             "resident/public",
             body.clone(),
         );
+        push_records_public_status(
+            request,
+            "Requester message received",
+            "requester message received",
+            "A requester message was added to the local request thread.".to_string(),
+        );
         (request.id.clone(), request.requester.clone())
     };
     push_notification_event(
@@ -4571,6 +4642,12 @@ fn assign_records_request(
         "records staff",
         format!("Assigned to {assigned_to}."),
     );
+    push_records_public_status(
+        request,
+        "Staff review assigned",
+        "assigned",
+        "The request was assigned for staff review.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -4606,6 +4683,12 @@ fn record_records_search(
                 format!(" Citation: {citation}.")
             }
         ),
+    );
+    push_records_public_status(
+        request,
+        "Records search in progress",
+        "searching",
+        "Staff recorded progress on the records search.".to_string(),
     );
     push_audit(
         state,
@@ -4676,6 +4759,12 @@ fn record_records_search_session(
         "search session recorded",
         "records staff",
         format!("{query} across {locations}; result {result_title}."),
+    );
+    push_records_public_status(
+        request,
+        "Records search updated",
+        "search session recorded",
+        "Staff saved structured search progress for this request.".to_string(),
     );
     push_audit(
         state,
@@ -4771,6 +4860,12 @@ fn add_records_document(
             "document attached",
             "records staff",
             format!("Attached {title} from {source_file_name}; sha256 {sha256}."),
+        );
+        push_records_public_status(
+            request,
+            "Responsive records under review",
+            "document attached",
+            "Potentially responsive records were added for staff review.".to_string(),
         );
         (
             stored_path.to_string_lossy().to_string(),
@@ -4897,6 +4992,12 @@ fn add_records_release_copy(
                 }
             ),
         );
+        push_records_public_status(
+            request,
+            "Release copy prepared",
+            "release copy attached",
+            "A release-ready or redacted copy was prepared for this request.".to_string(),
+        );
         (
             document_title,
             stored_path.to_string_lossy().to_string(),
@@ -4933,6 +5034,12 @@ fn add_records_exemption_review(
         "exemption review recorded",
         "records staff",
         exemption_note,
+    );
+    push_records_public_status(
+        request,
+        "Review in progress",
+        "in review",
+        "Staff recorded review progress before final response approval.".to_string(),
     );
     push_audit(
         state,
@@ -4995,6 +5102,12 @@ fn add_records_exemption_decision(
         "records staff",
         format!("{decision} decision for {source}: {finding} under {basis}."),
     );
+    push_records_public_status(
+        request,
+        "Release review updated",
+        "exemption decision recorded",
+        "Staff recorded release, redaction, or exemption review progress.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -5018,6 +5131,12 @@ fn estimate_records_fee(
         "fee estimate saved",
         "records staff",
         fee_estimate.clone(),
+    );
+    push_records_public_status(
+        request,
+        "Fee review updated",
+        "ready",
+        "Staff updated the request fee review.".to_string(),
     );
     push_audit(
         state,
@@ -5077,6 +5196,12 @@ fn add_records_fee_line(
             schedule_basis
         ),
     );
+    push_records_public_status(
+        request,
+        "Fee review updated",
+        "fee review",
+        "Staff updated the request fee review.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -5099,6 +5224,12 @@ fn waive_records_fee(state: &mut CityWorkState, payload: Option<&Value>) -> Resu
     request.fee_estimate = format!("$0.00 waived: {reason}");
     request.status = "fee waived".to_string();
     push_records_timeline(request, "fee waived", "records staff", reason.clone());
+    push_records_public_status(
+        request,
+        "Fee waived",
+        "fee waived",
+        "Staff marked the records fee as waived.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -5130,6 +5261,12 @@ fn draft_records_response(
         } else {
             format!("Draft response saved with citation {citation}.")
         },
+    );
+    push_records_public_status(
+        request,
+        "Response drafting",
+        "drafted",
+        "Staff saved a response draft for review.".to_string(),
     );
     push_audit(
         state,
@@ -5180,6 +5317,12 @@ fn suggest_records_response(
         "local model",
         format!("Draft generated with {runtime_model}; human approval still required."),
     );
+    push_records_public_status(
+        request,
+        "Response drafting",
+        "local AI draft ready for review",
+        "A response draft is ready for human staff review.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -5219,6 +5362,12 @@ fn approve_records_response(
         } else {
             approval_note
         },
+    );
+    push_records_public_status(
+        request,
+        "Response approved",
+        "approved",
+        "A human reviewer approved the response for export.".to_string(),
     );
     push_audit(
         state,
@@ -5348,6 +5497,12 @@ fn build_records_release_package(
         "records staff",
         format!("Release package manifest written to {export_path}; sha256 {package_hash}."),
     );
+    push_records_public_status(
+        request,
+        "Release package prepared",
+        "release package built",
+        "Staff prepared the release package for fulfillment.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -5457,6 +5612,12 @@ fn export_records_response(
         "records staff",
         format!("Approved response package exported to {export_path}."),
     );
+    push_records_public_status(
+        request,
+        "Response package exported",
+        "response package exported",
+        "The approved response package was exported for release.".to_string(),
+    );
     push_audit(
         state,
         "civicrecords-ai",
@@ -5511,6 +5672,12 @@ fn fulfill_records_request(
             "fulfilled",
             "records staff",
             "Approved response package marked fulfilled.".to_string(),
+        );
+        push_records_public_status(
+            request,
+            "Response ready",
+            "fulfilled",
+            "The approved records response has been marked fulfilled.".to_string(),
         );
         (
             request.id.clone(),
@@ -5577,6 +5744,12 @@ fn close_records_request(
             "records staff",
             "Fulfilled request closed with audit, export, and notification evidence preserved."
                 .to_string(),
+        );
+        push_records_public_status(
+            request,
+            "Request closed",
+            "closed",
+            "The fulfilled records request was closed locally.".to_string(),
         );
         (request.id.clone(), request.public_tracking_number.clone())
     };
@@ -6730,6 +6903,12 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             .map(|entry| format!("{} {} {}", entry.action, entry.actor, entry.note))
             .collect::<Vec<_>>()
             .join(" ");
+        let public_status_events = request
+            .public_status_events
+            .iter()
+            .map(|entry| format!("{} {} {}", entry.label, entry.status, entry.summary))
+            .collect::<Vec<_>>()
+            .join(" ");
         if contains_query(
             &[
                 &request.requester,
@@ -6753,6 +6932,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 &exemption_decisions,
                 &approval_notes,
                 &timeline,
+                &public_status_events,
             ],
             query,
         ) {
@@ -9097,8 +9277,12 @@ mod tests {
             let document_results = search_city_work(&state, "Park contract email attachment");
             assert_eq!(document_results.len(), 1);
             let notification_results = search_city_work(&state, "response ready");
-            assert_eq!(notification_results.len(), 1);
-            assert_eq!(notification_results[0].module_id, "civiccore");
+            assert!(notification_results
+                .iter()
+                .any(|result| result.module_id == "civiccore"));
+            assert!(notification_results
+                .iter()
+                .any(|result| result.module_id == "civicrecords-ai"));
         });
     }
 
@@ -9128,6 +9312,11 @@ mod tests {
             assert!(request.fulfilled_at_unix_seconds.is_none());
             assert_eq!(request.timeline.len(), 1);
             assert_eq!(request.timeline[0].action, "public intake");
+            assert_eq!(request.public_status_events.len(), 1);
+            assert_eq!(request.public_status_events[0].label, "Request received");
+            assert!(request.public_status_events[0]
+                .summary
+                .contains("waiting for staff deadline review"));
             assert_eq!(state.notification_events.len(), 2);
             assert!(state.notification_events.iter().any(|event| {
                 event.audience == "records staff"
@@ -9182,6 +9371,14 @@ mod tests {
                 .timeline
                 .iter()
                 .any(|entry| entry.action == "deadline reviewed"));
+            assert_eq!(request.public_status_events.len(), 2);
+            assert!(request.public_status_events.iter().any(|entry| {
+                entry.label == "Deadline reviewed"
+                    && entry.summary.contains("2026-07-20")
+                    && entry
+                        .summary
+                        .contains("Colorado CORA response deadline reviewed")
+            }));
             assert_eq!(state.notification_events.len(), 3);
             let deadline_notification = state
                 .notification_events
@@ -9241,6 +9438,14 @@ mod tests {
             assert!(public_request.approval_notes.is_empty());
             assert!(public_request.release_packages.is_empty());
             assert!(public_request.timeline.is_empty());
+            assert_eq!(public_request.public_status_events.len(), 2);
+            assert!(public_request.public_status_events.iter().any(|entry| {
+                entry.label == "Request received"
+                    && entry.summary.contains("waiting for staff deadline review")
+            }));
+            assert!(public_request.public_status_events.iter().any(|entry| {
+                entry.label == "Deadline reviewed" && entry.summary.contains("2026-07-20")
+            }));
             assert!(public_request.messages.is_empty());
             assert!(public_request.documents.is_empty());
 
@@ -9262,6 +9467,14 @@ mod tests {
             assert!(public_message_request.messages[0]
                 .body
                 .contains("invoices from May"));
+            assert_eq!(public_message_request.public_status_events.len(), 3);
+            assert!(public_message_request
+                .public_status_events
+                .iter()
+                .any(|entry| {
+                    entry.label == "Requester message received"
+                        && !entry.summary.contains("invoices from May")
+                }));
             let public_state = public_city_work_state().expect("public state stays redacted");
             assert!(public_state.records_requests.is_empty());
 
@@ -9283,11 +9496,15 @@ mod tests {
                 .expect("public lookup includes message thread");
             let public_request = &lookup_result.state.records_requests[0];
             assert_eq!(public_request.messages.len(), 2);
+            assert_eq!(public_request.public_status_events.len(), 4);
             assert!(public_request
                 .messages
                 .iter()
                 .any(|message| message.author_role == "staff"
                     && message.body.contains("May invoices first")));
+            assert!(public_request.public_status_events.iter().any(|entry| {
+                entry.label == "Message added" && !entry.summary.contains("May invoices first")
+            }));
 
             let wrong_contact = serde_json::json!({
                 "trackingNumber": "REQ-0001",

@@ -2861,6 +2861,7 @@ function publicRecordsRequestView(request) {
     approval_notes: [],
     release_packages: [],
     timeline: [],
+    public_status_events: request.public_status_events || [],
     messages: lookupVerified ? (request.messages || []) : [],
     documents: []
   };
@@ -3029,6 +3030,7 @@ function renderPublicRecordsWorkflow() {
           <p><strong>Requester:</strong> ${request.requester}</p>
           <p>${request.summary}</p>
           ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
+          ${renderRecordsPublicStatusEvents(request)}
           ${renderRecordsMessages(request)}
           <small>${request.submitted_via || "Staff intake"} - ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
         </article>
@@ -3077,6 +3079,26 @@ function renderRecordsTimeline(request) {
             <strong>${escapeHtml(entry.action)}</strong> by ${escapeHtml(entry.actor)}:
             ${escapeHtml(entry.note)}
             <small>${new Date(entry.created_at_unix_seconds * 1000).toLocaleString()}</small>
+          </li>
+        `).join("")}
+      </ul>
+    </details>
+  `;
+}
+
+function renderRecordsPublicStatusEvents(request) {
+  const events = request.public_status_events || [];
+  if (events.length === 0) return "";
+  return `
+    <details class="record-details" open>
+      <summary>Status Updates</summary>
+      <ul>
+        ${events.map((event) => `
+          <li>
+            <strong>${escapeHtml(event.label)}</strong>
+            <span>${escapeHtml(event.status)}</span>
+            ${escapeHtml(event.summary)}
+            <small>${new Date(event.created_at_unix_seconds * 1000).toLocaleString()}</small>
           </li>
         `).join("")}
       </ul>
@@ -3321,6 +3343,7 @@ function renderRecordsWorkflow() {
           ${renderRecordsExemptionDecisions(request)}
           ${renderRecordsReleasePackages(request)}
           ${renderRecordsTimeline(request)}
+          ${renderRecordsPublicStatusEvents(request)}
           <div class="record-actions">
             ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
           </div>
@@ -3709,6 +3732,8 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       .map((pkg) => [pkg.export_path, pkg.package_hash, pkg.document_count, pkg.release_artifact_count, pkg.search_session_count, pkg.release_count, pkg.redacted_count, pkg.exempt_count].join(" "));
     const feeLineSearchText = (request.fee_line_items || [])
       .map((item) => [item.description, item.schedule_basis, formatFeeCents(item.amount_cents)].join(" "));
+    const publicStatusEventSearchText = (request.public_status_events || [])
+      .map((event) => [event.label, event.summary, event.status].join(" "));
     const publicRecordFields = [
       request.public_tracking_number,
       request.requester,
@@ -3717,6 +3742,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       request.status,
       request.deadline,
       request.deadline_basis,
+      ...publicStatusEventSearchText,
       ...(request.citations || [])
     ];
     const recordsSearchText = publicOnly ? publicRecordFields : [

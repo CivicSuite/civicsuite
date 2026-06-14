@@ -65,6 +65,7 @@ const requiredUiPhrases = [
   "Local notification log",
   "Log Notification Sent",
   "Request Timeline",
+  "Status Updates",
   "Request Messages",
   "Message to requester",
   "Add Request Message",
@@ -124,6 +125,7 @@ for (const phrase of requiredUiPhrases) {
 for (const phrase of [
   "function publicMeetingView",
   "function publicRecordsRequestView",
+  "function renderRecordsPublicStatusEvents",
   "function publicCodeSourceView",
   "function codeQuestionSearchFields",
   "function codeSourceSearchFields",
