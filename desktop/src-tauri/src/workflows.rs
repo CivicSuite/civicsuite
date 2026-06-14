@@ -10169,6 +10169,81 @@ mod tests {
     }
 
     #[test]
+    fn code_publication_targets_selected_source_when_multiple_sources_exist() {
+        with_temp_state_dir(|_| {
+            let noise_source = serde_json::json!({
+                "title": "Noise Ordinance",
+                "citation": "CMC 8.12",
+                "body": "Quiet hours begin at 10 PM."
+            });
+            let sign_source = serde_json::json!({
+                "title": "Temporary Sign Code",
+                "citation": "CMC 17.48",
+                "body": "Temporary signs require planning review."
+            });
+            city_work_action("import-code-source", Some(&noise_source))
+                .expect("noise source imported");
+            city_work_action("import-code-source", Some(&sign_source))
+                .expect("sign source imported");
+            let state = city_work_state().expect("state reads after imports");
+            let noise_id = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Noise Ordinance")
+                .expect("noise source exists")
+                .id
+                .clone();
+            let publish_noise = serde_json::json!({ "codeSourceId": noise_id.clone() });
+            city_work_action("publish-code-source", Some(&publish_noise))
+                .expect("selected source published");
+
+            let state = city_work_state().expect("state reads after selected publish");
+            let noise = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Noise Ordinance")
+                .expect("noise source exists");
+            let signs = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Temporary Sign Code")
+                .expect("sign source exists");
+            assert_eq!(noise.public_status, "published");
+            assert_eq!(signs.public_status, "internal draft");
+            assert_eq!(noise.public_exports.len(), 1);
+            assert!(signs.public_exports.is_empty());
+            let public_state = city_work_public_projection(&state);
+            assert_eq!(public_state.code_sources.len(), 1);
+            assert_eq!(public_state.code_sources[0].title, "Noise Ordinance");
+
+            let unpublish_noise = serde_json::json!({ "codeSourceId": noise_id });
+            city_work_action("unpublish-code-source", Some(&unpublish_noise))
+                .expect("selected source unpublished");
+            let state = city_work_state().expect("state reads after selected unpublish");
+            let noise = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Noise Ordinance")
+                .expect("noise source exists");
+            let signs = state
+                .code_sources
+                .iter()
+                .find(|source| source.title == "Temporary Sign Code")
+                .expect("sign source exists");
+            assert_eq!(noise.public_status, "internal draft");
+            assert_eq!(signs.public_status, "internal draft");
+            assert!(state.publication_events.iter().any(|event| {
+                event.source_record_id == noise.id && event.retracted_at_unix_seconds.is_some()
+            }));
+            assert!(!state
+                .publication_events
+                .iter()
+                .any(|event| event.source_record_id == signs.id));
+            assert_valid_audit_chain(&state.audit_entries);
+        });
+    }
+
+    #[test]
     fn code_question_answers_use_published_current_citations() {
         with_temp_state_dir(|_| {
             let payload = serde_json::json!({

@@ -194,6 +194,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
 
   await page.getByRole("button", { name: /Code & Ordinances/ }).click();
   await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
+  await expect(page.getByText("Selected code source for actions:")).toBeVisible();
   await expect(page.getByLabel("Source title")).toBeVisible();
   await expect(page.getByLabel("Citation")).toBeVisible();
   await expect(page.getByLabel("Source file path")).toBeVisible();

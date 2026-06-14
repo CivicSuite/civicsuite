@@ -3473,11 +3473,15 @@ function renderCodeWorkflow() {
   const selectedSource = currentCodeSource(work);
   const selectedHandoff = currentCodeHandoff(work);
   const codeAnswers = localCodeQuestionResults(state.workDraft.codeQuestion, { publicOnly: false });
+  const selectedSourceContext = selectedSource
+    ? `${escapeHtml(selectedSource.title)} (${escapeHtml(selectedSource.citation)})`
+    : "No code source selected yet. Import a source or choose Work On This before publishing, syncing, or handing off.";
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
       <h2>Code & Ordinances</h2>
       <p>Import local code sources with citation text and create clerk handoffs for ordinance or resolution work.</p>
+      <p class="form-help"><strong>Selected code source for actions:</strong> ${selectedSourceContext}</p>
     </section>
     <section class="workflow-editor">
       <div class="workflow-form">

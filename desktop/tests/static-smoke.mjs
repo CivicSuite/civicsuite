@@ -118,6 +118,7 @@ const requiredUiPhrases = [
   "Data remains installed. Re-enable this module to show its work area.",
   "Backup includes:",
   "code workflow history",
+  "Selected code source for actions:",
   "Module actions are handled by the Windows desktop app",
   "Source history:",
   "Sign in as local administrator to change local model setup.",
