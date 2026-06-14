@@ -4,8 +4,18 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await page.goto("/");
 
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await expect(page.getByRole("heading", { name: "Meeting Bodies" })).toBeVisible();
+  await expect(page.getByLabel("Meeting body name")).toBeVisible();
+  await expect(page.getByLabel("Body type")).toBeVisible();
+  await expect(page.getByLabel("Body statutory basis")).toBeVisible();
+  await expect(page.getByLabel("Meeting cadence")).toBeVisible();
+  await expect(page.getByLabel("Default notice days")).toBeVisible();
+  await expect(page.getByLabel("Quorum rule")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Meeting Body" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toBeVisible();
+  await expect(page.getByLabel("Meeting body", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Meeting" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Meeting" })).toBeDisabled();
   await expect(page.getByLabel("Notice meeting type")).toBeVisible();
   await expect(page.getByLabel("Statutory notice basis")).toBeVisible();
   await expect(page.getByLabel("Notice deadline")).toBeVisible();
@@ -133,6 +143,7 @@ test("resident public surface hides staff workflow controls", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Public Comment Review" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Redact Comment" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save Meeting Body" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
@@ -272,7 +283,9 @@ test("risky city workflow actions require guided review before mutation", async 
 test("browser preview refuses persistent city workflow mutations", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
-  await page.getByRole("button", { name: "Create Meeting" }).click();
+  await page.getByRole("button", { name: "Save Meeting Body" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Saving Meeting Body" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm Save Meeting Body" }).click();
 
   await expect(page.getByText("Desktop app required")).toBeVisible();
   await expect(page.getByText("City workflow changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();

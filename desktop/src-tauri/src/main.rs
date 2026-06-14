@@ -133,7 +133,8 @@ fn city_work_action_module_requirement(
     payload: Option<&Value>,
 ) -> Option<(Vec<&'static str>, bool)> {
     match action {
-        "create-meeting"
+        "create-meeting-body"
+        | "create-meeting"
         | "add-agenda-item"
         | "add-meeting-attachment"
         | "add-code-handoff-agenda"
@@ -1033,7 +1034,20 @@ mod tests {
         with_clean_first_run_state(|_| {
             create_first_admin();
 
+            let body_payload = serde_json::json!({
+                "meetingBodyName": "City Council",
+                "meetingBodyType": "legislative",
+                "meetingBodyStatutoryBasis": "City Charter Section 2.1",
+                "meetingBodyCadence": "First and third Wednesday",
+                "meetingBodyDefaultNoticeDays": "3",
+                "meetingBodyQuorumRule": "majority of seated members"
+            });
+            let body_result =
+                workflows::city_work_action("create-meeting-body", Some(&body_payload))
+                    .expect("meeting body created");
+            let body_id = body_result.state.meeting_bodies[0].id.clone();
             let meeting_payload = serde_json::json!({
+                "meetingBodyId": body_id,
                 "title": "Budget Work Session",
                 "meetingDate": "2026-07-02",
                 "summary": "Review draft budget priorities.",

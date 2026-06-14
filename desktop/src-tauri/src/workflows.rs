@@ -8,6 +8,19 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::local_paths;
 
 #[derive(Deserialize, Serialize, Clone)]
+pub struct MeetingBody {
+    pub id: String,
+    pub name: String,
+    pub body_type: String,
+    pub statutory_basis: String,
+    pub meeting_cadence: String,
+    pub default_notice_days: u32,
+    pub quorum_rule: String,
+    pub status: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct AgendaItem {
     pub id: String,
     pub title: String,
@@ -94,6 +107,10 @@ pub struct MinuteCitation {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct Meeting {
     pub id: String,
+    #[serde(default)]
+    pub body_id: String,
+    #[serde(default)]
+    pub body_name: String,
     pub title: String,
     pub meeting_date: String,
     pub status: String,
@@ -401,6 +418,8 @@ pub struct SearchResult {
 
 #[derive(Deserialize, Serialize, Clone, Default)]
 pub struct CityWorkState {
+    #[serde(default)]
+    pub meeting_bodies: Vec<MeetingBody>,
     pub meetings: Vec<Meeting>,
     pub records_requests: Vec<RecordsRequest>,
     pub code_sources: Vec<CodeSource>,
@@ -856,6 +875,52 @@ fn ensure_meeting_can_change(meeting: &Meeting) -> Result<(), String> {
     Ok(())
 }
 
+fn parse_default_notice_days(value: &str) -> Result<u32, String> {
+    if value.trim().is_empty() {
+        return Ok(3);
+    }
+    let days = value
+        .trim()
+        .parse::<u32>()
+        .map_err(|_| "Enter default notice days as a whole number.".to_string())?;
+    if days > 365 {
+        return Err("Default notice days must be 365 or less.".to_string());
+    }
+    Ok(days)
+}
+
+fn selected_meeting_body_for_payload(
+    state: &CityWorkState,
+    payload: Option<&Value>,
+) -> Result<(String, String), String> {
+    let body_id = payload_optional_string(payload, "meetingBodyId");
+    if !body_id.is_empty() {
+        let body = state
+            .meeting_bodies
+            .iter()
+            .find(|body| body.id == body_id)
+            .ok_or_else(|| "The selected meeting body was not found.".to_string())?;
+        return Ok((body.id.clone(), body.name.clone()));
+    }
+    let body_name = payload_optional_string(payload, "meetingBodyName");
+    if !body_name.is_empty() {
+        if let Some(body) = state
+            .meeting_bodies
+            .iter()
+            .find(|body| body.name.eq_ignore_ascii_case(&body_name))
+        {
+            return Ok((body.id.clone(), body.name.clone()));
+        }
+        return Err(
+            "Save this meeting body with statutory basis before creating a meeting.".to_string(),
+        );
+    }
+    if let Some(body) = state.meeting_bodies.first() {
+        return Ok((body.id.clone(), body.name.clone()));
+    }
+    Err("Create a meeting body with statutory basis before creating a meeting.".to_string())
+}
+
 fn selected_record_index(state: &CityWorkState, payload: Option<&Value>) -> Result<usize, String> {
     let request_id = payload_optional_string(payload, "recordsRequestId");
     if request_id.is_empty() {
@@ -963,14 +1028,86 @@ fn selected_pending_code_handoff_index(
     Ok(index)
 }
 
+fn create_meeting_body(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let name = payload_string(payload, "meetingBodyName")
+        .map_err(|_| "Enter the meeting body name.".to_string())?;
+    let statutory_basis = payload_string(payload, "meetingBodyStatutoryBasis")
+        .map_err(|_| "Enter the statutory basis for this meeting body.".to_string())?;
+    if state
+        .meeting_bodies
+        .iter()
+        .any(|body| body.name.eq_ignore_ascii_case(&name))
+    {
+        return Err("A meeting body with this name already exists.".to_string());
+    }
+    let body_type = {
+        let value = payload_optional_string(payload, "meetingBodyType");
+        if value.is_empty() {
+            "legislative".to_string()
+        } else {
+            value
+        }
+    };
+    let meeting_cadence = {
+        let value = payload_optional_string(payload, "meetingBodyCadence");
+        if value.is_empty() {
+            "as scheduled".to_string()
+        } else {
+            value
+        }
+    };
+    let quorum_rule = {
+        let value = payload_optional_string(payload, "meetingBodyQuorumRule");
+        if value.is_empty() {
+            "majority of seated members".to_string()
+        } else {
+            value
+        }
+    };
+    let default_notice_days = parse_default_notice_days(&payload_optional_string(
+        payload,
+        "meetingBodyDefaultNoticeDays",
+    ))?;
+    let id = new_id("meeting-body", state.meeting_bodies.len());
+    state.meeting_bodies.insert(
+        0,
+        MeetingBody {
+            id: id.clone(),
+            name: name.clone(),
+            body_type: body_type.clone(),
+            statutory_basis: statutory_basis.clone(),
+            meeting_cadence: meeting_cadence.clone(),
+            default_notice_days,
+            quorum_rule: quorum_rule.clone(),
+            status: "active".to_string(),
+            created_at_unix_seconds: now_unix_seconds(),
+        },
+    );
+    push_audit(
+        state,
+        "civicclerk",
+        "create-meeting-body",
+        format!(
+            "Created meeting body {name}; type: {body_type}; basis: {statutory_basis}; cadence: {meeting_cadence}; default notice days: {default_notice_days}; quorum: {quorum_rule}."
+        ),
+    );
+    Ok(format!("Meeting body saved locally: {name}."))
+}
+
 fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<String, String> {
     let title = payload_string(payload, "title")?;
     let meeting_date = payload_string(payload, "meetingDate")?;
     let summary = payload_optional_string(payload, "summary");
     let agenda_title = payload_optional_string(payload, "agendaTitle");
+    let (body_id, body_name) = selected_meeting_body_for_payload(state, payload)?;
     let id = new_id("meeting", state.meetings.len());
     let mut meeting = Meeting {
         id: id.clone(),
+        body_id,
+        body_name: body_name.clone(),
         title: title.clone(),
         meeting_date,
         status: "draft".to_string(),
@@ -1004,7 +1141,7 @@ fn create_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result<
         state,
         "civicclerk",
         "create-meeting",
-        format!("Created meeting draft: {title}"),
+        format!("Created meeting draft for {body_name}: {title}"),
     );
     Ok("Meeting draft saved locally with agenda and notice status.".to_string())
 }
@@ -2026,9 +2163,15 @@ fn meeting_packet_contents(meeting: &Meeting) -> String {
     let notice_postings = notice_postings_or_default(&meeting.notice_postings);
     let attachments = meeting_attachments_or_default(&meeting.attachments);
     let minute_citations = minute_citations_or_default(&meeting.minute_citations);
+    let body_name = if meeting.body_name.is_empty() {
+        "No meeting body recorded."
+    } else {
+        &meeting.body_name
+    };
     format!(
-        "# {}\n\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
+        "# {}\n\nBody: {}\nDate: {}\nStatus: {}\nNotice: {}\n\n## Notice Checklist\n{}\n\n## Notice Posting Evidence\n{}\n\n## Summary\n{}\n\n## Agenda\n{}\n\n## Packet Attachments\n{}\n\n## Minutes\n{}\n\n## Minute Citations\n{}\n\n## Minutes Adoption\n{}\n\n## Outcomes\n{}\n\n## Action Items\n{}\n\n## Staff-Entered Resident Comments\n{}\n\n## Public Comments\n{}\n",
         meeting.title,
+        body_name,
         meeting.meeting_date,
         meeting.status,
         meeting.notice_status,
@@ -3893,6 +4036,31 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         return Vec::new();
     }
     let mut results = Vec::new();
+    for body in &state.meeting_bodies {
+        if contains_query(
+            &[
+                &body.name,
+                &body.body_type,
+                &body.statutory_basis,
+                &body.meeting_cadence,
+                &body.quorum_rule,
+                &body.status,
+            ],
+            query,
+        ) {
+            results.push(SearchResult {
+                module_id: "civicclerk".to_string(),
+                record_id: body.id.clone(),
+                title: format!("Meeting body: {}", body.name),
+                snippet: format!(
+                    "{}; cadence {}; quorum {}",
+                    body.body_type, body.meeting_cadence, body.quorum_rule
+                ),
+                citation: body.statutory_basis.clone(),
+                status: body.status.clone(),
+            });
+        }
+    }
     for meeting in &state.meetings {
         let agenda_titles = meeting
             .agenda_items
@@ -3982,6 +4150,7 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
         if contains_query(
             &[
                 &meeting.title,
+                &meeting.body_name,
                 &meeting.summary,
                 &meeting.status,
                 &meeting.minutes,
@@ -4379,6 +4548,7 @@ fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
 
 pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkState {
     CityWorkState {
+        meeting_bodies: state.meeting_bodies.clone(),
         meetings: state
             .meetings
             .iter()
@@ -4428,6 +4598,7 @@ pub fn city_work_action(
     let mut state = read_state()?;
     let mut search_results = Vec::new();
     let message = match action {
+        "create-meeting-body" => create_meeting_body(&mut state, payload)?,
         "create-meeting" => create_meeting(&mut state, payload)?,
         "add-agenda-item" => add_agenda_item(&mut state, payload)?,
         "add-meeting-attachment" => add_meeting_attachment(&mut state, payload)?,
@@ -4548,6 +4719,25 @@ mod tests {
         result
     }
 
+    fn create_city_council_body() -> String {
+        let body = serde_json::json!({
+            "meetingBodyName": "City Council",
+            "meetingBodyType": "legislative",
+            "meetingBodyStatutoryBasis": "City Charter Section 2.1",
+            "meetingBodyCadence": "First and third Wednesday",
+            "meetingBodyDefaultNoticeDays": "3",
+            "meetingBodyQuorumRule": "majority of seated members"
+        });
+        city_work_action("create-meeting-body", Some(&body)).expect("meeting body saved");
+        city_work_state()
+            .expect("state reads after meeting body")
+            .meeting_bodies
+            .first()
+            .expect("meeting body exists")
+            .id
+            .clone()
+    }
+
     fn assert_valid_audit_chain(entries: &[AuditEntry]) {
         assert!(!entries.is_empty());
         for (index, entry) in entries.iter().enumerate() {
@@ -4617,7 +4807,48 @@ mod tests {
     #[test]
     fn meeting_workflow_persists_agenda_notice_minutes_votes_comments_actions_and_archive() {
         with_temp_state_dir(|root| {
+            let missing_body_meeting = serde_json::json!({
+                "title": "Council Regular Meeting",
+                "meetingDate": "2026-07-01",
+                "summary": "Budget hearing",
+                "agendaTitle": "Adopt budget ordinance"
+            });
+            let error = match city_work_action("create-meeting", Some(&missing_body_meeting)) {
+                Ok(_) => panic!("meeting cannot be created before meeting body setup"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Create a meeting body"));
+            let incomplete_body = serde_json::json!({ "meetingBodyName": "City Council" });
+            let error = match city_work_action("create-meeting-body", Some(&incomplete_body)) {
+                Ok(_) => panic!("meeting body cannot be created without statutory basis"),
+                Err(error) => error,
+            };
+            assert!(error.contains("statutory basis"));
+            let meeting_body = serde_json::json!({
+                "meetingBodyName": "City Council",
+                "meetingBodyType": "legislative",
+                "meetingBodyStatutoryBasis": "City Charter Section 2.1",
+                "meetingBodyCadence": "First and third Wednesday",
+                "meetingBodyDefaultNoticeDays": "3",
+                "meetingBodyQuorumRule": "majority of seated members"
+            });
+            city_work_action("create-meeting-body", Some(&meeting_body))
+                .expect("meeting body saved");
+            let body_state = city_work_state().expect("state reads after meeting body");
+            let meeting_body_id = body_state
+                .meeting_bodies
+                .first()
+                .expect("meeting body exists")
+                .id
+                .clone();
+            let duplicate_body_error =
+                match city_work_action("create-meeting-body", Some(&meeting_body)) {
+                    Ok(_) => panic!("duplicate meeting body cannot be created"),
+                    Err(error) => error,
+                };
+            assert!(duplicate_body_error.contains("already exists"));
             let payload = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
                 "title": "Council Regular Meeting",
                 "meetingDate": "2026-07-01",
                 "summary": "Budget hearing",
@@ -4772,7 +5003,18 @@ mod tests {
             city_work_action("export-meeting-packet", None).expect("packet exported");
             city_work_action("archive-meeting", None).expect("meeting archived");
             let state = city_work_state().expect("state reads");
+            assert_eq!(state.meeting_bodies.len(), 1);
+            let body = state.meeting_bodies.first().expect("meeting body exists");
+            assert_eq!(body.name, "City Council");
+            assert_eq!(body.body_type, "legislative");
+            assert_eq!(body.statutory_basis, "City Charter Section 2.1");
+            assert_eq!(body.meeting_cadence, "First and third Wednesday");
+            assert_eq!(body.default_notice_days, 3);
+            assert_eq!(body.quorum_rule, "majority of seated members");
+            assert_eq!(body.status, "active");
             let meeting = state.meetings.first().expect("meeting exists");
+            assert_eq!(meeting.body_id, body.id);
+            assert_eq!(meeting.body_name, "City Council");
             assert_eq!(meeting.notice_status, "public notice ready");
             assert_eq!(meeting.notice_checklists.len(), 1);
             assert_eq!(
@@ -4812,6 +5054,7 @@ mod tests {
             assert!(PathBuf::from(&meeting.exports[1]).is_file());
             let packet = fs::read_to_string(&meeting.exports[0]).expect("packet reads");
             assert_export_integrity_manifest(&meeting.exports[0], &packet);
+            assert!(packet.contains("Body: City Council"));
             assert!(packet.contains("## Packet Attachments"));
             assert!(packet.contains("Fiscal note"));
             assert!(packet.contains("Packet item 4 fiscal note"));
@@ -4820,6 +5063,7 @@ mod tests {
             assert!(packet.contains("Executive session memo"));
             let archive = fs::read_to_string(&meeting.exports[1]).expect("archive reads");
             assert_export_integrity_manifest(&meeting.exports[1], &archive);
+            assert!(archive.contains("Body: City Council"));
             assert!(archive.contains("## Notice Checklist"));
             assert!(archive.contains("Municipal open meetings notice"));
             assert!(archive.contains("## Notice Posting Evidence"));
@@ -4841,11 +5085,22 @@ mod tests {
             assert_eq!(attachment_results.len(), 1);
             let citation_results = search_city_work(&state, "Supports budget action");
             assert_eq!(citation_results.len(), 1);
+            let body_results = search_city_work(&state, "City Charter Section 2.1");
+            assert!(body_results
+                .iter()
+                .any(|result| result.title == "Meeting body: City Council"));
             let public_state = public_city_work_state().expect("public state reads");
+            assert_eq!(public_state.meeting_bodies.len(), 1);
+            assert_eq!(
+                public_state.meeting_bodies[0].statutory_basis,
+                "City Charter Section 2.1"
+            );
             let public_meeting = public_state
                 .meetings
                 .first()
                 .expect("public meeting exists");
+            assert_eq!(public_meeting.body_id, body.id);
+            assert_eq!(public_meeting.body_name, "City Council");
             assert_eq!(public_meeting.attachments.len(), 1);
             assert_eq!(public_meeting.attachments[0].title, "Fiscal note");
             assert!(public_meeting.attachments[0].original_path.is_empty());
@@ -4890,6 +5145,7 @@ mod tests {
                     .expect("re-export path exists"),
             )
             .expect("public re-export reads");
+            assert!(public_reexport.contains("Body: City Council"));
             assert!(public_reexport.contains("Fiscal note"));
             assert!(!public_reexport.contains("Closed-session attorney memo"));
             assert!(public_reexport.contains("Packet item 4 fiscal note"));
@@ -4900,7 +5156,9 @@ mod tests {
     #[test]
     fn public_comment_intake_requires_posted_meeting_and_is_preserved() {
         with_temp_state_dir(|_| {
+            let meeting_body_id = create_city_council_body();
             let payload = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
                 "title": "Council Hearing",
                 "meetingDate": "2026-07-15",
                 "summary": "Sidewalk tree ordinance hearing",
@@ -5751,13 +6009,16 @@ mod tests {
     #[test]
     fn workflow_actions_target_selected_records_when_ids_are_supplied() {
         with_temp_state_dir(|_| {
+            let meeting_body_id = create_city_council_body();
             let budget_meeting = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
                 "title": "Budget Meeting",
                 "meetingDate": "2026-07-01",
                 "summary": "Budget agenda",
                 "agendaTitle": "Open budget hearing"
             });
             let planning_meeting = serde_json::json!({
+                "meetingBodyName": "City Council",
                 "title": "Planning Meeting",
                 "meetingDate": "2026-07-02",
                 "summary": "Planning agenda",
@@ -5940,7 +6201,9 @@ mod tests {
     #[test]
     fn code_handoff_can_be_added_to_clerk_agenda() {
         with_temp_state_dir(|_| {
+            let meeting_body_id = create_city_council_body();
             let meeting = serde_json::json!({
+                "meetingBodyId": meeting_body_id,
                 "title": "Council Regular Meeting",
                 "meetingDate": "2026-07-01",
                 "summary": "Ordinance review"

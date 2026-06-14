@@ -460,6 +460,7 @@ const fallbackState = {
     }
   ],
   city_work: {
+    meeting_bodies: [],
     meetings: [],
     records_requests: [],
     code_sources: [],
@@ -531,6 +532,13 @@ const state = {
     passcode: ""
   },
   workDraft: {
+    meetingBodyId: "",
+    meetingBodyName: "",
+    meetingBodyType: "legislative",
+    meetingBodyStatutoryBasis: "",
+    meetingBodyCadence: "as scheduled",
+    meetingBodyDefaultNoticeDays: "3",
+    meetingBodyQuorumRule: "majority of seated members",
     meetingTitle: "",
     meetingDate: "",
     meetingSummary: "",
@@ -1327,6 +1335,7 @@ function workflowEmpty(label) {
 }
 
 const GUIDED_WORK_ACTIONS = new Set([
+  "create-meeting-body",
   "add-code-handoff-agenda",
   "add-meeting-attachment",
   "complete-notice-checklist",
@@ -1368,6 +1377,10 @@ const GUIDED_SUPERVISOR_ACTIONS = new Set([
 
 function selectedFrom(collection, selectedId) {
   return collection.find((record) => record.id === selectedId) || collection[0] || null;
+}
+
+function meetingBodies(work = cityWork()) {
+  return work.meeting_bodies || [];
 }
 
 function currentMeeting(work = cityWork()) {
@@ -1432,6 +1445,24 @@ function guidedReviewForAction(action) {
   const handoffSubject = handoff ? handoff.title : "Current code handoff";
   const notificationSubject = notification ? notification.subject : "Current local notification";
   const reviews = {
+    "create-meeting-body": {
+      title: "Review Before Saving Meeting Body",
+      confirmLabel: "Save Meeting Body",
+      module: "CivicClerk",
+      subject: detailOrFallback(state.workDraft.meetingBodyName, "New meeting body"),
+      status: "Local setup record",
+      changes: "Stores the council, board, commission, or authority that holds meetings, including legal basis, cadence, default notice days, and quorum rule.",
+      visibility: "Staff setup data. Meeting records can show the body name and statutory basis in packets, archives, and search.",
+      sources: [
+        detailOrFallback(state.workDraft.meetingBodyName, "Meeting body name is required."),
+        detailOrFallback(state.workDraft.meetingBodyStatutoryBasis, "Statutory basis is required."),
+        detailOrFallback(state.workDraft.meetingBodyCadence, "Meeting cadence will default to as scheduled if left blank."),
+        detailOrFallback(state.workDraft.meetingBodyDefaultNoticeDays, "Default notice days will default to 3 if left blank."),
+        detailOrFallback(state.workDraft.meetingBodyQuorumRule, "Quorum rule will default to majority of seated members if left blank.")
+      ],
+      audit: "Creates a CivicClerk audit entry for the meeting body setup record.",
+      retry: "If the name, statutory basis, notice days, or duplicate check fails, the desktop app leaves local records unchanged."
+    },
     "add-code-handoff-agenda": {
       title: "Review Before Adding Code Handoff",
       confirmLabel: "Add Code Handoff",
@@ -2049,10 +2080,11 @@ function renderPublicMeetingsWorkflow() {
         <article class="workflow-record">
           <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : meeting.notice_status}</span>
           <h3>${meeting.title}</h3>
+          <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
           <p>${meeting.summary || "No public summary recorded."}</p>
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} packet attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2062,6 +2094,8 @@ function renderPublicMeetingsWorkflow() {
 function renderMeetingsWorkflow() {
   if (isPublicSurface()) return renderPublicMeetingsWorkflow();
   const work = cityWork();
+  const bodies = meetingBodies(work);
+  const selectedBodyId = state.workDraft.meetingBodyId || bodies[0]?.id || "";
   const selectedMeeting = currentMeeting(work);
   const selectedPublicComment = currentPublicComment(work);
   const pendingCodeHandoffs = work.code_handoffs.filter((handoff) => handoff.status !== "sent to clerk agenda");
@@ -2073,7 +2107,27 @@ function renderMeetingsWorkflow() {
     </section>
     <section class="workflow-editor">
       <div class="workflow-form">
+        <h3>Meeting Bodies</h3>
+        <p class="form-help">Set up the council, board, commission, or authority that holds meetings before scheduling recurring work.</p>
+        <label>Meeting body name <input type="text" data-work-field="meetingBodyName" value="${state.workDraft.meetingBodyName}" placeholder="City Council" /></label>
+        <label>Body type <input type="text" data-work-field="meetingBodyType" value="${state.workDraft.meetingBodyType}" placeholder="legislative, advisory, authority" /></label>
+        <label>Body statutory basis <input type="text" data-work-field="meetingBodyStatutoryBasis" value="${state.workDraft.meetingBodyStatutoryBasis}" placeholder="Municipal charter or ordinance section" /></label>
+        <label>Meeting cadence <input type="text" data-work-field="meetingBodyCadence" value="${state.workDraft.meetingBodyCadence}" placeholder="First and third Tuesday" /></label>
+        <label>Default notice days <input type="number" min="0" max="365" data-work-field="meetingBodyDefaultNoticeDays" value="${state.workDraft.meetingBodyDefaultNoticeDays}" /></label>
+        <label>Quorum rule <input type="text" data-work-field="meetingBodyQuorumRule" value="${state.workDraft.meetingBodyQuorumRule}" placeholder="majority of seated members" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="create-meeting-body">Save Meeting Body</button>
+        </div>
+        <p class="form-help">${bodies.length === 0 ? "No meeting bodies saved yet." : `Saved bodies: ${bodies.map((body) => escapeHtml(body.name)).join(", ")}`}</p>
+      </div>
+      <div class="workflow-form">
         <h3>Prepare Meeting</h3>
+        <label>Meeting body
+          ${bodies.length > 0 ? `<select data-work-field="meetingBodyId">
+            ${bodies.map((body) => `<option value="${escapeHtml(body.id)}" ${body.id === selectedBodyId ? "selected" : ""}>${escapeHtml(body.name)} - ${escapeHtml(body.statutory_basis)}</option>`).join("")}
+          </select>` : `<input type="text" data-work-field="meetingBodyName" value="${state.workDraft.meetingBodyName}" placeholder="City Council" />`}
+        </label>
+        ${bodies.length === 0 ? `<p class="form-help">Save a meeting body with statutory basis before creating a meeting.</p>` : ""}
         <label>Meeting title <input type="text" data-work-field="meetingTitle" value="${state.workDraft.meetingTitle}" /></label>
         <label>Date <input type="date" data-work-field="meetingDate" value="${state.workDraft.meetingDate}" /></label>
         <label>Summary <textarea data-work-field="meetingSummary">${state.workDraft.meetingSummary}</textarea></label>
@@ -2088,7 +2142,7 @@ function renderMeetingsWorkflow() {
         <label>Notice posting method <input type="text" data-work-field="noticeMethod" value="${state.workDraft.noticeMethod}" placeholder="Posted PDF and clerk attestation" /></label>
         <label>Posting confirmation <textarea data-work-field="noticeConfirmation">${state.workDraft.noticeConfirmation}</textarea></label>
         <div class="workflow-actions">
-          <button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>
+          ${bodies.length === 0 ? `<button type="button" class="primary-action" disabled>Create Meeting</button>` : `<button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>`}
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
           <button type="button" class="secondary-action" data-work-action="add-code-handoff-agenda">Add Code Handoff</button>
           <button type="button" class="secondary-action" data-work-action="complete-notice-checklist">Approve Notice Checklist</button>
@@ -2163,6 +2217,7 @@ function renderMeetingsWorkflow() {
         <article class="workflow-record">
           <span class="status-warn">${meeting.status}</span>
           <h3>${meeting.title}</h3>
+          <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
           <p>${meeting.summary || "No summary yet."}</p>
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)} (${escapeHtml(citation.access_level)})`).join("; ")}</p>` : ""}
@@ -2185,7 +2240,7 @@ function renderMeetingsWorkflow() {
           <div class="record-actions">
             ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.attachments || []).length} attachments - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.votes || []).length} outcomes - ${(meeting.action_items || []).length} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -2823,6 +2878,18 @@ function localSearchResults(query, { publicOnly = false } = {}) {
   const work = cityWork();
   if (!normalized) return [];
   const results = [];
+  meetingBodies(work).forEach((body) => {
+    const bodySearchText = [body.name, body.body_type, body.statutory_basis, body.meeting_cadence, body.quorum_rule, body.status];
+    if (bodySearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({
+        module_id: "civicclerk",
+        title: `Meeting body: ${body.name}`,
+        snippet: `${body.body_type}; ${body.meeting_cadence}; quorum ${body.quorum_rule}`,
+        citation: body.statutory_basis,
+        status: body.status
+      });
+    }
+  });
   const meetings = publicOnly ? publicMeetings(work) : work.meetings;
   meetings.forEach((meeting) => {
     const agendaTitles = (meeting.agenda_items || []).map((item) => item.title).join(" ");
@@ -2867,6 +2934,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     const publicArchive = publicOnly && (meeting.status === "archived public record" || meeting.archived_at_unix_seconds);
     const publicMeetingFields = [
       meeting.title,
+      meeting.body_name,
       meeting.summary,
       meeting.status,
       meeting.notice_status,
@@ -2881,7 +2949,7 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       ? publicArchive
         ? [...publicMeetingFields, meeting.minutes, outcomes, actionItems, residentComments]
         : publicMeetingFields
-      : [meeting.title, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, outcomes, actionItems, residentComments, publicComments];
+      : [meeting.title, meeting.body_name, meeting.summary, meeting.status, meeting.minutes, noticeChecklists, noticePostings, agendaTitles, packetAttachments, minuteCitations, outcomes, actionItems, residentComments, publicComments];
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
@@ -3989,8 +4057,18 @@ function workPayloadForAction(action) {
     notificationId: currentNotification()?.id || ""
   };
   const payloads = {
+    "create-meeting-body": {
+      meetingBodyName: draft.meetingBodyName,
+      meetingBodyType: draft.meetingBodyType,
+      meetingBodyStatutoryBasis: draft.meetingBodyStatutoryBasis,
+      meetingBodyCadence: draft.meetingBodyCadence,
+      meetingBodyDefaultNoticeDays: draft.meetingBodyDefaultNoticeDays,
+      meetingBodyQuorumRule: draft.meetingBodyQuorumRule
+    },
     "create-meeting": {
       title: draft.meetingTitle,
+      meetingBodyId: draft.meetingBodyId || meetingBodies(cityWork())[0]?.id || "",
+      meetingBodyName: draft.meetingBodyName,
       meetingDate: draft.meetingDate,
       summary: draft.meetingSummary,
       agendaTitle: draft.agendaTitle
