@@ -21,6 +21,9 @@ const runtimeSourcesManifest = JSON.parse(readFileSync(join(root, "runtime", "wi
 const firstRunManifest = JSON.parse(readFileSync(join(root, "runtime", "windows-first-run.json"), "utf8"));
 const modelManifest = JSON.parse(readFileSync(join(root, "runtime", "gemma4-model.json"), "utf8"));
 const runtimePayloadScript = readFileSync(join(root, "scripts", "prepare-runtime-payload.ps1"), "utf8");
+const repoReadme = readFileSync(join(root, "..", "README.md"), "utf8");
+const repoStatus = readFileSync(join(root, "..", "STATUS.md"), "utf8");
+const userManual = readFileSync(join(root, "..", "USER-MANUAL.md"), "utf8");
 
 const requiredUiPhrases = [
   "Meetings & Notices",
@@ -171,6 +174,40 @@ for (const phrase of [
 for (const phrase of ["Docker", "WSL"]) {
   if (main.includes(`Start ${phrase}`) || main.includes(`Install ${phrase}`)) {
     throw new Error(`desktop shell should not direct clerks to start/install ${phrase}`);
+  }
+}
+
+const currentFacingDocs = [
+  ["README.md", repoReadme],
+  ["STATUS.md", repoStatus],
+  ["USER-MANUAL.md", userManual]
+];
+
+for (const [docName, doc] of currentFacingDocs) {
+  for (const stalePhrase of [
+    "Windows uses Docker Desktop plus WSL 2",
+    "Docker Desktop on Windows",
+    "Choose Guided Setup if Docker",
+    "Docker Desktop/WSL2",
+    "Open <http://localhost:8080>",
+    "Windows is supported through a wrapper around the same containerized services",
+    "CivicSuite's core runtime path is Linux/container-first"
+  ]) {
+    if (doc.includes(stalePhrase)) {
+      throw new Error(`${docName} still describes the old container-wrapper clerk path: ${stalePhrase}`);
+    }
+  }
+}
+
+for (const [docName, doc] of currentFacingDocs) {
+  for (const requiredPhrase of [
+    "Windows Local",
+    "Tauri/WebView2",
+    "Gemma 4 12B QAT"
+  ]) {
+    if (!doc.includes(requiredPhrase)) {
+      throw new Error(`${docName} missing current Windows Local phrase: ${requiredPhrase}`);
+    }
   }
 }
 
