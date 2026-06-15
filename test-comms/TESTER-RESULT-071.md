@@ -1,0 +1,47 @@
+# Tester Result 071 - Corrected MSI cleanroom-equivalent city-core gate
+
+- Final verdict: BLOCKED - corrected artifact verified, but cleanroom-equivalent uninstall is blocked by Windows administrator requirements on the existing per-machine CivicSuite install.
+- Tested branch and commit for repo channel: `stage-3a-baremetal-windows` at `ec51b84bc9586bed466340d6b647f654c0f1b959`.
+- Required continuity read: `test-comms/TESTER-RESULT-070.md`, `test-comms/TESTER-DIRECTIVE-070.md`, and `test-comms/TESTER-DIRECTIVE-067.md` were read before this run.
+- PR #192 head SHA tested: intended corrected artifact from `489b45cac51ff4d55b1b5a0411dc16693e28757d`.
+- Corrected public prerelease URLs used:
+  - MSI: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-489b45c/CivicSuite_0.1.0_x64_en-US.msi`
+  - Evidence: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-489b45c/CivicSuite-msi-evidence.txt`
+- MSI and evidence SHA-256 verification:
+  - MSI bytes: `1639775191`; SHA-256: `2cf2940a247d489a16b457e818aa988c1580012332f8935128fbcd182a5f3aae`; matches directive.
+  - Evidence bytes: `548`; SHA-256: `00193b8452f8ce8573b7fc04e8d835e9eaae9345313ec30287e5eb623222e8a2`; matches directive.
+  - Verification evidence: `directive071-evidence/corrected-artifact-verification.json`.
+- Cleanroom-equivalent wipe/uninstall evidence:
+  - Worker identity: `DESKTOP-LOOTB7M\insty`.
+  - Worker admin status: `false`.
+  - Pre-cleanup running CivicSuite process: PID `29428`, title `CivicSuite`, path `C:\Program Files\CivicSuite\civicsuite-desktop.exe`.
+  - Process cleanup: PID `29428` was stopped; no `civicsuite-desktop.exe` process remained afterward.
+  - Existing install entry before uninstall: HKLM `CivicSuite` version `0.1.0`, install location `C:\Program Files\CivicSuite\`, uninstall string `MsiExec.exe /X{F6DA9BD7-B75C-405B-9799-ED10E105CEC0}`.
+  - Medium-token silent uninstall attempted with `msiexec /x {F6DA9BD7-B75C-405B-9799-ED10E105CEC0} /qn /norestart`; exit code `1603`.
+  - MSI log blocker: `Error 1730. You must be an Administrator to remove this application.`
+  - Non-prompt elevated scheduled-task uninstall path attempted with `/RL HIGHEST`; `schtasks /Create` failed with `ERROR: Access is denied.`
+  - Install entry after attempts: HKLM `CivicSuite` remained present.
+  - Program files after attempts: `C:\Program Files\CivicSuite` remained present.
+  - Cleanup evidence: `directive071-evidence/cleanup-medium-uninstall.json`, `directive071-evidence/old-msi-uninstall-medium.log`, and `directive071-evidence/cleanup-schtasks-uninstall.json`.
+- Install evidence: not reached. The directive required uninstalling the existing CivicSuite install and confirming no install entry remained before installing the corrected MSI; that precondition could not be satisfied without an administrator/elevated path.
+- Normal app launch evidence: not reached for corrected MSI.
+- UI focus/input stability evidence: not reached for corrected MSI. No WebView input attempt was made because the corrected MSI was not installed.
+- Corrected first-run order result: not reached.
+- First CivicSuite local-admin creation result: not reached.
+- CivicSuite local-admin sign-in result: not reached.
+- Model setup result after app local-admin sign-in: not reached.
+- System Health/admin-gating result if reached: not reached.
+- Module manager result if reached: not reached.
+- Local Users/RBAC result if reached: not reached.
+- CivicClerk workflow result if reached: not reached.
+- CivicRecords AI workflow result if reached: not reached.
+- Resident/public records request result if reached: not reached.
+- CivicCode workflow result if reached: not reached.
+- Cross-module search/handoff result if reached: not reached.
+- Close/reopen persistence result if reached: not reached.
+- Backup/restore result if reached: not reached.
+- Support bundle result if reached: not reached.
+- Repair result if reached: not reached.
+- Uninstall/reinstall/restore result if reached: not reached.
+- Windows reboot/restart confirmation: Windows was not rebooted or restarted.
+- Exact blocker details: the corrected public MSI and evidence file were successfully downloaded and verified, and the stale normal CivicSuite process was stopped. The existing per-machine CivicSuite MSI install remained in HKLM after both available non-UAC cleanup attempts. Medium-token uninstall returned `1603` with MSI `Error 1730` requiring an administrator. Creating a highest-privilege scheduled task for a non-prompt elevated uninstall was denied. With no approved non-interactive elevated path available in this heartbeat run, the machine could not be put into the required cleanroom-equivalent starting state, so installing and testing the corrected MSI would have violated the directive's pre-install conditions.
