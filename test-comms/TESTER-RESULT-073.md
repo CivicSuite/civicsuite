@@ -1,0 +1,55 @@
+# Tester Result 073 - Corrected admin-gated model setup city-core gate
+
+- Final verdict: FAIL - the corrected MSI installs and fixes the pre-admin model exposure/actionability defect from result 072, but the full gate still fails because the post-admin model download persists contradictory status after the complete model file is present.
+- Tested branch and commit for repo channel: `stage-3a-baremetal-windows` at `91bbb0f19f8eb1057d0768b9122c46e945e4bf3d`.
+- Required continuity read: `test-comms/TESTER-RESULT-072.md`, `test-comms/TESTER-DIRECTIVE-072.md`, and `test-comms/TESTER-DIRECTIVE-067.md` were read before this run.
+- Communication contract followed: all builder/tester communication for this gate used repository `CivicSuite/civicsuite`, branch `stage-3a-baremetal-windows`, folder `test-comms`. No bridge folder, OneDrive path, cloud-sync path, alternate branch, or chat-only result path was used. Live remote `FETCH_HEAD` was checked after fetch before acting.
+- PR #192 head SHA tested: `c224227eb6bb805be4778d47e21068d4db76011f`.
+- Corrected public prerelease URLs used:
+  - MSI: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-c224227/CivicSuite_0.1.0_x64_en-US.msi`
+  - Evidence: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-c224227/CivicSuite-msi-evidence.txt`
+- MSI and evidence SHA-256 verification:
+  - MSI bytes: `1639758807`; SHA-256: `e63c49a474f549dce5ad172e9a08b480aeadfd92d1b83816a117354bbc9156ef`; matches directive.
+  - Evidence bytes: `548`; SHA-256: `1a3421fa1248a781ffbdb451266f9accb41b5fa2812c6c265e9ac33a41c07a24`; matches directive.
+  - Evidence: `directive073-evidence/corrected-artifact-verification.json`.
+- Cleanroom-equivalent wipe/uninstall evidence:
+  - Previous all-users MSI removed via elevated Windows Installer path: `Start-Process msiexec.exe -Verb RunAs /x {A00EEA7B-D173-48D6-B9B9-B739FE4981BE} /qn /norestart`.
+  - Removed reachable tester-user state under `C:\Users\insty\AppData\Local\CivicSuite` and `C:\Users\insty\AppData\Local\org.civicsuite.desktop`.
+  - Confirmed no CivicSuite uninstall entry, no `C:\Program Files\CivicSuite`, and no `civicsuite-desktop.exe` process before corrected install.
+  - Evidence: `directive073-evidence/old-msi-uninstall-elevated-runas.json`, `directive073-evidence/old-msi-uninstall-elevated-runas.log`, and `directive073-evidence/cleanroom-wipe.json`.
+- Corrected MSI install evidence:
+  - Install path used: elevated Windows Installer path, `Start-Process msiexec.exe -Verb RunAs /i <corrected MSI> /qn /norestart`.
+  - Install log: `directive073-evidence/corrected-msi-install-elevated-runas.log`.
+  - Result: Windows Installer reported `Installation completed successfully`, `Installation success or error status: 0`, and `MainEngineThread is returning 0`.
+  - Installed entry: HKLM `CivicSuite` version `0.1.0`, install location `C:\Program Files\CivicSuite\`, uninstall string `MsiExec.exe /X{7C50CC85-4F98-4BA9-95D1-BF14139E4D07}`.
+  - Installed executable: `C:\Program Files\CivicSuite\civicsuite-desktop.exe`.
+  - Evidence: `directive073-evidence/corrected-msi-install-elevated-runas.json` and `directive073-evidence/corrected-msi-install-postwait-state.json`.
+- Normal app launch evidence:
+  - Launched `C:\Program Files\CivicSuite\civicsuite-desktop.exe` as normal interactive user.
+  - Process PID `24116` initially had title `CivicSuite`, `Responding: true`, and path `C:\Program Files\CivicSuite\civicsuite-desktop.exe`.
+  - Evidence: `directive073-evidence/normal-app-launch.json` and `directive073-evidence/initial-app-screenshot.png`.
+- UI focus/input stability evidence:
+  - The visible WebView was difficult to drive by blind coordinates because the content was wider than the 1280px desktop and UIAutomation exposed only the Tauri/WebView surface.
+  - Controlled recovery used WebView2 remote debugging with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223 --remote-allow-origins=*`, then Playwright CDP DOM inspection/action against `http://tauri.localhost/`.
+  - Evidence: `directive073-evidence/webview-debug-launch.json`, `directive073-evidence/after-review-continue-dom.json`, and setup screenshots/DOM captures under `directive073-evidence/`.
+- Corrected first-run order result: PASS for the corrected ordering requirement. The initial Home first-run checklist showed step 5 `City profile` and step 6 `First admin user` before step 8 `Local AI model download`. The model step copy says a signed-in CivicSuite local administrator downloads the pinned model. Evidence: `directive073-evidence/initial-app-screenshot.png`, `directive073-evidence/home-zoomed-top-screenshot.png`, and `directive073-evidence/after-review-continue-dom.json`.
+- Pre-admin Home model setup visibility/actionability result: PASS. Home no longer exposed a standalone actionable Gemma model setup card before first CivicSuite local-admin sign-in. It showed the city-core checklist and module overview. The module list mentions local AI requirements as product/module metadata but did not expose pre-admin model actions from Home.
+- Pre-admin System Health model action lock result: PASS. System Health showed model readiness before sign-in, but `Open Model Folder`, `Download / Resume`, `Verify Checksum`, `Load in Ollama`, and `Retry Setup` were disabled. The page said `Create the first local administrator and sign in before changing local model setup`, and the local path was hidden behind `Sign in as local administrator to view the model file path`. Evidence: `directive073-evidence/system-health-pre-admin-dom.json` and `directive073-evidence/system-health-pre-admin.png`.
+- First CivicSuite local-admin creation result: PASS. Setup advanced through unsigned beta notice, SmartScreen explanation, local folder creation, module selection, city profile, and first admin creation. First-admin copy explicitly said: `Create the first admin user, then sign in with that local passcode before continuing setup.` Evidence: `directive073-evidence/after-city-profile-save-retry.json`, `directive073-evidence/first-admin-filled-before-save.png`, and `directive073-evidence/after-first-admin-save-retry.json`.
+- CivicSuite local-admin sign-in result: PASS after one retry. The app showed a dedicated local sign-in form, accepted the created admin credentials, and then displayed `Sign Out`, confirming a signed-in local-admin state. Evidence: `directive073-evidence/after-local-admin-signin-retry.json`.
+- Model setup result after app local-admin sign-in: FAIL. After sign-in, model actions became enabled and the local model path became visible, which is correct. Clicking `Download / Resume` created `C:\Users\insty\AppData\Local\CivicSuite\Data\models\gemma-4-12b-it-qat-q4_0.gguf.part`, then the full `C:\Users\insty\AppData\Local\CivicSuite\Data\models\gemma-4-12b-it-qat-q4_0.gguf` file appeared at the expected size `6975877728` bytes. However, `C:\Users\insty\AppData\Local\CivicSuite\config\model-download-status.json` remained stale/contradictory: `status: "Downloading"`, `local_bytes: 0`, `partial_bytes: 0`, `progress_percent: 0.0`, and `last_error: null`, even after the final `.gguf` file existed and the `.part` file was gone. Evidence: `directive073-evidence/after-admin-model-download-click.json`, `directive073-evidence/post-admin-model-download-files.json`, and `directive073-evidence/post-admin-model-download-files-after-long-wait.json`.
+- System Health/admin-gating result if reached: reached for the relevant gating. Pre-admin actions were disabled; after local-admin sign-in, model controls were enabled and model path was visible. The later status persistence bug prevents a passing System Health/model state.
+- Module manager result if reached: partially reached only as first-run module selection. City Core was selected, CivicCore was locked, ready modules were listed, and not-ready modules were disabled with reasons. Evidence: `directive073-evidence/setup-step4-module-selection.json` and `directive073-evidence/setup-step4-direct-dom-click.json`.
+- Local Users/RBAC result if reached: not reached beyond first local-admin creation/sign-in.
+- CivicClerk workflow result if reached: not reached.
+- CivicRecords AI workflow result if reached: not reached.
+- Resident/public records request result if reached: not reached.
+- CivicCode workflow result if reached: not reached.
+- Cross-module search/handoff result if reached: not reached.
+- Close/reopen persistence result if reached: partially reached. Setup state persisted across CDP-driven app relaunches, including city profile/admin progress and downloaded model file. The model status persistence was incorrect after model download completion.
+- Backup/restore result if reached: partially reached. Backup folder step was reached after local-admin sign-in and `Create backup folder` was clicked before model setup. Full backup/restore was not reached because the model-status failure stopped the gate.
+- Support bundle result if reached: not reached.
+- Repair result if reached: not reached.
+- Uninstall/reinstall/restore result if reached: not reached.
+- Windows reboot/restart confirmation: Windows was not rebooted or restarted.
+- Exact failure details: the original directive 072 failure is corrected: model setup is no longer visible/actionable before first CivicSuite local-admin sign-in, and System Health gates model actions for pre-admin users. The remaining gate failure is after local-admin sign-in: the app downloads the full pinned model file but leaves persisted status stuck at `Downloading` with zero bytes/progress and no error. This is misleading status persistence/bad downloader state, not an external network/auth/storage blocker, because the full expected-size file exists locally and the partial file is gone.
