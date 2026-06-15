@@ -1242,8 +1242,12 @@ mod tests {
     #[test]
     fn first_run_setup_actions_can_bootstrap_before_admin_exists() {
         with_clean_first_run_state(|_| {
-            first_run_action("review".to_string(), Some("unsigned-beta".to_string()), None)
-                .expect("notice can bootstrap before admin exists");
+            first_run_action(
+                "review".to_string(),
+                Some("unsigned-beta".to_string()),
+                None,
+            )
+            .expect("notice can bootstrap before admin exists");
             first_run_action("review".to_string(), Some("smartscreen".to_string()), None)
                 .expect("smartscreen can bootstrap before admin exists");
             first_run_action(

@@ -1258,8 +1258,9 @@ mod tests {
                 "adminEmail": "alex@example.gov",
                 "adminPasscode": "correct horse battery staple"
             });
-            let result = first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
-                .expect("admin saved");
+            let result =
+                first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+                    .expect("admin saved");
             assert!(result.accepted);
 
             let record = saved_admin_record()
