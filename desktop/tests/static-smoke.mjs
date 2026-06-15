@@ -410,7 +410,12 @@ for (const phrase of [
   "ModelDownloadState",
   "model-download-status.json",
   "Partial download",
-  "Download failed"
+  "Download failed",
+  "fn model_overall_status",
+  "\"Needs verification\"",
+  "\"Needs runtime\"",
+  "\"Needs load\"",
+  "\"Needs registration\""
 ]) {
   if (!readFileSync(join(root, "src-tauri", "src", "model.rs"), "utf8").includes(phrase)) {
     throw new Error(`Windows model setup missing durable download state phrase: ${phrase}`);

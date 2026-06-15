@@ -1207,6 +1207,44 @@ fn readiness_items(
         .collect()
 }
 
+fn readiness_check_ok(checks: &[ModelReadinessItem], check_id: &str) -> bool {
+    checks
+        .iter()
+        .find(|check| check.id == check_id)
+        .map(|check| check.ok)
+        .unwrap_or(false)
+}
+
+fn model_overall_status(
+    checks: &[ModelReadinessItem],
+    download_state: &ModelDownloadState,
+) -> &'static str {
+    if checks.iter().all(|check| check.ok) {
+        return "Ready";
+    }
+    match download_state.status.as_str() {
+        "Download failed" => return "Download failed",
+        "Partial download" => return "Partial download",
+        _ => {}
+    }
+    if !readiness_check_ok(checks, "artifact-file") {
+        return "Needs download";
+    }
+    if !readiness_check_ok(checks, "checksum") {
+        return "Needs verification";
+    }
+    if !readiness_check_ok(checks, "runtime") {
+        return "Needs runtime";
+    }
+    if !readiness_check_ok(checks, "runtime-model") {
+        return "Needs load";
+    }
+    if !readiness_check_ok(checks, "registered-model") {
+        return "Needs registration";
+    }
+    "Needs attention"
+}
+
 pub fn model_state() -> Result<ModelState, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -1215,7 +1253,7 @@ pub fn model_state() -> Result<ModelState, String> {
     let checks = readiness_items(&manifest, &local_path, &runtime);
     let download_state = current_model_download_state(&manifest, &local_path);
     let ready = checks.iter().all(|check| check.ok);
-    let status = if ready { "Ready" } else { "Needs download" };
+    let status = model_overall_status(&checks, &download_state);
 
     Ok(ModelState {
         profile: manifest.profile,
@@ -1508,6 +1546,7 @@ mod tests {
                 .is_file());
 
             let state = model_state().expect("model state");
+            assert_eq!(state.status, "Download failed");
             assert_eq!(state.download_state.status, "Download failed");
             assert!(state
                 .download_state
@@ -1529,6 +1568,7 @@ mod tests {
             let state = model_state().expect("model state");
 
             assert_eq!(state.download_state.status, "Partial download");
+            assert_eq!(state.status, "Partial download");
             assert_eq!(state.download_state.partial_bytes, 4096);
             assert!(state.download_state.progress_percent > 0.0);
             assert!(state.download_state.message.contains("can be resumed"));
@@ -1540,6 +1580,59 @@ mod tests {
                     .to_string_lossy()
                     .to_string()
             );
+        });
+    }
+
+    #[test]
+    fn model_state_reports_present_file_needs_verification() {
+        with_temp_state_dir(|_| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let local_path = model_path(&manifest.model.artifact);
+            fs::create_dir_all(local_path.parent().expect("model parent")).expect("mkdir");
+            let file = fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&local_path)
+                .expect("model file");
+            file.set_len(manifest.model.artifact.size_bytes)
+                .expect("sparse model size");
+
+            let state = model_state().expect("model state");
+
+            assert_eq!(state.status, "Needs verification");
+            assert_eq!(state.download_state.status, "Needs verification");
+        });
+    }
+
+    #[test]
+    fn model_state_reports_verified_file_needs_runtime() {
+        with_temp_state_dir(|_| {
+            env::set_var("OLLAMA_BASE_URL", "http://127.0.0.1:9");
+            let manifest = parse_manifest().expect("manifest parses");
+            let local_path = model_path(&manifest.model.artifact);
+            fs::create_dir_all(local_path.parent().expect("model parent")).expect("mkdir");
+            let file = fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&local_path)
+                .expect("model file");
+            file.set_len(manifest.model.artifact.size_bytes)
+                .expect("sparse model size");
+            fs::write(
+                checksum_marker_path(&local_path),
+                format!("{}\n", manifest.model.artifact.sha256),
+            )
+            .expect("checksum marker");
+
+            let state = model_state().expect("model state");
+
+            env::remove_var("OLLAMA_BASE_URL");
+            assert_eq!(state.status, "Needs runtime");
+            assert_eq!(state.download_state.status, "Verified");
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "runtime" && !check.ok));
         });
     }
 
