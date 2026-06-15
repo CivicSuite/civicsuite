@@ -843,6 +843,23 @@ fn write_model_download_state(
         .map_err(|error| format!("Could not write {}: {error}", path.display()))
 }
 
+fn write_current_model_download_state(
+    manifest: &ModelManifest,
+    local_path: &Path,
+) -> Result<(), String> {
+    let mut state = current_model_download_state(manifest, local_path);
+    state.updated_at_unix_seconds = now_unix_seconds();
+    let path = model_download_status_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Could not create model download status folder: {error}"))?;
+    }
+    let contents = serde_json::to_string_pretty(&state)
+        .map_err(|error| format!("Could not serialize model download status: {error}"))?;
+    fs::write(&path, format!("{contents}\n"))
+        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+}
+
 fn register_verified_model(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
     let mut registry = read_model_registry()?;
     let entry = RegisteredModel {
@@ -1070,6 +1087,7 @@ fn download_model_artifact_inner(
     }
     fs::rename(&partial_path, local_path)
         .map_err(|error| format!("Could not move verified model into place: {error}"))?;
+    write_current_model_download_state(manifest, local_path)?;
     verify_and_register_model_artifact(manifest, local_path)
 }
 
@@ -1603,6 +1621,55 @@ mod tests {
 
             assert_eq!(state.status, "Needs verification");
             assert_eq!(state.download_state.status, "Needs verification");
+        });
+    }
+
+    #[test]
+    fn model_download_state_persists_completed_file_before_checksum() {
+        with_temp_state_dir(|_| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let local_path = model_path(&manifest.model.artifact);
+            fs::create_dir_all(local_path.parent().expect("model parent")).expect("mkdir");
+            let file = fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&local_path)
+                .expect("model file");
+            file.set_len(manifest.model.artifact.size_bytes)
+                .expect("sparse model size");
+
+            let status_path = model_download_status_path();
+            fs::create_dir_all(status_path.parent().expect("status parent")).expect("mkdir");
+            let stale_state = ModelDownloadState {
+                schema_version: 1,
+                model_id: manifest.model.id.clone(),
+                status: "Downloading".to_string(),
+                message: "CivicSuite is downloading the pinned Gemma model file.".to_string(),
+                local_path: local_path.to_string_lossy().to_string(),
+                partial_path: partial_download_path(&local_path)
+                    .to_string_lossy()
+                    .to_string(),
+                expected_size_bytes: manifest.model.artifact.size_bytes,
+                local_bytes: 0,
+                partial_bytes: 0,
+                progress_percent: 0.0,
+                last_error: None,
+                updated_at_unix_seconds: 1,
+            };
+            fs::write(
+                &status_path,
+                serde_json::to_string_pretty(&stale_state).expect("status json"),
+            )
+            .expect("write stale status");
+
+            write_current_model_download_state(&manifest, &local_path).expect("status refresh");
+
+            let refreshed = read_model_download_state().expect("status persisted");
+            assert_eq!(refreshed.status, "Needs verification");
+            assert_eq!(refreshed.local_bytes, manifest.model.artifact.size_bytes);
+            assert_eq!(refreshed.partial_bytes, 0);
+            assert_eq!(refreshed.progress_percent, 100.0);
+            assert!(refreshed.message.contains("needs checksum verification"));
         });
     }
 
