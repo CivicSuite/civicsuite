@@ -1,0 +1,59 @@
+# Tester Result 072 - Elevated uninstall cleanup and corrected MSI gate
+
+- Final verdict: FAIL - the old all-users MSI was removed and the corrected MSI installed, but the installed app exposes and triggers local model setup before first CivicSuite local-admin creation/sign-in, contrary to the corrected first-run order required by directive 072.
+- Tested branch and commit for repo channel: `stage-3a-baremetal-windows` at `35f6d6ee71fb84ca101e6e1faeb80411f9d9b911`.
+- Required continuity read: `test-comms/TESTER-RESULT-071.md`, `test-comms/TESTER-DIRECTIVE-071.md`, and `test-comms/TESTER-DIRECTIVE-067.md` were read before this run.
+- PR #192 head SHA tested: corrected artifact from `489b45cac51ff4d55b1b5a0411dc16693e28757d`.
+- Corrected public prerelease URLs used:
+  - MSI: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-489b45c/CivicSuite_0.1.0_x64_en-US.msi`
+  - Evidence: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-489b45c/CivicSuite-msi-evidence.txt`
+- MSI and evidence SHA-256 verification:
+  - MSI bytes: `1639775191`; SHA-256: `2cf2940a247d489a16b457e818aa988c1580012332f8935128fbcd182a5f3aae`; matches directive.
+  - Evidence bytes: `548`; SHA-256: `00193b8452f8ce8573b7fc04e8d835e9eaae9345313ec30287e5eb623222e8a2`; matches directive.
+  - Evidence: `directive072-evidence/cleanroom-wipe-and-artifact-verify.json`.
+- Elevated uninstall evidence:
+  - Elevated path used: `Start-Process msiexec.exe -Verb RunAs /x {F6DA9BD7-B75C-405B-9799-ED10E105CEC0} /qn /norestart`.
+  - UAC/elevation method: Windows `runas` shell elevation for `msiexec`; no elevated PowerShell window was launched by the tester.
+  - Uninstall log: `directive072-evidence/old-msi-uninstall-elevated-runas.log`.
+  - Result: old HKLM uninstall entry was removed and `C:\Program Files\CivicSuite\` was removed after Windows Installer settled.
+  - Confirmation: no `civicsuite-desktop.exe` process remained.
+  - Evidence: `directive072-evidence/elevated-runas-uninstall.json`.
+- Cleanroom-equivalent wipe evidence:
+  - Removed reachable tester-user state at `C:\Users\insty\AppData\Local\CivicSuite` and `C:\Users\insty\AppData\Local\org.civicsuite.desktop`.
+  - Confirmed no old uninstall entry, no `C:\Program Files\CivicSuite`, and no stale CivicSuite process before corrected install.
+  - Evidence: `directive072-evidence/cleanroom-wipe-and-artifact-verify.json`.
+- Corrected MSI install evidence:
+  - Elevated path used: `Start-Process msiexec.exe -Verb RunAs /i <corrected MSI> /qn /norestart`.
+  - Install log: `directive072-evidence/corrected-msi-install-elevated-runas.log`.
+  - Install result: Windows Installer reported `Installation completed successfully` and `Installation success or error status: 0`.
+  - Installed entry: HKLM `CivicSuite` version `0.1.0`, install location `C:\Program Files\CivicSuite\`, uninstall string `MsiExec.exe /X{A00EEA7B-D173-48D6-B9B9-B739FE4981BE}`.
+  - Installed executable: `C:\Program Files\CivicSuite\civicsuite-desktop.exe` existed.
+  - Evidence: `directive072-evidence/corrected-msi-install-postwait-state.json`.
+- Normal app launch evidence:
+  - Launched `C:\Program Files\CivicSuite\civicsuite-desktop.exe` as normal user.
+  - Process PID `29644` initially had title `CivicSuite` and `Responding: true`.
+  - Evidence: `directive072-evidence/normal-app-launch.json` and `directive072-evidence/initial-app-screenshot.png`.
+- UI focus/input stability evidence:
+  - UIAutomation exposed only Tauri/WebView/Chromium container nodes, not app form controls; evidence: `directive072-evidence/uia-tree-initial.json` and `directive072-evidence/uia-raw-tree-initial.json`.
+  - Mouse wheel focus into the WebView worked and exposed the setup checklist; evidence: `directive072-evidence/setup-checklist-wheel-scroll.png`.
+  - A visible mouse click on `Review and continue` did not change the page; evidence: `directive072-evidence/after-review-and-continue-click.png`.
+  - Controlled recovery via refocus, overlay-close attempt, Tab traversal, and Enter did change state, but moved into the model setup section rather than allowing reliable ordered setup; evidence: `directive072-evidence/after-tab-enter-recovery.png`.
+- Corrected first-run order result: FAIL. The app showed Gemma model setup metadata and a focused `Download / Resume` button while the screen still said `Local path: Sign in as local administrator to view the model file`. No first CivicSuite local administrator had been created or signed in during this clean run. This violates the required order that local model setup appear after first-admin creation and sign-in.
+- First CivicSuite local-admin creation result: not reached. The harness could not reliably activate the earlier checklist step, and recovery landed on model setup before local-admin creation.
+- CivicSuite local-admin sign-in result: not reached. Model setup was visible before sign-in, with copy saying sign-in was still required.
+- Model setup result after app local-admin sign-in: FAIL before sign-in. Activating the focused `Download / Resume` control before local-admin sign-in created `C:\Users\insty\AppData\Local\CivicSuite\config\model-download-status.json` with status `Downloading`, message `CivicSuite is downloading the pinned Gemma model file. Closing the app keeps the partial file for resume.`, and `progress_percent: 0.0`. A full-size `C:\Users\insty\AppData\Local\CivicSuite\Data\models\gemma-4-12b-it-qat-q4_0.gguf` file of `6975877728` bytes also appeared, while the status still reported `local_bytes: 0` and `partial_bytes: 0`. Evidence: `directive072-evidence/after-download-resume-before-signin-enter.png` and model status/file checks captured in command output.
+- System Health/admin-gating result if reached: not reached.
+- Module manager result if reached: not reached.
+- Local Users/RBAC result if reached: not reached.
+- CivicClerk workflow result if reached: not reached.
+- CivicRecords AI workflow result if reached: not reached.
+- Resident/public records request result if reached: not reached.
+- CivicCode workflow result if reached: not reached.
+- Cross-module search/handoff result if reached: not reached.
+- Close/reopen persistence result if reached: partially reached only for app relaunch. After the premature model-download trigger, no `civicsuite-desktop.exe` process remained; a subsequent normal launch succeeded and returned to the setup checklist. Evidence: `directive072-evidence/relaunch-after-model-download-trigger.png`.
+- Backup/restore result if reached: not reached.
+- Support bundle result if reached: not reached.
+- Repair result if reached: not reached.
+- Uninstall/reinstall/restore result if reached: not reached.
+- Windows reboot/restart confirmation: Windows was not rebooted or restarted.
+- Exact failure details: the corrected MSI install path is now unblocked and successful, but the product still fails the directive 072 gate because model setup is reachable and actionable before first CivicSuite local-admin creation/sign-in. The premature action also leaves contradictory model state: status `Downloading` at zero bytes while a full-size `.gguf` file exists. This is not an external network/auth/storage blocker; it is an app first-run ordering and model-status behavior failure.
