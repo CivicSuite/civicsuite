@@ -373,8 +373,27 @@ for (const sourceKey of ["postgres", "pgvector", "python", "ollama"]) {
   }
 }
 
-if (!runtimeSourcesManifest.sources.postgres.download_url?.includes("postgresql-17.10-2-windows-x64-binaries.zip")) {
-  throw new Error("Windows runtime sources manifest must pin a direct PostgreSQL 17 Windows binary ZIP URL");
+if (
+  !runtimeSourcesManifest.sources.postgres.download_url?.includes(
+    "releases/download/windows-runtime-postgres-17.10-2/postgresql-17.10-2-windows-x64-binaries.zip"
+  )
+) {
+  throw new Error("Windows runtime sources manifest must pin the mirrored PostgreSQL 17 Windows binary ZIP URL");
+}
+
+if (
+  runtimeSourcesManifest.sources.postgres.download_sha256 !==
+  "ef9b1e5e23d2e8a83914ba13d9dc536a72210fba53fd1808ff1f7e06bb22b106"
+) {
+  throw new Error("Windows runtime sources manifest must checksum the mirrored PostgreSQL 17 Windows binary ZIP");
+}
+
+if (
+  !runtimeSourcesManifest.sources.postgres.mirror_of?.includes(
+    "get.enterprisedb.com/postgresql/postgresql-17.10-2-windows-x64-binaries.zip"
+  )
+) {
+  throw new Error("Windows runtime sources manifest must retain the original PostgreSQL binary source URL");
 }
 
 for (const phrase of [
@@ -384,6 +403,8 @@ for (const phrase of [
   "Install-PgvectorPayload",
   "Get-PostgresSourceUrl",
   "falling back to PostgreSQL download-page discovery",
+  "Test-CivicDownloadHash",
+  "Downloaded payload hash mismatch",
   "MSVC cl.exe and nmake.exe are required",
   "System.Security.Cryptography.SHA256",
   "PayloadManifestPath",

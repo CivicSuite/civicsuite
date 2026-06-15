@@ -48,6 +48,19 @@ function Get-Sha256 {
     }
 }
 
+function Test-CivicDownloadHash {
+    param(
+        [string]$Path,
+        [string]$ExpectedSha256,
+        [string]$Url
+    )
+    $ActualSha256 = Get-Sha256 -Path $Path
+    if ($ExpectedSha256 -and ($ActualSha256 -ne $ExpectedSha256.ToLowerInvariant())) {
+        throw "Downloaded payload hash mismatch for ${Url}: expected $ExpectedSha256, got $ActualSha256"
+    }
+    return $ActualSha256
+}
+
 function Join-CivicPath {
     param(
         [string]$Root,
@@ -111,10 +124,18 @@ function New-RuntimePayloadLock {
 function Invoke-CivicDownload {
     param(
         [string]$Url,
-        [string]$Destination
+        [string]$Destination,
+        [string]$ExpectedSha256 = ""
     )
     if (Test-Path -LiteralPath $Destination) {
-        return Get-Sha256 -Path $Destination
+        $CachedSha256 = Get-Sha256 -Path $Destination
+        if ((-not $ExpectedSha256) -or ($CachedSha256 -eq $ExpectedSha256.ToLowerInvariant())) {
+            return $CachedSha256
+        }
+        if ($SkipDownloads) {
+            throw "Cached payload hash mismatch for ${Url}: expected $ExpectedSha256, got $CachedSha256"
+        }
+        Remove-Item -LiteralPath $Destination -Force
     }
     if ($SkipDownloads) {
         throw "Download required but -SkipDownloads was supplied: $Url"
@@ -130,11 +151,17 @@ function Invoke-CivicDownload {
         try {
             Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
             Move-Item -LiteralPath $TempDestination -Destination $Destination -Force
-            return Get-Sha256 -Path $Destination
+            return Test-CivicDownloadHash -Path $Destination -ExpectedSha256 $ExpectedSha256 -Url $Url
         } catch {
             $LastError = $_
             if (Test-Path -LiteralPath $TempDestination) {
                 Remove-Item -LiteralPath $TempDestination -Force -ErrorAction SilentlyContinue
+            }
+            if ($ExpectedSha256 -and (Test-Path -LiteralPath $Destination)) {
+                $FailedSha256 = Get-Sha256 -Path $Destination
+                if ($FailedSha256 -ne $ExpectedSha256.ToLowerInvariant()) {
+                    Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
+                }
             }
             if ($Attempt -lt 3) {
                 Start-Sleep -Seconds ([Math]::Min(10, [Math]::Pow(2, $Attempt)))
@@ -321,8 +348,12 @@ function Install-PostgresPayload {
     }
     $Url = Get-PostgresSourceUrl -Source $Source
     $Archive = Join-Path $CacheRoot "postgres-windows-binaries.zip"
+    $ExpectedSha256 = ""
+    if ($Source.download_sha256) {
+        $ExpectedSha256 = [string]$Source.download_sha256
+    }
     try {
-        $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
+        $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive -ExpectedSha256 $ExpectedSha256
     } catch {
         if (-not $Source.download_page) {
             throw
@@ -333,7 +364,7 @@ function Install-PostgresPayload {
             throw
         }
         $Url = $FallbackUrl
-        $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive
+        $Sha = Invoke-CivicDownload -Url $Url -Destination $Archive -ExpectedSha256 $ExpectedSha256
     }
     Expand-PostgresServerPayload -Archive $Archive -Destination $Destination
     return @{ status = "installed"; url = $Url; sha256 = $Sha; path = $Destination }
