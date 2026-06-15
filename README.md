@@ -62,7 +62,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). A
 
 - City Core installs CivicCore plus CivicRecords AI, CivicClerk, and CivicCode. CivicCore is always installed and cannot be deselected.
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
-- First-run setup covers the unsigned beta notice, SmartScreen explanation, local folders, module selection, model download/verification, city profile, first local administrator, backup folder, health verification, and finish.
+- First-run setup covers the unsigned beta notice, SmartScreen explanation, local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
 - Trust path: use the MSI artifact from the active PR/release evidence, verify its checksum, and confirm the module pins in `installer/modules.json` before beta testing.
 - macOS and Linux package paths remain separate future or historical profiles until their own matching-host evidence is refreshed.
 

@@ -17,10 +17,10 @@
     "review",
     "choose-location",
     "select-modules",
-    "download-model",
     "create-city-profile",
     "create-admin",
     "choose-backup",
+    "download-model",
     "verify-health",
     "open-app",
     "repair",
@@ -69,16 +69,6 @@
       "action": "select-modules"
     },
     {
-      "id": "model",
-      "label": "Local AI model download",
-      "surface": "Installer",
-      "required": true,
-      "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
-      "detail": "The model step must use pinned metadata, resumable download, checksum verification, and local-only default behavior.",
-      "next_action": "Download and verify the pinned local model weights.",
-      "action": "download-model"
-    },
-    {
       "id": "city-profile",
       "label": "City profile",
       "surface": "First run",
@@ -94,8 +84,8 @@
       "surface": "First run",
       "required": true,
       "summary": "Create the first local administrator before staff work begins.",
-      "detail": "The first admin owns initial user setup, roles, backup settings, and recovery contact information.",
-      "next_action": "Create the first admin user.",
+      "detail": "The first admin owns setup, model download, users, roles, backup settings, and recovery contact information.",
+      "next_action": "Create the first admin user, then sign in with that local passcode before continuing setup.",
       "action": "create-admin"
     },
     {
@@ -107,6 +97,16 @@
       "detail": "Backup is configured before city work begins so records, packets, notices, code imports, and audit entries have a recovery path.",
       "next_action": "Choose the default backup folder.",
       "action": "choose-backup"
+    },
+    {
+      "id": "model",
+      "label": "Local AI model download",
+      "surface": "First run",
+      "required": true,
+      "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
+      "detail": "A signed-in CivicSuite local administrator downloads the pinned model with resumable download, checksum verification, and local-only default behavior.",
+      "next_action": "Sign in as the local administrator, then download and verify the pinned local model weights.",
+      "action": "download-model"
     },
     {
       "id": "health",

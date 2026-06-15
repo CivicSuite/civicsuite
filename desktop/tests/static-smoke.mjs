@@ -626,6 +626,14 @@ for (const stepId of ["unsigned-beta", "smartscreen", "locations", "modules", "m
   }
 }
 
+const firstRunStepIds = firstRunManifest.steps.map((step) => step.id);
+if (firstRunStepIds.indexOf("city-profile") > firstRunStepIds.indexOf("first-admin")) {
+  throw new Error("Windows first-run setup must collect the city profile before the first local admin");
+}
+if (firstRunStepIds.indexOf("first-admin") > firstRunStepIds.indexOf("model")) {
+  throw new Error("Windows first-run setup must create the first local admin before model setup");
+}
+
 for (const action of ["review", "choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"]) {
   if (!firstRunManifest.actions.includes(action)) {
     throw new Error(`Windows first-run manifest missing action: ${action}`);

@@ -174,7 +174,7 @@ const fallbackState = {
       data_root: "%LOCALAPPDATA%\\CivicSuite\\Data",
       backup_root: "%USERPROFILE%\\Documents\\CivicSuite Backups"
     },
-    available_actions: ["review", "choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"],
+    available_actions: ["review", "choose-location", "select-modules", "create-city-profile", "create-admin", "choose-backup", "download-model", "verify-health", "open-app", "repair", "backup", "uninstall"],
     steps: [
       {
         id: "unsigned-beta",
@@ -229,19 +229,6 @@ const fallbackState = {
         action: "select-modules"
       },
       {
-        id: "model",
-        label: "Local AI model download",
-        surface: "Installer",
-        required: true,
-        completed: false,
-        current: false,
-        status: "Needs setup",
-        summary: "Download Gemma 4 12B quantization-aware weights for local AI.",
-        detail: "Model setup must verify pinned metadata and checksums.",
-        next_action: "Download and verify the pinned local model weights.",
-        action: "download-model"
-      },
-      {
         id: "city-profile",
         label: "City profile",
         surface: "First run",
@@ -263,8 +250,8 @@ const fallbackState = {
         current: false,
         status: "Needs setup",
         summary: "Create the first local administrator before staff work begins.",
-        detail: "The first admin owns users, roles, backups, and recovery contact information.",
-        next_action: "Create the first admin user.",
+        detail: "The first admin owns setup, model download, users, roles, backups, and recovery contact information.",
+        next_action: "Create the first admin user, then sign in with that local passcode before continuing setup.",
         action: "create-admin"
       },
       {
@@ -279,6 +266,19 @@ const fallbackState = {
         detail: "Backup is configured before city work begins.",
         next_action: "Choose the default backup folder.",
         action: "choose-backup"
+      },
+      {
+        id: "model",
+        label: "Local AI model download",
+        surface: "First run",
+        required: true,
+        completed: false,
+        current: false,
+        status: "Needs setup",
+        summary: "Download Gemma 4 12B quantization-aware weights for local AI.",
+        detail: "A signed-in CivicSuite local administrator verifies pinned metadata and checksums.",
+        next_action: "Sign in as the local administrator, then download and verify the pinned local model weights.",
+        action: "download-model"
       },
       {
         id: "health",

@@ -19,10 +19,10 @@ const REQUIRED_STEP_IDS: [&str; 10] = [
     "smartscreen",
     "locations",
     "modules",
-    "model",
     "city-profile",
     "first-admin",
     "backup",
+    "model",
     "health",
     "finish",
 ];
@@ -30,10 +30,10 @@ const REQUIRED_ACTIONS: [&str; 12] = [
     "review",
     "choose-location",
     "select-modules",
-    "download-model",
     "create-city-profile",
     "create-admin",
     "choose-backup",
+    "download-model",
     "verify-health",
     "open-app",
     "repair",
@@ -723,7 +723,7 @@ pub fn first_run_action(
                 "Verified",
                 "The pinned Gemma model has already passed local checksum verification."
                     .to_string(),
-                "Continue to city profile setup.".to_string(),
+                "Continue to health verification.".to_string(),
             ));
         } else {
             let model_result = model::model_action("resume-download")?;
@@ -740,9 +740,17 @@ pub fn first_run_action(
             action_completion = Some((
                 model_result.status,
                 model_result.message,
-                "Continue to city profile setup.".to_string(),
+                "Continue to health verification.".to_string(),
             ));
         }
+    }
+    if action == "create-admin" {
+        action_completion = Some((
+            "Saved",
+            "The first local administrator was saved for this Windows profile.".to_string(),
+            "Sign in with that local administrator account, then continue backup and local model setup."
+                .to_string(),
+        ));
     }
     if action == "verify-health" {
         if !model::local_model_artifact_verified()? {
@@ -890,6 +898,20 @@ mod tests {
         for step_id in REQUIRED_STEP_IDS {
             assert!(step_ids.contains(&step_id), "missing {step_id}");
         }
+        let city_profile_index = step_ids
+            .iter()
+            .position(|step_id| step_id == &"city-profile")
+            .expect("city profile step exists");
+        let first_admin_index = step_ids
+            .iter()
+            .position(|step_id| step_id == &"first-admin")
+            .expect("first admin step exists");
+        let model_index = step_ids
+            .iter()
+            .position(|step_id| step_id == &"model")
+            .expect("model step exists");
+        assert!(city_profile_index < first_admin_index);
+        assert!(first_admin_index < model_index);
     }
 
     #[test]
@@ -976,6 +998,7 @@ mod tests {
             assert!(result.accepted);
             assert_eq!(result.status, "Verified");
             assert!(result.message.contains("already passed local checksum"));
+            assert!(result.next_action.contains("health verification"));
             let state = first_run_state(&[]).expect("state reads saved progress");
             assert!(state
                 .steps

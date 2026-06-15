@@ -99,11 +99,12 @@ Required installer steps:
    and what "More info" and "Run anyway" mean for this unsigned beta.
 3. Local install location and data location.
 4. Module selection: City Core by default, Custom available, CivicCore locked.
-5. Model download: Gemma 4 12B quantization-aware weights, pinned metadata,
+5. City profile: city name, state, time zone, records contact, clerk contact.
+6. First admin user. The first admin signs in before model, backup, health,
+   module-manager, repair, restore, or runtime changes continue.
+7. Backup default.
+8. Model download: Gemma 4 12B quantization-aware weights, pinned metadata,
    resumable download, checksum verification, and local-only default.
-6. City profile: city name, state, time zone, records contact, clerk contact.
-7. First admin user.
-8. Backup default.
 9. Health verification.
 10. Finish screen with open app, repair, backup, support bundle, and uninstall
     entry points.

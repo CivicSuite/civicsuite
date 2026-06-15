@@ -1233,6 +1233,7 @@ mod tests {
             )
             .expect("first admin can bootstrap local access");
             assert!(admin_result.accepted);
+            assert!(admin_result.next_action.contains("Sign in"));
         });
     }
 

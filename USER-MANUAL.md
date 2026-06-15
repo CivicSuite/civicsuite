@@ -59,7 +59,7 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 2. Verify the SHA-256 checksum or release manifest from the same source.
 3. Open the installer. Windows SmartScreen can warn "Unknown publisher" for this unsigned beta. Use **More info** and **Run anyway** only when the checksum matches the trusted artifact source.
 4. Follow the installer screens and open CivicSuite after install.
-5. Complete first-run setup: unsigned beta notice, SmartScreen review, local folders, City Core module selection, Gemma 4 12B QAT download/resume, checksum verification, city profile, first local administrator, backup folder, health verification, and finish.
+5. Complete first-run setup: unsigned beta notice, SmartScreen review, local folders, City Core module selection, city profile, first local administrator sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
 6. Add clerk, records, code, or city-staff users from Settings when staff need separate local sign-ins.
 7. Use Meetings & Notices, Records Requests, Code & Ordinances, Search City Knowledge, System Health, and Settings from the desktop app.
 

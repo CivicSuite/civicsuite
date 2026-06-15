@@ -46,10 +46,12 @@ Do not install Docker Desktop or WSL for this product path. If the app asks for 
    - Review unsigned beta and SmartScreen status.
    - Confirm local install/data/backup folders.
    - Keep the City Core module profile selected.
-   - Download or resume the pinned Gemma 4 12B QAT Q4_0 model.
-   - Verify the model checksum before enabling AI workflows.
    - Create the city profile.
    - Create the first local administrator.
+   - Sign in as the first local administrator.
+   - Choose the backup folder.
+   - Download or resume the pinned Gemma 4 12B QAT Q4_0 model.
+   - Verify the model checksum before enabling AI workflows.
    - Add clerk, records, code, or city-staff local users from Settings when staff
      need separate sign-in.
    - Run local health verification.
