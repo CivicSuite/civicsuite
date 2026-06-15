@@ -1466,22 +1466,24 @@ mod tests {
 
     #[test]
     fn model_state_blocks_missing_runtime_and_registry() {
-        let state = model_state().expect("state builds from manifest");
-        assert_eq!(state.display_name, "Gemma 4 12B QAT Q4_0");
-        assert!(!state.ready);
-        assert_eq!(state.status, "Needs download");
-        assert!(state
-            .checks
-            .iter()
-            .any(|check| check.id == "runtime" && !check.ok));
-        assert!(state
-            .checks
-            .iter()
-            .any(|check| check.id == "registered-model" && !check.ok));
-        assert!(state
-            .checks
-            .iter()
-            .any(|check| check.id == "runtime-model" && !check.ok));
+        with_temp_state_dir(|_| {
+            let state = model_state().expect("state builds from manifest");
+            assert_eq!(state.display_name, "Gemma 4 12B QAT Q4_0");
+            assert!(!state.ready);
+            assert_eq!(state.status, "Needs download");
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "runtime" && !check.ok));
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "registered-model" && !check.ok));
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "runtime-model" && !check.ok));
+        });
     }
 
     #[test]
