@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -52,10 +52,7 @@ jobs:
         run: npm ci
 
       - name: Install browser for docs landing page check
-        # No --with-deps: it requires passwordless sudo and hangs on the
-        # self-hosted runner. Chromium OS dependencies are preinstalled on the
-        # runner image (see docs/process/stages stage-2 ledger, slice 4).
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Verify docs landing page in browser
         run: npm run verify:browser

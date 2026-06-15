@@ -39,18 +39,12 @@ jobs:
             installer_version: 0.1.0
           - platform: macos
             profile: clerk-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz
             installer_version: 0.1.0
           - platform: linux
             profile: clerk-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz
             installer_version: 0.1.0
           - platform: windows
@@ -61,18 +55,12 @@ jobs:
             installer_version: 0.1.0
           - platform: macos
             profile: city-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-city-core-macos-0.1.0.tar.gz
             installer_version: 0.1.0
           - platform: linux
             profile: city-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-city-core-linux-0.1.2.tar.gz
             installer_version: 0.1.2
     steps:
@@ -122,10 +110,7 @@ jobs:
 
   linux-package-lifecycle:
     name: linux archive full lifecycle
-    runs-on:
-      - self-hosted
-      - linux
-      - x64
+    runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
       CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED: "1"
