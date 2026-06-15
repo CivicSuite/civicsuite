@@ -699,21 +699,19 @@ pub fn first_run_action(
             step.id, step.action
         ));
     }
-    if action == "open-app" {
-        let missing_steps = missing_prior_required_steps(&progress, &manifest, &target_step_id);
-        if !missing_steps.is_empty() {
-            return Ok(FirstRunActionResult {
-                accepted: false,
-                action: action.to_string(),
-                step_id: Some(target_step_id),
-                status: "Setup incomplete",
-                message: format!(
-                    "CivicSuite cannot finish setup until these required steps are complete: {}.",
-                    missing_steps.join(", ")
-                ),
-                next_action: "Complete the current setup step before finishing.".to_string(),
-            });
-        }
+    let missing_steps = missing_prior_required_steps(&progress, &manifest, &target_step_id);
+    if !missing_steps.is_empty() {
+        return Ok(FirstRunActionResult {
+            accepted: false,
+            action: action.to_string(),
+            step_id: Some(target_step_id),
+            status: "Setup incomplete",
+            message: format!(
+                "CivicSuite cannot continue this setup step until these required steps are complete: {}.",
+                missing_steps.join(", ")
+            ),
+            next_action: "Complete the current setup step before continuing.".to_string(),
+        });
     }
 
     let mut action_completion: Option<(&'static str, String, String)> = None;
@@ -880,6 +878,92 @@ pub fn first_run_action(
 mod tests {
     use super::*;
 
+    fn mark_setup_ready_for_first_admin_step() {
+        write_progress(&FirstRunProgress {
+            completed_step_ids: vec![
+                "unsigned-beta".to_string(),
+                "smartscreen".to_string(),
+                "locations".to_string(),
+                "modules".to_string(),
+                "city-profile".to_string(),
+            ],
+            last_action: Some("create-city-profile".to_string()),
+            last_updated_unix_seconds: now_unix_seconds(),
+        })
+        .expect("progress writes");
+    }
+
+    fn mark_setup_ready_for_city_profile_step() {
+        write_progress(&FirstRunProgress {
+            completed_step_ids: vec![
+                "unsigned-beta".to_string(),
+                "smartscreen".to_string(),
+                "locations".to_string(),
+                "modules".to_string(),
+            ],
+            last_action: Some("select-modules".to_string()),
+            last_updated_unix_seconds: now_unix_seconds(),
+        })
+        .expect("progress writes");
+    }
+
+    fn mark_setup_ready_for_location_step() {
+        write_progress(&FirstRunProgress {
+            completed_step_ids: vec!["unsigned-beta".to_string(), "smartscreen".to_string()],
+            last_action: Some("review".to_string()),
+            last_updated_unix_seconds: now_unix_seconds(),
+        })
+        .expect("progress writes");
+    }
+
+    fn mark_setup_ready_for_module_step() {
+        write_progress(&FirstRunProgress {
+            completed_step_ids: vec![
+                "unsigned-beta".to_string(),
+                "smartscreen".to_string(),
+                "locations".to_string(),
+            ],
+            last_action: Some("choose-location".to_string()),
+            last_updated_unix_seconds: now_unix_seconds(),
+        })
+        .expect("progress writes");
+    }
+
+    fn mark_setup_ready_for_model_step() {
+        write_progress(&FirstRunProgress {
+            completed_step_ids: vec![
+                "unsigned-beta".to_string(),
+                "smartscreen".to_string(),
+                "locations".to_string(),
+                "modules".to_string(),
+                "city-profile".to_string(),
+                "first-admin".to_string(),
+                "backup".to_string(),
+            ],
+            last_action: Some("choose-backup".to_string()),
+            last_updated_unix_seconds: now_unix_seconds(),
+        })
+        .expect("progress writes");
+    }
+
+    fn mark_setup_ready_for_health_step() {
+        write_progress(&FirstRunProgress {
+            completed_step_ids: vec![
+                "unsigned-beta".to_string(),
+                "smartscreen".to_string(),
+                "locations".to_string(),
+                "modules".to_string(),
+                "city-profile".to_string(),
+                "first-admin".to_string(),
+                "backup".to_string(),
+                "model".to_string(),
+            ],
+            last_action: Some("download-model".to_string()),
+            last_updated_unix_seconds: now_unix_seconds(),
+        })
+        .expect("progress writes");
+    }
+
     #[test]
     fn manifest_declares_local_only_operator_path() {
         let manifest = parse_manifest().expect("manifest parses");
@@ -977,6 +1061,7 @@ mod tests {
     #[test]
     fn first_run_model_action_downloads_through_model_setup_and_blocks_low_disk() {
         with_temp_state_dir(|_| {
+            mark_setup_ready_for_model_step();
             env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "1");
             let result = first_run_action("download-model", Some("model"), None)
                 .expect("action response is structured");
@@ -990,6 +1075,7 @@ mod tests {
     #[test]
     fn first_run_model_action_advances_when_model_is_verified() {
         with_temp_state_dir(|_| {
+            mark_setup_ready_for_model_step();
             env::set_var("CIVICSUITE_TEST_MODEL_VERIFIED", "1");
             let result = first_run_action("download-model", Some("model"), None)
                 .expect("action response is structured");
@@ -1008,8 +1094,28 @@ mod tests {
     }
 
     #[test]
+    fn first_run_model_action_cannot_skip_prior_required_steps() {
+        with_temp_state_dir(|_| {
+            let result = first_run_action("download-model", Some("model"), None)
+                .expect("action response is structured");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Setup incomplete");
+            assert!(result.message.contains("First admin user"));
+            assert!(result.next_action.contains("current setup step"));
+            let state = first_run_state(&[]).expect("state remains at first step");
+            assert_eq!(state.current_step_id.as_deref(), Some("unsigned-beta"));
+            assert!(!state
+                .steps
+                .iter()
+                .any(|step| step.id == "model" && step.completed));
+        });
+    }
+
+    #[test]
     fn first_run_health_action_requires_verified_model() {
         with_temp_state_dir(|_| {
+            mark_setup_ready_for_health_step();
             let result = first_run_action("verify-health", Some("health"), None)
                 .expect("action response is structured");
             assert!(!result.accepted);
@@ -1021,6 +1127,7 @@ mod tests {
     #[test]
     fn first_run_health_action_bootstraps_runtime_before_completion() {
         with_temp_state_dir(|root| {
+            mark_setup_ready_for_health_step();
             env::set_var("CIVICSUITE_TEST_MODEL_VERIFIED", "1");
             let result = first_run_action("verify-health", Some("health"), None)
                 .expect("action response is structured");
@@ -1079,6 +1186,7 @@ mod tests {
     #[test]
     fn first_run_location_action_persists_custom_runtime_folders() {
         with_temp_state_dir(|root| {
+            mark_setup_ready_for_location_step();
             let install = root.join("Program Files").join("CivicSuite");
             let data = root.join("City Data");
             let backups = root.join("City Backups");
@@ -1108,6 +1216,7 @@ mod tests {
     #[test]
     fn first_run_module_selection_persists_profile_state() {
         with_temp_state_dir(|root| {
+            mark_setup_ready_for_module_step();
             let result = first_run_action("select-modules", Some("modules"), None)
                 .expect("module selection can be saved");
             assert!(result.accepted);
@@ -1118,6 +1227,7 @@ mod tests {
     #[test]
     fn first_run_module_selection_accepts_valid_custom_payload() {
         with_temp_state_dir(|_| {
+            mark_setup_ready_for_module_step();
             let payload = serde_json::json!({
                 "profileId": "custom",
                 "selectedModuleIds": ["civicclerk", "civiccode"]
@@ -1142,13 +1252,15 @@ mod tests {
     #[test]
     fn first_admin_passcode_verifies_local_admin() {
         with_temp_state_dir(|_| {
+            mark_setup_ready_for_first_admin_step();
             let admin_payload = serde_json::json!({
                 "adminName": "Alex Clerk",
                 "adminEmail": "alex@example.gov",
                 "adminPasscode": "correct horse battery staple"
             });
-            first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+            let result = first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
                 .expect("admin saved");
+            assert!(result.accepted);
 
             let record = saved_admin_record()
                 .expect("admin record reads")
@@ -1203,6 +1315,7 @@ mod tests {
     #[test]
     fn city_profile_requires_payload_before_completion() {
         with_temp_state_dir(|_| {
+            mark_setup_ready_for_city_profile_step();
             let result = first_run_action("create-city-profile", Some("city-profile"), None);
             assert!(result.is_err());
             assert!(result.err().expect("error text").contains("cityName"));

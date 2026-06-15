@@ -641,13 +641,36 @@ mod tests {
     }
 
     fn create_admin() {
+        first_run::first_run_action("review", Some("unsigned-beta"), None).expect("notice saved");
+        first_run::first_run_action("review", Some("smartscreen"), None)
+            .expect("smartscreen saved");
+        first_run::first_run_action("choose-location", Some("locations"), None)
+            .expect("locations saved");
+        let module_payload = serde_json::json!({ "profileId": "city-core" });
+        first_run::first_run_action("select-modules", Some("modules"), Some(&module_payload))
+            .expect("modules saved");
+        let city_payload = serde_json::json!({
+            "cityName": "Brookfield",
+            "state": "CO",
+            "timeZone": "America/Denver",
+            "recordsContact": "records@example.gov",
+            "clerkContact": "clerk@example.gov"
+        });
+        first_run::first_run_action(
+            "create-city-profile",
+            Some("city-profile"),
+            Some(&city_payload),
+        )
+        .expect("city profile saved");
         let admin_payload = serde_json::json!({
             "adminName": "Alex Clerk",
             "adminEmail": "alex@example.gov",
             "adminPasscode": "correct horse battery staple"
         });
-        first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
-            .expect("admin saved");
+        let result =
+            first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+                .expect("admin saved");
+        assert!(result.accepted);
     }
 
     #[test]

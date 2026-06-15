@@ -961,7 +961,7 @@ function renderHome() {
     </section>
     ${renderFirstRunWizard()}
     ${renderAccessPanel()}
-    ${renderModelReadiness({ compact: true })}
+    ${showStandaloneModelReadiness() ? renderModelReadiness({ compact: true }) : ""}
     <section class="task-grid" aria-label="Primary work areas">
       ${primaryTasks.map((item) => `
         <article class="task-card">
@@ -1012,11 +1012,33 @@ function adminOnlyControlLocked() {
   return access.configured && access.role !== "local-admin";
 }
 
+function modelSetupControlLocked() {
+  const access = accessState();
+  return access.role !== "local-admin";
+}
+
 function adminOnlyLockMessage(fallback) {
   const access = accessState();
   if (!adminOnlyControlLocked()) return "";
   if (!access.signed_in) return fallback;
   return "Use a local administrator account before changing setup, model, backup, restore, repair, module, user, or runtime settings.";
+}
+
+function modelSetupLockMessage() {
+  const access = accessState();
+  if (!modelSetupControlLocked()) return "";
+  if (!access.configured) {
+    return "Create the first local administrator and sign in before changing local model setup.";
+  }
+  if (!access.signed_in) {
+    return "Sign in as local administrator to change local model setup.";
+  }
+  return "Use a local administrator account before changing local model setup.";
+}
+
+function showStandaloneModelReadiness() {
+  const firstRun = state.app.first_run;
+  return !firstRun || firstRun.finished || !modelSetupControlLocked();
 }
 
 function renderModuleSelectionControls() {
@@ -1341,9 +1363,9 @@ function renderFirstRunWizard({ compact = false } = {}) {
 }
 
 function renderModelActions(model) {
-  const adminLocked = adminOnlyControlLocked();
+  const adminLocked = modelSetupControlLocked();
   const adminDisabled = adminLocked ? "disabled" : "";
-  const lockMessage = adminOnlyLockMessage("Sign in as local administrator to change local model setup.");
+  const lockMessage = modelSetupLockMessage();
   return `
     <div class="model-actions" aria-label="Local model setup actions">
       <button type="button" class="secondary-action" data-model-action="open-model-folder" ${adminDisabled}>

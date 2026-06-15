@@ -100,8 +100,8 @@ fn installer_steps() -> Vec<&'static str> {
         "Explain unsigned beta status and Windows SmartScreen.",
         "Choose install and local data locations.",
         "Install CivicCore and selected city-core modules.",
-        "Download and verify Gemma 4 12B quantization-aware weights.",
         "Create city profile and first admin user.",
+        "Download and verify Gemma 4 12B quantization-aware weights.",
         "Verify local health, backup, repair, and uninstall entry points.",
     ]
 }
@@ -394,7 +394,13 @@ fn get_model_state() -> Result<ModelState, String> {
 #[tauri::command]
 fn model_action(action: String) -> Result<ModelActionResult, String> {
     let access = auth::access_state()?;
-    if access.configured && !access_is_local_admin(&access) {
+    if !access_is_local_admin(&access) {
+        if !access.configured {
+            return Err(
+                "Create the first local administrator and sign in before changing local model setup."
+                    .to_string(),
+            );
+        }
         return Err(
             "Sign in as the local administrator before changing local model setup.".to_string(),
         );
@@ -743,13 +749,36 @@ mod tests {
     }
 
     fn create_first_admin() {
+        first_run::first_run_action("review", Some("unsigned-beta"), None).expect("notice saved");
+        first_run::first_run_action("review", Some("smartscreen"), None)
+            .expect("smartscreen saved");
+        first_run::first_run_action("choose-location", Some("locations"), None)
+            .expect("locations saved");
+        let module_payload = serde_json::json!({ "profileId": "city-core" });
+        first_run::first_run_action("select-modules", Some("modules"), Some(&module_payload))
+            .expect("modules saved");
+        let city_payload = serde_json::json!({
+            "cityName": "Brookfield",
+            "state": "CO",
+            "timeZone": "America/Denver",
+            "recordsContact": "records@example.gov",
+            "clerkContact": "clerk@example.gov"
+        });
+        first_run::first_run_action(
+            "create-city-profile",
+            Some("city-profile"),
+            Some(&city_payload),
+        )
+        .expect("city profile saved");
         let admin_payload = serde_json::json!({
             "adminName": "Alex Clerk",
             "adminEmail": "alex@example.gov",
             "adminPasscode": "correct horse battery staple"
         });
-        first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
-            .expect("admin saved");
+        let result =
+            first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
+                .expect("admin saved");
+        assert!(result.accepted);
     }
 
     fn sign_in_as_first_admin() {
@@ -846,8 +875,15 @@ mod tests {
     }
 
     #[test]
-    fn model_actions_require_admin_after_first_admin_exists() {
+    fn model_actions_require_local_admin_session() {
         with_clean_first_run_state(|_| {
+            let pre_admin_result = model_action("open-model-folder".to_string());
+            assert!(pre_admin_result.is_err());
+            assert!(pre_admin_result
+                .err()
+                .expect("pre-admin model action auth error")
+                .contains("Create the first local administrator and sign in"));
+
             create_first_admin();
 
             let signed_out_result = model_action("open-model-folder".to_string());
@@ -1206,6 +1242,23 @@ mod tests {
     #[test]
     fn first_run_setup_actions_can_bootstrap_before_admin_exists() {
         with_clean_first_run_state(|_| {
+            first_run_action("review".to_string(), Some("unsigned-beta".to_string()), None)
+                .expect("notice can bootstrap before admin exists");
+            first_run_action("review".to_string(), Some("smartscreen".to_string()), None)
+                .expect("smartscreen can bootstrap before admin exists");
+            first_run_action(
+                "choose-location".to_string(),
+                Some("locations".to_string()),
+                None,
+            )
+            .expect("locations can bootstrap before admin exists");
+            let module_payload = serde_json::json!({ "profileId": "city-core" });
+            first_run_action(
+                "select-modules".to_string(),
+                Some("modules".to_string()),
+                Some(module_payload),
+            )
+            .expect("module selection can bootstrap before admin exists");
             let city_payload = serde_json::json!({
                 "cityName": "Brookfield",
                 "state": "CO",
@@ -1253,26 +1306,7 @@ mod tests {
     #[test]
     fn app_state_reports_saved_city_profile_and_first_admin() {
         with_clean_first_run_state(|_| {
-            let city_payload = serde_json::json!({
-                "cityName": "Brookfield",
-                "state": "CO",
-                "timeZone": "America/Denver",
-                "recordsContact": "records@example.gov",
-                "clerkContact": "clerk@example.gov"
-            });
-            first_run::first_run_action(
-                "create-city-profile",
-                Some("city-profile"),
-                Some(&city_payload),
-            )
-            .expect("city profile saved");
-            let admin_payload = serde_json::json!({
-                "adminName": "Alex Clerk",
-                "adminEmail": "alex@example.gov",
-                "adminPasscode": "correct horse battery staple"
-            });
-            first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
-                .expect("admin saved");
+            create_first_admin();
             sign_in_as_first_admin();
 
             let state = get_app_state().expect("app state");

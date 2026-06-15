@@ -135,6 +135,7 @@ const requiredUiPhrases = [
   "City workflow services",
   "Background work queue",
   "Local document storage",
+  "Create the first local administrator and sign in before changing local model setup.",
   "The Windows installer owns the app folder.",
   "Enabled modules:",
   "Data remains installed. Re-enable this module to show its work area.",
@@ -176,7 +177,12 @@ for (const phrase of [
 for (const phrase of [
   "function adminOnlyControlLocked",
   "return access.configured && access.role !== \"local-admin\";",
+  "function modelSetupControlLocked",
+  "return access.role !== \"local-admin\";",
+  "function showStandaloneModelReadiness",
+  "showStandaloneModelReadiness() ? renderModelReadiness({ compact: true })",
   "const lockMessage = adminOnlyLockMessage(\"Sign in as local administrator to use local lifecycle actions.\");",
+  "const lockMessage = modelSetupLockMessage();",
   "data-supervisor-action=\"backup\" ${adminDisabled}",
   "data-supervisor-action=\"install\" data-service-id=\"${escapeHtml(item.id)}\" ${adminDisabled}",
   "data-supervisor-review-confirm=\"${state.pendingSupervisorReviewAction}\"${serviceAttr} ${adminDisabled}"
@@ -423,7 +429,7 @@ for (const phrase of [
 }
 
 for (const phrase of [
-  "CivicSuite cannot finish setup until these required steps are complete",
+  "CivicSuite cannot continue this setup step until these required steps are complete",
   "CivicSuite setup is complete on this Windows profile.",
   "System Health keeps backup, repair, logs, restore, and uninstall available.",
   "Start city work from Meetings & Notices, Records Requests, Code & Ordinances, or Search City Knowledge."
