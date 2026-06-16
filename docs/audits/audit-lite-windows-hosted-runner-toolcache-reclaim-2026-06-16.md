@@ -15,6 +15,7 @@ The installer-cleanroom Linux clerk-core lifecycle stopped before archive extrac
 
 - [scripts/reclaim-installer-cleanroom-space.py](../../scripts/reclaim-installer-cleanroom-space.py): keeps the existing repository-root cleanup, then, only when running on GitHub-hosted Linux with `--approved`, removes known disposable hosted-runner toolcache families (`android`, `dotnet`, `ghc`, `ghcup`, and CodeQL) before the cleanroom lifecycle check.
 - [scripts/reclaim-installer-cleanroom-space.py](../../scripts/reclaim-installer-cleanroom-space.py): records separate repository and hosted-runner cleanup evidence, including bytes before, removal status, and command output tails.
+- [.github/workflows/installer-cleanroom.yml](../../.github/workflows/installer-cleanroom.yml): runs the approved reclaim step before both package-plan extraction and full Linux lifecycle extraction.
 - The 60 GB cleanroom gate remains unchanged; the hosted runner now reclaims disposable preinstalled toolchains instead of weakening lifecycle evidence criteria.
 
 ## Evidence

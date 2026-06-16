@@ -28,6 +28,8 @@ jobs:
     name: ${{ matrix.platform }} archive readiness and plan
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    env:
+      CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -97,6 +99,9 @@ jobs:
 
       - name: Generate release artifacts
         run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
+
+      - name: Reclaim hosted-runner workspace before package plan
+        run: python scripts/reclaim-installer-cleanroom-space.py --run-id "ci-${{ matrix.profile }}-${{ matrix.platform }}-package-plan" --approved
 
       - name: Run extracted package readiness and plan
         run: python scripts/run-installer-package-cleanroom.py --archive "${{ matrix.archive }}" --platform "${{ matrix.platform }}" --skip-install --run-id "ci-${{ matrix.profile }}-${{ matrix.platform }}-package-plan"
