@@ -8,6 +8,7 @@ on:
       - "docs/installer/**"
       - "installer/**"
       - "scripts/plan-installer.py"
+      - "scripts/reclaim-installer-cleanroom-space.py"
       - "scripts/run-clerk-core-installer.py"
       - "scripts/run-installer-package-cleanroom.py"
       - "scripts/verify-installer-plan.py"
@@ -160,6 +161,9 @@ jobs:
 
       - name: Generate release artifacts
         run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
+
+      - name: Reclaim hosted-runner workspace before lifecycle
+        run: python scripts/reclaim-installer-cleanroom-space.py --run-id "${{ matrix.run_id }}" --approved
 
       - name: Run extracted Linux package install, repair, verify, workflow proof, backup, restore, and uninstall
         run: python scripts/run-installer-package-cleanroom.py --archive "${{ matrix.archive }}" --platform linux --run-id "${{ matrix.run_id }}" --staff-mode bearer --workflow-proof
