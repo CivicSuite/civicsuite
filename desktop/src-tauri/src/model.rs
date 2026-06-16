@@ -329,13 +329,17 @@ fn windows_runtime_root() -> PathBuf {
     if let Ok(root) = env::var("CIVICSUITE_RUNTIME_ROOT") {
         return PathBuf::from(root);
     }
-    env::var("CIVICSUITE_DESKTOP_STATE_DIR")
-        .map(PathBuf::from)
+    local_paths::effective_locations()
+        .map(|locations| PathBuf::from(locations.install_root))
         .unwrap_or_else(|_| {
-            env::var("LOCALAPPDATA")
+            env::var("CIVICSUITE_DESKTOP_STATE_DIR")
                 .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
-                .join("CivicSuite")
+                .unwrap_or_else(|_| {
+                    env::var("LOCALAPPDATA")
+                        .map(PathBuf::from)
+                        .unwrap_or_else(|_| PathBuf::from("{local_app_data}"))
+                        .join("CivicSuite")
+                })
         })
 }
 
@@ -404,10 +408,8 @@ fn ollama_executable() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|_| {
             let bundled = bundled_ollama_path();
-            if bundled.is_file() {
+            if bundled.is_file() || cfg!(target_os = "windows") {
                 bundled
-            } else if cfg!(target_os = "windows") {
-                PathBuf::from("ollama.exe")
             } else {
                 PathBuf::from("ollama")
             }
@@ -656,9 +658,13 @@ fn start_model_runtime_service() -> Result<String, String> {
         };
     }
 
+    let install = crate::supervisor::supervisor_action("install", Some("model-runtime"))?;
+    if !install.accepted {
+        return Err(format!("{} {}", install.message, install.next_action));
+    }
     let result = crate::supervisor::supervisor_action("start", Some("model-runtime"))?;
     if result.accepted {
-        Ok(result.message)
+        Ok(format!("{} {}", install.message, result.message))
     } else {
         Err(format!("{} {}", result.message, result.next_action))
     }
@@ -1821,6 +1827,23 @@ mod tests {
             env::remove_var("CIVICSUITE_TEST_MODEL_RUNTIME_START");
             assert!(error.contains("could not start"));
             assert!(error.contains("test runtime start refused"));
+        });
+    }
+
+    #[test]
+    fn windows_ollama_executable_uses_bundled_runtime_path() {
+        with_temp_state_dir(|root| {
+            env::remove_var("CIVICSUITE_OLLAMA_PATH");
+            let executable = ollama_executable();
+
+            if cfg!(target_os = "windows") {
+                assert_eq!(
+                    executable,
+                    root.join("runtime").join("ollama").join("ollama.exe")
+                );
+            } else {
+                assert_eq!(executable, PathBuf::from("ollama"));
+            }
         });
     }
 

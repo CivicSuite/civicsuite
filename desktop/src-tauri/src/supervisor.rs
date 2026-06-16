@@ -295,7 +295,11 @@ fn support_bundle_root() -> PathBuf {
 fn runtime_root() -> PathBuf {
     env::var("CIVICSUITE_RUNTIME_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|_| civic_suite_root())
+        .unwrap_or_else(|_| {
+            local_paths::effective_locations()
+                .map(|locations| PathBuf::from(locations.install_root))
+                .unwrap_or_else(|_| civic_suite_root())
+        })
 }
 
 fn random_hex_secret(byte_count: usize) -> Result<String, String> {
@@ -331,6 +335,36 @@ fn local_database_url(driver: &str) -> Result<String, String> {
     ))
 }
 
+fn append_executable_payload_roots(candidates: &mut Vec<PathBuf>, executable_parent: &Path) {
+    candidates.push(executable_parent.join("runtime").join("payload"));
+    candidates.push(
+        executable_parent
+            .join("_up_")
+            .join("runtime")
+            .join("payload"),
+    );
+    candidates.push(
+        executable_parent
+            .join("resources")
+            .join("runtime")
+            .join("payload"),
+    );
+    candidates.push(executable_parent.join("resources").join("runtime-payload"));
+    candidates.push(
+        executable_parent
+            .join("_up_")
+            .join("resources")
+            .join("runtime")
+            .join("payload"),
+    );
+    candidates.push(
+        executable_parent
+            .join("_up_")
+            .join("resources")
+            .join("runtime-payload"),
+    );
+}
+
 fn runtime_payload_roots() -> Vec<PathBuf> {
     let mut candidates = Vec::new();
     if let Ok(root) = env::var("CIVICSUITE_RUNTIME_PAYLOAD_DIR") {
@@ -338,9 +372,7 @@ fn runtime_payload_roots() -> Vec<PathBuf> {
     }
     if let Ok(exe) = env::current_exe() {
         if let Some(parent) = exe.parent() {
-            candidates.push(parent.join("runtime").join("payload"));
-            candidates.push(parent.join("resources").join("runtime").join("payload"));
-            candidates.push(parent.join("resources").join("runtime-payload"));
+            append_executable_payload_roots(&mut candidates, parent);
         }
     }
     candidates.push(runtime_root().join("runtime").join("payload"));
@@ -2489,6 +2521,39 @@ mod tests {
                 name == "LLM_MODEL" && value == "civicsuite-gemma4-12b-qat:q4_0"
             }));
         });
+    }
+
+    #[test]
+    fn runtime_root_uses_saved_install_location_without_env_override() {
+        with_temp_state_dir(|root| {
+            env::remove_var("CIVICSUITE_RUNTIME_ROOT");
+            let install_root = root.join("selected-install-root");
+            crate::local_paths::save_locations(&crate::local_paths::LocalLocations {
+                install_root: install_root.to_string_lossy().to_string(),
+                data_root: root.join("Data").to_string_lossy().to_string(),
+                backup_root: root.join("Backups").to_string_lossy().to_string(),
+            })
+            .expect("locations saved");
+
+            assert_eq!(runtime_root(), install_root);
+
+            env::set_var("CIVICSUITE_RUNTIME_ROOT", root.join("Runtime"));
+        });
+    }
+
+    #[test]
+    fn executable_payload_roots_include_tauri_up_payload_dir() {
+        let executable_parent = PathBuf::from(r"C:\Program Files\CivicSuite");
+        let mut roots = Vec::new();
+
+        append_executable_payload_roots(&mut roots, &executable_parent);
+
+        assert!(roots.contains(
+            &executable_parent
+                .join("_up_")
+                .join("runtime")
+                .join("payload")
+        ));
     }
 
     #[test]
