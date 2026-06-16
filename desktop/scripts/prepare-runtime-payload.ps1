@@ -171,6 +171,26 @@ function Invoke-CivicDownload {
     throw $LastError
 }
 
+function Invoke-CivicRestMethod {
+    param(
+        [string]$Uri,
+        [string]$Label,
+        [hashtable]$Headers = @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+    )
+    $LastError = $null
+    for ($Attempt = 1; $Attempt -le 5; $Attempt++) {
+        try {
+            return Invoke-RestMethod -Uri $Uri -Headers $Headers -TimeoutSec 30 -ErrorAction Stop
+        } catch {
+            $LastError = $_
+            if ($Attempt -lt 5) {
+                Start-Sleep -Seconds ([Math]::Min(30, [Math]::Pow(2, $Attempt)))
+            }
+        }
+    }
+    throw "$Label failed after 5 attempts: $($LastError.Exception.Message)"
+}
+
 function Expand-CivicZip {
     param(
         [string]$Archive,
@@ -606,7 +626,10 @@ function Install-OllamaPayload {
     if ($SkipDownloads) {
         throw "Ollama release lookup requires network access."
     }
-    $Release = Invoke-RestMethod -Uri $Source.release_api -Headers @{ "User-Agent" = "CivicSuite-runtime-payload" }
+    $Release = Invoke-CivicRestMethod `
+        -Uri $Source.release_api `
+        -Label "Ollama release lookup" `
+        -Headers @{ "User-Agent" = "CivicSuite-runtime-payload" }
     $Asset = $Release.assets | Where-Object { $_.name -eq $Source.asset_name_pattern } | Select-Object -First 1
     if (-not $Asset) {
         throw "Could not find Ollama asset $($Source.asset_name_pattern) in latest release."
