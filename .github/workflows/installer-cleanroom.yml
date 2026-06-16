@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 45
     env:
       CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED: "1"
+      CIVICSUITE_CLEANROOM_MIN_FREE_GB: "40"
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +102,7 @@ jobs:
         run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
 
       - name: Reclaim hosted-runner workspace before package plan
+        if: runner.os == 'Linux'
         run: python scripts/reclaim-installer-cleanroom-space.py --run-id "ci-${{ matrix.profile }}-${{ matrix.platform }}-package-plan" --approved
 
       - name: Run extracted package readiness and plan
@@ -120,6 +122,7 @@ jobs:
     timeout-minutes: 120
     env:
       CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED: "1"
+      CIVICSUITE_CLEANROOM_MIN_FREE_GB: "40"
     strategy:
       fail-fast: false
       max-parallel: 1

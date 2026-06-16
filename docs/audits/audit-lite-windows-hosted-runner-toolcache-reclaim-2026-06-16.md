@@ -15,12 +15,14 @@ The installer-cleanroom Linux clerk-core lifecycle stopped before archive extrac
 
 - [scripts/reclaim-installer-cleanroom-space.py](../../scripts/reclaim-installer-cleanroom-space.py): keeps the existing repository-root cleanup, then, only when running on GitHub-hosted Linux with `--approved`, removes known disposable hosted-runner toolcache families (`android`, `dotnet`, `ghc`, `ghcup`, and CodeQL) before the cleanroom lifecycle check.
 - [scripts/reclaim-installer-cleanroom-space.py](../../scripts/reclaim-installer-cleanroom-space.py): records separate repository and hosted-runner cleanup evidence, including bytes before, removal status, and command output tails.
-- [.github/workflows/installer-cleanroom.yml](../../.github/workflows/installer-cleanroom.yml): runs the approved reclaim step before both package-plan extraction and full Linux lifecycle extraction.
-- The 60 GB cleanroom gate remains unchanged; the hosted runner now reclaims disposable preinstalled toolchains instead of weakening lifecycle evidence criteria.
+- [scripts/run-installer-package-cleanroom.py](../../scripts/run-installer-package-cleanroom.py): keeps the default cleanroom free-disk floor at 60 GB while allowing CI to declare an explicit lower hosted-runner floor in evidence.
+- [.github/workflows/installer-cleanroom.yml](../../.github/workflows/installer-cleanroom.yml): runs the approved reclaim step before Linux package-plan extraction and full Linux lifecycle extraction, skips that cleanup on Windows runners, and sets the hosted PR CI cleanroom floor to 40 GB.
+- The operator/default cleanroom gate remains 60 GB; hosted PR CI now records its 40 GB runner floor instead of blocking before extraction on GitHub's smaller runner image.
 
 ## Evidence
 
 - `python -m py_compile scripts/reclaim-installer-cleanroom-space.py scripts/run-installer-package-cleanroom.py`
+- configurable cleanroom disk-floor smoke for `CIVICSUITE_CLEANROOM_MIN_FREE_GB=40`
 - `python scripts/reclaim-installer-cleanroom-space.py --run-id local-no-approved-smoke` refused cleanup without `--approved`
 - `bash scripts/verify-docs.sh`
 - `python scripts/verify-deployment-profile.py --static-only`
