@@ -1580,7 +1580,7 @@ const GUIDED_SUPERVISOR_ACTIONS = new Set([
 ]);
 
 function selectedFrom(collection, selectedId) {
-  return collection.find((record) => record.id === selectedId) || collection[0] || null;
+  return collection.find((record) => record.id === selectedId) || newestRecord(collection) || null;
 }
 
 function meetingBodies(work = cityWork()) {
@@ -5587,8 +5587,30 @@ function workPayloadForAction(action) {
   return payloads[action] || {};
 }
 
+function recordFreshnessValue(record) {
+  const idSequence = String(record?.id || "").match(/(\d+)(?!.*\d)/);
+  const sequenceValue = idSequence ? Number(idSequence[1]) : 0;
+  const timestampFields = [
+    "created_at_unix_seconds",
+    "updated_at_unix_seconds",
+    "finalized_at_unix_seconds",
+    "recorded_at_unix_seconds",
+    "published_at_unix_seconds",
+    "archived_at_unix_seconds",
+    "sent_at_unix_seconds"
+  ];
+  for (const field of timestampFields) {
+    const value = Number(record?.[field]);
+    if (Number.isFinite(value) && value > 0) return (value * 1000000) + sequenceValue;
+  }
+  return sequenceValue;
+}
+
 function newestRecord(records) {
-  return Array.isArray(records) && records.length > 0 ? records[records.length - 1] : null;
+  if (!Array.isArray(records) || records.length === 0) return null;
+  return records.reduce((newest, record) => (
+    recordFreshnessValue(record) >= recordFreshnessValue(newest) ? record : newest
+  ), records[0]);
 }
 
 function recordById(records, id) {

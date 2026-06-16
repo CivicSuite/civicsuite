@@ -165,6 +165,8 @@ for (const phrase of [
   "data-guided-review=\"module\"",
   "scrollGuidedReviewIntoView(\"work\")",
   "syncWorkSelectionAfterAction(action, result.state)",
+  "function recordFreshnessValue",
+  "return collection.find((record) => record.id === selectedId) || newestRecord(collection) || null;",
   "lastStaffEmail",
   "Temporary local passcode must be at least 10 characters."
 ]) {

@@ -157,6 +157,12 @@ struct BackupFileEntry {
     sha256: String,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
+struct SkippedBackupFileEntry {
+    path: String,
+    reason: String,
+}
+
 #[derive(Deserialize, Serialize)]
 struct BackupManifest {
     schema_version: u16,
@@ -170,6 +176,8 @@ struct BackupManifest {
     contains_config: bool,
     file_count: usize,
     files: Vec<BackupFileEntry>,
+    #[serde(default)]
+    skipped_files: Vec<SkippedBackupFileEntry>,
 }
 
 #[derive(Serialize)]
@@ -183,6 +191,7 @@ struct SupportBundleManifest {
     selected_services: Vec<String>,
     file_count: usize,
     files: Vec<BackupFileEntry>,
+    skipped_files: Vec<SkippedBackupFileEntry>,
 }
 
 fn parse_manifest() -> Result<RuntimeManifest, String> {
@@ -489,58 +498,88 @@ fn sha256_file(path: &Path) -> Result<(u64, String), String> {
     ))
 }
 
-fn collect_backup_files(root: &Path) -> Result<Vec<BackupFileEntry>, String> {
+fn collect_backup_files_with_skips(
+    root: &Path,
+) -> Result<(Vec<BackupFileEntry>, Vec<SkippedBackupFileEntry>), String> {
     fn collect(
         root: &Path,
         current: &Path,
         entries: &mut Vec<BackupFileEntry>,
+        skipped: &mut Vec<SkippedBackupFileEntry>,
     ) -> Result<(), String> {
+        let skipped_path =
+            normalized_backup_path(root, current).unwrap_or_else(|_| current.display().to_string());
         if !current.exists() {
             return Ok(());
         }
-        let metadata = fs::symlink_metadata(current).map_err(|error| {
-            format!(
-                "Could not inspect backup file {}: {error}",
-                current.display()
-            )
-        })?;
+        let metadata = match fs::symlink_metadata(current) {
+            Ok(metadata) => metadata,
+            Err(error) => {
+                skipped.push(SkippedBackupFileEntry {
+                    path: skipped_path,
+                    reason: format!("inspect failed: {error}"),
+                });
+                return Ok(());
+            }
+        };
         if metadata.file_type().is_symlink() {
-            return Err(format!(
-                "Refusing to follow symbolic link in backup: {}",
-                current.display()
-            ));
+            skipped.push(SkippedBackupFileEntry {
+                path: skipped_path,
+                reason: "symbolic link skipped".to_string(),
+            });
+            return Ok(());
         }
         if metadata.is_dir() {
-            let mut children = fs::read_dir(current)
-                .map_err(|error| {
-                    format!(
-                        "Could not read backup folder {}: {error}",
-                        current.display()
-                    )
-                })?
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|error| format!("Could not inspect backup folder entry: {error}"))?;
+            let mut children = match fs::read_dir(current) {
+                Ok(children) => match children.collect::<Result<Vec<_>, _>>() {
+                    Ok(children) => children,
+                    Err(error) => {
+                        skipped.push(SkippedBackupFileEntry {
+                            path: skipped_path,
+                            reason: format!("folder entry read failed: {error}"),
+                        });
+                        return Ok(());
+                    }
+                },
+                Err(error) => {
+                    skipped.push(SkippedBackupFileEntry {
+                        path: skipped_path,
+                        reason: format!("folder read failed: {error}"),
+                    });
+                    return Ok(());
+                }
+            };
             children.sort_by_key(|entry| entry.path());
             for child in children {
-                collect(root, &child.path(), entries)?;
+                collect(root, &child.path(), entries, skipped)?;
             }
             return Ok(());
         }
-        if metadata.is_file() && current != root.join("backup-manifest.json") {
-            let (size_bytes, sha256) = sha256_file(current)?;
-            entries.push(BackupFileEntry {
-                path: normalized_backup_path(root, current)?,
-                size_bytes,
-                sha256,
-            });
+        if metadata.is_file()
+            && current != root.join("backup-manifest.json")
+            && current != root.join("support-manifest.json")
+        {
+            match sha256_file(current) {
+                Ok((size_bytes, sha256)) => entries.push(BackupFileEntry {
+                    path: normalized_backup_path(root, current)?,
+                    size_bytes,
+                    sha256,
+                }),
+                Err(error) => skipped.push(SkippedBackupFileEntry {
+                    path: skipped_path,
+                    reason: error,
+                }),
+            }
         }
         Ok(())
     }
 
     let mut entries = Vec::new();
-    collect(root, root, &mut entries)?;
+    let mut skipped = Vec::new();
+    collect(root, root, &mut entries, &mut skipped)?;
     entries.sort_by(|left, right| left.path.cmp(&right.path));
-    Ok(entries)
+    skipped.sort_by(|left, right| left.path.cmp(&right.path));
+    Ok((entries, skipped))
 }
 
 fn payloads_for_services<'a>(
@@ -749,7 +788,7 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
         ),
     )
     .map_err(|error| format!("Could not write backup README: {error}"))?;
-    let files = collect_backup_files(&destination)?;
+    let (files, skipped_files) = collect_backup_files_with_skips(&destination)?;
 
     let manifest = BackupManifest {
         schema_version: 1,
@@ -763,6 +802,7 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
         contains_config,
         file_count: files.len(),
         files,
+        skipped_files,
     };
     let contents = serde_json::to_string_pretty(&manifest)
         .map_err(|error| format!("Could not serialize backup manifest: {error}"))?;
@@ -786,12 +826,17 @@ fn verified_backup_manifest(source: &Path) -> Result<BackupManifest, String> {
             manifest.schema_version
         ));
     }
-    let actual_files = collect_backup_files(source)?;
+    let (actual_files, actual_skipped_files) = collect_backup_files_with_skips(source)?;
     if manifest.file_count != manifest.files.len() {
         return Err("backup manifest file count does not match its file list".to_string());
     }
     if manifest.file_count != actual_files.len() || manifest.files != actual_files {
         return Err("backup files do not match the recorded SHA-256 manifest".to_string());
+    }
+    if manifest.skipped_files != actual_skipped_files {
+        return Err(
+            "backup skipped-file evidence does not match the current backup folder".to_string(),
+        );
     }
     Ok(manifest)
 }
@@ -1926,7 +1971,10 @@ fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
         )
     })?;
 
-    let _ = prepare_log_artifacts(services)?;
+    let mut bundle_notes = Vec::new();
+    if let Err(error) = prepare_log_artifacts(services) {
+        bundle_notes.push(format!("Could not prepare live log artifacts: {error}"));
+    }
     let bundle_logs = destination.join("logs");
     fs::create_dir_all(&bundle_logs).map_err(|error| {
         format!(
@@ -1937,19 +1985,30 @@ fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
     for service in services {
         let source = service_log_path(service);
         if source.is_file() {
-            let file_name = source
-                .file_name()
-                .ok_or_else(|| format!("Could not name service log {}", source.display()))?;
-            fs::copy(&source, bundle_logs.join(file_name)).map_err(|error| {
-                format!(
-                    "Could not copy service log {} into support bundle: {error}",
-                    source.display()
-                )
-            })?;
+            match source.file_name() {
+                Some(file_name) => {
+                    if let Err(error) = fs::copy(&source, bundle_logs.join(file_name)) {
+                        bundle_notes.push(format!(
+                            "Could not copy service log {} into support bundle: {error}",
+                            source.display()
+                        ));
+                    }
+                }
+                None => {
+                    bundle_notes.push(format!("Could not name service log {}", source.display()))
+                }
+            }
         }
     }
 
-    let health = runtime_health()?;
+    let health = match runtime_health() {
+        Ok(health) => serde_json::to_value(health)
+            .map_err(|error| format!("Could not serialize health summary: {error}"))?,
+        Err(error) => {
+            bundle_notes.push(format!("Could not collect runtime health: {error}"));
+            serde_json::json!({ "error": error })
+        }
+    };
     fs::write(
         destination.join("health-summary.json"),
         format!(
@@ -1960,11 +2019,19 @@ fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
     )
     .map_err(|error| format!("Could not write support bundle health summary: {error}"))?;
 
+    let runtime_state = match read_state() {
+        Ok(state) => serde_json::to_value(state)
+            .map_err(|error| format!("Could not serialize runtime state: {error}"))?,
+        Err(error) => {
+            bundle_notes.push(format!("Could not collect runtime state: {error}"));
+            serde_json::json!({ "error": error })
+        }
+    };
     fs::write(
         destination.join("runtime-state.json"),
         format!(
             "{}\n",
-            serde_json::to_string_pretty(&read_state()?)
+            serde_json::to_string_pretty(&runtime_state)
                 .map_err(|error| format!("Could not serialize runtime state: {error}"))?
         ),
     )
@@ -1982,8 +2049,15 @@ fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
     );
     fs::write(destination.join("README.txt"), readme)
         .map_err(|error| format!("Could not write support bundle README: {error}"))?;
+    if !bundle_notes.is_empty() {
+        fs::write(
+            destination.join("collection-notes.txt"),
+            format!("{}\n", bundle_notes.join("\n")),
+        )
+        .map_err(|error| format!("Could not write support bundle collection notes: {error}"))?;
+    }
 
-    let files = collect_backup_files(&destination)?;
+    let (files, skipped_files) = collect_backup_files_with_skips(&destination)?;
     let manifest = SupportBundleManifest {
         schema_version: 1,
         kind: "support-bundle".to_string(),
@@ -1994,6 +2068,7 @@ fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
         selected_services: services.iter().map(|service| service.id.clone()).collect(),
         file_count: files.len(),
         files,
+        skipped_files,
     };
     fs::write(
         destination.join("support-manifest.json"),
