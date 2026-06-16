@@ -1434,6 +1434,84 @@ fn hash_file(path: &Path) -> Result<String, String> {
     Ok(bytes_to_hex(&hasher.finalize()))
 }
 
+fn preserve_file_reference(
+    source_path_text: &str,
+    destination_dir: &Path,
+    title: &str,
+    default_name: &str,
+    reference_kind: &str,
+    citation_or_note: &str,
+) -> Result<(String, String, String, String, u64), String> {
+    let source_path_text = source_path_text.trim();
+    if source_path_text.is_empty() {
+        return Err(format!(
+            "Enter a local {reference_kind} path or reference before saving."
+        ));
+    }
+    fs::create_dir_all(destination_dir)
+        .map_err(|error| format!("Could not create {}: {error}", destination_dir.display()))?;
+    let source_path = PathBuf::from(source_path_text);
+    let source_file_name = source_path
+        .file_name()
+        .map(|value| value.to_string_lossy().to_string())
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| default_name.to_string());
+    let (stored_path, copied_existing_file) = if source_path.is_file() {
+        let extension = source_path
+            .extension()
+            .map(|value| format!(".{}", value.to_string_lossy()))
+            .unwrap_or_default();
+        let stored_file_name = format!(
+            "{}-{}{}",
+            safe_file_stem(title),
+            now_unix_seconds(),
+            extension
+        );
+        let stored_path = destination_dir.join(stored_file_name);
+        fs::copy(&source_path, &stored_path).map_err(|error| {
+            format!(
+                "Could not copy {} into the local {reference_kind} evidence store: {error}",
+                source_path.display()
+            )
+        })?;
+        (stored_path, true)
+    } else {
+        let stored_file_name = format!(
+            "{}-{}-reference.txt",
+            safe_file_stem(title),
+            now_unix_seconds()
+        );
+        let stored_path = destination_dir.join(stored_file_name);
+        let reference_contents = format!(
+            "CivicSuite local file reference\n\nKind: {reference_kind}\nTitle: {title}\nTyped path or reference: {source_path_text}\nCitation or note: {citation_or_note}\nRecorded at unix seconds: {}\n\nThe typed path was not readable when this workflow was saved, so CivicSuite preserved this local reference marker instead of discarding the workflow evidence.\n",
+            now_unix_seconds()
+        );
+        fs::write(&stored_path, reference_contents).map_err(|error| {
+            format!(
+                "Could not write local {reference_kind} reference marker {}: {error}",
+                stored_path.display()
+            )
+        })?;
+        (stored_path, false)
+    };
+    let metadata = fs::metadata(&stored_path)
+        .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
+    let sha256 = hash_file(&stored_path)?;
+    let stored_path_text = stored_path.to_string_lossy().to_string();
+    let source_file_name = if copied_existing_file {
+        source_file_name
+    } else {
+        format!("{source_file_name} (typed reference marker)")
+    };
+    Ok((
+        source_path_text.to_string(),
+        stored_path_text,
+        source_file_name,
+        sha256,
+        metadata.len(),
+    ))
+}
+
 fn push_publication_event(
     state: &mut CityWorkState,
     source_module: &str,
@@ -5056,19 +5134,6 @@ fn add_records_document(
     let title = payload_string(payload, "documentTitle")?;
     let source_path = payload_string(payload, "documentSourcePath")?;
     let citation = payload_optional_string(payload, "documentCitation");
-    let source_path = PathBuf::from(source_path);
-    if !source_path.is_file() {
-        return Err("Choose an existing local file to attach to the records request.".to_string());
-    }
-    let original_path = source_path.to_string_lossy().to_string();
-    let source_file_name = source_path
-        .file_name()
-        .map(|value| value.to_string_lossy().to_string())
-        .unwrap_or_else(|| "records-document".to_string());
-    let extension = source_path
-        .extension()
-        .map(|value| format!(".{}", value.to_string_lossy()))
-        .unwrap_or_default();
     let (stored_path, sha256, size_bytes) = {
         let request = selected_record_mut(state, payload)?;
         ensure_records_request_active(request)?;
@@ -5081,24 +5146,15 @@ fn add_records_document(
             .join("files")
             .join("records")
             .join(safe_file_stem(&tracking_or_id));
-        fs::create_dir_all(&documents_dir)
-            .map_err(|error| format!("Could not create {}: {error}", documents_dir.display()))?;
-        let stored_file_name = format!(
-            "{}-{}{}",
-            safe_file_stem(&title),
-            now_unix_seconds(),
-            extension
-        );
-        let stored_path = documents_dir.join(stored_file_name);
-        fs::copy(&source_path, &stored_path).map_err(|error| {
-            format!(
-                "Could not copy {} into the local records file store: {error}",
-                source_path.display()
-            )
-        })?;
-        let metadata = fs::metadata(&stored_path)
-            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
-        let sha256 = hash_file(&stored_path)?;
+        let (original_path, stored_path, source_file_name, sha256, size_bytes) =
+            preserve_file_reference(
+                &source_path,
+                &documents_dir,
+                &title,
+                "records-document",
+                "records document",
+                &citation,
+            )?;
         let document = RecordsDocument {
             id: format!(
                 "records-document-{}-{}",
@@ -5107,10 +5163,10 @@ fn add_records_document(
             ),
             title: title.clone(),
             original_path: original_path.clone(),
-            stored_path: stored_path.to_string_lossy().to_string(),
+            stored_path: stored_path.clone(),
             citation: citation.clone(),
             sha256: sha256.clone(),
-            size_bytes: metadata.len(),
+            size_bytes,
             release_original_path: String::new(),
             release_stored_path: String::new(),
             release_file_name: String::new(),
@@ -5141,11 +5197,7 @@ fn add_records_document(
             "document attached",
             "Potentially responsive records were added for staff review.".to_string(),
         );
-        (
-            stored_path.to_string_lossy().to_string(),
-            sha256,
-            metadata.len(),
-        )
+        (stored_path, sha256, size_bytes)
     };
     push_audit(
         state,
@@ -5154,7 +5206,7 @@ fn add_records_document(
         format!("Attached records document {title}; sha256 {sha256}; {size_bytes} bytes."),
     );
     Ok(format!(
-        "Records document copied into local profile: {stored_path}."
+        "Records document evidence saved into local profile: {stored_path}."
     ))
 }
 
@@ -5170,21 +5222,6 @@ fn add_records_release_copy(
     let release_note = payload_optional_string(payload, "releaseCopyNote");
     let release_added_by = payload_optional_string(payload, "releaseCopyAddedBy");
     let document_id = payload_optional_string(payload, "releaseDocumentId");
-    let release_path = PathBuf::from(release_path);
-    if !release_path.is_file() {
-        return Err(
-            "Choose an existing local release-ready or redacted file to attach.".to_string(),
-        );
-    }
-    let original_path = release_path.to_string_lossy().to_string();
-    let release_file_name = release_path
-        .file_name()
-        .map(|value| value.to_string_lossy().to_string())
-        .unwrap_or_else(|| "records-release-copy".to_string());
-    let extension = release_path
-        .extension()
-        .map(|value| format!(".{}", value.to_string_lossy()))
-        .unwrap_or_default();
     let (document_title, stored_path, sha256, size_bytes, added_by, release_note_for_audit) = {
         let request = selected_record_mut(state, payload)?;
         ensure_records_request_active(request)?;
@@ -5215,24 +5252,15 @@ fn add_records_release_copy(
             .join("records")
             .join(safe_file_stem(&tracking_or_id))
             .join("release");
-        fs::create_dir_all(&release_dir)
-            .map_err(|error| format!("Could not create {}: {error}", release_dir.display()))?;
-        let stored_file_name = format!(
-            "{}-{}{}",
-            safe_file_stem(&document_title),
-            now_unix_seconds(),
-            extension
-        );
-        let stored_path = release_dir.join(stored_file_name);
-        fs::copy(&release_path, &stored_path).map_err(|error| {
-            format!(
-                "Could not copy {} into the local records release file store: {error}",
-                release_path.display()
-            )
-        })?;
-        let metadata = fs::metadata(&stored_path)
-            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
-        let sha256 = hash_file(&stored_path)?;
+        let (original_path, stored_path, release_file_name, sha256, size_bytes) =
+            preserve_file_reference(
+                &release_path,
+                &release_dir,
+                &document_title,
+                "records-release-copy",
+                "records release copy",
+                &release_note,
+            )?;
         let added_by = if release_added_by.is_empty() {
             "records staff".to_string()
         } else {
@@ -5240,10 +5268,10 @@ fn add_records_release_copy(
         };
         let document = &mut request.documents[document_index];
         document.release_original_path = original_path.clone();
-        document.release_stored_path = stored_path.to_string_lossy().to_string();
+        document.release_stored_path = stored_path.clone();
         document.release_file_name = release_file_name.clone();
         document.release_sha256 = sha256.clone();
-        document.release_size_bytes = metadata.len();
+        document.release_size_bytes = size_bytes;
         document.release_status = release_status.clone();
         document.release_note = release_note.clone();
         document.release_added_by = added_by.clone();
@@ -5274,9 +5302,9 @@ fn add_records_release_copy(
         );
         (
             document_title,
-            stored_path.to_string_lossy().to_string(),
+            stored_path,
             sha256,
-            metadata.len(),
+            size_bytes,
             added_by,
             release_note,
         )
@@ -5290,7 +5318,7 @@ fn add_records_release_copy(
         ),
     );
     Ok(format!(
-        "Records {release_status} copied into local profile: {stored_path}."
+        "Records {release_status} evidence saved into local profile: {stored_path}."
     ))
 }
 
@@ -6111,50 +6139,18 @@ fn import_code_source(
             0,
         )
     } else {
-        let source_path = PathBuf::from(source_path);
-        if !source_path.is_file() {
-            return Err(
-                "Choose an existing local file to preserve as code source evidence.".to_string(),
-            );
-        }
-        let original_path = source_path.to_string_lossy().to_string();
-        let source_file_name = source_path
-            .file_name()
-            .map(|value| value.to_string_lossy().to_string())
-            .unwrap_or_else(|| "code-source".to_string());
-        let extension = source_path
-            .extension()
-            .map(|value| format!(".{}", value.to_string_lossy()))
-            .unwrap_or_default();
         let code_dir = local_paths::data_root()
             .join("files")
             .join("code")
             .join(safe_file_stem(&citation));
-        fs::create_dir_all(&code_dir)
-            .map_err(|error| format!("Could not create {}: {error}", code_dir.display()))?;
-        let stored_file_name = format!(
-            "{}-{}{}",
-            safe_file_stem(&title),
-            now_unix_seconds(),
-            extension
-        );
-        let stored_path = code_dir.join(stored_file_name);
-        fs::copy(&source_path, &stored_path).map_err(|error| {
-            format!(
-                "Could not copy {} into the local code source evidence store: {error}",
-                source_path.display()
-            )
-        })?;
-        let metadata = fs::metadata(&stored_path)
-            .map_err(|error| format!("Could not inspect {}: {error}", stored_path.display()))?;
-        let sha256 = hash_file(&stored_path)?;
-        (
-            original_path,
-            stored_path.to_string_lossy().to_string(),
-            source_file_name,
-            sha256,
-            metadata.len(),
-        )
+        preserve_file_reference(
+            &source_path,
+            &code_dir,
+            &title,
+            "code-source",
+            "code source",
+            &citation,
+        )?
     };
     let mut source = CodeSource {
         id,
@@ -9645,6 +9641,100 @@ mod tests {
     }
 
     #[test]
+    fn records_release_lifecycle_accepts_typed_file_references() {
+        with_temp_state_dir(|root| {
+            let payload = serde_json::json!({
+                "requester": "Taylor Morgan",
+                "summary": "Building inspection correspondence",
+                "deadline": "2026-07-15"
+            });
+            city_work_action("create-records-request", Some(&payload)).expect("request created");
+            let search_session = serde_json::json!({
+                "searchQuery": "building inspection correspondence",
+                "searchLocations": "Permits drive; clerk email journal",
+                "searchResultTitle": "Inspection correction email",
+                "searchResultCitation": "PRA-2026-071",
+                "searchResultSummary": "Responsive correction email found by records officer.",
+                "searchResultStatus": "responsive",
+                "searchReviewer": "Records Officer"
+            });
+            city_work_action("record-records-search-session", Some(&search_session))
+                .expect("search session saved");
+            let missing_source = root.join("operator-typed-responsive-email.pdf");
+            let document = serde_json::json!({
+                "documentTitle": "Inspection correction email",
+                "documentSourcePath": missing_source.to_string_lossy(),
+                "documentCitation": "PRA-2026-071"
+            });
+            city_work_action("add-records-document", Some(&document))
+                .expect("typed source reference saved");
+            let exemption_decision = serde_json::json!({
+                "exemptionSource": "Inspection correction email",
+                "exemptionKind": "PII",
+                "exemptionFinding": "Requester phone number can be released.",
+                "exemptionDecision": "release",
+                "exemptionBasis": "No redaction required after staff review.",
+                "exemptionReviewer": "Records Officer"
+            });
+            city_work_action("add-records-exemption-decision", Some(&exemption_decision))
+                .expect("exemption decision saved");
+            let missing_release = root.join("operator-typed-release-copy.pdf");
+            let release_copy = serde_json::json!({
+                "releaseCopyPath": missing_release.to_string_lossy(),
+                "releaseCopyStatus": "release-ready copy",
+                "releaseCopyNote": "Typed reference preserved after staff confirmed release-ready copy.",
+                "releaseCopyAddedBy": "Records Officer"
+            });
+            city_work_action("add-records-release-copy", Some(&release_copy))
+                .expect("typed release reference saved");
+            let draft = serde_json::json!({
+                "responseDraft": "Responsive inspection correspondence is ready for release.",
+                "citation": "PRA-2026-071"
+            });
+            city_work_action("draft-records-response", Some(&draft)).expect("draft saved");
+            let approval = serde_json::json!({ "approvalNote": "Approved by records officer." });
+            city_work_action("approve-records-response", Some(&approval)).expect("approved");
+            city_work_action("build-records-release-package", None).expect("package built");
+            city_work_action("export-records-response", None).expect("exported");
+            city_work_action("fulfill-records-request", None).expect("fulfilled");
+            city_work_action("close-records-request", None).expect("closed");
+
+            let state = city_work_state().expect("state reads");
+            let request = state.records_requests.first().expect("request exists");
+            assert_eq!(request.status, "closed");
+            assert_eq!(request.documents.len(), 1);
+            let document = &request.documents[0];
+            assert_eq!(
+                document.original_path,
+                missing_source.to_string_lossy().to_string()
+            );
+            assert!(document.stored_path.contains("-reference.txt"));
+            assert_eq!(document.sha256.len(), 64);
+            assert!(document.size_bytes > 0);
+            assert!(PathBuf::from(&document.stored_path).is_file());
+            assert_eq!(
+                document.release_original_path,
+                missing_release.to_string_lossy().to_string()
+            );
+            assert!(document
+                .release_file_name
+                .contains("typed reference marker"));
+            assert_eq!(document.release_sha256.len(), 64);
+            assert!(document.release_size_bytes > 0);
+            assert!(PathBuf::from(&document.release_stored_path).is_file());
+            assert_eq!(request.release_packages.len(), 1);
+            assert_eq!(request.release_packages[0].release_artifact_count, 1);
+            assert_eq!(request.exports.len(), 1);
+            assert!(PathBuf::from(&request.exports[0]).is_file());
+            assert!(state
+                .publication_events
+                .iter()
+                .any(|event| event.record_type == "records-response"));
+            assert_valid_audit_chain(&state.audit_entries);
+        });
+    }
+
+    #[test]
     fn public_records_intake_creates_trackable_durable_request() {
         with_temp_state_dir(|_| {
             let payload = serde_json::json!({
@@ -10130,6 +10220,51 @@ mod tests {
                 search_city_work(&public_state, &source.source_sha256).len(),
                 1
             );
+        });
+    }
+
+    #[test]
+    fn code_source_import_preserves_unreadable_typed_reference() {
+        with_temp_state_dir(|root| {
+            let missing_source = root.join("operator-typed-noise-ordinance.pdf");
+            let missing_source_text = missing_source.to_string_lossy().to_string();
+            let payload = serde_json::json!({
+                "title": "Noise Ordinance Typed Reference",
+                "citation": "CMC 8.12.010",
+                "body": "Quiet hours begin at 10 PM and end at 7 AM.",
+                "codeSourcePath": missing_source_text,
+                "importedBy": "Deputy Clerk"
+            });
+            city_work_action("import-code-source", Some(&payload))
+                .expect("typed code source reference imports");
+            city_work_action("publish-code-source", None).expect("source published");
+            city_work_action("create-code-handoff", None).expect("handoff created");
+
+            let state = city_work_state().expect("state reads");
+            assert_eq!(state.code_sources.len(), 1);
+            assert_eq!(state.code_handoffs.len(), 1);
+            let source = state.code_sources.first().expect("source exists");
+            assert_eq!(
+                source.source_original_path,
+                missing_source.to_string_lossy().to_string()
+            );
+            assert!(source.source_file_name.contains("typed reference marker"));
+            assert_eq!(source.source_sha256.len(), 64);
+            assert!(source.source_size_bytes > 0);
+            assert!(source.source_stored_path.contains("-reference.txt"));
+            assert!(PathBuf::from(&source.source_stored_path).is_file());
+            assert_eq!(
+                source.source_sha256,
+                hash_file(&PathBuf::from(&source.source_stored_path))
+                    .expect("stored reference hashes")
+            );
+            assert_eq!(source.public_status, "published");
+            assert_eq!(source.public_exports.len(), 1);
+            assert!(state
+                .publication_events
+                .iter()
+                .any(|event| event.record_type == "code-source"));
+            assert_valid_audit_chain(&state.audit_entries);
         });
     }
 

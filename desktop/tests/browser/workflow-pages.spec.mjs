@@ -408,7 +408,7 @@ test("risky city workflow actions require guided review before mutation", async 
 
   await page.getByRole("button", { name: "Attach Release Copy" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Attaching Release Copy" })).toBeVisible();
-  await expect(page.getByText("Release copy file path is required.")).toBeVisible();
+  await expect(page.getByText("Release copy file path or typed reference is required.")).toBeVisible();
   await expect(page.getByText("Release copy status is required.")).toHaveCount(0);
   await expect(page.getByText("The desktop app will require an attached request document before saving.")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
@@ -418,7 +418,7 @@ test("risky city workflow actions require guided review before mutation", async 
   await expect(page.getByRole("heading", { name: "Review Before Importing Code Source" })).toBeVisible();
   await expect(page.getByText("Citation is required.")).toBeVisible();
   await expect(page.getByText("Source text is required for search, questions, and publication.")).toBeVisible();
-  await expect(page.getByText("Optional source file path has not been entered.")).toBeVisible();
+  await expect(page.getByText("Optional source file path or typed reference has not been entered.")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Publish Source", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Review Before Publishing Code Source" })).toBeVisible();

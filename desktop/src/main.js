@@ -2170,16 +2170,16 @@ function guidedReviewForAction(action) {
       module: "CivicRecords AI",
       subject: recordsDocument ? recordsDocument.title : "Current request document",
       status: recordsDocument ? recordsDocument.status : "No request document selected yet.",
-      changes: "Copies the release-ready or redacted file into the CivicSuite local profile and records filename, size, SHA-256 hash, reviewer, and note.",
+      changes: "Preserves release-ready or redacted evidence in the CivicSuite local profile. Readable files are copied and hashed; unreadable typed references are saved as local marker files with their own SHA-256 hash.",
       visibility: "Staff can see local release evidence. Requester/public status never exposes local workstation paths.",
       sources: [
         recordsDocument ? `Original document hash: ${recordsDocument.sha256 || "not recorded"}` : "The desktop app will require an attached request document before saving.",
-        detailOrFallback(state.workDraft.releaseCopyPath, "Release copy file path is required."),
+        detailOrFallback(state.workDraft.releaseCopyPath, "Release copy file path or typed reference is required."),
         detailOrFallback(state.workDraft.releaseCopyStatus, "Release copy status is required."),
         detailOrFallback(state.workDraft.releaseCopyNote, "Release note is optional but recommended.")
       ],
       audit: "Creates a CivicRecords AI audit and request timeline entries for the release/redaction artifact.",
-      retry: "If the selected document or release file path is invalid, the desktop app stops before changing the request."
+      retry: "If no document is selected or the release status is invalid, the desktop app stops before changing the request. A typed but unreadable release file reference is preserved as a hashed local marker."
     },
     "record-records-search-session": {
       title: "Review Before Saving Search Session",
@@ -2339,15 +2339,15 @@ function guidedReviewForAction(action) {
       module: "CivicCode",
       subject: detailOrFallback(state.workDraft.codeTitle, "New municipal code source"),
       status: "Not saved yet.",
-      changes: "Creates a durable local code source with citation text and, if provided, copies the source file into the CivicSuite local profile with a SHA-256 hash.",
+      changes: "Creates a durable local code source with citation text. If the typed source path is readable, CivicSuite copies and hashes it; if it is not readable, CivicSuite saves a local reference marker file with its own SHA-256 hash.",
       visibility: "Staff can see local source evidence. Resident/Public views only see published code sources and never see clerk workstation paths.",
       sources: [
         detailOrFallback(state.workDraft.codeCitation, "Citation is required."),
         detailOrFallback(state.workDraft.codeBody, "Source text is required for search, questions, and publication."),
-        detailOrFallback(state.workDraft.codeSourcePath, "Optional source file path has not been entered.")
+        detailOrFallback(state.workDraft.codeSourcePath, "Optional source file path or typed reference has not been entered.")
       ],
       audit: "Creates a CivicCode audit entry recording the local import and any preserved source-file evidence.",
-      retry: "If title, citation, source text, or the optional file path is invalid, the desktop app stops before saving."
+      retry: "If title, citation, or source text is missing, the desktop app stops before saving. A typed but unreadable file reference is preserved as a hashed local marker."
     },
     "approve-code-guidance": {
       title: "Review Before Approving Code Guidance",
@@ -3464,9 +3464,9 @@ function renderRecordsWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Request Documents</h3>
-        <p class="form-help">Attach a local source file to this request. The desktop app copies it into the city profile and records a SHA-256 hash.</p>
+        <p class="form-help">Attach a local source file or typed records reference. Readable files are copied and hashed; unreadable typed references are preserved as hashed local marker files.</p>
         <label>Document title <input type="text" data-work-field="documentTitle" value="${state.workDraft.documentTitle}" /></label>
-        ${renderFilePathField("Source file path", "documentSourcePath", state.workDraft.documentSourcePath, "C:/City/Records/responsive-email.pdf")}
+        ${renderFilePathField("Source file path or reference", "documentSourcePath", state.workDraft.documentSourcePath, "C:/City/Records/responsive-email.pdf")}
         <label>Document citation <input type="text" data-work-field="documentCitation" value="${state.workDraft.documentCitation}" /></label>
         <button type="button" class="secondary-action" data-work-action="add-records-document">Attach Document</button>
         <label>Release document
@@ -3474,7 +3474,7 @@ function renderRecordsWorkflow() {
             ${(selectedRequest.documents || []).map((document) => `<option value="${document.id}" ${selectedReleaseDocumentId === document.id ? "selected" : ""}>${escapeHtml(document.title)}</option>`).join("")}
           </select>` : `<input type="text" aria-label="Release document" value="Attach an original document first" disabled />`}
         </label>
-        ${renderFilePathField("Release copy file path", "releaseCopyPath", state.workDraft.releaseCopyPath, "C:/City/Records/release/redacted-email.pdf")}
+        ${renderFilePathField("Release copy file path or reference", "releaseCopyPath", state.workDraft.releaseCopyPath, "C:/City/Records/release/redacted-email.pdf")}
         <label>Release copy status
           <select aria-label="Release copy status" data-work-field="releaseCopyStatus">
             ${["redacted copy", "release-ready copy"].map((status) => `<option value="${status}" ${state.workDraft.releaseCopyStatus === status ? "selected" : ""}>${status}</option>`).join("")}
@@ -3602,7 +3602,7 @@ function renderCodeWorkflow() {
         <h3>Import Code Source</h3>
         <label>Source title <input type="text" data-work-field="codeTitle" value="${state.workDraft.codeTitle}" /></label>
         <label>Citation <input type="text" data-work-field="codeCitation" value="${state.workDraft.codeCitation}" /></label>
-        ${renderFilePathField("Source file path", "codeSourcePath", state.workDraft.codeSourcePath, "C:/City/Code/noise-ordinance.pdf")}
+        ${renderFilePathField("Source file path or reference", "codeSourcePath", state.workDraft.codeSourcePath, "C:/City/Code/noise-ordinance.pdf")}
         <label>Imported by <input type="text" data-work-field="codeImportedBy" value="${state.workDraft.codeImportedBy}" placeholder="City Clerk or deputy clerk" /></label>
         <label>Source text <textarea data-work-field="codeBody">${state.workDraft.codeBody}</textarea></label>
         <div class="workflow-actions">

@@ -741,6 +741,14 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
     let contains_config = config.exists();
     copy_path_recursive(&data, &destination.join("Data"))?;
     copy_path_recursive(&config, &destination.join("config"))?;
+    fs::write(
+        destination.join("README.txt"),
+        format!(
+            "CivicSuite Backup\n\nThis folder is a local CivicSuite backup created before a lifecycle action or by Backup Now.\nRestore verification starts from backup-manifest.json in this folder.\n\nBackup folder:\n{}\nCreated at unix seconds: {created}\n",
+            destination.display()
+        ),
+    )
+    .map_err(|error| format!("Could not write backup README: {error}"))?;
     let files = collect_backup_files(&destination)?;
 
     let manifest = BackupManifest {
@@ -2004,7 +2012,11 @@ fn support_bundle_action(
     services: &[&ServiceDefinition],
 ) -> Result<SupervisorActionResult, String> {
     let bundle = create_support_bundle(services)?;
-    crate::local_shell::open_local_folder(&bundle)?;
+    let open_result = crate::local_shell::open_local_folder(&bundle);
+    let open_note = open_result
+        .err()
+        .map(|error| format!(" Folder open was skipped or blocked: {error}"))
+        .unwrap_or_default();
     Ok(SupervisorActionResult {
         accepted: true,
         action: "support-bundle".to_string(),
@@ -2015,10 +2027,14 @@ fn support_bundle_action(
         },
         status: "Support bundle ready",
         message: format!(
-            "Created and opened a CivicSuite support bundle with health, runtime-state, and selected service logs: {}.",
-            bundle.display()
+            "Created a CivicSuite support bundle with health, runtime-state, selected service logs, and support-manifest.json at {}.{}",
+            bundle.display(),
+            open_note
         ),
-        next_action: "Share README.txt and support-manifest.json only with trusted CivicSuite support or city IT."
+        next_action: format!(
+            "Verify {} exists, then share README.txt and support-manifest.json only with trusted CivicSuite support or city IT.",
+            bundle.join("support-manifest.json").display()
+        )
             .to_string(),
     })
 }
@@ -2135,10 +2151,14 @@ fn backup_action() -> Result<SupervisorActionResult, String> {
         service_id: None,
         status: "Backup complete",
         message: format!(
-            "CivicSuite local data and configuration were backed up to {}.",
-            destination.display()
+            "CivicSuite local data and configuration were backed up to {}; manifest: {}.",
+            destination.display(),
+            destination.join("backup-manifest.json").display()
         ),
-        next_action: "Keep this backup folder available for restore or reinstall recovery."
+        next_action: format!(
+            "Verify {} exists, then keep this backup folder available for restore or reinstall recovery.",
+            destination.join("backup-manifest.json").display()
+        )
             .to_string(),
     })
 }
@@ -2861,10 +2881,14 @@ mod tests {
                 .join("packet.md")
                 .is_file());
             assert!(backup.join("config").join("city.json").is_file());
+            assert!(backup.join("README.txt").is_file());
             assert!(backup.join("backup-manifest.json").is_file());
+            let backup_readme = fs::read_to_string(backup.join("README.txt")).expect("readme");
+            assert!(backup_readme.contains("backup-manifest.json"));
             let manifest =
                 verified_backup_manifest(&backup).expect("backup hash manifest verifies");
             assert_eq!(manifest.file_count, manifest.files.len());
+            assert!(manifest.files.iter().any(|file| file.path == "README.txt"));
             assert!(manifest.files.iter().any(|file| {
                 file.path == "Data/files/record.txt"
                     && file.size_bytes == "agenda".len() as u64
