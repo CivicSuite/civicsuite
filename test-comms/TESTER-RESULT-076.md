@@ -1,0 +1,67 @@
+# Tester Result 076 - Bundled Ollama runtime start and city-core gate
+
+- Final verdict: FAIL - the corrected artifact still does not make the local Ollama runtime reachable from the installed app. `Load in Ollama` left System Health at `Needs runtime` and `http://127.0.0.1:15434/api/tags` remained unreachable.
+- Tested branch and commit for repo channel: `stage-3a-baremetal-windows` at `664182e96cb935e3b53ff67bc299d1f51fe2c4bc`.
+- Required continuity read: `test-comms/TESTER-RESULT-075.md`, `test-comms/TESTER-DIRECTIVE-075.md`, and `test-comms/TESTER-DIRECTIVE-067.md` were read before this run.
+- Communication contract followed: all builder/tester communication for this gate used repository `CivicSuite/civicsuite`, branch `stage-3a-baremetal-windows`, folder `test-comms`. No old bridge folder, local-only bridge folder, OneDrive path, Microsoft cloud-sync path, alternate branch, or chat-only result path was used. The live remote was fetched before acting.
+- PR #192 head SHA tested: `53f8f0e31e11e4a64109c4b1080ff0c458b2f55c`.
+- Corrected public prerelease URLs used:
+  - Public prerelease page: `https://github.com/CivicSuite/civicsuite/releases/tag/windows-local-msi-ci-53f8f0e`
+  - MSI: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-53f8f0e/CivicSuite_0.1.0_x64_en-US.msi`
+  - Evidence: `https://github.com/CivicSuite/civicsuite/releases/download/windows-local-msi-ci-53f8f0e/CivicSuite-msi-evidence.txt`
+- MSI and evidence SHA-256 verification:
+  - MSI bytes: `1639804151`; SHA-256: `7ae0385a04d2e81b4ef6903647f4b5e27742125cc9bd62b3f068657475fe1e84`; matches directive.
+  - Evidence bytes: `548`; SHA-256: `4c56a197f4dbd007ad5728634eb7912c6a333b141c46a328c368dcfb0ca2c1b6`; matches directive.
+  - Evidence text recorded `GeneratedAtUtc=2026-06-16T06:29:11.3954776Z`, `RuntimePayload=desktop/runtime/payload`, `NoDockerPrerequisite=true`, and `NoWslPrerequisite=true`.
+  - Evidence: `directive076-evidence/artifact-verification.json`.
+- Cleanroom-equivalent wipe/uninstall evidence:
+  - Stopped reachable `civicsuite-desktop.exe` and `ollama.exe` processes before install.
+  - Removed prior CivicSuite install `{D76CA8B3-37FB-49E0-99E9-C6FFF7D8903D}` using elevated Windows Installer path.
+  - Removed reachable tester-user state under `C:\Users\insty\AppData\Local\CivicSuite`, `C:\Users\insty\AppData\Local\org.civicsuite.desktop`, `C:\Program Files\CivicSuite`, and `C:\Users\insty\Documents\CivicSuite Backups` where present.
+  - Evidence: `directive076-evidence/cleanroom-wipe.json` and `directive076-evidence/uninstall-D76CA8B3-37FB-49E0-99E9-C6FFF7D8903D.log`.
+- Corrected MSI install evidence:
+  - Install path used: elevated Windows Installer path, `Start-Process msiexec.exe -Verb RunAs -WindowStyle Hidden /i <corrected MSI> /qn /norestart`.
+  - Windows Installer log reported `Installation completed successfully`, `Installation success or error status: 0`, and `MainEngineThread is returning 0`.
+  - Installed executable existed at `C:\Program Files\CivicSuite\civicsuite-desktop.exe`.
+  - Evidence: `directive076-evidence/install-53f8f0e.log`.
+- Normal app launch evidence:
+  - Launched `C:\Program Files\CivicSuite\civicsuite-desktop.exe` as the normal interactive user, not elevated.
+  - App process title was `CivicSuite`, process was responding, and WebView2 CDP was reachable on `http://127.0.0.1:9223`.
+- UI focus/input stability evidence:
+  - Used WebView2 CDP against the normal CivicSuite process instead of blind coordinate clicks.
+  - Setup and model actions were verified with DOM snapshots, screenshots, persisted JSON state, process state, and runtime endpoint probes.
+  - Evidence: `directive076-evidence/setup-and-signin-log.json`, `directive076-evidence/admin-fix-log.json`, `directive076-evidence/admin-ready-download-click-log.json`, and `directive076-evidence/verify-load-actions.json`.
+- Corrected first-run order result: PASS. The app advanced through unsigned beta, SmartScreen explanation, locations, module selection, city profile, first admin, backup, and model setup.
+- Pre-admin Home model setup visibility/actionability result: PASS. Before local-admin sign-in, model actions were not usable from Home/setup.
+- Pre-admin System Health model action lock result: PASS. After first admin creation but before local-admin sign-in, System Health routed to local access/sign-in and did not expose usable model actions. In an earlier pre-admin state, visible model controls were disabled and showed the sign-in/admin requirement. Evidence: `directive076-evidence/admin-fix-pre-signin-health.json` and `directive076-evidence/pre-signin-health.json`.
+- First CivicSuite local-admin creation result: PASS. The first admin `admin@teston.local` was created through the app UI. `first-run-progress.json` recorded `first-admin`, and `first-admin.json` contained the local-admin record.
+- CivicSuite local-admin sign-in result: PASS after controlled relaunch. Sign-in wrote `local-session.json` for `admin@teston.local` with role `local-admin`; the current WebView did not repaint immediately, so I performed one controlled app relaunch. The relaunched app showed `Sign Out` and allowed admin-only model actions.
+- Model setup result after app local-admin sign-in: FAIL for full gate. After selecting the backup folder and clicking Download / Resume, the final GGUF was produced, but the app process was no longer alive when the download monitor finished. After controlled relaunch, checksum verification and registry succeeded, but runtime load failed.
+- Completed model status persistence result: PASS. Final model file existed at `C:\Users\insty\AppData\Local\CivicSuite\Data\models\gemma-4-12b-it-qat-q4_0.gguf`, size `6975877728`, SHA-256 `faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1`; `.part` was absent. `model-download-status.json` advanced to `Needs verification` and then `Verified`. Evidence: `directive076-evidence/model-download-monitor.json` and `directive076-evidence/model-download-final.json`.
+- Verify Checksum app survival result: PASS after controlled relaunch. Clicking `Verify Checksum` did not terminate the relaunched app.
+- Verify Checksum persisted state/registry result: PASS. `model-download-status.json` recorded `Verified`, and `C:\Users\insty\AppData\Local\CivicSuite\config\model-registry.json` contained the verified Gemma registry entry with the expected SHA and local artifact path.
+- Bundled Ollama runtime start result: FAIL. The installed payload contains bundled Ollama at `C:\Program Files\CivicSuite\_up_\runtime\payload\ollama\ollama.exe`, but after clicking `Load in Ollama`, the only observed `ollama.exe` process was `C:\Users\insty\AppData\Local\Programs\Ollama\ollama.exe`; the CivicSuite `15434` health endpoint was still unreachable.
+- `OLLAMA_MODELS`/local model store result: FAIL. The CivicSuite local data model store contained the downloaded GGUF and `.sha256.verified` marker, but the runtime endpoint never became reachable, so I could not verify that a running Ollama process used `OLLAMA_MODELS` pointed at the CivicSuite local model store.
+- Load in Ollama result: FAIL. Clicking `Load in Ollama` left the UI at `Needs runtime`; direct probe to `http://127.0.0.1:15434/api/tags` failed with `Unable to connect to the remote server`.
+- System Health runtime/model readiness result: FAIL. System Health showed:
+  - `Local model runtime`: `Needs start`; `Ollama is not responding at http://127.0.0.1:15434/api/tags: connection timed out`.
+  - `Gemma model loaded in Ollama`: `Needs runtime`; `Start the bundled Ollama runtime before loading the Gemma model`.
+  - `CivicCore model registry`: `Registered`.
+  - Evidence: `directive076-evidence/after-load-076.json`, `directive076-evidence/after-load-076.png`, and `directive076-evidence/runtime-load-state.json`.
+- Module manager result if reached: partially reached through first-run module selection. City Core was selected and first-run advanced.
+- Local Users/RBAC result if reached: not reached beyond first local-admin creation/sign-in because the model runtime gate failed.
+- CivicClerk workflow result if reached: not reached.
+- CivicRecords AI workflow result if reached: not reached.
+- Resident/public records request result if reached: not reached.
+- CivicCode workflow result if reached: not reached.
+- Cross-module search/handoff result if reached: not reached.
+- Close/reopen persistence result if reached: partially reached. First-run progress, admin session, verified model status, and model registry persisted across controlled app relaunch.
+- Backup/restore result if reached: partially reached only for first-run backup-folder setup; full backup/restore was not reached because the model runtime gate failed.
+- Support bundle result if reached: not reached.
+- Repair result if reached: not reached.
+- Uninstall/reinstall/restore result if reached: not reached.
+- Windows reboot/restart confirmation: Windows was not rebooted or restarted for this directive.
+- Exact failure details:
+  - The directive 075 fixes remain good: pre-sign-in model action lock passed, checksum verification survived after relaunch, and verified status/registry were persisted.
+  - The directive 076 targeted runtime fix failed: `Load in Ollama` did not make the bundled local runtime reachable at `http://127.0.0.1:15434/api/tags`, did not advance System Health beyond `Needs runtime`, and did not demonstrate `OLLAMA_MODELS` pointing at the CivicSuite local data model store.
+  - Additional observation: after Download / Resume completed from the signed-in app, the `civicsuite-desktop.exe` process was no longer alive at the end of the download monitor, though the completed model status persisted correctly. A controlled relaunch was required before checksum and runtime-load testing could continue.
