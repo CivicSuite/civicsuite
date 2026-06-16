@@ -1152,6 +1152,13 @@ fn service_environment(service: &ServiceDefinition) -> Result<Vec<(String, Strin
     }
     if service.id == "model-runtime" {
         env.push(("OLLAMA_HOST".to_string(), "127.0.0.1:15434".to_string()));
+        env.push((
+            "OLLAMA_MODELS".to_string(),
+            data.join("models")
+                .join("ollama")
+                .to_string_lossy()
+                .to_string(),
+        ));
     }
     Ok(env)
 }
@@ -1569,6 +1576,10 @@ fn ensure_runtime_dirs(service: &ServiceDefinition) -> Result<(), String> {
         fs::create_dir_all(data_root().join("postgres"))
             .map_err(|error| format!("Could not create local database folder: {error}"))?;
     }
+    if service.id == "model-runtime" {
+        fs::create_dir_all(data_root().join("models").join("ollama"))
+            .map_err(|error| format!("Could not create local model runtime folder: {error}"))?;
+    }
     if let Some(parent) = service_log_path(service).parent() {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
@@ -1695,13 +1706,18 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             .append(true)
             .open(&log_path)
             .map_err(|error| format!("Could not open {}: {error}", log_path.display()))?;
-        let child = Command::new(&binary)
+        let mut command = Command::new(&binary);
+        command
             .args(service_arg_values(service))
             .envs(service_environment(service)?)
             .stdout(Stdio::from(log.try_clone().map_err(|error| {
                 format!("Could not prepare service log: {error}")
             })?))
-            .stderr(Stdio::from(log))
+            .stderr(Stdio::from(log));
+        if let Some(parent) = binary.parent() {
+            command.current_dir(parent);
+        }
+        let child = command
             .spawn()
             .map_err(|error| format!("Could not start {}: {error}", service.label))?;
         update_service_state(&mut state, &service.id, true, Some(child.id()), "start");
@@ -2472,6 +2488,35 @@ mod tests {
             assert!(env.iter().any(|(name, value)| {
                 name == "LLM_MODEL" && value == "civicsuite-gemma4-12b-qat:q4_0"
             }));
+        });
+    }
+
+    #[test]
+    fn model_runtime_environment_uses_local_model_store() {
+        with_temp_state_dir(|root| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let service = manifest
+                .services
+                .iter()
+                .find(|candidate| candidate.id == "model-runtime")
+                .expect("model runtime declared");
+
+            ensure_runtime_dirs(service).expect("runtime dirs created");
+            let env = service_environment(service).expect("service environment builds");
+            let expected_models = root
+                .join("Data")
+                .join("models")
+                .join("ollama")
+                .to_string_lossy()
+                .to_string();
+
+            assert!(root.join("Data").join("models").join("ollama").is_dir());
+            assert!(env
+                .iter()
+                .any(|(name, value)| name == "OLLAMA_HOST" && value == "127.0.0.1:15434"));
+            assert!(env
+                .iter()
+                .any(|(name, value)| name == "OLLAMA_MODELS" && value == &expected_models));
         });
     }
 

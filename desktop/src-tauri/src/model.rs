@@ -6,12 +6,15 @@ use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::local_paths;
 
 const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json");
 const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
+const MODEL_RUNTIME_READY_ATTEMPTS: usize = 80;
+const MODEL_RUNTIME_READY_INTERVAL: Duration = Duration::from_millis(500);
 const REQUIRED_ACTIONS: [&str; 6] = [
     "download",
     "resume-download",
@@ -117,7 +120,7 @@ struct OllamaGenerateResponse {
     response: String,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 struct ModelRuntimeProbe {
     reachable: bool,
     model_available: bool,
@@ -618,6 +621,86 @@ fn probe_model_runtime(manifest: &ModelManifest) -> ModelRuntimeProbe {
     }
 }
 
+#[cfg(test)]
+fn test_runtime_probe_from_env() -> Option<ModelRuntimeProbe> {
+    match env::var("CIVICSUITE_TEST_MODEL_RUNTIME_AFTER_START")
+        .ok()
+        .as_deref()
+    {
+        Some("reachable-empty") => Some(ModelRuntimeProbe {
+            reachable: true,
+            model_available: false,
+            message: "test Ollama runtime is reachable without the pinned model".to_string(),
+        }),
+        Some("reachable-loaded") => Some(ModelRuntimeProbe {
+            reachable: true,
+            model_available: true,
+            message: "test Ollama runtime is reachable with the pinned model".to_string(),
+        }),
+        Some("unreachable") => Some(ModelRuntimeProbe {
+            reachable: false,
+            model_available: false,
+            message: "test Ollama runtime is not reachable".to_string(),
+        }),
+        _ => None,
+    }
+}
+
+fn start_model_runtime_service() -> Result<String, String> {
+    #[cfg(test)]
+    if let Ok(value) = env::var("CIVICSUITE_TEST_MODEL_RUNTIME_START") {
+        return if value == "ok" {
+            Ok("test model runtime start accepted".to_string())
+        } else {
+            Err(value)
+        };
+    }
+
+    let result = crate::supervisor::supervisor_action("start", Some("model-runtime"))?;
+    if result.accepted {
+        Ok(result.message)
+    } else {
+        Err(format!("{} {}", result.message, result.next_action))
+    }
+}
+
+fn wait_for_model_runtime(manifest: &ModelManifest) -> ModelRuntimeProbe {
+    #[cfg(test)]
+    if let Some(probe) = test_runtime_probe_from_env() {
+        return probe;
+    }
+
+    let mut latest = probe_model_runtime(manifest);
+    for _ in 0..MODEL_RUNTIME_READY_ATTEMPTS {
+        if latest.reachable {
+            return latest;
+        }
+        thread::sleep(MODEL_RUNTIME_READY_INTERVAL);
+        latest = probe_model_runtime(manifest);
+    }
+    latest
+}
+
+fn ensure_model_runtime_reachable(manifest: &ModelManifest) -> Result<ModelRuntimeProbe, String> {
+    let runtime = probe_model_runtime(manifest);
+    if runtime.reachable {
+        return Ok(runtime);
+    }
+
+    let start_message = start_model_runtime_service().map_err(|error| {
+        format!("CivicSuite could not start the bundled Ollama runtime. {error}")
+    })?;
+    let runtime = wait_for_model_runtime(manifest);
+    if runtime.reachable {
+        return Ok(runtime);
+    }
+
+    Err(format!(
+        "The local Ollama runtime did not become ready after CivicSuite started it. Last health check: {} Start result: {}",
+        runtime.message, start_message
+    ))
+}
+
 fn sha256_file(local_path: &Path) -> Result<String, String> {
     let mut file = fs::File::open(local_path)
         .map_err(|error| format!("Could not open {}: {error}", local_path.display()))?;
@@ -908,13 +991,7 @@ fn load_model_into_runtime(manifest: &ModelManifest, local_path: &Path) -> Resul
                 .to_string(),
         );
     }
-    let runtime = probe_model_runtime(manifest);
-    if !runtime.reachable {
-        return Err(format!(
-            "The local Ollama runtime is not ready yet. {}",
-            runtime.message
-        ));
-    }
+    let runtime = ensure_model_runtime_reachable(manifest)?;
     if runtime.model_available {
         return Ok(());
     }
@@ -1702,6 +1779,48 @@ mod tests {
                 .checks
                 .iter()
                 .any(|check| check.id == "runtime" && !check.ok));
+        });
+    }
+
+    #[test]
+    fn model_runtime_start_waits_for_bundled_ollama_health() {
+        with_temp_state_dir(|_| {
+            env::set_var("OLLAMA_BASE_URL", "http://127.0.0.1:9");
+            env::set_var("CIVICSUITE_TEST_MODEL_RUNTIME_START", "ok");
+            env::set_var(
+                "CIVICSUITE_TEST_MODEL_RUNTIME_AFTER_START",
+                "reachable-empty",
+            );
+            let manifest = parse_manifest().expect("manifest parses");
+
+            let runtime =
+                ensure_model_runtime_reachable(&manifest).expect("runtime starts in test");
+
+            env::remove_var("OLLAMA_BASE_URL");
+            env::remove_var("CIVICSUITE_TEST_MODEL_RUNTIME_START");
+            env::remove_var("CIVICSUITE_TEST_MODEL_RUNTIME_AFTER_START");
+            assert!(runtime.reachable);
+            assert!(!runtime.model_available);
+            assert!(runtime.message.contains("reachable"));
+        });
+    }
+
+    #[test]
+    fn model_runtime_start_failure_returns_plain_error() {
+        with_temp_state_dir(|_| {
+            env::set_var("OLLAMA_BASE_URL", "http://127.0.0.1:9");
+            env::set_var(
+                "CIVICSUITE_TEST_MODEL_RUNTIME_START",
+                "test runtime start refused",
+            );
+            let manifest = parse_manifest().expect("manifest parses");
+
+            let error = ensure_model_runtime_reachable(&manifest).expect_err("start fails");
+
+            env::remove_var("OLLAMA_BASE_URL");
+            env::remove_var("CIVICSUITE_TEST_MODEL_RUNTIME_START");
+            assert!(error.contains("could not start"));
+            assert!(error.contains("test runtime start refused"));
         });
     }
 
