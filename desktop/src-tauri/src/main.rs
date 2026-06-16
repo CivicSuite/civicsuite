@@ -13,6 +13,7 @@ use model::{ModelActionResult, ModelState};
 use module_registry::{ModuleProfileSummary, ModuleSelectionState, ModuleSummary};
 use serde::Serialize;
 use serde_json::Value;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use supervisor::{RuntimeHealthItem, SupervisorActionResult};
 use workflows::{CityWorkActionResult, CityWorkState};
 
@@ -391,8 +392,7 @@ fn get_model_state() -> Result<ModelState, String> {
     }
 }
 
-#[tauri::command]
-fn model_action(action: String) -> Result<ModelActionResult, String> {
+fn model_action_authorized(action: String) -> Result<ModelActionResult, String> {
     let access = auth::access_state()?;
     if !access_is_local_admin(&access) {
         if !access.configured {
@@ -406,6 +406,16 @@ fn model_action(action: String) -> Result<ModelActionResult, String> {
         );
     }
     model::model_action(&action)
+}
+
+#[tauri::command]
+async fn model_action(action: String) -> Result<ModelActionResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        catch_unwind(AssertUnwindSafe(|| model_action_authorized(action)))
+            .map_err(|_| "Model setup action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health.".to_string())?
+    })
+    .await
+    .map_err(|error| format!("Model setup action could not complete: {error}"))?
 }
 
 #[tauri::command]
@@ -877,7 +887,7 @@ mod tests {
     #[test]
     fn model_actions_require_local_admin_session() {
         with_clean_first_run_state(|_| {
-            let pre_admin_result = model_action("open-model-folder".to_string());
+            let pre_admin_result = model_action_authorized("open-model-folder".to_string());
             assert!(pre_admin_result.is_err());
             assert!(pre_admin_result
                 .err()
@@ -886,7 +896,7 @@ mod tests {
 
             create_first_admin();
 
-            let signed_out_result = model_action("open-model-folder".to_string());
+            let signed_out_result = model_action_authorized("open-model-folder".to_string());
 
             assert!(signed_out_result.is_err());
             assert!(signed_out_result
@@ -895,8 +905,8 @@ mod tests {
                 .contains("Sign in as the local administrator"));
 
             sign_in_as_first_admin();
-            let signed_in_result =
-                model_action("open-model-folder".to_string()).expect("model action allowed");
+            let signed_in_result = model_action_authorized("open-model-folder".to_string())
+                .expect("model action allowed");
             assert!(signed_in_result.accepted);
         });
     }

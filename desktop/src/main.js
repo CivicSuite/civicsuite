@@ -1014,7 +1014,7 @@ function adminOnlyControlLocked() {
 
 function modelSetupControlLocked() {
   const access = accessState();
-  return access.role !== "local-admin";
+  return !access.signed_in || access.role !== "local-admin";
 }
 
 function adminOnlyLockMessage(fallback) {
@@ -5003,6 +5003,17 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
 }
 
 async function handleModelAction(action) {
+  if (modelSetupControlLocked()) {
+    state.modelActionResult = {
+      accepted: false,
+      action,
+      status: "Sign in required",
+      message: modelSetupLockMessage(),
+      next_action: "Sign in as the local administrator before changing local model setup."
+    };
+    render();
+    return;
+  }
   if (!hasTauriBridge()) {
     state.modelActionResult = {
       accepted: false,
