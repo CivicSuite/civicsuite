@@ -574,7 +574,8 @@ const state = {
     userName: "",
     userEmail: "",
     userRole: "city-staff",
-    userPasscode: ""
+    userPasscode: "",
+    lastStaffEmail: ""
   },
   workDraft: {
     meetingBodyId: "",
@@ -751,6 +752,12 @@ function byId(id) {
   return document.getElementById(id);
 }
 
+function scrollGuidedReviewIntoView(kind) {
+  window.requestAnimationFrame(() => {
+    document.querySelector(`[data-guided-review="${kind}"]`)?.scrollIntoView({ block: "start" });
+  });
+}
+
 async function loadAppState() {
   if (!("__TAURI_INTERNALS__" in window)) {
     return;
@@ -785,6 +792,8 @@ function hydrateSetupDraftFromApp() {
   const access = accessState();
   if (access.operator_email) {
     state.accessDraft.email = access.operator_email;
+  } else if (state.accessDraft.lastStaffEmail) {
+    state.accessDraft.email = state.accessDraft.lastStaffEmail;
   } else if (admin?.email) {
     state.accessDraft.email = admin.email;
   }
@@ -2427,7 +2436,7 @@ function renderGuidedWorkReview() {
   const review = guidedReviewForAction(state.pendingWorkReviewAction);
   if (!review) return "";
   return `
-    <section class="guided-review" aria-labelledby="guided-review-title">
+    <section class="guided-review" data-guided-review="work" aria-labelledby="guided-review-title">
       <div>
         <p class="eyebrow">${escapeHtml(review.module)}</p>
         <h3 id="guided-review-title">${escapeHtml(review.title)}</h3>
@@ -2651,6 +2660,7 @@ function renderMeetingsWorkflow() {
       <h2>Meetings & Notices</h2>
       <p>Create meetings, agenda items, notices, minutes, votes, and action records in the local city profile.</p>
     </section>
+    ${renderGuidedWorkReview()}
     <section class="workflow-editor">
       <div class="workflow-form">
         <h3>Meeting Bodies</h3>
@@ -2910,7 +2920,6 @@ function renderMeetingsWorkflow() {
         </div>
       </div>
     </section>
-    ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${work.meetings.length === 0 ? workflowEmpty("No local meetings have been created yet.") : work.meetings.map((meeting) => `
@@ -3382,6 +3391,7 @@ function renderRecordsWorkflow() {
       <h2>Records Requests</h2>
       <p>Track intake, deadline, review draft, citations, exports, and audit evidence locally.</p>
     </section>
+    ${renderGuidedWorkReview()}
     <section class="workflow-editor">
       <div class="workflow-form">
         <h3>Request Intake</h3>
@@ -3490,7 +3500,6 @@ function renderRecordsWorkflow() {
         </div>
       </div>
     </section>
-    ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
     ${renderRecordsNotificationOutbox(work)}
     <section class="workflow-list">
@@ -3587,6 +3596,7 @@ function renderCodeWorkflow() {
       <p>Import local code sources with citation text and create clerk handoffs for ordinance or resolution work.</p>
       <p class="form-help"><strong>Selected code source for actions:</strong> ${selectedSourceContext}</p>
     </section>
+    ${renderGuidedWorkReview()}
     <section class="workflow-editor">
       <div class="workflow-form">
         <h3>Import Code Source</h3>
@@ -3638,7 +3648,6 @@ function renderCodeWorkflow() {
         <button type="button" class="secondary-action" data-work-action="answer-code-question">Answer Code Question</button>
       </div>
     </section>
-    ${renderGuidedWorkReview()}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${codeAnswers.length === 0 ? workflowEmpty("Ask a code question to see cited staff answers.") : codeAnswers.map((answer) => `
@@ -4270,7 +4279,7 @@ function renderGuidedModuleReview() {
   const review = guidedModuleReviewForAction(state.pendingModuleReviewAction, state.pendingModuleReviewId);
   if (!review) return "";
   return `
-    <section class="guided-review" aria-labelledby="module-review-title">
+    <section class="guided-review" data-guided-review="module" aria-labelledby="module-review-title">
       <div>
         <p class="eyebrow">${escapeHtml(review.module)}</p>
         <h3 id="module-review-title">${escapeHtml(review.title)}</h3>
@@ -4434,7 +4443,7 @@ function renderGuidedSupervisorReview() {
   const adminDisabled = adminLocked ? "disabled" : "";
   const lockMessage = adminOnlyLockMessage("Sign in as local administrator to use local lifecycle actions.");
   return `
-    <section class="guided-review" aria-labelledby="supervisor-review-title">
+    <section class="guided-review" data-guided-review="supervisor" aria-labelledby="supervisor-review-title">
       <div>
         <p class="eyebrow">${escapeHtml(review.module)}</p>
         <h3 id="supervisor-review-title">${escapeHtml(review.title)}</h3>
@@ -4594,6 +4603,7 @@ function renderHealth() {
       <h2>System Health</h2>
       <p>Plain-English local health first. Technical logs stay behind repair detail screens.</p>
     </section>
+    ${renderGuidedSupervisorReview()}
     ${renderModelReadiness()}
     <section class="section-band lifecycle-panel" aria-label="Local lifecycle actions">
       <div class="section-title">
@@ -4611,7 +4621,6 @@ function renderHealth() {
         ${lockMessage ? `<small>${lockMessage}</small>` : ""}
       </div>
     </section>
-    ${renderGuidedSupervisorReview()}
     <section class="health-grid">
       ${state.app.health.map((item) => `
         <article class="health-card">
@@ -4966,6 +4975,7 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
     state.pendingModuleReviewId = moduleId;
     state.actionResult = null;
     render();
+    scrollGuidedReviewIntoView("module");
     return;
   }
   state.pendingModuleReviewAction = null;
@@ -5044,6 +5054,7 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
     state.pendingSupervisorReviewServiceId = serviceId || null;
     state.supervisorActionResult = null;
     render();
+    scrollGuidedReviewIntoView("supervisor");
     return;
   }
   state.pendingSupervisorReviewAction = null;
@@ -5199,6 +5210,17 @@ async function handleAuthAction(action, payloadOverride = null) {
     render();
     return;
   }
+  if (action === "create-user" && state.accessDraft.userPasscode.length < 10) {
+    state.authActionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: "Temporary local passcode must be at least 10 characters.",
+      next_action: "Enter a 10-character or longer temporary passcode, then create the staff user."
+    };
+    render();
+    return;
+  }
+  const createdStaffEmail = action === "create-user" ? state.accessDraft.userEmail.trim() : "";
   try {
     state.authActionResult = await invoke("auth_action", {
       action,
@@ -5214,6 +5236,10 @@ async function handleAuthAction(action, payloadOverride = null) {
       state.accessDraft.userPasscode = "";
     }
     await loadAppState();
+    if (action === "create-user" && state.authActionResult.accepted && createdStaffEmail) {
+      state.accessDraft.lastStaffEmail = createdStaffEmail;
+      state.accessDraft.email = createdStaffEmail;
+    }
   } catch (error) {
     state.authActionResult = {
       accepted: false,
@@ -5561,11 +5587,130 @@ function workPayloadForAction(action) {
   return payloads[action] || {};
 }
 
+function newestRecord(records) {
+  return Array.isArray(records) && records.length > 0 ? records[records.length - 1] : null;
+}
+
+function recordById(records, id) {
+  if (!id || !Array.isArray(records)) return null;
+  return records.find((record) => record.id === id) || null;
+}
+
+function ensureSelectedRecord(selectionKey, records) {
+  if (recordById(records, state.workSelection[selectionKey])) return;
+  state.workSelection[selectionKey] = newestRecord(records)?.id || "";
+}
+
+function syncMeetingDependentSelections(work) {
+  const meetings = work.meetings || [];
+  const meeting = recordById(meetings, state.workSelection.meetingId) || newestRecord(meetings);
+  const agendaItems = meeting?.agenda_items || [];
+  const rosterMembers = (work.meeting_members || []).filter((member) => (
+    !meeting || !meeting.body_id || member.body_id === meeting.body_id
+  ));
+  const motions = meeting?.motions || [];
+
+  if (!recordById(agendaItems, state.workDraft.staffReportAgendaItemId)) {
+    state.workDraft.staffReportAgendaItemId = agendaItems[0]?.id || "";
+  }
+  if (!recordById(rosterMembers, state.workDraft.memberVoteMemberId)) {
+    state.workDraft.memberVoteMemberId = rosterMembers[0]?.id || "";
+  }
+  if (!recordById(rosterMembers, state.workDraft.attendanceMemberId)) {
+    state.workDraft.attendanceMemberId = rosterMembers[0]?.id || "";
+  }
+  if (!recordById(motions, state.workDraft.memberVoteMotionId)) {
+    state.workDraft.memberVoteMotionId = newestRecord(motions)?.id || "";
+  }
+}
+
+function reconcileWorkSelection(work) {
+  const bodies = work.meeting_bodies || [];
+  const requests = work.records_requests || [];
+  const selectedRequest = recordById(requests, state.workSelection.recordsRequestId) || newestRecord(requests);
+  const requestDocuments = selectedRequest?.documents || [];
+
+  if (!recordById(bodies, state.workDraft.meetingBodyId)) {
+    state.workDraft.meetingBodyId = newestRecord(bodies)?.id || "";
+  }
+  ensureSelectedRecord("meetingId", work.meetings || []);
+  ensureSelectedRecord("agendaIntakeId", work.agenda_intakes || []);
+  ensureSelectedRecord("recordsRequestId", requests);
+  ensureSelectedRecord("codeSourceId", work.code_sources || []);
+  ensureSelectedRecord("codeHandoffId", work.code_handoffs || []);
+  ensureSelectedRecord("notificationId", work.notification_events || []);
+  if (!recordById(requestDocuments, state.workDraft.releaseDocumentId)) {
+    state.workDraft.releaseDocumentId = requestDocuments[0]?.id || "";
+  }
+  syncMeetingDependentSelections(work);
+}
+
+function syncWorkSelectionAfterAction(action, work) {
+  const latestMeeting = newestRecord(work.meetings || []);
+  const latestBody = newestRecord(work.meeting_bodies || []);
+  const latestMember = newestRecord(work.meeting_members || []);
+  const latestIntake = newestRecord(work.agenda_intakes || []);
+  const latestRequest = newestRecord(work.records_requests || []);
+  const latestSource = newestRecord(work.code_sources || []);
+  const latestHandoff = newestRecord(work.code_handoffs || []);
+  const selectedRequest = recordById(work.records_requests || [], state.workSelection.recordsRequestId) || latestRequest;
+  const latestDocument = newestRecord(selectedRequest?.documents || []);
+  const selectedMeeting = recordById(work.meetings || [], state.workSelection.meetingId) || latestMeeting;
+  const latestAgendaItem = newestRecord(selectedMeeting?.agenda_items || []);
+  const latestMotion = newestRecord(selectedMeeting?.motions || []);
+  const latestPublicComment = newestRecord(selectedMeeting?.public_comments || []);
+
+  if (action === "create-meeting-body" && latestBody) {
+    state.workDraft.meetingBodyId = latestBody.id;
+  }
+  if (action === "add-meeting-member" && latestMember) {
+    state.workDraft.meetingBodyId = latestMember.body_id || state.workDraft.meetingBodyId;
+    state.workDraft.memberVoteMemberId = latestMember.id;
+    state.workDraft.attendanceMemberId = latestMember.id;
+  }
+  if (action === "create-meeting" && latestMeeting) {
+    state.workSelection.meetingId = latestMeeting.id;
+    state.workDraft.meetingBodyId = latestMeeting.body_id || state.workDraft.meetingBodyId;
+    state.workDraft.staffReportAgendaItemId = latestMeeting.agenda_items?.[0]?.id || "";
+  }
+  if (action === "submit-agenda-intake" && latestIntake) {
+    state.workSelection.agendaIntakeId = latestIntake.id;
+  }
+  if (["add-agenda-item", "promote-agenda-intake", "add-code-handoff-agenda"].includes(action) && latestAgendaItem) {
+    state.workDraft.staffReportAgendaItemId = latestAgendaItem.id;
+  }
+  if (action === "record-motion" && latestMotion) {
+    state.workDraft.memberVoteMotionId = latestMotion.id;
+  }
+  if (action === "submit-public-comment" && latestPublicComment) {
+    state.workSelection.publicCommentId = latestPublicComment.id;
+  }
+  if (["create-records-request", "submit-public-records-request"].includes(action) && latestRequest) {
+    state.workSelection.recordsRequestId = latestRequest.id;
+    if (latestRequest.public_tracking_number) {
+      state.workDraft.publicRequestLookup = latestRequest.public_tracking_number;
+      state.workDraft.publicRequestContact =
+        latestRequest.requester_contact || state.workDraft.publicRequesterContact || state.workDraft.publicRequestContact;
+    }
+  }
+  if (action === "add-records-document" && latestDocument) {
+    state.workDraft.releaseDocumentId = latestDocument.id;
+  }
+  if (action === "import-code-source" && latestSource) {
+    state.workSelection.codeSourceId = latestSource.id;
+  }
+  if (action === "create-code-handoff" && latestHandoff) {
+    state.workSelection.codeHandoffId = latestHandoff.id;
+  }
+  reconcileWorkSelection(work);
+}
+
 async function handleCityWorkAction(action, { confirmed = false } = {}) {
   if (requiresGuidedWorkReview(action) && !confirmed) {
     state.pendingWorkReviewAction = action;
     state.workActionResult = null;
     render();
+    scrollGuidedReviewIntoView("work");
     return;
   }
   state.pendingWorkReviewAction = null;
@@ -5610,6 +5755,7 @@ async function handleCityWorkAction(action, { confirmed = false } = {}) {
     });
     state.workActionResult = result;
     state.app.city_work = result.state;
+    syncWorkSelectionAfterAction(action, result.state);
     state.searchResults = result.search_results || [];
     if (action === "submit-public-records-request") {
       const trackingNumber = String(result.message || "").match(/\bREQ-\d+\b/)?.[0] || "";

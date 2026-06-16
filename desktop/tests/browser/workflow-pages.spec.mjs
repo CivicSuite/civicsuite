@@ -316,6 +316,7 @@ test("risky city workflow actions require guided review before mutation", async 
 
   await page.getByRole("button", { name: /Meetings & Notices/ }).click();
   await page.getByRole("button", { name: "Archive Public Record" }).click();
+  await expect(page.locator('[data-guided-review="work"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: "Review Before Archiving Public Record" })).toBeVisible();
   await expect(page.getByText("What will change")).toBeVisible();
   await expect(page.getByText("Who can see it")).toBeVisible();
@@ -505,6 +506,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(removeReview.getByText("Writes a backup manifest before updating the local module-selection record")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Disable CivicCode" }).click();
+  await expect(page.locator('[data-guided-review="module"]')).toBeVisible();
   const moduleReview = page.locator(".guided-review").filter({ hasText: "Review Before Disabling CivicCode" });
   await expect(moduleReview.getByRole("heading", { name: "Review Before Disabling CivicCode" })).toBeVisible();
   await expect(moduleReview.getByText("Existing module data remains installed.")).toBeVisible();

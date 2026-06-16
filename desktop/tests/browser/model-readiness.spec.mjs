@@ -73,6 +73,7 @@ test("browser preview explains supervisor actions require the desktop bridge", a
 
   await page.getByRole("button", { name: "Backup Now" }).click();
 
+  await expect(page.locator('[data-guided-review="supervisor"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: "Review Before Backing Up Local Profile" })).toBeVisible();
   await expect(page.getByText("What will change")).toBeVisible();
   await expect(page.getByText("Sources and evidence")).toBeVisible();

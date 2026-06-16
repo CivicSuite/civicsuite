@@ -160,6 +160,20 @@ for (const phrase of requiredUiPhrases) {
 }
 
 for (const phrase of [
+  "data-guided-review=\"work\"",
+  "data-guided-review=\"supervisor\"",
+  "data-guided-review=\"module\"",
+  "scrollGuidedReviewIntoView(\"work\")",
+  "syncWorkSelectionAfterAction(action, result.state)",
+  "lastStaffEmail",
+  "Temporary local passcode must be at least 10 characters."
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop guided workflow resilience phrase missing: ${phrase}`);
+  }
+}
+
+for (const phrase of [
   "function publicMeetingView",
   "function publicRecordsRequestView",
   "function renderRecordsPublicStatusEvents",
