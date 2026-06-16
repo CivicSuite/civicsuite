@@ -818,7 +818,7 @@ fn progress_percent(progress_bytes: u64, expected_size_bytes: u64) -> f64 {
         return 0.0;
     }
     let percent = (progress_bytes as f64 / expected_size_bytes as f64) * 100.0;
-    let rounded = (percent * 100.0).round() / 100.0;
+    let rounded = ((percent * 100.0).round() / 100.0).min(100.0);
     if progress_bytes > 0 && rounded == 0.0 {
         0.01
     } else {
@@ -1107,6 +1107,91 @@ fn curl_executable() -> String {
     })
 }
 
+fn run_model_download_curl(
+    manifest: &ModelManifest,
+    partial_path: &Path,
+    resume: bool,
+) -> Result<(), String> {
+    let mut command = Command::new(curl_executable());
+    command
+        .arg("-L")
+        .arg("--fail")
+        .arg("--retry")
+        .arg("3")
+        .arg("--retry-all-errors");
+    if resume {
+        command.arg("--continue-at").arg("-");
+    }
+    let status = command
+        .arg("--output")
+        .arg(partial_path)
+        .arg(&manifest.model.resolve_url)
+        .status()
+        .map_err(|error| format!("Could not start the model download: {error}"))?;
+    if !status.success() {
+        return Err(format!(
+            "Model download failed with exit code {}",
+            status
+                .code()
+                .map(|code| code.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        ));
+    }
+    Ok(())
+}
+
+fn remove_invalid_partial(partial_path: &Path, reason: &str) -> Result<(), String> {
+    fs::remove_file(partial_path).map_err(|error| {
+        format!("Could not remove invalid partial model download after {reason}: {error}")
+    })
+}
+
+fn finalize_partial_download(
+    manifest: &ModelManifest,
+    local_path: &Path,
+    partial_path: &Path,
+) -> Result<bool, String> {
+    let metadata = match fs::metadata(partial_path) {
+        Ok(metadata) if metadata.is_file() => metadata,
+        _ => return Ok(false),
+    };
+    let expected_size = manifest.model.artifact.size_bytes;
+    let partial_size = metadata.len();
+    if partial_size < expected_size {
+        return Ok(false);
+    }
+
+    if partial_size > expected_size {
+        let file = fs::OpenOptions::new()
+            .write(true)
+            .open(partial_path)
+            .map_err(|error| {
+                format!("Could not open oversized partial model download for repair: {error}")
+            })?;
+        file.set_len(expected_size).map_err(|error| {
+            format!("Could not trim oversized partial model download for repair: {error}")
+        })?;
+    }
+
+    let actual_sha256 = sha256_file(partial_path)?;
+    if !actual_sha256.eq_ignore_ascii_case(&manifest.model.artifact.sha256) {
+        remove_invalid_partial(
+            partial_path,
+            "its checksum did not match the pinned Gemma model",
+        )?;
+        return Ok(false);
+    }
+
+    if local_path.exists() {
+        fs::remove_file(local_path)
+            .map_err(|error| format!("Could not replace old model file: {error}"))?;
+    }
+    fs::rename(partial_path, local_path)
+        .map_err(|error| format!("Could not move verified model into place: {error}"))?;
+    verify_and_register_model_artifact(manifest, local_path)?;
+    Ok(true)
+}
+
 fn download_model_artifact_inner(
     manifest: &ModelManifest,
     local_path: &Path,
@@ -1131,6 +1216,9 @@ fn download_model_artifact_inner(
     })?;
     ensure_minimum_free_disk(parent, manifest.download.minimum_free_disk_bytes)?;
     let partial_path = partial_download_path(local_path);
+    if finalize_partial_download(manifest, local_path, &partial_path)? {
+        return Ok(());
+    }
     write_model_download_state(
         manifest,
         local_path,
@@ -1139,44 +1227,42 @@ fn download_model_artifact_inner(
             .to_string(),
         None,
     )?;
-    let status = Command::new(curl_executable())
-        .arg("-L")
-        .arg("--fail")
-        .arg("--retry")
-        .arg("3")
-        .arg("--continue-at")
-        .arg("-")
-        .arg("--output")
-        .arg(&partial_path)
-        .arg(&manifest.model.resolve_url)
-        .status()
-        .map_err(|error| format!("Could not start the model download: {error}"))?;
-    if !status.success() {
-        return Err(format!(
-            "Model download failed with exit code {}",
-            status
-                .code()
-                .map(|code| code.to_string())
-                .unwrap_or_else(|| "unknown".to_string())
-        ));
+    let resume = matches!(
+        fs::metadata(&partial_path).map(|metadata| metadata.len()),
+        Ok(size) if size > 0 && size < manifest.model.artifact.size_bytes
+    );
+    run_model_download_curl(manifest, &partial_path, resume)?;
+    if finalize_partial_download(manifest, local_path, &partial_path)? {
+        return Ok(());
     }
     let downloaded_size = fs::metadata(&partial_path)
         .map_err(|error| format!("Could not inspect downloaded model: {error}"))?
         .len();
-    if downloaded_size != manifest.model.artifact.size_bytes {
-        return Err(format!(
-            "Model download is incomplete: got {downloaded_size}, expected {} bytes",
-            manifest.model.artifact.size_bytes
-        ));
+    if downloaded_size > manifest.model.artifact.size_bytes {
+        remove_invalid_partial(&partial_path, "it was larger than the pinned model size")?;
+        write_model_download_state(
+            manifest,
+            local_path,
+            "Downloading",
+            "CivicSuite is retrying the pinned Gemma model download from the beginning after discarding an invalid partial file."
+                .to_string(),
+            None,
+        )?;
+        run_model_download_curl(manifest, &partial_path, false)?;
+        if finalize_partial_download(manifest, local_path, &partial_path)? {
+            return Ok(());
+        }
+    } else if downloaded_size == manifest.model.artifact.size_bytes {
+        return Err(
+            "Model download finished at the pinned size, but checksum verification did not pass."
+                .to_string(),
+        );
     }
-    if local_path.exists() {
-        fs::remove_file(local_path)
-            .map_err(|error| format!("Could not replace old model file: {error}"))?;
-    }
-    fs::rename(&partial_path, local_path)
-        .map_err(|error| format!("Could not move verified model into place: {error}"))?;
-    write_current_model_download_state(manifest, local_path)?;
-    verify_and_register_model_artifact(manifest, local_path)
+    let final_size = file_size_or_zero(&partial_path);
+    Err(format!(
+        "Model download is incomplete: got {final_size}, expected {} bytes",
+        manifest.model.artifact.size_bytes
+    ))
 }
 
 fn download_model_artifact(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
@@ -1688,6 +1774,78 @@ mod tests {
                     .to_string_lossy()
                     .to_string()
             );
+        });
+    }
+
+    #[test]
+    fn model_state_caps_oversized_partial_progress() {
+        with_temp_state_dir(|_| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let local_path = model_path(&manifest.model.artifact);
+            let partial_path = partial_download_path(&local_path);
+            fs::create_dir_all(partial_path.parent().expect("partial parent")).expect("mkdir");
+            let file = fs::OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&partial_path)
+                .expect("partial file");
+            file.set_len(manifest.model.artifact.size_bytes + 1024)
+                .expect("oversized sparse partial");
+
+            let state = model_state().expect("model state");
+
+            assert_eq!(state.download_state.status, "Partial download");
+            assert_eq!(state.download_state.progress_percent, 100.0);
+            assert_eq!(
+                state.download_state.partial_bytes,
+                manifest.model.artifact.size_bytes + 1024
+            );
+        });
+    }
+
+    #[test]
+    fn oversized_valid_partial_is_repaired_and_registered() {
+        with_temp_state_dir(|_| {
+            let mut manifest = parse_manifest().expect("manifest parses");
+            manifest.model.artifact.size_bytes = 3;
+            manifest.model.artifact.sha256 = format!("{:x}", Sha256::digest(b"abc"));
+            let local_path = model_path(&manifest.model.artifact);
+            let partial_path = partial_download_path(&local_path);
+            fs::create_dir_all(partial_path.parent().expect("partial parent")).expect("mkdir");
+            fs::write(&partial_path, b"abcdef").expect("oversized partial");
+
+            let finalized = finalize_partial_download(&manifest, &local_path, &partial_path)
+                .expect("finalize succeeds");
+
+            assert!(finalized);
+            assert_eq!(fs::read(&local_path).expect("local model"), b"abc");
+            assert!(!partial_path.exists());
+            assert!(checksum_marker_matches(
+                &local_path,
+                &manifest.model.artifact.sha256
+            ));
+            let state = read_model_download_state().expect("download state");
+            assert_eq!(state.status, "Verified");
+        });
+    }
+
+    #[test]
+    fn oversized_corrupt_partial_is_discarded_for_clean_retry() {
+        with_temp_state_dir(|_| {
+            let mut manifest = parse_manifest().expect("manifest parses");
+            manifest.model.artifact.size_bytes = 3;
+            manifest.model.artifact.sha256 = format!("{:x}", Sha256::digest(b"abc"));
+            let local_path = model_path(&manifest.model.artifact);
+            let partial_path = partial_download_path(&local_path);
+            fs::create_dir_all(partial_path.parent().expect("partial parent")).expect("mkdir");
+            fs::write(&partial_path, b"zzzzzz").expect("oversized corrupt partial");
+
+            let finalized = finalize_partial_download(&manifest, &local_path, &partial_path)
+                .expect("finalize handles corrupt partial");
+
+            assert!(!finalized);
+            assert!(!local_path.exists());
+            assert!(!partial_path.exists());
         });
     }
 
