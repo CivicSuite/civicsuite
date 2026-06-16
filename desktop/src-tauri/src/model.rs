@@ -403,6 +403,10 @@ fn bundled_ollama_path() -> PathBuf {
         .join("ollama.exe")
 }
 
+fn ollama_models_dir() -> PathBuf {
+    windows_data_root().join("models").join("ollama")
+}
+
 fn ollama_executable() -> PathBuf {
     env::var("CIVICSUITE_OLLAMA_PATH")
         .map(PathBuf::from)
@@ -1029,6 +1033,7 @@ fn load_model_into_runtime(manifest: &ModelManifest, local_path: &Path) -> Resul
         .arg("-f")
         .arg(&modelfile_path)
         .env("OLLAMA_HOST", ollama_host_env())
+        .env("OLLAMA_MODELS", ollama_models_dir())
         .current_dir(parent)
         .status()
         .map_err(|error| {
@@ -1844,6 +1849,16 @@ mod tests {
             } else {
                 assert_eq!(executable, PathBuf::from("ollama"));
             }
+        });
+    }
+
+    #[test]
+    fn ollama_models_dir_uses_local_data_store() {
+        with_temp_state_dir(|root| {
+            assert_eq!(
+                ollama_models_dir(),
+                root.join("Data").join("models").join("ollama")
+            );
         });
     }
 

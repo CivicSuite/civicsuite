@@ -586,7 +586,7 @@ fn parse_payload_lock(payload_root: &Path) -> Result<RuntimePayloadLock, String>
     let lock_path = payload_root.join("runtime-payload-lock.json");
     let contents = fs::read_to_string(&lock_path)
         .map_err(|error| format!("Could not read {}: {error}", lock_path.display()))?;
-    serde_json::from_str(&contents)
+    serde_json::from_str(contents.trim_start_matches('\u{feff}'))
         .map_err(|error| format!("Could not parse {}: {error}", lock_path.display()))
 }
 
@@ -2629,6 +2629,31 @@ mod tests {
     fn supervisor_install_copies_bundled_runtime_payload() {
         with_temp_state_dir(|root| {
             write_test_postgres_payload(&root.join("Payload"));
+
+            let result = supervisor_action("install", Some("postgres"))
+                .expect("action response is structured");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Installed");
+            assert!(root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin")
+                .join("pg_ctl.exe")
+                .is_file());
+        });
+    }
+
+    #[test]
+    fn supervisor_install_accepts_utf8_bom_payload_lock() {
+        with_temp_state_dir(|root| {
+            let payload_root = root.join("Payload");
+            write_test_postgres_payload(&payload_root);
+            let lock_path = payload_root.join("runtime-payload-lock.json");
+            let mut contents = vec![0xef, 0xbb, 0xbf];
+            contents.extend(fs::read(&lock_path).expect("lock reads"));
+            fs::write(&lock_path, contents).expect("bom lock writes");
 
             let result = supervisor_action("install", Some("postgres"))
                 .expect("action response is structured");

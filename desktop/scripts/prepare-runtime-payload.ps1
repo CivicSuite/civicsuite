@@ -32,7 +32,9 @@ function Write-JsonFile {
     if ($Parent) {
         New-Item -ItemType Directory -Force -Path $Parent | Out-Null
     }
-    $Value | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $Path -Encoding UTF8
+    $Json = $Value | ConvertTo-Json -Depth 12
+    $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($Path, "$Json`r`n", $Utf8NoBom)
 }
 
 function Get-Sha256 {
