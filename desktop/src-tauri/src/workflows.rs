@@ -815,11 +815,18 @@ fn read_state() -> Result<CityWorkState, String> {
         .map_err(|error| format!("Could not read local workflow state: {error}"))?;
     let mut state: CityWorkState = serde_json::from_str(&contents)
         .map_err(|error| format!("Could not parse local workflow state: {error}"))?;
-    normalize_adopted_legislation_index(&mut state);
+    if normalize_adopted_legislation_index(&mut state) {
+        write_state(&state)?;
+    }
     Ok(state)
 }
 
-fn normalize_adopted_legislation_index(state: &mut CityWorkState) {
+fn normalize_adopted_legislation_index(state: &mut CityWorkState) -> bool {
+    let previous_ids = state
+        .adopted_legislation
+        .iter()
+        .map(|record| record.id.clone())
+        .collect::<Vec<_>>();
     let mut seen = HashSet::new();
     let mut records = Vec::new();
     for record in state.adopted_legislation.iter().cloned().chain(
@@ -838,7 +845,13 @@ fn normalize_adopted_legislation_index(state: &mut CityWorkState) {
             .cmp(&left.created_at_unix_seconds)
             .then_with(|| left.id.cmp(&right.id))
     });
+    let next_ids = records
+        .iter()
+        .map(|record| record.id.clone())
+        .collect::<Vec<_>>();
+    let changed = previous_ids != next_ids;
     state.adopted_legislation = records;
+    changed
 }
 
 fn write_state(state: &CityWorkState) -> Result<(), String> {
@@ -7802,6 +7815,17 @@ mod tests {
             assert_eq!(reloaded.adopted_legislation.len(), 1);
             assert_eq!(reloaded.adopted_legislation[0].id, record.id);
             assert_eq!(reloaded.adopted_legislation[0].title, "Noise ordinance");
+            let persisted: Value = serde_json::from_str(
+                &fs::read_to_string(workflows_path()).expect("normalized state persisted"),
+            )
+            .expect("persisted state remains json");
+            assert_eq!(
+                persisted["adopted_legislation"]
+                    .as_array()
+                    .expect("top-level adopted legislation remains an array")
+                    .len(),
+                1
+            );
         });
     }
 

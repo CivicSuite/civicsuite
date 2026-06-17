@@ -458,6 +458,147 @@ fn copy_path_recursive(source: &Path, destination: &Path) -> Result<(), String> 
     Ok(())
 }
 
+fn backup_relative_copy_path(prefix: &str, source_root: &Path, current: &Path) -> String {
+    let path = current
+        .strip_prefix(source_root)
+        .ok()
+        .filter(|relative| !relative.as_os_str().is_empty())
+        .map(|relative| PathBuf::from(prefix).join(relative))
+        .unwrap_or_else(|| PathBuf::from(prefix));
+    path.components()
+        .map(|component| component.as_os_str().to_string_lossy())
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
+fn push_backup_copy_skip(
+    skipped: &mut Vec<SkippedBackupFileEntry>,
+    prefix: &str,
+    source_root: &Path,
+    current: &Path,
+    reason: impl Into<String>,
+) {
+    skipped.push(SkippedBackupFileEntry {
+        path: backup_relative_copy_path(prefix, source_root, current),
+        reason: reason.into(),
+    });
+}
+
+fn copy_path_recursive_for_backup(
+    source: &Path,
+    destination: &Path,
+    backup_path_prefix: &str,
+    skipped: &mut Vec<SkippedBackupFileEntry>,
+) {
+    fn copy(
+        source_root: &Path,
+        current: &Path,
+        destination: &Path,
+        backup_path_prefix: &str,
+        skipped: &mut Vec<SkippedBackupFileEntry>,
+    ) {
+        if !current.exists() {
+            return;
+        }
+        let metadata = match fs::symlink_metadata(current) {
+            Ok(metadata) => metadata,
+            Err(error) => {
+                push_backup_copy_skip(
+                    skipped,
+                    backup_path_prefix,
+                    source_root,
+                    current,
+                    format!("inspect failed before copy: {error}"),
+                );
+                return;
+            }
+        };
+        if metadata.file_type().is_symlink() {
+            push_backup_copy_skip(
+                skipped,
+                backup_path_prefix,
+                source_root,
+                current,
+                "symbolic link skipped during backup copy",
+            );
+            return;
+        }
+        if metadata.is_dir() {
+            if let Err(error) = fs::create_dir_all(destination) {
+                push_backup_copy_skip(
+                    skipped,
+                    backup_path_prefix,
+                    source_root,
+                    current,
+                    format!("backup folder create failed: {error}"),
+                );
+                return;
+            }
+            let children = match fs::read_dir(current) {
+                Ok(children) => children,
+                Err(error) => {
+                    push_backup_copy_skip(
+                        skipped,
+                        backup_path_prefix,
+                        source_root,
+                        current,
+                        format!("folder read failed during backup copy: {error}"),
+                    );
+                    return;
+                }
+            };
+            for entry in children {
+                let entry = match entry {
+                    Ok(entry) => entry,
+                    Err(error) => {
+                        push_backup_copy_skip(
+                            skipped,
+                            backup_path_prefix,
+                            source_root,
+                            current,
+                            format!("folder entry read failed during backup copy: {error}"),
+                        );
+                        continue;
+                    }
+                };
+                copy(
+                    source_root,
+                    &entry.path(),
+                    &destination.join(entry.file_name()),
+                    backup_path_prefix,
+                    skipped,
+                );
+            }
+            return;
+        }
+        if metadata.is_file() {
+            if let Some(parent) = destination.parent() {
+                if let Err(error) = fs::create_dir_all(parent) {
+                    push_backup_copy_skip(
+                        skipped,
+                        backup_path_prefix,
+                        source_root,
+                        current,
+                        format!("backup parent folder create failed: {error}"),
+                    );
+                    return;
+                }
+            }
+            if let Err(error) = fs::copy(current, destination) {
+                push_backup_copy_skip(
+                    skipped,
+                    backup_path_prefix,
+                    source_root,
+                    current,
+                    format!("backup file copy failed: {error}"),
+                );
+            }
+        }
+    }
+
+    copy(source, source, destination, backup_path_prefix, skipped);
+}
+
 fn normalized_backup_path(root: &Path, path: &Path) -> Result<String, String> {
     let relative = path.strip_prefix(root).map_err(|error| {
         format!(
@@ -778,8 +919,14 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
     let config = config_dir();
     let contains_data = data.exists();
     let contains_config = config.exists();
-    copy_path_recursive(&data, &destination.join("Data"))?;
-    copy_path_recursive(&config, &destination.join("config"))?;
+    let mut skipped_files = Vec::new();
+    copy_path_recursive_for_backup(&data, &destination.join("Data"), "Data", &mut skipped_files);
+    copy_path_recursive_for_backup(
+        &config,
+        &destination.join("config"),
+        "config",
+        &mut skipped_files,
+    );
     fs::write(
         destination.join("README.txt"),
         format!(
@@ -788,7 +935,14 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
         ),
     )
     .map_err(|error| format!("Could not write backup README: {error}"))?;
-    let (files, skipped_files) = collect_backup_files_with_skips(&destination)?;
+    let (files, mut hash_skipped_files) = collect_backup_files_with_skips(&destination)?;
+    skipped_files.append(&mut hash_skipped_files);
+    skipped_files.sort_by(|left, right| {
+        left.path
+            .cmp(&right.path)
+            .then_with(|| left.reason.cmp(&right.reason))
+    });
+    skipped_files.dedup();
 
     let manifest = BackupManifest {
         schema_version: 1,
@@ -833,7 +987,10 @@ fn verified_backup_manifest(source: &Path) -> Result<BackupManifest, String> {
     if manifest.file_count != actual_files.len() || manifest.files != actual_files {
         return Err("backup files do not match the recorded SHA-256 manifest".to_string());
     }
-    if manifest.skipped_files != actual_skipped_files {
+    if !actual_skipped_files
+        .iter()
+        .all(|entry| manifest.skipped_files.contains(entry))
+    {
         return Err(
             "backup skipped-file evidence does not match the current backup folder".to_string(),
         );
@@ -2979,6 +3136,24 @@ mod tests {
                 .files
                 .iter()
                 .any(|file| { file.path == "config/city.json" && file.sha256.len() == 64 }));
+        });
+    }
+
+    #[test]
+    fn backup_copy_records_skipped_destination_errors_without_aborting() {
+        with_temp_state_dir(|root| {
+            let source = root.join("source-data");
+            fs::create_dir_all(source.join("files")).expect("source folder");
+            fs::write(source.join("files").join("record.txt"), "agenda").expect("source file");
+            let destination = root.join("blocked-destination");
+            fs::write(&destination, "not a directory").expect("blocking destination file");
+            let mut skipped = Vec::new();
+
+            copy_path_recursive_for_backup(&source, &destination, "Data", &mut skipped);
+
+            assert!(skipped.iter().any(|entry| {
+                entry.path == "Data" && entry.reason.contains("backup folder create failed")
+            }));
         });
     }
 
