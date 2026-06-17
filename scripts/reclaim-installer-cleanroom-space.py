@@ -23,9 +23,13 @@ REPO_RECLAIM_TARGETS = (
 HOST_LINUX_RECLAIM_TARGETS = (
     Path("/usr/local/lib/android"),
     Path("/usr/share/dotnet"),
+    Path("/usr/share/swift"),
     Path("/opt/ghc"),
     Path("/usr/local/.ghcup"),
     Path("/opt/hostedtoolcache/CodeQL"),
+    Path("/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk"),
+    Path("/opt/hostedtoolcache/Ruby"),
+    Path("/opt/hostedtoolcache/go"),
 )
 
 
