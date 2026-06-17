@@ -1239,9 +1239,42 @@ fn postgres_binary(service: &ServiceDefinition, file_name: &str) -> Result<PathB
 }
 
 fn command_output(command: &mut Command, label: &str) -> Result<String, String> {
-    let output = command
-        .output()
+    command_output_with_timeout(command, label, SERVICE_COMMAND_TIMEOUT)
+}
+
+fn command_output_with_timeout(
+    command: &mut Command,
+    label: &str,
+    timeout: Duration,
+) -> Result<String, String> {
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .map_err(|error| format!("{label} could not start: {error}"))?;
+    let started = Instant::now();
+    loop {
+        if child
+            .try_wait()
+            .map_err(|error| format!("{label} status check failed: {error}"))?
+            .is_some()
+        {
+            break;
+        }
+        if started.elapsed() >= timeout {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(format!(
+                "{label} timed out after {} seconds.",
+                timeout.as_secs()
+            ));
+        }
+        thread::sleep(Duration::from_millis(250));
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|error| format!("{label} output collection failed: {error}"))?;
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     if output.status.success() {
@@ -2078,12 +2111,6 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
     let mut started = Vec::new();
     for service in services {
         ensure_runtime_dirs(service)?;
-        if probe_service_health(service, &state) {
-            let existing_pid = service_state(&state, service).and_then(|entry| entry.pid);
-            update_service_state(&mut state, &service.id, true, existing_pid, "start");
-            started.push(service.label.clone());
-            continue;
-        }
         if service.id == "postgres" {
             let binary = service_binary_path(service);
             if !binary.is_file() {
@@ -2103,6 +2130,12 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             }
             start_postgres_service(service)?;
             update_service_state(&mut state, &service.id, true, None, "start");
+            started.push(service.label.clone());
+            continue;
+        }
+        if probe_service_health(service, &state) {
+            let existing_pid = service_state(&state, service).and_then(|entry| entry.pid);
+            update_service_state(&mut state, &service.id, true, existing_pid, "start");
             started.push(service.label.clone());
             continue;
         }
@@ -3061,6 +3094,58 @@ mod tests {
         assert!(needs_migrations
             .next_action
             .contains("Run Install or Repair"));
+    }
+
+    #[test]
+    fn command_output_times_out_instead_of_hanging() {
+        let mut command = if cfg!(target_os = "windows") {
+            let mut command = Command::new("powershell.exe");
+            command
+                .arg("-NoProfile")
+                .arg("-NonInteractive")
+                .arg("-ExecutionPolicy")
+                .arg("Bypass")
+                .arg("-Command")
+                .arg("Start-Sleep -Seconds 5; Write-Output late");
+            command
+        } else {
+            let mut command = Command::new("sh");
+            command.arg("-c").arg("sleep 5; echo late");
+            command
+        };
+
+        let error = command_output_with_timeout(
+            &mut command,
+            "Hanging post-restore runtime command",
+            Duration::from_millis(100),
+        )
+        .expect_err("hanging command should time out");
+
+        assert!(error.contains("Hanging post-restore runtime command timed out"));
+    }
+
+    #[test]
+    fn postgres_start_verifies_database_even_when_tcp_port_is_open() {
+        let Ok(_listener) = std::net::TcpListener::bind(("127.0.0.1", LOCAL_DB_PORT)) else {
+            return;
+        };
+
+        with_temp_state_dir(|root| {
+            let bin_dir = root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin");
+            fs::create_dir_all(&bin_dir).expect("postgres bin dir");
+            fs::write(bin_dir.join("pg_ctl.exe"), "fake pg_ctl").expect("fake pg_ctl");
+
+            let error = match supervisor_action("start", Some("postgres")) {
+                Ok(_) => panic!("postgres start should verify database setup"),
+                Err(error) => error,
+            };
+
+            assert!(error.contains("Local data store initializer is missing"));
+        });
     }
 
     #[test]
