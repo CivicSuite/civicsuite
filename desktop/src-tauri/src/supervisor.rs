@@ -33,7 +33,6 @@ const LOCAL_DB_PORT: u16 = 15432;
 const PROFILE_REPLACE_ATTEMPTS: usize = 12;
 const PROFILE_REPLACE_RETRY_DELAY: Duration = Duration::from_millis(750);
 const SERVICE_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
-const POST_RESTORE_HEALTH_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Deserialize)]
 struct OperatorPath {
@@ -2580,26 +2579,6 @@ fn rewrite_service_state_after_restore(services: &[&ServiceDefinition]) -> Resul
     write_state(&state)
 }
 
-fn wait_for_post_restore_health(services: &[&ServiceDefinition]) -> Result<bool, String> {
-    let started = Instant::now();
-    while started.elapsed() < POST_RESTORE_HEALTH_TIMEOUT {
-        let state = read_state()?;
-        if services
-            .iter()
-            .filter(|service| service.required)
-            .all(|service| probe_service_health(service, &state))
-        {
-            return Ok(true);
-        }
-        thread::sleep(Duration::from_millis(500));
-    }
-    let state = read_state()?;
-    Ok(services
-        .iter()
-        .filter(|service| service.required)
-        .all(|service| probe_service_health(service, &state)))
-}
-
 pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -2780,51 +2759,17 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
                     .to_string(),
         });
     }
-    let start_result = match start_services(services) {
-        Ok(result) => result,
-        Err(error) => {
-            return Ok(SupervisorActionResult {
-                accepted: false,
-                action: "restore".to_string(),
-                service_id: None,
-                status: "Restore needs service start",
-                message: format!("{restored_message} Local services could not restart: {error}."),
-                next_action: "Use Repair, then Start and Check from System Health. If services still do not respond, create a support bundle.".to_string(),
-            });
-        }
-    };
-    if !start_result.accepted {
-        return Ok(SupervisorActionResult {
-            accepted: false,
-            action: "restore".to_string(),
-            service_id: start_result.service_id,
-            status: "Restore needs service start",
-            message: format!(
-                "{restored_message} Local services still need attention: {}",
-                start_result.message
-            ),
-            next_action: start_result.next_action,
-        });
-    }
-    if !wait_for_post_restore_health(services)? {
-        return Ok(SupervisorActionResult {
-            accepted: false,
-            action: "restore".to_string(),
-            service_id: None,
-            status: "Restore needs service health",
-            message: format!(
-                "{restored_message} Restored services were started, but one or more health checks did not become ready before the desktop timeout."
-            ),
-            next_action: "Use Check, then Repair and Start from System Health. If services still do not respond, create a support bundle.".to_string(),
-        });
-    }
     Ok(SupervisorActionResult {
-        accepted: true,
+        accepted: false,
         action: "restore".to_string(),
         service_id: None,
-        status: "Restore complete",
-        message: format!("{restored_message} Local services were restarted and verified."),
-        next_action: "Continue city work from the restored local profile.".to_string(),
+        status: "Restore needs service start",
+        message: format!(
+            "{restored_message} Local services were left stopped so Start can verify database, migration, and service health against the restored profile."
+        ),
+        next_action:
+            "Use Start, then Check from System Health. If services still do not respond, use Repair and Start again."
+                .to_string(),
     })
 }
 
@@ -3775,6 +3720,67 @@ mod tests {
                 .expect("backups")
                 .filter_map(Result::ok)
                 .any(|entry| entry.file_name().to_string_lossy().contains("pre-restore")));
+        });
+    }
+
+    #[test]
+    fn restore_defers_service_restart_after_profile_swap() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(root.join("Data").join("files").join("record.txt"), "before")
+                .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "before").expect("config file");
+            supervisor_action("backup", None).expect("backup response");
+
+            fs::write(root.join("Data").join("files").join("record.txt"), "after")
+                .expect("mutate data");
+            fs::write(root.join("config").join("city.json"), "after").expect("mutate config");
+
+            for binary in [
+                root.join("Runtime")
+                    .join("runtime")
+                    .join("postgres")
+                    .join("bin")
+                    .join("pg_ctl.exe"),
+                root.join("Runtime")
+                    .join("runtime")
+                    .join("python")
+                    .join("python.exe"),
+                root.join("Runtime")
+                    .join("runtime")
+                    .join("ollama")
+                    .join("ollama.exe"),
+            ] {
+                fs::create_dir_all(binary.parent().expect("binary parent")).expect("binary dir");
+                fs::write(binary, "fake runtime binary").expect("fake binary");
+            }
+
+            let result = supervisor_action("restore", None).expect("restore response");
+
+            assert!(!result.accepted);
+            assert_eq!(result.status, "Restore needs service start");
+            assert!(result.message.contains("Local services were left stopped"));
+            assert!(result.message.contains("Start can verify database"));
+            assert_eq!(
+                fs::read_to_string(root.join("Data").join("files").join("record.txt"))
+                    .expect("restored data"),
+                "before"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("config").join("city.json")).expect("restored config"),
+                "before"
+            );
+            let runtime_state: RuntimeState = serde_json::from_str(
+                &fs::read_to_string(root.join("config").join("runtime-state.json"))
+                    .expect("runtime state"),
+            )
+            .expect("runtime state json");
+            assert_eq!(runtime_state.last_action.as_deref(), Some("restore"));
+            assert!(runtime_state
+                .services
+                .iter()
+                .all(|service| service.pid.is_none()));
         });
     }
 
