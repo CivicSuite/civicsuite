@@ -359,6 +359,18 @@ if (!rustMain.includes("fn choose_folder_path") || !main.includes('invoke("choos
   throw new Error("desktop shell must expose and call the native folder picker");
 }
 
+if (!main.includes("const normalizedServiceId = serviceId || null")) {
+  throw new Error("desktop supervisor confirms must normalize missing service ids before invoking Tauri");
+}
+
+if (!main.includes("serviceId: normalizedServiceId")) {
+  throw new Error("desktop supervisor actions must pass an explicit nullable serviceId to Tauri");
+}
+
+if (!main.includes('status: "Working"') || !main.includes("Keep CivicSuite open while the local action completes.")) {
+  throw new Error("desktop supervisor confirms must leave guided review state before long-running native actions");
+}
+
 if (!rustMain.includes("before changing CivicSuite setup, profile, model, backup, or runtime settings")) {
   throw new Error("desktop shell must require local admin access before first-run setup/profile/model/runtime mutations");
 }

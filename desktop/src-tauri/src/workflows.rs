@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -812,8 +813,32 @@ fn read_state() -> Result<CityWorkState, String> {
     }
     let contents = fs::read_to_string(&path)
         .map_err(|error| format!("Could not read local workflow state: {error}"))?;
-    serde_json::from_str(&contents)
-        .map_err(|error| format!("Could not parse local workflow state: {error}"))
+    let mut state: CityWorkState = serde_json::from_str(&contents)
+        .map_err(|error| format!("Could not parse local workflow state: {error}"))?;
+    normalize_adopted_legislation_index(&mut state);
+    Ok(state)
+}
+
+fn normalize_adopted_legislation_index(state: &mut CityWorkState) {
+    let mut seen = HashSet::new();
+    let mut records = Vec::new();
+    for record in state.adopted_legislation.iter().cloned().chain(
+        state
+            .meetings
+            .iter()
+            .flat_map(|meeting| meeting.adopted_legislation.iter().cloned()),
+    ) {
+        if seen.insert(record.id.clone()) {
+            records.push(record);
+        }
+    }
+    records.sort_by(|left, right| {
+        right
+            .created_at_unix_seconds
+            .cmp(&left.created_at_unix_seconds)
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    state.adopted_legislation = records;
 }
 
 fn write_state(state: &CityWorkState) -> Result<(), String> {
@@ -7709,6 +7734,75 @@ mod tests {
             .expect("meeting body exists")
             .id
             .clone()
+    }
+
+    #[test]
+    fn city_work_state_backfills_adopted_legislation_index_from_meetings() {
+        with_temp_state_dir(|_| {
+            let record = AdoptedLegislationRecord {
+                id: "adopted-legislation-test-1".to_string(),
+                code_source_id: "code-source-test-1".to_string(),
+                meeting_id: "meeting-test-1".to_string(),
+                meeting_title: "Council adoption".to_string(),
+                legislation_type: "ordinance".to_string(),
+                title: "Noise ordinance".to_string(),
+                text: "Adopted ordinance text.".to_string(),
+                effective_date: "2026-07-15".to_string(),
+                codification_section_hint: "Title 8".to_string(),
+                source_motion_id: "motion-test-1".to_string(),
+                source_motion_text: "Move to adopt the noise ordinance.".to_string(),
+                source_agenda_item_id: "agenda-test-1".to_string(),
+                source_agenda_item_title: "Noise ordinance adoption".to_string(),
+                handoff_status: "pending CivicCode sync".to_string(),
+                created_at_unix_seconds: 100,
+            };
+            let state = CityWorkState {
+                meetings: vec![Meeting {
+                    id: "meeting-test-1".to_string(),
+                    body_id: "body-test-1".to_string(),
+                    body_name: "City Council".to_string(),
+                    title: "Council adoption".to_string(),
+                    meeting_date: "2026-07-01".to_string(),
+                    status: "adopted legislation recorded".to_string(),
+                    notice_status: "public notice ready".to_string(),
+                    notice_checklists: Vec::new(),
+                    notice_postings: Vec::new(),
+                    summary: "Adoption meeting".to_string(),
+                    agenda_items: Vec::new(),
+                    staff_reports: Vec::new(),
+                    attachments: Vec::new(),
+                    packet_assemblies: Vec::new(),
+                    minutes: "Minutes adopted and signed.".to_string(),
+                    minute_citations: Vec::new(),
+                    motions: Vec::new(),
+                    member_votes: Vec::new(),
+                    attendance_records: Vec::new(),
+                    quorum_checks: Vec::new(),
+                    votes: Vec::new(),
+                    action_items: Vec::new(),
+                    action_records: Vec::new(),
+                    adopted_legislation: vec![record.clone()],
+                    closed_sessions: Vec::new(),
+                    resident_comments: Vec::new(),
+                    public_comments: Vec::new(),
+                    exports: Vec::new(),
+                    export_bundles: Vec::new(),
+                    minutes_adopted_at_unix_seconds: Some(90),
+                    minutes_signed_by: "City Clerk".to_string(),
+                    minutes_signature_attestation: "Signed".to_string(),
+                    minutes_signed_at_unix_seconds: Some(95),
+                    archived_at_unix_seconds: None,
+                    created_at_unix_seconds: 80,
+                }],
+                ..CityWorkState::default()
+            };
+            write_state(&state).expect("state writes with nested adopted legislation");
+
+            let reloaded = city_work_state().expect("state reads with normalized index");
+            assert_eq!(reloaded.adopted_legislation.len(), 1);
+            assert_eq!(reloaded.adopted_legislation[0].id, record.id);
+            assert_eq!(reloaded.adopted_legislation[0].title, "Noise ordinance");
+        });
     }
 
     fn assert_valid_audit_chain(entries: &[AuditEntry]) {

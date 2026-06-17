@@ -5057,8 +5057,16 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
     scrollGuidedReviewIntoView("supervisor");
     return;
   }
+  const normalizedServiceId = serviceId || null;
   state.pendingSupervisorReviewAction = null;
   state.pendingSupervisorReviewServiceId = null;
+  state.supervisorActionResult = {
+    accepted: true,
+    status: "Working",
+    message: `Running ${supervisorActionLabel(action)} from the desktop app.`,
+    next_action: "Keep CivicSuite open while the local action completes."
+  };
+  render();
   if (!hasTauriBridge()) {
     state.supervisorActionResult = {
       accepted: false,
@@ -5072,7 +5080,7 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
   try {
     state.supervisorActionResult = await invoke("supervisor_action", {
       action,
-      serviceId
+      serviceId: normalizedServiceId
     });
     await loadAppState();
   } catch (error) {
@@ -5084,6 +5092,23 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
     };
   }
   render();
+}
+
+function supervisorActionLabel(action) {
+  const labels = {
+    backup: "Backup Now",
+    "support-bundle": "Create Support Bundle",
+    restore: "Restore Latest Backup",
+    uninstall: "Prepare Uninstall",
+    repair: "Repair",
+    stop: "Stop",
+    health: "Check",
+    install: "Install",
+    logs: "Logs",
+    "open-backup-folder": "Open Backup Folder",
+    "open-windows-uninstall": "Open Windows Uninstall"
+  };
+  return labels[action] || action;
 }
 
 async function handleChooseFilePath(field) {
