@@ -30,6 +30,8 @@ const REQUIRED_ACTIONS: [&str; 12] = [
 const LOCAL_DB_NAME: &str = "civicsuite";
 const LOCAL_DB_USER: &str = "civicsuite";
 const LOCAL_DB_PORT: u16 = 15432;
+const PROFILE_REPLACE_ATTEMPTS: usize = 12;
+const PROFILE_REPLACE_RETRY_DELAY: Duration = Duration::from_millis(750);
 
 #[derive(Deserialize)]
 struct OperatorPath {
@@ -889,7 +891,7 @@ fn install_runtime_payloads(payloads: &[&RuntimePayloadDefinition]) -> Result<Ve
     Ok(missing)
 }
 
-fn remove_profile_dir(path: &Path) -> Result<bool, String> {
+fn remove_profile_dir_once(path: &Path) -> Result<bool, String> {
     if !path.exists() {
         return Ok(false);
     }
@@ -897,6 +899,116 @@ fn remove_profile_dir(path: &Path) -> Result<bool, String> {
     fs::remove_dir_all(path)
         .map_err(|error| format!("Could not remove {}: {error}", path.display()))?;
     Ok(true)
+}
+
+fn remove_profile_dir(path: &Path) -> Result<bool, String> {
+    let mut last_error = None;
+    for attempt in 1..=PROFILE_REPLACE_ATTEMPTS {
+        match remove_profile_dir_once(path) {
+            Ok(removed) => return Ok(removed),
+            Err(error) => {
+                last_error = Some(error);
+                if attempt < PROFILE_REPLACE_ATTEMPTS {
+                    thread::sleep(PROFILE_REPLACE_RETRY_DELAY);
+                }
+            }
+        }
+    }
+    Err(last_error.unwrap_or_else(|| format!("Could not remove {}.", path.display())))
+}
+
+fn restore_swap_path(destination: &Path, suffix: &str) -> Result<PathBuf, String> {
+    let parent = destination.parent().ok_or_else(|| {
+        format!(
+            "Could not resolve parent folder for restore target {}.",
+            destination.display()
+        )
+    })?;
+    let name = destination
+        .file_name()
+        .map(|name| name.to_string_lossy().to_string())
+        .ok_or_else(|| {
+            format!(
+                "Could not resolve restore target name: {}",
+                destination.display()
+            )
+        })?;
+    Ok(parent.join(format!(
+        ".civicsuite-restore-{suffix}-{name}-{}-{}",
+        now_unix_seconds(),
+        std::process::id()
+    )))
+}
+
+fn rename_path_with_retries(source: &Path, destination: &Path) -> Result<(), String> {
+    let mut last_error = None;
+    for attempt in 1..=PROFILE_REPLACE_ATTEMPTS {
+        match fs::rename(source, destination) {
+            Ok(()) => return Ok(()),
+            Err(error) => {
+                last_error = Some(error);
+                if attempt < PROFILE_REPLACE_ATTEMPTS {
+                    thread::sleep(PROFILE_REPLACE_RETRY_DELAY);
+                }
+            }
+        }
+    }
+    Err(format!(
+        "Could not move {} to {}: {}",
+        source.display(),
+        destination.display(),
+        last_error
+            .map(|error| error.to_string())
+            .unwrap_or_else(|| "unknown error".to_string())
+    ))
+}
+
+fn replace_profile_dir_from_backup(
+    source: &Path,
+    destination: &Path,
+    label: &str,
+) -> Result<Option<String>, String> {
+    if let Some(parent) = destination.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
+    }
+
+    if !source.exists() {
+        remove_profile_dir(destination)?;
+        return Ok(None);
+    }
+
+    let stage = restore_swap_path(destination, "stage")?;
+    if stage.exists() {
+        remove_profile_dir(&stage)?;
+    }
+    copy_path_recursive(source, &stage).map_err(|error| {
+        let _ = remove_profile_dir(&stage);
+        error
+    })?;
+
+    let old = restore_swap_path(destination, "old")?;
+    if destination.exists() {
+        ensure_profile_child_for_delete(destination)?;
+        rename_path_with_retries(destination, &old)?;
+    }
+    if let Err(error) = rename_path_with_retries(&stage, destination) {
+        if old.exists() && !destination.exists() {
+            let _ = rename_path_with_retries(&old, destination);
+        }
+        let _ = remove_profile_dir(&stage);
+        return Err(error);
+    }
+
+    if old.exists() {
+        if let Err(error) = remove_profile_dir(&old) {
+            return Ok(Some(format!(
+                "{label} restored; old folder cleanup is pending because {error}"
+            )));
+        }
+    }
+
+    Ok(None)
 }
 
 fn create_backup(kind: &str) -> Result<PathBuf, String> {
@@ -1492,6 +1604,52 @@ fn process_running(pid: u32) -> bool {
     }
 }
 
+fn process_ids_for_executable(_executable: &Path) -> Vec<u32> {
+    #[cfg(target_os = "windows")]
+    {
+        let script = r#"
+$target = [System.IO.Path]::GetFullPath($args[0])
+Get-CimInstance Win32_Process |
+  Where-Object { $_.ExecutablePath -and ([System.IO.Path]::GetFullPath($_.ExecutablePath) -ieq $target) } |
+  Select-Object -ExpandProperty ProcessId
+"#;
+        let output = Command::new("powershell.exe")
+            .arg("-NoProfile")
+            .arg("-NonInteractive")
+            .arg("-ExecutionPolicy")
+            .arg("Bypass")
+            .arg("-Command")
+            .arg(script)
+            .arg(_executable)
+            .output();
+        return output
+            .ok()
+            .filter(|output| output.status.success())
+            .map(|output| {
+                String::from_utf8_lossy(&output.stdout)
+                    .lines()
+                    .filter_map(|line| line.trim().parse::<u32>().ok())
+                    .collect()
+            })
+            .unwrap_or_default();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Vec::new()
+    }
+}
+
+fn stop_processes_for_executable(executable: &Path) -> usize {
+    let current_pid = std::process::id();
+    let mut stopped = 0;
+    for pid in process_ids_for_executable(executable) {
+        if pid != current_pid && stop_pid(pid) {
+            stopped += 1;
+        }
+    }
+    stopped
+}
+
 fn probe_service_health(service: &ServiceDefinition, state: &RuntimeState) -> bool {
     match &service.health {
         HealthDefinition::Tcp { host, port } => tcp_health_ok(host, *port),
@@ -2021,12 +2179,18 @@ fn stop_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResu
                     );
                 }
             }
+            if let Ok(postgres) = postgres_binary(service, "postgres.exe") {
+                let _ = stop_processes_for_executable(&postgres);
+            }
             update_service_state(&mut state, &service.id, true, None, "stop");
             stopped.push(service.label.clone());
             continue;
         }
         if let Some(pid) = service_state(&state, service).and_then(|entry| entry.pid) {
             let _ = stop_pid(pid);
+        }
+        if service_needs_binary(service) {
+            let _ = stop_processes_for_executable(&service_binary_path(service));
         }
         update_service_state(&mut state, &service.id, true, None, "stop");
         stopped.push(service.label.clone());
@@ -2043,6 +2207,31 @@ fn stop_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResu
         ),
         next_action: "Start services again from System Health when needed.".to_string(),
     })
+}
+
+fn service_process_health_ok(service: &ServiceDefinition, state: &RuntimeState) -> bool {
+    match &service.health {
+        HealthDefinition::Tcp { host, port } => tcp_health_ok(host, *port),
+        HealthDefinition::Http { endpoint } => http_health_ok(endpoint),
+        HealthDefinition::Supervisor { .. } => service_state(state, service)
+            .and_then(|entry| entry.pid)
+            .map(process_running)
+            .unwrap_or(false),
+        HealthDefinition::Filesystem { .. } => false,
+    }
+}
+
+fn wait_for_services_to_release_profile(services: &[&ServiceDefinition]) {
+    for _ in 0..PROFILE_REPLACE_ATTEMPTS {
+        let state = read_state().unwrap_or_default();
+        if services
+            .iter()
+            .all(|service| !service_process_health_ok(service, &state))
+        {
+            return;
+        }
+        thread::sleep(PROFILE_REPLACE_RETRY_DELAY);
+    }
 }
 
 fn prepare_log_artifacts(services: &[&ServiceDefinition]) -> Result<PathBuf, String> {
@@ -2457,19 +2646,33 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
     }
     let safety_backup = create_backup("pre-restore")?;
     let _ = stop_services(services)?;
-    remove_profile_dir(&data_root())?;
-    remove_profile_dir(&config_dir())?;
-    copy_path_recursive(&source.join("Data"), &data_root())?;
-    copy_path_recursive(&source.join("config"), &config_dir())?;
+    wait_for_services_to_release_profile(services);
+    let mut cleanup_notes = Vec::new();
+    if let Some(note) =
+        replace_profile_dir_from_backup(&source.join("Data"), &data_root(), "City data")?
+    {
+        cleanup_notes.push(note);
+    }
+    if let Some(note) =
+        replace_profile_dir_from_backup(&source.join("config"), &config_dir(), "Setup/config")?
+    {
+        cleanup_notes.push(note);
+    }
+    let cleanup_message = if cleanup_notes.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", cleanup_notes.join(" "))
+    };
     Ok(SupervisorActionResult {
         accepted: true,
         action: "restore".to_string(),
         service_id: None,
         status: "Restore complete",
         message: format!(
-            "Restored CivicSuite local data from {}. A pre-restore safety backup was saved to {}.",
+            "Restored CivicSuite local data from {}. A pre-restore safety backup was saved to {}.{}",
             source.display(),
-            safety_backup.display()
+            safety_backup.display(),
+            cleanup_message
         ),
         next_action: "Run health checks, then start local services when staff are ready."
             .to_string(),
@@ -3289,6 +3492,13 @@ mod tests {
             fs::write(root.join("Data").join("files").join("record.txt"), "after")
                 .expect("mutate data");
             fs::write(
+                root.join("Data")
+                    .join("files")
+                    .join("post-backup-extra.txt"),
+                "extra",
+            )
+            .expect("extra data file");
+            fs::write(
                 root.join("Data").join("workflows").join("city-work.json"),
                 r#"{"records_requests":[]}"#,
             )
@@ -3325,6 +3535,19 @@ mod tests {
                 .join("records")
                 .join("response.md")
                 .is_file());
+            assert!(!root
+                .join("Data")
+                .join("files")
+                .join("post-backup-extra.txt")
+                .exists());
+            assert!(!root
+                .read_dir()
+                .expect("profile entries")
+                .filter_map(Result::ok)
+                .any(|entry| entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".civicsuite-restore-")));
             assert!(root
                 .join("Backups")
                 .read_dir()
