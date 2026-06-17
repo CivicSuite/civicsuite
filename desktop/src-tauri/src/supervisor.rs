@@ -7,7 +7,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::local_paths;
 
@@ -32,6 +32,8 @@ const LOCAL_DB_USER: &str = "civicsuite";
 const LOCAL_DB_PORT: u16 = 15432;
 const PROFILE_REPLACE_ATTEMPTS: usize = 12;
 const PROFILE_REPLACE_RETRY_DELAY: Duration = Duration::from_millis(750);
+const SERVICE_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
+const POST_RESTORE_HEALTH_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Deserialize)]
 struct OperatorPath {
@@ -1258,13 +1260,38 @@ fn command_output(command: &mut Command, label: &str) -> Result<String, String> 
 }
 
 fn command_status(command: &mut Command, label: &str) -> Result<(), String> {
-    let status = command
-        .status()
+    command_status_with_timeout(command, label, SERVICE_COMMAND_TIMEOUT)
+}
+
+fn command_status_with_timeout(
+    command: &mut Command,
+    label: &str,
+    timeout: Duration,
+) -> Result<(), String> {
+    let mut child = command
+        .spawn()
         .map_err(|error| format!("{label} could not start: {error}"))?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(format!("{label} failed with status {status}."))
+    let started = Instant::now();
+    loop {
+        if let Some(status) = child
+            .try_wait()
+            .map_err(|error| format!("{label} status check failed: {error}"))?
+        {
+            return if status.success() {
+                Ok(())
+            } else {
+                Err(format!("{label} failed with status {status}."))
+            };
+        }
+        if started.elapsed() >= timeout {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(format!(
+                "{label} timed out after {} seconds.",
+                timeout.as_secs()
+            ));
+        }
+        thread::sleep(Duration::from_millis(250));
     }
 }
 
@@ -2145,6 +2172,8 @@ fn stop_pid(pid: u32) -> bool {
             .arg(pid.to_string())
             .arg("/T")
             .arg("/F")
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .status()
             .map(|status| status.success())
             .unwrap_or(false)
@@ -2165,7 +2194,7 @@ fn stop_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResu
             if postgres_tcp_ready() {
                 let binary = service_binary_path(service);
                 if binary.is_file() {
-                    let _ = command_status(
+                    let _ = command_status_with_timeout(
                         Command::new(binary)
                             .arg("stop")
                             .arg("-D")
@@ -2176,6 +2205,7 @@ fn stop_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResu
                             .stdout(Stdio::null())
                             .stderr(Stdio::null()),
                         "Local data store stop",
+                        PROFILE_REPLACE_RETRY_DELAY * PROFILE_REPLACE_ATTEMPTS as u32,
                     );
                 }
             }
@@ -2502,6 +2532,41 @@ fn wait_for_services_health(services: &[&ServiceDefinition]) -> Result<(), Strin
     Ok(())
 }
 
+fn services_have_startable_runtime(services: &[&ServiceDefinition]) -> bool {
+    services
+        .iter()
+        .all(|service| !service_needs_binary(service) || service_binary_path(service).is_file())
+}
+
+fn rewrite_service_state_after_restore(services: &[&ServiceDefinition]) -> Result<(), String> {
+    let mut state = read_state().unwrap_or_default();
+    for service in services {
+        let installed = !service_needs_binary(service) || service_binary_path(service).is_file();
+        update_service_state(&mut state, &service.id, installed, None, "restore");
+    }
+    write_state(&state)
+}
+
+fn wait_for_post_restore_health(services: &[&ServiceDefinition]) -> Result<bool, String> {
+    let started = Instant::now();
+    while started.elapsed() < POST_RESTORE_HEALTH_TIMEOUT {
+        let state = read_state()?;
+        if services
+            .iter()
+            .filter(|service| service.required)
+            .all(|service| probe_service_health(service, &state))
+        {
+            return Ok(true);
+        }
+        thread::sleep(Duration::from_millis(500));
+    }
+    let state = read_state()?;
+    Ok(services
+        .iter()
+        .filter(|service| service.required)
+        .all(|service| probe_service_health(service, &state)))
+}
+
 pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -2658,24 +2723,75 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
     {
         cleanup_notes.push(note);
     }
+    rewrite_service_state_after_restore(services)?;
     let cleanup_message = if cleanup_notes.is_empty() {
         String::new()
     } else {
         format!(" {}", cleanup_notes.join(" "))
     };
+    let restored_message = format!(
+        "Restored CivicSuite local data from {}. A pre-restore safety backup was saved to {}.{}",
+        source.display(),
+        safety_backup.display(),
+        cleanup_message
+    );
+    if !services_have_startable_runtime(services) {
+        return Ok(SupervisorActionResult {
+            accepted: true,
+            action: "restore".to_string(),
+            service_id: None,
+            status: "Restore complete",
+            message: restored_message,
+            next_action:
+                "Repair or install the bundled Windows runtime files, then start local services."
+                    .to_string(),
+        });
+    }
+    let start_result = match start_services(services) {
+        Ok(result) => result,
+        Err(error) => {
+            return Ok(SupervisorActionResult {
+                accepted: false,
+                action: "restore".to_string(),
+                service_id: None,
+                status: "Restore needs service start",
+                message: format!("{restored_message} Local services could not restart: {error}."),
+                next_action: "Use Repair, then Start and Check from System Health. If services still do not respond, create a support bundle.".to_string(),
+            });
+        }
+    };
+    if !start_result.accepted {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "restore".to_string(),
+            service_id: start_result.service_id,
+            status: "Restore needs service start",
+            message: format!(
+                "{restored_message} Local services still need attention: {}",
+                start_result.message
+            ),
+            next_action: start_result.next_action,
+        });
+    }
+    if !wait_for_post_restore_health(services)? {
+        return Ok(SupervisorActionResult {
+            accepted: false,
+            action: "restore".to_string(),
+            service_id: None,
+            status: "Restore needs service health",
+            message: format!(
+                "{restored_message} Restored services were started, but one or more health checks did not become ready before the desktop timeout."
+            ),
+            next_action: "Use Check, then Repair and Start from System Health. If services still do not respond, create a support bundle.".to_string(),
+        });
+    }
     Ok(SupervisorActionResult {
         accepted: true,
         action: "restore".to_string(),
         service_id: None,
         status: "Restore complete",
-        message: format!(
-            "Restored CivicSuite local data from {}. A pre-restore safety backup was saved to {}.{}",
-            source.display(),
-            safety_backup.display(),
-            cleanup_message
-        ),
-        next_action: "Run health checks, then start local services when staff are ready."
-            .to_string(),
+        message: format!("{restored_message} Local services were restarted and verified."),
+        next_action: "Continue city work from the restored local profile.".to_string(),
     })
 }
 
@@ -3487,6 +3603,11 @@ mod tests {
             .expect("export file");
             fs::create_dir_all(root.join("config")).expect("config folder");
             fs::write(root.join("config").join("city.json"), "before").expect("config file");
+            fs::write(
+                root.join("config").join("runtime-state.json"),
+                r#"{"services":[{"id":"python-services","installed":true,"pid":424242,"last_action":"start","last_updated_unix_seconds":1}],"last_action":"start","last_updated_unix_seconds":1}"#,
+            )
+            .expect("stale runtime state");
             supervisor_action("backup", None).expect("backup response");
 
             fs::write(root.join("Data").join("files").join("record.txt"), "after")
@@ -3535,6 +3656,21 @@ mod tests {
                 .join("records")
                 .join("response.md")
                 .is_file());
+            let runtime_state: RuntimeState = serde_json::from_str(
+                &fs::read_to_string(root.join("config").join("runtime-state.json"))
+                    .expect("runtime state"),
+            )
+            .expect("runtime state json");
+            assert_eq!(runtime_state.last_action.as_deref(), Some("restore"));
+            assert!(runtime_state.services.iter().any(|service| {
+                service.id == "python-services"
+                    && service.pid.is_none()
+                    && service.last_action.as_deref() == Some("restore")
+            }));
+            assert!(runtime_state
+                .services
+                .iter()
+                .all(|service| service.pid.is_none()));
             assert!(!root
                 .join("Data")
                 .join("files")
