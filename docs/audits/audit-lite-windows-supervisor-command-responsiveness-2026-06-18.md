@@ -30,8 +30,9 @@ The common product boundary was the synchronous Tauri command path for local fil
 - `cargo fmt --manifest-path desktop/src-tauri/Cargo.toml --check`
 - `cargo test restore --manifest-path desktop/src-tauri/Cargo.toml -- --test-threads=1`
 - `cargo test backup --manifest-path desktop/src-tauri/Cargo.toml -- --test-threads=1`
+- `cargo test supervisor_command_wrapper_completes_backup_action --manifest-path desktop/src-tauri/Cargo.toml -- --test-threads=1`
 - `npm --prefix desktop run test:browser -- desktop/tests/browser/model-readiness.spec.mjs --grep "desktop restore result|desktop backup and support"`
-- `cargo test --manifest-path desktop/src-tauri/Cargo.toml -- --test-threads=1`
+- `cargo test --manifest-path desktop/src-tauri/Cargo.toml -- --test-threads=1` (131 tests)
 - `npm --prefix desktop test`
 - `npm --prefix desktop run test:browser -- desktop/tests/browser/model-readiness.spec.mjs desktop/tests/browser/workflow-pages.spec.mjs`
 - `npm --prefix desktop run build`

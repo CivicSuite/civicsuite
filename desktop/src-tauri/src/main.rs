@@ -975,6 +975,29 @@ mod tests {
     }
 
     #[test]
+    fn supervisor_command_wrapper_completes_backup_action() {
+        with_clean_first_run_state(|root| {
+            create_first_admin();
+            sign_in_as_first_admin();
+
+            let result =
+                tauri::async_runtime::block_on(supervisor_action("backup".to_string(), None))
+                    .expect("backup command returns through async wrapper");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Backup complete");
+            assert!(result.message.contains("backup-manifest.json"));
+            assert!(fs::read_dir(root.join("Backups"))
+                .expect("backup root exists")
+                .any(|entry| entry
+                    .expect("backup entry")
+                    .path()
+                    .join("backup-manifest.json")
+                    .is_file()));
+        });
+    }
+
+    #[test]
     fn module_actions_require_admin_after_first_admin_exists() {
         with_clean_first_run_state(|root| {
             create_first_admin();
