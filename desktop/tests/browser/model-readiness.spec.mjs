@@ -85,6 +85,67 @@ test("browser preview explains supervisor actions require the desktop bridge", a
   await expect(page.getByText("Runtime service changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
 });
 
+test("desktop restore result leaves Working state with bounded service-start follow-up", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.__supervisorInvocations = [];
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "get_app_state") {
+          throw new Error("Keep the browser fallback app state for this UI regression.");
+        }
+        if (cmd === "supervisor_action") {
+          window.__supervisorInvocations.push({ cmd, args });
+          if (args.action !== "restore") {
+            throw new Error(`Unexpected supervisor action: ${args.action}`);
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, 250));
+          return {
+            accepted: false,
+            action: "restore",
+            service_id: null,
+            status: "Restore needs service start",
+            message:
+              "Restored CivicSuite local data and setup. Data old folder cleanup is pending at C:\\CivicSuite\\Data.restore-old. Config old folder cleanup is pending at C:\\CivicSuite\\config.restore-old.",
+            next_action:
+              "Use Start, then Check or Repair from System Health so the restored profile verifies database, task queue, and service health."
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("button", { name: /System Health/ }).click();
+  await page.getByRole("button", { name: "Restore Latest Backup" }).click();
+
+  await expect(page.locator('[data-guided-review="supervisor"]')).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review Before Restoring Latest Backup" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Confirm Restore Latest Backup" }).click();
+
+  await expect(page.locator('[data-guided-review="supervisor"]')).toHaveCount(0);
+  await expect(page.locator(".action-result").getByText("Working", { exact: true })).toBeVisible();
+  await expect(page.getByText("Running Restore Latest Backup from the desktop app.")).toBeVisible();
+
+  await expect(page.locator(".action-result").getByText("Restore needs service start", { exact: true })).toBeVisible();
+  await expect(page.getByText("Data old folder cleanup is pending")).toBeVisible();
+  await expect(page.getByText("Config old folder cleanup is pending")).toBeVisible();
+  await expect(page.getByText("Use Start, then Check or Repair from System Health")).toBeVisible();
+  await expect(page.locator(".action-result").getByText("Working", { exact: true })).toHaveCount(0);
+
+  const supervisorInvocations = await page.evaluate(() => window.__supervisorInvocations);
+  expect(supervisorInvocations).toEqual([
+    {
+      cmd: "supervisor_action",
+      args: {
+        action: "restore",
+        serviceId: null
+      }
+    }
+  ]);
+});
+
 test("system health repair and uninstall actions require guided review", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /System Health/ }).click();
