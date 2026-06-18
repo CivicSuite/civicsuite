@@ -755,6 +755,40 @@ NGINX
     )
 
 
+def normalize_clerk_frontend_dockerfile(target: Path) -> None:
+    dockerfile = target / "Dockerfile.frontend"
+    lockfile = target / "frontend" / "package-lock.json"
+    if not dockerfile.is_file() or not lockfile.is_file():
+        return
+    try:
+        lock = json.loads(lockfile.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return
+    packages = lock.get("packages")
+    if not isinstance(packages, dict):
+        return
+    rolldown = packages.get("node_modules/rolldown")
+    if not isinstance(rolldown, dict):
+        return
+    optional = rolldown.get("optionalDependencies")
+    if not isinstance(optional, dict):
+        return
+    version = optional.get("@rolldown/binding-linux-x64-musl")
+    if not isinstance(version, str) or not version:
+        return
+    text = dockerfile.read_text(encoding="utf-8")
+    install_line = f"RUN npm install --no-save @rolldown/binding-linux-x64-musl@{version}\n"
+    if install_line in text:
+        return
+    if "RUN npm ci\n" not in text or "RUN npm run build" not in text:
+        return
+    dockerfile.write_text(
+        text.replace("RUN npm ci\n", f"RUN npm ci\n{install_line}", 1),
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def write_clerk_env(
     target: Path,
     *,
@@ -1982,6 +2016,7 @@ def prepare_sources(
         write_records_override(ctx["records_source"], records_ports)  # type: ignore[arg-type]
     if MODULE_CLERK in modules:
         copy_source(source_root(MODULE_CLERK), ctx["clerk_source"])  # type: ignore[arg-type]
+        normalize_clerk_frontend_dockerfile(ctx["clerk_source"])  # type: ignore[arg-type]
         write_clerk_env(
             ctx["clerk_source"] / ".env",
             staff_mode=staff_mode,

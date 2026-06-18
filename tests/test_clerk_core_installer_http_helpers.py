@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -112,3 +113,43 @@ def test_uninstall_uses_orphan_cleanup_when_source_tree_is_missing(monkeypatch, 
     assert cleanup_projects == ["civicsuite-test-clerk"]
     assert result["steps"][0]["status"] == "skipped_not_selected"
     assert result["steps"][1]["status"] == "source_missing_orphan_cleanup"
+
+
+def test_normalize_clerk_frontend_dockerfile_installs_rolldown_musl_binding(tmp_path) -> None:
+    installer = _load_installer_module()
+    source = tmp_path / "civicclerk"
+    frontend = source / "frontend"
+    frontend.mkdir(parents=True)
+    (source / "Dockerfile.frontend").write_text(
+        "FROM node:24-alpine AS build\n"
+        "WORKDIR /app\n"
+        "COPY frontend/package.json frontend/package-lock.json ./\n"
+        "RUN npm ci\n"
+        "COPY frontend/ ./\n"
+        "RUN npm run build\n",
+        encoding="utf-8",
+    )
+    (frontend / "package-lock.json").write_text(
+        json.dumps(
+            {
+                "packages": {
+                    "node_modules/rolldown": {
+                        "optionalDependencies": {
+                            "@rolldown/binding-linux-x64-musl": "1.0.3"
+                        }
+                    }
+                }
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    installer.normalize_clerk_frontend_dockerfile(source)
+    installer.normalize_clerk_frontend_dockerfile(source)
+
+    dockerfile = (source / "Dockerfile.frontend").read_text(encoding="utf-8")
+    install_line = "RUN npm install --no-save @rolldown/binding-linux-x64-musl@1.0.3"
+    assert dockerfile.count(install_line) == 1
+    assert dockerfile.index(install_line) > dockerfile.index("RUN npm ci")
+    assert dockerfile.index(install_line) < dockerfile.index("RUN npm run build")
