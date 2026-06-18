@@ -183,6 +183,25 @@ struct BackupManifest {
     skipped_files: Vec<SkippedBackupFileEntry>,
 }
 
+#[derive(Clone, Copy)]
+struct BackupOptions {
+    include_model_cache: bool,
+}
+
+impl Default for BackupOptions {
+    fn default() -> Self {
+        Self {
+            include_model_cache: true,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+struct RestoreProfileOptions {
+    skip_source_model_cache: bool,
+    preserve_destination_model_cache: bool,
+}
+
 #[derive(Serialize)]
 struct SupportBundleManifest {
     schema_version: u16,
@@ -461,6 +480,81 @@ fn copy_path_recursive(source: &Path, destination: &Path) -> Result<(), String> 
     Ok(())
 }
 
+fn relative_path_is_model_cache(source_root: &Path, current: &Path) -> bool {
+    let Ok(relative) = current.strip_prefix(source_root) else {
+        return false;
+    };
+    relative
+        .components()
+        .next()
+        .map(|component| {
+            component
+                .as_os_str()
+                .to_string_lossy()
+                .eq_ignore_ascii_case("models")
+        })
+        .unwrap_or(false)
+}
+
+fn copy_path_recursive_for_restore(
+    source: &Path,
+    destination: &Path,
+    options: RestoreProfileOptions,
+) -> Result<(), String> {
+    fn copy(
+        source_root: &Path,
+        current: &Path,
+        destination: &Path,
+        options: RestoreProfileOptions,
+    ) -> Result<(), String> {
+        if !current.exists() {
+            return Ok(());
+        }
+        if options.skip_source_model_cache && relative_path_is_model_cache(source_root, current) {
+            return Ok(());
+        }
+        let metadata = fs::symlink_metadata(current)
+            .map_err(|error| format!("Could not inspect {}: {error}", current.display()))?;
+        if metadata.file_type().is_symlink() {
+            return Err(format!(
+                "Refusing to follow symbolic link during restore: {}",
+                current.display()
+            ));
+        }
+        if metadata.is_dir() {
+            fs::create_dir_all(destination)
+                .map_err(|error| format!("Could not create {}: {error}", destination.display()))?;
+            for entry in fs::read_dir(current)
+                .map_err(|error| format!("Could not read {}: {error}", current.display()))?
+            {
+                let entry =
+                    entry.map_err(|error| format!("Could not read restore entry: {error}"))?;
+                copy(
+                    source_root,
+                    &entry.path(),
+                    &destination.join(entry.file_name()),
+                    options,
+                )?;
+            }
+        } else if metadata.is_file() {
+            if let Some(parent) = destination.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
+            }
+            fs::copy(current, destination).map_err(|error| {
+                format!(
+                    "Could not copy {} to {}: {error}",
+                    current.display(),
+                    destination.display()
+                )
+            })?;
+        }
+        Ok(())
+    }
+
+    copy(source, source, destination, options)
+}
+
 fn backup_relative_copy_path(prefix: &str, source_root: &Path, current: &Path) -> String {
     let path = current
         .strip_prefix(source_root)
@@ -472,6 +566,11 @@ fn backup_relative_copy_path(prefix: &str, source_root: &Path, current: &Path) -
         .map(|component| component.as_os_str().to_string_lossy())
         .collect::<Vec<_>>()
         .join("/")
+}
+
+fn backup_relative_path_is_model_cache(prefix: &str, source_root: &Path, current: &Path) -> bool {
+    let relative_path = backup_relative_copy_path(prefix, source_root, current);
+    relative_path == "Data/models" || relative_path.starts_with("Data/models/")
 }
 
 fn push_backup_copy_skip(
@@ -493,14 +592,43 @@ fn copy_path_recursive_for_backup(
     backup_path_prefix: &str,
     skipped: &mut Vec<SkippedBackupFileEntry>,
 ) {
+    copy_path_recursive_for_backup_with_options(
+        source,
+        destination,
+        backup_path_prefix,
+        skipped,
+        BackupOptions::default(),
+    );
+}
+
+fn copy_path_recursive_for_backup_with_options(
+    source: &Path,
+    destination: &Path,
+    backup_path_prefix: &str,
+    skipped: &mut Vec<SkippedBackupFileEntry>,
+    options: BackupOptions,
+) {
     fn copy(
         source_root: &Path,
         current: &Path,
         destination: &Path,
         backup_path_prefix: &str,
         skipped: &mut Vec<SkippedBackupFileEntry>,
+        options: BackupOptions,
     ) {
         if !current.exists() {
+            return;
+        }
+        if !options.include_model_cache
+            && backup_relative_path_is_model_cache(backup_path_prefix, source_root, current)
+        {
+            push_backup_copy_skip(
+                skipped,
+                backup_path_prefix,
+                source_root,
+                current,
+                "local model cache skipped for restore safety backup; CivicSuite verifies or redownloads model files after restore",
+            );
             return;
         }
         let metadata = match fs::symlink_metadata(current) {
@@ -570,6 +698,7 @@ fn copy_path_recursive_for_backup(
                     &destination.join(entry.file_name()),
                     backup_path_prefix,
                     skipped,
+                    options,
                 );
             }
             return;
@@ -599,7 +728,14 @@ fn copy_path_recursive_for_backup(
         }
     }
 
-    copy(source, source, destination, backup_path_prefix, skipped);
+    copy(
+        source,
+        source,
+        destination,
+        backup_path_prefix,
+        skipped,
+        options,
+    );
 }
 
 fn normalized_backup_path(root: &Path, path: &Path) -> Result<String, String> {
@@ -968,7 +1104,21 @@ fn replace_profile_dir_from_backup(
     source: &Path,
     destination: &Path,
     label: &str,
-) -> Result<Option<String>, String> {
+) -> Result<Vec<String>, String> {
+    replace_profile_dir_from_backup_with_options(
+        source,
+        destination,
+        label,
+        RestoreProfileOptions::default(),
+    )
+}
+
+fn replace_profile_dir_from_backup_with_options(
+    source: &Path,
+    destination: &Path,
+    label: &str,
+    options: RestoreProfileOptions,
+) -> Result<Vec<String>, String> {
     if let Some(parent) = destination.parent() {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
@@ -976,14 +1126,14 @@ fn replace_profile_dir_from_backup(
 
     if !source.exists() {
         remove_profile_dir(destination)?;
-        return Ok(None);
+        return Ok(Vec::new());
     }
 
     let stage = restore_swap_path(destination, "stage")?;
     if stage.exists() {
         remove_profile_dir(&stage)?;
     }
-    copy_path_recursive(source, &stage).map_err(|error| {
+    copy_path_recursive_for_restore(source, &stage, options).map_err(|error| {
         let _ = remove_profile_dir(&stage);
         error
     })?;
@@ -1001,17 +1151,38 @@ fn replace_profile_dir_from_backup(
         return Err(error);
     }
 
+    let mut notes = Vec::new();
     if old.exists() {
-        return Ok(Some(format!(
+        if options.preserve_destination_model_cache {
+            let old_models = old.join("models");
+            let restored_models = destination.join("models");
+            if old_models.exists() && !restored_models.exists() {
+                match rename_path_with_retries(&old_models, &restored_models) {
+                    Ok(()) => notes.push(format!(
+                        "{label} restored; existing local model cache was preserved at {}.",
+                        restored_models.display()
+                    )),
+                    Err(error) => notes.push(format!(
+                        "{label} restored; local model cache preservation is pending at {} because {error}.",
+                        old_models.display()
+                    )),
+                }
+            }
+        }
+        notes.push(format!(
             "{label} restored; old folder cleanup is pending at {}.",
             old.display()
-        )));
+        ));
     }
 
-    Ok(None)
+    Ok(notes)
 }
 
 fn create_backup(kind: &str) -> Result<PathBuf, String> {
+    create_backup_with_options(kind, BackupOptions::default())
+}
+
+fn create_backup_with_options(kind: &str, options: BackupOptions) -> Result<PathBuf, String> {
     let created = now_unix_seconds();
     let root = backup_root();
     fs::create_dir_all(&root)
@@ -1032,7 +1203,13 @@ fn create_backup(kind: &str) -> Result<PathBuf, String> {
     let contains_data = data.exists();
     let contains_config = config.exists();
     let mut skipped_files = Vec::new();
-    copy_path_recursive_for_backup(&data, &destination.join("Data"), "Data", &mut skipped_files);
+    copy_path_recursive_for_backup_with_options(
+        &data,
+        &destination.join("Data"),
+        "Data",
+        &mut skipped_files,
+        options,
+    );
     copy_path_recursive_for_backup(
         &config,
         &destination.join("config"),
@@ -1290,10 +1467,6 @@ fn command_output_with_timeout(
     })
 }
 
-fn command_status(command: &mut Command, label: &str) -> Result<(), String> {
-    command_status_with_timeout(command, label, SERVICE_COMMAND_TIMEOUT)
-}
-
 fn command_status_with_timeout(
     command: &mut Command,
     label: &str,
@@ -1384,6 +1557,39 @@ fn ensure_postgres_initialized(service: &ServiceDefinition) -> Result<(), String
 
 fn postgres_tcp_ready() -> bool {
     tcp_health_ok("127.0.0.1", LOCAL_DB_PORT)
+}
+
+fn postgres_pid_file() -> PathBuf {
+    postgres_data_dir().join("postmaster.pid")
+}
+
+fn clear_stale_postgres_pid_file() -> Result<Option<String>, String> {
+    let pid_file = postgres_pid_file();
+    if !pid_file.is_file() || postgres_tcp_ready() {
+        return Ok(None);
+    }
+    let contents = fs::read_to_string(&pid_file)
+        .map_err(|error| format!("Could not read {}: {error}", pid_file.display()))?;
+    let pid = contents
+        .lines()
+        .next()
+        .and_then(|line| line.trim().parse::<u32>().ok());
+    if pid.map(process_running).unwrap_or(false) {
+        return Ok(None);
+    }
+    fs::remove_file(&pid_file)
+        .map_err(|error| format!("Could not remove stale {}: {error}", pid_file.display()))?;
+    Ok(Some(format!(
+        "Removed stale local data store PID file {} before start.",
+        pid_file.display()
+    )))
+}
+
+fn recent_log_excerpt(path: &Path, max_bytes: usize) -> Option<String> {
+    let bytes = fs::read(path).ok()?;
+    let start = bytes.len().saturating_sub(max_bytes);
+    let excerpt = String::from_utf8_lossy(&bytes[start..]).trim().to_string();
+    (!excerpt.is_empty()).then_some(excerpt.replace("\r\n", " ").replace('\n', " "))
 }
 
 fn run_postgres_with_password(
@@ -1499,14 +1705,23 @@ fn run_python_migrations() -> Result<(), String> {
 fn start_postgres_service(service: &ServiceDefinition) -> Result<(), String> {
     ensure_postgres_initialized(service)?;
     if !postgres_tcp_ready() {
+        let stale_pid_note = clear_stale_postgres_pid_file()?;
         let binary = service_binary_path(service);
-        command_status(
-            Command::new(binary)
-                .args(service_arg_values(service))
-                .stdout(Stdio::null())
-                .stderr(Stdio::null()),
-            "Local data store start",
-        )?;
+        let mut command = Command::new(binary);
+        command.args(service_arg_values(service));
+        if let Err(error) = command_output(&mut command, "Local data store start") {
+            let mut details = Vec::new();
+            if let Some(note) = stale_pid_note {
+                details.push(note);
+            }
+            if let Some(log) = recent_log_excerpt(&service_log_path(service), 4096) {
+                details.push(format!("Recent local data store log: {log}"));
+            }
+            if details.is_empty() {
+                return Err(error);
+            }
+            return Err(format!("{} {}", error, details.join(" ")));
+        }
         for _ in 0..40 {
             if postgres_tcp_ready() {
                 break;
@@ -2720,20 +2935,29 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
                     .to_string(),
         });
     }
-    let safety_backup = create_backup("pre-restore")?;
+    let safety_backup = create_backup_with_options(
+        "pre-restore",
+        BackupOptions {
+            include_model_cache: false,
+        },
+    )?;
     let _ = stop_services(services)?;
     wait_for_services_to_release_profile(services);
     let mut cleanup_notes = Vec::new();
-    if let Some(note) =
-        replace_profile_dir_from_backup(&source.join("Data"), &data_root(), "City data")?
-    {
-        cleanup_notes.push(note);
-    }
-    if let Some(note) =
-        replace_profile_dir_from_backup(&source.join("config"), &config_dir(), "Setup/config")?
-    {
-        cleanup_notes.push(note);
-    }
+    cleanup_notes.extend(replace_profile_dir_from_backup_with_options(
+        &source.join("Data"),
+        &data_root(),
+        "City data",
+        RestoreProfileOptions {
+            skip_source_model_cache: true,
+            preserve_destination_model_cache: true,
+        },
+    )?);
+    cleanup_notes.extend(replace_profile_dir_from_backup(
+        &source.join("config"),
+        &config_dir(),
+        "Setup/config",
+    )?);
     rewrite_service_state_after_restore(services)?;
     let cleanup_message = if cleanup_notes.is_empty() {
         String::new()
@@ -3066,6 +3290,22 @@ mod tests {
         .expect_err("hanging command should time out");
 
         assert!(error.contains("Hanging post-restore runtime command timed out"));
+    }
+
+    #[test]
+    fn stale_postgres_pid_file_is_removed_before_start() {
+        with_temp_state_dir(|root| {
+            let postgres = root.join("Data").join("postgres");
+            fs::create_dir_all(&postgres).expect("postgres data dir");
+            fs::write(postgres.join("postmaster.pid"), "999999\n").expect("pid file");
+
+            let note = clear_stale_postgres_pid_file().expect("clear stale pid");
+
+            assert!(note
+                .expect("stale pid note")
+                .contains("Removed stale local data store PID file"));
+            assert!(!postgres.join("postmaster.pid").exists());
+        });
     }
 
     #[test]
@@ -3630,6 +3870,16 @@ mod tests {
                 "released response",
             )
             .expect("export file");
+            fs::create_dir_all(root.join("Data").join("models").join("ollama"))
+                .expect("model cache folder");
+            fs::write(
+                root.join("Data")
+                    .join("models")
+                    .join("ollama")
+                    .join("model-cache.bin"),
+                "backup-model-cache",
+            )
+            .expect("model cache file before backup");
             fs::create_dir_all(root.join("config")).expect("config folder");
             fs::write(root.join("config").join("city.json"), "before").expect("config file");
             fs::write(
@@ -3660,6 +3910,14 @@ mod tests {
                     .join("response.md"),
             )
             .expect("remove export");
+            fs::write(
+                root.join("Data")
+                    .join("models")
+                    .join("ollama")
+                    .join("model-cache.bin"),
+                "current-model-cache",
+            )
+            .expect("current model cache file");
             fs::write(root.join("config").join("city.json"), "after").expect("mutate config");
 
             let result = supervisor_action("restore", None).expect("restore response");
@@ -3685,6 +3943,16 @@ mod tests {
                 .join("records")
                 .join("response.md")
                 .is_file());
+            assert_eq!(
+                fs::read_to_string(
+                    root.join("Data")
+                        .join("models")
+                        .join("ollama")
+                        .join("model-cache.bin")
+                )
+                .expect("current model cache preserved"),
+                "current-model-cache"
+            );
             let runtime_state: RuntimeState = serde_json::from_str(
                 &fs::read_to_string(root.join("config").join("runtime-state.json"))
                     .expect("runtime state"),
@@ -3722,12 +3990,26 @@ mod tests {
                 .iter()
                 .any(|name| name.contains("-old-config-")));
             assert!(result.message.contains("old folder cleanup is pending"));
-            assert!(root
+            assert!(result
+                .message
+                .contains("existing local model cache was preserved"));
+            let pre_restore_backup = root
                 .join("Backups")
                 .read_dir()
                 .expect("backups")
                 .filter_map(Result::ok)
-                .any(|entry| entry.file_name().to_string_lossy().contains("pre-restore")));
+                .find(|entry| entry.file_name().to_string_lossy().contains("pre-restore"))
+                .expect("pre-restore safety backup")
+                .path();
+            assert!(!pre_restore_backup.join("Data").join("models").exists());
+            let manifest =
+                verified_backup_manifest(&pre_restore_backup).expect("pre-restore verifies");
+            assert!(manifest.skipped_files.iter().any(|entry| {
+                entry.path == "Data/models"
+                    && entry
+                        .reason
+                        .contains("model cache skipped for restore safety backup")
+            }));
         });
     }
 
