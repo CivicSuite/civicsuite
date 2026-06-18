@@ -1100,6 +1100,45 @@ fn rename_path_with_retries(source: &Path, destination: &Path) -> Result<(), Str
     ))
 }
 
+fn move_children_except(
+    source_dir: &Path,
+    destination_dir: &Path,
+    excluded_names: &[&str],
+) -> Result<Vec<String>, String> {
+    if !source_dir.exists() {
+        return Ok(Vec::new());
+    }
+    fs::create_dir_all(destination_dir).map_err(|error| {
+        format!(
+            "Could not create restore swap folder {}: {error}",
+            destination_dir.display()
+        )
+    })?;
+    let mut moved = Vec::new();
+    for entry in fs::read_dir(source_dir)
+        .map_err(|error| format!("Could not inspect {}: {error}", source_dir.display()))?
+    {
+        let entry = entry.map_err(|error| format!("Could not inspect restore entry: {error}"))?;
+        let file_name = entry.file_name();
+        let name = file_name.to_string_lossy();
+        if excluded_names
+            .iter()
+            .any(|excluded| name.eq_ignore_ascii_case(excluded))
+        {
+            continue;
+        }
+        let source = entry.path();
+        let destination = destination_dir.join(&file_name);
+        if destination.exists() {
+            ensure_profile_child_for_delete(&destination)?;
+            remove_profile_dir(&destination)?;
+        }
+        rename_path_with_retries(&source, &destination)?;
+        moved.push(name.to_string());
+    }
+    Ok(moved)
+}
+
 fn replace_profile_dir_from_backup(
     source: &Path,
     destination: &Path,
@@ -1137,6 +1176,43 @@ fn replace_profile_dir_from_backup_with_options(
         let _ = remove_profile_dir(&stage);
         error
     })?;
+
+    if options.preserve_destination_model_cache {
+        let old = restore_swap_path(destination, "old")?;
+        if old.exists() {
+            remove_profile_dir(&old)?;
+        }
+        fs::create_dir_all(destination)
+            .map_err(|error| format!("Could not create {}: {error}", destination.display()))?;
+        ensure_profile_child_for_delete(destination)?;
+        let moved_old = move_children_except(destination, &old, &["models"])?;
+        if let Err(error) = move_children_except(&stage, destination, &["models"]) {
+            let _ = move_children_except(&old, destination, &[]);
+            let _ = remove_profile_dir(&stage);
+            return Err(error);
+        }
+        let mut notes = Vec::new();
+        if destination.join("models").exists() {
+            notes.push(format!(
+                "{label} restored; existing local model cache was preserved at {}.",
+                destination.join("models").display()
+            ));
+        }
+        if stage.join("models").exists() && !destination.join("models").exists() {
+            notes.push(format!(
+                "{label} restored; backup model cache remains pending at {} because the local model cache was preserved.",
+                stage.join("models").display()
+            ));
+        }
+        let _ = remove_profile_dir(&stage);
+        if !moved_old.is_empty() || old.exists() {
+            notes.push(format!(
+                "{label} restored; old folder cleanup is pending at {}.",
+                old.display()
+            ));
+        }
+        return Ok(notes);
+    }
 
     let old = restore_swap_path(destination, "old")?;
     if destination.exists() {
@@ -1561,6 +1637,7 @@ fn ensure_postgres_initialized(
     }
     fs::create_dir_all(&data_dir)
         .map_err(|error| format!("Could not create local data store folder: {error}"))?;
+    ensure_postgres_data_dir_uncompressed(&data_dir)?;
 
     let _ = postgres_password()?;
     let password_file = secrets_dir().join("postgres-password.txt");
@@ -1629,6 +1706,45 @@ fn clear_stale_postgres_pid_file() -> Result<Option<String>, String> {
         "Removed stale local data store PID file {} before start.",
         pid_file.display()
     )))
+}
+
+fn ensure_postgres_data_dir_uncompressed(data_dir: &Path) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        if !data_dir.exists() {
+            return Ok(());
+        }
+        for arg in [
+            data_dir.to_string_lossy().to_string(),
+            format!("/S:{}", data_dir.display()),
+        ] {
+            let status = Command::new("compact.exe")
+                .arg("/U")
+                .arg("/I")
+                .arg("/Q")
+                .arg(&arg)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .map_err(|error| {
+                    format!(
+                        "Could not clear NTFS compression from local data store {}: {error}",
+                        data_dir.display()
+                    )
+                })?;
+            if !status.success() {
+                return Err(format!(
+                    "Could not clear NTFS compression from local data store {}: compact exited with {status}.",
+                    data_dir.display()
+                ));
+            }
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = data_dir;
+    }
+    Ok(())
 }
 
 fn recent_log_excerpt(path: &Path, max_bytes: usize) -> Option<String> {
@@ -1756,6 +1872,7 @@ fn start_postgres_service(
     allow_repair_reset: bool,
 ) -> Result<Option<String>, String> {
     let repair_note = ensure_postgres_initialized(service, allow_repair_reset)?;
+    ensure_postgres_data_dir_uncompressed(&postgres_data_dir())?;
     if !postgres_tcp_ready() {
         let stale_pid_note = clear_stale_postgres_pid_file()?;
         let binary = service_binary_path(service);
@@ -1796,6 +1913,11 @@ fn start_postgres_service(
             thread::sleep(Duration::from_millis(500));
         }
         if !postgres_tcp_ready() {
+            if let Some(log) = recent_log_excerpt(&log_path, 4096) {
+                return Err(format!(
+                    "Local data store did not become ready on localhost. Recent local data store log: {log}"
+                ));
+            }
             return Err("Local data store did not become ready on localhost.".to_string());
         }
     }
@@ -4203,6 +4325,15 @@ mod tests {
                 "current-model-cache",
             )
             .expect("current model cache file");
+            let _locked_model_cache = OpenOptions::new()
+                .read(true)
+                .open(
+                    root.join("Data")
+                        .join("models")
+                        .join("ollama")
+                        .join("model-cache.bin"),
+                )
+                .expect("hold live model cache handle during restore");
             fs::write(root.join("config").join("city.json"), "after").expect("mutate config");
 
             let result = supervisor_action("restore", None).expect("restore response");
