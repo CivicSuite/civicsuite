@@ -3438,6 +3438,7 @@ mod tests {
             "bin/pg_ctl.exe",
             "bin/initdb.exe",
             "bin/postgres.exe",
+            "bin/zlib1.dll",
             "share/extension/vector.control",
             "lib/vector.dll",
         ] {
@@ -3454,6 +3455,7 @@ mod tests {
                 "bin/pg_ctl.exe",
                 "bin/initdb.exe",
                 "bin/postgres.exe",
+                "bin/zlib1.dll",
                 "share/extension/vector.control",
                 "lib/vector.dll",
             ],
@@ -3846,6 +3848,38 @@ mod tests {
                 .join("bin")
                 .join("pg_ctl.exe")
                 .is_file());
+            assert!(root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin")
+                .join("zlib1.dll")
+                .is_file());
+        });
+    }
+
+    #[test]
+    fn supervisor_install_repairs_stale_postgres_runtime_missing_zlib() {
+        with_temp_state_dir(|root| {
+            let payload_root = root.join("Payload");
+            write_test_postgres_payload(&payload_root);
+            let stale_runtime = root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin");
+            fs::create_dir_all(&stale_runtime).expect("stale runtime bin dir");
+            for file in ["pg_ctl.exe", "initdb.exe", "postgres.exe"] {
+                fs::write(stale_runtime.join(file), "fake runtime file")
+                    .expect("stale runtime file");
+            }
+
+            let result = supervisor_action("install", Some("postgres"))
+                .expect("action response is structured");
+
+            assert!(result.accepted);
+            assert_eq!(result.status, "Installed");
+            assert!(stale_runtime.join("zlib1.dll").is_file());
         });
     }
 

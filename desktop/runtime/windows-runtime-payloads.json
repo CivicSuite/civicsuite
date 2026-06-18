@@ -15,6 +15,7 @@
         "bin/pg_ctl.exe",
         "bin/initdb.exe",
         "bin/postgres.exe",
+        "bin/zlib1.dll",
         "share/extension/vector.control",
         "lib/vector.dll"
       ]
