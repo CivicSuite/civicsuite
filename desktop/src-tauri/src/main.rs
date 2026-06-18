@@ -778,6 +778,11 @@ async fn city_work_action(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .on_window_event(|_window, event| {
+            if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+                let _ = supervisor::supervisor_action("stop", None);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             get_app_state,
             get_model_state,

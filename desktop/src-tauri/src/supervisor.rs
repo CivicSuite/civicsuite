@@ -1532,24 +1532,35 @@ fn command_status_with_timeout(
     }
 }
 
-fn ensure_postgres_initialized(service: &ServiceDefinition) -> Result<(), String> {
+fn ensure_postgres_initialized(
+    service: &ServiceDefinition,
+    allow_repair_reset: bool,
+) -> Result<Option<String>, String> {
     let data_dir = postgres_data_dir();
     if data_dir.join("PG_VERSION").is_file() {
-        return Ok(());
+        return Ok(None);
     }
+    let mut repair_note = None;
     if data_dir.exists() {
         let mut entries = fs::read_dir(&data_dir)
             .map_err(|error| format!("Could not inspect local data store folder: {error}"))?;
         if entries.next().is_some() {
-            return Err(format!(
-                "The local data store folder {} exists but is not initialized. Use repair after backing up this profile.",
-                data_dir.display()
+            if !allow_repair_reset {
+                return Err(format!(
+                    "The local data store folder {} exists but is not initialized. Use Repair after backing up this profile.",
+                    data_dir.display()
+                ));
+            }
+            let old = restore_swap_path(&data_dir, "postgres-repair-old")?;
+            rename_path_with_retries(&data_dir, &old)?;
+            repair_note = Some(format!(
+                "Moved incomplete local data store initialization to {} before repair.",
+                old.display()
             ));
         }
-    } else {
-        fs::create_dir_all(&data_dir)
-            .map_err(|error| format!("Could not create local data store folder: {error}"))?;
     }
+    fs::create_dir_all(&data_dir)
+        .map_err(|error| format!("Could not create local data store folder: {error}"))?;
 
     let _ = postgres_password()?;
     let password_file = secrets_dir().join("postgres-password.txt");
@@ -1561,22 +1572,24 @@ fn ensure_postgres_initialized(service: &ServiceDefinition) -> Result<(), String
             initdb.display()
         ));
     }
-    command_output(
-        Command::new(initdb)
-            .arg("-D")
-            .arg(&data_dir)
-            .arg("--username")
-            .arg(LOCAL_DB_USER)
-            .arg("--pwfile")
-            .arg(&password_file)
-            .arg("--auth-host")
-            .arg("scram-sha-256")
-            .arg("--auth-local")
-            .arg("trust")
-            .arg("--encoding")
-            .arg("UTF8"),
-        "Local data store initialization",
-    )?;
+    let mut command = Command::new(&initdb);
+    command
+        .arg("-D")
+        .arg(&data_dir)
+        .arg("--username")
+        .arg(LOCAL_DB_USER)
+        .arg("--pwfile")
+        .arg(&password_file)
+        .arg("--auth-host")
+        .arg("scram-sha-256")
+        .arg("--auth-local")
+        .arg("trust")
+        .arg("--encoding")
+        .arg("UTF8");
+    if let Some(parent) = initdb.parent() {
+        command.current_dir(parent);
+    }
+    command_output(&mut command, "Local data store initialization")?;
 
     fs::write(
         data_dir.join("postgresql.auto.conf"),
@@ -1585,7 +1598,7 @@ fn ensure_postgres_initialized(service: &ServiceDefinition) -> Result<(), String
         ),
     )
     .map_err(|error| format!("Could not write local data store configuration: {error}"))?;
-    Ok(())
+    Ok(repair_note)
 }
 
 fn postgres_tcp_ready() -> bool {
@@ -1639,10 +1652,13 @@ fn run_postgres_with_password(
             binary.display()
         ));
     }
-    let mut command = Command::new(binary);
+    let mut command = Command::new(&binary);
     command.env("PGPASSWORD", password);
     for arg in args {
         command.arg(arg);
+    }
+    if let Some(parent) = binary.parent() {
+        command.current_dir(parent);
     }
     command_output(&mut command, label)
 }
@@ -1735,8 +1751,11 @@ fn run_python_migrations() -> Result<(), String> {
     Ok(())
 }
 
-fn start_postgres_service(service: &ServiceDefinition) -> Result<(), String> {
-    ensure_postgres_initialized(service)?;
+fn start_postgres_service(
+    service: &ServiceDefinition,
+    allow_repair_reset: bool,
+) -> Result<Option<String>, String> {
+    let repair_note = ensure_postgres_initialized(service, allow_repair_reset)?;
     if !postgres_tcp_ready() {
         let stale_pid_note = clear_stale_postgres_pid_file()?;
         let binary = service_binary_path(service);
@@ -1750,6 +1769,9 @@ fn start_postgres_service(service: &ServiceDefinition) -> Result<(), String> {
             .args(service_arg_values(service))
             .stdout(Stdio::null())
             .stderr(Stdio::null());
+        if let Some(parent) = service_binary_path(service).parent() {
+            command.current_dir(parent);
+        }
         if let Err(error) = command_status_with_timeout(
             &mut command,
             "Local data store start",
@@ -1779,7 +1801,7 @@ fn start_postgres_service(service: &ServiceDefinition) -> Result<(), String> {
     }
     ensure_postgres_database(service)?;
     run_python_migrations()?;
-    Ok(())
+    Ok(repair_note)
 }
 
 fn service_environment(service: &ServiceDefinition) -> Result<Vec<(String, String)>, String> {
@@ -2303,6 +2325,36 @@ fn target_services<'a>(
     Ok(manifest.services.iter().collect())
 }
 
+fn service_by_id<'a>(
+    manifest: &'a RuntimeManifest,
+    service_id: &str,
+) -> Result<&'a ServiceDefinition, String> {
+    manifest
+        .services
+        .iter()
+        .find(|service| service.id == service_id)
+        .ok_or_else(|| format!("Unknown supervisor service: {service_id}"))
+}
+
+fn target_services_with_start_dependencies<'a>(
+    manifest: &'a RuntimeManifest,
+    service_id: Option<&str>,
+) -> Result<Vec<&'a ServiceDefinition>, String> {
+    let Some(id) = service_id else {
+        return Ok(manifest.services.iter().collect());
+    };
+    let mut services = Vec::new();
+    if matches!(id, "python-services" | "task-queue") {
+        services.push(service_by_id(manifest, "postgres")?);
+    }
+    if id == "task-queue" {
+        services.push(service_by_id(manifest, "python-services")?);
+    }
+    services.push(service_by_id(manifest, id)?);
+    services.dedup_by(|left, right| left.id == right.id);
+    Ok(services)
+}
+
 fn ensure_runtime_dirs(service: &ServiceDefinition) -> Result<(), String> {
     fs::create_dir_all(data_root().join("logs"))
         .map_err(|error| format!("Could not create runtime log folder: {error}"))?;
@@ -2384,9 +2436,40 @@ fn install_or_repair(
     }
 }
 
-fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult, String> {
+fn repair_services(
+    manifest: &RuntimeManifest,
+    services: &[&ServiceDefinition],
+) -> Result<SupervisorActionResult, String> {
+    let install_result = install_or_repair("repair", manifest, services)?;
+    if !install_result.accepted {
+        return Ok(install_result);
+    }
+    let start_result = start_services(services, true)?;
+    Ok(SupervisorActionResult {
+        accepted: start_result.accepted,
+        action: "repair".to_string(),
+        service_id: start_result.service_id,
+        status: if start_result.accepted {
+            "Repaired"
+        } else {
+            start_result.status
+        },
+        message: format!(
+            "{} {}",
+            install_result.message.trim_end_matches('.'),
+            start_result.message
+        ),
+        next_action: "Run Check from System Health after services finish warming up.".to_string(),
+    })
+}
+
+fn start_services(
+    services: &[&ServiceDefinition],
+    allow_repair_reset: bool,
+) -> Result<SupervisorActionResult, String> {
     let mut state = read_state()?;
     let mut started = Vec::new();
+    let mut notes = Vec::new();
     for service in services {
         ensure_runtime_dirs(service)?;
         if service.id == "postgres" {
@@ -2406,7 +2489,9 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
                         .to_string(),
                 });
             }
-            start_postgres_service(service)?;
+            if let Some(note) = start_postgres_service(service, allow_repair_reset)? {
+                notes.push(note);
+            }
             update_service_state(&mut state, &service.id, true, None, "start");
             started.push(service.label.clone());
             continue;
@@ -2470,10 +2555,18 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
         action: "start".to_string(),
         service_id: None,
         status: "Started",
-        message: format!(
-            "Started or verified local runtime service state for {}.",
-            started.join(", ")
-        ),
+        message: if notes.is_empty() {
+            format!(
+                "Started or verified local runtime service state for {}.",
+                started.join(", ")
+            )
+        } else {
+            format!(
+                "Started or verified local runtime service state for {}. {}",
+                started.join(", "),
+                notes.join(" ")
+            )
+        },
         next_action: "Run health verification after services finish warming up.".to_string(),
     })
 }
@@ -2880,7 +2973,7 @@ pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, Str
         });
     }
 
-    let start = start_services(&services)?;
+    let start = start_services(&services, true)?;
     if !start.accepted {
         return Ok(SupervisorActionResult {
             accepted: false,
@@ -3109,18 +3202,42 @@ pub fn supervisor_action(
         return Err(format!("Unsupported supervisor action: {action}"));
     }
 
-    let services = target_services(&manifest, service_id)?;
     match action {
-        "install" | "repair" => install_or_repair(action, &manifest, &services),
-        "start" => start_services(&services),
-        "stop" => stop_services(&services),
+        "install" => {
+            let services = target_services(&manifest, service_id)?;
+            install_or_repair(action, &manifest, &services)
+        }
+        "repair" => {
+            let services = target_services_with_start_dependencies(&manifest, service_id)?;
+            repair_services(&manifest, &services)
+        }
+        "start" => {
+            let services = target_services_with_start_dependencies(&manifest, service_id)?;
+            start_services(&services, false)
+        }
+        "stop" => {
+            let services = target_services(&manifest, service_id)?;
+            stop_services(&services)
+        }
         "health" => health_action(service_id),
-        "logs" => log_action(&services),
-        "support-bundle" => support_bundle_action(&services),
+        "logs" => {
+            let services = target_services(&manifest, service_id)?;
+            log_action(&services)
+        }
+        "support-bundle" => {
+            let services = target_services(&manifest, service_id)?;
+            support_bundle_action(&services)
+        }
         "backup" => backup_action(),
         "open-backup-folder" => open_backup_folder_action(),
-        "restore" => restore_action(&services),
-        "uninstall" => uninstall_action(&services),
+        "restore" => {
+            let services = target_services(&manifest, service_id)?;
+            restore_action(&services)
+        }
+        "uninstall" => {
+            let services = target_services(&manifest, service_id)?;
+            uninstall_action(&services)
+        }
         "open-windows-uninstall" => open_windows_uninstall_action(),
         _ => Err(format!("Unsupported supervisor action: {action}")),
     }
@@ -3396,6 +3513,64 @@ mod tests {
             };
 
             assert!(error.contains("Local data store initializer is missing"));
+        });
+    }
+
+    #[test]
+    fn service_start_targets_include_runtime_dependencies() {
+        let manifest = parse_manifest().expect("manifest parses");
+
+        let python_services =
+            target_services_with_start_dependencies(&manifest, Some("python-services"))
+                .expect("python services target expands");
+        assert_eq!(
+            python_services
+                .iter()
+                .map(|service| service.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["postgres", "python-services"]
+        );
+
+        let task_queue = target_services_with_start_dependencies(&manifest, Some("task-queue"))
+            .expect("task queue target expands");
+        assert_eq!(
+            task_queue
+                .iter()
+                .map(|service| service.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["postgres", "python-services", "task-queue"]
+        );
+    }
+
+    #[test]
+    fn postgres_repair_moves_incomplete_data_store_before_reinitializing() {
+        with_temp_state_dir(|root| {
+            let manifest = parse_manifest().expect("manifest parses");
+            let service = service_by_id(&manifest, "postgres").expect("postgres service exists");
+            let postgres = root.join("Data").join("postgres");
+            fs::create_dir_all(postgres.join("base")).expect("partial postgres folder");
+            fs::write(postgres.join("partial-init.txt"), "failed init").expect("partial marker");
+
+            let error = ensure_postgres_initialized(service, true)
+                .expect_err("missing initdb still reports a bounded repair error");
+
+            assert!(error.contains("Local data store initializer is missing"));
+            assert!(postgres.is_dir());
+            assert!(!postgres.join("partial-init.txt").exists());
+            let old_partial = fs::read_dir(root.join("Data"))
+                .expect("data dir readable")
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .find(|path| {
+                    path.file_name()
+                        .map(|name| {
+                            name.to_string_lossy()
+                                .starts_with(".civicsuite-restore-postgres-repair-old-postgres-")
+                        })
+                        .unwrap_or(false)
+                })
+                .expect("partial postgres folder moved aside");
+            assert!(old_partial.join("partial-init.txt").is_file());
         });
     }
 
@@ -3714,6 +3889,49 @@ mod tests {
             assert!(health.iter().any(|item| item.id == "task-queue" && item.ok));
             supervisor_action("stop", Some("task-queue")).expect("stop task queue");
             supervisor_action("stop", Some("python-services")).expect("stop python services");
+            supervisor_action("stop", Some("postgres")).expect("stop postgres");
+        });
+    }
+
+    #[test]
+    fn real_copied_payload_repair_recovers_partial_postgres_when_enabled() {
+        if env::var("CIVICSUITE_RUN_REAL_RUNTIME_COPY_TEST")
+            .ok()
+            .as_deref()
+            != Some("1")
+        {
+            return;
+        }
+        let payload_dir = env::var("CIVICSUITE_RUNTIME_PAYLOAD_DIR")
+            .map(PathBuf::from)
+            .expect("CIVICSUITE_RUNTIME_PAYLOAD_DIR points at prepared desktop runtime payload");
+        with_temp_state_dir_and_payload(payload_dir, |root| {
+            let partial_postgres = root.join("Data").join("postgres");
+            fs::create_dir_all(&partial_postgres).expect("partial postgres folder");
+            fs::write(partial_postgres.join("partial-init.txt"), "failed init")
+                .expect("partial marker");
+
+            let repair =
+                supervisor_action("repair", Some("postgres")).expect("repair postgres payload");
+
+            assert!(repair.accepted);
+            assert_eq!(repair.status, "Repaired");
+            assert!(root
+                .join("Runtime")
+                .join("runtime")
+                .join("postgres")
+                .join("bin")
+                .join("pg_ctl.exe")
+                .is_file());
+            assert!(root
+                .join("Data")
+                .join("postgres")
+                .join("PG_VERSION")
+                .is_file());
+            assert!(runtime_health()
+                .expect("health builds")
+                .iter()
+                .any(|item| item.id == "postgres" && item.ok));
             supervisor_action("stop", Some("postgres")).expect("stop postgres");
         });
     }
