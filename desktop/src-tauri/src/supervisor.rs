@@ -1002,11 +1002,10 @@ fn replace_profile_dir_from_backup(
     }
 
     if old.exists() {
-        if let Err(error) = remove_profile_dir(&old) {
-            return Ok(Some(format!(
-                "{label} restored; old folder cleanup is pending because {error}"
-            )));
-        }
+        return Ok(Some(format!(
+            "{label} restored; old folder cleanup is pending at {}.",
+            old.display()
+        )));
     }
 
     Ok(None)
@@ -3706,14 +3705,23 @@ mod tests {
                 .join("files")
                 .join("post-backup-extra.txt")
                 .exists());
-            assert!(!root
+            let restore_swap_entries: Vec<String> = root
                 .read_dir()
                 .expect("profile entries")
                 .filter_map(Result::ok)
-                .any(|entry| entry
-                    .file_name()
-                    .to_string_lossy()
-                    .starts_with(".civicsuite-restore-")));
+                .map(|entry| entry.file_name().to_string_lossy().to_string())
+                .filter(|name| name.starts_with(".civicsuite-restore-"))
+                .collect();
+            assert!(!restore_swap_entries
+                .iter()
+                .any(|name| name.contains("-stage-")));
+            assert!(restore_swap_entries
+                .iter()
+                .any(|name| name.contains("-old-Data-")));
+            assert!(restore_swap_entries
+                .iter()
+                .any(|name| name.contains("-old-config-")));
+            assert!(result.message.contains("old folder cleanup is pending"));
             assert!(root
                 .join("Backups")
                 .read_dir()
@@ -3762,6 +3770,7 @@ mod tests {
             assert_eq!(result.status, "Restore needs service start");
             assert!(result.message.contains("Local services were left stopped"));
             assert!(result.message.contains("Start can verify database"));
+            assert!(result.message.contains("old folder cleanup is pending"));
             assert_eq!(
                 fs::read_to_string(root.join("Data").join("files").join("record.txt"))
                     .expect("restored data"),
