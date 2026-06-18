@@ -5639,6 +5639,12 @@ function newestRecord(records) {
   ), records[0]);
 }
 
+function newlyAddedRecord(records, previousRecords) {
+  if (!Array.isArray(records) || records.length === 0) return null;
+  const previousIds = new Set((previousRecords || []).map((record) => record.id));
+  return records.find((record) => !previousIds.has(record.id)) || newestRecord(records);
+}
+
 function recordById(records, id) {
   if (!id || !Array.isArray(records)) return null;
   return records.find((record) => record.id === id) || null;
@@ -5693,20 +5699,34 @@ function reconcileWorkSelection(work) {
   syncMeetingDependentSelections(work);
 }
 
-function syncWorkSelectionAfterAction(action, work) {
-  const latestMeeting = newestRecord(work.meetings || []);
-  const latestBody = newestRecord(work.meeting_bodies || []);
-  const latestMember = newestRecord(work.meeting_members || []);
-  const latestIntake = newestRecord(work.agenda_intakes || []);
-  const latestRequest = newestRecord(work.records_requests || []);
-  const latestSource = newestRecord(work.code_sources || []);
-  const latestHandoff = newestRecord(work.code_handoffs || []);
+function syncWorkSelectionAfterAction(action, work, previousWork = {}) {
+  const latestMeeting = newlyAddedRecord(work.meetings || [], previousWork.meetings || []);
+  const latestBody = newlyAddedRecord(work.meeting_bodies || [], previousWork.meeting_bodies || []);
+  const latestMember = newlyAddedRecord(work.meeting_members || [], previousWork.meeting_members || []);
+  const latestIntake = newlyAddedRecord(work.agenda_intakes || [], previousWork.agenda_intakes || []);
+  const latestRequest = newlyAddedRecord(work.records_requests || [], previousWork.records_requests || []);
+  const latestSource = newlyAddedRecord(work.code_sources || [], previousWork.code_sources || []);
+  const latestHandoff = newlyAddedRecord(work.code_handoffs || [], previousWork.code_handoffs || []);
   const selectedRequest = recordById(work.records_requests || [], state.workSelection.recordsRequestId) || latestRequest;
-  const latestDocument = newestRecord(selectedRequest?.documents || []);
+  const previousSelectedRequest = recordById(previousWork.records_requests || [], selectedRequest?.id);
+  const latestDocument = newlyAddedRecord(
+    selectedRequest?.documents || [],
+    previousSelectedRequest?.documents || []
+  );
   const selectedMeeting = recordById(work.meetings || [], state.workSelection.meetingId) || latestMeeting;
-  const latestAgendaItem = newestRecord(selectedMeeting?.agenda_items || []);
-  const latestMotion = newestRecord(selectedMeeting?.motions || []);
-  const latestPublicComment = newestRecord(selectedMeeting?.public_comments || []);
+  const previousSelectedMeeting = recordById(previousWork.meetings || [], selectedMeeting?.id);
+  const latestAgendaItem = newlyAddedRecord(
+    selectedMeeting?.agenda_items || [],
+    previousSelectedMeeting?.agenda_items || []
+  );
+  const latestMotion = newlyAddedRecord(
+    selectedMeeting?.motions || [],
+    previousSelectedMeeting?.motions || []
+  );
+  const latestPublicComment = newlyAddedRecord(
+    selectedMeeting?.public_comments || [],
+    previousSelectedMeeting?.public_comments || []
+  );
 
   if (action === "create-meeting-body" && latestBody) {
     state.workDraft.meetingBodyId = latestBody.id;
@@ -5797,13 +5817,14 @@ async function handleCityWorkAction(action, { confirmed = false } = {}) {
     return;
   }
   try {
+    const previousWork = cityWork();
     const result = await invoke("city_work_action", {
       action,
       payload: workPayloadForAction(action)
     });
     state.workActionResult = result;
     state.app.city_work = result.state;
-    syncWorkSelectionAfterAction(action, result.state);
+    syncWorkSelectionAfterAction(action, result.state, previousWork);
     state.searchResults = result.search_results || [];
     if (action === "submit-public-records-request") {
       const trackingNumber = String(result.message || "").match(/\bREQ-\d+\b/)?.[0] || "";

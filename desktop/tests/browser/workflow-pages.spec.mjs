@@ -436,6 +436,127 @@ test("browser preview refuses persistent city workflow mutations", async ({ page
   await expect(page.getByText("City workflow changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
 });
 
+test("desktop workflow actions select freshly added records over restored stale records", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [],
+      meeting_members: [],
+      agenda_intakes: [],
+      meetings: [],
+      records_requests: [],
+      code_sources: [],
+      code_handoffs: [],
+      adopted_legislation: [],
+      notification_events: [],
+      code_answers: []
+    });
+    const body = {
+      id: "body-001",
+      name: "City Council",
+      statutory_basis: "Municipal charter",
+      type: "council"
+    };
+    const meeting = (id, title) => ({
+      id,
+      body_id: body.id,
+      body_name: body.name,
+      title,
+      meeting_date: "2026-06-18",
+      status: "draft",
+      summary: "Budget workflow",
+      notice_status: "draft",
+      agenda_items: [],
+      staff_reports: [],
+      attachments: [],
+      packet_assemblies: [],
+      export_bundles: [],
+      closed_sessions: [],
+      attendance_records: [],
+      quorum_checks: [],
+      minute_citations: [],
+      motions: [],
+      member_votes: [],
+      votes: [],
+      adopted_legislation: [],
+      action_records: [],
+      action_items: [],
+      resident_comments: [],
+      public_comments: [],
+      exports: []
+    });
+    const source = (id, title) => ({
+      id,
+      title,
+      citation: `${title} citation`,
+      body: `${title} body`,
+      status: "internal draft",
+      public_status: "internal draft",
+      codifier_sync_status: "not synced",
+      public_exports: []
+    });
+    const oldMeeting = meeting("meeting-999", "Restored meeting DIR091");
+    const freshMeeting = meeting("meeting-100", "Fresh meeting DIR094");
+    const oldSource = source("source-999", "Noise ordinance DIR091");
+    const freshSource = source("source-100", "Fresh source DIR094");
+    window.__cityWorkState = emptyWork();
+    window.__cityWorkCalls = [];
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          window.__cityWorkCalls.push({ action: args.action, payload: args.payload });
+          if (args.action === "create-meeting-body") {
+            window.__cityWorkState = { ...window.__cityWorkState, meeting_bodies: [body] };
+          } else if (args.action === "create-meeting") {
+            const meetings = window.__cityWorkState.meetings.length === 0
+              ? [oldMeeting]
+              : [oldMeeting, freshMeeting];
+            window.__cityWorkState = { ...window.__cityWorkState, meetings };
+          } else if (args.action === "import-code-source") {
+            const codeSources = window.__cityWorkState.code_sources.length === 0
+              ? [oldSource]
+              : [oldSource, freshSource];
+            window.__cityWorkState = { ...window.__cityWorkState, code_sources: codeSources };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await page.getByRole("button", { name: "Save Meeting Body" }).click();
+  await page.getByRole("button", { name: "Confirm Save Meeting Body" }).click();
+
+  await page.getByRole("button", { name: "Create Meeting" }).click();
+  await page.getByRole("button", { name: "Create Meeting" }).click();
+
+  await expect(page.locator(".workflow-record").filter({ hasText: "Fresh meeting DIR094" }).getByText("Selected for actions")).toBeVisible();
+  await page.getByRole("button", { name: "Add Minute Citation" }).click();
+  await page.getByRole("button", { name: "Confirm Add Minute Citation" }).click();
+
+  await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await page.getByRole("button", { name: "Import Source" }).click();
+  await page.getByRole("button", { name: "Confirm Import Source" }).click();
+  await page.getByRole("button", { name: "Import Source" }).click();
+  await page.getByRole("button", { name: "Confirm Import Source" }).click();
+
+  await expect(page.locator(".workflow-record").filter({ hasText: "Fresh source DIR094" }).getByText("Selected for actions")).toBeVisible();
+  await page.getByRole("button", { name: "Save Guidance Draft" }).click();
+
+  const calls = await page.evaluate(() => window.__cityWorkCalls);
+  expect(calls.find((call) => call.action === "add-minute-citation")?.payload.meetingId).toBe("meeting-100");
+  expect(calls.find((call) => call.action === "draft-code-guidance")?.payload.codeSourceId).toBe("source-100");
+});
+
 test("audit drawer uses local workflow audit language instead of placeholder text", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Audit Trail" }).click();

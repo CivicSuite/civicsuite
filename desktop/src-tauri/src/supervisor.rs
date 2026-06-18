@@ -1422,37 +1422,70 @@ fn command_output_with_timeout(
     label: &str,
     timeout: Duration,
 ) -> Result<String, String> {
+    let capture_id = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    let stdout_path = env::temp_dir().join(format!(
+        "civicsuite-command-{}-{capture_id}-stdout.log",
+        std::process::id()
+    ));
+    let stderr_path = env::temp_dir().join(format!(
+        "civicsuite-command-{}-{capture_id}-stderr.log",
+        std::process::id()
+    ));
+    let stdout_file = fs::File::create(&stdout_path)
+        .map_err(|error| format!("{label} stdout capture could not start: {error}"))?;
+    let stderr_file = fs::File::create(&stderr_path)
+        .map_err(|error| format!("{label} stderr capture could not start: {error}"))?;
     let mut child = command
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stdout(Stdio::from(stdout_file))
+        .stderr(Stdio::from(stderr_file))
         .spawn()
-        .map_err(|error| format!("{label} could not start: {error}"))?;
+        .map_err(|error| {
+            let _ = fs::remove_file(&stdout_path);
+            let _ = fs::remove_file(&stderr_path);
+            format!("{label} could not start: {error}")
+        })?;
     let started = Instant::now();
-    loop {
-        if child
+    let status = loop {
+        if let Some(status) = child
             .try_wait()
             .map_err(|error| format!("{label} status check failed: {error}"))?
-            .is_some()
         {
-            break;
+            break status;
         }
         if started.elapsed() >= timeout {
             let _ = child.kill();
             let _ = child.wait();
+            let stdout = fs::read_to_string(&stdout_path).unwrap_or_default();
+            let stderr = fs::read_to_string(&stderr_path).unwrap_or_default();
+            let _ = fs::remove_file(&stdout_path);
+            let _ = fs::remove_file(&stderr_path);
+            let detail = [stdout.trim(), stderr.trim()]
+                .into_iter()
+                .filter(|part| !part.is_empty())
+                .collect::<Vec<_>>()
+                .join("; ");
             return Err(format!(
-                "{label} timed out after {} seconds.",
-                timeout.as_secs()
+                "{label} timed out after {} seconds{}",
+                timeout.as_secs(),
+                if detail.is_empty() {
+                    ".".to_string()
+                } else {
+                    format!(": {detail}")
+                }
             ));
         }
         thread::sleep(Duration::from_millis(250));
-    }
-
-    let output = child
-        .wait_with_output()
-        .map_err(|error| format!("{label} output collection failed: {error}"))?;
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    if output.status.success() {
+    };
+    let stdout = fs::read_to_string(&stdout_path).unwrap_or_default();
+    let stderr = fs::read_to_string(&stderr_path).unwrap_or_default();
+    let _ = fs::remove_file(&stdout_path);
+    let _ = fs::remove_file(&stderr_path);
+    let stdout = stdout.trim().to_string();
+    let stderr = stderr.trim().to_string();
+    if status.success() {
         return Ok(stdout);
     }
     let detail = [stdout.as_str(), stderr.as_str()]
@@ -1461,9 +1494,9 @@ fn command_output_with_timeout(
         .collect::<Vec<_>>()
         .join("; ");
     Err(if detail.is_empty() {
-        format!("{label} failed with status {}.", output.status)
+        format!("{label} failed with status {status}.")
     } else {
-        format!("{label} failed with status {}: {detail}", output.status)
+        format!("{label} failed with status {status}: {detail}")
     })
 }
 
@@ -1707,14 +1740,26 @@ fn start_postgres_service(service: &ServiceDefinition) -> Result<(), String> {
     if !postgres_tcp_ready() {
         let stale_pid_note = clear_stale_postgres_pid_file()?;
         let binary = service_binary_path(service);
+        let log_path = service_log_path(service);
+        if let Some(parent) = log_path.parent() {
+            fs::create_dir_all(parent)
+                .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
+        }
         let mut command = Command::new(binary);
-        command.args(service_arg_values(service));
-        if let Err(error) = command_output(&mut command, "Local data store start") {
+        command
+            .args(service_arg_values(service))
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        if let Err(error) = command_status_with_timeout(
+            &mut command,
+            "Local data store start",
+            SERVICE_COMMAND_TIMEOUT,
+        ) {
             let mut details = Vec::new();
             if let Some(note) = stale_pid_note {
                 details.push(note);
             }
-            if let Some(log) = recent_log_excerpt(&service_log_path(service), 4096) {
+            if let Some(log) = recent_log_excerpt(&log_path, 4096) {
                 details.push(format!("Recent local data store log: {log}"));
             }
             if details.is_empty() {
@@ -1881,30 +1926,32 @@ fn process_ids_for_executable(_executable: &Path) -> Vec<u32> {
     #[cfg(target_os = "windows")]
     {
         let script = r#"
-$target = [System.IO.Path]::GetFullPath($args[0])
+$target = [System.IO.Path]::GetFullPath($env:CIVICSUITE_PROCESS_LOOKUP_TARGET)
 Get-CimInstance Win32_Process |
   Where-Object { $_.ExecutablePath -and ([System.IO.Path]::GetFullPath($_.ExecutablePath) -ieq $target) } |
   Select-Object -ExpandProperty ProcessId
 "#;
-        let output = Command::new("powershell.exe")
+        let mut command = Command::new("powershell.exe");
+        command
             .arg("-NoProfile")
             .arg("-NonInteractive")
             .arg("-ExecutionPolicy")
             .arg("Bypass")
             .arg("-Command")
             .arg(script)
-            .arg(_executable)
-            .output();
-        return output
-            .ok()
-            .filter(|output| output.status.success())
-            .map(|output| {
-                String::from_utf8_lossy(&output.stdout)
-                    .lines()
-                    .filter_map(|line| line.trim().parse::<u32>().ok())
-                    .collect()
-            })
-            .unwrap_or_default();
+            .env("CIVICSUITE_PROCESS_LOOKUP_TARGET", _executable);
+        return command_output_with_timeout(
+            &mut command,
+            "Windows process lookup",
+            Duration::from_secs(10),
+        )
+        .map(|stdout| {
+            stdout
+                .lines()
+                .filter_map(|line| line.trim().parse::<u32>().ok())
+                .collect()
+        })
+        .unwrap_or_default();
     }
     #[cfg(not(target_os = "windows"))]
     {
@@ -1921,6 +1968,24 @@ fn stop_processes_for_executable(executable: &Path) -> usize {
         }
     }
     stopped
+}
+
+fn settled_service_pid(binary: &Path, spawned_pid: u32, existing_pids: &[u32]) -> u32 {
+    for _ in 0..20 {
+        if process_running(spawned_pid) {
+            return spawned_pid;
+        }
+        let mut candidates: Vec<u32> = process_ids_for_executable(binary)
+            .into_iter()
+            .filter(|pid| *pid != std::process::id() && !existing_pids.contains(pid))
+            .collect();
+        candidates.sort_unstable();
+        if let Some(pid) = candidates.pop() {
+            return pid;
+        }
+        thread::sleep(Duration::from_millis(250));
+    }
+    spawned_pid
 }
 
 fn probe_service_health(service: &ServiceDefinition, state: &RuntimeState) -> bool {
@@ -2358,6 +2423,7 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             continue;
         }
         let binary = service_binary_path(service);
+        let existing_pids = process_ids_for_executable(&binary);
         if !binary.is_file() {
             return Ok(SupervisorActionResult {
                 accepted: false,
@@ -2393,7 +2459,8 @@ fn start_services(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
         let child = command
             .spawn()
             .map_err(|error| format!("Could not start {}: {error}", service.label))?;
-        update_service_state(&mut state, &service.id, true, Some(child.id()), "start");
+        let pid = settled_service_pid(&binary, child.id(), &existing_pids);
+        update_service_state(&mut state, &service.id, true, Some(pid), "start");
         started.push(service.label.clone());
     }
     write_state(&state)?;
