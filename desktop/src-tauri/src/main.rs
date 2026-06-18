@@ -337,8 +337,7 @@ fn first_run_action_requires_admin_after_setup(action: &str) -> bool {
     )
 }
 
-#[tauri::command]
-fn get_app_state() -> Result<AppState, String> {
+fn app_state() -> Result<AppState, String> {
     let access = auth::access_state()?;
     let admin_signed_in = access_is_local_admin(&access);
     let signed_in = access_is_signed_in(&access);
@@ -379,6 +378,18 @@ fn get_app_state() -> Result<AppState, String> {
         health,
         city_work,
     })
+}
+
+#[tauri::command]
+async fn get_app_state() -> Result<AppState, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        catch_unwind(AssertUnwindSafe(app_state)).map_err(|_| {
+            "App state stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+                .to_string()
+        })?
+    })
+    .await
+    .map_err(|error| format!("App state could not load: {error}"))?
 }
 
 #[tauri::command]
@@ -423,8 +434,7 @@ fn preview_first_run_state(completed_step_ids: Vec<String>) -> Result<FirstRunSt
     first_run::first_run_state(&completed_step_ids)
 }
 
-#[tauri::command]
-fn first_run_action(
+fn first_run_action_authorized(
     action: String,
     step_id: Option<String>,
     payload: Option<Value>,
@@ -443,12 +453,30 @@ fn first_run_action(
 }
 
 #[tauri::command]
+async fn first_run_action(
+    action: String,
+    step_id: Option<String>,
+    payload: Option<Value>,
+) -> Result<FirstRunActionResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        catch_unwind(AssertUnwindSafe(|| {
+            first_run_action_authorized(action, step_id, payload)
+        }))
+        .map_err(|_| {
+            "First-run action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+                .to_string()
+        })?
+    })
+    .await
+    .map_err(|error| format!("First-run action could not complete: {error}"))?
+}
+
+#[tauri::command]
 fn auth_action(action: String, payload: Option<Value>) -> Result<AuthActionResult, String> {
     auth::auth_action(&action, payload.as_ref())
 }
 
-#[tauri::command]
-fn supervisor_action(
+fn supervisor_action_authorized(
     action: String,
     service_id: Option<String>,
 ) -> Result<SupervisorActionResult, String> {
@@ -456,6 +484,24 @@ fn supervisor_action(
         auth::require_admin_session()?;
     }
     supervisor::supervisor_action(&action, service_id.as_deref())
+}
+
+#[tauri::command]
+async fn supervisor_action(
+    action: String,
+    service_id: Option<String>,
+) -> Result<SupervisorActionResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        catch_unwind(AssertUnwindSafe(|| {
+            supervisor_action_authorized(action, service_id)
+        }))
+        .map_err(|_| {
+            "System Health action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+                .to_string()
+        })?
+    })
+    .await
+    .map_err(|error| format!("System Health action could not complete: {error}"))?
 }
 
 fn picked_file_path_for_desktop() -> Result<Option<String>, String> {
@@ -663,8 +709,7 @@ fn get_city_work_state() -> Result<CityWorkState, String> {
     }
 }
 
-#[tauri::command]
-fn city_work_action(
+fn city_work_action_authorized(
     action: String,
     payload: Option<Value>,
 ) -> Result<CityWorkActionResult, String> {
@@ -710,6 +755,24 @@ fn city_work_action(
         result.state = workflows::city_work_public_projection(&result.state);
     }
     Ok(result)
+}
+
+#[tauri::command]
+async fn city_work_action(
+    action: String,
+    payload: Option<Value>,
+) -> Result<CityWorkActionResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        catch_unwind(AssertUnwindSafe(|| {
+            city_work_action_authorized(action, payload)
+        }))
+        .map_err(|_| {
+            "City workflow action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+                .to_string()
+        })?
+    })
+    .await
+    .map_err(|error| format!("City workflow action could not complete: {error}"))?
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -845,7 +908,7 @@ mod tests {
 
     #[test]
     fn app_state_reports_runtime_health_from_manifest() {
-        let state = get_app_state().expect("app state builds");
+        let state = app_state().expect("app state builds");
         assert!(state.health.iter().any(|item| item.id == "desktop-shell"));
         assert!(state.health.iter().any(|item| item.id == "postgres"));
         assert!(state.health.iter().any(|item| item.id == "model-runtime"));
@@ -853,7 +916,7 @@ mod tests {
 
     #[test]
     fn app_state_reports_model_readiness_contract() {
-        let state = get_app_state().expect("app state builds");
+        let state = app_state().expect("app state builds");
         assert_eq!(state.model.display_name, "Gemma 4 12B QAT Q4_0");
         assert_eq!(state.model.status, "Needs download");
         assert!(state.model.artifact.checksum_required);
@@ -1092,7 +1155,7 @@ mod tests {
                 "summary": "Emails about park contract",
                 "deadline": "2026-07-10"
             });
-            city_work_action(
+            city_work_action_authorized(
                 "create-records-request".to_string(),
                 Some(records_payload.clone()),
             )
@@ -1105,7 +1168,7 @@ mod tests {
                 "meetingBodyDefaultNoticeDays": "3",
                 "meetingBodyQuorumRule": "majority of seated members"
             });
-            let records_error = match city_work_action(
+            let records_error = match city_work_action_authorized(
                 "create-meeting-body".to_string(),
                 Some(meeting_body.clone()),
             ) {
@@ -1116,14 +1179,15 @@ mod tests {
             auth::auth_action("sign-out", None).expect("records staff signed out");
 
             sign_in_as_user("casey@example.gov", "clerk passcode 123");
-            city_work_action("create-meeting-body".to_string(), Some(meeting_body))
+            city_work_action_authorized("create-meeting-body".to_string(), Some(meeting_body))
                 .expect("clerk can create meeting body");
-            let clerk_error =
-                match city_work_action("create-records-request".to_string(), Some(records_payload))
-                {
-                    Ok(_) => panic!("clerk cannot create records request"),
-                    Err(error) => error,
-                };
+            let clerk_error = match city_work_action_authorized(
+                "create-records-request".to_string(),
+                Some(records_payload),
+            ) {
+                Ok(_) => panic!("clerk cannot create records request"),
+                Err(error) => error,
+            };
             assert!(clerk_error.contains("not allowed"));
             auth::auth_action("sign-out", None).expect("clerk signed out");
 
@@ -1134,9 +1198,9 @@ mod tests {
                 "body": "Quiet hours begin at 10 PM.",
                 "importedBy": "Deputy Clerk"
             });
-            city_work_action("import-code-source".to_string(), Some(code_payload))
+            city_work_action_authorized("import-code-source".to_string(), Some(code_payload))
                 .expect("code staff can import code source");
-            let code_error = match city_work_action(
+            let code_error = match city_work_action_authorized(
                 "create-records-request".to_string(),
                 Some(serde_json::json!({
                     "requester": "Blake Chen",
@@ -1164,7 +1228,8 @@ mod tests {
                 "citation": "CMC 6.16.040",
                 "body": "Backyard chickens are allowed with a coop permit."
             });
-            let result = city_work_action("import-code-source".to_string(), Some(code_payload));
+            let result =
+                city_work_action_authorized("import-code-source".to_string(), Some(code_payload));
 
             assert!(result.is_err());
             assert!(result
@@ -1184,15 +1249,17 @@ mod tests {
                 "citation": "CMC 6.16.040",
                 "body": "Backyard chickens are allowed with a coop permit."
             });
-            city_work_action("import-code-source".to_string(), Some(code_payload))
+            city_work_action_authorized("import-code-source".to_string(), Some(code_payload))
                 .expect("code source imported");
             module_action("disable-module".to_string(), "civiccode".to_string())
                 .expect("civiccode disabled");
 
             let search_payload = serde_json::json!({ "query": "chickens" });
-            let result =
-                city_work_action("search-city-knowledge".to_string(), Some(search_payload))
-                    .expect("search remains available through enabled modules");
+            let result = city_work_action_authorized(
+                "search-city-knowledge".to_string(),
+                Some(search_payload),
+            )
+            .expect("search remains available through enabled modules");
 
             assert!(result.search_results.is_empty());
             assert!(result.message.contains("enabled modules with 0 result"));
@@ -1211,7 +1278,7 @@ mod tests {
                 "recordsContact": "records@example.gov",
                 "clerkContact": "clerk@example.gov"
             });
-            let signed_out_profile_result = first_run_action(
+            let signed_out_profile_result = first_run_action_authorized(
                 "create-city-profile".to_string(),
                 Some("city-profile".to_string()),
                 Some(city_payload),
@@ -1222,7 +1289,7 @@ mod tests {
                 .expect("first-run profile auth error")
                 .contains("Sign in as the local administrator"));
 
-            let signed_out_model_result = first_run_action(
+            let signed_out_model_result = first_run_action_authorized(
                 "download-model".to_string(),
                 Some("model".to_string()),
                 None,
@@ -1233,7 +1300,7 @@ mod tests {
                 .expect("first-run model auth error")
                 .contains("Sign in as the local administrator"));
 
-            let signed_out_result = first_run_action("backup".to_string(), None, None);
+            let signed_out_result = first_run_action_authorized("backup".to_string(), None, None);
 
             assert!(signed_out_result.is_err());
             assert!(signed_out_result
@@ -1242,8 +1309,8 @@ mod tests {
                 .contains("Sign in as the local administrator"));
 
             sign_in_as_first_admin();
-            let signed_in_result =
-                first_run_action("backup".to_string(), None, None).expect("backup allowed");
+            let signed_in_result = first_run_action_authorized("backup".to_string(), None, None)
+                .expect("backup allowed");
             assert!(signed_in_result.accepted);
             assert_eq!(signed_in_result.action, "backup");
         });
@@ -1252,22 +1319,26 @@ mod tests {
     #[test]
     fn first_run_setup_actions_can_bootstrap_before_admin_exists() {
         with_clean_first_run_state(|_| {
-            first_run_action(
+            first_run_action_authorized(
                 "review".to_string(),
                 Some("unsigned-beta".to_string()),
                 None,
             )
             .expect("notice can bootstrap before admin exists");
-            first_run_action("review".to_string(), Some("smartscreen".to_string()), None)
-                .expect("smartscreen can bootstrap before admin exists");
-            first_run_action(
+            first_run_action_authorized(
+                "review".to_string(),
+                Some("smartscreen".to_string()),
+                None,
+            )
+            .expect("smartscreen can bootstrap before admin exists");
+            first_run_action_authorized(
                 "choose-location".to_string(),
                 Some("locations".to_string()),
                 None,
             )
             .expect("locations can bootstrap before admin exists");
             let module_payload = serde_json::json!({ "profileId": "city-core" });
-            first_run_action(
+            first_run_action_authorized(
                 "select-modules".to_string(),
                 Some("modules".to_string()),
                 Some(module_payload),
@@ -1280,7 +1351,7 @@ mod tests {
                 "recordsContact": "records@example.gov",
                 "clerkContact": "clerk@example.gov"
             });
-            let city_result = first_run_action(
+            let city_result = first_run_action_authorized(
                 "create-city-profile".to_string(),
                 Some("city-profile".to_string()),
                 Some(city_payload),
@@ -1293,7 +1364,7 @@ mod tests {
                 "adminEmail": "alex@example.gov",
                 "adminPasscode": "correct horse battery staple"
             });
-            let admin_result = first_run_action(
+            let admin_result = first_run_action_authorized(
                 "create-admin".to_string(),
                 Some("first-admin".to_string()),
                 Some(admin_payload),
@@ -1307,7 +1378,7 @@ mod tests {
     #[test]
     fn app_state_reports_first_run_setup_contract() {
         with_clean_first_run_state(|_| {
-            let state = get_app_state().expect("app state builds");
+            let state = app_state().expect("app state builds");
             assert_eq!(state.first_run.status, "Needs setup");
             assert_eq!(
                 state.first_run.current_step_id.as_deref(),
@@ -1323,7 +1394,7 @@ mod tests {
             create_first_admin();
             sign_in_as_first_admin();
 
-            let state = get_app_state().expect("app state");
+            let state = app_state().expect("app state");
 
             let profile = state.city_profile.expect("city profile");
             assert_eq!(profile.city_name, "Brookfield");
@@ -1339,7 +1410,7 @@ mod tests {
         with_clean_first_run_state(|_| {
             module_registry::persist_profile_selection("city-core")
                 .expect("module selection persists");
-            let state = get_app_state().expect("app state");
+            let state = app_state().expect("app state");
             assert_eq!(state.module_selection.profile_id, "city-core");
             assert_eq!(state.module_selection.installed_module_ids.len(), 4);
             assert!(state
@@ -1357,7 +1428,7 @@ mod tests {
     #[test]
     fn app_state_reports_local_city_work_state() {
         with_clean_first_run_state(|_| {
-            let state = get_app_state().expect("app state builds");
+            let state = app_state().expect("app state builds");
             assert_eq!(state.city_work.meetings.len(), 0);
             assert_eq!(state.city_work.records_requests.len(), 0);
             assert_eq!(state.city_work.code_sources.len(), 0);
@@ -1473,7 +1544,7 @@ mod tests {
             assert!(public_state.code_handoffs.is_empty());
             assert!(public_state.audit_entries.is_empty());
             assert!(public_state.notification_events.is_empty());
-            let public_app_state = get_app_state().expect("public app state");
+            let public_app_state = app_state().expect("public app state");
             assert!(public_app_state.users.is_empty());
             assert_eq!(
                 public_app_state.model.artifact.local_path,
@@ -1525,7 +1596,7 @@ mod tests {
                 "requesterContact": "riley@example.org",
                 "summary": "Please provide the current council packet."
             });
-            let result = city_work_action(
+            let result = city_work_action_authorized(
                 "submit-public-records-request".to_string(),
                 Some(public_payload),
             );
@@ -1548,7 +1619,7 @@ mod tests {
                 "requesterContact": "riley@example.org",
                 "summary": "Please provide the current council packet."
             });
-            let public_result = city_work_action(
+            let public_result = city_work_action_authorized(
                 "submit-public-records-request".to_string(),
                 Some(public_payload),
             )
@@ -1562,7 +1633,7 @@ mod tests {
                 "trackingNumber": "REQ-0001",
                 "requesterContact": "riley@example.org"
             });
-            let lookup_result = city_work_action(
+            let lookup_result = city_work_action_authorized(
                 "lookup-public-records-request".to_string(),
                 Some(lookup_payload),
             )
@@ -1579,7 +1650,7 @@ mod tests {
                 "trackingNumber": "REQ-0001",
                 "requesterContact": "wrong@example.org"
             });
-            let wrong_lookup_result = city_work_action(
+            let wrong_lookup_result = city_work_action_authorized(
                 "lookup-public-records-request".to_string(),
                 Some(wrong_lookup_payload),
             )
@@ -1593,8 +1664,10 @@ mod tests {
                 "summary": "Internal request",
                 "deadline": "2026-07-01"
             });
-            let staff_result =
-                city_work_action("create-records-request".to_string(), Some(staff_payload));
+            let staff_result = city_work_action_authorized(
+                "create-records-request".to_string(),
+                Some(staff_payload),
+            );
 
             assert!(staff_result.is_err());
             assert!(staff_result

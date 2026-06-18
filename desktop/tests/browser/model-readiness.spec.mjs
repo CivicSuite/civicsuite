@@ -92,7 +92,7 @@ test("desktop restore result leaves Working state with bounded service-start fol
     window.__TAURI_INTERNALS__ = {
       invoke: async (cmd, args = {}) => {
         if (cmd === "get_app_state") {
-          throw new Error("Keep the browser fallback app state for this UI regression.");
+          return new Promise(() => {});
         }
         if (cmd === "supervisor_action") {
           window.__supervisorInvocations.push({ cmd, args });
@@ -140,6 +140,89 @@ test("desktop restore result leaves Working state with bounded service-start fol
       cmd: "supervisor_action",
       args: {
         action: "restore",
+        serviceId: null
+      }
+    }
+  ]);
+});
+
+test("desktop backup and support results render before slow health refresh", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.__supervisorInvocations = [];
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "get_app_state") {
+          return new Promise(() => {});
+        }
+        if (cmd === "supervisor_action") {
+          window.__supervisorInvocations.push({ cmd, args });
+          await new Promise((resolve) => window.setTimeout(resolve, 250));
+          if (args.action === "backup") {
+            return {
+              accepted: true,
+              action: "backup",
+              service_id: null,
+              status: "Backup created",
+              message:
+                "Created a verified CivicSuite backup at C:\\CivicSuite Backups\\civicsuite-manual-backup-123.",
+              next_action:
+                "Keep this backup folder available for restore or reinstall recovery."
+            };
+          }
+          if (args.action === "support-bundle") {
+            return {
+              accepted: true,
+              action: "support-bundle",
+              service_id: null,
+              status: "Support bundle created",
+              message:
+                "Created a CivicSuite support bundle at C:\\CivicSuite Backups\\support-bundles\\bundle-123.",
+              next_action:
+                "Share this support bundle folder only with trusted CivicSuite support or city IT."
+            };
+          }
+          throw new Error(`Unexpected supervisor action: ${args.action}`);
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("button", { name: /System Health/ }).click();
+  await page.getByRole("button", { name: "Backup Now" }).click();
+  await page.getByRole("button", { name: "Confirm Backup Now" }).click();
+
+  await expect(page.locator('[data-guided-review="supervisor"]')).toHaveCount(0);
+  await expect(page.locator(".action-result").getByText("Working", { exact: true })).toBeVisible();
+  await expect(page.getByText("Running Backup Now from the desktop app.")).toBeVisible();
+  await expect(page.locator(".action-result").getByText("Backup created", { exact: true })).toBeVisible();
+  await expect(page.getByText("Created a verified CivicSuite backup")).toBeVisible();
+  await expect(page.locator(".action-result").getByText("Working", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Create Support Bundle" }).click();
+  await page.getByRole("button", { name: "Confirm Create Support Bundle" }).click();
+
+  await expect(page.locator('[data-guided-review="supervisor"]')).toHaveCount(0);
+  await expect(page.locator(".action-result").getByText("Working", { exact: true })).toBeVisible();
+  await expect(page.getByText("Running Create Support Bundle from the desktop app.")).toBeVisible();
+  await expect(page.locator(".action-result").getByText("Support bundle created", { exact: true })).toBeVisible();
+  await expect(page.getByText("Created a CivicSuite support bundle")).toBeVisible();
+  await expect(page.locator(".action-result").getByText("Working", { exact: true })).toHaveCount(0);
+
+  const supervisorInvocations = await page.evaluate(() => window.__supervisorInvocations);
+  expect(supervisorInvocations).toEqual([
+    {
+      cmd: "supervisor_action",
+      args: {
+        action: "backup",
+        serviceId: null
+      }
+    },
+    {
+      cmd: "supervisor_action",
+      args: {
+        action: "support-bundle",
         serviceId: null
       }
     }

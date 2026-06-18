@@ -5082,6 +5082,7 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
       action,
       serviceId: normalizedServiceId
     });
+    render();
     await loadAppState();
   } catch (error) {
     state.supervisorActionResult = {
