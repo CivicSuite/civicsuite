@@ -1,0 +1,4 @@
+﻿npm --prefix desktop test: PASS
+python scripts\verify-installer-plan.py: PASS
+python scripts\verify-suite-state.py: CivicNotice/city-core PASS; future-module local sibling clones missing on this workstation
+git diff --check: PASS with CRLF warnings only

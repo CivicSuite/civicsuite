@@ -1,0 +1,12 @@
+﻿[
+    {
+        "Algorithm":  "SHA256",
+        "Hash":  "ACABE177F9CD3C5A001065EB6DCC49D39BBEF46C617E902578FEDF3978DA6EE2",
+        "Path":  "C:\\dev\\Codex\\civicsuite\\.artifacts\\civicnotice-final-28fafe7\\CivicSuite_0.1.0_x64_en-US.msi"
+    },
+    {
+        "Algorithm":  "SHA256",
+        "Hash":  "58B5F47B53176741FEBB4597B5683723B2444527F7952BD2ACC7EE6D2C32ED1C",
+        "Path":  "C:\\dev\\Codex\\civicsuite\\.artifacts\\civicnotice-final-28fafe7\\CivicSuite-msi-evidence.txt"
+    }
+]

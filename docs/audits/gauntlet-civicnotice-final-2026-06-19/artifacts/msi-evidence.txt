@@ -1,0 +1,15 @@
+﻿CivicSuite Windows Local MSI build evidence
+GeneratedAtUtc=2026-06-19T21:46:17.8396023Z
+File=CivicSuite_0.1.0_x64_en-US.msi
+Bytes=1645268284
+SHA256=acabe177f9cd3c5a001065eb6dcc49d39bbef46c617e902578fedf3978da6ee2
+UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930
+SameVersionMajorUpgrade=true
+InstallerBundle=msi
+UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt
+UnsignedBetaNoticeSurface=msi-license-file
+SmartScreenGuidance=More info -> Run anyway
+NoDockerPrerequisite=true
+NoWslPrerequisite=true
+RuntimePayload=desktop/runtime/payload
+
