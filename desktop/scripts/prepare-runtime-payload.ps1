@@ -151,7 +151,7 @@ function Invoke-CivicDownload {
     $LastError = $null
     for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
         try {
-            Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+            Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -TimeoutSec 1800 -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
             Move-Item -LiteralPath $TempDestination -Destination $Destination -Force
             return Test-CivicDownloadHash -Path $Destination -ExpectedSha256 $ExpectedSha256 -Url $Url
         } catch {
@@ -636,7 +636,11 @@ function Install-OllamaPayload {
             $AssetName = [string]$Source.asset_name_pattern
         }
         $Archive = Join-Path $CacheRoot $AssetName
-        $Sha = Invoke-CivicDownload -Url $Source.download_url -Destination $Archive
+        $ExpectedSha256 = ""
+        if ($Source.download_sha256) {
+            $ExpectedSha256 = [string]$Source.download_sha256
+        }
+        $Sha = Invoke-CivicDownload -Url $Source.download_url -Destination $Archive -ExpectedSha256 $ExpectedSha256
         Expand-CivicZip -Archive $Archive -Destination $Destination
         if (-not (Test-Path -LiteralPath (Join-Path $Destination "ollama.exe"))) {
             $Ollama = Get-ChildItem -LiteralPath $Destination -Recurse -Filter "ollama.exe" | Select-Object -First 1
