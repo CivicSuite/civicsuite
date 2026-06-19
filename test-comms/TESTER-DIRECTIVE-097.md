@@ -62,7 +62,8 @@ Bare-metal fallback if a VM snapshot is not available:
 - Remove the test user's CivicSuite runtime/profile/cache/config/data folders.
 - Remove stale CivicSuite MSI registrations/product codes if Windows Installer still reports them.
 - Remove prior CivicSuite test artifacts, downloaded MSIs, support bundles, and backup artifacts used only for previous runs.
-- Reboot before installing this artifact.
+- Do not reboot the tester machine. It is unattended and must remain available for the Codex tester session.
+- Before installing this artifact, verify no CivicSuite processes or services remain running and no CivicSuite product remains registered with Windows Installer.
 
 Do not delete unrelated installed software, unrelated user data, unrelated system components, or unrelated developer tooling.
 
