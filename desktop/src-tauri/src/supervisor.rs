@@ -1381,11 +1381,24 @@ fn latest_backup_dir() -> Result<Option<PathBuf>, String> {
                 .to_string_lossy()
                 .starts_with("civicsuite-")
         {
-            candidates.push(path);
+            let manifest_path = path.join("backup-manifest.json");
+            let manifest_sort_key = fs::read_to_string(&manifest_path)
+                .ok()
+                .and_then(|contents| serde_json::from_str::<BackupManifest>(&contents).ok())
+                .and_then(|manifest| {
+                    if manifest.kind == "pre-restore" {
+                        None
+                    } else {
+                        Some(manifest.created_unix_seconds)
+                    }
+                });
+            if let Some(created_unix_seconds) = manifest_sort_key {
+                candidates.push((created_unix_seconds, entry.file_name().to_os_string(), path));
+            }
         }
     }
-    candidates.sort_by_key(|path| path.file_name().map(|name| name.to_os_string()));
-    Ok(candidates.pop())
+    candidates.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| left.1.cmp(&right.1)));
+    Ok(candidates.pop().map(|candidate| candidate.2))
 }
 
 fn read_state() -> Result<RuntimeState, String> {
@@ -4460,6 +4473,91 @@ mod tests {
                         .reason
                         .contains("model cache skipped for restore safety backup")
             }));
+        });
+    }
+
+    #[test]
+    fn restore_latest_ignores_stale_pre_restore_safety_backup() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(root.join("Data").join("files").join("record.txt"), "stale")
+                .expect("stale data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "stale").expect("stale config");
+            let stale_safety_backup = create_backup_with_options(
+                "pre-restore",
+                BackupOptions {
+                    include_model_cache: false,
+                },
+            )
+            .expect("stale pre-restore safety backup");
+
+            fs::write(root.join("Data").join("files").join("record.txt"), "fresh")
+                .expect("fresh data file");
+            fs::write(root.join("config").join("city.json"), "fresh").expect("fresh config");
+            let fresh_manual_backup = create_backup("manual").expect("fresh manual backup");
+
+            let fresh_manifest_path = fresh_manual_backup.join("backup-manifest.json");
+            let fresh_manifest: BackupManifest = serde_json::from_str(
+                &fs::read_to_string(&fresh_manifest_path).expect("fresh manifest"),
+            )
+            .expect("fresh manifest json");
+            let stale_manifest_path = stale_safety_backup.join("backup-manifest.json");
+            let mut stale_manifest: BackupManifest = serde_json::from_str(
+                &fs::read_to_string(&stale_manifest_path).expect("stale manifest"),
+            )
+            .expect("stale manifest json");
+            stale_manifest.created_unix_seconds =
+                fresh_manifest.created_unix_seconds.saturating_sub(300);
+            fs::write(
+                &stale_manifest_path,
+                format!(
+                    "{}\n",
+                    serde_json::to_string_pretty(&stale_manifest)
+                        .expect("serialize stale manifest")
+                ),
+            )
+            .expect("rewrite stale manifest timestamp");
+
+            assert!(
+                stale_safety_backup
+                    .file_name()
+                    .expect("stale name")
+                    .to_string_lossy()
+                    > fresh_manual_backup
+                        .file_name()
+                        .expect("fresh name")
+                        .to_string_lossy(),
+                "pre-restore folder names sort after manual backup names"
+            );
+            assert_eq!(
+                latest_backup_dir()
+                    .expect("latest lookup")
+                    .expect("latest backup"),
+                fresh_manual_backup
+            );
+
+            fs::write(
+                root.join("Data").join("files").join("record.txt"),
+                "current",
+            )
+            .expect("current data file");
+            fs::write(root.join("config").join("city.json"), "current").expect("current config");
+
+            let result = supervisor_action("restore", None).expect("restore response");
+
+            assert!(result
+                .message
+                .contains(&fresh_manual_backup.display().to_string()));
+            assert_eq!(
+                fs::read_to_string(root.join("Data").join("files").join("record.txt"))
+                    .expect("restored data"),
+                "fresh"
+            );
+            assert_eq!(
+                fs::read_to_string(root.join("config").join("city.json")).expect("restored config"),
+                "fresh"
+            );
         });
     }
 
