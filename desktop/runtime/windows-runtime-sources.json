@@ -36,6 +36,7 @@
       "id": "ollama-windows",
       "label": "Ollama Windows x86-64 runtime",
       "provider": "Ollama",
+      "download_url": "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip",
       "release_api": "https://api.github.com/repos/ollama/ollama/releases/latest",
       "asset_name_pattern": "ollama-windows-amd64.zip"
     }

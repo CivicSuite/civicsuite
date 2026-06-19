@@ -628,7 +628,23 @@ function Install-OllamaPayload {
         return @{ status = "present"; path = $Destination }
     }
     if ($SkipDownloads) {
-        throw "Ollama release lookup requires network access."
+        throw "Ollama download requires network access."
+    }
+    if ($Source.download_url) {
+        $AssetName = [System.IO.Path]::GetFileName(([System.Uri][string]$Source.download_url).AbsolutePath)
+        if (-not $AssetName) {
+            $AssetName = [string]$Source.asset_name_pattern
+        }
+        $Archive = Join-Path $CacheRoot $AssetName
+        $Sha = Invoke-CivicDownload -Url $Source.download_url -Destination $Archive
+        Expand-CivicZip -Archive $Archive -Destination $Destination
+        if (-not (Test-Path -LiteralPath (Join-Path $Destination "ollama.exe"))) {
+            $Ollama = Get-ChildItem -LiteralPath $Destination -Recurse -Filter "ollama.exe" | Select-Object -First 1
+            if ($Ollama) {
+                Copy-Item -LiteralPath $Ollama.FullName -Destination (Join-Path $Destination "ollama.exe") -Force
+            }
+        }
+        return @{ status = "installed"; url = $Source.download_url; sha256 = $Sha; version = $Source.version; path = $Destination }
     }
     $Release = Invoke-CivicRestMethod `
         -Uri $Source.release_api `
