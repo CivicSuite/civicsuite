@@ -8,6 +8,7 @@ on:
       - "docs/installer/**"
       - "installer/**"
       - "scripts/plan-installer.py"
+      - "scripts/reclaim-installer-cleanroom-space.py"
       - "scripts/run-clerk-core-installer.py"
       - "scripts/run-installer-package-cleanroom.py"
       - "scripts/verify-installer-plan.py"
@@ -27,6 +28,9 @@ jobs:
     name: ${{ matrix.platform }} archive readiness and plan
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    env:
+      CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED: "1"
+      CIVICSUITE_CLEANROOM_MIN_FREE_GB: "40"
     strategy:
       fail-fast: false
       matrix:
@@ -39,18 +43,12 @@ jobs:
             installer_version: 0.1.0
           - platform: macos
             profile: clerk-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-clerk-core-macos-0.1.0.tar.gz
             installer_version: 0.1.0
           - platform: linux
             profile: clerk-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-clerk-core-linux-0.1.0.tar.gz
             installer_version: 0.1.0
           - platform: windows
@@ -61,18 +59,12 @@ jobs:
             installer_version: 0.1.0
           - platform: macos
             profile: city-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-city-core-macos-0.1.0.tar.gz
             installer_version: 0.1.0
           - platform: linux
             profile: city-core
-            os:
-              - self-hosted
-              - linux
-              - x64
+            os: ubuntu-latest
             archive: installer/dist/CivicSuite-city-core-linux-0.1.2.tar.gz
             installer_version: 0.1.2
     steps:
@@ -100,6 +92,13 @@ jobs:
           ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
           path: modules/civiccode
 
+      - name: Check out CivicNotice bundle source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicnotice
+          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          path: modules/civicnotice
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -108,6 +107,10 @@ jobs:
 
       - name: Generate release artifacts
         run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
+
+      - name: Reclaim hosted-runner workspace before package plan
+        if: runner.os == 'Linux'
+        run: python scripts/reclaim-installer-cleanroom-space.py --run-id "ci-${{ matrix.profile }}-${{ matrix.platform }}-package-plan" --approved
 
       - name: Run extracted package readiness and plan
         run: python scripts/run-installer-package-cleanroom.py --archive "${{ matrix.archive }}" --platform "${{ matrix.platform }}" --skip-install --run-id "ci-${{ matrix.profile }}-${{ matrix.platform }}-package-plan"
@@ -122,11 +125,11 @@ jobs:
 
   linux-package-lifecycle:
     name: linux archive full lifecycle
-    runs-on:
-      - self-hosted
-      - linux
-      - x64
+    runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      CIVICSUITE_CLEANROOM_HOST_CLEANUP_APPROVED: "1"
+      CIVICSUITE_CLEANROOM_MIN_FREE_GB: "40"
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -165,6 +168,13 @@ jobs:
           ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
           path: modules/civiccode
 
+      - name: Check out CivicNotice bundle source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicnotice
+          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          path: modules/civicnotice
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -173,6 +183,9 @@ jobs:
 
       - name: Generate release artifacts
         run: python scripts/plan-installer.py --profile "${{ matrix.profile }}" --generate-release-artifacts --installer-version "${{ matrix.installer_version }}"
+
+      - name: Reclaim hosted-runner workspace before lifecycle
+        run: python scripts/reclaim-installer-cleanroom-space.py --run-id "${{ matrix.run_id }}" --approved
 
       - name: Run extracted Linux package install, repair, verify, workflow proof, backup, restore, and uninstall
         run: python scripts/run-installer-package-cleanroom.py --archive "${{ matrix.archive }}" --platform linux --run-id "${{ matrix.run_id }}" --staff-mode bearer --workflow-proof

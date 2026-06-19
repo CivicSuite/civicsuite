@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CivicSuite",
+  "version": "0.1.0",
+  "identifier": "org.civicsuite.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:5174",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CivicSuite",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi"],
+    "publisher": "CivicSuite",
+    "icon": ["icons/icon.ico"],
+    "licenseFile": "../installer/windows/unsigned-beta-install-notice.txt",
+    "resources": ["../runtime/payload/"],
+    "windows": {
+      "allowDowngrades": false,
+      "wix": {
+        "upgradeCode": "a63fc1d3-5437-5f55-89a2-fef93fb1f930",
+        "language": "en-US",
+        "enableElevatedUpdateTask": false
+      }
+    }
+  }
+}

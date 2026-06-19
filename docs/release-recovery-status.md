@@ -1,6 +1,8 @@
 # CivicSuite Release Recovery Status
 
-Status date: 2026-06-13
+Status date: 2026-06-19
+
+Update 2026-06-19: CivicNotice v0.2.0 is promoted into the Windows Local city-core installer profile as the public-notice workflow release car. The suite installer vendored-source pin records CivicNotice commit `2bf0c9d7b764af84cd042657a972e84213a261d5`, packages `civicnotice.main` in the desktop runtime payload, exposes Public Notices in the desktop app, and includes CivicNotice in city-core profile generation, lifecycle verification, backup/restore contracts, and docs. This is a city-core beta module promotion only; it does not claim full-suite procurement readiness or promote modules outside the current city-core package.
 
 Update 2026-06-13: CivicClerk v1.0.4 supersedes v1.0.3 as the city-core clerk package/source truth. The published v1.0.4 release peels to `9f63ab79a0a75611ec3221d77e8577a95501e4c7`; release workflow run `27451630904` passed preflight and verify-build, and PR #176 repaired the draft-release asset upload workflow for future tags. The suite installer vendored-source pin advances to CivicClerk `main` head `dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5`, which includes that workflow-only repair. The same lockstep pass advances CivicRecords AI's source pin to post-PR-#102 `master` head `538766523ad90ee7553b0ffa75b626d3d4850b17` without changing the published v1.7.3 release object. This updates source/release truth only and does not create a city-ready, procurement-ready, production-ready, macOS lifecycle, public-use, or full-suite promotion claim.
 

@@ -1,0 +1,24 @@
+{
+  "name": "@civicsuite/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tauri/WebView2 desktop shell for CivicSuite Windows Local 1.0.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5174",
+    "build": "vite build",
+    "generate-icon": "node scripts/generate-icon.mjs",
+    "prepare-runtime-payload": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-runtime-payload.ps1",
+    "test": "node tests/static-smoke.mjs",
+    "test:browser": "playwright test",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@tauri-apps/cli": "2.11.2",
+    "vite": "8.0.16"
+  }
+}

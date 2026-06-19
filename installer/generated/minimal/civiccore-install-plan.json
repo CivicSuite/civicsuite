@@ -1,8 +1,8 @@
 {
   "civiccore": {
-    "local_artifact": "C:/dev/Claude/civiccore/dist/civiccore-1.2.0-py3-none-any.whl",
-    "local_artifact_posix": "/mnt/c/dev/Claude/civiccore/dist/civiccore-1.2.0-py3-none-any.whl",
-    "repo_path": "C:\\dev\\Claude\\civiccore",
+    "local_artifact": "C:/dev/Codex/civiccore/dist/civiccore-1.2.0-py3-none-any.whl",
+    "local_artifact_posix": "/mnt/c/dev/Codex/civiccore/dist/civiccore-1.2.0-py3-none-any.whl",
+    "repo_path": "C:\\dev\\Codex\\civiccore",
     "verify_command": "python -c \"import civiccore; print(civiccore.__version__)\"",
     "version": "1.2.0"
   },

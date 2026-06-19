@@ -27,10 +27,10 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.4.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
-- The city-core installer has predecessor Linux and Windows matching-host lifecycle, integration, first-run browser QA, documentation lockstep, CI/PR, and audit-full evidence. The 2026-05-28 engagement is closing the full independent audit-team finding set before the beta-ready truth-reconciled label is current. It is not public-use ready, procurement-ready, production-ready, macOS lifecycle certified, or a full-suite release.
-- The suite launcher is the local browser front door for staff, resident, and IT-admin orientation over the installed services. The 2026-05-28 engagement is proving the shared browser session across modules; until the independent audit-team rerun clears it, treat that as in-flight city-core beta work rather than a municipal managed-SSO claim.
+- The active city-core installer path is the Windows Local Tauri/WebView2 desktop app with portable local runtime services, local backup/restore, local file evidence, local model setup, and a normal Windows uninstall entry.
+- The desktop app is the staff, resident/public preview, and IT/admin front door for the current city-core beta package. It is local-only by default and does not require Docker, WSL, a terminal, or developer tooling for the clerk path.
 
-A municipality cannot today run end-to-end on this suite. Pilot evaluation is reasonable; procurement is not.
+A municipality should evaluate the Windows Local city-core package as a beta package, not as a completed full-suite procurement product.
 
 ### What this means for your city
 
@@ -44,59 +44,54 @@ A municipality cannot today run end-to-end on this suite. Pilot evaluation is re
 
 ## Part 1.5 - Your first task with the city-core launcher
 
-If you want to *try* CivicSuite today, start at the suite launcher. Treat this as a developer-preview walkthrough, not production setup.
+If you want to try CivicSuite today, start with the Windows Local city-core desktop installer and the operator walkthrough in [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
 ### Prerequisites
 
-- A workstation with **8+ CPU cores**, **32 GB RAM**, **50 GB free disk space**.
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary development and runtime proof path. On Windows, also WSL 2 + Virtual Machine Platform. The city-core first-run wizard offers a Guided Setup path for supported Linux and Windows hosts, plus a Manual Prerequisite path for IT-managed machines. Linux Guided Setup uses Docker's signed package repositories where supported. macOS remains beta/archive/readiness only.
-- About 30 minutes for first install (model downloads).
+- A Windows workstation with enough CPU, memory, and disk for local services, city data, backups, and the Gemma 4 12B QAT model file.
+- Permission to install normal Windows desktop software.
+- A stable internet connection for first install and model download unless IT has already staged the model file.
+- A city name, records contact, clerk contact, first local administrator name/email, and backup folder location.
 
-### Install (Windows wrapper)
+### Install (Windows Local desktop)
 
-1. Download the current city-core installer artifact from the active run evidence or the matching GitHub release attestation when one is published.
+1. Download the current Windows Local MSI artifact from the active PR/release evidence or the matching GitHub release attestation when one is published.
 2. Verify the SHA-256 checksum or release manifest from the same source.
-3. Run the installer. **Windows SmartScreen can warn "Unknown publisher" - this is expected for unsigned beta artifacts. Click "More info" only when the checksum matches the trusted artifact source.**
-4. Choose Guided Setup if Docker Desktop/WSL2 is missing on Windows or Docker Engine is missing on Linux. Choose Manual Prerequisite if IT already installed those components.
-5. Complete the first-run wizard, rotate the first administrator password, then open the suite launcher at the URL printed by the installer.
-6. From the launcher, open Records AI, CivicClerk, or CivicCode. In the current engagement, shared-session behavior is being verified across those three staff modules.
+3. Open the installer. Windows SmartScreen can warn "Unknown publisher" for this unsigned beta. Use **More info** and **Run anyway** only when the checksum matches the trusted artifact source.
+4. Follow the installer screens and open CivicSuite after install.
+5. Complete first-run setup: unsigned beta notice, SmartScreen review, local folders, City Core module selection, city profile, first local administrator sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
+6. Add clerk, records, code, or city-staff users from Settings when staff need separate local sign-ins.
+7. Use Meetings & Notices, Records Requests, Code & Ordinances, Search City Knowledge, System Health, and Settings from the desktop app.
 
 ### Install (Linux / macOS)
 
-Linux is the primary runtime target. Windows is supported through a wrapper around the same containerized services. macOS remains beta/archive/readiness only until matching-host lifecycle evidence exists.
-
-```bash
-git clone https://github.com/CivicSuite/civicrecords-ai.git
-cd civicrecords-ai
-bash install.sh
-```
-
-For city-core, the first-run wizard can guide supported Linux/Windows prerequisite setup, then resumes the install. For IT-managed machines, choose Manual Prerequisite after Docker/WSL is already present. macOS prerequisite bootstrap remains out of scope for this run.
+Linux and macOS are not the current clerk install promise for Windows Local 1.0. Treat older Linux/macOS archive and wrapper evidence as historical until those profiles receive their own refreshed matching-host lifecycle gates.
 
 ### Trust path for city-core artifacts
 
 City-core artifacts for this run are live regenerated evidence artifacts, not restored committed `installer/dist` files. Before testing a package:
 
-1. Use the active run evidence path recorded in [README.md](README.md) and [STATUS.md](STATUS.md).
-2. Verify the generated `SHA256SUMS` or release-manifest hash for the package you will run.
-3. Confirm the source pins in `installer/modules.json` match the vendored source commits copied into the package.
-4. For CivicCode release-car assets, confirm the published SHA256 and attestation assets recorded in the module release evidence.
+1. Use the active PR/release evidence path recorded in [README.md](README.md) and [STATUS.md](STATUS.md).
+2. Verify the generated MSI checksum or release-manifest hash for the package you will run.
+3. Confirm the source pins in `installer/modules.json` match the city-core module commits.
+4. For module release-car assets, confirm the published SHA256 and attestation assets recorded in the module release evidence where applicable.
 
 Do not restore old generated installer artifacts unless Scott explicitly decides that those artifacts should be restored.
 
-### First task: search a small document set
+### First task: complete local setup
 
-1. Open <http://localhost:8080> in your browser.
-2. Sign in with the initial administrator credential file surfaced by the installer, rotate it immediately, and store the rotated value in your municipal password vault.
-3. **Sources → Add Source** → enter a directory path with a few sample PDFs/DOCX files.
-4. Click **Ingest Now**. The pipeline parses, chunks, embeds, and indexes the documents.
-5. **Search** → type a natural-language query (e.g., "what does the city pay for streetlight maintenance?"). Results show with source attribution and relevance scores.
+1. Open CivicSuite from Windows.
+2. Complete the City Core setup checklist.
+3. Create the first local administrator and store the passcode in the city's password vault.
+4. Add staff users from Settings.
+5. Open System Health and verify local services, local model, storage, backup, and task queue status.
+6. Start with one real workflow: create a meeting in Meetings & Notices, create a records request in Records Requests, or import a code source in Code & Ordinances.
 
 ### What you should expect
 
-- **What works.** Document ingestion, hybrid search with citations, exemption flagging (with required human review), request lifecycle from intake to closure, fee tracking, response letter drafting.
-- **What's a developer preview.** SMTP delivery into status transitions is pending; full third-party accessibility audit is pending; production deployments are unverified.
-- **What's not in scope.** SharePoint and IMAP connectors are roadmap; MIT-style "drop a CSV in this folder" is the most reliable connector path today.
+- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff.
+- **What still needs its own proof gate.** The final clean-machine walkthrough for the current MSI artifact and each future module outside the city-core set.
+- **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 
 ### Where to go next
 
@@ -129,6 +124,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civiccore` | Shared platform; v1.2.0 current city-core platform |
 | `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
+| `civicnotice` | v0.2.0 public-notice workflow city-core release car |
 | `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
 | `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
 | `civicgrants`, `civicprocure` | v0.2.0 scaffold-depth recovery labels |
@@ -186,10 +182,11 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
-| CivicCore | 1.2.0 | shared platform | none | `9f7e3a5a0156` | `v1_2_0_shared_ingestion_shipped` |
+| CivicCore | 1.2.0 | shared platform | none | `1a53f0680fff` | `v1_2_0_windows_local_platform_contracts` |
 | CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `538766523ad9` | `v1_7_3_city_core_release_car` |
 | CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `dae807ec9d13` | `v1_0_4_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
+| CivicNotice | 0.2.0 | public notice workflow | `civiccore`, `civicclerk` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
 
 Excluded from city-core:
 - `civicaccess`: OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe.
@@ -247,8 +244,8 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 
 | Symptom | Where to look |
 |---|---|
-| Module will not install | The module repo's `README.md` and `CONTRIBUTING.md`; if you hit a Docker/WSL prereq, choose Guided Setup on supported Linux/Windows hosts or Manual Prerequisite for IT-managed environments. Linux Guided Setup uses Docker's signed package repositories where supported. |
-| Suite launcher opens but shows no module activity | Run the installer verify command, confirm Docker is running, then refresh the launcher. The launcher session is local browser/runtime state; it is not a municipal SSO proof. |
+| Module will not install | Open Settings > Module Catalog, review dependencies and proof status, then use the guided install/update/repair action for ready modules. CivicCore stays installed. |
+| Desktop app opens but shows no module activity | Open System Health, check local services, task queue schema, local model, and enabled module state, then use Repair after reviewing the repair panel. |
 | Unsure whether an artifact is current | Verify the live `SHA256SUMS` or release manifest from the active run evidence path; do not rely on restored `installer/dist` files unless Scott explicitly approved restoration. |
 | `civiccore` version mismatch | [docs/compatibility/index.md](docs/compatibility/index.md) is the canonical pairing source. |
 | README says "shipping," recovery doc says "frozen" | The recovery doc wins. See [docs/release-recovery-status.md](docs/release-recovery-status.md). |

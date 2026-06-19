@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "profile": "windows-local-1.0",
+  "local_only": true,
+  "payload_root": "runtime/payload",
+  "install_root": "runtime",
+  "payloads": [
+    {
+      "id": "postgres-17-pgvector",
+      "label": "Portable PostgreSQL 17 with pgvector",
+      "services": ["postgres"],
+      "source_dir": "postgres",
+      "destination_dir": "runtime/postgres",
+      "required_files": [
+        "bin/pg_ctl.exe",
+        "bin/initdb.exe",
+        "bin/postgres.exe",
+        "bin/zlib1.dll",
+        "share/extension/vector.control",
+        "lib/vector.dll"
+      ]
+    },
+    {
+      "id": "cpython-services",
+      "label": "Bundled CPython city services",
+      "services": ["python-services", "task-queue", "file-storage"],
+      "source_dir": "python",
+      "destination_dir": "runtime/python",
+      "required_files": [
+        "python.exe",
+        "Lib/site-packages/civiccore/__init__.py",
+        "Lib/site-packages/civiccore/migrations/alembic.ini",
+        "Lib/site-packages/civiccore/migrations/versions/civiccore_0003_local_task_queue.py",
+        "Lib/site-packages/app/main.py",
+        "Lib/site-packages/civicclerk/main.py",
+        "Lib/site-packages/civiccode/main.py",
+        "Lib/site-packages/civicnotice/main.py",
+        "Lib/site-packages/civicsuite_runtime/__init__.py",
+        "Lib/site-packages/civicsuite_runtime/migrate.py",
+        "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic.ini",
+        "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic/env.py"
+      ]
+    },
+    {
+      "id": "ollama-runtime",
+      "label": "Native Ollama model runtime",
+      "services": ["model-runtime"],
+      "source_dir": "ollama",
+      "destination_dir": "runtime/ollama",
+      "required_files": ["ollama.exe"]
+    }
+  ]
+}

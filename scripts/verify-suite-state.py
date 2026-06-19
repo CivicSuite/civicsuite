@@ -57,8 +57,10 @@ CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0"
 CURRENT_CITY_CORE_INSTALLER_STATUS = "city_core_beta_ready_truth_reconciled"
 EXPECTED_CITY_CORE_PROFILE_STATUS = "beta_ready_truth_reconciled"
 CITY_CORE_SOURCE_PIN_RECOVERY = (
-    "2026-06-13 source-pin refresh includes CivicRecords AI post-PR-#102 "
-    "and CivicClerk v1.0.4 post-PR-#176 default-branch heads"
+    "2026-06-13 source-pin refresh includes CivicCore Windows-local platform "
+    "contracts, CivicRecords AI post-PR-#102, CivicClerk v1.0.4 "
+    "post-PR-#176 default-branch heads, CivicCode v1.0.8, and "
+    "CivicNotice v0.2.0 installed-module source pins"
 )
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
@@ -223,10 +225,9 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicnotice",
         "CivicSuite/civicnotice",
         "civicnotice",
-        "0.1.2",
-        civiccore_required="0.9.0",
-        published_version="0.1.1",
-        published_civiccore_required="0.3.0",
+        "0.2.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        release_required=False,
     ),
     RepoSpec(
         "civic311",
@@ -400,11 +401,17 @@ def check_city_core_profile_truth() -> list[str]:
     city_core = profiles.get("city-core")
     if not isinstance(city_core, dict):
         return [fail("installer/modules.json missing city-core profile")]
-    expected_modules = ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"]
+    expected_modules = [
+        "civiccore",
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode",
+        "civicnotice",
+    ]
     if city_core.get("modules") != expected_modules:
         errors.append(
             fail(
-                "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode"
+                "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice"
             )
         )
     if installer_data.get("installer_status") != CURRENT_CITY_CORE_INSTALLER_STATUS:
@@ -763,7 +770,13 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
     default branch has moved; remote-only verification stays tied to default
     branches after merge.
     """
-    city_core_modules = {"civiccore", "civicrecords-ai", "civicclerk", "civiccode"}
+    city_core_modules = {
+        "civiccore",
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode",
+        "civicnotice",
+    }
     if spec.name not in city_core_modules:
         return []
     declared = installer_source_commits().get(spec.name)
@@ -1037,7 +1050,7 @@ def main() -> int:
         for error in city_core_errors:
             print(f"  {error}")
     else:
-        print("[city-core-profile] PASS civiccore,civicrecords-ai,civicclerk,civiccode")
+        print("[city-core-profile] PASS civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice")
 
     workflow_errors = check_clerk_core_workflow_proof_truth()
     if workflow_errors:

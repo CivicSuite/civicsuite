@@ -1,6 +1,67 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-05-18
+Last updated: 2026-06-13
+
+## Active Target Override
+
+1. **CivicSuite Windows Local 1.0 city-core desktop completion - ACTIVE**
+
+Why now: Scott explicitly reset the target on 2026-06-13. The old module queue
+did not deliver the required non-technical Windows installable product. The
+active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
+portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
+UX, city-core module completion, and future module package foundation.
+
+Current slice: CivicCore local platform completion for auth, audit, module
+registry, model registry, queue, health, backup/restore, and installer APIs.
+
+Closed Windows Local slices:
+
+- Windows desktop design control and module package contract foundation.
+  Evidence: `docs/design/windows-desktop-design-control.md`,
+  `docs/architecture/ADR-0010-module-package-contract.md`,
+  `installer/module-manifest-contract.json`,
+  `tests/test_module_manifest_contract.py`, and
+  `docs/process/audits/audit-lite-windows-desktop-design-contract-2026-06-13.md`.
+- Tauri/WebView2 desktop shell scaffold and local task navigation.
+  Evidence: `desktop/`, `desktop/tests/static-smoke.mjs`, Tauri no-bundle
+  executable build, and
+  `docs/process/audits/audit-lite-windows-desktop-shell-scaffold-2026-06-13.md`.
+- Portable runtime supervisor and Windows process lifecycle foundation.
+  Evidence: `desktop/runtime/windows-local-runtime.json`,
+  `desktop/src-tauri/src/supervisor.rs`, System Health runtime rendering, and
+  `docs/process/audits/audit-lite-windows-runtime-supervisor-2026-06-13.md`.
+- Installer and first-run wizard without Docker/WSL.
+  Evidence: `desktop/runtime/windows-first-run.json`,
+  `desktop/src-tauri/src/first_run.rs`, Home/System Health setup rendering, and
+  `docs/process/audits/audit-lite-windows-first-run-setup-2026-06-13.md`.
+- Gemma 4 12B quantization-aware model metadata and readiness path.
+  Evidence: `desktop/runtime/gemma4-model.json`,
+  `desktop/src-tauri/src/model.rs`, Home/System Health model readiness
+  rendering, Playwright browser checks, and
+  `docs/process/audits/audit-lite-windows-model-readiness-2026-06-13.md`.
+
+Slice Definition of Done:
+
+- Complete CivicCore local platform contracts and implementation surface needed
+  by the Windows desktop profile.
+- Cover auth/RBAC, audit chain, module registry, model registry, task queue,
+  health, backup/restore, and installer/runtime APIs.
+- Ensure the desktop and installer path call real CivicCore contracts instead
+  of duplicated local-only placeholders where implementation exists.
+- Add automated tests for the local platform contracts and blocked/ready states.
+- Run audit-lite and fix all slice findings.
+
+Next slices after this CivicCore local platform foundation:
+
+7. CivicRecords AI Windows local persistence and workflow closure.
+8. CivicClerk persistence and public-meeting workflow closure.
+9. CivicCode local integration and handoff workflow closure.
+10. Cross-module workflows, full walkthrough, audit-full, clean-machine gate,
+    and release closeout.
+
+The historical queue below is retained as recovery history only. It is not the
+active target while this override is in force.
 
 ## Completed Target
 

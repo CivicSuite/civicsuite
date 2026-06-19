@@ -97,6 +97,7 @@ resources for the profile.
 - civicrecords-ai
 - civicclerk
 - civiccode
+- civicnotice
 
 The default package selection installs this package profile on top of the
 CivicCore base contract. Operators can choose one module or the whole profile:
@@ -105,7 +106,8 @@ CivicCore base contract. Operators can choose one module or the whole profile:
 bash ./start-civicsuite-installer.sh plan --module civicrecords-ai
 bash ./start-civicsuite-installer.sh plan --module civicclerk
 bash ./start-civicsuite-installer.sh plan --module civiccode
-bash ./start-civicsuite-installer.sh install --module civicrecords-ai --module civicclerk --module civiccode
+bash ./start-civicsuite-installer.sh plan --module civicnotice
+bash ./start-civicsuite-installer.sh install --module civicrecords-ai --module civicclerk --module civiccode --module civicnotice
 ```
 
 When a module is selected explicitly, plan/readiness use the same selection

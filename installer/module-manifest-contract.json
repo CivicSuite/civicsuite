@@ -1,0 +1,63 @@
+{
+  "contract_version": 1,
+  "registry_path": "installer/modules.json",
+  "required_root_fields": [
+    "schema_version",
+    "module_contract_version",
+    "installer_status",
+    "profiles",
+    "modules"
+  ],
+  "required_profile_fields": [
+    "id",
+    "label",
+    "description",
+    "modules"
+  ],
+  "required_module_fields": [
+    "id",
+    "display_name",
+    "repo",
+    "tier",
+    "role",
+    "selectable",
+    "required",
+    "civiccore_requirement",
+    "dependencies",
+    "installer_status",
+    "proof_required"
+  ],
+  "required_ready_module_fields": [
+    "current_version",
+    "source_commit"
+  ],
+  "city_core_profile": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode",
+    "civicnotice"
+  ],
+  "planned_repo_null_statuses": [
+    "planned_spec_module_no_runtime_repo"
+  ],
+  "ready_status_markers": [
+    "city_core_release_car",
+    "shared_ingestion_shipped",
+    "installed_module_release"
+  ],
+  "future_desktop_contract_fields": [
+    "routes",
+    "permissions",
+    "services",
+    "migrations",
+    "tasks",
+    "health_checks",
+    "backup_hooks",
+    "restore_hooks",
+    "uninstall_hooks",
+    "model_requirements",
+    "audit_events",
+    "surface_placement"
+  ]
+}

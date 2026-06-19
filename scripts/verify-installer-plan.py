@@ -25,6 +25,9 @@ INSTALLER_LIFECYCLE_RUNNER = ROOT / "scripts" / "run-clerk-core-installer.py"
 PACKAGE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-installer-package-cleanroom.py"
 CLEANROOM_RUNNER = ROOT / "scripts" / "run-minimal-cleanroom.py"
 SERVICE_CLEANROOM_RUNNER = ROOT / "scripts" / "run-civicrecords-cleanroom.py"
+MODULE_MANIFEST_CONTRACT_VERIFIER = (
+    ROOT / "scripts" / "verify-module-manifest-contract.py"
+)
 WINDOWS_LAUNCHER = ROOT / "installer" / "windows" / "plan-installer.ps1"
 MACOS_LAUNCHER = ROOT / "installer" / "macos" / "plan-installer.sh"
 LINUX_LAUNCHER = ROOT / "installer" / "linux" / "plan-installer.sh"
@@ -115,6 +118,7 @@ ALLOWED_EVIDENCE_CLASSIFICATIONS = {
     "archive_readiness_only",
     "matching_host_lifecycle",
     "matching_host_lifecycle_failed",
+    "dependency_gate_blocked",
     "host_platform_mismatch",
     "unsupported_lifecycle",
 }
@@ -471,6 +475,9 @@ def check_cleanroom_workflow() -> list[str]:
         "path: modules/civicclerk",
         "repository: CivicSuite/civiccode",
         "path: modules/civiccode",
+        "repository: CivicSuite/civicnotice",
+        "path: modules/civicnotice",
+        "2bf0c9d7b764af84cd042657a972e84213a261d5",
         "--profile \"${{ matrix.profile }}\"",
         "CivicSuite-city-core-linux-0.1.2.tar.gz",
         "--staff-mode bearer --workflow-proof",
@@ -508,6 +515,7 @@ def check_package_cleanroom_evidence_contract(
         "evidence_classification",
         "archive_readiness_only",
         "matching_host_lifecycle",
+        "dependency_gate_blocked",
         "unsupported_lifecycle",
         "darwin",
         "CIVICSUITE_INSTALLER_RUN_ID",
@@ -767,6 +775,21 @@ def check_manifest(data: dict[str, object]) -> list[str]:
     return errors
 
 
+def check_module_manifest_contract() -> list[str]:
+    if not MODULE_MANIFEST_CONTRACT_VERIFIER.is_file():
+        return [fail(f"missing {MODULE_MANIFEST_CONTRACT_VERIFIER.relative_to(ROOT)}")]
+    result = subprocess.run(
+        [sys.executable, str(MODULE_MANIFEST_CONTRACT_VERIFIER)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode == 0:
+        return []
+    detail = (result.stdout + result.stderr).strip()
+    return [fail(detail or "module manifest contract verification failed")]
+
+
 def check_planner(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if not PLANNER.is_file():
@@ -790,6 +813,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicrecords-ai",
             "civicclerk",
             "civiccode",
+            "civicnotice",
         ],
     }
     for profile, expected_modules in scenarios.items():
@@ -1825,8 +1849,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicrecords-ai",
             "civicclerk",
             "civiccode",
+            "civicnotice",
         ]:
-            errors.append(fail("city-core release artifacts must package the four city-core modules"))
+            errors.append(fail("city-core release artifacts must package the five city-core modules"))
         if len(city_core_release.get("archives", [])) != 3:
             errors.append(fail("city-core release artifacts must emit one archive per platform"))
         city_manifest_path = ROOT / city_core_release.get("release_manifest", "")
@@ -1874,7 +1899,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 ]
                 for action in install_actions:
                     module_id = action.get("module")
-                    if module_id in {"civicrecords-ai", "civicclerk", "civiccode"} and action.get("civiccore_requirement") != "1.2.0":
+                    if module_id in {"civicrecords-ai", "civicclerk", "civiccode", "civicnotice"} and action.get("civiccore_requirement") != "1.2.0":
                         errors.append(
                             fail(
                                 f"city-core package {platform_id} {module_id} must install against CivicCore 1.2.0"
@@ -1883,9 +1908,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
             launcher_path = package_dir / launcher
             if launcher_path.is_file():
                 launcher_text = launcher_path.read_text(encoding="utf-8")
-                if "civiccode" not in launcher_text:
+                if "civiccode" not in launcher_text or "civicnotice" not in launcher_text:
                     errors.append(
-                        fail(f"city-core package {platform_id} launcher must pass CivicCode through lifecycle commands")
+                        fail(f"city-core package {platform_id} launcher must pass CivicCode and CivicNotice through lifecycle commands")
                     )
 
     if has_local_civiccore_wheel():
@@ -2449,6 +2474,7 @@ def main() -> int:
             try:
                 manifest = load_manifest()
                 errors.extend(check_manifest(manifest))
+                errors.extend(check_module_manifest_contract())
                 errors.extend(check_planner(manifest))
                 errors.extend(check_launchers())
             except Exception as exc:

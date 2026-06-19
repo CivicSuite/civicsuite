@@ -1,0 +1,766 @@
+import { expect, test } from "@playwright/test";
+
+test("city workflow pages expose real local task controls", async ({ page }) => {
+  await page.goto("/");
+
+  const primaryNav = page.getByRole("navigation", { name: "Primary" });
+  await primaryNav.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await expect(page.getByRole("heading", { name: "Meeting Bodies" })).toBeVisible();
+  await expect(page.getByLabel("Meeting body name")).toBeVisible();
+  await expect(page.getByLabel("Body type")).toBeVisible();
+  await expect(page.getByLabel("Body statutory basis")).toBeVisible();
+  await expect(page.getByLabel("Meeting cadence")).toBeVisible();
+  await expect(page.getByLabel("Default notice days")).toBeVisible();
+  await expect(page.getByLabel("Quorum rule")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Meeting Body" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Member Roster" })).toBeVisible();
+  await expect(page.getByLabel("Roster body")).toBeVisible();
+  await expect(page.getByLabel("Member name")).toBeVisible();
+  await expect(page.getByLabel("Member role")).toBeVisible();
+  await expect(page.getByLabel("Term start")).toBeVisible();
+  await expect(page.getByLabel("Term end")).toBeVisible();
+  await expect(page.getByLabel("Member email")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Member" })).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Agenda Intake Queue" })).toBeVisible();
+  await expect(page.getByLabel("Intake title")).toBeVisible();
+  await expect(page.getByLabel("Submitted by")).toBeVisible();
+  await expect(page.getByLabel("Department")).toBeVisible();
+  await expect(page.getByLabel("Requested meeting date")).toBeVisible();
+  await expect(page.getByLabel("Intake summary")).toBeVisible();
+  await expect(page.getByLabel("Source or citation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit Agenda Intake" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review Agenda Intake" })).toBeVisible();
+  await expect(page.getByLabel("Readiness decision")).toBeVisible();
+  await expect(page.getByLabel("Clerk review note")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Review Agenda Intake" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Promote To Agenda" })).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toBeVisible();
+  await expect(page.getByLabel("Meeting body", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Meeting" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Meeting" })).toBeDisabled();
+  await expect(page.getByLabel("Notice meeting type")).toBeVisible();
+  await expect(page.getByLabel("Statutory notice basis")).toBeVisible();
+  await expect(page.getByLabel("Notice lead days")).toBeVisible();
+  await expect(page.getByLabel("Notice day type")).toBeVisible();
+  await expect(page.getByLabel("Notice deadline")).toBeVisible();
+  await expect(page.getByLabel("Notice time zone")).toBeVisible();
+  await expect(page.getByLabel("Clerk has reviewed and approved the notice checklist")).toBeVisible();
+  await expect(page.getByLabel("Actual posting date")).toBeVisible();
+  await expect(page.getByLabel("Notice posting location")).toBeVisible();
+  await expect(page.getByLabel("Notice posting method")).toBeVisible();
+  await expect(page.getByLabel("Posting confirmation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Code Handoff" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Calculate Notice Deadline" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve Notice Checklist" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Notice Ready" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export Records Bundle" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Staff Reports" })).toBeVisible();
+  await expect(page.getByLabel("Recommendation")).toBeVisible();
+  await expect(page.getByLabel("Background")).toBeVisible();
+  await expect(page.getByLabel("Analysis")).toBeVisible();
+  await expect(page.getByLabel("Fiscal impact")).toBeVisible();
+  await expect(page.getByLabel("Alternatives considered")).toBeVisible();
+  await expect(page.getByLabel("Prior actions")).toBeVisible();
+  await expect(page.getByLabel("Staff report prepared by")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Staff Report" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Packet Attachments" })).toBeVisible();
+  await expect(page.getByLabel("Attachment title")).toBeVisible();
+  await expect(page.getByLabel("Attachment source file path")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose File" })).toBeVisible();
+  await expect(page.getByLabel("Attachment citation")).toBeVisible();
+  await expect(page.getByLabel("Packet section")).toBeVisible();
+  await expect(page.getByLabel("Attachment access")).toBeVisible();
+  await expect(page.getByLabel("Packet title")).toBeVisible();
+  await expect(page.getByLabel("Packet prepared by")).toBeVisible();
+  await expect(page.getByLabel("Packet review note")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Attach Packet File" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Finalize Packet" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
+  await expect(page.getByLabel("Closed-session statutory basis")).toBeVisible();
+  await expect(page.getByLabel("Closed-session topics")).toBeVisible();
+  await expect(page.getByLabel("Closed-session attendees")).toBeVisible();
+  await expect(page.getByLabel("Entered closed session")).toBeVisible();
+  await expect(page.getByLabel("Exited closed session")).toBeVisible();
+  await expect(page.getByLabel("Reconvene statement")).toBeVisible();
+  await expect(page.getByLabel("Staff-only notes reference")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Closed Session" })).toBeVisible();
+  await expect(page.getByLabel("Motion text")).toBeVisible();
+  await expect(page.getByLabel("Moved by")).toBeVisible();
+  await expect(page.getByLabel("Seconded by")).toBeVisible();
+  await expect(page.getByLabel("Motion disposition")).toBeVisible();
+  await expect(page.getByLabel("Linked vote reference")).toBeVisible();
+  await expect(page.getByLabel("Roll-call motion")).toBeVisible();
+  await expect(page.getByLabel("Roll-call member")).toBeVisible();
+  await expect(page.getByLabel("Roll-call vote")).toBeVisible();
+  await expect(page.getByLabel("Attendance member")).toBeVisible();
+  await expect(page.getByLabel("Attendance status")).toBeVisible();
+  await expect(page.getByLabel("Attendance recorded by")).toBeVisible();
+  await expect(page.getByLabel("Attendance note")).toBeVisible();
+  await expect(page.getByLabel("Quorum required count")).toBeVisible();
+  await expect(page.getByLabel("Quorum review note")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Motion" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Roll Call Vote" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Record Attendance" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save Quorum Check" })).toBeDisabled();
+  await expect(page.getByLabel("Action owner")).toBeVisible();
+  await expect(page.getByLabel("Action due date")).toBeVisible();
+  await expect(page.getByLabel("Action status")).toBeVisible();
+  await expect(page.getByLabel("Action source")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Action Item" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Resident Comment" })).toBeVisible();
+  await expect(page.getByLabel("Minutes signed by")).toBeVisible();
+  await expect(page.getByLabel("Signature attestation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign Minutes" })).toBeVisible();
+  await expect(page.getByLabel("Adopted item type")).toBeVisible();
+  await expect(page.getByLabel("Adopted title")).toBeVisible();
+  await expect(page.getByLabel("Adopted text")).toBeVisible();
+  await expect(page.getByLabel("Effective date")).toBeVisible();
+  await expect(page.getByLabel("Codification section hint")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Adopted Ordinance/Resolution" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Local AI Minutes" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Minute Citations" })).toBeVisible();
+  await expect(page.getByLabel("Minutes sentence or excerpt")).toBeVisible();
+  await expect(page.getByLabel("Citation source type")).toBeVisible();
+  await expect(page.getByLabel("Citation source reference")).toBeVisible();
+  await expect(page.getByLabel("Citation note")).toBeVisible();
+  await expect(page.getByLabel("Citation access")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Minute Citation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Adopt Minutes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Archive Public Record" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Public Comment Review" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Reviewed" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Redact Comment" })).toBeDisabled();
+  await expect(page.getByText("No local meetings have been created yet.")).toBeVisible();
+  await expect(page.getByText("No agenda intake items are waiting for clerk review.")).toBeVisible();
+  await expect(page.getByText("No CivicCode handoffs are waiting for the clerk.")).toBeVisible();
+
+  await page.getByRole("button", { name: /Records Requests/ }).click();
+  await expect(page.getByRole("heading", { name: "Request Intake" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Request" })).toBeVisible();
+  await expect(page.getByLabel("Deadline basis")).toBeVisible();
+  await expect(page.getByLabel("Received date")).toBeVisible();
+  await expect(page.getByLabel("Deadline rule")).toBeVisible();
+  await expect(page.getByLabel("Deadline day count")).toBeVisible();
+  await expect(page.getByLabel("Deadline day type")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Scope & Search" })).toBeVisible();
+  await expect(page.getByLabel("Fee line description")).toBeVisible();
+  await expect(page.getByLabel("Fee schedule or policy basis")).toBeVisible();
+  await expect(page.getByLabel("Fee line amount")).toBeVisible();
+  await expect(page.getByLabel("Fee waiver reason")).toBeVisible();
+  await expect(page.getByLabel("Records search query")).toBeVisible();
+  await expect(page.getByLabel("Searched locations")).toBeVisible();
+  await expect(page.getByLabel("Search result title")).toBeVisible();
+  await expect(page.getByLabel("Search result citation")).toBeVisible();
+  await expect(page.getByLabel("Search result summary")).toBeVisible();
+  await expect(page.getByLabel("Exemption source")).toBeVisible();
+  await expect(page.getByLabel("Exemption category")).toBeVisible();
+  await expect(page.getByLabel("Staff finding")).toBeVisible();
+  await expect(page.getByLabel("Decision", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Decision basis")).toBeVisible();
+  await expect(page.getByLabel("Exemption reviewer")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Request Messages" })).toBeVisible();
+  await expect(page.getByLabel("Message to requester")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Request Message" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Request Documents" })).toBeVisible();
+  await expect(page.getByLabel("Document title")).toBeVisible();
+  await expect(page.getByLabel("Source file path")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose File" })).toHaveCount(2);
+  await expect(page.getByLabel("Document citation")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Attach Document" })).toBeVisible();
+  await expect(page.getByLabel("Release document")).toBeVisible();
+  await expect(page.getByLabel("Release copy file path")).toBeVisible();
+  await expect(page.getByLabel("Release copy status")).toBeVisible();
+  await expect(page.getByLabel("Release copy note")).toBeVisible();
+  await expect(page.getByLabel("Release copy reviewed by")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Attach Release Copy" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Set Deadline" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Calculate Deadline" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Assign" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Request Clarification" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Search" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Search Session" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Exemption Review" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Exemption Decision" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Estimate Fee" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add Fee Line" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Waive Fee" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Response & Release" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Local AI Draft" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve Response" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Build Release Package" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export Response" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close Request" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Notification Outbox" })).toBeVisible();
+  await expect(page.getByText("No local records notifications have been created yet.")).toBeVisible();
+  await page.getByRole("button", { name: "Choose File" }).first().click();
+  await expect(page.getByText("Native file selection is available in the Windows desktop app")).toBeVisible();
+
+  await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await expect(page.getByRole("heading", { name: "Import Code Source" })).toBeVisible();
+  await expect(page.getByText("Selected code source for actions:")).toBeVisible();
+  await expect(page.getByLabel("Source title")).toBeVisible();
+  await expect(page.getByLabel("Citation")).toBeVisible();
+  await expect(page.getByLabel("Source file path")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose File" })).toBeVisible();
+  await expect(page.getByLabel("Imported by")).toBeVisible();
+  await expect(page.getByLabel("Source text")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Import Source" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Codifier Sync" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Sync", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record Sync Failure" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry Sync" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark Stale" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Guidance & Summary" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate Local AI Guidance" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save Guidance Draft" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve Guidance" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ask Code Question" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Answer Code Question" })).toBeVisible();
+
+  await page.getByRole("button", { name: /Search City Knowledge/ }).click();
+  await expect(page.getByRole("heading", { name: "Local Search" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Search Local Data" })).toBeVisible();
+  await expect(page.getByText("No local search results yet.")).toBeVisible();
+  await expect(page.locator("main").getByText("Scaffold")).toHaveCount(0);
+});
+
+test("resident public surface hides staff workflow controls", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("tab", { name: "Resident/Public" }).click();
+
+  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await expect(page.getByRole("heading", { name: "Public Meeting Materials" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Submit Public Comment" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit Public Comment" })).toBeDisabled();
+  await expect(page.getByText("No posted public meeting is open for comment")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prepare Meeting" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Agenda Intake Queue" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Review Agenda Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Submit Agenda Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Review Agenda Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Promote To Agenda" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Public Comment Review" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Redact Comment" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save Meeting Body" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create Meeting" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add Code Handoff" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Calculate Notice Deadline" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Attach Packet File" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Finalize Packet" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record Motion" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record Attendance" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save Quorum Check" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add Minute Citation" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Archive Public Record" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Records Requests/ }).click();
+  await expect(page.getByRole("heading", { name: "Public Records Requests" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Submit Public Records Request" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Submit Records Request" })).toBeVisible();
+  await expect(page.getByLabel("Request number")).toBeVisible();
+  await expect(page.getByLabel("Submitted contact")).toBeVisible();
+  await expect(page.getByLabel("Message to records staff")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check Request Status" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Send Request Message" })).toBeVisible();
+  await expect(page.getByText("Pending public intake appears only after the request number and submitted contact match.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Request Intake" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create Request" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Calculate Deadline" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Approve Response" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Attach Release Copy" })).toHaveCount(0);
+  await expect(page.getByLabel("Release copy file path")).toHaveCount(0);
+  await expect(page.getByLabel("Release copy status")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Export Response" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Mark Fulfilled" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Notification Outbox" })).toHaveCount(0);
+  await page.getByLabel("Your name").fill("Morgan Lee");
+  await page.getByLabel("Email or phone").fill("morgan@example.gov");
+  await page.getByLabel("Records requested").fill("Emails and invoices about the river trail grant");
+  await page.getByRole("button", { name: "Submit Records Request" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+
+  await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await expect(page.getByRole("heading", { name: "Municipal Code Search" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ask the Code" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Answer Code Question" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Import Code Source" })).toHaveCount(0);
+  await expect(page.getByLabel("Source file path")).toHaveCount(0);
+  await expect(page.getByLabel("Imported by")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Import Source" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Publish Source", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Unpublish Source", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record Sync", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Approve Guidance" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create Clerk Handoff" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open Exports Folder" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Search City Knowledge/ }).click();
+  await expect(page.getByRole("heading", { name: "Public Search" })).toBeVisible();
+  await expect(page.getByText("No public search results yet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Local Search" })).toHaveCount(0);
+  await expect(page.getByText("No local search results yet.")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Search Local Data" })).toHaveCount(0);
+});
+
+test("risky city workflow actions require guided review before mutation", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await page.getByRole("button", { name: "Archive Public Record" }).click();
+  await expect(page.locator('[data-guided-review="work"]')).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review Before Archiving Public Record" })).toBeVisible();
+  await expect(page.getByText("What will change")).toBeVisible();
+  await expect(page.getByText("Who can see it")).toBeVisible();
+  await expect(page.getByText("Sources and evidence")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Archive Public Record" })).toBeVisible();
+  await expect(page.getByText("Desktop app required")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Archiving Public Record" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Generate Local AI Minutes" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Generating Minutes Draft" })).toBeVisible();
+  await expect(page.getByText("Uses the verified local AI model to draft internal meeting minutes")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Attach Packet File" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Attaching Packet File" })).toBeVisible();
+  await expect(page.getByText("Attachment title is required.")).toBeVisible();
+  await expect(page.getByText("Attachment source file path is required.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Attach Packet File" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Add Minute Citation" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Adding Minute Citation" })).toBeVisible();
+  await expect(page.getByText("Minutes sentence or excerpt is required.")).toBeVisible();
+  await expect(page.getByText("Source reference is required.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Add Minute Citation" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Approve Notice Checklist" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Approving Notice Checklist" })).toBeVisible();
+  await expect(page.getByText("Statutory notice basis is required.")).toBeVisible();
+  await expect(page.getByText("Clerk approval is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Calculate Notice Deadline" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Calculating Notice Deadline" })).toBeVisible();
+  await expect(page.getByText("The desktop app will require a meeting before saving.")).toBeVisible();
+  await expect(page.getByText("Statutory notice basis is required.")).toBeVisible();
+  await expect(page.getByText("Clerk approval is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Mark Notice Ready" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Posting Notice" })).toBeVisible();
+  await expect(page.getByText("Approved notice checklist is required.")).toBeVisible();
+  await expect(page.getByText("Actual posting date is required.")).toBeVisible();
+  await expect(page.getByText("Posting confirmation evidence is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Confirm Mark Notice Ready" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+
+  await page.addInitScript(() => {
+    const cityCoreModules = [
+      {
+        id: "civiccore",
+        display_name: "CivicCore",
+        role: "core platform",
+        required: true,
+        selectable: false,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      },
+      {
+        id: "civicrecords-ai",
+        display_name: "CivicRecords AI",
+        role: "records workflow",
+        required: false,
+        selectable: true,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      },
+      {
+        id: "civicclerk",
+        display_name: "CivicClerk",
+        role: "clerk workflow",
+        required: false,
+        selectable: true,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      },
+      {
+        id: "civiccode",
+        display_name: "CivicCode",
+        role: "municipal code",
+        required: false,
+        selectable: true,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      }
+    ];
+    const civicnotice = {
+      id: "civicnotice",
+      display_name: "CivicNotice",
+      role: "public notice workflow",
+      version: "0.2.0",
+      civiccore_requirement: "1.2.0",
+      required: false,
+      selectable: true,
+      installed: true,
+      enabled: true,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore", "civicclerk"],
+      route_count: 2,
+      service_count: 2,
+      task_count: 4,
+      backup_restore_hooks: ["Data/workflows/notice", "Data/exports/notice", "Data/files/notice"],
+      model_required: false,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
+    };
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "get_app_state") {
+          return {
+            ...window.__appStateForTest,
+            modules: [
+              ...cityCoreModules,
+              civicnotice
+            ],
+            module_selection: {
+              ...(window.__appStateForTest?.module_selection || {}),
+              profile_id: "custom",
+              profile_label: "Custom",
+              installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice"],
+              enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice"]
+            }
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+  await page.reload();
+  await page.getByRole("button", { name: /Public Notices/ }).click();
+  await page.getByLabel("Statutory notice basis").fill("Open meetings \"notice\" basis");
+  await page.getByLabel("Posting confirmation").fill("</textarea><strong>DIR-NOTICE-XSS</strong>");
+  await expect(page.getByLabel("Statutory notice basis")).toHaveValue("Open meetings \"notice\" basis");
+  await expect(page.getByLabel("Posting confirmation")).toHaveValue("</textarea><strong>DIR-NOTICE-XSS</strong>");
+  await page.getByRole("button", { name: "Calculate Deadline" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Calculating Notice Deadline" })).toBeVisible();
+  await expect(page.getByText("CivicNotice", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Calculate Deadline" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Save Checklist" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Saving Notice Checklist" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Save Checklist" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Record Posting Proof" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Recording Posting Proof" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Record Posting Proof" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Build Archive Packet" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Building Notice Archive Packet" })).toBeVisible();
+  await expect(page.getByText("Saved notice checklist is required.")).toBeVisible();
+  await expect(page.getByText("Posting proof is required.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Build Archive Packet" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: /Records Requests/ }).click();
+  await page.getByRole("button", { name: "Set Deadline" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Setting Records Deadline" })).toBeVisible();
+  await expect(page.getByText("Deadline basis is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Calculate Deadline" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Calculating Records Deadline" })).toBeVisible();
+  await expect(page.getByText("Received date is required.")).toBeVisible();
+  await expect(page.getByText("Deadline basis is required.")).toBeVisible();
+  await expect(page.getByText("The desktop app will require a request before saving.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Add Request Message" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Adding Request Message" })).toBeVisible();
+  await expect(page.getByText("Request message is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Add Fee Line" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Adding Records Fee Line" })).toBeVisible();
+  await expect(page.getByText("Fee line description is required.")).toBeVisible();
+  await expect(page.getByText("Fee schedule or policy basis is required.")).toBeVisible();
+  await expect(page.getByText("Fee line amount is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Waive Fee" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Waiving Records Fee" })).toBeVisible();
+  await expect(page.getByText("Fee waiver reason is required.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Generate Local AI Draft" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Generating Records Draft" })).toBeVisible();
+  await expect(page.getByText("Uses the verified local AI model to draft an internal response")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Approve Response" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Approving Records Response" })).toBeVisible();
+  await expect(page.getByText("Internal staff status changes to human-approved")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Attach Release Copy" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Attaching Release Copy" })).toBeVisible();
+  await expect(page.getByText("Release copy file path or typed reference is required.")).toBeVisible();
+  await expect(page.getByText("Release copy status is required.")).toHaveCount(0);
+  await expect(page.getByText("The desktop app will require an attached request document before saving.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await page.getByRole("button", { name: "Import Source" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Importing Code Source" })).toBeVisible();
+  await expect(page.getByText("Citation is required.")).toBeVisible();
+  await expect(page.getByText("Source text is required for search, questions, and publication.")).toBeVisible();
+  await expect(page.getByText("Optional source file path or typed reference has not been entered.")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Publish Source", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Publishing Code Source" })).toBeVisible();
+  await expect(page.getByText("Creates CivicCode audit and CivicCore publication-gate entries.")).toBeVisible();
+});
+
+test("browser preview refuses persistent city workflow mutations", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await page.getByRole("button", { name: "Save Meeting Body" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Saving Meeting Body" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm Save Meeting Body" }).click();
+
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+  await expect(page.getByText("City workflow changes are saved by the Windows desktop app, not the browser preview.")).toBeVisible();
+});
+
+test("desktop workflow actions select freshly added records over restored stale records", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [],
+      meeting_members: [],
+      agenda_intakes: [],
+      meetings: [],
+      records_requests: [],
+      code_sources: [],
+      code_handoffs: [],
+      adopted_legislation: [],
+      notification_events: [],
+      code_answers: []
+    });
+    const body = {
+      id: "body-001",
+      name: "City Council",
+      statutory_basis: "Municipal charter",
+      type: "council"
+    };
+    const meeting = (id, title) => ({
+      id,
+      body_id: body.id,
+      body_name: body.name,
+      title,
+      meeting_date: "2026-06-18",
+      status: "draft",
+      summary: "Budget workflow",
+      notice_status: "draft",
+      agenda_items: [],
+      staff_reports: [],
+      attachments: [],
+      packet_assemblies: [],
+      export_bundles: [],
+      closed_sessions: [],
+      attendance_records: [],
+      quorum_checks: [],
+      minute_citations: [],
+      motions: [],
+      member_votes: [],
+      votes: [],
+      adopted_legislation: [],
+      action_records: [],
+      action_items: [],
+      resident_comments: [],
+      public_comments: [],
+      exports: []
+    });
+    const source = (id, title) => ({
+      id,
+      title,
+      citation: `${title} citation`,
+      body: `${title} body`,
+      status: "internal draft",
+      public_status: "internal draft",
+      codifier_sync_status: "not synced",
+      public_exports: []
+    });
+    const oldMeeting = meeting("meeting-999", "Restored meeting DIR091");
+    const freshMeeting = meeting("meeting-100", "Fresh meeting DIR094");
+    const oldSource = source("source-999", "Noise ordinance DIR091");
+    const freshSource = source("source-100", "Fresh source DIR094");
+    window.__cityWorkState = emptyWork();
+    window.__cityWorkCalls = [];
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          window.__cityWorkCalls.push({ action: args.action, payload: args.payload });
+          if (args.action === "create-meeting-body") {
+            window.__cityWorkState = { ...window.__cityWorkState, meeting_bodies: [body] };
+          } else if (args.action === "create-meeting") {
+            const meetings = window.__cityWorkState.meetings.length === 0
+              ? [oldMeeting]
+              : [oldMeeting, freshMeeting];
+            window.__cityWorkState = { ...window.__cityWorkState, meetings };
+          } else if (args.action === "import-code-source") {
+            const codeSources = window.__cityWorkState.code_sources.length === 0
+              ? [oldSource]
+              : [oldSource, freshSource];
+            window.__cityWorkState = { ...window.__cityWorkState, code_sources: codeSources };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("button", { name: /Meetings & Notices/ }).click();
+  await page.getByRole("button", { name: "Save Meeting Body" }).click();
+  await page.getByRole("button", { name: "Confirm Save Meeting Body" }).click();
+
+  await page.getByRole("button", { name: "Create Meeting" }).click();
+  await page.getByRole("button", { name: "Create Meeting" }).click();
+
+  await expect(page.locator(".workflow-record").filter({ hasText: "Fresh meeting DIR094" }).getByText("Selected for actions")).toBeVisible();
+  await page.getByRole("button", { name: "Add Minute Citation" }).click();
+  await page.getByRole("button", { name: "Confirm Add Minute Citation" }).click();
+
+  await page.getByRole("button", { name: /Code & Ordinances/ }).click();
+  await page.getByRole("button", { name: "Import Source" }).click();
+  await page.getByRole("button", { name: "Confirm Import Source" }).click();
+  await page.getByRole("button", { name: "Import Source" }).click();
+  await page.getByRole("button", { name: "Confirm Import Source" }).click();
+
+  await expect(page.locator(".workflow-record").filter({ hasText: "Fresh source DIR094" }).getByText("Selected for actions")).toBeVisible();
+  await page.getByRole("button", { name: "Save Guidance Draft" }).click();
+
+  const calls = await page.evaluate(() => window.__cityWorkCalls);
+  expect(calls.find((call) => call.action === "add-minute-citation")?.payload.meetingId).toBe("meeting-100");
+  expect(calls.find((call) => call.action === "draft-code-guidance")?.payload.codeSourceId).toBe("source-100");
+});
+
+test("audit drawer uses local workflow audit language instead of placeholder text", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Audit Trail" }).click();
+
+  await expect(page.getByRole("heading", { name: "Audit Trail" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Publication Gates" })).toBeVisible();
+  await expect(page.getByText("No human-approved public records have been published yet.")).toBeVisible();
+  await expect(page.getByText("No local workflow actions have been recorded yet.")).toBeVisible();
+  await expect(page.getByText("Scaffold")).toHaveCount(0);
+});
+
+test("module manager presents the installed city-core package", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /Settings/ }).click();
+
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "City Profile" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "First Admin" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Local Users" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Local Folders" })).toBeVisible();
+  await expect(page.getByLabel("App install folder")).toBeVisible();
+  await expect(page.getByLabel("City data folder")).toBeVisible();
+  await expect(page.getByLabel("Backup folder")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose Folder" })).toHaveCount(2);
+  await expect(page.getByRole("button", { name: "Save Local Folders" })).toBeVisible();
+  await page.getByRole("button", { name: "Choose Folder" }).first().click();
+  await expect(page.getByText("Native folder selection is available in the Windows desktop app")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save City Profile" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save First Admin" })).toBeVisible();
+  await expect(page.getByLabel("Local passcode", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Staff name")).toBeVisible();
+  await expect(page.getByLabel("Staff email")).toBeVisible();
+  await expect(page.getByLabel("Role")).toBeVisible();
+  await expect(page.getByLabel("Temporary local passcode")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create Staff User" })).toBeVisible();
+  await page.getByRole("button", { name: "Create Staff User" }).click();
+  await expect(page.getByText("Local access is managed by the Windows desktop app")).toBeVisible();
+  await expect(page.getByText("sign in or manage local users")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "City Core Modules" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose Product Modules" })).toBeVisible();
+  await expect(page.getByLabel(/City Core/)).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civicrecords-ai"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civicclerk"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civiccode"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civiczone"]')).toBeDisabled();
+  await expect(page.getByText("Not ready for Windows Local 1.0")).toBeVisible();
+  await page.getByLabel(/Custom/).check();
+  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
+  await page.locator('[data-module-toggle="civicrecords-ai"]').uncheck();
+  await expect(page.getByText("Custom selection will install CivicCore plus 2 selected product modules.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Apply Module Selection" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
+  await expect(page.getByText("Selected profile: City Core. Installed modules: 4. Enabled modules: 4.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
+  await expect(page.getByText("Backup includes: code workflow history, code exports, code files")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports CivicCode" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check Update CivicCode" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove From Profile CivicCode" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove From Profile CivicCode" }).click();
+  const removeReview = page.locator(".guided-review").filter({ hasText: "Review Before Removing CivicCode From Profile" });
+  await expect(removeReview.getByText("Creates a verified local profile backup")).toBeVisible();
+  await expect(removeReview.getByText("Writes a backup manifest before updating the local module-selection record")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Disable CivicCode" }).click();
+  await expect(page.locator('[data-guided-review="module"]')).toBeVisible();
+  const moduleReview = page.locator(".guided-review").filter({ hasText: "Review Before Disabling CivicCode" });
+  await expect(moduleReview.getByRole("heading", { name: "Review Before Disabling CivicCode" })).toBeVisible();
+  await expect(moduleReview.getByText("Existing module data remains installed.")).toBeVisible();
+  await expect(moduleReview.getByText("Audit trail", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Disable Module" })).toBeVisible();
+  await expect(page.getByText("Module actions are handled by the Windows desktop app")).toHaveCount(0);
+  await page.getByRole("button", { name: "Confirm Disable Module" }).click();
+  await expect(page.getByText("Module actions are handled by the Windows desktop app")).toBeVisible();
+  await expect(page.getByText("install, update, enable, disable, remove modules, or open local module exports")).toBeVisible();
+  await expect(page.getByText("Installed by selected package profile").first()).toBeVisible();
+  await expect(page.getByText("Updated through the versioned module manifest").first()).toBeVisible();
+  await expect(page.getByText("Allowed after a backup is created").first()).toBeVisible();
+  await expect(page.getByText("Removed only after module data backup").first()).toBeVisible();
+  await expect(page.getByText("backup-first-module-data-removal")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Full Suite" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicNotice" })).toBeVisible();
+  await expect(page.getByText("Backup includes: notice workflow history, notice exports, notice proof files")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Install CivicNotice" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
+  await expect(page.getByText("Package waiting")).toBeVisible();
+  await expect(page.getByText("Scaffold")).toHaveCount(0);
+});

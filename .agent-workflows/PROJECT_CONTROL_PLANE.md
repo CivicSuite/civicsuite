@@ -1,6 +1,68 @@
 # CivicSuite Project Control Plane
 
-Last updated: 2026-05-18
+Last updated: 2026-06-13
+
+## Current Authorized Target
+
+Active target: CivicSuite Windows Local 1.0 city-core desktop completion.
+
+Scott explicitly superseded the stale CivicInspect queue on 2026-06-13 and
+authorized implementation of the Windows Local 1.0 plan. The target is a real
+Tauri/WebView2 Windows desktop application, local portable-native runtime,
+non-technical installer, Gemma 4 12B quantization-aware local model path,
+CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
+contract that lets future modules plug into the existing app one at a time.
+
+Current working slice: CivicCore local platform completion for auth, audit,
+module registry, model registry, queue, health, backup/restore, and installer
+APIs.
+
+Definition of Done for this slice:
+
+- CivicCore local platform contracts and implementation surface are aligned
+  with the Windows desktop profile.
+- Auth/RBAC, audit chain, module registry, model registry, task queue, health,
+  backup/restore, and installer/runtime APIs have automated local contract
+  coverage.
+- Desktop and installer paths use real CivicCore contracts where implementation
+  exists and keep blocked states clear where native execution is not yet wired.
+- audit-lite runs for this slice and findings are fixed before push.
+
+Closed Windows Local slices:
+
+- Windows desktop design control and module package contract foundation.
+  Evidence: `docs/design/windows-desktop-design-control.md`,
+  `docs/architecture/ADR-0010-module-package-contract.md`,
+  `installer/module-manifest-contract.json`,
+  `scripts/verify-module-manifest-contract.py`, and
+  `docs/process/audits/audit-lite-windows-desktop-design-contract-2026-06-13.md`.
+- Tauri/WebView2 desktop shell scaffold and local task navigation.
+  Evidence: `desktop/`, `desktop/tests/static-smoke.mjs`, Tauri no-bundle
+  executable build, and
+  `docs/process/audits/audit-lite-windows-desktop-shell-scaffold-2026-06-13.md`.
+- Portable runtime supervisor and Windows process lifecycle foundation.
+  Evidence: `desktop/runtime/windows-local-runtime.json`,
+  `desktop/src-tauri/src/supervisor.rs`, System Health runtime rendering, and
+  `docs/process/audits/audit-lite-windows-runtime-supervisor-2026-06-13.md`.
+- Installer and first-run wizard without Docker/WSL.
+  Evidence: `desktop/runtime/windows-first-run.json`,
+  `desktop/src-tauri/src/first_run.rs`, Home/System Health setup rendering, and
+  `docs/process/audits/audit-lite-windows-first-run-setup-2026-06-13.md`.
+- Gemma 4 12B quantization-aware model metadata and readiness path.
+  Evidence: `desktop/runtime/gemma4-model.json`,
+  `desktop/src-tauri/src/model.rs`, Home/System Health model readiness
+  rendering, Playwright browser checks, and
+  `docs/process/audits/audit-lite-windows-model-readiness-2026-06-13.md`.
+
+Stop conditions:
+
+- Any action requires signing keys, paid services, production secrets,
+  destructive data operations, history rewrite, tag deletion, or release
+  publication.
+- Validation reveals that implementing the Windows app requires removing real
+  existing module functionality.
+- A clean-machine test directive is sent and reports a human-only external
+  blocker.
 
 ## Project Goal
 

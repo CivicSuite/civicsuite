@@ -1,20 +1,29 @@
 # CivicSuite Installer Contract
 
-Status: Linux-first clerk-core beta lifecycle, with Windows and macOS wrapper targets.
+Status: Legacy Docker/browser planner and beta package history. The Windows
+Local 1.0 clerk path now lives in `desktop/` as the Tauri/WebView2 app and
+portable-native runtime contract.
 
-This directory defines the suite-level installer target for CivicSuite. It does
-not replace module-specific install paths, and it does not certify any module as
-city-ready. The goal is to define the delivery surface that can take a
-zero-baseline machine to a working local CivicSuite profile.
+This directory keeps the older suite-level installer target, planner, evidence,
+and historical clerk-core beta package work. It remains useful as a design
+contract, not implementation for the Windows Local 1.0 installer. It does not
+define the non-technical city clerk install path, and it must not be read as a
+Docker or WSL requirement for the Windows desktop app.
+
+For the current Windows Local 1.0 path, use `desktop/`: it owns the unsigned
+beta installer notice, SmartScreen explanation, first-run wizard, module
+manager, local runtime payload contract, Gemma model readiness, health, backup,
+restore, repair, and uninstall surfaces. That path is explicitly no Docker, no
+WSL, and no terminal for normal city staff use.
 
 The original installer work began as a design contract, not implementation. The
-current beta now includes a working `clerk-core` lifecycle runner that can be
-packaged, extracted, installed, verified, repaired, and uninstalled from a clean
-bundle using Docker.
+historical beta includes a `clerk-core` lifecycle runner that can be packaged,
+extracted, installed, verified, repaired, and uninstalled from a clean bundle
+using Docker. That legacy runner is not the Windows Local 1.0 end-user path.
 
 ## Required Outcome
 
-The suite installer must support:
+The legacy suite installer planner records the older Docker/browser target:
 
 - Linux, with Ubuntu LTS as the first proof target.
 - Windows 10/11 through a wrapper around Docker Desktop and the same containerized services. Lifecycle certification requires a matching Windows host or VM with Docker Desktop running.
@@ -80,7 +89,7 @@ selected menu style without changing host state.
 
 ## Suite Launcher Runtime
 
-The first city-core launcher scaffold lives at
+The first city-core static launcher lives at
 `installer/runtime/suite-launcher`. It is a static, self-contained runtime with
 Staff, Resident, and IT-Admin surfaces, local tiles for CivicRecords AI,
 CivicClerk, and CivicCode, a one-click audit drawer, and a Ctrl-K/Cmd-K command
@@ -286,7 +295,7 @@ extracted bundle, remove the extracted payload, and write evidence under
 `installer/reports/{run_id}`. Each package report records an
 `evidence_classification`: `archive_readiness_only`,
 `matching_host_lifecycle`, `matching_host_lifecycle_failed`,
-`host_platform_mismatch`, or `unsupported_lifecycle`. Full
+`dependency_gate_blocked`, `host_platform_mismatch`, or `unsupported_lifecycle`. Full
 install/repair/verify/backup/restore/uninstall proof is certification evidence
 only when the archive is run on a matching host or VM. Windows lifecycle
 evidence now exists from a Windows 11 + WSL 2 Docker Desktop host; macOS

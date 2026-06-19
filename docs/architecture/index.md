@@ -18,3 +18,4 @@ the suite as a whole.
 - [ADR-0007: First production-depth workflow is CivicClerk agenda packet and notice](ADR-0007-first-production-depth-workflow.md)
 - [ADR-0008: Windows deployment profile is portable-native, not Docker](ADR-0008-portable-native-windows-runtime.md)
 - [ADR-0009: Background work runs on a Postgres-backed queue in the Windows profile](ADR-0009-postgres-backed-queue-windows-profile.md)
+- [ADR-0010: Future modules install through a strict module package contract](ADR-0010-module-package-contract.md)
