@@ -32,6 +32,7 @@
     "licenseFile": "../installer/windows/unsigned-beta-install-notice.txt",
     "resources": ["../runtime/payload/"],
     "windows": {
+      "allowDowngrades": false,
       "wix": {
         "upgradeCode": "a63fc1d3-5437-5f55-89a2-fef93fb1f930",
         "language": "en-US",

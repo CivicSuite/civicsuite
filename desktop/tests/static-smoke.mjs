@@ -285,6 +285,7 @@ if (!tauriConfig.includes('"resources": ["../runtime/payload/"]')) {
 
 for (const phrase of [
   '"wix": {',
+  '"allowDowngrades": false',
   '"upgradeCode": "a63fc1d3-5437-5f55-89a2-fef93fb1f930"',
   '"language": "en-US"',
   '"enableElevatedUpdateTask": false'
@@ -310,6 +311,7 @@ for (const phrase of [
   "npm run tauri -- build",
   "desktop/src-tauri/target/release/bundle/msi/*.msi",
   "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930",
+  "SameVersionMajorUpgrade=true",
   "InstallerBundle=msi",
   "UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt",
   "UnsignedBetaNoticeSurface=msi-license-file",

@@ -105,6 +105,7 @@ jobs:
             "Bytes=$($msi.Length)"
             "SHA256=$($hash.Hash.ToLowerInvariant())"
             "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930"
+            "SameVersionMajorUpgrade=true"
             "InstallerBundle=msi"
             "UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt"
             "UnsignedBetaNoticeSurface=msi-license-file"
