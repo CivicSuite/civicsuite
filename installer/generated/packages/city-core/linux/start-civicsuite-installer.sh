@@ -17,7 +17,7 @@ if [[ "$#" -gt 0 ]]; then
 fi
 
 PLANNER_ARGS=(--menu-style "guided" --dry-run)
-LIFECYCLE_MODULE_ARGS=("--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode")
+LIFECYCLE_MODULE_ARGS=("--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode" "--module" "civicnotice")
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
 first_run_wizard() {

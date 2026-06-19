@@ -2122,7 +2122,7 @@ if [[ "$#" -gt 0 ]]; then
 fi
 
 PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
-LIFECYCLE_MODULE_ARGS=({'"--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode"' if profile_id == "city-core" else ""})
+LIFECYCLE_MODULE_ARGS=({'"--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode" "--module" "civicnotice"' if profile_id == "city-core" else ""})
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
 first_run_wizard() {{

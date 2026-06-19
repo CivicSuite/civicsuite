@@ -44,7 +44,7 @@ MODULE_CLERK = "civicclerk"
 MODULE_CODE = "civiccode"
 MODULE_NOTICE = "civicnotice"
 SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE, MODULE_NOTICE)
-DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE, MODULE_NOTICE)
+DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 EXPECTED_CIVICCORE_VERSION = "1.2.0"
 EXPECTED_RECORDS_VERSION = "1.7.3"
 EXPECTED_CLERK_VERSION = "1.0.4"
@@ -2774,7 +2774,7 @@ def main() -> int:
         action="append",
         choices=SELECTABLE_MODULES,
         default=None,
-        help="Install or verify one selectable module. Repeat for multiple modules. Defaults to the city-core module set.",
+        help="Install or verify one selectable module. Repeat for multiple modules. Defaults to the clerk-core module set.",
     )
     parser.add_argument(
         "--staff-mode",

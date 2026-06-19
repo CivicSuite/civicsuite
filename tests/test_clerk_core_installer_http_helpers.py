@@ -157,19 +157,30 @@ def test_normalize_clerk_frontend_dockerfile_installs_rolldown_musl_binding(tmp_
     assert dockerfile.index(install_line) < dockerfile.index("RUN npm run build")
 
 
-def test_civicnotice_is_part_of_default_installer_lifecycle(monkeypatch, tmp_path) -> None:
+def test_civicnotice_is_part_of_city_core_installer_lifecycle(monkeypatch, tmp_path) -> None:
     installer = _load_installer_module()
     monkeypatch.setattr(installer, "ROOT", tmp_path)
     install_root = tmp_path / "runtime" / "city-core"
     isolation = installer.resolve_isolation(run_id="test-civicnotice-default", port_offset=0)
 
-    ctx = installer.lifecycle_context(install_root, isolation, selected_modules=None)
+    default_ctx = installer.lifecycle_context(install_root, isolation, selected_modules=None)
+    city_core_ctx = installer.lifecycle_context(
+        install_root,
+        isolation,
+        selected_modules=[
+            installer.MODULE_RECORDS,
+            installer.MODULE_CLERK,
+            installer.MODULE_CODE,
+            installer.MODULE_NOTICE,
+        ],
+    )
 
     assert installer.MODULE_NOTICE in installer.SELECTABLE_MODULES
-    assert installer.MODULE_NOTICE in installer.DEFAULT_SELECTED_MODULES
-    assert installer.MODULE_NOTICE in ctx["selected_modules"]
-    assert ctx["notice_source"] == install_root / "sources" / "civicnotice"
-    assert ctx["notice_project"] == isolation["compose_projects"]["civicnotice"]
+    assert installer.MODULE_NOTICE not in installer.DEFAULT_SELECTED_MODULES
+    assert installer.MODULE_NOTICE not in default_ctx["selected_modules"]
+    assert installer.MODULE_NOTICE in city_core_ctx["selected_modules"]
+    assert city_core_ctx["notice_source"] == install_root / "sources" / "civicnotice"
+    assert city_core_ctx["notice_project"] == isolation["compose_projects"]["civicnotice"]
 
 
 def test_civicnotice_database_contract_uses_generated_env(tmp_path) -> None:
