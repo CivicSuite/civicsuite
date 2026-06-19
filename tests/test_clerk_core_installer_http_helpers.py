@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -204,3 +205,26 @@ def test_civicnotice_database_contract_uses_generated_env(tmp_path) -> None:
     assert contract["postgres_service"] == "postgres"
     assert contract["postgres_user"] == "notice_user"
     assert contract["postgres_db"] == "notice_db"
+
+
+def test_civicnotice_generated_compose_has_parseable_healthcheck(tmp_path) -> None:
+    installer = _load_installer_module()
+    notice_source = tmp_path / "sources" / "civicnotice"
+    notice_source.mkdir(parents=True)
+
+    installer.write_notice_compose(notice_source)
+
+    compose_text = (notice_source / "docker-compose.yml").read_text(encoding="utf-8")
+    assert "test:\n        - CMD-SHELL\n        - >-\n" in compose_text
+    assert "urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)" in compose_text
+
+    docker = shutil.which("docker")
+    if docker:
+        proc = subprocess.run(
+            [docker, "compose", "-f", "docker-compose.yml", "config"],
+            cwd=notice_source,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert proc.returncode == 0, proc.stderr or proc.stdout

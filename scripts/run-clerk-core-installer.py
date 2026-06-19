@@ -948,7 +948,10 @@ CMD ["uvicorn", "civicnotice.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "${CIVICNOTICE_API_PORT:-18866}:8000"
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()\""]
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()"
       interval: 10s
       timeout: 5s
       retries: 18
