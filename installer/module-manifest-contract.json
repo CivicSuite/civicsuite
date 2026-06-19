@@ -35,14 +35,16 @@
     "civiccore",
     "civicrecords-ai",
     "civicclerk",
-    "civiccode"
+    "civiccode",
+    "civicnotice"
   ],
   "planned_repo_null_statuses": [
     "planned_spec_module_no_runtime_repo"
   ],
   "ready_status_markers": [
     "city_core_release_car",
-    "shared_ingestion_shipped"
+    "shared_ingestion_shipped",
+    "installed_module_release"
   ],
   "future_desktop_contract_fields": [
     "routes",

@@ -91,6 +91,23 @@
       "type": "install_module"
     },
     {
+      "civiccore_requirement": "1.2.0",
+      "display_name": "CivicNotice",
+      "module": "civicnotice",
+      "proof_required": [
+        "module_selection",
+        "install_plan",
+        "artifact_resolution",
+        "health_check",
+        "restart",
+        "backup",
+        "restore",
+        "release_artifacts"
+      ],
+      "repo": "CivicSuite/civicnotice",
+      "type": "install_module"
+    },
+    {
       "component": "suite-launcher",
       "modules": [
         {
@@ -151,7 +168,8 @@
     "civiccore",
     "civicrecords-ai",
     "civicclerk",
-    "civiccode"
+    "civiccode",
+    "civicnotice"
   ],
   "mutates_host": false,
   "profile": "city-core",

@@ -367,6 +367,120 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Confirm Mark Notice Ready" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();
 
+  await page.addInitScript(() => {
+    const cityCoreModules = [
+      {
+        id: "civiccore",
+        display_name: "CivicCore",
+        role: "core platform",
+        required: true,
+        selectable: false,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      },
+      {
+        id: "civicrecords-ai",
+        display_name: "CivicRecords AI",
+        role: "records workflow",
+        required: false,
+        selectable: true,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      },
+      {
+        id: "civicclerk",
+        display_name: "CivicClerk",
+        role: "clerk workflow",
+        required: false,
+        selectable: true,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      },
+      {
+        id: "civiccode",
+        display_name: "CivicCode",
+        role: "municipal code",
+        required: false,
+        selectable: true,
+        installed: true,
+        enabled: true,
+        contract_ready: true
+      }
+    ];
+    const civicnotice = {
+      id: "civicnotice",
+      display_name: "CivicNotice",
+      role: "public notice workflow",
+      version: "0.2.0",
+      civiccore_requirement: "1.2.0",
+      required: false,
+      selectable: true,
+      installed: true,
+      enabled: true,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore", "civicclerk"],
+      route_count: 2,
+      service_count: 2,
+      task_count: 4,
+      backup_restore_hooks: ["Data/workflows/notice", "Data/exports/notice", "Data/files/notice"],
+      model_required: false,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
+    };
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "get_app_state") {
+          return {
+            ...window.__appStateForTest,
+            modules: [
+              ...cityCoreModules,
+              civicnotice
+            ],
+            module_selection: {
+              ...(window.__appStateForTest?.module_selection || {}),
+              profile_id: "custom",
+              profile_label: "Custom",
+              installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice"],
+              enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice"]
+            }
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+  await page.reload();
+  await page.getByRole("button", { name: /Public Notices/ }).click();
+  await page.getByLabel("Statutory notice basis").fill("Open meetings \"notice\" basis");
+  await page.getByLabel("Posting confirmation").fill("</textarea><strong>DIR-NOTICE-XSS</strong>");
+  await expect(page.getByLabel("Statutory notice basis")).toHaveValue("Open meetings \"notice\" basis");
+  await expect(page.getByLabel("Posting confirmation")).toHaveValue("</textarea><strong>DIR-NOTICE-XSS</strong>");
+  await page.getByRole("button", { name: "Calculate Deadline" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Calculating Notice Deadline" })).toBeVisible();
+  await expect(page.getByText("CivicNotice", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Calculate Deadline" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Save Checklist" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Saving Notice Checklist" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Save Checklist" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Record Posting Proof" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Recording Posting Proof" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Record Posting Proof" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Build Archive Packet" }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Building Notice Archive Packet" })).toBeVisible();
+  await expect(page.getByText("Saved notice checklist is required.")).toBeVisible();
+  await expect(page.getByText("Posting proof is required.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm Build Archive Packet" })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
   await page.getByRole("button", { name: /Records Requests/ }).click();
   await page.getByRole("button", { name: "Set Deadline" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Setting Records Deadline" })).toBeVisible();
@@ -643,6 +757,9 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByText("Removed only after module data backup").first()).toBeVisible();
   await expect(page.getByText("backup-first-module-data-removal")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Full Suite" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicNotice" })).toBeVisible();
+  await expect(page.getByText("Backup includes: notice workflow history, notice exports, notice proof files")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Install CivicNotice" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
   await expect(page.getByText("Package waiting")).toBeVisible();
   await expect(page.getByText("Scaffold")).toHaveCount(0);

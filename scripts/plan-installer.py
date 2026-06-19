@@ -2006,7 +2006,7 @@ Write-Host "{copy['project_status']}"
 $PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
 $LifecycleModuleArgs = @()
 $LifecycleModeArgs = @("--staff-mode", $StaffMode)
-{'''$DefaultProfileModules = @("civicrecords-ai", "civicclerk", "civiccode")
+{'''$DefaultProfileModules = @("civicrecords-ai", "civicclerk", "civiccode", "civicnotice")
 foreach ($DefaultModule in $DefaultProfileModules) {
     $LifecycleModuleArgs += @("--module", $DefaultModule)
 }
@@ -2250,7 +2250,7 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --module)
       if [[ "$#" -lt 2 ]]; then
-        echo "--module requires civicrecords-ai, civicclerk, or civiccode" >&2
+        echo "--module requires civicrecords-ai, civicclerk, civiccode, or civicnotice" >&2
         exit 2
       fi
       SELECTED_MODULES+=("$2")
@@ -2419,7 +2419,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode] [--module civicnotice]" >&2
     exit 2
     ;;
 esac
@@ -2441,6 +2441,7 @@ def _package_readme_text(
         records_only_plan = f".\\{launcher} -Plan -Module civicrecords-ai"
         clerk_only_plan = f".\\{launcher} -Plan -Module civicclerk"
         code_only_plan = f".\\{launcher} -Plan -Module civiccode"
+        notice_only_plan = f".\\{launcher} -Plan -Module civicnotice"
         both_install = (
             f".\\{launcher} -Install {lifecycle_module_args_ps}".strip()
         )
@@ -2452,6 +2453,7 @@ def _package_readme_text(
         records_only_plan = f"bash ./{launcher} plan --module civicrecords-ai"
         clerk_only_plan = f"bash ./{launcher} plan --module civicclerk"
         code_only_plan = f"bash ./{launcher} plan --module civiccode"
+        notice_only_plan = f"bash ./{launcher} plan --module civicnotice"
         both_install = (
             f"bash ./{launcher} install {lifecycle_module_args_sh}".strip()
         )
@@ -2563,6 +2565,7 @@ CivicCore base contract. Operators can choose one module or the whole profile:
 {records_only_plan}
 {clerk_only_plan}
 {code_only_plan}
+{notice_only_plan}
 {both_install}
 ```
 

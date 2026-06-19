@@ -8,7 +8,7 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 ## Read Me First
 
-CivicSuite's active product target is the Windows Local 1.0 city-core beta package: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, and the Tauri/WebView2 desktop installer shell. The clerk path is local-only on Windows: no Docker, WSL, terminal, or developer tooling. It installs CivicCore plus the three city-core product modules under one desktop app, with portable local storage, local services, local file evidence, local backup/restore, and the pinned Gemma 4 12B QAT model path.
+CivicSuite's active product target is the Windows Local 1.0 city-core beta package: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the Tauri/WebView2 desktop installer shell. The clerk path is local-only on Windows: no Docker, WSL, terminal, or developer tooling. It installs CivicCore plus the four city-core product modules under one desktop app, with portable local storage, local services, local file evidence, local backup/restore, and the pinned Gemma 4 12B QAT model path.
 
 Public procurement readiness still depends on the final Windows clean-machine evidence gate. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
@@ -24,7 +24,7 @@ Status snapshot: **2026-06-13**
 
 | Tier | Count | What it means today |
 |---|---:|---|
-| City-core release cars | CivicCore plus 3 product repos | CivicCore v1.2.0 is the shared platform release and now carries the Windows-local platform contracts plus PostgreSQL-backed task queue/worker. CivicRecords AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8 are the city-core module cars. The active suite integration target is the Windows Local Tauri/WebView2 desktop app with a portable-native runtime and local-only clerk path. PR #183 evidence is historical predecessor evidence for the earlier wrapper profile. |
+| City-core release cars | CivicCore plus 4 product repos | CivicCore v1.2.0 is the shared platform release and now carries the Windows-local platform contracts plus PostgreSQL-backed task queue/worker. CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, and CivicNotice v0.2.0 are the city-core module cars. The active suite integration target is the Windows Local Tauri/WebView2 desktop app with a portable-native runtime and local-only clerk path. PR #183 evidence is historical predecessor evidence for the earlier wrapper profile. |
 | Queued / excluded modules | Tier 2 and CivicAccess | CivicAccess is out of city-core after a NEEDS-WORK depth probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued on demotion-truth labels, not city-core public-use releases. |
 | Foundation / planned | 17 named product modules | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The reconciled unified spec, installer metadata, and live GitHub org state now enumerate 27 product modules plus CivicCore. |
 
@@ -38,6 +38,7 @@ The most important distinction: **"all repos have releases" is not the same thin
 - **`civiccore`** (shared platform) - v1.2.0 is the current shared-platform release for city-core. Repo: <https://github.com/CivicSuite/civiccore>
 - **`civicclerk`** (meetings/agendas/minutes) - v1.0.4 is the current meeting workflow release car with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
 - **`civiccode`** - v1.0.8 is the current municipal-code city-core release car on CivicCore v1.2.0.
+- **`civicnotice`** - v0.2.0 is the current public-notice city-core release car on CivicCore v1.2.0.
 - **`civicaccess`** - accessibility and records-ready export module; out of city-core after the 2026-05-23 NEEDS-WORK depth probe.
 - **`civiczone`, `civicplan`, `civicpermit`, `civicinspect`** - queued Tier 2 modules on demotion-truth labels; not part of city-core.
 - **`civicgrants`, `civicprocure`** - recently tagged v1.0.0 against the 2026-05-07 halt; false labels are being superseded by v0.2.0 recovery releases.
@@ -60,7 +61,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). A
 
 **Windows Local city-core (current beta target):** the active installable product path is the CivicSuite desktop app under `desktop/`. It packages a Tauri/WebView2 Windows MSI, a portable PostgreSQL 17 + pgvector data store, bundled CPython city services, a PostgreSQL-backed task queue, local file storage, local backup/restore, local repair/support-bundle flows, Windows uninstall handoff, and Gemma 4 12B QAT Q4_0 model setup through explicit download/checksum/runtime registration.
 
-- City Core installs CivicCore plus CivicRecords AI, CivicClerk, and CivicCode. CivicCore is always installed and cannot be deselected.
+- City Core installs CivicCore plus CivicRecords AI, CivicClerk, CivicCode, and CivicNotice. CivicCore is always installed and cannot be deselected.
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
 - First-run setup covers the unsigned beta notice, SmartScreen explanation, local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
 - Trust path: use the MSI artifact from the active PR/release evidence, verify its checksum, and confirm the module pins in `installer/modules.json` before beta testing.
@@ -93,6 +94,7 @@ If you are orienting yourself for the first time, read in this order:
 | `civicrecords-ai` | v1.7.3 developer-preview city-core records release car |
 | `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
+| `civicnotice` | v0.2.0 public-notice workflow city-core release car |
 | `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
 | `civiczone` | Queued Tier 2 land-use module on demotion-truth label |
 | `civicplan` | Queued Tier 2 planning module on demotion-truth label |

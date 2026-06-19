@@ -79,6 +79,11 @@ fn navigation() -> Vec<NavigationItem> {
             description: "Search, imports, guidance, handoffs",
         },
         NavigationItem {
+            id: "notice",
+            label: "Public Notices",
+            description: "Deadlines, proof, archive packets",
+        },
+        NavigationItem {
             id: "search",
             label: "Search City Knowledge",
             description: "Cross-module local search with citations",
@@ -192,6 +197,10 @@ fn city_work_action_module_requirement(
         | "record-closed-session"
         | "export-meeting-packet"
         | "archive-meeting" => Some((vec!["civicclerk"], false)),
+        "civicnotice-calculate-deadline"
+        | "civicnotice-complete-checklist"
+        | "civicnotice-post-notice"
+        | "civicnotice-export-archive-packet" => Some((vec!["civicclerk", "civicnotice"], false)),
         "record-adopted-legislation" => Some((vec!["civicclerk", "civiccode"], false)),
         "create-records-request"
         | "submit-public-records-request"
@@ -231,7 +240,10 @@ fn city_work_action_module_requirement(
         | "unpublish-code-source"
         | "create-code-handoff"
         | "answer-code-question" => Some((vec!["civiccode"], false)),
-        "search-city-knowledge" => Some((vec!["civicclerk", "civicrecords-ai", "civiccode"], true)),
+        "search-city-knowledge" => Some((
+            vec!["civicclerk", "civicrecords-ai", "civiccode", "civicnotice"],
+            true,
+        )),
         "open-exports-folder" => match payload
             .and_then(|value| value.get("folder"))
             .and_then(Value::as_str)
@@ -239,7 +251,11 @@ fn city_work_action_module_requirement(
             Some("meetings") => Some((vec!["civicclerk"], false)),
             Some("records") => Some((vec!["civicrecords-ai"], false)),
             Some("code") => Some((vec!["civiccode"], false)),
-            _ => Some((vec!["civicclerk", "civicrecords-ai", "civiccode"], true)),
+            Some("notice") => Some((vec!["civicnotice"], false)),
+            _ => Some((
+                vec!["civicclerk", "civicrecords-ai", "civiccode", "civicnotice"],
+                true,
+            )),
         },
         _ => None,
     }
@@ -262,6 +278,7 @@ fn module_exports_folder(module_id: &str) -> Option<(&'static str, &'static str)
         "civicclerk" => Some(("meetings", "meeting exports")),
         "civicrecords-ai" => Some(("records", "records exports")),
         "civiccode" => Some(("code", "code exports")),
+        "civicnotice" => Some(("notice", "notice exports")),
         _ => None,
     }
 }
@@ -889,7 +906,13 @@ mod tests {
     fn city_core_modules_are_reported_installed() {
         module_registry::validate_default_registry().expect("module registry contract validates");
         let modules = module_summaries().expect("module registry parses");
-        for module_id in ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"] {
+        for module_id in [
+            "civiccore",
+            "civicrecords-ai",
+            "civicclerk",
+            "civiccode",
+            "civicnotice",
+        ] {
             let module = modules
                 .iter()
                 .find(|candidate| candidate.id == module_id)
@@ -1440,7 +1463,7 @@ mod tests {
                 .expect("module selection persists");
             let state = app_state().expect("app state");
             assert_eq!(state.module_selection.profile_id, "city-core");
-            assert_eq!(state.module_selection.installed_module_ids.len(), 4);
+            assert_eq!(state.module_selection.installed_module_ids.len(), 5);
             assert!(state
                 .module_profiles
                 .iter()

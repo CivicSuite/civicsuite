@@ -91,7 +91,7 @@ def _validate_profiles(
             if modules != city_core_profile:
                 errors.append(
                     fail(
-                        "city-core profile must install CivicCore, CivicRecords AI, CivicClerk, and CivicCode in contract order"
+                        "city-core profile must install the contract city-core modules in order"
                     )
                 )
             if profile.get("disabled") is True:

@@ -34,6 +34,7 @@
         "Lib/site-packages/app/main.py",
         "Lib/site-packages/civicclerk/main.py",
         "Lib/site-packages/civiccode/main.py",
+        "Lib/site-packages/civicnotice/main.py",
         "Lib/site-packages/civicsuite_runtime/__init__.py",
         "Lib/site-packages/civicsuite_runtime/migrate.py",
         "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic.ini",

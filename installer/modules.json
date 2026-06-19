@@ -57,12 +57,13 @@
                      {
                          "id":  "city-core",
                          "label":  "City Core",
-                         "description":  "Install the beta-ready city-core profile: records, clerk, and municipal code on CivicCore.",
+                        "description":  "Install the beta-ready city-core profile: records, clerk, municipal code, and public notices on CivicCore.",
                          "modules":  [
                                          "civiccore",
                                          "civicrecords-ai",
                                          "civicclerk",
-                                         "civiccode"
+                                         "civiccode",
+                                         "civicnotice"
                                      ],
                          "status":  "beta_ready_truth_reconciled",
                          "excluded_modules":  [
@@ -709,18 +710,80 @@
                         "role":  "public notice workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "0.9.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore",
                                              "civicclerk"
                                          ],
                         "default_port":  8066,
-                        "installer_status":  "tracked_suite_module_needs_installer_proof",
+                        "installer_status":  "v0_2_0_installed_module_release",
                         "proof_required":  [
-                                               "install",
+                                               "module_selection",
+                                               "install_plan",
+                                               "artifact_resolution",
                                                "health_check",
-                                               "restart"
-                                           ]
+                                               "restart",
+                                               "backup",
+                                               "restore",
+                                               "release_artifacts"
+                                           ],
+                        "current_version":  "0.2.0",
+                        "source_commit":  "2bf0c9d7b764af84cd042657a972e84213a261d5",
+                        "routes":  [
+                                       {
+                                           "id":  "notice-workbench",
+                                           "label":  "Public Notices",
+                                           "path":  "/notice",
+                                           "surface":  "Staff"
+                                       },
+                                       {
+                                           "id":  "search-city-knowledge",
+                                           "label":  "Search City Knowledge",
+                                           "path":  "/search",
+                                           "surface":  "Staff"
+                                       }
+                                   ],
+                        "permissions":  [
+                                            "notice.registry",
+                                            "notice.deadline",
+                                            "notice.proof",
+                                            "notice.archive"
+                                        ],
+                        "services":  [
+                                         {
+                                             "id":  "python-services",
+                                             "kind":  "bundled-python",
+                                             "health_check":  "python-services"
+                                         },
+                                         {
+                                             "id":  "file-storage",
+                                             "kind":  "local-file-store",
+                                             "health_check":  "file-storage"
+                                         }
+                                     ],
+                        "migrations":  [
+                                           "civicnotice-windows-local-state-v1"
+                                       ],
+                        "tasks":  [
+                                      "notice-deadline",
+                                      "notice-checklist",
+                                      "publication-proof",
+                                      "notice-archive"
+                                  ],
+                        "backup_restore_hooks":  [
+                                                     "Data/workflows/notice",
+                                                     "Data/exports/notice",
+                                                     "Data/files/notice"
+                                                 ],
+                        "model_needs":  [
+
+                                        ],
+                        "lifecycle":  {
+                                          "install":  "profile-selected",
+                                          "update":  "manifest-versioned",
+                                          "disable":  "allowed-after-backup",
+                                          "uninstall":  "backup-first-module-data-removal"
+                                      }
                     },
                     {
                         "id":  "civic311",

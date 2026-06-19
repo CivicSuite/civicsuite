@@ -45,6 +45,7 @@ def test_city_core_profile_keeps_windows_local_1_modules_in_order() -> None:
         "civicrecords-ai",
         "civicclerk",
         "civiccode",
+        "civicnotice",
     ]
     assert profiles["custom"]["modules"] == []
 
@@ -75,3 +76,18 @@ def test_promoted_ready_module_requires_version_and_source_commit() -> None:
     errors = verifier.validate_manifest_data(data, contract)
 
     assert any("civiccode missing required field source_commit" in error for error in errors)
+
+
+def test_installed_module_release_requires_source_commit() -> None:
+    verifier = _load_verifier()
+    data = copy.deepcopy(_registry())
+    contract = _contract()
+    for module in data["modules"]:
+        if module["id"] == "civicnotice":
+            module.pop("source_commit")
+            module["installer_status"] = "v0_2_0_installed_module_release"
+            break
+
+    errors = verifier.validate_manifest_data(data, contract)
+
+    assert any("civicnotice missing required field source_commit" in error for error in errors)

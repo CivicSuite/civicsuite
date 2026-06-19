@@ -97,6 +97,7 @@ resources for the profile.
 - civicrecords-ai
 - civicclerk
 - civiccode
+- civicnotice
 
 The default package selection installs this package profile on top of the
 CivicCore base contract. Operators can choose one module or the whole profile:
@@ -105,7 +106,8 @@ CivicCore base contract. Operators can choose one module or the whole profile:
 .\start-civicsuite-installer.ps1 -Plan -Module civicrecords-ai
 .\start-civicsuite-installer.ps1 -Plan -Module civicclerk
 .\start-civicsuite-installer.ps1 -Plan -Module civiccode
-.\start-civicsuite-installer.ps1 -Install -Module civicrecords-ai -Module civicclerk -Module civiccode
+.\start-civicsuite-installer.ps1 -Plan -Module civicnotice
+.\start-civicsuite-installer.ps1 -Install -Module civicrecords-ai -Module civicclerk -Module civiccode -Module civicnotice
 ```
 
 When a module is selected explicitly, plan/readiness use the same selection

@@ -1086,6 +1086,7 @@ fn write_meeting_export_bundle(
     contents: &str,
     public_record: bool,
     bundle_sequence: usize,
+    bundle_type: &str,
 ) -> Result<MeetingExportBundle, String> {
     let integrity_manifest_path = export_manifest_path(export_path);
     if !integrity_manifest_path.is_file() {
@@ -1100,7 +1101,7 @@ fn write_meeting_export_bundle(
     let counts = meeting_export_bundle_counts(meeting);
     let manifest = MeetingExportBundleManifest {
         schema_version: 1,
-        bundle_type: "civicclerk-meeting-packet-notice".to_string(),
+        bundle_type: bundle_type.to_string(),
         meeting_id: meeting.id.clone(),
         meeting_title: meeting.title.clone(),
         meeting_date: meeting.meeting_date.clone(),
@@ -4429,6 +4430,7 @@ fn export_meeting_packet(
         &contents,
         public_record,
         bundle_sequence,
+        "civicclerk-meeting-packet-notice",
     ) {
         Ok(bundle) => bundle,
         Err(error) => {
@@ -4449,6 +4451,53 @@ fn export_meeting_packet(
     );
     Ok(format!(
         "Records-ready meeting packet bundle written to {export_path}."
+    ))
+}
+
+fn export_notice_archive_packet(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let meeting = selected_meeting_mut(state, payload)?;
+    if meeting.notice_checklists.is_empty() {
+        return Err(
+            "Save the notice checklist before building a notice archive packet.".to_string(),
+        );
+    }
+    if meeting.notice_postings.is_empty() || meeting.notice_status != "public notice ready" {
+        return Err("Record posting proof before building a notice archive packet.".to_string());
+    }
+    let public_notice = public_meeting_projection(meeting).ok_or_else(|| {
+        "Complete the public notice workflow before building a notice archive packet.".to_string()
+    })?;
+    let contents = meeting_packet_contents(&public_notice);
+    let export_path = write_export_file("notice", &meeting.title, &contents)?;
+    let export_path_buf = PathBuf::from(&export_path);
+    let bundle_sequence = meeting.export_bundles.len() + 1;
+    let bundle = match write_meeting_export_bundle(
+        &public_notice,
+        &export_path_buf,
+        &contents,
+        true,
+        bundle_sequence,
+        "civicnotice-notice-archive-packet",
+    ) {
+        Ok(bundle) => bundle,
+        Err(error) => {
+            remove_export_artifacts(&export_path_buf);
+            return Err(error);
+        }
+    };
+    meeting.exports.push(export_path.clone());
+    meeting.export_bundles.push(bundle);
+    push_audit(
+        state,
+        "civicnotice",
+        "export-notice-archive-packet",
+        format!("Exported public notice archive packet bundle: {export_path}"),
+    );
+    Ok(format!(
+        "Notice archive packet bundle written to {export_path}."
     ))
 }
 
@@ -4478,6 +4527,7 @@ fn archive_meeting(state: &mut CityWorkState, payload: Option<&Value>) -> Result
             &contents,
             true,
             bundle_sequence,
+            "civicclerk-meeting-packet-notice",
         ) {
             Ok(bundle) => bundle,
             Err(error) => {
@@ -7094,6 +7144,27 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
                 status: meeting.status.clone(),
             });
         }
+        if contains_query(
+            &[&notice_checklists, &notice_postings, &export_bundles],
+            query,
+        ) {
+            results.push(SearchResult {
+                module_id: "civicnotice".to_string(),
+                record_id: meeting.id.clone(),
+                title: format!("Notice workpaper: {}", meeting.title),
+                snippet: if meeting.notice_status.is_empty() {
+                    "Notice workpaper".to_string()
+                } else {
+                    meeting.notice_status.clone()
+                },
+                citation: format!("Meeting {}", meeting.meeting_date),
+                status: if meeting.notice_status.is_empty() {
+                    meeting.status.clone()
+                } else {
+                    meeting.notice_status.clone()
+                },
+            });
+        }
     }
     for request in &state.records_requests {
         let citations = request.citations.join(" ");
@@ -7607,6 +7678,10 @@ pub fn city_work_action(
         "calculate-notice-deadline" => calculate_notice_deadline(&mut state, payload)?,
         "complete-notice-checklist" => complete_notice_checklist(&mut state, payload)?,
         "post-notice" => post_notice(&mut state, payload)?,
+        "civicnotice-calculate-deadline" => calculate_notice_deadline(&mut state, payload)?,
+        "civicnotice-complete-checklist" => complete_notice_checklist(&mut state, payload)?,
+        "civicnotice-post-notice" => post_notice(&mut state, payload)?,
+        "civicnotice-export-archive-packet" => export_notice_archive_packet(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-motion" => record_motion(&mut state, payload)?,
         "add-minute-citation" => add_minute_citation(&mut state, payload)?,
@@ -7874,6 +7949,104 @@ mod tests {
             manifest["generated_by"].as_str(),
             Some("CivicSuite Windows Local")
         );
+    }
+
+    #[test]
+    fn civicnotice_actions_save_notice_workpaper_and_search_result() {
+        with_temp_state_dir(|_| {
+            city_work_action(
+                "create-meeting-body",
+                Some(&serde_json::json!({
+                    "meetingBodyName": "City Council",
+                    "meetingBodyType": "legislative",
+                    "meetingBodyStatutoryBasis": "Charter Section 2",
+                    "meetingBodyCadence": "first Tuesday",
+                    "meetingBodyDefaultNoticeDays": "3",
+                    "meetingBodyQuorumRule": "majority of seated members"
+                })),
+            )
+            .expect("body created");
+            city_work_action(
+                "create-meeting",
+                Some(&serde_json::json!({
+                    "title": "CivicNotice public hearing",
+                    "meetingDate": "2026-08-04",
+                    "summary": "Notice module integration hearing",
+                    "agendaTitle": "Public hearing notice"
+                })),
+            )
+            .expect("meeting created");
+            let state = city_work_state().expect("state reads");
+            let meeting_id = state.meetings[0].id.clone();
+            city_work_action(
+                "civicnotice-complete-checklist",
+                Some(&serde_json::json!({
+                    "meetingId": meeting_id,
+                    "noticeMeetingType": "Regular council meeting",
+                    "noticeStatutoryBasis": "Municipal open meetings notice",
+                    "noticeDeadline": "2026-08-01",
+                    "noticeTimeZone": "America/Denver",
+                    "noticeHumanApproval": true
+                })),
+            )
+            .expect("notice checklist saved");
+            let state = city_work_state().expect("state reads after checklist");
+            city_work_action(
+                "civicnotice-post-notice",
+                Some(&serde_json::json!({
+                    "meetingId": state.meetings[0].id,
+                    "postingLocation": "City Hall bulletin board and city website",
+                    "postingMethod": "Posted PDF and clerk attestation",
+                    "postingConfirmation": "Screenshot hash DIR-NOTICE-001",
+                    "postingDate": "2026-08-01"
+                })),
+            )
+            .expect("posting proof saved");
+            city_work_action(
+                "civicnotice-export-archive-packet",
+                Some(&serde_json::json!({
+                    "meetingId": state.meetings[0].id
+                })),
+            )
+            .expect("notice archive packet exported");
+            let state = city_work_state().expect("state reads after notice");
+            let meeting = &state.meetings[0];
+            assert_eq!(meeting.notice_checklists.len(), 1);
+            assert_eq!(meeting.notice_postings.len(), 1);
+            assert_eq!(meeting.exports.len(), 1);
+            assert_eq!(meeting.export_bundles.len(), 1);
+            assert_eq!(meeting.notice_status, "public notice ready");
+            let export_path = PathBuf::from(&meeting.exports[0]);
+            assert!(export_path.is_file());
+            assert_eq!(
+                export_path.parent().and_then(|path| path.file_name()),
+                Some(std::ffi::OsStr::new("notice"))
+            );
+            let packet = fs::read_to_string(&meeting.exports[0]).expect("notice packet reads");
+            assert!(packet.contains("## Notice Checklist"));
+            assert!(packet.contains("Municipal open meetings notice"));
+            assert!(packet.contains("## Notice Posting Evidence"));
+            assert!(packet.contains("Screenshot hash DIR-NOTICE-001"));
+            assert!(!packet.contains("closed-session"));
+            let bundle = &meeting.export_bundles[0];
+            assert!(bundle.public_record);
+            assert_eq!(bundle.notice_checklist_count, 1);
+            assert_eq!(bundle.notice_posting_count, 1);
+            let manifest: serde_json::Value = serde_json::from_str(
+                &fs::read_to_string(&bundle.manifest_path).expect("notice manifest reads"),
+            )
+            .expect("notice manifest parses");
+            assert_eq!(
+                manifest["bundle_type"].as_str(),
+                Some("civicnotice-notice-archive-packet")
+            );
+            assert_eq!(manifest["counts"]["notice_postings"].as_u64(), Some(1));
+            let results = search_city_work(&state, "DIR-NOTICE-001");
+            assert!(results.iter().any(|result| {
+                result.module_id == "civicnotice"
+                    && result.title.contains("CivicNotice public hearing")
+            }));
+        });
     }
 
     fn assert_meeting_export_bundle_manifest(

@@ -810,6 +810,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicrecords-ai",
             "civicclerk",
             "civiccode",
+            "civicnotice",
         ],
     }
     for profile, expected_modules in scenarios.items():
@@ -1845,8 +1846,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicrecords-ai",
             "civicclerk",
             "civiccode",
+            "civicnotice",
         ]:
-            errors.append(fail("city-core release artifacts must package the four city-core modules"))
+            errors.append(fail("city-core release artifacts must package the five city-core modules"))
         if len(city_core_release.get("archives", [])) != 3:
             errors.append(fail("city-core release artifacts must emit one archive per platform"))
         city_manifest_path = ROOT / city_core_release.get("release_manifest", "")
@@ -1894,7 +1896,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 ]
                 for action in install_actions:
                     module_id = action.get("module")
-                    if module_id in {"civicrecords-ai", "civicclerk", "civiccode"} and action.get("civiccore_requirement") != "1.2.0":
+                    if module_id in {"civicrecords-ai", "civicclerk", "civiccode", "civicnotice"} and action.get("civiccore_requirement") != "1.2.0":
                         errors.append(
                             fail(
                                 f"city-core package {platform_id} {module_id} must install against CivicCore 1.2.0"
@@ -1903,9 +1905,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
             launcher_path = package_dir / launcher
             if launcher_path.is_file():
                 launcher_text = launcher_path.read_text(encoding="utf-8")
-                if "civiccode" not in launcher_text:
+                if "civiccode" not in launcher_text or "civicnotice" not in launcher_text:
                     errors.append(
-                        fail(f"city-core package {platform_id} launcher must pass CivicCode through lifecycle commands")
+                        fail(f"city-core package {platform_id} launcher must pass CivicCode and CivicNotice through lifecycle commands")
                     )
 
     if has_local_civiccore_wheel():

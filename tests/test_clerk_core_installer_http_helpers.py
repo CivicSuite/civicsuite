@@ -76,12 +76,14 @@ def test_uninstall_uses_orphan_cleanup_when_source_tree_is_missing(monkeypatch, 
             "civicrecords-ai": {"api": 18000, "web": 18080},
             "civicclerk": {"api": 18776, "web": 18081},
             "civiccode": {"api": 18820},
+            "civicnotice": {"api": 18866},
             "suite-launcher": {"web": 18082},
         },
         "compose_projects": {
             "civicrecords-ai": "civicsuite-test-records",
             "civicclerk": "civicsuite-test-clerk",
             "civiccode": "civicsuite-test-code",
+            "civicnotice": "civicsuite-test-notice",
         },
         "isolation_id": "test",
         "port_offset": 0,
@@ -153,3 +155,41 @@ def test_normalize_clerk_frontend_dockerfile_installs_rolldown_musl_binding(tmp_
     assert dockerfile.count(install_line) == 1
     assert dockerfile.index(install_line) > dockerfile.index("RUN npm ci")
     assert dockerfile.index(install_line) < dockerfile.index("RUN npm run build")
+
+
+def test_civicnotice_is_part_of_default_installer_lifecycle(monkeypatch, tmp_path) -> None:
+    installer = _load_installer_module()
+    monkeypatch.setattr(installer, "ROOT", tmp_path)
+    install_root = tmp_path / "runtime" / "city-core"
+    isolation = installer.resolve_isolation(run_id="test-civicnotice-default", port_offset=0)
+
+    ctx = installer.lifecycle_context(install_root, isolation, selected_modules=None)
+
+    assert installer.MODULE_NOTICE in installer.SELECTABLE_MODULES
+    assert installer.MODULE_NOTICE in installer.DEFAULT_SELECTED_MODULES
+    assert installer.MODULE_NOTICE in ctx["selected_modules"]
+    assert ctx["notice_source"] == install_root / "sources" / "civicnotice"
+    assert ctx["notice_project"] == isolation["compose_projects"]["civicnotice"]
+
+
+def test_civicnotice_database_contract_uses_generated_env(tmp_path) -> None:
+    installer = _load_installer_module()
+    notice_source = tmp_path / "sources" / "civicnotice"
+    notice_source.mkdir(parents=True)
+    (notice_source / ".env").write_text(
+        "POSTGRES_USER=notice_user\n"
+        "POSTGRES_DB=notice_db\n",
+        encoding="utf-8",
+    )
+    ctx = {
+        "notice_source": notice_source,
+        "notice_project": "civicsuite-test-notice",
+    }
+
+    contract = installer.module_database_contract(ctx, installer.MODULE_NOTICE)
+
+    assert contract["source"] == notice_source
+    assert contract["project"] == "civicsuite-test-notice"
+    assert contract["postgres_service"] == "postgres"
+    assert contract["postgres_user"] == "notice_user"
+    assert contract["postgres_db"] == "notice_db"

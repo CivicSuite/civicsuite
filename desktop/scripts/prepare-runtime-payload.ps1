@@ -537,7 +537,7 @@ import os
 os.environ.setdefault('TESTING', 'true')
 os.environ.setdefault('PORTAL_MODE', 'private')
 os.environ.setdefault('DATABASE_URL', 'postgresql+asyncpg://civicsuite:civicsuite@127.0.0.1:15432/civicsuite')
-for name in ['civiccore', 'app.main', 'civicclerk.main', 'civiccode.main', 'civicsuite_runtime.services', 'civicsuite_runtime.migrate']:
+for name in ['civiccore', 'app.main', 'civicclerk.main', 'civiccode.main', 'civicnotice.main', 'civicsuite_runtime.services', 'civicsuite_runtime.migrate']:
     importlib.import_module(name)
 print('CivicSuite embedded Python service imports verified')
 "@
@@ -576,6 +576,7 @@ function Install-PythonServicePackages {
     $CivicRecords = (Resolve-Path (Join-Path $RepoRoot "..\civicrecords-ai\backend")).Path
     $CivicClerk = (Resolve-Path (Join-Path $RepoRoot "..\civicclerk")).Path
     $CivicCode = (Resolve-Path (Join-Path $RepoRoot "..\civiccode")).Path
+    $CivicNotice = (Resolve-Path (Join-Path $RepoRoot "..\civicnotice")).Path
     $RuntimeBridge = (Resolve-Path (Join-Path $RepoRoot "desktop\runtime\python-services")).Path
 
     Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
@@ -605,13 +606,14 @@ function Install-PythonServicePackages {
         $CivicRecords,
         $CivicClerk,
         $CivicCode,
+        $CivicNotice,
         $RuntimeBridge
     )
     Copy-CivicRecordsMigrations -PythonRoot $PythonRoot -RepoRoot $RepoRoot
     Test-PythonServiceImports -PythonRoot $PythonRoot
     return @{
         pip = $PipStatus
-        installed = @("civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicsuite-runtime")
+        installed = @("civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicsuite-runtime")
     }
 }
 

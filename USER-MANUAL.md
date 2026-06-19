@@ -89,7 +89,7 @@ Do not restore old generated installer artifacts unless Scott explicitly decides
 
 ### What you should expect
 
-- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff.
+- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff.
 - **What still needs its own proof gate.** The final clean-machine walkthrough for the current MSI artifact and each future module outside the city-core set.
 - **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 
@@ -124,6 +124,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civiccore` | Shared platform; v1.2.0 current city-core platform |
 | `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
+| `civicnotice` | v0.2.0 public-notice workflow city-core release car |
 | `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
 | `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
 | `civicgrants`, `civicprocure` | v0.2.0 scaffold-depth recovery labels |
@@ -185,6 +186,7 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `538766523ad9` | `v1_7_3_city_core_release_car` |
 | CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `dae807ec9d13` | `v1_0_4_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
+| CivicNotice | 0.2.0 | public notice workflow | `civiccore`, `civicclerk` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
 
 Excluded from city-core:
 - `civicaccess`: OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe.

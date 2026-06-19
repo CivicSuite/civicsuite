@@ -12,10 +12,11 @@ The Windows Local city-core package installs:
 - CivicRecords AI `1.7.3`
 - CivicClerk `1.0.4`
 - CivicCode `1.0.8`
+- CivicNotice `0.2.0`
 - CivicSuite desktop shell using Tauri/WebView2
 - Portable local runtime payload for storage, services, file exports, backup/restore, and the local AI model runtime
 
-CivicCore is always installed. CivicRecords AI, CivicClerk, and CivicCode are selected as the City Core profile. Future modules remain visible only through the module manager contract until their package and proof gates pass.
+CivicCore is always installed. CivicRecords AI, CivicClerk, CivicCode, and CivicNotice are selected as the City Core profile. Future modules remain visible only through the module manager contract until their package and proof gates pass.
 
 ## Before You Start
 
@@ -80,7 +81,7 @@ After first-run setup, open System Health. Verify:
 Use the module manager in Settings to confirm:
 
 - City Core profile is selected.
-- CivicCore, CivicRecords AI, CivicClerk, and CivicCode are installed.
+- CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicNotice are installed.
 - Each installed module shows install, update, disable, remove, backup coverage, and export access state.
 - Future modules are not presented as installed.
 
@@ -90,6 +91,7 @@ Use Local Users in Settings to confirm:
 - A staff passcode can be reset without hand-editing local files.
 - A disabled staff account can be re-enabled by the local administrator.
 - Clerk staff can work in Meetings & Notices.
+- Clerk staff can work in Public Notices.
 - Records staff can work in Records Requests.
 - Code staff can work in Code & Ordinances.
 - City staff can work across the city-core module set without receiving setup,
@@ -105,6 +107,7 @@ type a path when IT has supplied one, but clerks should not have to browse
 Windows folders manually for normal file evidence work.
 
 - Meetings & Notices: create a meeting body with statutory basis/cadence/notice/quorum details, save meeting body roster members with roles/terms/contact details, submit an agenda intake item with department/source evidence, review it as ready for agenda, promote it into a meeting agenda, create a meeting for that body, add a manual agenda item when needed, record a structured staff report with recommendation/background/analysis/fiscal impact/alternatives/prior actions/preparer details, attach public packet files and closed-session addenda with citations and SHA-256 evidence, finalize the packet with prepared-by and review-note evidence before export, record closed-session basis/topics/timing/reconvene evidence with staff-only notes separated, calculate the notice deadline from meeting date/lead days/day type with the city/state holiday review warning, complete or confirm the notice checklist with meeting type/statutory basis/deadline/time zone/clerk approval, record notice posting date/location/method/confirmation, mark notice ready, export a records-ready packet/notice bundle with checksums, source references, public/staff classification, and export counts, generate or type minutes, add minute citation evidence for the current draft, record attendance from the saved member roster, save a quorum check from the attendance evidence, record a motion, record individual roll-call votes from the saved member roster, record vote/outcome summaries, record action items with owner/due/status/source details, adopt minutes, sign the adopted minutes with attestation evidence, record adopted ordinances/resolutions for CivicCode sync, and archive the public record without exposing closed-session files, staff-only minute citations, staff-only closed-session notes, intake queue records, or local paths.
+- Public Notices: open the Public Notices screen, enter the meeting date and legal basis, calculate the posting deadline, complete the notice checklist with clerk approval, record posting proof with date/location/method/confirmation, export the notice archive packet, and confirm the exported bundle appears in module exports and Search City Knowledge with the public-notice module label. CivicNotice helps staff preserve checklist, posting, and archive evidence; it does not replace the city attorney or clerk's statutory judgment.
 - Records Requests: create or submit a request, calculate the response deadline from received date/rule/day-count/day-type with staff review, manually override the response deadline and basis when needed, review the Request Timeline, public-safe Status Updates, Request Messages, Search Sessions, Request Documents, Exemption Decisions, Release Packages, and Notification Outbox, log generated notifications as sent after staff sends them, record search/citation notes, save durable search sessions with query/location/result evidence, attach local source documents with hash/citation evidence, attach release-ready or redacted copies with their own hash/reviewer/note evidence before package build, save release/redact/exempt decisions with source and basis evidence, build a checksummed release package manifest, add fee line items with the fee schedule or policy basis, record a fee waiver reason, generate or type a response draft, approve, export, mark fulfilled, and close.
 - Resident/Public Records Requests: submit a public request, keep the returned request number, check status with the same submitted contact, and confirm Status Updates show safe progress without staff notes, search details, exemption reasoning, local paths, or internal audit details.
 - Code & Ordinances: import a code source with title/citation/searchable text, preserve the source file as local evidence when available, verify the saved source shows filename/hash evidence without publishing local workstation paths, record sync state, generate or type guidance, approve guidance, publish source, answer a code question with citations, and create a clerk handoff.

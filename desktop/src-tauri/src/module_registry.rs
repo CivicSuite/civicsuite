@@ -466,7 +466,7 @@ fn selection_from_installed_and_enabled(
             .ok_or_else(|| format!("Installed module {module_id} is missing from the registry"))?;
     }
 
-    let ordered_module_ids = if installed_module_ids
+    let mut ordered_module_ids = if installed_module_ids
         .iter()
         .any(|module_id| module_id != "civiccore")
     {
@@ -479,6 +479,17 @@ fn selection_from_installed_and_enabled(
     } else {
         vec!["civiccore".to_string()]
     };
+    if let Some(profile) = registry.profiles.iter().find(|profile| {
+        !profile.disabled
+            && profile.modules.len() == ordered_module_ids.len()
+            && profile.modules.iter().all(|module_id| {
+                ordered_module_ids
+                    .iter()
+                    .any(|ordered| ordered == module_id)
+            })
+    }) {
+        ordered_module_ids = profile.modules.clone();
+    }
     let installed: HashSet<&str> = ordered_module_ids.iter().map(String::as_str).collect();
     let mut enabled_module_ids = enabled_module_ids
         .into_iter()
@@ -977,7 +988,8 @@ mod tests {
                     "civiccore".to_string(),
                     "civicrecords-ai".to_string(),
                     "civicclerk".to_string(),
-                    "civiccode".to_string()
+                    "civiccode".to_string(),
+                    "civicnotice".to_string()
                 ]
             );
             assert_eq!(selection.enabled_module_ids, selection.installed_module_ids);
@@ -1074,11 +1086,15 @@ mod tests {
             persist_profile_selection("city-core").expect("profile selection persists");
             let removed =
                 set_module_installed("civiccode", false).expect("civiccode can be removed");
-            assert_eq!(removed.profile_id, "clerk-core");
+            assert_eq!(removed.profile_id, "custom");
             assert!(!removed
                 .installed_module_ids
                 .iter()
                 .any(|module_id| module_id == "civiccode"));
+            assert!(removed
+                .installed_module_ids
+                .iter()
+                .any(|module_id| module_id == "civicnotice"));
             assert!(!removed
                 .enabled_module_ids
                 .iter()
@@ -1125,6 +1141,42 @@ mod tests {
                 .installed_module_ids
                 .iter()
                 .any(|module_id| module_id == "civicrecords-ai"));
+        });
+    }
+
+    #[test]
+    fn civicnotice_installs_with_clerk_dependency_from_custom_profile() {
+        with_temp_state_dir(|_| {
+            persist_profile_selection("minimal").expect("minimal profile persists");
+            let installed =
+                set_module_installed("civicnotice", true).expect("civicnotice can install");
+            assert_eq!(installed.profile_id, "custom");
+            assert_eq!(
+                installed.installed_module_ids,
+                vec![
+                    "civiccore".to_string(),
+                    "civicclerk".to_string(),
+                    "civicnotice".to_string()
+                ]
+            );
+            assert_eq!(installed.enabled_module_ids, installed.installed_module_ids);
+
+            let modules = module_summaries().expect("summaries build");
+            let civicnotice = modules
+                .iter()
+                .find(|module| module.id == "civicnotice")
+                .expect("civicnotice module");
+            assert!(civicnotice.installed);
+            assert!(civicnotice.enabled);
+            assert!(civicnotice.contract_ready);
+            assert_eq!(civicnotice.version.as_deref(), Some("0.2.0"));
+            assert_eq!(civicnotice.civiccore_requirement.as_deref(), Some("1.2.0"));
+            assert!(civicnotice
+                .backup_restore_hooks
+                .iter()
+                .any(|hook| hook == "Data/workflows/notice"));
+            assert_eq!(civicnotice.model_required, false);
+            assert!(civicnotice.blocked_reason.is_none());
         });
     }
 

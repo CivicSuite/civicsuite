@@ -6,7 +6,8 @@ const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccod
 const MODULE_AREA_BY_ID = {
   meetings: "civicclerk",
   records: "civicrecords-ai",
-  code: "civiccode"
+  code: "civiccode",
+  notice: "civicnotice"
 };
 
 const fallbackState = {
@@ -18,6 +19,7 @@ const fallbackState = {
     ["meetings", "Meetings & Notices", "Agendas, notices, minutes, votes"],
     ["records", "Records Requests", "Intake, review, response, exports"],
     ["code", "Code & Ordinances", "Search, imports, guidance, handoffs"],
+    ["notice", "Public Notices", "Deadlines, proof, archive packets"],
     ["search", "Search City Knowledge", "Cross-module search with citations"],
     ["health", "System Health", "Local services, model, backup, repair"],
     ["settings", "Settings", "City profile, users, modules"]
@@ -104,6 +106,29 @@ const fallbackState = {
       task_count: 4,
       backup_restore_hooks: ["Data/workflows/code", "Data/exports/code", "Data/files/code"],
       model_required: true,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
+    },
+    {
+      id: "civicnotice",
+      display_name: "CivicNotice",
+      role: "public notice workflow",
+      version: "0.2.0",
+      civiccore_requirement: "1.2.0",
+      required: false,
+      selectable: true,
+      installed: false,
+      enabled: false,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore", "civicclerk"],
+      route_count: 2,
+      service_count: 2,
+      task_count: 4,
+      backup_restore_hooks: ["Data/workflows/notice", "Data/exports/notice", "Data/files/notice"],
+      model_required: false,
       lifecycle_install: "profile-selected",
       lifecycle_update: "manifest-versioned",
       lifecycle_disable: "allowed-after-backup",
@@ -860,7 +885,7 @@ function moduleIsEnabled(moduleId) {
 function areaIsEnabled(areaId) {
   if (["home", "health", "settings"].includes(areaId)) return true;
   if (areaId === "search") {
-    return CITY_CORE_PRODUCT_MODULE_IDS.some((moduleId) => moduleIsEnabled(moduleId));
+    return [...CITY_CORE_PRODUCT_MODULE_IDS, "civicnotice"].some((moduleId) => moduleIsEnabled(moduleId));
   }
   const moduleId = MODULE_AREA_BY_ID[areaId];
   return moduleId ? moduleIsEnabled(moduleId) : true;
@@ -1515,6 +1540,7 @@ function exportFolderForActiveArea() {
   if (state.activeArea === "meetings") return "meetings";
   if (state.activeArea === "records") return "records";
   if (state.activeArea === "code") return "code";
+  if (state.activeArea === "notice") return "notice";
   return "all";
 }
 
@@ -1536,6 +1562,10 @@ const GUIDED_WORK_ACTIONS = new Set([
   "complete-notice-checklist",
   "post-notice",
   "export-meeting-packet",
+  "civicnotice-calculate-deadline",
+  "civicnotice-complete-checklist",
+  "civicnotice-post-notice",
+  "civicnotice-export-archive-packet",
   "add-minute-citation",
   "review-public-comment",
   "redact-public-comment",
@@ -1643,6 +1673,10 @@ function currentNotification(work = cityWork()) {
 
 function detailOrFallback(value, fallback) {
   return value ? value : fallback;
+}
+
+function escapedDraft(field) {
+  return escapeHtml(state.workDraft[field]);
 }
 
 function escapeHtml(value) {
@@ -1915,6 +1949,82 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicClerk audit entry for the packet export and durable records-ready bundle manifest.",
       retry: "If the packet, checksum sidecar, or bundle manifest cannot be written, the desktop app reports the failure and preserves the meeting record."
+    },
+    "civicnotice-calculate-deadline": {
+      title: "Review Before Calculating Notice Deadline",
+      confirmLabel: "Calculate Deadline",
+      module: "CivicNotice",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Calculates and stores the notice posting deadline from the selected meeting date, lead-day rule, day type, statutory basis, time zone, and clerk approval.",
+      visibility: "Internal CivicNotice workpaper until posting proof is recorded. The saved calculation keeps the city/state holiday caveat with the source evidence.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "At least one agenda item is required.",
+        detailOrFallback(state.workDraft.noticeMeetingType, "Meeting type is required."),
+        detailOrFallback(state.workDraft.noticeStatutoryBasis, "Statutory notice basis is required."),
+        detailOrFallback(state.workDraft.noticeLeadDays, "Notice lead days are required."),
+        detailOrFallback(state.workDraft.noticeDayType, "Notice day type is required."),
+        detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
+        state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
+      ],
+      audit: "Creates a CivicNotice audit entry for the calculated notice deadline without claiming legal sufficiency.",
+      retry: "If required notice details are missing, the day count or time zone is invalid, approval is unchecked, or the meeting is archived, the desktop app leaves the notice unchanged."
+    },
+    "civicnotice-complete-checklist": {
+      title: "Review Before Saving Notice Checklist",
+      confirmLabel: "Save Checklist",
+      module: "CivicNotice",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Records the meeting type, statutory notice basis, deadline, time zone, and clerk approval needed before posting proof can mark the notice ready.",
+      visibility: "Internal CivicNotice checklist until posting proof is recorded or the meeting is archived.",
+      sources: [
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
+        detailOrFallback(state.workDraft.noticeMeetingType, "Meeting type is required."),
+        detailOrFallback(state.workDraft.noticeStatutoryBasis, "Statutory notice basis is required."),
+        detailOrFallback(state.workDraft.noticeDeadline, "Notice deadline is required."),
+        detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
+        state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
+      ],
+      audit: "Creates a CivicNotice audit entry for checklist approval without claiming legal sufficiency.",
+      retry: "If required checklist details are missing, the time zone is invalid, or approval is not checked, the desktop app leaves the notice unchanged."
+    },
+    "civicnotice-post-notice": {
+      title: "Review Before Recording Posting Proof",
+      confirmLabel: "Record Posting Proof",
+      module: "CivicNotice",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Records final posting proof and marks the current meeting notice as ready for public posting after the approved checklist passes.",
+      visibility: "Resident/Public meeting materials can show posted notice information.",
+      sources: [
+        meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
+        meeting && (meeting.notice_checklists || []).length > 0 ? "Notice checklist approved." : "Approved notice checklist is required.",
+        detailOrFallback(state.workDraft.noticePostingDate, "Actual posting date is required."),
+        detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet."),
+        detailOrFallback(state.workDraft.noticeLocation, "Posting location is required."),
+        detailOrFallback(state.workDraft.noticeConfirmation, "Posting confirmation evidence is required.")
+      ],
+      audit: "Creates a CivicNotice audit entry for posting proof with location, method, and confirmation evidence.",
+      retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
+    },
+    "civicnotice-export-archive-packet": {
+      title: "Review Before Building Notice Archive Packet",
+      confirmLabel: "Build Archive Packet",
+      module: "CivicNotice",
+      subject: meetingSubject,
+      status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
+      changes: "Writes a public notice archive packet under the CivicNotice exports folder with checksum and records-ready bundle manifests.",
+      visibility: "The notice archive packet uses the public notice projection and omits staff-only paths and closed-session material.",
+      sources: [
+        meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
+        meeting && (meeting.notice_checklists || []).length > 0 ? "Notice checklist saved." : "Saved notice checklist is required.",
+        meeting && (meeting.notice_postings || []).length > 0 ? "Posting proof recorded." : "Posting proof is required.",
+        meeting?.notice_status === "public notice ready" ? "Notice is public notice ready." : "Notice must be public notice ready."
+      ],
+      audit: "Creates a CivicNotice audit entry for the notice archive packet and durable bundle manifest.",
+      retry: "If the notice packet, checksum sidecar, or bundle manifest cannot be written, the desktop app reports the failure and preserves the meeting record."
     },
     "suggest-minutes-draft": {
       title: "Review Before Generating Minutes Draft",
@@ -2733,9 +2843,9 @@ function renderMeetingsWorkflow() {
         <label>Date <input type="date" data-work-field="meetingDate" value="${state.workDraft.meetingDate}" /></label>
         <label>Summary <textarea data-work-field="meetingSummary">${state.workDraft.meetingSummary}</textarea></label>
         <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${state.workDraft.agendaTitle}" /></label>
-        <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${state.workDraft.noticeMeetingType}" placeholder="Regular council meeting" /></label>
-        <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${state.workDraft.noticeStatutoryBasis}" placeholder="Municipal open meetings notice" /></label>
-        <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${state.workDraft.noticeLeadDays}" /></label>
+        <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${escapedDraft("noticeMeetingType")}" placeholder="Regular council meeting" /></label>
+        <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${escapedDraft("noticeStatutoryBasis")}" placeholder="Municipal open meetings notice" /></label>
+        <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${escapedDraft("noticeLeadDays")}" /></label>
         <label>Notice day type
           <select data-work-field="noticeDayType">
             <option value="calendar days" ${state.workDraft.noticeDayType === "calendar days" ? "selected" : ""}>Calendar days</option>
@@ -2743,8 +2853,8 @@ function renderMeetingsWorkflow() {
           </select>
         </label>
         <p class="form-help">Business-day notice calculations skip weekends. Staff must still check city/state holidays before posting.</p>
-        <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${state.workDraft.noticeDeadline}" /></label>
-        <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${state.workDraft.noticeTimeZone}" placeholder="America/Denver" /></label>
+        <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${escapedDraft("noticeDeadline")}" /></label>
+        <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${escapedDraft("noticeTimeZone")}" placeholder="America/Denver" /></label>
         <label class="checkbox-row"><input type="checkbox" data-work-field="noticeHumanApproval" ${state.workDraft.noticeHumanApproval ? "checked" : ""} /> Clerk has reviewed and approved the notice checklist</label>
         <label>Actual posting date <input type="date" data-work-field="noticePostingDate" value="${state.workDraft.noticePostingDate}" /></label>
         <label>Notice posting location <input type="text" data-work-field="noticeLocation" value="${state.workDraft.noticeLocation}" placeholder="City Hall bulletin board and city website" /></label>
@@ -3161,6 +3271,75 @@ function localCodeQuestionResults(query, { publicOnly = false } = {}) {
         status: source.public_status || source.status
       };
     });
+}
+
+function renderNoticeWorkflow() {
+  if (isPublicSurface()) return renderPublicMeetingsWorkflow();
+  const work = cityWork();
+  const selectedMeeting = currentMeeting(work);
+  const noticeMeetings = (work.meetings || []).filter((meeting) => (
+    (meeting.notice_checklists || []).length > 0 ||
+    (meeting.notice_postings || []).length > 0 ||
+    (meeting.export_bundles || []).length > 0 ||
+    meeting.notice_status
+  ));
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">${state.activeSurface}</p>
+      <h2>Public Notices</h2>
+      <p>Manage statutory deadline workpapers, clerk approval, posting proof, and records-ready notice archive packets.</p>
+    </section>
+    ${renderGuidedWorkReview()}
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Notice Workpaper</h3>
+        <p class="form-help">${selectedMeeting ? `Working on ${escapeHtml(selectedMeeting.title)}.` : "Create a meeting in Meetings & Notices before preparing notice proof."}</p>
+        <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${state.workDraft.noticeMeetingType}" placeholder="Regular council meeting" /></label>
+        <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${state.workDraft.noticeStatutoryBasis}" placeholder="Municipal open meetings notice" /></label>
+        <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${state.workDraft.noticeLeadDays}" /></label>
+        <label>Lead day type
+          <select aria-label="Lead day type" data-work-field="noticeDayType">
+            <option value="calendar days" ${state.workDraft.noticeDayType === "calendar days" ? "selected" : ""}>Calendar days</option>
+            <option value="business days" ${state.workDraft.noticeDayType === "business days" ? "selected" : ""}>Business days</option>
+          </select>
+        </label>
+        <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${state.workDraft.noticeDeadline}" /></label>
+        <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${state.workDraft.noticeTimeZone}" placeholder="America/Denver" /></label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="noticeHumanApproval" ${state.workDraft.noticeHumanApproval ? "checked" : ""} /> Clerk has reviewed and approved the notice checklist</label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicnotice-calculate-deadline">Calculate Deadline</button>
+          <button type="button" class="secondary-action" data-work-action="civicnotice-complete-checklist">Save Checklist</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Posting Proof</h3>
+        <label>Actual posting date <input type="date" data-work-field="noticePostingDate" value="${escapedDraft("noticePostingDate")}" /></label>
+        <label>Posting location <input type="text" data-work-field="noticeLocation" value="${escapedDraft("noticeLocation")}" placeholder="City Hall bulletin board and city website" /></label>
+        <label>Posting method <input type="text" data-work-field="noticeMethod" value="${escapedDraft("noticeMethod")}" placeholder="Posted PDF and clerk attestation" /></label>
+        <label>Posting confirmation <textarea data-work-field="noticeConfirmation">${escapedDraft("noticeConfirmation")}</textarea></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicnotice-post-notice">Record Posting Proof</button>
+          <button type="button" class="secondary-action" data-work-action="civicnotice-export-archive-packet">Build Archive Packet</button>
+          <button type="button" class="secondary-action" data-work-action="open-exports-folder">Open Exports Folder</button>
+        </div>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list" aria-label="Notice workpapers">
+      ${noticeMeetings.length === 0 ? workflowEmpty("No notice workpapers have been saved yet.") : noticeMeetings.map((meeting) => `
+        <article class="workflow-record">
+          <span class="${meeting.notice_status === "public notice ready" ? "status-ok" : "status-warn"}">${escapeHtml(meeting.notice_status || meeting.status)}</span>
+          <h3>${escapeHtml(meeting.title)}</h3>
+          <p>${escapeHtml(meeting.summary || "No meeting summary recorded.")}</p>
+          <p><strong>Checklists:</strong> ${(meeting.notice_checklists || []).length} <strong>Posting proofs:</strong> ${(meeting.notice_postings || []).length} <strong>Archive packets:</strong> ${(meeting.export_bundles || []).length}</p>
+          <div class="record-actions">
+            ${state.workSelection.meetingId === meeting.id ? `<span class="status-ok">Selected for notice work</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
+          </div>
+          <small>${escapeHtml(meeting.meeting_date || "No meeting date")} - CivicNotice preserves proof; staff still verify legal sufficiency.</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
 }
 
 function renderPublicRecordsWorkflow() {
@@ -3864,6 +4043,15 @@ function localSearchResults(query, { publicOnly = false } = {}) {
     if (meetingSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
       results.push({ module_id: "civicclerk", title: meeting.title, snippet: meeting.summary, citation: `Meeting ${meeting.meeting_date}`, status: meeting.status });
     }
+    if ([noticeChecklists, noticePostings, exportBundles].some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({
+        module_id: "civicnotice",
+        title: `Notice workpaper: ${meeting.title}`,
+        snippet: meeting.notice_status || "Notice workpaper",
+        citation: `Meeting ${meeting.meeting_date}`,
+        status: meeting.notice_status || meeting.status
+      });
+    }
   });
   if (!publicOnly) {
     agendaIntakes(work).forEach((intake) => {
@@ -4045,7 +4233,7 @@ function moduleLifecycleItems(module) {
     .map(([label, value]) => ({ label, value: lifecycleStatusText(value) }));
 }
 
-const MODULE_EXPORTS_AVAILABLE = new Set(["civicrecords-ai", "civicclerk", "civiccode"]);
+const MODULE_EXPORTS_AVAILABLE = new Set(["civicrecords-ai", "civicclerk", "civiccode", "civicnotice"]);
 
 function backupHookLabel(hook) {
   const labels = {
@@ -4061,7 +4249,10 @@ function backupHookLabel(hook) {
     "Data/files/meetings": "meeting files",
     "Data/workflows/code": "code workflow history",
     "Data/exports/code": "code exports",
-    "Data/files/code": "code files"
+    "Data/files/code": "code files",
+    "Data/workflows/notice": "notice workflow history",
+    "Data/exports/notice": "notice exports",
+    "Data/files/notice": "notice proof files"
   };
   return labels[hook] || String(hook || "").replace(/^Data\//, "").replaceAll("/", " ");
 }
@@ -4587,7 +4778,7 @@ function renderModules() {
           <h3>Module Catalog</h3>
           <p>Future modules keep their dependency, lifecycle, backup, service, and proof contract here before they can join an install profile.</p>
         </div>
-        <div class="module-list">${catalog.map(renderModuleRow).join("")}</div>
+        <div class="module-list">${catalog.map((module) => renderModuleRow(module, { actions: true })).join("")}</div>
       </div>
     </section>
   `;
@@ -4663,6 +4854,8 @@ function renderActiveArea() {
       return renderRecordsWorkflow();
     case "code":
       return renderCodeWorkflow();
+    case "notice":
+      return renderNoticeWorkflow();
     case "search":
       return renderSearchWorkflow();
     case "health":
@@ -5397,6 +5590,31 @@ function workPayloadForAction(action) {
       postingConfirmation: draft.noticeConfirmation,
       postingDate: draft.noticePostingDate
     },
+    "civicnotice-calculate-deadline": {
+      ...selected,
+      noticeMeetingType: draft.noticeMeetingType,
+      noticeStatutoryBasis: draft.noticeStatutoryBasis,
+      noticeLeadDays: draft.noticeLeadDays,
+      noticeDayType: draft.noticeDayType,
+      noticeTimeZone: draft.noticeTimeZone,
+      noticeHumanApproval: draft.noticeHumanApproval
+    },
+    "civicnotice-complete-checklist": {
+      ...selected,
+      noticeMeetingType: draft.noticeMeetingType,
+      noticeStatutoryBasis: draft.noticeStatutoryBasis,
+      noticeDeadline: draft.noticeDeadline,
+      noticeTimeZone: draft.noticeTimeZone,
+      noticeHumanApproval: draft.noticeHumanApproval
+    },
+    "civicnotice-post-notice": {
+      ...selected,
+      postingLocation: draft.noticeLocation,
+      postingMethod: draft.noticeMethod,
+      postingConfirmation: draft.noticeConfirmation,
+      postingDate: draft.noticePostingDate
+    },
+    "civicnotice-export-archive-packet": selected,
     "export-meeting-packet": selected,
     "suggest-minutes-draft": selected,
     "record-minutes": { ...selected, minutes: draft.minutes },

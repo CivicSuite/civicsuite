@@ -380,7 +380,7 @@ pub fn require_signed_in_session() -> Result<AccessState, String> {
 fn role_module_ids(role: &str) -> Option<&'static [&'static str]> {
     match role {
         "local-admin" | "city-staff" => None,
-        "clerk" => Some(&["civicclerk"]),
+        "clerk" => Some(&["civicclerk", "civicnotice"]),
         "records-staff" => Some(&["civicrecords-ai"]),
         "code-staff" => Some(&["civiccode"]),
         _ => Some(&[]),

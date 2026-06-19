@@ -1,6 +1,6 @@
 # CivicSuite Module Status
 
-**Last verified:** 2026-06-13
+**Last verified:** 2026-06-19
 **Program:** As of 2026-06-10 all module work runs under the [full-suite finishing program](docs/roadmap/full-suite-program.md). Modules reach done only through the clean-VM evidence gate defined there. The active city-core path is the portable-native Windows Local runtime of [ADR-0008](docs/architecture/ADR-0008-portable-native-windows-runtime.md) and [ADR-0009](docs/architecture/ADR-0009-postgres-backed-queue-windows-profile.md). Module labels below are unchanged by program adoption; promotions happen only with evidence kits. Older `C:\dev\Claude\...` references are historical.
 **Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
@@ -8,9 +8,9 @@ This is the plain-English operating truth for CivicSuite. The unified spec descr
 
 ## Active City-Core Beta Target
 
-The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the Windows Local desktop installer shell. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.3`, CivicClerk `v1.0.4`, and CivicCode `v1.0.8`; PR #183 records predecessor evidence for the earlier wrapper profile. The current beta target is the Tauri/WebView2 Windows desktop app with portable PostgreSQL 17 + pgvector, bundled CPython city services, PostgreSQL-backed task queue, local file storage, local model setup, backup/restore, repair, support bundle, and Windows uninstall handoff. The package remains unsigned beta software until the final clean-machine release gate is complete; macOS remains beta-level readiness only until a matching-host macOS lifecycle is proven.
+The active city-core promotion package is CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and the Windows Local desktop installer shell. The current released module cars are CivicCore `v1.2.0`, CivicRecords AI `v1.7.3`, CivicClerk `v1.0.4`, CivicCode `v1.0.8`, and CivicNotice `v0.2.0`; PR #183 records predecessor evidence for the earlier wrapper profile. The current beta target is the Tauri/WebView2 Windows desktop app with portable PostgreSQL 17 + pgvector, bundled CPython city services, PostgreSQL-backed task queue, local file storage, local model setup, backup/restore, repair, support bundle, and Windows uninstall handoff. The package remains unsigned beta software until the final clean-machine release gate is complete; macOS remains beta-level readiness only until a matching-host macOS lifecycle is proven.
 
-The operator path is local-only on Windows and does not require Docker, WSL, a terminal, or a browser URL. Verify the generated MSI checksum or release manifest from the active PR/release evidence, confirm the `installer/modules.json` `source_commit` pins for the four city-core repos, and use published module hashes/attestations where applicable. Do not treat old committed `installer/dist` files as canonical unless Scott explicitly confirms artifact restoration.
+The operator path is local-only on Windows and does not require Docker, WSL, a terminal, or a browser URL. Verify the generated MSI checksum or release manifest from the active PR/release evidence, confirm the `installer/modules.json` `source_commit` pins for the five city-core repos, and use published module hashes/attestations where applicable. Do not treat old committed `installer/dist` files as canonical unless Scott explicitly confirms artifact restoration.
 
 CivicAccess is explicitly OUT of city-core for this sprint after the 2026-05-23 depth probe on branch `probe/civicaccess-depth-2026-05-23` recorded `PROBE-PROGRESS.md` with a NEEDS-WORK verdict. CivicAccess requires gap closure and a fresh re-probe before it can be added to the city-core profile.
 
@@ -34,6 +34,7 @@ As of 2026-05-14, the release-integrity decision is:
 | civicclerk | v1.0.4 shipped | Real meeting workflow release car pinned to CivicCore v1.2.0; protected staff auth defaults remain required. |
 | civicrecords-ai | v1.7.3 shipped | Developer preview records release car pinned to CivicCore v1.2.0 and consuming shared CivicCore ingestion; v1.7.3 adds release-asset convention bring-up without functional installer behavior changes. |
 | civiccode | v1.0.8 shipped | City-core release car pinned to CivicCore v1.2.0; v1.0.8 supersedes the earlier v1.0.0 posture and carries release attestation. |
+| civicnotice | v0.2.0 shipped | City-core public-notice workflow release car pinned to CivicCore v1.2.0; installed through the Windows Local city-core profile with checklist, posting proof, archive export, backup/restore, and search wiring. |
 | civicaccess | OUT / v0.2.0 source truth | Excluded from city-core after NEEDS-WORK depth probe; no public-use promotion claim. |
 | civiczone | v0.2.2 | Narrow truth-repair demotion release; no functional upgrade; queued for Tier 2 real work. |
 | civicplan | v0.2.2 | Narrow truth-repair demotion release; no functional upgrade; queued for Tier 2 real work. |
@@ -50,7 +51,8 @@ All other modules remain foundation surfaces unless their own repo evidence says
 - `civicrecords-ai` v1.7.3 remains developer preview, consumes CivicCore v1.2.0 shared ingestion, and keeps the city-core installer on the vendored-source path.
 - `civicclerk` v1.0.4 is the current meeting workflow release car for city-core.
 - `civiccode` v1.0.8 is the current municipal-code release car for city-core.
-- The active Windows Local city-core desktop path now covers installer trust copy, SmartScreen guidance, first-run local folders, module profile selection, city profile, first local administrator sign-in, Gemma 4 12B QAT model setup, local users/RBAC, city-core workflows, task queue health, local file evidence, exports, backup/restore, repair, support bundle, and uninstall handoff. Final city beta testing still depends on a fresh Windows clean-machine install/reboot/uninstall walkthrough for the current MSI artifact.
+- `civicnotice` v0.2.0 is the current public-notice workflow release car for city-core.
+- The active Windows Local city-core desktop path now covers installer trust copy, SmartScreen guidance, first-run local folders, module profile selection, city profile, first local administrator sign-in, Gemma 4 12B QAT model setup, local users/RBAC, city-core workflows, task queue health, local file evidence, exports, backup/restore, repair, support bundle, and uninstall handoff. Final city beta testing still depends on a clean-machine Windows Local lifecycle walkthrough for the current MSI artifact.
 - The suite-level `clerk-core` installer beta now records package cleanroom evidence classification, isolated lifecycle ports/projects, installed-stack workflow proof, and Linux matching-host lifecycle proof for install, repair, verify, backup, restore, and uninstall. Windows and macOS wrapper claims remain bounded to archive/readiness until matching-host lifecycle evidence exists on those hosts.
 - CivicAccess is OUT of city-core pending gap closure and re-probe.
 - CivicZone, CivicPlan, CivicPermit, and CivicInspect are at v0.2.2 demotion-truth state, not public-use release state.
@@ -58,4 +60,4 @@ All other modules remain foundation surfaces unless their own repo evidence says
 
 ## What Does Not Work Yet
 
-A municipality should not treat CivicSuite as a finished full-suite procurement product today. The immediate beta target is the Windows Local city-core package only: CivicCore, CivicRecords AI, CivicClerk, CivicCode, and the desktop installer shell. Missing proof still includes the final clean-machine Windows Local walkthrough for the current MSI artifact and module-by-module feature completion for the rest of the unified spec.
+A municipality should not treat CivicSuite as a finished full-suite procurement product today. The immediate beta target is the Windows Local city-core package only: CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and the desktop installer shell. Missing proof still includes the final clean-machine Windows Local walkthrough for the current MSI artifact and module-by-module feature completion for the rest of the unified spec.

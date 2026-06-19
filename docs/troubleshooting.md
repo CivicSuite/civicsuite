@@ -1,6 +1,6 @@
 # CivicSuite Troubleshooting
 
-**Last verified:** 2026-05-27
+**Last verified:** 2026-06-19
 
 This guide covers the umbrella city-core installer and documentation truth path. Module-specific bugs still belong in the relevant module repo.
 
@@ -32,7 +32,7 @@ Use the live trust path:
 
 1. Verify the generated `SHA256SUMS` or release manifest that belongs to the package you are running.
 2. Confirm the package came from the official CivicSuite source or the recorded active run evidence path.
-3. Confirm `installer/modules.json` `source_commit` values match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, and CivicCode.
+3. Confirm `installer/modules.json` `source_commit` values match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicNotice.
 4. For CivicCode module release assets, compare the published SHA256 and attestation bundle recorded in module release evidence.
 
 Do not restore old committed `installer/dist` artifacts unless Scott explicitly confirms that restoration decision in bridge/for-scott or a durable run note.
