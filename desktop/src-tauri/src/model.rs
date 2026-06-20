@@ -121,6 +121,16 @@ struct OllamaTag {
 struct OllamaGenerateResponse {
     #[serde(default)]
     response: String,
+    #[serde(default)]
+    message: Option<OllamaGenerateMessage>,
+    #[serde(default)]
+    done: bool,
+}
+
+#[derive(Deserialize, Default)]
+struct OllamaGenerateMessage {
+    #[serde(default)]
+    content: String,
 }
 
 #[derive(Debug, Default)]
@@ -579,6 +589,47 @@ fn json_object_slice(body: &str) -> &str {
         (Some(start), Some(end)) if start <= end => &body[start..=end],
         _ => body,
     }
+}
+
+fn parse_ollama_generate_text(body: &str) -> Result<String, String> {
+    let mut generated = String::new();
+    let mut parsed_any = false;
+
+    for line in body.lines().map(str::trim).filter(|line| !line.is_empty()) {
+        let json_text = if line.starts_with('{') {
+            line
+        } else {
+            json_object_slice(line)
+        };
+        let payload: OllamaGenerateResponse = serde_json::from_str(json_text)
+            .map_err(|error| format!("Could not parse local AI response: {error}"))?;
+        parsed_any = true;
+        if !payload.response.trim().is_empty() {
+            generated.push_str(&payload.response);
+        }
+        if let Some(message) = payload.message {
+            if !message.content.trim().is_empty() {
+                generated.push_str(&message.content);
+            }
+        }
+        if payload.done && !generated.trim().is_empty() {
+            break;
+        }
+    }
+
+    if parsed_any {
+        return Ok(generated.trim().to_string());
+    }
+
+    let payload: OllamaGenerateResponse = serde_json::from_str(json_object_slice(body))
+        .map_err(|error| format!("Could not parse local AI response: {error}"))?;
+    if !payload.response.trim().is_empty() {
+        return Ok(payload.response.trim().to_string());
+    }
+    Ok(payload
+        .message
+        .map(|message| message.content.trim().to_string())
+        .unwrap_or_default())
 }
 
 fn parse_ollama_model_names(body: &str) -> Vec<String> {
@@ -1542,13 +1593,11 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
     let body = local_generation_request_body(runtime_model.as_str(), prompt);
     let endpoint = format!("{}/api/generate", ollama_base_url());
     let response = http_post_json_text(&endpoint, &body, LOCAL_GENERATION_TIMEOUT_MILLIS)?;
-    let payload: OllamaGenerateResponse = serde_json::from_str(json_object_slice(&response))
-        .map_err(|error| format!("Could not parse local AI response: {error}"))?;
-    let generated = payload.response.trim();
+    let generated = parse_ollama_generate_text(&response)?;
     if generated.is_empty() {
         return Err("Local AI returned an empty draft.".to_string());
     }
-    Ok((runtime_model, generated.to_string()))
+    Ok((runtime_model, generated))
 }
 
 pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
@@ -1688,6 +1737,46 @@ mod tests {
             .as_str()
             .expect("prompt string")
             .contains("under 180 words"));
+    }
+
+    #[test]
+    fn ollama_generate_parser_accepts_non_streaming_response_text() {
+        let body = r#"{"model":"civicsuite-gemma4-12b-qat:q4_0","response":"Draft ready for review.","done":true}"#;
+
+        let parsed = parse_ollama_generate_text(body).expect("parse response");
+
+        assert_eq!(parsed, "Draft ready for review.");
+    }
+
+    #[test]
+    fn ollama_generate_parser_accepts_message_content_shape() {
+        let body = r#"{"model":"civicsuite-gemma4-12b-qat:q4_0","message":{"role":"assistant","content":"Guidance draft ready."},"done":true}"#;
+
+        let parsed = parse_ollama_generate_text(body).expect("parse response");
+
+        assert_eq!(parsed, "Guidance draft ready.");
+    }
+
+    #[test]
+    fn ollama_generate_parser_combines_streamed_json_lines() {
+        let body = concat!(
+            r#"{"response":"Minutes ","done":false}"#,
+            "\n",
+            r#"{"response":"draft ready.","done":true}"#
+        );
+
+        let parsed = parse_ollama_generate_text(body).expect("parse streamed response");
+
+        assert_eq!(parsed, "Minutes draft ready.");
+    }
+
+    #[test]
+    fn ollama_generate_parser_preserves_empty_output_detection() {
+        let body = r#"{"model":"civicsuite-gemma4-12b-qat:q4_0","done":true}"#;
+
+        let parsed = parse_ollama_generate_text(body).expect("parse empty response");
+
+        assert_eq!(parsed, "");
     }
 
     #[test]
