@@ -563,6 +563,8 @@ for (const phrase of [
 for (const phrase of [
   "generate_local_text",
   "/api/generate",
+  "num_predict",
+  "LOCAL_GENERATION_NUM_CTX",
   "Local AI model is not ready"
 ]) {
   if (!modelRust.includes(phrase)) {

@@ -15,6 +15,9 @@ const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json"
 const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
 const MODEL_RUNTIME_READY_ATTEMPTS: usize = 80;
 const MODEL_RUNTIME_READY_INTERVAL: Duration = Duration::from_millis(500);
+const LOCAL_GENERATION_TIMEOUT_MILLIS: u64 = 180_000;
+const LOCAL_GENERATION_NUM_PREDICT: u16 = 192;
+const LOCAL_GENERATION_NUM_CTX: u16 = 3072;
 const REQUIRED_ACTIONS: [&str; 6] = [
     "download",
     "resume-download",
@@ -1499,6 +1502,26 @@ pub(crate) fn pinned_runtime_model() -> Result<String, String> {
     Ok(manifest.model.runtime_model)
 }
 
+fn local_generation_prompt(prompt: &str) -> String {
+    format!(
+        "{prompt}\n\nReturn a concise staff-review draft in under 180 words. Use plain text only. Do not include hidden reasoning or analysis."
+    )
+}
+
+fn local_generation_request_body(runtime_model: &str, prompt: &str) -> String {
+    serde_json::json!({
+        "model": runtime_model,
+        "prompt": local_generation_prompt(prompt),
+        "stream": false,
+        "options": {
+            "temperature": 0.2,
+            "num_predict": LOCAL_GENERATION_NUM_PREDICT,
+            "num_ctx": LOCAL_GENERATION_NUM_CTX
+        }
+    })
+    .to_string()
+}
+
 pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -1516,17 +1539,9 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
                 .to_string(),
         );
     }
-    let body = serde_json::json!({
-        "model": runtime_model.as_str(),
-        "prompt": prompt,
-        "stream": false,
-        "options": {
-            "temperature": 0.2
-        }
-    })
-    .to_string();
+    let body = local_generation_request_body(runtime_model.as_str(), prompt);
     let endpoint = format!("{}/api/generate", ollama_base_url());
-    let response = http_post_json_text(&endpoint, &body, 180_000)?;
+    let response = http_post_json_text(&endpoint, &body, LOCAL_GENERATION_TIMEOUT_MILLIS)?;
     let payload: OllamaGenerateResponse = serde_json::from_str(json_object_slice(&response))
         .map_err(|error| format!("Could not parse local AI response: {error}"))?;
     let generated = payload.response.trim();
@@ -1654,6 +1669,25 @@ mod tests {
             .readiness_checks
             .iter()
             .any(|check| check.id == "runtime-model" && check.required));
+    }
+
+    #[test]
+    fn local_generation_request_bounds_slow_ollama_outputs() {
+        let body = local_generation_request_body(
+            "civicsuite-gemma4-12b-qat:q4_0",
+            "Draft a staff response for marker D100-AI-MODEL-MARKER-20260620.",
+        );
+        let payload: serde_json::Value = serde_json::from_str(&body).expect("valid json");
+
+        assert_eq!(payload["model"], "civicsuite-gemma4-12b-qat:q4_0");
+        assert_eq!(payload["stream"], false);
+        assert_eq!(payload["options"]["temperature"], 0.2);
+        assert_eq!(payload["options"]["num_predict"], 192);
+        assert_eq!(payload["options"]["num_ctx"], 3072);
+        assert!(payload["prompt"]
+            .as_str()
+            .expect("prompt string")
+            .contains("under 180 words"));
     }
 
     #[test]
