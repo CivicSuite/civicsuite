@@ -304,7 +304,7 @@ for (const phrase of [
   "path: civicrecords-ai",
   "ref: e2208827b660faa7d3fc1eab2271a8eae18526ee",
   "path: civicclerk",
-  "ref: fa1874e31c1d1de909d2240f42b8e2b2da79ccfd",
+  "ref: fa1874edfe977bfc36ddea2939df6464b5bc16be",
   "path: civiccode",
   "ref: a960bba0a2249d118b593dd61bee3a65a69a9d77",
   "path: civicnotice",

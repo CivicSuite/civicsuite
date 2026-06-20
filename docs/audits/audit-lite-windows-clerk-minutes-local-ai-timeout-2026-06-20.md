@@ -24,7 +24,7 @@ Evidence:
 - CivicClerk now parses top-level `response`, chat-style `message.content`, and JSON-line/chunk-tolerant Ollama output while preserving empty-output failure detection.
 - CivicClerk regression tests cover the pinned runtime model payload, Gemma prompt bounds, top-level response parsing, chat-shaped response parsing, chunk-line tolerant parsing, empty-output detection, and the existing 503/manual-workflow fallback.
 - The stale real-Postgres migration test expectation now tracks the current installed CivicCore migration head `civiccore_0003_local_task_queue`.
-- CivicSuite MSI and installer-cleanroom workflows now pin `CivicSuite/civicclerk` to commit `fa1874e31c1d1de909d2240f42b8e2b2da79ccfd`, and the desktop static smoke contract checks that exact pin.
+- CivicSuite MSI and installer-cleanroom workflows now pin `CivicSuite/civicclerk` to commit `fa1874edfe977bfc36ddea2939df6464b5bc16be`, and the desktop static smoke contract checks that exact pin.
 
 Verification:
 - `python -m pytest tests\test_soft_ai_dependency.py -q -k "minutes_generation_payload or ollama_generate_parser or minutes_ai_assist"`: 4 passed, 2 deselected.
