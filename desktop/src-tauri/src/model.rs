@@ -578,10 +578,65 @@ fn http_post_json_text(endpoint: &str, body: &str, timeout_millis: u64) -> Resul
     if !(status_line.starts_with("HTTP/1.1 2") || status_line.starts_with("HTTP/1.0 2")) {
         return Err(format!("Ollama generation endpoint returned {status_line}"));
     }
-    Ok(response
+    decode_http_response_body(&response)
+}
+
+fn decode_http_response_body(response: &str) -> Result<String, String> {
+    let (headers, body) = response
         .split_once("\r\n\r\n")
-        .map(|(_, body)| body.to_string())
-        .unwrap_or_default())
+        .ok_or_else(|| "Could not find local AI response body.".to_string())?;
+    let is_chunked = headers.lines().any(|line| {
+        let lower = line.to_ascii_lowercase();
+        lower.starts_with("transfer-encoding:") && lower.contains("chunked")
+    });
+    if !is_chunked {
+        return Ok(body.to_string());
+    }
+    decode_chunked_http_body(body)
+}
+
+fn decode_chunked_http_body(body: &str) -> Result<String, String> {
+    let bytes = body.as_bytes();
+    let mut position = 0usize;
+    let mut decoded = Vec::new();
+
+    loop {
+        let line_end = find_crlf(bytes, position)
+            .ok_or_else(|| "Could not read local AI chunk size.".to_string())?;
+        let size_text = std::str::from_utf8(&bytes[position..line_end])
+            .map_err(|error| format!("Could not decode local AI chunk size: {error}"))?;
+        let size_hex = size_text.split(';').next().unwrap_or_default().trim();
+        let size = usize::from_str_radix(size_hex, 16)
+            .map_err(|error| format!("Could not parse local AI chunk size {size_hex}: {error}"))?;
+        position = line_end + 2;
+        if size == 0 {
+            break;
+        }
+        let chunk_end = position
+            .checked_add(size)
+            .ok_or_else(|| "Local AI response chunk size overflowed.".to_string())?;
+        if chunk_end > bytes.len() {
+            return Err("Local AI response ended before the chunk was complete.".to_string());
+        }
+        decoded.extend_from_slice(&bytes[position..chunk_end]);
+        position = chunk_end;
+        if bytes.get(position..position + 2) == Some(b"\r\n") {
+            position += 2;
+        } else {
+            return Err("Local AI response chunk was missing its line ending.".to_string());
+        }
+    }
+
+    String::from_utf8(decoded)
+        .map_err(|error| format!("Could not decode local AI chunked response: {error}"))
+}
+
+fn find_crlf(bytes: &[u8], start: usize) -> Option<usize> {
+    bytes
+        .get(start..)?
+        .windows(2)
+        .position(|window| window == b"\r\n")
+        .map(|offset| start + offset)
 }
 
 fn json_object_slice(body: &str) -> &str {
@@ -1777,6 +1832,31 @@ mod tests {
         let parsed = parse_ollama_generate_text(body).expect("parse empty response");
 
         assert_eq!(parsed, "");
+    }
+
+    #[test]
+    fn http_response_body_decodes_chunked_ollama_json() {
+        let body = r#"{"response":"Draft from chunked response.","done":true}"#;
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{}\r\n0\r\n\r\n",
+            body.len(),
+            body
+        );
+
+        let decoded = decode_http_response_body(&response).expect("decode chunked body");
+        let parsed = parse_ollama_generate_text(&decoded).expect("parse decoded body");
+
+        assert_eq!(parsed, "Draft from chunked response.");
+    }
+
+    #[test]
+    fn http_response_body_preserves_plain_json_body() {
+        let response =
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"response\":\"Plain body.\"}";
+
+        let decoded = decode_http_response_body(response).expect("decode plain body");
+
+        assert_eq!(decoded, "{\"response\":\"Plain body.\"}");
     }
 
     #[test]
