@@ -391,6 +391,22 @@ fn runtime_modelfile_path(local_path: &Path) -> PathBuf {
     local_path.with_file_name("gemma-4-12b-it-qat-q4_0.Modelfile")
 }
 
+fn runtime_modelfile_contents(file_name: &str) -> String {
+    format!(
+        r#"FROM ./{file_name}
+TEMPLATE """{{{{ if .System }}}}<start_of_turn>system
+{{{{ .System }}}}<end_of_turn>
+{{{{ end }}}}<start_of_turn>user
+{{{{ .Prompt }}}}<end_of_turn>
+<start_of_turn>model
+{{{{ .Response }}}}"""
+PARAMETER temperature 0.1
+PARAMETER stop "<end_of_turn>"
+PARAMETER stop "<start_of_turn>"
+"#
+    )
+}
+
 fn ollama_base_url() -> String {
     env::var("OLLAMA_BASE_URL")
         .unwrap_or_else(|_| DEFAULT_OLLAMA_BASE_URL.to_string())
@@ -1130,11 +1146,8 @@ fn load_model_into_runtime(manifest: &ModelManifest, local_path: &Path) -> Resul
             )
         })?;
     let modelfile_path = runtime_modelfile_path(local_path);
-    fs::write(
-        &modelfile_path,
-        format!("FROM ./{file_name}\nPARAMETER temperature 0.1\n"),
-    )
-    .map_err(|error| format!("Could not write {}: {error}", modelfile_path.display()))?;
+    fs::write(&modelfile_path, runtime_modelfile_contents(file_name))
+        .map_err(|error| format!("Could not write {}: {error}", modelfile_path.display()))?;
     let executable = ollama_executable();
     let status = Command::new(&executable)
         .arg("create")
@@ -1614,15 +1627,24 @@ fn local_generation_prompt(prompt: &str) -> String {
     )
 }
 
+fn gemma_raw_generation_prompt(prompt: &str) -> String {
+    format!(
+        "<start_of_turn>user\n{}<end_of_turn>\n<start_of_turn>model\n",
+        local_generation_prompt(prompt)
+    )
+}
+
 fn local_generation_request_body(runtime_model: &str, prompt: &str) -> String {
     serde_json::json!({
         "model": runtime_model,
-        "prompt": local_generation_prompt(prompt),
+        "prompt": gemma_raw_generation_prompt(prompt),
+        "raw": true,
         "stream": false,
         "options": {
             "temperature": 0.2,
             "num_predict": LOCAL_GENERATION_NUM_PREDICT,
-            "num_ctx": LOCAL_GENERATION_NUM_CTX
+            "num_ctx": LOCAL_GENERATION_NUM_CTX,
+            "stop": ["<end_of_turn>", "<start_of_turn>"]
         }
     })
     .to_string()
@@ -1784,14 +1806,27 @@ mod tests {
         let payload: serde_json::Value = serde_json::from_str(&body).expect("valid json");
 
         assert_eq!(payload["model"], "civicsuite-gemma4-12b-qat:q4_0");
+        assert_eq!(payload["raw"], true);
         assert_eq!(payload["stream"], false);
         assert_eq!(payload["options"]["temperature"], 0.2);
         assert_eq!(payload["options"]["num_predict"], 192);
         assert_eq!(payload["options"]["num_ctx"], 3072);
-        assert!(payload["prompt"]
-            .as_str()
-            .expect("prompt string")
-            .contains("under 180 words"));
+        assert_eq!(payload["options"]["stop"][0], "<end_of_turn>");
+        let prompt = payload["prompt"].as_str().expect("prompt string");
+        assert!(prompt.starts_with("<start_of_turn>user\n"));
+        assert!(prompt.contains("under 180 words"));
+        assert!(prompt.ends_with("<start_of_turn>model\n"));
+    }
+
+    #[test]
+    fn runtime_modelfile_uses_gemma_instruction_template() {
+        let contents = runtime_modelfile_contents("gemma-4-12b-it-qat-q4_0.gguf");
+
+        assert!(contents.contains("FROM ./gemma-4-12b-it-qat-q4_0.gguf"));
+        assert!(contents.contains("TEMPLATE"));
+        assert!(contents.contains("<start_of_turn>user"));
+        assert!(contents.contains("<start_of_turn>model"));
+        assert!(contents.contains("PARAMETER stop \"<end_of_turn>\""));
     }
 
     #[test]
