@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5
+          ref: fa1874e31c1d1de909d2240f42b8e2b2da79ccfd
           path: civicclerk
 
       - name: Check out CivicCode runtime source
