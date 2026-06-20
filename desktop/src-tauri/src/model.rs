@@ -1234,6 +1234,32 @@ fn run_model_download_curl(
     partial_path: &Path,
     resume: bool,
 ) -> Result<(), String> {
+    #[cfg(test)]
+    if let Ok(sequence) = env::var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE") {
+        let attempt_path = partial_path.with_extension("attempt");
+        if sequence == "corrupt-always" {
+            fs::write(partial_path, b"zzz")
+                .map_err(|error| format!("Could not write test corrupt model download: {error}"))?;
+        } else if sequence == "corrupt-then-valid" && attempt_path.exists() {
+            fs::write(partial_path, b"abc")
+                .map_err(|error| format!("Could not write test model download: {error}"))?;
+        } else if sequence == "corrupt-then-valid" {
+            if let Some(parent) = attempt_path.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|error| format!("Could not create test model folder: {error}"))?;
+            }
+            fs::write(&attempt_path, b"1")
+                .map_err(|error| format!("Could not write test model attempt: {error}"))?;
+            fs::write(partial_path, b"zzz")
+                .map_err(|error| format!("Could not write test corrupt model download: {error}"))?;
+        } else {
+            return Err(format!(
+                "Unsupported test model download sequence: {sequence}"
+            ));
+        }
+        return Ok(());
+    }
+
     let mut command = Command::new(curl_executable());
     command
         .arg("-L")
@@ -1263,9 +1289,13 @@ fn run_model_download_curl(
 }
 
 fn remove_invalid_partial(partial_path: &Path, reason: &str) -> Result<(), String> {
-    fs::remove_file(partial_path).map_err(|error| {
-        format!("Could not remove invalid partial model download after {reason}: {error}")
-    })
+    match fs::remove_file(partial_path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(format!(
+            "Could not remove invalid partial model download after {reason}: {error}"
+        )),
+    }
 }
 
 fn finalize_partial_download(
@@ -1356,6 +1386,26 @@ fn download_model_artifact_inner(
     run_model_download_curl(manifest, &partial_path, resume)?;
     if finalize_partial_download(manifest, local_path, &partial_path)? {
         return Ok(());
+    }
+    if !partial_path.exists() {
+        write_model_download_state(
+            manifest,
+            local_path,
+            "Downloading",
+            "CivicSuite is retrying the pinned Gemma model download from the beginning after discarding an invalid full-size file."
+                .to_string(),
+            None,
+        )?;
+        run_model_download_curl(manifest, &partial_path, false)?;
+        if finalize_partial_download(manifest, local_path, &partial_path)? {
+            return Ok(());
+        }
+        if !partial_path.exists() {
+            return Err(
+                "Model download reached the pinned size, but checksum verification did not pass. The invalid file was discarded; retry will start a clean download."
+                    .to_string(),
+            );
+        }
     }
     let downloaded_size = fs::metadata(&partial_path)
         .map_err(|error| format!("Could not inspect downloaded model: {error}"))?
@@ -2084,6 +2134,77 @@ mod tests {
             assert!(!finalized);
             assert!(!local_path.exists());
             assert!(!partial_path.exists());
+        });
+    }
+
+    #[test]
+    fn missing_invalid_partial_cleanup_is_not_user_visible_failure() {
+        with_temp_state_dir(|root| {
+            let partial_path = root.join("Data").join("models").join("missing.gguf.part");
+
+            remove_invalid_partial(&partial_path, "it was already removed")
+                .expect("missing invalid partial cleanup is idempotent");
+        });
+    }
+
+    #[test]
+    fn corrupt_full_size_download_retries_clean_file_before_failing() {
+        with_temp_state_dir(|_| {
+            let mut manifest = parse_manifest().expect("manifest parses");
+            manifest.model.artifact.size_bytes = 3;
+            manifest.model.artifact.sha256 = format!("{:x}", Sha256::digest(b"abc"));
+            let local_path = model_path(&manifest.model.artifact);
+
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "99999999999");
+            env::set_var(
+                "CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE",
+                "corrupt-then-valid",
+            );
+
+            download_model_artifact(&manifest, &local_path)
+                .expect("corrupt first download is retried once with a clean file");
+
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            env::remove_var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE");
+
+            assert_eq!(fs::read(&local_path).expect("local model"), b"abc");
+            assert!(!partial_download_path(&local_path).exists());
+            assert!(checksum_marker_matches(
+                &local_path,
+                &manifest.model.artifact.sha256
+            ));
+            let state = read_model_download_state().expect("download state");
+            assert_eq!(state.status, "Verified");
+        });
+    }
+
+    #[test]
+    fn repeated_corrupt_full_size_download_reports_checksum_failure() {
+        with_temp_state_dir(|_| {
+            let mut manifest = parse_manifest().expect("manifest parses");
+            manifest.model.artifact.size_bytes = 3;
+            manifest.model.artifact.sha256 = format!("{:x}", Sha256::digest(b"abc"));
+            let local_path = model_path(&manifest.model.artifact);
+
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "99999999999");
+            env::set_var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE", "corrupt-always");
+
+            let error = download_model_artifact(&manifest, &local_path)
+                .expect_err("repeated corrupt downloads fail with a checksum error");
+
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            env::remove_var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE");
+
+            assert!(error.contains("checksum verification did not pass"));
+            assert!(!error.contains("Could not inspect downloaded model"));
+            assert!(!local_path.exists());
+            assert!(!partial_download_path(&local_path).exists());
+            let state = read_model_download_state().expect("download state");
+            assert_eq!(state.status, "Download failed");
+            assert!(state
+                .last_error
+                .unwrap_or_default()
+                .contains("checksum verification did not pass"));
         });
     }
 
