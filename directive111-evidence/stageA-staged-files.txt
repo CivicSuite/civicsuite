@@ -1,0 +1,15 @@
+﻿directive111-evidence/A0-config-backup/first-run-progress.json
+directive111-evidence/A0-config-backup/locations.json
+directive111-evidence/A0-config-backup/module-selection.json
+directive111-evidence/A0-config-listing.txt
+directive111-evidence/A1-exe-path.txt
+directive111-evidence/A2-cdp-targets.json
+directive111-evidence/A2-cdp-version.json
+directive111-evidence/A2-ws-url.txt
+directive111-evidence/A4-ab-decisive.json
+directive111-evidence/A4-action-result.txt
+directive111-evidence/A4-first-run-list.html
+directive111-evidence/A4-first-run-list.txt
+directive111-evidence/A4-screenshot.png
+directive111-evidence/channel-before.json
+test-comms/TESTER-RESULT-111.md

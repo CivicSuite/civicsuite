@@ -1,0 +1,79 @@
+﻿1
+Welcome and unsigned beta notice
+Finished
+
+CivicSuite is beta software from an unsigned open-source build.
+
+The installer explains that this build is not code-signed yet and should be installed only from the official CivicSuite release source after checksum verification.
+2
+Windows SmartScreen explanation
+Finished
+
+Windows may show an Unknown Publisher warning for this beta.
+
+The installer explains why the warning appears and how More info and Run anyway apply to this verified unsigned beta.
+3
+Install and local data locations
+Finished
+
+Choose where the app and city data live on this machine.
+
+The default locations stay under the current Windows user profile and can be changed before local services are installed.
+4
+Module selection
+Finished
+
+City Core is selected by default and CivicCore is locked on.
+
+Custom selection is part of the architecture, but only modules with passing package and proof contracts can be installed from the clerk path.
+5
+City profile
+Current
+
+Enter the city name, state, time zone, records contact, and clerk contact.
+
+The city profile personalizes notices, records responses, code guidance, and audit context.
+
+Next: Create the city profile.
+
+City name
+State
+Time zone
+Records contact
+Clerk contact
+Save city profile
+6
+First admin user
+Needs setup
+
+Create the first local administrator before staff work begins.
+
+The first admin owns setup, model download, users, roles, backup settings, and recovery contact information.
+7
+Backup default
+Needs setup
+
+Choose the default local backup folder.
+
+Backup is configured before city work begins so records, packets, notices, code imports, and audit entries have a recovery path.
+8
+Local AI model download
+Needs setup
+
+Download Gemma 4 12B quantization-aware weights for local AI.
+
+A signed-in CivicSuite local administrator downloads the pinned model with resumable download, checksum verification, and local-only default behavior.
+9
+Health verification
+Needs setup
+
+Verify local services, storage, backup, and the local model before staff work.
+
+The health step checks the desktop shell, local data store, workflow services, task queue, local AI model, and document storage.
+10
+Finish and lifecycle entry points
+Needs setup
+
+Open CivicSuite and keep repair, backup, and uninstall reachable.
+
+The finish screen links the app, System Health, repair, backup, and uninstall so the same product surface owns the lifecycle.

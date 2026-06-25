@@ -1,0 +1,10 @@
+{
+  "completed_step_ids": [
+    "unsigned-beta",
+    "smartscreen",
+    "locations",
+    "modules"
+  ],
+  "last_action": "select-modules",
+  "last_updated_unix_seconds": 1782404388
+}

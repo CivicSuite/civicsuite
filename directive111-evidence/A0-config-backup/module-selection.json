@@ -1,0 +1,44 @@
+{
+  "profile_id": "city-core",
+  "profile_label": "City Core",
+  "installed_module_ids": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode",
+    "civicnotice"
+  ],
+  "disabled_module_ids": [
+    "civiczone",
+    "civicplan",
+    "civicpermit",
+    "civicaccess",
+    "civicinspect",
+    "civicgrants",
+    "civicprocure",
+    "civiccontracts",
+    "civicboards",
+    "civic311",
+    "civiccomms",
+    "civicdata",
+    "civicregwatch",
+    "civicapi",
+    "civichr",
+    "civicbudget",
+    "civiclegal",
+    "civicelections",
+    "civicutility",
+    "civiccourt",
+    "civicsafety",
+    "civiclibrary",
+    "civicparks"
+  ],
+  "enabled_module_ids": [
+    "civiccore",
+    "civicrecords-ai",
+    "civicclerk",
+    "civiccode",
+    "civicnotice"
+  ],
+  "last_updated_unix_seconds": 1782404388
+}

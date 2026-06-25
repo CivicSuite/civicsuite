@@ -1,0 +1,173 @@
+﻿{
+  "bridge": {
+    "internalsPresent": true,
+    "via": "internals",
+    "getAppStateError": null
+  },
+  "backend": {
+    "currentId": "city-profile",
+    "finished": false,
+    "status": "Needs setup",
+    "cityProfileCurrent": true,
+    "steps": [
+      {
+        "id": "unsigned-beta",
+        "current": false,
+        "completed": true,
+        "status": "Finished"
+      },
+      {
+        "id": "smartscreen",
+        "current": false,
+        "completed": true,
+        "status": "Finished"
+      },
+      {
+        "id": "locations",
+        "current": false,
+        "completed": true,
+        "status": "Finished"
+      },
+      {
+        "id": "modules",
+        "current": false,
+        "completed": true,
+        "status": "Finished"
+      },
+      {
+        "id": "city-profile",
+        "current": true,
+        "completed": false,
+        "status": "Current"
+      },
+      {
+        "id": "first-admin",
+        "current": false,
+        "completed": false,
+        "status": "Needs setup"
+      },
+      {
+        "id": "backup",
+        "current": false,
+        "completed": false,
+        "status": "Needs setup"
+      },
+      {
+        "id": "model",
+        "current": false,
+        "completed": false,
+        "status": "Needs setup"
+      },
+      {
+        "id": "health",
+        "current": false,
+        "completed": false,
+        "status": "Needs setup"
+      },
+      {
+        "id": "finish",
+        "current": false,
+        "completed": false,
+        "status": "Needs setup"
+      }
+    ]
+  },
+  "dom": {
+    "listPresent": true,
+    "cityNameInputCount_GLOBAL": 1,
+    "currentStepH3": "City profile",
+    "articles": [
+      {
+        "h3": "Welcome and unsigned beta notice",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Windows SmartScreen explanation",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Install and local data locations",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Module selection",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "City profile",
+        "isCurrent": true,
+        "setupFields": [
+          "cityName",
+          "state",
+          "timeZone",
+          "recordsContact",
+          "clerkContact"
+        ]
+      },
+      {
+        "h3": "First admin user",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Backup default",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Local AI model download",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Health verification",
+        "isCurrent": false,
+        "setupFields": []
+      },
+      {
+        "h3": "Finish and lifecycle entry points",
+        "isCurrent": false,
+        "setupFields": []
+      }
+    ],
+    "cityProfileInputsScoped": [
+      {
+        "field": "cityName",
+        "present": true
+      },
+      {
+        "field": "state",
+        "present": true
+      },
+      {
+        "field": "timeZone",
+        "present": true
+      },
+      {
+        "field": "recordsContact",
+        "present": true
+      },
+      {
+        "field": "clerkContact",
+        "present": true
+      }
+    ],
+    "saveButtonScoped": true,
+    "saveButtonDisabled": false,
+    "cityNameStyle": {
+      "display": "block",
+      "visibility": "visible",
+      "opacity": "1",
+      "width": 272.1253356933594,
+      "height": 37.99257278442383,
+      "x": 367.0138854980469,
+      "y": 1139.2684326171875,
+      "offsetParentNull": false
+    }
+  },
+  "errors": []
+}

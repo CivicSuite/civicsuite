@@ -1,0 +1,9 @@
+﻿{
+    "Timestamp":  "2026-06-25T11:09:44.9050908-06:00",
+    "RemoteUrl":  "https://github.com/CivicSuite/civicsuite.git",
+    "LsRemoteBefore":  "9143e197c29ccf4001e313b18920d27a56fa5be5\trefs/heads/stage-3a-baremetal-windows",
+    "FetchOutput":  "git : From https://github.com/CivicSuite/civicsuite\r\nAt line:8 char:13\r\n+ $fetchOut = git fetch origin stage-3a-baremetal-windows 2\u003e\u00261 | Out-St ...\r\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : NotSpecified: (From https://gi...uite/civicsuite:String) [], RemoteException\r\n    + FullyQualifiedErrorId : NativeCommandError\r\n \r\n * branch            stage-3a-baremetal-windows -\u003e FETCH_HEAD",
+    "FetchHeadBefore":  "9143e197c29ccf4001e313b18920d27a56fa5be5\t\tbranch \u0027stage-3a-baremetal-windows\u0027 of https://github.com/CivicSuite/civicsuite",
+    "Head":  "9143e197c29ccf4001e313b18920d27a56fa5be5",
+    "Note":  "A hard reset to origin/stage-3a-baremetal-windows occurred before reading directive 111 due heartbeat wrapper; subsequent sync is non-destructive."
+}
