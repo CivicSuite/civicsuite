@@ -183,8 +183,8 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
 | CivicCore | 1.2.0 | shared platform | none | `1a53f0680fff` | `v1_2_0_windows_local_platform_contracts` |
-| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `538766523ad9` | `v1_7_3_city_core_release_car` |
-| CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `dae807ec9d13` | `v1_0_4_city_core_release_car` |
+| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `e2208827b660` | `v1_7_3_city_core_release_car` |
+| CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `fa1874edfe97` | `v1_0_4_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
 | CivicNotice | 0.2.0 | public notice workflow | `civiccore`, `civicclerk` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
 
