@@ -246,7 +246,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.7.3",
-                        "source_commit":  "538766523ad90ee7553b0ffa75b626d3d4850b17",
+                        "source_commit":  "e2208827b660faa7d3fc1eab2271a8eae18526ee",
                         "routes":  [
                                        {
                                            "id":  "records-requests",
@@ -330,7 +330,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.0.4",
-                        "source_commit":  "dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5",
+                        "source_commit":  "fa1874edfe977bfc36ddea2939df6464b5bc16be",
                         "routes":  [
                                        {
                                            "id":  "meetings-notices",
