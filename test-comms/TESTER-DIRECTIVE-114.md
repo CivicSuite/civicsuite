@@ -35,15 +35,28 @@ exists.** On each `check repo` / heartbeat:
    directive is posted.)
 3. **Only when the prerelease exists AND has a `*.msi` asset:** proceed to Stage A.
 
-## Stage A — Bare-metal clean (box is rebooted; pending-rename should be clear)
+## Stage A — Truer clean (box is rebooted; pending-rename should be clear; box is expendable)
 
-Remove all prior CivicSuite product/state from the earlier directives so the fix-MSI installs clean:
-stop CivicSuite processes (desktop/runtime ollama/postgres/python) and any standalone Ollama;
-uninstall the currently-installed CivicSuite product (find its ProductCode by DisplayName); delete
-`C:\Program Files\CivicSuite\`, `%LOCALAPPDATA%\CivicSuite\` (config/Data/runtime/backups, incl. the
-model cache — we re-test the fresh download), stale registrations, and prior `directive1NN-evidence/`
-folders. Verify no CivicSuite product/process/registration/payload/model remains. Record free disk
-and `HypervisorPresent`. If uninstall hits exit 3010 / reboot-pending → STOP, blocker, do not reboot.
+Remove all prior CivicSuite product/state **and the host AI-runtime + WebView2 leftovers**, so the
+fix-MSI installs onto a machine where the ONLY AI runtime is the product's own bundled Ollama:
+
+1. Stop CivicSuite processes (desktop; runtime `ollama.exe`/`postgres.exe`/`python.exe`).
+2. **Uninstall the standalone user Ollama entirely and delete its model store/blobs** (e.g.
+   `%LOCALAPPDATA%\Programs\Ollama`, `%USERPROFILE%\.ollama`) so the port-`11434` instance is GONE,
+   not merely stopped — after install the only Ollama must be the product's bundled runtime (`15434`).
+3. Uninstall the currently-installed CivicSuite product (find its ProductCode by DisplayName).
+4. Delete `C:\Program Files\CivicSuite\`, `%LOCALAPPDATA%\CivicSuite\` in full (config/Data/runtime/
+   backups, **incl. the model cache** — re-test the fresh HF download), stale MSI registrations, and
+   prior `directive1NN-evidence/` folders.
+5. **Delete the CivicSuite app's WebView2 user-data/profile** — the `EBWebView` directory under the
+   Tauri app identifier (e.g. `%LOCALAPPDATA%\org.civicsuite.desktop\` incl. `EBWebView`) — so no
+   stale WebView2 cache/profile/state carries over.
+
+**Verify the clean before install:** no CivicSuite product/process/registration/payload/model
+remains; **standalone Ollama is uninstalled (port 11434 closed, `ollama.exe` not present outside the
+product payload)**; **no `EBWebView`/`org.civicsuite.desktop` profile remains**. Record free disk and
+`HypervisorPresent`. If any uninstall hits exit 3010 / reboot-pending → STOP, record
+`environment/blocker`, do NOT reboot.
 
 ## Stage B — Install the fix-MSI from the prerelease
 
