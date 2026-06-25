@@ -1113,7 +1113,7 @@ fn verify_and_register_model_artifact(
         manifest,
         local_path,
         "Verified",
-        "The pinned Gemma model file passed checksum verification and is registered with CivicCore."
+        "The pinned Gemma model file passed checksum verification and is registered in the local model registry."
             .to_string(),
         None,
     )
@@ -1354,7 +1354,7 @@ fn download_model_artifact_inner(
             manifest,
             local_path,
             "Verified",
-            "The pinned Gemma model file has already passed checksum verification and is registered with CivicCore.".to_string(),
+            "The pinned Gemma model file has already passed checksum verification and is registered in the local model registry.".to_string(),
             None,
         )?;
         return Ok(());
@@ -1540,14 +1540,14 @@ fn readiness_items(
                         (
                             true,
                             "Registered",
-                            "CivicCore has a local registry entry for this verified model."
+                            "A local registry entry exists for this verified model."
                                 .to_string(),
                         )
                     } else {
                         (
                             false,
                             "Needs registration",
-                            "CivicCore has not registered this verified local model yet."
+                            "No local registry entry exists for this verified model yet."
                                 .to_string(),
                         )
                     }
@@ -2458,7 +2458,7 @@ mod tests {
     }
 
     #[test]
-    fn register_verified_model_writes_civiccore_registry() {
+    fn register_verified_model_writes_local_registry() {
         with_temp_state_dir(|root| {
             let manifest = parse_manifest().expect("manifest parses");
             let model_path = root

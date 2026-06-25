@@ -425,11 +425,11 @@ const fallbackState = {
       },
       {
         id: "registered-model",
-        label: "CivicCore model registry",
+        label: "Local model registry",
         ok: false,
         status: "Needs setup",
-        message: "CivicCore has not registered this verified local model yet.",
-        next_action: "Register the verified model with CivicCore before staff workflows use it."
+        message: "No local registry entry exists for this verified model yet.",
+        next_action: "Register the verified model in the local model registry before staff workflows use it."
       }
     ],
     next_action: "Use first-run setup to download, resume, and verify the pinned local model."

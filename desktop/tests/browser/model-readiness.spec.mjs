@@ -43,7 +43,7 @@ test("system health keeps full model readiness visible", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Local model file" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Checksum verification" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Local model runtime" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicCore model registry" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Local model registry" })).toBeVisible();
   await expect(page.getByText("explicit setup consent required")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Backup, Restore, Uninstall" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City data folder" })).toBeVisible();

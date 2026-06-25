@@ -82,9 +82,9 @@
     },
     {
       "id": "registered-model",
-      "label": "CivicCore model registry",
+      "label": "Local model registry",
       "required": true,
-      "next_action": "Register the verified model with CivicCore before staff workflows use it."
+      "next_action": "Register the verified model in the local model registry before staff workflows use it."
     }
   ]
 }
