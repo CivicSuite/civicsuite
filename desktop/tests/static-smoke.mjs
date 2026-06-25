@@ -302,9 +302,9 @@ for (const phrase of [
   "path: civiccore",
   "ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c",
   "path: civicrecords-ai",
-  "ref: 538766523ad90ee7553b0ffa75b626d3d4850b17",
+  "ref: e2208827b660faa7d3fc1eab2271a8eae18526ee",
   "path: civicclerk",
-  "ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5",
+  "ref: fa1874edfe977bfc36ddea2939df6464b5bc16be",
   "path: civiccode",
   "ref: a960bba0a2249d118b593dd61bee3a65a69a9d77",
   "path: civicnotice",
@@ -563,6 +563,8 @@ for (const phrase of [
 for (const phrase of [
   "generate_local_text",
   "/api/generate",
+  "num_predict",
+  "LOCAL_GENERATION_NUM_CTX",
   "Local AI model is not ready"
 ]) {
   if (!modelRust.includes(phrase)) {

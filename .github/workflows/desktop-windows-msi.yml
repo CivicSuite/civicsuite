@@ -38,14 +38,14 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicrecords-ai
-          ref: 538766523ad90ee7553b0ffa75b626d3d4850b17
+          ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
           path: civicrecords-ai
 
       - name: Check out CivicClerk runtime source
         uses: actions/checkout@v5
         with:
           repository: CivicSuite/civicclerk
-          ref: dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5
+          ref: fa1874edfe977bfc36ddea2939df6464b5bc16be
           path: civicclerk
 
       - name: Check out CivicCode runtime source

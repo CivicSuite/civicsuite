@@ -15,6 +15,9 @@ const MODEL_MANIFEST_JSON: &str = include_str!("../../runtime/gemma4-model.json"
 const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
 const MODEL_RUNTIME_READY_ATTEMPTS: usize = 80;
 const MODEL_RUNTIME_READY_INTERVAL: Duration = Duration::from_millis(500);
+const LOCAL_GENERATION_TIMEOUT_MILLIS: u64 = 180_000;
+const LOCAL_GENERATION_NUM_PREDICT: u16 = 192;
+const LOCAL_GENERATION_NUM_CTX: u16 = 3072;
 const REQUIRED_ACTIONS: [&str; 6] = [
     "download",
     "resume-download",
@@ -118,6 +121,16 @@ struct OllamaTag {
 struct OllamaGenerateResponse {
     #[serde(default)]
     response: String,
+    #[serde(default)]
+    message: Option<OllamaGenerateMessage>,
+    #[serde(default)]
+    done: bool,
+}
+
+#[derive(Deserialize, Default)]
+struct OllamaGenerateMessage {
+    #[serde(default)]
+    content: String,
 }
 
 #[derive(Debug, Default)]
@@ -378,6 +391,22 @@ fn runtime_modelfile_path(local_path: &Path) -> PathBuf {
     local_path.with_file_name("gemma-4-12b-it-qat-q4_0.Modelfile")
 }
 
+fn runtime_modelfile_contents(file_name: &str) -> String {
+    format!(
+        r#"FROM ./{file_name}
+TEMPLATE """{{{{ if .System }}}}<start_of_turn>system
+{{{{ .System }}}}<end_of_turn>
+{{{{ end }}}}<start_of_turn>user
+{{{{ .Prompt }}}}<end_of_turn>
+<start_of_turn>model
+{{{{ .Response }}}}"""
+PARAMETER temperature 0.1
+PARAMETER stop "<end_of_turn>"
+PARAMETER stop "<start_of_turn>"
+"#
+    )
+}
+
 fn ollama_base_url() -> String {
     env::var("OLLAMA_BASE_URL")
         .unwrap_or_else(|_| DEFAULT_OLLAMA_BASE_URL.to_string())
@@ -565,10 +594,65 @@ fn http_post_json_text(endpoint: &str, body: &str, timeout_millis: u64) -> Resul
     if !(status_line.starts_with("HTTP/1.1 2") || status_line.starts_with("HTTP/1.0 2")) {
         return Err(format!("Ollama generation endpoint returned {status_line}"));
     }
-    Ok(response
+    decode_http_response_body(&response)
+}
+
+fn decode_http_response_body(response: &str) -> Result<String, String> {
+    let (headers, body) = response
         .split_once("\r\n\r\n")
-        .map(|(_, body)| body.to_string())
-        .unwrap_or_default())
+        .ok_or_else(|| "Could not find local AI response body.".to_string())?;
+    let is_chunked = headers.lines().any(|line| {
+        let lower = line.to_ascii_lowercase();
+        lower.starts_with("transfer-encoding:") && lower.contains("chunked")
+    });
+    if !is_chunked {
+        return Ok(body.to_string());
+    }
+    decode_chunked_http_body(body)
+}
+
+fn decode_chunked_http_body(body: &str) -> Result<String, String> {
+    let bytes = body.as_bytes();
+    let mut position = 0usize;
+    let mut decoded = Vec::new();
+
+    loop {
+        let line_end = find_crlf(bytes, position)
+            .ok_or_else(|| "Could not read local AI chunk size.".to_string())?;
+        let size_text = std::str::from_utf8(&bytes[position..line_end])
+            .map_err(|error| format!("Could not decode local AI chunk size: {error}"))?;
+        let size_hex = size_text.split(';').next().unwrap_or_default().trim();
+        let size = usize::from_str_radix(size_hex, 16)
+            .map_err(|error| format!("Could not parse local AI chunk size {size_hex}: {error}"))?;
+        position = line_end + 2;
+        if size == 0 {
+            break;
+        }
+        let chunk_end = position
+            .checked_add(size)
+            .ok_or_else(|| "Local AI response chunk size overflowed.".to_string())?;
+        if chunk_end > bytes.len() {
+            return Err("Local AI response ended before the chunk was complete.".to_string());
+        }
+        decoded.extend_from_slice(&bytes[position..chunk_end]);
+        position = chunk_end;
+        if bytes.get(position..position + 2) == Some(b"\r\n") {
+            position += 2;
+        } else {
+            return Err("Local AI response chunk was missing its line ending.".to_string());
+        }
+    }
+
+    String::from_utf8(decoded)
+        .map_err(|error| format!("Could not decode local AI chunked response: {error}"))
+}
+
+fn find_crlf(bytes: &[u8], start: usize) -> Option<usize> {
+    bytes
+        .get(start..)?
+        .windows(2)
+        .position(|window| window == b"\r\n")
+        .map(|offset| start + offset)
 }
 
 fn json_object_slice(body: &str) -> &str {
@@ -576,6 +660,47 @@ fn json_object_slice(body: &str) -> &str {
         (Some(start), Some(end)) if start <= end => &body[start..=end],
         _ => body,
     }
+}
+
+fn parse_ollama_generate_text(body: &str) -> Result<String, String> {
+    let mut generated = String::new();
+    let mut parsed_any = false;
+
+    for line in body.lines().map(str::trim).filter(|line| !line.is_empty()) {
+        let json_text = if line.starts_with('{') {
+            line
+        } else {
+            json_object_slice(line)
+        };
+        let payload: OllamaGenerateResponse = serde_json::from_str(json_text)
+            .map_err(|error| format!("Could not parse local AI response: {error}"))?;
+        parsed_any = true;
+        if !payload.response.trim().is_empty() {
+            generated.push_str(&payload.response);
+        }
+        if let Some(message) = payload.message {
+            if !message.content.trim().is_empty() {
+                generated.push_str(&message.content);
+            }
+        }
+        if payload.done && !generated.trim().is_empty() {
+            break;
+        }
+    }
+
+    if parsed_any {
+        return Ok(generated.trim().to_string());
+    }
+
+    let payload: OllamaGenerateResponse = serde_json::from_str(json_object_slice(body))
+        .map_err(|error| format!("Could not parse local AI response: {error}"))?;
+    if !payload.response.trim().is_empty() {
+        return Ok(payload.response.trim().to_string());
+    }
+    Ok(payload
+        .message
+        .map(|message| message.content.trim().to_string())
+        .unwrap_or_default())
 }
 
 fn parse_ollama_model_names(body: &str) -> Vec<String> {
@@ -1021,11 +1146,8 @@ fn load_model_into_runtime(manifest: &ModelManifest, local_path: &Path) -> Resul
             )
         })?;
     let modelfile_path = runtime_modelfile_path(local_path);
-    fs::write(
-        &modelfile_path,
-        format!("FROM ./{file_name}\nPARAMETER temperature 0.1\n"),
-    )
-    .map_err(|error| format!("Could not write {}: {error}", modelfile_path.display()))?;
+    fs::write(&modelfile_path, runtime_modelfile_contents(file_name))
+        .map_err(|error| format!("Could not write {}: {error}", modelfile_path.display()))?;
     let executable = ollama_executable();
     let status = Command::new(&executable)
         .arg("create")
@@ -1112,6 +1234,32 @@ fn run_model_download_curl(
     partial_path: &Path,
     resume: bool,
 ) -> Result<(), String> {
+    #[cfg(test)]
+    if let Ok(sequence) = env::var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE") {
+        let attempt_path = partial_path.with_extension("attempt");
+        if sequence == "corrupt-always" {
+            fs::write(partial_path, b"zzz")
+                .map_err(|error| format!("Could not write test corrupt model download: {error}"))?;
+        } else if sequence == "corrupt-then-valid" && attempt_path.exists() {
+            fs::write(partial_path, b"abc")
+                .map_err(|error| format!("Could not write test model download: {error}"))?;
+        } else if sequence == "corrupt-then-valid" {
+            if let Some(parent) = attempt_path.parent() {
+                fs::create_dir_all(parent)
+                    .map_err(|error| format!("Could not create test model folder: {error}"))?;
+            }
+            fs::write(&attempt_path, b"1")
+                .map_err(|error| format!("Could not write test model attempt: {error}"))?;
+            fs::write(partial_path, b"zzz")
+                .map_err(|error| format!("Could not write test corrupt model download: {error}"))?;
+        } else {
+            return Err(format!(
+                "Unsupported test model download sequence: {sequence}"
+            ));
+        }
+        return Ok(());
+    }
+
     let mut command = Command::new(curl_executable());
     command
         .arg("-L")
@@ -1141,9 +1289,13 @@ fn run_model_download_curl(
 }
 
 fn remove_invalid_partial(partial_path: &Path, reason: &str) -> Result<(), String> {
-    fs::remove_file(partial_path).map_err(|error| {
-        format!("Could not remove invalid partial model download after {reason}: {error}")
-    })
+    match fs::remove_file(partial_path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(format!(
+            "Could not remove invalid partial model download after {reason}: {error}"
+        )),
+    }
 }
 
 fn finalize_partial_download(
@@ -1234,6 +1386,26 @@ fn download_model_artifact_inner(
     run_model_download_curl(manifest, &partial_path, resume)?;
     if finalize_partial_download(manifest, local_path, &partial_path)? {
         return Ok(());
+    }
+    if !partial_path.exists() {
+        write_model_download_state(
+            manifest,
+            local_path,
+            "Downloading",
+            "CivicSuite is retrying the pinned Gemma model download from the beginning after discarding an invalid full-size file."
+                .to_string(),
+            None,
+        )?;
+        run_model_download_curl(manifest, &partial_path, false)?;
+        if finalize_partial_download(manifest, local_path, &partial_path)? {
+            return Ok(());
+        }
+        if !partial_path.exists() {
+            return Err(
+                "Model download reached the pinned size, but checksum verification did not pass. The invalid file was discarded; retry will start a clean download."
+                    .to_string(),
+            );
+        }
     }
     let downloaded_size = fs::metadata(&partial_path)
         .map_err(|error| format!("Could not inspect downloaded model: {error}"))?
@@ -1499,6 +1671,35 @@ pub(crate) fn pinned_runtime_model() -> Result<String, String> {
     Ok(manifest.model.runtime_model)
 }
 
+fn local_generation_prompt(prompt: &str) -> String {
+    format!(
+        "{prompt}\n\nReturn a concise staff-review draft in under 180 words. Use plain text only. Do not include hidden reasoning or analysis."
+    )
+}
+
+fn gemma_raw_generation_prompt(prompt: &str) -> String {
+    format!(
+        "<start_of_turn>user\n{}<end_of_turn>\n<start_of_turn>model\n",
+        local_generation_prompt(prompt)
+    )
+}
+
+fn local_generation_request_body(runtime_model: &str, prompt: &str) -> String {
+    serde_json::json!({
+        "model": runtime_model,
+        "prompt": gemma_raw_generation_prompt(prompt),
+        "raw": true,
+        "stream": false,
+        "options": {
+            "temperature": 0.2,
+            "num_predict": LOCAL_GENERATION_NUM_PREDICT,
+            "num_ctx": LOCAL_GENERATION_NUM_CTX,
+            "stop": ["<end_of_turn>", "<start_of_turn>"]
+        }
+    })
+    .to_string()
+}
+
 pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -1516,24 +1717,14 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
                 .to_string(),
         );
     }
-    let body = serde_json::json!({
-        "model": runtime_model.as_str(),
-        "prompt": prompt,
-        "stream": false,
-        "options": {
-            "temperature": 0.2
-        }
-    })
-    .to_string();
+    let body = local_generation_request_body(runtime_model.as_str(), prompt);
     let endpoint = format!("{}/api/generate", ollama_base_url());
-    let response = http_post_json_text(&endpoint, &body, 180_000)?;
-    let payload: OllamaGenerateResponse = serde_json::from_str(json_object_slice(&response))
-        .map_err(|error| format!("Could not parse local AI response: {error}"))?;
-    let generated = payload.response.trim();
+    let response = http_post_json_text(&endpoint, &body, LOCAL_GENERATION_TIMEOUT_MILLIS)?;
+    let generated = parse_ollama_generate_text(&response)?;
     if generated.is_empty() {
         return Err("Local AI returned an empty draft.".to_string());
     }
-    Ok((runtime_model, generated.to_string()))
+    Ok((runtime_model, generated))
 }
 
 pub fn model_action(action: &str) -> Result<ModelActionResult, String> {
@@ -1654,6 +1845,103 @@ mod tests {
             .readiness_checks
             .iter()
             .any(|check| check.id == "runtime-model" && check.required));
+    }
+
+    #[test]
+    fn local_generation_request_bounds_slow_ollama_outputs() {
+        let body = local_generation_request_body(
+            "civicsuite-gemma4-12b-qat:q4_0",
+            "Draft a staff response for marker D100-AI-MODEL-MARKER-20260620.",
+        );
+        let payload: serde_json::Value = serde_json::from_str(&body).expect("valid json");
+
+        assert_eq!(payload["model"], "civicsuite-gemma4-12b-qat:q4_0");
+        assert_eq!(payload["raw"], true);
+        assert_eq!(payload["stream"], false);
+        assert_eq!(payload["options"]["temperature"], 0.2);
+        assert_eq!(payload["options"]["num_predict"], 192);
+        assert_eq!(payload["options"]["num_ctx"], 3072);
+        assert_eq!(payload["options"]["stop"][0], "<end_of_turn>");
+        let prompt = payload["prompt"].as_str().expect("prompt string");
+        assert!(prompt.starts_with("<start_of_turn>user\n"));
+        assert!(prompt.contains("under 180 words"));
+        assert!(prompt.ends_with("<start_of_turn>model\n"));
+    }
+
+    #[test]
+    fn runtime_modelfile_uses_gemma_instruction_template() {
+        let contents = runtime_modelfile_contents("gemma-4-12b-it-qat-q4_0.gguf");
+
+        assert!(contents.contains("FROM ./gemma-4-12b-it-qat-q4_0.gguf"));
+        assert!(contents.contains("TEMPLATE"));
+        assert!(contents.contains("<start_of_turn>user"));
+        assert!(contents.contains("<start_of_turn>model"));
+        assert!(contents.contains("PARAMETER stop \"<end_of_turn>\""));
+    }
+
+    #[test]
+    fn ollama_generate_parser_accepts_non_streaming_response_text() {
+        let body = r#"{"model":"civicsuite-gemma4-12b-qat:q4_0","response":"Draft ready for review.","done":true}"#;
+
+        let parsed = parse_ollama_generate_text(body).expect("parse response");
+
+        assert_eq!(parsed, "Draft ready for review.");
+    }
+
+    #[test]
+    fn ollama_generate_parser_accepts_message_content_shape() {
+        let body = r#"{"model":"civicsuite-gemma4-12b-qat:q4_0","message":{"role":"assistant","content":"Guidance draft ready."},"done":true}"#;
+
+        let parsed = parse_ollama_generate_text(body).expect("parse response");
+
+        assert_eq!(parsed, "Guidance draft ready.");
+    }
+
+    #[test]
+    fn ollama_generate_parser_combines_streamed_json_lines() {
+        let body = concat!(
+            r#"{"response":"Minutes ","done":false}"#,
+            "\n",
+            r#"{"response":"draft ready.","done":true}"#
+        );
+
+        let parsed = parse_ollama_generate_text(body).expect("parse streamed response");
+
+        assert_eq!(parsed, "Minutes draft ready.");
+    }
+
+    #[test]
+    fn ollama_generate_parser_preserves_empty_output_detection() {
+        let body = r#"{"model":"civicsuite-gemma4-12b-qat:q4_0","done":true}"#;
+
+        let parsed = parse_ollama_generate_text(body).expect("parse empty response");
+
+        assert_eq!(parsed, "");
+    }
+
+    #[test]
+    fn http_response_body_decodes_chunked_ollama_json() {
+        let body = r#"{"response":"Draft from chunked response.","done":true}"#;
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{}\r\n0\r\n\r\n",
+            body.len(),
+            body
+        );
+
+        let decoded = decode_http_response_body(&response).expect("decode chunked body");
+        let parsed = parse_ollama_generate_text(&decoded).expect("parse decoded body");
+
+        assert_eq!(parsed, "Draft from chunked response.");
+    }
+
+    #[test]
+    fn http_response_body_preserves_plain_json_body() {
+        let response =
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"response\":\"Plain body.\"}";
+
+        let decoded = decode_http_response_body(response).expect("decode plain body");
+
+        assert_eq!(decoded, "{\"response\":\"Plain body.\"}");
     }
 
     #[test]
@@ -1846,6 +2134,77 @@ mod tests {
             assert!(!finalized);
             assert!(!local_path.exists());
             assert!(!partial_path.exists());
+        });
+    }
+
+    #[test]
+    fn missing_invalid_partial_cleanup_is_not_user_visible_failure() {
+        with_temp_state_dir(|root| {
+            let partial_path = root.join("Data").join("models").join("missing.gguf.part");
+
+            remove_invalid_partial(&partial_path, "it was already removed")
+                .expect("missing invalid partial cleanup is idempotent");
+        });
+    }
+
+    #[test]
+    fn corrupt_full_size_download_retries_clean_file_before_failing() {
+        with_temp_state_dir(|_| {
+            let mut manifest = parse_manifest().expect("manifest parses");
+            manifest.model.artifact.size_bytes = 3;
+            manifest.model.artifact.sha256 = format!("{:x}", Sha256::digest(b"abc"));
+            let local_path = model_path(&manifest.model.artifact);
+
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "99999999999");
+            env::set_var(
+                "CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE",
+                "corrupt-then-valid",
+            );
+
+            download_model_artifact(&manifest, &local_path)
+                .expect("corrupt first download is retried once with a clean file");
+
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            env::remove_var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE");
+
+            assert_eq!(fs::read(&local_path).expect("local model"), b"abc");
+            assert!(!partial_download_path(&local_path).exists());
+            assert!(checksum_marker_matches(
+                &local_path,
+                &manifest.model.artifact.sha256
+            ));
+            let state = read_model_download_state().expect("download state");
+            assert_eq!(state.status, "Verified");
+        });
+    }
+
+    #[test]
+    fn repeated_corrupt_full_size_download_reports_checksum_failure() {
+        with_temp_state_dir(|_| {
+            let mut manifest = parse_manifest().expect("manifest parses");
+            manifest.model.artifact.size_bytes = 3;
+            manifest.model.artifact.sha256 = format!("{:x}", Sha256::digest(b"abc"));
+            let local_path = model_path(&manifest.model.artifact);
+
+            env::set_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE", "99999999999");
+            env::set_var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE", "corrupt-always");
+
+            let error = download_model_artifact(&manifest, &local_path)
+                .expect_err("repeated corrupt downloads fail with a checksum error");
+
+            env::remove_var("CIVICSUITE_AVAILABLE_DISK_BYTES_OVERRIDE");
+            env::remove_var("CIVICSUITE_TEST_MODEL_DOWNLOAD_SEQUENCE");
+
+            assert!(error.contains("checksum verification did not pass"));
+            assert!(!error.contains("Could not inspect downloaded model"));
+            assert!(!local_path.exists());
+            assert!(!partial_download_path(&local_path).exists());
+            let state = read_model_download_state().expect("download state");
+            assert_eq!(state.status, "Download failed");
+            assert!(state
+                .last_error
+                .unwrap_or_default()
+                .contains("checksum verification did not pass"));
         });
     }
 
