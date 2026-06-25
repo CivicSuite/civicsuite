@@ -156,7 +156,7 @@ Evidence:
 
 ## Current Scope Boundary
 
-Active target: CivicInspect v1.0.0 suite-truth reconciliation.
+Superseded (historical, completed): CivicInspect v1.0.0 suite-truth reconciliation.
 
 State on resume: the Clerk-Core public-use starter, CivicCode v1.0.0, CivicAccess v1.0.0, CivicZone v1.0.0, CivicPlan v1.0.0, and CivicPermit v1.0.0 have already passed their suite truth gates. The root active release queue now names CivicInspect as the active module. CivicInspect source PR #10 has merged, release `v1.0.0` is published, and this suite run reconciles installer/module-selection truth, compatibility truth, release recovery docs, and verifier truth for CivicInspect only. `docs/CivicSuiteUnifiedSpec.md` remains the source of truth for the 27 product modules plus CivicCore.
 
