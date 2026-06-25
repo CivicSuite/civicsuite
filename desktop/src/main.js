@@ -773,6 +773,24 @@ const state = {
   app: fallbackState
 };
 
+// First-run wizard focus management.
+// Reassigned (hence `let`). Tracks the current step we last auto-advanced to, so
+// scroll/focus fire ONLY when the backend advances current_step_id — never on
+// per-keystroke or unrelated re-renders (nav, audit toggle, surface switch).
+let lastFocusedFirstRunStepId = null;
+
+// Step ids that render text inputs ([data-setup-field]). EXCLUDES "modules"
+// (checkbox UI) and the installer-notice steps (no form).
+const FIRST_RUN_FORM_STEP_IDS = new Set(["locations", "city-profile", "first-admin", "backup"]);
+
+function announce(message) {
+  const region = byId("sr-announce");
+  if (!region) return;
+  // Clear then set on next frame so repeated identical text still re-announces.
+  region.textContent = "";
+  window.requestAnimationFrame(() => { region.textContent = message; });
+}
+
 function byId(id) {
   return document.getElementById(id);
 }
@@ -780,6 +798,74 @@ function byId(id) {
 function scrollGuidedReviewIntoView(kind) {
   window.requestAnimationFrame(() => {
     document.querySelector(`[data-guided-review="${kind}"]`)?.scrollIntoView({ block: "start" });
+  });
+}
+
+function maybeAdvanceFirstRunFocus() {
+  const firstRun = state.app && state.app.first_run;
+
+  // Guard D: never hijack the Resident/Public surface (wizard can render there today).
+  // Do NOT reset the tracker here — only a genuine finish resets it (see D3 fix).
+  if (isPublicSurface()) return;
+
+  // Guard E: wizard must exist; reset ONLY when setup is genuinely finished.
+  if (!firstRun) return;
+  if (firstRun.finished) { lastFocusedFirstRunStepId = null; return; }
+
+  // Guard F: scope strictly to the wizard's mounted current step (never a global
+  // [data-setup-field] query → no collision with the Settings duplicate).
+  // If the wizard is simply not mounted on this area (e.g. Settings), do NOT reset
+  // the tracker, or returning to Home would re-fire scroll/focus on a non-advance.
+  const currentStepEl = document.querySelector(
+    '[data-setup-context="first-run"] .first-run-step.current'
+  );
+  if (!currentStepEl) return;
+
+  const stepId = currentStepEl.dataset.stepId || null;
+
+  // Guard B: fire ONLY when the current step CHANGED. Suppresses scroll-jank on
+  // audit-toggle/nav/surface re-renders, Home<->Settings round-trips, and the
+  // re-scroll loop on a failed Save (which re-renders without advancing the step).
+  if (!stepId || stepId === lastFocusedFirstRunStepId) return;
+  lastFocusedFirstRunStepId = stepId;
+
+  // Announce the step change via the persistent region (Guard D already excluded public).
+  const heading = currentStepEl.querySelector("h3");
+  announce(`Action needed: ${heading ? heading.textContent : "complete this setup step"}.`);
+
+  const reduceMotion =
+    window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  window.requestAnimationFrame(() => {
+    const el = document.querySelector(
+      '[data-setup-context="first-run"] .first-run-step.current'
+    );
+    if (!el) return;
+
+    el.scrollIntoView({
+      block: "nearest",                          // avoids topbar overlap
+      behavior: reduceMotion ? "auto" : "smooth" // no animation under reduced-motion
+    });
+
+    // Guard C: auto-FOCUS only for steps that render text fields.
+    if (!FIRST_RUN_FORM_STEP_IDS.has(stepId)) return;
+
+    // Guard (D4): skip auto-focus if the step's primary action is admin-locked/disabled —
+    // focusing an inert form is a new dead-end; the lock message already explains why.
+    const actionBtn = el.querySelector("[data-first-run-action]");
+    if (actionBtn && actionBtn.disabled) return;
+
+    // Guard A: never steal focus if the user is already in THIS step.
+    const active = document.activeElement;
+    if (active && el.contains(active) &&
+        active.matches("input, textarea, select, button")) return;
+
+    // First EMPTY focusable field within the current step; else the first field.
+    const fields = el.querySelectorAll(
+      'input[data-setup-field]:not([readonly]):not([disabled])'
+    );
+    const target = Array.from(fields).find((f) => !f.value) || fields[0] || null;
+    target && target.focus({ preventScroll: true }); // we already scrolled
   });
 }
 
@@ -1213,7 +1299,7 @@ function renderFirstRunStep(step, index) {
     customSelectedModuleIds().length === 0;
   const actionLocked = adminLocked || moduleSelectionLocked;
   return `
-    <article class="first-run-step ${step.current ? "current" : ""}">
+    <article class="first-run-step ${step.current ? "current" : ""}" data-step-id="${step.id}"${step.current ? ' aria-current="step"' : ""}>
       <strong>${index + 1}</strong>
       <div>
         <div class="step-header">
@@ -1222,7 +1308,12 @@ function renderFirstRunStep(step, index) {
         </div>
         <p>${step.summary}</p>
         <small>${step.detail}</small>
-        ${step.current ? `<p class="next-action"><strong>Next:</strong> ${step.next_action}</p>` : ""}
+        ${step.current && !isPublicSurface() && !(state.actionResult && state.actionResult.accepted === false) ? `
+          <div class="first-run-action-needed action-result blocked">
+            <strong>Action needed</strong>
+            <span>${step.next_action}</span>
+          </div>
+        ` : ""}
         ${renderSetupFields(step)}
         ${step.current ? `
           <div class="setup-actions">
@@ -1385,7 +1476,7 @@ function renderFirstRunWizard({ compact = false } = {}) {
           <strong>${firstRun.locations.backup_root}</strong>
         </div>
       </div>
-      <div class="first-run-list">
+      <div class="first-run-list" data-setup-context="first-run">
         ${steps.map(renderFirstRunStep).join("")}
       </div>
       ${renderActionResult()}
@@ -4705,7 +4796,7 @@ function renderModules() {
       <h2>Settings</h2>
       <p>The module manager shares this screen with the local city profile, first admin, and installed City Core package on this Windows machine.</p>
     </section>
-    <section class="workflow-editor">
+    <section class="workflow-editor" data-setup-context="settings">
       <div class="workflow-form">
         <h3>City Profile</h3>
         <label>City name <input type="text" data-setup-field="cityName" value="${state.setupDraft.cityName}" autocomplete="organization" /></label>
@@ -4923,6 +5014,7 @@ function render() {
     </div>
   `;
   bindEvents();
+  maybeAdvanceFirstRunFocus();
 }
 
 function bindEvents() {

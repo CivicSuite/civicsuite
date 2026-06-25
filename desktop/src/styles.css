@@ -652,6 +652,16 @@ main {
   width: 100%;
 }
 
+/* Visible focus ring for setup fields incl. the auto-focused first-run field
+   (WCAG 2.2 AA 2.4.11/2.4.13). :focus (not :focus-visible) so programmatic focus
+   from maybeAdvanceFirstRunFocus() is also ringed. Mirrors the navy token. */
+.setup-form input:focus,
+.workflow-form input:focus {
+  border-color: #1e5f74; /* navy, already in file (L96/103/462...) */
+  box-shadow: 0 0 0 3px rgba(30, 95, 116, 0.16);
+  outline: none;
+}
+
 .setup-actions {
   display: flex;
   gap: 10px;
@@ -676,6 +686,13 @@ main {
   background: #fff4d8;
   border: 1px solid #ead49a;
   color: #6d4d10;
+}
+
+/* First-run "Action needed" affordance — reuses .action-result.blocked amber,
+   adds the gold current-step accent so it reads as the action point. */
+.first-run-action-needed {
+  border-left: 3px solid #d8a42b; /* matches .first-run-step.current border, L611-613 */
+  margin-top: 12px;
 }
 
 .action-result span,
@@ -975,4 +992,17 @@ main {
     max-width: none;
     width: 88vw;
   }
+}
+
+/* Visually-hidden live region (persistent SR announcer; lives outside #app). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }

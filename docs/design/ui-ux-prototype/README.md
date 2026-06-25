@@ -21,12 +21,12 @@ This prototype is that visual spec. Any pull request that touches user-visible c
 | `clerk.jsx` | CivicClerk module screens (meetings, agendas, minutes). |
 | `records.jsx` | CivicRecords AI module screens (request lifecycle). |
 | `resident.jsx` | Resident-facing surface. |
-| `admin.jsx` | IT/Admin surface. |
+| `admin.jsx` | IT/Admin surface. Includes the canonical first-run setup checklist: a three-state step list (done / current / upcoming) where the current step is the single, unmistakable action point — gold accent + `aria-current="step"` + an "Action needed" banner + auto-focused first empty field. The same pattern appears in the desktop app via `.first-run-action-needed` (amber) and a persistent `aria-live` region; the two surfaces express one pattern in each codebase's class vocabulary. |
 | `modules-stub.jsx` | Placeholder shape for unbuilt modules (used as the canonical "module not yet implemented" pattern). |
 | `data.jsx` | Mock data + role/permission model used by the prototype. |
 | `icons.jsx` | Icon set + naming conventions. |
 | `tweaks-panel.jsx` | Live density/spacing/color tweaks panel — also the source of truth for the design tokens. |
-| `styles.css` | Design tokens (typography, spacing, color, rules), component styles. 1,241 lines. |
+| `styles.css` | Design tokens (typography, spacing, color, rules), component styles. Includes the canonical `.setup-step` first-run checklist block. |
 
 ## Three architectural commitments in the prototype
 
