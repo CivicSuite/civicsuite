@@ -36,6 +36,7 @@ function AdminConsole({ install, setInstall, setPage }) {
           <button className={tab==='identity'?'on':''} onClick={() => setTab('identity')}>Identity & SSO</button>
           <button className={tab==='backups'?'on':''} onClick={() => setTab('backups')}>Backups</button>
           <button className={tab==='updates'?'on':''} onClick={() => setTab('updates')}>Updates<span className="pill">1</span></button>
+          <button className={tab==='setup'?'on':''} onClick={() => setTab('setup')}>First-run setup<span className="badge warn dot" style={{marginLeft:6}}>1</span></button>
         </div>
       </div>
 
@@ -142,6 +143,56 @@ function AdminConsole({ install, setInstall, setPage }) {
               </div>
             </div>
           </>
+        )}
+
+        {tab === 'setup' && (
+          <div className="card" style={{ maxWidth: 720 }}>
+            <div className="card-h">
+              <div className="ttl">City Core setup checklist <small>local - this machine</small></div>
+            </div>
+            <div className="card-b" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="setup-step done">
+                <div className="num"><Icon name="check" size={13} /></div>
+                <div>
+                  <div className="setup-step-h"><h3>Select product modules</h3><span className="badge ok dot">Done</span></div>
+                  <p className="muted" style={{ fontSize: 12 }}>City Core profile selected.</p>
+                </div>
+              </div>
+
+              <div className="setup-step current" aria-current="step">
+                <div className="num">3</div>
+                <div>
+                  <div className="setup-step-h"><h3>City profile</h3><span className="badge warn dot">Current</span></div>
+                  <p className="muted" style={{ fontSize: 12 }}>Identify this installation's city, contacts, and time zone.</p>
+
+                  {/* Action-needed affordance. In the app this is announced via a persistent
+                      aria-live region (not this node); shown here for the visual pattern. */}
+                  <div className="alert warn setup-action-needed" role="status">
+                    <Icon name="flag" size={14} className="ic" />
+                    <div className="body"><b>Action needed</b>Fill in your city details below, then Save city profile.</div>
+                  </div>
+
+                  {/* First empty field is auto-focused on step change (logic lives in the app). */}
+                  <div className="setup-fields" data-setup-context="first-run">
+                    <div className="field"><label>City name</label>
+                      <input className="input" data-setup-field="cityName" placeholder="e.g. Brookfield" />
+                    </div>
+                    <div className="field"><label>State</label><input className="input" data-setup-field="state" /></div>
+                    <div className="field"><label>Records contact</label><input className="input" type="email" data-setup-field="recordsContact" /></div>
+                  </div>
+                  <button className="btn primary" style={{ marginTop: 10 }}>Save city profile</button>
+                </div>
+              </div>
+
+              <div className="setup-step">
+                <div className="num">4</div>
+                <div>
+                  <div className="setup-step-h"><h3>Create first administrator</h3><span className="badge dot" style={{ background: 'var(--paper-3)', color: 'var(--ink-3)' }}>Upcoming</span></div>
+                  <p className="muted" style={{ fontSize: 12 }}>Available once the city profile is saved.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {tab === 'modules' && (

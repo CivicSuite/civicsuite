@@ -634,6 +634,30 @@ input, select, textarea { font: inherit; color: inherit; }
 .alert .body b { display: block; font-weight: 600; margin-bottom: 2px; }
 .alert .actions { display: flex; gap: 6px; margin-top: 8px; }
 
+/* First-run setup checklist (canonical three-state step list). */
+.setup-step {
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr);
+  gap: var(--gap);
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+.setup-step.current { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.setup-step > .num {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 600;
+  background: var(--paper-2); color: var(--ink-3);
+}
+.setup-step.current > .num { background: var(--navy); color: #fff; }
+.setup-step.done > .num { background: var(--ok-soft); color: var(--ok); }
+.setup-step-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.setup-step-h h3 { margin: 0; font-family: var(--font-serif); font-size: 15px; }
+.setup-action-needed { margin: 10px 0; }
+.setup-fields { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-top: 6px; }
+/* .input:focus (navy ring, L612) already provides the AA focus appearance. */
+
 /* Empty */
 .empty {
   text-align: center;
