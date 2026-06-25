@@ -1,0 +1,1673 @@
+﻿{
+  "actions": [
+    "set-codeTitle=D111 Marker Ordinance",
+    "set-codeCitation=D111-ORD-2026-0625",
+    "set-codeSourcePath=D111 local typed source reference",
+    "set-codeImportedBy=Cleanroom Admin",
+    "set-codeBody=Section 1. Local model lifecycle proof shall include the exact marker D111-AI-MODEL-MARKER-20260625. Guidance generated from this source must mention D111-AI-MODEL-MARKER-20260625.",
+    "clicked-[data-work-action=\"import-code-source\"]",
+    "clicked-[data-work-action=\"suggest-code-guidance\"]",
+    "clicked-confirm-Confirm Generate Guidance"
+  ],
+  "afterImportKeys": [
+    "product_name",
+    "status_label",
+    "local_only",
+    "navigation",
+    "modules",
+    "module_profiles",
+    "module_selection",
+    "installer_steps",
+    "first_run",
+    "city_profile",
+    "users",
+    "access",
+    "model",
+    "health",
+    "city_work"
+  ],
+  "bodyText": "WINDOWS LOCAL 1.0\n\nCivicSuite\nStaff\nResident/Public\nIT/Admin\nAudit Trail\nSign Out\nHome\nWork that needs attention\nMeetings & Notices\nAgendas, notices, minutes, votes\nRecords Requests\nIntake, review, response, exports\nCode & Ordinances\nSearch, imports, guidance, handoffs\nPublic Notices\nDeadlines, proof, archive packets\nSearch City Knowledge\nCross-module local search with citations\nSystem Health\nLocal services, model, backup, repair\nSettings\nCity profile, users, modules\n\nSTAFF\n\nCode & Ordinances\n\nImport local code sources with citation text and create clerk handoffs for ordinance or resolution work.\n\nSelected code source for actions: No code source selected yet. Import a source or choose Work On This before publishing, syncing, or handing off.\n\nImport Code Source\nSource title\nCitation\nSource file path or reference\nChoose File\nImported by\nSource text\nImport Source\nPublish Source\nUnpublish Source\nOpen Exports Folder\nCodifier Sync\nCodifier\nAuthoritative URL\nVersion label\nSync error\nAmendment or stale note\nRecord Sync\nRecord Sync Failure\nRetry Sync\nMark Stale\nGuidance & Summary\nStaff guidance\nPlain-English summary\nGenerate Local AI Guidance\nSave Guidance Draft\nApprove Guidance\nClerk Handoff\nHandoff summary\nCreate Clerk Handoff\nAsk Code Question\n\nStaff answers can use internal guidance and citations, but still stay non-authoritative.\n\nQuestion\nAnswer Code Question\nNeeds attention\nImport a code source before changing its public status.\nReview the required fields and try again.\n\nAsk a code question to see cited staff answers.\n\nNo local code sources have been imported yet.\n\nAudit Trail\n\nLocal workflow actions and public publication gates record module, action, hash, time, and summary in the Windows data profile.\n\nPublication Gates\nNo publications\n\nNo human-approved public records have been published yet.\n\nWorkflow Actions\ncivicrecords-ai\n\ncreate-records-request\n\nCreated records request REQ-0001 for: D111 Records Requester\n\n6/25/2026, 11:27:26 AM Audit hash 247947000cfc; previous GENESIS\ncivicrecords-ai\n\nrecord-records-search\n\nRecorded records search source note.\n\n6/25/2026, 11:29:27 AM Audit hash 2d3ec5296e03; previous 247947000cfc\ncivicrecords-ai\n\nsuggest-records-response\n\nGenerated local AI records response draft with civicsuite-gemma4-12b-qat:q4_0; human approval still required.\n\n6/25/2026, 11:30:32 AM Audit hash 1a7bb629f68e; previous 2d3ec5296e03",
+  "guidanceDraft": null,
+  "appState": {
+    "product_name": "CivicSuite",
+    "status_label": "Windows Local 1.0 desktop",
+    "local_only": true,
+    "navigation": [
+      {
+        "id": "home",
+        "label": "Home",
+        "description": "Work that needs attention"
+      },
+      {
+        "id": "meetings",
+        "label": "Meetings & Notices",
+        "description": "Agendas, notices, minutes, votes"
+      },
+      {
+        "id": "records",
+        "label": "Records Requests",
+        "description": "Intake, review, response, exports"
+      },
+      {
+        "id": "code",
+        "label": "Code & Ordinances",
+        "description": "Search, imports, guidance, handoffs"
+      },
+      {
+        "id": "notice",
+        "label": "Public Notices",
+        "description": "Deadlines, proof, archive packets"
+      },
+      {
+        "id": "search",
+        "label": "Search City Knowledge",
+        "description": "Cross-module local search with citations"
+      },
+      {
+        "id": "health",
+        "label": "System Health",
+        "description": "Local services, model, backup, repair"
+      },
+      {
+        "id": "settings",
+        "label": "Settings",
+        "description": "City profile, users, modules"
+      }
+    ],
+    "modules": [
+      {
+        "id": "civiccore",
+        "display_name": "CivicCore",
+        "role": "shared platform",
+        "version": "1.2.0",
+        "installer_status": "v1_2_0_windows_local_platform_contracts",
+        "civiccore_requirement": null,
+        "required": true,
+        "selectable": false,
+        "installed": true,
+        "enabled": true,
+        "contract_ready": true,
+        "blocked_reason": null,
+        "dependencies": [],
+        "proof_required": [
+          "install",
+          "version_check",
+          "compatibility_matrix_check",
+          "windows_local_contracts",
+          "task_queue_worker"
+        ],
+        "backup_restore_hooks": [
+          "config",
+          "Data",
+          "audit-log",
+          "model-registry"
+        ],
+        "route_count": 2,
+        "service_count": 3,
+        "permission_count": 4,
+        "task_count": 4,
+        "lifecycle_install": "always-installed-with-profile",
+        "lifecycle_update": "manifest-versioned",
+        "lifecycle_disable": "not-allowed-required-foundation",
+        "lifecycle_uninstall": "backup-first-profile-removal",
+        "model_required": false
+      },
+      {
+        "id": "civicrecords-ai",
+        "display_name": "CivicRecords AI",
+        "role": "records workflow",
+        "version": "1.7.3",
+        "installer_status": "v1_7_3_city_core_release_car",
+        "civiccore_requirement": "1.2.0",
+        "required": false,
+        "selectable": true,
+        "installed": true,
+        "enabled": true,
+        "contract_ready": true,
+        "blocked_reason": null,
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart",
+          "repair",
+          "backup",
+          "restore"
+        ],
+        "backup_restore_hooks": [
+          "Data/workflows/records",
+          "Data/exports/records",
+          "Data/files/records"
+        ],
+        "route_count": 2,
+        "service_count": 2,
+        "permission_count": 4,
+        "task_count": 4,
+        "lifecycle_install": "profile-selected",
+        "lifecycle_update": "manifest-versioned",
+        "lifecycle_disable": "allowed-after-backup",
+        "lifecycle_uninstall": "backup-first-module-data-removal",
+        "model_required": true
+      },
+      {
+        "id": "civicclerk",
+        "display_name": "CivicClerk",
+        "role": "meetings workflow",
+        "version": "1.0.4",
+        "installer_status": "v1_0_4_city_core_release_car",
+        "civiccore_requirement": "1.2.0",
+        "required": false,
+        "selectable": true,
+        "installed": true,
+        "enabled": true,
+        "contract_ready": true,
+        "blocked_reason": null,
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart",
+          "repair",
+          "backup",
+          "restore"
+        ],
+        "backup_restore_hooks": [
+          "Data/workflows/meetings",
+          "Data/exports/meetings",
+          "Data/files/meetings"
+        ],
+        "route_count": 2,
+        "service_count": 2,
+        "permission_count": 4,
+        "task_count": 5,
+        "lifecycle_install": "profile-selected",
+        "lifecycle_update": "manifest-versioned",
+        "lifecycle_disable": "allowed-after-backup",
+        "lifecycle_uninstall": "backup-first-module-data-removal",
+        "model_required": false
+      },
+      {
+        "id": "civiccode",
+        "display_name": "CivicCode",
+        "role": "municipal code",
+        "version": "1.0.8",
+        "installer_status": "v1_0_8_city_core_release_car",
+        "civiccore_requirement": "1.2.0",
+        "required": false,
+        "selectable": true,
+        "installed": true,
+        "enabled": true,
+        "contract_ready": true,
+        "blocked_reason": null,
+        "dependencies": [
+          "civiccore",
+          "civicclerk"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "release_artifacts",
+          "release_attestation"
+        ],
+        "backup_restore_hooks": [
+          "Data/workflows/code",
+          "Data/exports/code",
+          "Data/files/code"
+        ],
+        "route_count": 2,
+        "service_count": 2,
+        "permission_count": 4,
+        "task_count": 4,
+        "lifecycle_install": "profile-selected",
+        "lifecycle_update": "manifest-versioned",
+        "lifecycle_disable": "allowed-after-backup",
+        "lifecycle_uninstall": "backup-first-module-data-removal",
+        "model_required": true
+      },
+      {
+        "id": "civiczone",
+        "display_name": "CivicZone",
+        "role": "zoning and land use",
+        "version": "0.2.2",
+        "installer_status": "demoted_v0_2_2_truth_repair_no_functional_upgrade",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civiczone must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore",
+          "civiccode"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "release_artifacts",
+          "version_label_matches_recovery_status"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicplan",
+        "display_name": "CivicPlan",
+        "role": "planning policy lookup",
+        "version": "0.2.2",
+        "installer_status": "demoted_v0_2_2_truth_repair_no_functional_upgrade",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicplan must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore",
+          "civiczone",
+          "civicclerk"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "release_artifacts",
+          "version_label_matches_recovery_status"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicpermit",
+        "display_name": "CivicPermit",
+        "role": "permit intake readiness",
+        "version": "0.2.2",
+        "installer_status": "demoted_v0_2_2_truth_repair_no_functional_upgrade",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicpermit must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore",
+          "civiccode",
+          "civiczone"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "release_artifacts",
+          "version_label_matches_recovery_status"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicaccess",
+        "display_name": "CivicAccess",
+        "role": "accessibility and public access workflow",
+        "version": "0.2.0",
+        "installer_status": "excluded_from_city_core_needs_work_probe",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicaccess must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "gap_closure",
+          "re_probe",
+          "public_use_gate"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicinspect",
+        "display_name": "CivicInspect",
+        "role": "inspection workflow",
+        "version": "0.2.2",
+        "installer_status": "demoted_v0_2_2_truth_repair_no_functional_upgrade",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicinspect must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore",
+          "civiccode",
+          "civicpermit"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "release_artifacts",
+          "version_label_matches_recovery_status"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicgrants",
+        "display_name": "CivicGrants",
+        "role": "grants workflow",
+        "version": "0.2.0",
+        "installer_status": "demoted_v0_2_0_recovery_label",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicgrants must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore",
+          "civicrecords-ai"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "version_label_matches_recovery_status"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicprocure",
+        "display_name": "CivicProcure",
+        "role": "procurement workflow",
+        "version": "0.2.0",
+        "installer_status": "demoted_v0_2_0_recovery_label",
+        "civiccore_requirement": "1.1.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicprocure must target CivicCore 1.2.0 for Windows Local 1.0",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "version_label_matches_recovery_status"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civiccontracts",
+        "display_name": "CivicContracts",
+        "role": "contract workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civiccontracts must define current_version",
+        "dependencies": [
+          "civiccore",
+          "civicprocure"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicboards",
+        "display_name": "CivicBoards",
+        "role": "boards and commissions workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicboards must define current_version",
+        "dependencies": [
+          "civiccore",
+          "civicclerk"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicnotice",
+        "display_name": "CivicNotice",
+        "role": "public notice workflow",
+        "version": "0.2.0",
+        "installer_status": "v0_2_0_installed_module_release",
+        "civiccore_requirement": "1.2.0",
+        "required": false,
+        "selectable": true,
+        "installed": true,
+        "enabled": true,
+        "contract_ready": true,
+        "blocked_reason": null,
+        "dependencies": [
+          "civiccore",
+          "civicclerk"
+        ],
+        "proof_required": [
+          "module_selection",
+          "install_plan",
+          "artifact_resolution",
+          "health_check",
+          "restart",
+          "backup",
+          "restore",
+          "release_artifacts"
+        ],
+        "backup_restore_hooks": [
+          "Data/workflows/notice",
+          "Data/exports/notice",
+          "Data/files/notice"
+        ],
+        "route_count": 2,
+        "service_count": 2,
+        "permission_count": 4,
+        "task_count": 4,
+        "lifecycle_install": "profile-selected",
+        "lifecycle_update": "manifest-versioned",
+        "lifecycle_disable": "allowed-after-backup",
+        "lifecycle_uninstall": "backup-first-module-data-removal",
+        "model_required": false
+      },
+      {
+        "id": "civic311",
+        "display_name": "Civic311",
+        "role": "resident request workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civic311 must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civiccomms",
+        "display_name": "CivicComms",
+        "role": "communications workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civiccomms must define current_version",
+        "dependencies": [
+          "civiccore",
+          "civicnotice"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicdata",
+        "display_name": "CivicData",
+        "role": "open data workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.4.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicdata must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicregwatch",
+        "display_name": "CivicRegWatch",
+        "role": "federal regulatory intelligence",
+        "version": null,
+        "installer_status": "planned_spec_module_no_runtime_repo",
+        "civiccore_requirement": null,
+        "required": false,
+        "selectable": false,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicregwatch must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "spec_inventory",
+          "runtime_repo_creation",
+          "installer_proof"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicapi",
+        "display_name": "CivicAPI",
+        "role": "public read-only data gateway",
+        "version": null,
+        "installer_status": "planned_spec_module_no_runtime_repo",
+        "civiccore_requirement": null,
+        "required": false,
+        "selectable": false,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicapi must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "spec_inventory",
+          "runtime_repo_creation",
+          "installer_proof"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civichr",
+        "display_name": "CivicHR",
+        "role": "human resources workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civichr must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicbudget",
+        "display_name": "CivicBudget",
+        "role": "budget workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.4.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicbudget must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civiclegal",
+        "display_name": "CivicLegal",
+        "role": "legal workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.11.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civiclegal must define current_version",
+        "dependencies": [
+          "civiccore",
+          "civicclerk"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicelections",
+        "display_name": "CivicElections",
+        "role": "elections workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicelections must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicutility",
+        "display_name": "CivicUtility",
+        "role": "utility billing workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicutility must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civiccourt",
+        "display_name": "CivicCourt",
+        "role": "court workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.4.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civiccourt must define current_version",
+        "dependencies": [
+          "civiccore",
+          "civiclegal"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicsafety",
+        "display_name": "CivicSafety",
+        "role": "public safety workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicsafety must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civiclibrary",
+        "display_name": "CivicLibrary",
+        "role": "library workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civiclibrary must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      },
+      {
+        "id": "civicparks",
+        "display_name": "CivicParks",
+        "role": "parks and recreation workflow",
+        "version": null,
+        "installer_status": "tracked_suite_module_needs_installer_proof",
+        "civiccore_requirement": "0.3.0",
+        "required": false,
+        "selectable": true,
+        "installed": false,
+        "enabled": false,
+        "contract_ready": false,
+        "blocked_reason": "Module civicparks must define current_version",
+        "dependencies": [
+          "civiccore"
+        ],
+        "proof_required": [
+          "install",
+          "health_check",
+          "restart"
+        ],
+        "backup_restore_hooks": [],
+        "route_count": 0,
+        "service_count": 0,
+        "permission_count": 0,
+        "task_count": 0,
+        "lifecycle_install": null,
+        "lifecycle_update": null,
+        "lifecycle_disable": null,
+        "lifecycle_uninstall": null,
+        "model_required": false
+      }
+    ],
+    "module_profiles": [
+      {
+        "id": "minimal",
+        "label": "Minimal",
+        "description": "Install CivicCore only.",
+        "selected": false,
+        "disabled": false,
+        "disabled_reason": null,
+        "module_count": 1
+      },
+      {
+        "id": "clerk-core",
+        "label": "Clerk Core",
+        "description": "Install the clerk-centered starter profile.",
+        "selected": false,
+        "disabled": false,
+        "disabled_reason": null,
+        "module_count": 3
+      },
+      {
+        "id": "city-core",
+        "label": "City Core",
+        "description": "Install the beta-ready city-core profile: records, clerk, municipal code, and public notices on CivicCore.",
+        "selected": true,
+        "disabled": false,
+        "disabled_reason": null,
+        "module_count": 5
+      },
+      {
+        "id": "land-use",
+        "label": "Land Use",
+        "description": "Queued Tier 2 profile; disabled until CivicZone, CivicPlan, CivicPermit, and CivicInspect complete real release turns.",
+        "selected": false,
+        "disabled": true,
+        "disabled_reason": "queued - depends on Tier 2 module work after city-core ships",
+        "module_count": 6
+      },
+      {
+        "id": "full-suite",
+        "label": "Full Suite",
+        "description": "Plan every tracked CivicSuite module after CivicCore.",
+        "selected": false,
+        "disabled": true,
+        "disabled_reason": "15 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite",
+        "module_count": 28
+      },
+      {
+        "id": "custom",
+        "label": "Custom",
+        "description": "Let the operator choose selectable modules.",
+        "selected": false,
+        "disabled": false,
+        "disabled_reason": null,
+        "module_count": 0
+      }
+    ],
+    "module_selection": {
+      "profile_id": "city-core",
+      "profile_label": "City Core",
+      "installed_module_ids": [
+        "civiccore",
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode",
+        "civicnotice"
+      ],
+      "disabled_module_ids": [
+        "civiczone",
+        "civicplan",
+        "civicpermit",
+        "civicaccess",
+        "civicinspect",
+        "civicgrants",
+        "civicprocure",
+        "civiccontracts",
+        "civicboards",
+        "civic311",
+        "civiccomms",
+        "civicdata",
+        "civicregwatch",
+        "civicapi",
+        "civichr",
+        "civicbudget",
+        "civiclegal",
+        "civicelections",
+        "civicutility",
+        "civiccourt",
+        "civicsafety",
+        "civiclibrary",
+        "civicparks"
+      ],
+      "enabled_module_ids": [
+        "civiccore",
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode",
+        "civicnotice"
+      ],
+      "last_updated_unix_seconds": 1782404388
+    },
+    "installer_steps": [
+      "Explain unsigned beta status and Windows SmartScreen.",
+      "Choose install and local data locations.",
+      "Install CivicCore and selected city-core modules.",
+      "Create city profile and first admin user.",
+      "Download and verify Gemma 4 12B quantization-aware weights.",
+      "Verify local health, backup, repair, and uninstall entry points."
+    ],
+    "first_run": {
+      "profile": "windows-local-1.0",
+      "profile_label": "City Core",
+      "local_only": true,
+      "finished": false,
+      "status": "Needs setup",
+      "current_step_id": "finish",
+      "locations": {
+        "install_root": "C:\\Users\\insty\\AppData\\Local\\CivicSuite",
+        "data_root": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data",
+        "backup_root": "C:\\Users\\insty\\Documents\\CivicSuite Backups"
+      },
+      "available_actions": [
+        "review",
+        "choose-location",
+        "select-modules",
+        "create-city-profile",
+        "create-admin",
+        "choose-backup",
+        "download-model",
+        "verify-health",
+        "open-app",
+        "repair",
+        "backup",
+        "uninstall"
+      ],
+      "steps": [
+        {
+          "id": "unsigned-beta",
+          "label": "Welcome and unsigned beta notice",
+          "surface": "Installer",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "CivicSuite is beta software from an unsigned open-source build.",
+          "detail": "The installer explains that this build is not code-signed yet and should be installed only from the official CivicSuite release source after checksum verification.",
+          "next_action": "Review the unsigned beta notice before continuing.",
+          "action": "review"
+        },
+        {
+          "id": "smartscreen",
+          "label": "Windows SmartScreen explanation",
+          "surface": "Installer",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Windows may show an Unknown Publisher warning for this beta.",
+          "detail": "The installer explains why the warning appears and how More info and Run anyway apply to this verified unsigned beta.",
+          "next_action": "Confirm the warning text matches the CivicSuite guidance.",
+          "action": "review"
+        },
+        {
+          "id": "locations",
+          "label": "Install and local data locations",
+          "surface": "Installer",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Choose where the app and city data live on this machine.",
+          "detail": "The default locations stay under the current Windows user profile and can be changed before local services are installed.",
+          "next_action": "Choose install, data, and backup folders.",
+          "action": "choose-location"
+        },
+        {
+          "id": "modules",
+          "label": "Module selection",
+          "surface": "Installer",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "City Core is selected by default and CivicCore is locked on.",
+          "detail": "Custom selection is part of the architecture, but only modules with passing package and proof contracts can be installed from the clerk path.",
+          "next_action": "Review the City Core module set.",
+          "action": "select-modules"
+        },
+        {
+          "id": "city-profile",
+          "label": "City profile",
+          "surface": "First run",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Enter the city name, state, time zone, records contact, and clerk contact.",
+          "detail": "The city profile personalizes notices, records responses, code guidance, and audit context.",
+          "next_action": "Create the city profile.",
+          "action": "create-city-profile"
+        },
+        {
+          "id": "first-admin",
+          "label": "First admin user",
+          "surface": "First run",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Create the first local administrator before staff work begins.",
+          "detail": "The first admin owns setup, model download, users, roles, backup settings, and recovery contact information.",
+          "next_action": "Create the first admin user, then sign in with that local passcode before continuing setup.",
+          "action": "create-admin"
+        },
+        {
+          "id": "backup",
+          "label": "Backup default",
+          "surface": "First run",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Choose the default local backup folder.",
+          "detail": "Backup is configured before city work begins so records, packets, notices, code imports, and audit entries have a recovery path.",
+          "next_action": "Choose the default backup folder.",
+          "action": "choose-backup"
+        },
+        {
+          "id": "model",
+          "label": "Local AI model download",
+          "surface": "First run",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
+          "detail": "A signed-in CivicSuite local administrator downloads the pinned model with resumable download, checksum verification, and local-only default behavior.",
+          "next_action": "Sign in as the local administrator, then download and verify the pinned local model weights.",
+          "action": "download-model"
+        },
+        {
+          "id": "health",
+          "label": "Health verification",
+          "surface": "First run",
+          "required": true,
+          "completed": true,
+          "current": false,
+          "status": "Finished",
+          "summary": "Verify local services, storage, backup, and the local model before staff work.",
+          "detail": "The health step checks the desktop shell, local data store, workflow services, task queue, local AI model, and document storage.",
+          "next_action": "Run local health verification.",
+          "action": "verify-health"
+        },
+        {
+          "id": "finish",
+          "label": "Finish and lifecycle entry points",
+          "surface": "First run",
+          "required": true,
+          "completed": false,
+          "current": true,
+          "status": "Current",
+          "summary": "Open CivicSuite and keep repair, backup, and uninstall reachable.",
+          "detail": "The finish screen links the app, System Health, repair, backup, and uninstall so the same product surface owns the lifecycle.",
+          "next_action": "Open CivicSuite after all setup checks pass.",
+          "action": "open-app"
+        }
+      ]
+    },
+    "city_profile": {
+      "city_name": "Cleanroom Test City",
+      "state": "WA",
+      "time_zone": "America/Los_Angeles",
+      "records_contact": "records@example.gov",
+      "clerk_contact": "clerk@example.gov"
+    },
+    "users": [
+      {
+        "display_name": "Cleanroom Admin",
+        "email": "admin@example.gov",
+        "role": "local-admin",
+        "status": "Active"
+      }
+    ],
+    "access": {
+      "configured": true,
+      "signed_in": true,
+      "operator_name": "Cleanroom Admin",
+      "operator_email": "admin@example.gov",
+      "role": "local-admin",
+      "status": "Signed in",
+      "next_action": "Continue local city work."
+    },
+    "model": {
+      "profile": "windows-local-1.0",
+      "local_only": true,
+      "ready": true,
+      "status": "Ready",
+      "display_name": "Gemma 4 12B QAT Q4_0",
+      "model_id": "gemma-4-12b-it-qat-q4_0",
+      "provider": "Google",
+      "source_repo": "google/gemma-4-12B-it-qat-q4_0-gguf",
+      "source_url": "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf",
+      "resolve_url": "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf",
+      "documentation_url": "https://ai.google.dev/gemma/docs/core",
+      "license": "Apache-2.0",
+      "runtime": "ollama",
+      "ollama_model": "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+      "runtime_model": "civicsuite-gemma4-12b-qat:q4_0",
+      "format": "GGUF",
+      "quantization": "QAT Q4_0",
+      "parameters": "12B",
+      "context_window_tokens": 256000,
+      "approximate_weight_memory_gb": 6.7,
+      "download_size_bytes": 6975877728,
+      "download_resumable": true,
+      "download_requires_consent": true,
+      "download_policy": "Explicit model setup only",
+      "minimum_free_disk_bytes": 15000000000,
+      "artifact": {
+        "file_name": "gemma-4-12b-it-qat-q4_0.gguf",
+        "local_path": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+        "expected_size_bytes": 6975877728,
+        "expected_sha256": "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+        "checksum_required": true,
+        "checksum_source": "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-q4_0-gguf?blobs=true",
+        "etag_blob_id": "2bf67e31a647c65d7037e38fd6e42fd6319da4bc"
+      },
+      "download_state": {
+        "schema_version": 1,
+        "model_id": "gemma-4-12b-it-qat-q4_0",
+        "status": "Verified",
+        "message": "The pinned Gemma model file has passed checksum verification.",
+        "local_path": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+        "partial_path": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf.part",
+        "expected_size_bytes": 6975877728,
+        "local_bytes": 6975877728,
+        "partial_bytes": 0,
+        "progress_percent": 100,
+        "last_error": null,
+        "updated_at_unix_seconds": 1782407812
+      },
+      "checks": [
+        {
+          "id": "metadata",
+          "label": "Pinned model metadata",
+          "ok": true,
+          "status": "OK",
+          "message": "Gemma 4 12B QAT Q4_0 is pinned with official source metadata and checksum requirements.",
+          "next_action": "Keep this pinned model contract with the Windows Local 1.0 installer."
+        },
+        {
+          "id": "artifact-file",
+          "label": "Local model file",
+          "ok": true,
+          "status": "Found",
+          "message": "The pinned GGUF file exists with the expected size in the local CivicSuite data folder.",
+          "next_action": "Download the pinned GGUF file during first-run setup."
+        },
+        {
+          "id": "checksum",
+          "label": "Checksum verification",
+          "ok": true,
+          "status": "Verified",
+          "message": "Checksum verification has been recorded for the pinned file.",
+          "next_action": "Verify the local file against the pinned SHA-256 before enabling AI workflows."
+        },
+        {
+          "id": "runtime",
+          "label": "Local model runtime",
+          "ok": true,
+          "status": "OK",
+          "message": "Ollama is responding at http://127.0.0.1:15434/api/tags and lists civicsuite-gemma4-12b-qat:q4_0.",
+          "next_action": "Start the bundled Ollama runtime after the portable runtime is installed."
+        },
+        {
+          "id": "runtime-model",
+          "label": "Gemma model loaded in Ollama",
+          "ok": true,
+          "status": "Loaded",
+          "message": "civicsuite-gemma4-12b-qat:q4_0 is available to the local Ollama runtime.",
+          "next_action": "Load the verified Gemma model into the local Ollama runtime before staff workflows use AI."
+        },
+        {
+          "id": "registered-model",
+          "label": "CivicCore model registry",
+          "ok": true,
+          "status": "Registered",
+          "message": "CivicCore has a local registry entry for this verified model.",
+          "next_action": "Register the verified model with CivicCore before staff workflows use it."
+        }
+      ],
+      "next_action": "Use first-run setup to download, resume, and verify the pinned local model."
+    },
+    "health": [
+      {
+        "id": "desktop-shell",
+        "label": "Desktop shell",
+        "ok": true,
+        "status": "OK",
+        "message": "Tauri/WebView2 shell is running locally.",
+        "next_action": "Continue the Windows local setup.",
+        "admin_detail": "The desktop process is active.",
+        "actionable": false
+      },
+      {
+        "id": "local-data-folder",
+        "label": "City data folder",
+        "ok": true,
+        "status": "OK",
+        "message": "City data folder is available and writable on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "kind local-folder; path C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data; exists true; writable true; write_check ok",
+        "actionable": false
+      },
+      {
+        "id": "backup-folder",
+        "label": "Backup folder",
+        "ok": true,
+        "status": "OK",
+        "message": "Backup folder is available and writable on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "kind local-folder; path C:\\Users\\insty\\Documents\\CivicSuite Backups; exists true; writable true; write_check ok",
+        "actionable": false
+      },
+      {
+        "id": "task-queue-schema",
+        "label": "Task queue schema",
+        "ok": true,
+        "status": "OK",
+        "message": "Local database and task queue schema are ready.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "kind postgres-task-queue-schema; endpoint http://127.0.0.1:15480/health; http_status 200; database_status ready",
+        "actionable": false
+      },
+      {
+        "id": "postgres",
+        "label": "Local data store",
+        "ok": true,
+        "status": "OK",
+        "message": "Local data store is ready on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "Portable PostgreSQL 17 + pgvector; required; kind postgres; binary C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\pg_ctl.exe; binary_present true; args start -D C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\postgres -l C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\logs\\postgres.log -w; health tcp 127.0.0.1:15432; log C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\logs\\postgres.log; pid none",
+        "actionable": true
+      },
+      {
+        "id": "python-services",
+        "label": "City workflow services",
+        "ok": true,
+        "status": "OK",
+        "message": "City workflow services is ready on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "Bundled CPython module services; required; kind python-services; binary C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\python\\python.exe; binary_present true; args -m civicsuite_runtime.services; health http://127.0.0.1:15480/health; log C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\logs\\python-services.log; pid none",
+        "actionable": true
+      },
+      {
+        "id": "task-queue",
+        "label": "Background work queue",
+        "ok": true,
+        "status": "OK",
+        "message": "Background work queue is ready on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "PostgreSQL-backed CivicCore task queue; required; kind postgres-task-queue; binary C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\python\\python.exe; binary_present true; args -m civiccore.tasks.worker --backend postgres; health supervisor service task-queue; log C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\logs\\task-queue.log; pid 30012",
+        "actionable": true
+      },
+      {
+        "id": "model-runtime",
+        "label": "Local AI model",
+        "ok": true,
+        "status": "OK",
+        "message": "Local AI model is ready on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "Ollama runtime with Gemma 4 12B quantization-aware weights; required; kind model-runtime; binary C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\ollama\\ollama.exe; binary_present true; args serve; health http://127.0.0.1:15434/api/tags; log C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\logs\\model-runtime.log; pid none",
+        "actionable": true
+      },
+      {
+        "id": "file-storage",
+        "label": "Local document storage",
+        "ok": true,
+        "status": "OK",
+        "message": "Local document storage is ready on this Windows profile.",
+        "next_action": "Continue local setup.",
+        "admin_detail": "CivicSuite local file storage; required; kind file-storage; binary C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\python\\python.exe; binary_present true; args -m civicsuite_runtime.storage; health C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\files; log C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\logs\\file-storage.log; pid none",
+        "actionable": true
+      }
+    ],
+    "city_work": {
+      "meeting_bodies": [],
+      "meeting_members": [],
+      "agenda_intakes": [],
+      "meetings": [],
+      "records_requests": [
+        {
+          "id": "records-1782408446-1",
+          "public_tracking_number": "REQ-0001",
+          "requester": "D111 Records Requester",
+          "requester_contact": "",
+          "submitted_via": "Staff intake",
+          "summary": "Records request source text includes D111-AI-MODEL-MARKER-20260625. Use this exact marker in the local AI response draft to prove the model consumed the selected request text.",
+          "deadline": "2026-07-02",
+          "deadline_basis": "Directive 111 lifecycle proof",
+          "status": "local AI draft ready for review",
+          "assigned_to": "",
+          "clarification_notes": [],
+          "search_notes": [
+            "Search note: responsive local source includes D111-AI-MODEL-MARKER-20260625."
+          ],
+          "search_sessions": [],
+          "exemption_reviews": [],
+          "exemption_decisions": [],
+          "fee_estimate": "",
+          "fee_line_items": [],
+          "fee_waiver_reason": "",
+          "citations": [],
+          "response_draft": "<|channel>thought\n<channel|>Staff Review Draft\n\nDate: [Current Date]\nTo: Records Department\nFrom: [Reviewer Name/ID]\nSubject: Response to Request from D111 Records Requester\n\nThe request received from D111 Records Requester has been reviewed. The requester is seeking access to specific records as outlined in their inquiry dated [Date]. \n\nBased on the initial search of our database, we have identified relevant materials that may satisfy this request. We are currently preparing a formal response which will include a list of the documents found, any applicable fees for reproduction, and instructions for the requester to obtain copies.\n\nA final determination regarding the release of these records will be provided shortly. \n\n[Placeholder for specific document citations]\n[Placeholder for fee schedule]\n[Placeholder for additional internal notes]",
+          "approval_notes": [],
+          "exports": [],
+          "release_packages": [],
+          "timeline": [
+            {
+              "id": "records-timeline-1782408446-1",
+              "action": "intake",
+              "actor": "records staff",
+              "note": "Staff created request REQ-0001 with deadline 2026-07-02.",
+              "created_at_unix_seconds": 1782408446
+            },
+            {
+              "id": "records-timeline-1782408567-2",
+              "action": "search recorded",
+              "actor": "records staff",
+              "note": "Search note: responsive local source includes D111-AI-MODEL-MARKER-20260625.",
+              "created_at_unix_seconds": 1782408567
+            },
+            {
+              "id": "records-timeline-1782408632-3",
+              "action": "local AI draft generated",
+              "actor": "local model",
+              "note": "Draft generated with civicsuite-gemma4-12b-qat:q4_0; human approval still required.",
+              "created_at_unix_seconds": 1782408632
+            }
+          ],
+          "public_status_events": [
+            {
+              "id": "records-public-status-1782408446-1",
+              "label": "Request received",
+              "summary": "Request REQ-0001 was created by staff and is being tracked locally.",
+              "status": "received",
+              "created_at_unix_seconds": 1782408446
+            },
+            {
+              "id": "records-public-status-1782408567-2",
+              "label": "Records search in progress",
+              "summary": "Staff recorded progress on the records search.",
+              "status": "searching",
+              "created_at_unix_seconds": 1782408567
+            },
+            {
+              "id": "records-public-status-1782408632-3",
+              "label": "Response drafting",
+              "summary": "A response draft is ready for human staff review.",
+              "status": "local AI draft ready for review",
+              "created_at_unix_seconds": 1782408632
+            }
+          ],
+          "messages": [],
+          "documents": [],
+          "deadline_reviewed_at_unix_seconds": 1782408446,
+          "approved_at_unix_seconds": null,
+          "fulfilled_at_unix_seconds": null,
+          "closed_at_unix_seconds": null,
+          "created_at_unix_seconds": 1782408446
+        }
+      ],
+      "code_sources": [],
+      "code_handoffs": [],
+      "adopted_legislation": [],
+      "audit_entries": [
+        {
+          "id": "audit-1782408446-1",
+          "module_id": "civicrecords-ai",
+          "action": "create-records-request",
+          "summary": "Created records request REQ-0001 for: D111 Records Requester",
+          "created_at_unix_seconds": 1782408446,
+          "previous_hash": "GENESIS",
+          "entry_hash": "247947000cfcc509c1e8bc9b5b32e48a5a60d263ddd572064c74963ec0aeb985"
+        },
+        {
+          "id": "audit-1782408567-2",
+          "module_id": "civicrecords-ai",
+          "action": "record-records-search",
+          "summary": "Recorded records search source note.",
+          "created_at_unix_seconds": 1782408567,
+          "previous_hash": "247947000cfcc509c1e8bc9b5b32e48a5a60d263ddd572064c74963ec0aeb985",
+          "entry_hash": "2d3ec5296e0362c2ca7639fba744726b1b5e6a5699739232b78ffe2d4012a476"
+        },
+        {
+          "id": "audit-1782408632-3",
+          "module_id": "civicrecords-ai",
+          "action": "suggest-records-response",
+          "summary": "Generated local AI records response draft with civicsuite-gemma4-12b-qat:q4_0; human approval still required.",
+          "created_at_unix_seconds": 1782408632,
+          "previous_hash": "2d3ec5296e0362c2ca7639fba744726b1b5e6a5699739232b78ffe2d4012a476",
+          "entry_hash": "1a7bb629f68e4db66a7d109ba5ba0b16176a2196e2fb2957082777d08521d2e3"
+        }
+      ],
+      "publication_events": [],
+      "notification_events": [
+        {
+          "id": "notification-1782408446-1",
+          "module_id": "civicrecords-ai",
+          "record_id": "records-1782408446-1",
+          "audience": "records staff",
+          "channel": "local notification outbox",
+          "subject": "Records request REQ-0001 created",
+          "body": "Staff-created request for D111 Records Requester is saved locally with deadline 2026-07-02.",
+          "status": "ready to send",
+          "created_at_unix_seconds": 1782408446,
+          "sent_at_unix_seconds": null
+        }
+      ]
+    }
+  }
+}

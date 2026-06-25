@@ -1,0 +1,127 @@
+﻿{
+  "nav": [
+    {
+      "tag": "BUTTON",
+      "text": "Home\nWork that needs attention",
+      "area": "home",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Meetings & Notices\nAgendas, notices, minutes, votes",
+      "area": "meetings",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Records Requests\nIntake, review, response, exports",
+      "area": "records",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Code & Ordinances\nSearch, imports, guidance, handoffs",
+      "area": "code",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Public Notices\nDeadlines, proof, archive packets",
+      "area": "notice",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Search City Knowledge\nCross-module local search with citations",
+      "area": "search",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "System Health\nLocal services, model, backup, repair",
+      "area": "health",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Settings\nCity profile, users, modules",
+      "area": "settings",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "View full model readiness",
+      "area": "health",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Open",
+      "area": "meetings",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Open",
+      "area": "records",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Open",
+      "area": "code",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Open",
+      "area": "notice",
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Open",
+      "area": "search",
+      "disabled": false
+    }
+  ],
+  "fields": [],
+  "actions": [],
+  "lifecycle": [
+    {
+      "text": "Open Model Folder",
+      "lifecycle": null,
+      "admin": null,
+      "model": "open-model-folder",
+      "disabled": false
+    },
+    {
+      "text": "Download / Resume",
+      "lifecycle": null,
+      "admin": null,
+      "model": "resume-download",
+      "disabled": false
+    },
+    {
+      "text": "Verify Checksum",
+      "lifecycle": null,
+      "admin": null,
+      "model": "verify-checksum",
+      "disabled": false
+    },
+    {
+      "text": "Load in Ollama",
+      "lifecycle": null,
+      "admin": null,
+      "model": "load-runtime-model",
+      "disabled": false
+    },
+    {
+      "text": "Retry Setup",
+      "lifecycle": null,
+      "admin": null,
+      "model": "retry",
+      "disabled": false
+    }
+  ]
+}

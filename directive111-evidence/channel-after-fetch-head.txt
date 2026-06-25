@@ -1,0 +1,1 @@
+﻿95676097270d255602976dcd753b397358462138		branch 'stage-3a-baremetal-windows' of https://github.com/CivicSuite/civicsuite

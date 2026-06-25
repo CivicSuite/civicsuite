@@ -1,0 +1,15 @@
+{
+  "completed_step_ids": [
+    "unsigned-beta",
+    "smartscreen",
+    "locations",
+    "modules",
+    "city-profile",
+    "first-admin",
+    "backup",
+    "model",
+    "health"
+  ],
+  "last_action": "verify-health",
+  "last_updated_unix_seconds": 1782408209
+}

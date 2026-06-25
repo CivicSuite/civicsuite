@@ -1,0 +1,21 @@
+﻿
+Name        Id Path                                                                     
+----        -- ----                                                                     
+ollama   33128 C:\Users\insty\AppData\Local\Programs\Ollama\ollama.exe                  
+ollama   62356 C:\Users\insty\AppData\Local\CivicSuite\runtime\ollama\ollama.exe        
+postgres 42716 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 47652 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 51912 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 51940 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 54552 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 55052 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 59752 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+postgres 61724                                                                          
+postgres 62404 C:\Users\insty\AppData\Local\CivicSuite\runtime\postgres\bin\postgres.exe
+python   18772 C:\Program Files\Python312\python.exe                                    
+python   30012 C:\Users\insty\AppData\Local\CivicSuite\runtime\python\python.exe        
+python   45700 C:\Users\insty\AppData\Local\CivicSuite\runtime\python\python.exe        
+python   60228 C:\Users\insty\AppData\Local\CivicSuite\runtime\python\python.exe        
+
+
+

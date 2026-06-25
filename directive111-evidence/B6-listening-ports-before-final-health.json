@@ -1,0 +1,26 @@
+﻿[
+    {
+        "LocalAddress":  "127.0.0.1",
+        "LocalPort":  15480,
+        "OwningProcess":  60228,
+        "State":  2
+    },
+    {
+        "LocalAddress":  "127.0.0.1",
+        "LocalPort":  15434,
+        "OwningProcess":  62356,
+        "State":  2
+    },
+    {
+        "LocalAddress":  "127.0.0.1",
+        "LocalPort":  15432,
+        "OwningProcess":  54552,
+        "State":  2
+    },
+    {
+        "LocalAddress":  "127.0.0.1",
+        "LocalPort":  9222,
+        "OwningProcess":  59256,
+        "State":  2
+    }
+]

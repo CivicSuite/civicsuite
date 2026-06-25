@@ -1,0 +1,5 @@
+﻿set-cityName=Cleanroom Test City
+set-state=WA
+set-timeZone=America/Los_Angeles
+set-recordsContact=records@example.gov
+set-clerkContact=clerk@example.gov

@@ -1,0 +1,3 @@
+﻿set-adminName=Cleanroom Admin
+set-adminEmail=admin@example.gov
+set-adminPasscode=Cleanroom-Passcode-111!

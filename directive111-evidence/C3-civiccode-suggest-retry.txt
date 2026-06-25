@@ -1,0 +1,108 @@
+﻿WINDOWS LOCAL 1.0
+
+CivicSuite
+Staff
+Resident/Public
+IT/Admin
+Audit Trail
+Sign Out
+Home
+Work that needs attention
+Meetings & Notices
+Agendas, notices, minutes, votes
+Records Requests
+Intake, review, response, exports
+Code & Ordinances
+Search, imports, guidance, handoffs
+Public Notices
+Deadlines, proof, archive packets
+Search City Knowledge
+Cross-module local search with citations
+System Health
+Local services, model, backup, repair
+Settings
+City profile, users, modules
+
+STAFF
+
+Code & Ordinances
+
+Import local code sources with citation text and create clerk handoffs for ordinance or resolution work.
+
+Selected code source for actions: No code source selected yet. Import a source or choose Work On This before publishing, syncing, or handing off.
+
+Import Code Source
+Source title
+Citation
+Source file path or reference
+Choose File
+Imported by
+Source text
+Import Source
+Publish Source
+Unpublish Source
+Open Exports Folder
+Codifier Sync
+Codifier
+Authoritative URL
+Version label
+Sync error
+Amendment or stale note
+Record Sync
+Record Sync Failure
+Retry Sync
+Mark Stale
+Guidance & Summary
+Staff guidance
+Plain-English summary
+Generate Local AI Guidance
+Save Guidance Draft
+Approve Guidance
+Clerk Handoff
+Handoff summary
+Create Clerk Handoff
+Ask Code Question
+
+Staff answers can use internal guidance and citations, but still stay non-authoritative.
+
+Question
+Answer Code Question
+Needs attention
+Import a code source before changing its public status.
+Review the required fields and try again.
+
+Ask a code question to see cited staff answers.
+
+No local code sources have been imported yet.
+
+Audit Trail
+
+Local workflow actions and public publication gates record module, action, hash, time, and summary in the Windows data profile.
+
+Publication Gates
+No publications
+
+No human-approved public records have been published yet.
+
+Workflow Actions
+civicrecords-ai
+
+create-records-request
+
+Created records request REQ-0001 for: D111 Records Requester
+
+6/25/2026, 11:27:26 AM Audit hash 247947000cfc; previous GENESIS
+civicrecords-ai
+
+record-records-search
+
+Recorded records search source note.
+
+6/25/2026, 11:29:27 AM Audit hash 2d3ec5296e03; previous 247947000cfc
+civicrecords-ai
+
+suggest-records-response
+
+Generated local AI records response draft with civicsuite-gemma4-12b-qat:q4_0; human approval still required.
+
+6/25/2026, 11:30:32 AM Audit hash 1a7bb629f68e; previous 2d3ec5296e03

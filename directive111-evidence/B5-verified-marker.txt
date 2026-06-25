@@ -1,0 +1,2 @@
+﻿C:\Users\insty\AppData\Local\CivicSuite\Data\models\gemma-4-12b-it-qat-q4_0.gguf.sha256.verified: faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1
+

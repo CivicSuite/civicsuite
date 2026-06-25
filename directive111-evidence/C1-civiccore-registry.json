@@ -1,0 +1,59 @@
+﻿{
+    "modelRegistry":  {
+                          "models":  [
+                                         {
+                                             "model_id":  "gemma-4-12b-it-qat-q4_0",
+                                             "display_name":  "Gemma 4 12B QAT Q4_0",
+                                             "provider":  "Google",
+                                             "runtime":  "ollama",
+                                             "ollama_model":  "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+                                             "runtime_model":  "civicsuite-gemma4-12b-qat:q4_0",
+                                             "artifact_path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+                                             "sha256":  "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+                                             "registered_at_unix_seconds":  1782407812
+                                         }
+                                     ]
+                      },
+    "modelState":  {
+                       "schema_version":  1,
+                       "model_id":  "gemma-4-12b-it-qat-q4_0",
+                       "status":  "Verified",
+                       "message":  "The pinned Gemma model file passed checksum verification and is registered with CivicCore.",
+                       "local_path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+                       "partial_path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf.part",
+                       "expected_size_bytes":  6975877728,
+                       "local_bytes":  6975877728,
+                       "partial_bytes":  0,
+                       "progress_percent":  100.0,
+                       "last_error":  null,
+                       "updated_at_unix_seconds":  1782407812
+                   },
+    "ollamaApi15434":  {
+                           "models":  [
+                                          {
+                                              "name":  "civicsuite-gemma4-12b-qat:q4_0",
+                                              "model":  "civicsuite-gemma4-12b-qat:q4_0",
+                                              "modified_at":  "2026-06-25T11:23:29.1623539-06:00",
+                                              "size":  6975878420,
+                                              "digest":  "36969d412ce4ec2d2651b81b56a891fd42507a3096da1c0468b9aa2c0a42c6eb",
+                                              "details":  {
+                                                              "parent_model":  "",
+                                                              "format":  "gguf",
+                                                              "family":  "gemma4",
+                                                              "families":  [
+                                                                               "gemma4"
+                                                                           ],
+                                                              "parameter_size":  "11.9B",
+                                                              "quantization_level":  "Q4_0",
+                                                              "context_length":  262144,
+                                                              "embedding_length":  3840
+                                                          },
+                                              "capabilities":  [
+                                                                   "completion",
+                                                                   "tools",
+                                                                   "thinking"
+                                                               ]
+                                          }
+                                      ]
+                       }
+}

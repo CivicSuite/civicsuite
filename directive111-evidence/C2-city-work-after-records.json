@@ -1,0 +1,135 @@
+{
+  "meeting_bodies": [],
+  "meeting_members": [],
+  "agenda_intakes": [],
+  "meetings": [],
+  "records_requests": [
+    {
+      "id": "records-1782408446-1",
+      "public_tracking_number": "REQ-0001",
+      "requester": "D111 Records Requester",
+      "requester_contact": "",
+      "submitted_via": "Staff intake",
+      "summary": "Records request source text includes D111-AI-MODEL-MARKER-20260625. Use this exact marker in the local AI response draft to prove the model consumed the selected request text.",
+      "deadline": "2026-07-02",
+      "deadline_basis": "Directive 111 lifecycle proof",
+      "status": "local AI draft ready for review",
+      "assigned_to": "",
+      "clarification_notes": [],
+      "search_notes": [
+        "Search note: responsive local source includes D111-AI-MODEL-MARKER-20260625."
+      ],
+      "search_sessions": [],
+      "exemption_reviews": [],
+      "exemption_decisions": [],
+      "fee_estimate": "",
+      "fee_line_items": [],
+      "fee_waiver_reason": "",
+      "citations": [],
+      "response_draft": "<|channel>thought\n<channel|>Staff Review Draft\n\nDate: [Current Date]\nTo: Records Department\nFrom: [Reviewer Name/ID]\nSubject: Response to Request from D111 Records Requester\n\nThe request received from D111 Records Requester has been reviewed. The requester is seeking access to specific records as outlined in their inquiry dated [Date]. \n\nBased on the initial search of our database, we have identified relevant materials that may satisfy this request. We are currently preparing a formal response which will include a list of the documents found, any applicable fees for reproduction, and instructions for the requester to obtain copies.\n\nA final determination regarding the release of these records will be provided shortly. \n\n[Placeholder for specific document citations]\n[Placeholder for fee schedule]\n[Placeholder for additional internal notes]",
+      "approval_notes": [],
+      "exports": [],
+      "release_packages": [],
+      "timeline": [
+        {
+          "id": "records-timeline-1782408446-1",
+          "action": "intake",
+          "actor": "records staff",
+          "note": "Staff created request REQ-0001 with deadline 2026-07-02.",
+          "created_at_unix_seconds": 1782408446
+        },
+        {
+          "id": "records-timeline-1782408567-2",
+          "action": "search recorded",
+          "actor": "records staff",
+          "note": "Search note: responsive local source includes D111-AI-MODEL-MARKER-20260625.",
+          "created_at_unix_seconds": 1782408567
+        },
+        {
+          "id": "records-timeline-1782408632-3",
+          "action": "local AI draft generated",
+          "actor": "local model",
+          "note": "Draft generated with civicsuite-gemma4-12b-qat:q4_0; human approval still required.",
+          "created_at_unix_seconds": 1782408632
+        }
+      ],
+      "public_status_events": [
+        {
+          "id": "records-public-status-1782408446-1",
+          "label": "Request received",
+          "summary": "Request REQ-0001 was created by staff and is being tracked locally.",
+          "status": "received",
+          "created_at_unix_seconds": 1782408446
+        },
+        {
+          "id": "records-public-status-1782408567-2",
+          "label": "Records search in progress",
+          "summary": "Staff recorded progress on the records search.",
+          "status": "searching",
+          "created_at_unix_seconds": 1782408567
+        },
+        {
+          "id": "records-public-status-1782408632-3",
+          "label": "Response drafting",
+          "summary": "A response draft is ready for human staff review.",
+          "status": "local AI draft ready for review",
+          "created_at_unix_seconds": 1782408632
+        }
+      ],
+      "messages": [],
+      "documents": [],
+      "deadline_reviewed_at_unix_seconds": 1782408446,
+      "approved_at_unix_seconds": null,
+      "fulfilled_at_unix_seconds": null,
+      "closed_at_unix_seconds": null,
+      "created_at_unix_seconds": 1782408446
+    }
+  ],
+  "code_sources": [],
+  "code_handoffs": [],
+  "adopted_legislation": [],
+  "audit_entries": [
+    {
+      "id": "audit-1782408446-1",
+      "module_id": "civicrecords-ai",
+      "action": "create-records-request",
+      "summary": "Created records request REQ-0001 for: D111 Records Requester",
+      "created_at_unix_seconds": 1782408446,
+      "previous_hash": "GENESIS",
+      "entry_hash": "247947000cfcc509c1e8bc9b5b32e48a5a60d263ddd572064c74963ec0aeb985"
+    },
+    {
+      "id": "audit-1782408567-2",
+      "module_id": "civicrecords-ai",
+      "action": "record-records-search",
+      "summary": "Recorded records search source note.",
+      "created_at_unix_seconds": 1782408567,
+      "previous_hash": "247947000cfcc509c1e8bc9b5b32e48a5a60d263ddd572064c74963ec0aeb985",
+      "entry_hash": "2d3ec5296e0362c2ca7639fba744726b1b5e6a5699739232b78ffe2d4012a476"
+    },
+    {
+      "id": "audit-1782408632-3",
+      "module_id": "civicrecords-ai",
+      "action": "suggest-records-response",
+      "summary": "Generated local AI records response draft with civicsuite-gemma4-12b-qat:q4_0; human approval still required.",
+      "created_at_unix_seconds": 1782408632,
+      "previous_hash": "2d3ec5296e0362c2ca7639fba744726b1b5e6a5699739232b78ffe2d4012a476",
+      "entry_hash": "1a7bb629f68e4db66a7d109ba5ba0b16176a2196e2fb2957082777d08521d2e3"
+    }
+  ],
+  "publication_events": [],
+  "notification_events": [
+    {
+      "id": "notification-1782408446-1",
+      "module_id": "civicrecords-ai",
+      "record_id": "records-1782408446-1",
+      "audience": "records staff",
+      "channel": "local notification outbox",
+      "subject": "Records request REQ-0001 created",
+      "body": "Staff-created request for D111 Records Requester is saved locally with deadline 2026-07-02.",
+      "status": "ready to send",
+      "created_at_unix_seconds": 1782408446,
+      "sent_at_unix_seconds": null
+    }
+  ]
+}

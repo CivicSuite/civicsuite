@@ -1,0 +1,107 @@
+﻿[
+    {
+        "ProcessName":  "civicsuite-desktop",
+        "Id":  51084,
+        "CPU":  72.65625,
+        "StartTime":  "\/Date(1782407385954)\/",
+        "Path":  "C:\\Program Files\\CivicSuite\\civicsuite-desktop.exe"
+    },
+    {
+        "ProcessName":  "node_repl",
+        "Id":  58164,
+        "CPU":  0,
+        "StartTime":  "\/Date(1782404043452)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\a89897d3d9baa117\\bin\\node_repl.exe"
+    },
+    {
+        "ProcessName":  "ollama",
+        "Id":  54360,
+        "CPU":  20.265625,
+        "StartTime":  "\/Date(1782408010820)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\ollama\\ollama.exe"
+    },
+    {
+        "ProcessName":  "ollama",
+        "Id":  62352,
+        "CPU":  21.296875,
+        "StartTime":  "\/Date(1782408043422)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\ollama\\ollama.exe"
+    },
+    {
+        "ProcessName":  "ollama",
+        "Id":  62356,
+        "CPU":  58.015625,
+        "StartTime":  "\/Date(1782407905867)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\ollama\\ollama.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  42716,
+        "CPU":  0.046875,
+        "StartTime":  "\/Date(1782407984020)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  47652,
+        "CPU":  0.046875,
+        "StartTime":  "\/Date(1782407984096)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  51940,
+        "CPU":  0.03125,
+        "StartTime":  "\/Date(1782407984090)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  54552,
+        "CPU":  0.234375,
+        "StartTime":  "\/Date(1782407983895)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  55052,
+        "CPU":  0.0625,
+        "StartTime":  "\/Date(1782407984016)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  59752,
+        "CPU":  0.0625,
+        "StartTime":  "\/Date(1782408039579)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "postgres",
+        "Id":  62404,
+        "CPU":  0.03125,
+        "StartTime":  "\/Date(1782407984086)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\postgres\\bin\\postgres.exe"
+    },
+    {
+        "ProcessName":  "python",
+        "Id":  18772,
+        "CPU":  155.71875,
+        "StartTime":  "\/Date(1781304422928)\/",
+        "Path":  "C:\\Program Files\\Python312\\python.exe"
+    },
+    {
+        "ProcessName":  "python",
+        "Id":  45700,
+        "CPU":  1.765625,
+        "StartTime":  "\/Date(1782408037760)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\python\\python.exe"
+    },
+    {
+        "ProcessName":  "python",
+        "Id":  60228,
+        "CPU":  2.765625,
+        "StartTime":  "\/Date(1782408036566)\/",
+        "Path":  "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\runtime\\python\\python.exe"
+    }
+]

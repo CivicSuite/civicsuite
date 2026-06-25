@@ -1,0 +1,8 @@
+{
+  "display_name": "Cleanroom Admin",
+  "email": "admin@example.gov",
+  "role": "local-admin",
+  "passcode_algorithm": "argon2id-v1",
+  "passcode_salt": "VNw3ks9oZdrsrwoeaRM++A",
+  "passcode_hash": "$argon2id$v=19$m=19456,t=2,p=1$VNw3ks9oZdrsrwoeaRM++A$r312shI6EocLR2i4oeqDpNeIEo0LSaQjw06Qro0ygqE"
+}

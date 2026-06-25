@@ -1,0 +1,31 @@
+﻿{
+  "actions": [
+    {
+      "action": "civicnotice-calculate-deadline",
+      "text": "Calculate Deadline",
+      "disabled": false
+    },
+    {
+      "action": "civicnotice-complete-checklist",
+      "text": "Save Checklist",
+      "disabled": false
+    },
+    {
+      "action": "civicnotice-post-notice",
+      "text": "Record Posting Proof",
+      "disabled": false
+    },
+    {
+      "action": "civicnotice-export-archive-packet",
+      "text": "Build Archive Packet",
+      "disabled": false
+    },
+    {
+      "action": "open-exports-folder",
+      "text": "Open Exports Folder",
+      "disabled": false
+    }
+  ],
+  "forbiddenPresent": [],
+  "bodyText": "WINDOWS LOCAL 1.0\n\nCivicSuite\nStaff\nResident/Public\nIT/Admin\nAudit Trail\nSign Out\nHome\nWork that needs attention\nMeetings & Notices\nAgendas, notices, minutes, votes\nRecords Requests\nIntake, review, response, exports\nCode & Ordinances\nSearch, imports, guidance, handoffs\nPublic Notices\nDeadlines, proof, archive packets\nSearch City Knowledge\nCross-module local search with citations\nSystem Health\nLocal services, model, backup, repair\nSettings\nCity profile, users, modules\n\nSTAFF\n\nPublic Notices\n\nManage statutory deadline workpapers, clerk approval, posting proof, and records-ready notice archive packets.\n\nNotice Workpaper\n\nCreate a meeting in Meetings & Notices before preparing notice proof.\n\nNotice meeting type\nStatutory notice basis\nNotice lead days\nLead day type\nCalendar days\nBusiness days\nNotice deadline\nNotice time zone\nClerk has reviewed and approved the notice checklist\nCalculate Deadline\nSave Checklist\nPosting Proof\nActual posting date\nPosting location\nPosting method\nPosting confirmation\nRecord Posting Proof\nBuild Archive Packet\nOpen Exports Folder\nNeeds attention\nImport a code source before changing its public status.\nReview the required fields and try again.\n\nNo notice workpapers have been saved yet.\n\nAudit Trail\n\nLocal workflow actions and public publication gates record module, action, hash, time, and summary in the Windows data profile.\n\nPublication Gates\nNo publications\n\nNo human-approved public records have been published yet.\n\nWorkflow Actions\ncivicrecords-ai\n\ncreate-records-request\n\nCreated records request REQ-0001 for: D111 Records Requester\n\n6/25/2026, 11:27:26 AM Audit hash 247947000cfc; previous GENESIS\ncivicrecords-ai\n\nrecord-records-search\n\nRecorded records search source note.\n\n6/25/2026, 11:29:27 AM Audit hash 2d3ec5296e03; previous 247947000cfc\ncivicrecords-ai\n\nsuggest-records-response\n\nGenerated local AI records response draft with civicsuite-gemma4-12b-qat:q4_0; human approval still required.\n\n6/25/2026, 11:30:32 AM Audit hash 1a7bb629f68e; previous 2d3ec5296e03"
+}

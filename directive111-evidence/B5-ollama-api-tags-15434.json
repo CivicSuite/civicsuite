@@ -1,0 +1,28 @@
+﻿{
+    "models":  [
+                   {
+                       "name":  "civicsuite-gemma4-12b-qat:q4_0",
+                       "model":  "civicsuite-gemma4-12b-qat:q4_0",
+                       "modified_at":  "2026-06-25T11:23:29.1623539-06:00",
+                       "size":  6975878420,
+                       "digest":  "36969d412ce4ec2d2651b81b56a891fd42507a3096da1c0468b9aa2c0a42c6eb",
+                       "details":  {
+                                       "parent_model":  "",
+                                       "format":  "gguf",
+                                       "family":  "gemma4",
+                                       "families":  [
+                                                        "gemma4"
+                                                    ],
+                                       "parameter_size":  "11.9B",
+                                       "quantization_level":  "Q4_0",
+                                       "context_length":  262144,
+                                       "embedding_length":  3840
+                                   },
+                       "capabilities":  [
+                                            "completion",
+                                            "tools",
+                                            "thinking"
+                                        ]
+                   }
+               ]
+}

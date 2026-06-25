@@ -1,0 +1,280 @@
+﻿{
+  "wizardPresent": true,
+  "bodyText": "WINDOWS LOCAL 1.0\n\nCivicSuite\nStaff\nResident/Public\nIT/Admin\nAudit Trail\nSign Out\nHome\nWork that needs attention\nMeetings & Notices\nAgendas, notices, minutes, votes\nRecords Requests\nIntake, review, response, exports\nCode & Ordinances\nSearch, imports, guidance, handoffs\nPublic Notices\nDeadlines, proof, archive packets\nSearch City Knowledge\nCross-module local search with citations\nSystem Health\nLocal services, model, backup, repair\nSettings\nCity profile, users, modules\n\nSTAFF SURFACE\n\nWork that needs attention\n\nStart with the task, not the module. City-core workflows stay local on this machine.\n\nFIRST-RUN SETUP\n\nCity Core setup checklist\n\nInstall stays local to this Windows machine. No Docker, WSL, terminal, or developer tooling is part of the clerk path.\n\nInstall\nC:\\Users\\insty\\AppData\\Local\\CivicSuite\nCity data\nC:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\nBackups\nC:\\Users\\insty\\Documents\\CivicSuite Backups\n1\nWelcome and unsigned beta notice\nFinished\n\nCivicSuite is beta software from an unsigned open-source build.\n\nThe installer explains that this build is not code-signed yet and should be installed only from the official CivicSuite release source after checksum verification.\n2\nWindows SmartScreen explanation\nFinished\n\nWindows may show an Unknown Publisher warning for this beta.\n\nThe installer explains why the warning appears and how More info and Run anyway apply to this verified unsigned beta.\n3\nInstall and local data locations\nFinished\n\nChoose where the app and city data live on this machine.\n\nThe default locations stay under the current Windows user profile and can be changed before local services are installed.\n4\nModule selection\nFinished\n\nCity Core is selected by default and CivicCore is locked on.\n\nCustom selection is part of the architecture, but only modules with passing package and proof contracts can be installed from the clerk path.\n5\nCity profile\nFinished\n\nEnter the city name, state, time zone, records contact, and clerk contact.\n\nThe city profile personalizes notices, records responses, code guidance, and audit context.\n6\nFirst admin user\nFinished\n\nCreate the first local administrator before staff work begins.\n\nThe first admin owns setup, model download, users, roles, backup settings, and recovery contact information.\n7\nBackup default\nFinished\n\nChoose the default local backup folder.\n\nBackup is configured before city work begins so records, packets, notices, code imports, and audit entries have a recovery path.\n8\nLocal AI model download\nFinished\n\nDownload Gemma 4 12B quantization-aware weights for local AI.\n\nA signed-in CivicSuite local administrator downloads the pinned model with resumable download, checksum verification, and local-only default behavior.\n9\nHealth verification\nFinished\n\nVerify local services, storage, backup, and the local model before staff work.\n\nThe health step checks the desktop shell, local data store, workflow services, task queue, local AI model, and document storage.\n10\nFinish and lifecycle entry points\nCurrent\n\nOpen CivicSuite and keep repair, backup, and uninstall reachable.\n\nThe finish screen links the app, System Health, repair, backup, and uninstall so the same product surface owns the lifecycle.\n\nNext: Open CivicSuite after all setup checks pass.\n\nFinish setup\n\nLOCAL ACCESS\n\nSigned in as Cleanroom Admin\n\nlocal-admin\n\nSign Out\n\nLOCAL AI MODEL\n\nGemma 4 12B QAT Q4_0\n\nOfficial Google weights are pinned for local-only use. No silent download starts from this screen.\n\nStatus\nNeeds runtime\nDownload\n6.5 GB resumable\nOfficial source\nhf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0\nRuntime name\ncivicsuite-gemma4-12b-qat:q4_0\nChecksum required\nfaff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1\nGoogle source\ngoogle/gemma-4-12B-it-qat-q4_0-gguf\nExplicit model setup only; explicit setup consent required.\nChecksum source: https://huggingface.co/api/models/google/gemma-4-12B-it-qat-q4_0-gguf?blobs=true\nLocal path: C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf\nDownload progress\nVerified\nThe pinned Gemma model file has passed checksum verification.\nSaved locally\n6.5 GB of 6.5 GB\n100.00% complete\nOpen Model Folder\nDownload / Resume\nVerify Checksum\nLoad in Ollama\nRetry Setup\nOK\nPinned model metadata\n\nGemma 4 12B QAT Q4_0 is pinned with official source metadata and checksum requirements.\n\nKeep this pinned model contract with the Windows Local 1.0 installer.\nFound\nLocal model file\n\nThe pinned GGUF file exists with the expected size in the local CivicSuite data folder.\n\nDownload the pinned GGUF file during first-run setup.\nVerified\nChecksum verification\n\nChecksum verification has been recorded for the pinned file.\n\nVerify the local file against the pinned SHA-256 before enabling AI workflows.\nView full model readiness\n\nCITY WORK\n\nMeetings & Notices\n\nAgendas, notices, minutes, votes\n\nOpen\n\nCITY WORK\n\nRecords Requests\n\nIntake, review, response, exports\n\nOpen\n\nCITY WORK\n\nCode & Ordinances\n\nSearch, imports, guidance, handoffs\n\nOpen\n\nCITY WORK\n",
+  "firstRun": {
+    "profile": "windows-local-1.0",
+    "profile_label": "City Core",
+    "local_only": true,
+    "finished": false,
+    "status": "Needs setup",
+    "current_step_id": "finish",
+    "locations": {
+      "install_root": "C:\\Users\\insty\\AppData\\Local\\CivicSuite",
+      "data_root": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data",
+      "backup_root": "C:\\Users\\insty\\Documents\\CivicSuite Backups"
+    },
+    "available_actions": [
+      "review",
+      "choose-location",
+      "select-modules",
+      "create-city-profile",
+      "create-admin",
+      "choose-backup",
+      "download-model",
+      "verify-health",
+      "open-app",
+      "repair",
+      "backup",
+      "uninstall"
+    ],
+    "steps": [
+      {
+        "id": "unsigned-beta",
+        "label": "Welcome and unsigned beta notice",
+        "surface": "Installer",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "CivicSuite is beta software from an unsigned open-source build.",
+        "detail": "The installer explains that this build is not code-signed yet and should be installed only from the official CivicSuite release source after checksum verification.",
+        "next_action": "Review the unsigned beta notice before continuing.",
+        "action": "review"
+      },
+      {
+        "id": "smartscreen",
+        "label": "Windows SmartScreen explanation",
+        "surface": "Installer",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Windows may show an Unknown Publisher warning for this beta.",
+        "detail": "The installer explains why the warning appears and how More info and Run anyway apply to this verified unsigned beta.",
+        "next_action": "Confirm the warning text matches the CivicSuite guidance.",
+        "action": "review"
+      },
+      {
+        "id": "locations",
+        "label": "Install and local data locations",
+        "surface": "Installer",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Choose where the app and city data live on this machine.",
+        "detail": "The default locations stay under the current Windows user profile and can be changed before local services are installed.",
+        "next_action": "Choose install, data, and backup folders.",
+        "action": "choose-location"
+      },
+      {
+        "id": "modules",
+        "label": "Module selection",
+        "surface": "Installer",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "City Core is selected by default and CivicCore is locked on.",
+        "detail": "Custom selection is part of the architecture, but only modules with passing package and proof contracts can be installed from the clerk path.",
+        "next_action": "Review the City Core module set.",
+        "action": "select-modules"
+      },
+      {
+        "id": "city-profile",
+        "label": "City profile",
+        "surface": "First run",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Enter the city name, state, time zone, records contact, and clerk contact.",
+        "detail": "The city profile personalizes notices, records responses, code guidance, and audit context.",
+        "next_action": "Create the city profile.",
+        "action": "create-city-profile"
+      },
+      {
+        "id": "first-admin",
+        "label": "First admin user",
+        "surface": "First run",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Create the first local administrator before staff work begins.",
+        "detail": "The first admin owns setup, model download, users, roles, backup settings, and recovery contact information.",
+        "next_action": "Create the first admin user, then sign in with that local passcode before continuing setup.",
+        "action": "create-admin"
+      },
+      {
+        "id": "backup",
+        "label": "Backup default",
+        "surface": "First run",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Choose the default local backup folder.",
+        "detail": "Backup is configured before city work begins so records, packets, notices, code imports, and audit entries have a recovery path.",
+        "next_action": "Choose the default backup folder.",
+        "action": "choose-backup"
+      },
+      {
+        "id": "model",
+        "label": "Local AI model download",
+        "surface": "First run",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
+        "detail": "A signed-in CivicSuite local administrator downloads the pinned model with resumable download, checksum verification, and local-only default behavior.",
+        "next_action": "Sign in as the local administrator, then download and verify the pinned local model weights.",
+        "action": "download-model"
+      },
+      {
+        "id": "health",
+        "label": "Health verification",
+        "surface": "First run",
+        "required": true,
+        "completed": true,
+        "current": false,
+        "status": "Finished",
+        "summary": "Verify local services, storage, backup, and the local model before staff work.",
+        "detail": "The health step checks the desktop shell, local data store, workflow services, task queue, local AI model, and document storage.",
+        "next_action": "Run local health verification.",
+        "action": "verify-health"
+      },
+      {
+        "id": "finish",
+        "label": "Finish and lifecycle entry points",
+        "surface": "First run",
+        "required": true,
+        "completed": false,
+        "current": true,
+        "status": "Current",
+        "summary": "Open CivicSuite and keep repair, backup, and uninstall reachable.",
+        "detail": "The finish screen links the app, System Health, repair, backup, and uninstall so the same product surface owns the lifecycle.",
+        "next_action": "Open CivicSuite after all setup checks pass.",
+        "action": "open-app"
+      }
+    ]
+  },
+  "access": {
+    "configured": true,
+    "signed_in": true,
+    "operator_name": "Cleanroom Admin",
+    "operator_email": "admin@example.gov",
+    "role": "local-admin",
+    "status": "Signed in",
+    "next_action": "Continue local city work."
+  },
+  "cityProfile": {
+    "city_name": "Cleanroom Test City",
+    "state": "WA",
+    "time_zone": "America/Los_Angeles",
+    "records_contact": "records@example.gov",
+    "clerk_contact": "clerk@example.gov"
+  },
+  "model": {
+    "profile": "windows-local-1.0",
+    "local_only": true,
+    "ready": false,
+    "status": "Needs runtime",
+    "display_name": "Gemma 4 12B QAT Q4_0",
+    "model_id": "gemma-4-12b-it-qat-q4_0",
+    "provider": "Google",
+    "source_repo": "google/gemma-4-12B-it-qat-q4_0-gguf",
+    "source_url": "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf",
+    "resolve_url": "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf",
+    "documentation_url": "https://ai.google.dev/gemma/docs/core",
+    "license": "Apache-2.0",
+    "runtime": "ollama",
+    "ollama_model": "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+    "runtime_model": "civicsuite-gemma4-12b-qat:q4_0",
+    "format": "GGUF",
+    "quantization": "QAT Q4_0",
+    "parameters": "12B",
+    "context_window_tokens": 256000,
+    "approximate_weight_memory_gb": 6.7,
+    "download_size_bytes": 6975877728,
+    "download_resumable": true,
+    "download_requires_consent": true,
+    "download_policy": "Explicit model setup only",
+    "minimum_free_disk_bytes": 15000000000,
+    "artifact": {
+      "file_name": "gemma-4-12b-it-qat-q4_0.gguf",
+      "local_path": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+      "expected_size_bytes": 6975877728,
+      "expected_sha256": "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+      "checksum_required": true,
+      "checksum_source": "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-q4_0-gguf?blobs=true",
+      "etag_blob_id": "2bf67e31a647c65d7037e38fd6e42fd6319da4bc"
+    },
+    "download_state": {
+      "schema_version": 1,
+      "model_id": "gemma-4-12b-it-qat-q4_0",
+      "status": "Verified",
+      "message": "The pinned Gemma model file has passed checksum verification.",
+      "local_path": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+      "partial_path": "C:\\Users\\insty\\AppData\\Local\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf.part",
+      "expected_size_bytes": 6975877728,
+      "local_bytes": 6975877728,
+      "partial_bytes": 0,
+      "progress_percent": 100,
+      "last_error": null,
+      "updated_at_unix_seconds": 1782407812
+    },
+    "checks": [
+      {
+        "id": "metadata",
+        "label": "Pinned model metadata",
+        "ok": true,
+        "status": "OK",
+        "message": "Gemma 4 12B QAT Q4_0 is pinned with official source metadata and checksum requirements.",
+        "next_action": "Keep this pinned model contract with the Windows Local 1.0 installer."
+      },
+      {
+        "id": "artifact-file",
+        "label": "Local model file",
+        "ok": true,
+        "status": "Found",
+        "message": "The pinned GGUF file exists with the expected size in the local CivicSuite data folder.",
+        "next_action": "Download the pinned GGUF file during first-run setup."
+      },
+      {
+        "id": "checksum",
+        "label": "Checksum verification",
+        "ok": true,
+        "status": "Verified",
+        "message": "Checksum verification has been recorded for the pinned file.",
+        "next_action": "Verify the local file against the pinned SHA-256 before enabling AI workflows."
+      },
+      {
+        "id": "runtime",
+        "label": "Local model runtime",
+        "ok": false,
+        "status": "Needs start",
+        "message": "Ollama is not responding at http://127.0.0.1:15434/api/tags: connection timed out",
+        "next_action": "Start the bundled Ollama runtime after the portable runtime is installed."
+      },
+      {
+        "id": "runtime-model",
+        "label": "Gemma model loaded in Ollama",
+        "ok": false,
+        "status": "Needs runtime",
+        "message": "Start the bundled Ollama runtime before loading the Gemma model.",
+        "next_action": "Load the verified Gemma model into the local Ollama runtime before staff workflows use AI."
+      },
+      {
+        "id": "registered-model",
+        "label": "CivicCore model registry",
+        "ok": true,
+        "status": "Registered",
+        "message": "CivicCore has a local registry entry for this verified model.",
+        "next_action": "Register the verified model with CivicCore before staff workflows use it."
+      }
+    ],
+    "next_action": "Use first-run setup to download, resume, and verify the pinned local model."
+  }
+}
