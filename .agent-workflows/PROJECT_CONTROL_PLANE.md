@@ -1,32 +1,46 @@
 # CivicSuite Project Control Plane
 
-Last updated: 2026-06-13
+Last updated: 2026-06-25
 
 ## Current Authorized Target
 
-Active target: CivicSuite Windows Local 1.0 city-core desktop completion.
+Active target: CivicAccess city-core integration (Windows Local)
 
-Scott explicitly superseded the stale CivicInspect queue on 2026-06-13 and
-authorized implementation of the Windows Local 1.0 plan. The target is a real
-Tauri/WebView2 Windows desktop application, local portable-native runtime,
-non-technical installer, Gemma 4 12B quantization-aware local model path,
-CivicCore plus CivicRecords AI, CivicClerk, and CivicCode, and a module package
-contract that lets future modules plug into the existing app one at a time.
+Windows Local 1.0.0 city-core shipped 2026-06-25 (release
+`civicsuite-windows-local-v1.0.0`: CivicCore, CivicRecords AI, CivicClerk,
+CivicCode, CivicNotice). A first-run UX-cue fix plus a model-registry honesty
+relabel merged via PR #194 (`4d5a3f0b`); the fix-MSI clean-machine validation is
+in flight on the test box (test-comms directive 114), after which the beta build
+is announceable. With city-core shipped, the active forward target is bringing
+the next module — CivicAccess (accessibility / plain-language / ADA Title II
+review support; deterministic, no live AI) — into the Windows Local city-core
+profile one phase at a time, following the no-AI CivicNotice integration pattern.
+CivicAccess Phase 0 is done: the standalone readiness branch landed to
+`civicaccess` main and v0.3.0 was released (installability gap closed).
 
-Current working slice: CivicCore local platform completion for auth, audit,
-module registry, model registry, queue, health, backup/restore, and installer
-APIs.
+Current working slice: CivicAccess Phase 1 — declare CivicAccess's Windows-Local
+module-package contract (routes, permissions, services, migrations, health
+checks, backup/restore/uninstall hooks, model_requirements=none, audit events,
+surface placement per ADR-0010 / `installer/module-manifest-contract.json`) and
+register it in the city-core installer profile (`installer/modules.json`: add
+`civicaccess` to the city-core profile, remove its `excluded_modules` entry, fill
+the ready-fields + `source_commit` pin to CivicAccess v0.3.0, update the
+contract's `city_core_profile`, and the manifest-contract test). Runtime/
+supervisor wiring, CivicCore-Postgres persistence alignment, and the clean-machine
+gate are explicitly later phases (2-4).
 
 Definition of Done for this slice:
 
-- CivicCore local platform contracts and implementation surface are aligned
-  with the Windows desktop profile.
-- Auth/RBAC, audit chain, module registry, model registry, task queue, health,
-  backup/restore, and installer/runtime APIs have automated local contract
-  coverage.
-- Desktop and installer paths use real CivicCore contracts where implementation
-  exists and keep blocked states clear where native execution is not yet wired.
+- CivicAccess declares a complete, contract-valid Windows-Local module package
+  per `installer/module-manifest-contract.json`.
+- `installer/modules.json` includes `civicaccess` in the city-core profile with
+  no remaining `excluded_modules` entry, correct ready-fields, and a
+  `source_commit` pin to a published CivicAccess release.
+- `tests/test_module_manifest_contract.py` and
+  `scripts/verify-module-manifest-contract.py` pass with the 6-module city-core.
 - audit-lite runs for this slice and findings are fixed before push.
+- Non-goals in this slice: no runtime supervisor wiring, no Postgres persistence
+  migration, no clean-machine gate (those are Phases 2-4).
 
 Closed Windows Local slices:
 

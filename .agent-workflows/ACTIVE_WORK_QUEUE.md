@@ -1,19 +1,28 @@
 # CivicSuite Active Work Queue
 
-Last updated: 2026-06-13
+Last updated: 2026-06-25
 
 ## Active Target Override
 
-1. **CivicSuite Windows Local 1.0 city-core desktop completion - ACTIVE**
+1. **CivicAccess city-core integration (Windows Local) - ACTIVE**
 
-Why now: Scott explicitly reset the target on 2026-06-13. The old module queue
-did not deliver the required non-technical Windows installable product. The
-active work is now the Windows Local 1.0 plan: Tauri/WebView2 app,
-portable-native local runtime, no Docker/WSL end-user dependency, clerk-first
-UX, city-core module completion, and future module package foundation.
+Why now: Windows Local 1.0.0 city-core shipped 2026-06-25 (release
+`civicsuite-windows-local-v1.0.0`; CivicCore + CivicRecords AI + CivicClerk +
+CivicCode + CivicNotice). A first-run UX-cue fix + model-registry honesty relabel
+merged via PR #194 (`4d5a3f0b`); the fix-MSI clean-machine validation is in flight
+(test-comms directive 114), after which the beta is announceable. With city-core
+shipped, the forward target is integrating the next module — CivicAccess
+(accessibility / plain-language / ADA Title II review support; deterministic, no
+live AI) — into the city-core profile, following the no-AI CivicNotice pattern.
+Phase 0 done: CivicAccess v0.3.0 released (installability gap closed).
 
-Current slice: CivicCore local platform completion for auth, audit, module
-registry, model registry, queue, health, backup/restore, and installer APIs.
+Current slice (Phase 1): declare CivicAccess's Windows-Local module-package
+contract per `installer/module-manifest-contract.json` and register it in the
+city-core installer profile (`installer/modules.json`: add `civicaccess`, remove
+its `excluded_modules` entry, ready-fields + `source_commit` pin to v0.3.0,
+update the contract's `city_core_profile` + the manifest-contract test).
+Runtime/supervisor wiring, Postgres persistence alignment, and the clean-machine
+gate are later phases (2-4).
 
 Closed Windows Local slices:
 
