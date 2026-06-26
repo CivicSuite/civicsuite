@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-011 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 12:56:53
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 12:56:55
 Refresh this file to watch the tester work step by step.
 
 ```
@@ -15,4 +15,5 @@ Refresh this file to watch the tester work step by step.
     SANDBOX> [12:56:42] MSI: CivicSuite_0.1.0_x64_en-US.msi (1569 MB)
     SANDBOX> [12:56:42] INSTALL: launching msiexec /i /quiet ...
 [12:56:53] No verdict file after timeout/exit. Treating as FAIL.
+[12:56:55] Sandbox finished. Verdict: FAIL. Writing final RESULT-011.
 ```
