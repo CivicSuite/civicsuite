@@ -1,19 +1,23 @@
-# CivicSuite VM-host autonomous runner — ONE-SHOT INSTALLER. Run once as administrator.
-# Installs a scheduled task that every 2 min + at each logon pulls the repo and executes any new
-# VMHOST-DIRECTIVE-NNN.ps1 the dev side posts to test-comms/vmhost-beelink/, writing the result back.
-# After this, the box is driven entirely through the repo — no human relay, survives reboots.
+# CivicSuite VM-host autonomous runner — ONE-SHOT INSTALLER (v2, robust force-fetch). Run as administrator.
+# Installs a scheduled task that every 2 min + at each logon FORCE-fetches the branch and executes any new
+# VMHOST-DIRECTIVE-NNN.ps1, writing results back. v2 fixes a stale-fetch bug (explicit branch fetch +
+# checkout -f -B FETCH_HEAD, immune to stale tracking refs / shallow clones).
 $ErrorActionPreference = 'Stop'
 $Repo     = 'C:\dev\Codex\civicsuite'
 $Branch   = 'stage-3a-baremetal-windows'
 $RunDir   = 'C:\dev\Codex\vmhost-runner'
 $TaskName = 'CivicSuiteVMHostRunner'
 
-# make sure git is reachable in this (possibly elevated) context
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
   foreach ($p in @("$env:ProgramFiles\Git\cmd","$env:ProgramFiles\Git\bin","$env:LOCALAPPDATA\Programs\Git\cmd")) {
     if (Test-Path (Join-Path $p 'git.exe')) { $env:PATH = "$p;$env:PATH"; break }
   }
 }
+
+# bring the local repo CURRENT with a robust, stale-proof fetch before anything else
+Set-Location $Repo
+git fetch origin $Branch --force 2>&1 | Out-Null
+git checkout -f -B $Branch FETCH_HEAD 2>&1 | Out-Null
 
 New-Item -ItemType Directory -Force -Path $RunDir | Out-Null
 
@@ -36,9 +40,8 @@ if (Test-Path $Lock) {
 Set-Content -Path $Lock -Value (Get-Date).ToString('o')
 try {
   Set-Location $Repo
-  git fetch origin 2>&1 | Out-Null
-  git checkout $Branch 2>&1 | Out-Null
-  git reset --hard "origin/$Branch" 2>&1 | Out-Null
+  git fetch origin $Branch --force 2>&1 | Out-Null
+  git checkout -f -B $Branch FETCH_HEAD 2>&1 | Out-Null
   $scripts = Get-ChildItem (Join-Path $VDir 'VMHOST-DIRECTIVE-*.ps1') -ErrorAction SilentlyContinue | Sort-Object Name
   foreach ($s in $scripts) {
     if ($s.Name -notmatch 'VMHOST-DIRECTIVE-(\d+)\.ps1') { continue }
@@ -50,6 +53,8 @@ try {
     } catch {
       $err = ($_ | Out-String)
       Set-Location $Repo
+      git fetch origin $Branch --force 2>&1 | Out-Null
+      git checkout -f -B $Branch FETCH_HEAD 2>&1 | Out-Null
       $rp = Join-Path $VDir ("VMHOST-RESULT-{0}.md" -f $n)
       Set-Content -Path $rp -Encoding UTF8 -Value ("# VMHOST-RESULT-{0} (runner-caught failure)`r`n`r`nThe directive script threw before writing its own result:`r`n`r`n{1}" -f $n,$err)
       git add -- $rp 2>&1 | Out-Null
@@ -77,11 +82,13 @@ Start-ScheduledTask -TaskName $TaskName
 # ---- immediate visibility: push a status file so the dev side sees the runner is live ----
 try {
   Set-Location $Repo
+  git fetch origin $Branch --force 2>&1 | Out-Null
+  git checkout -f -B $Branch FETCH_HEAD 2>&1 | Out-Null
   $sp = Join-Path $Repo 'test-comms\vmhost-beelink\RUNNER-STATUS.md'
-  Set-Content -Path $sp -Encoding UTF8 -Value ("# VMHost runner status`r`n`r`nInstalled $(Get-Date -Format o) on $env:COMPUTERNAME. Scheduled task '$TaskName' active (at logon + every 2 min, highest privileges). Auto-processes VMHOST-DIRECTIVE-NNN.ps1 from the repo. Picking up directive 002 now.")
+  Set-Content -Path $sp -Encoding UTF8 -Value ("# VMHost runner status`r`n`r`nInstalled $(Get-Date -Format o) on $env:COMPUTERNAME (v2 force-fetch). Scheduled task '$TaskName' active (at logon + every 2 min, highest privileges). Auto-processes VMHOST-DIRECTIVE-NNN.ps1 from the repo. Picking up directive 002 now.")
   git add -- $sp 2>&1 | Out-Null
-  git -c user.name='vmhost-beelink' -c user.email='vmhost@localhost' commit -m "vmhost: runner installed + online" 2>&1 | Out-Null
+  git -c user.name='vmhost-beelink' -c user.email='vmhost@localhost' commit -m "vmhost: runner v2 installed + online" 2>&1 | Out-Null
   git push origin ("HEAD:{0}" -f $Branch) 2>&1 | Out-Null
 } catch {}
 
-Write-Host "Installed '$TaskName' (logon + every 2 min, highest priv). Runner: $RunDir\runner.ps1. Box is now autonomous."
+Write-Host "Installed '$TaskName' v2 (logon + every 2 min, highest priv, force-fetch). Box is now autonomous."
