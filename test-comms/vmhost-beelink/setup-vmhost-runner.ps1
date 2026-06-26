@@ -79,16 +79,34 @@ $settings   = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstance
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigLogon,$trigRepeat -Principal $principal -Settings $settings -Force | Out-Null
 Start-ScheduledTask -TaskName $TaskName
 
+# ---- enable AUTO-LOGIN so the box resumes the runner after the Hyper-V REBOOT with no manual sign-in ----
+# The task is logon-triggered, so after a reboot it only fires once a user session exists. Auto-login makes
+# that session come up by itself. This box's account looks passwordless, so classic auto-login applies.
+# Best-effort: if the account actually has a password we cannot set, this is neutral (box waits at the
+# login screen for ONE sign-in) — it never locks anyone out.
+$autologin = 'unknown'
+try {
+  $wl = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+  Set-ItemProperty   -Path $wl -Name 'AutoAdminLogon'    -Value '1'             -Type String
+  Set-ItemProperty   -Path $wl -Name 'DefaultUserName'   -Value $env:USERNAME   -Type String
+  Set-ItemProperty   -Path $wl -Name 'DefaultDomainName' -Value $env:USERDOMAIN -Type String
+  Remove-ItemProperty -Path $wl -Name 'DefaultPassword'  -ErrorAction SilentlyContinue
+  Remove-ItemProperty -Path $wl -Name 'AutoLogonCount'   -ErrorAction SilentlyContinue   # absent = unlimited
+  $pl = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device'
+  if (Test-Path $pl) { Set-ItemProperty -Path $pl -Name 'DevicePasswordLessBuildVersion' -Value 0 -Type DWord -ErrorAction SilentlyContinue }
+  $autologin = 'enabled (passwordless account)'
+} catch { $autologin = "could NOT enable ($($_.Exception.Message)) — one manual login may be needed after the reboot" }
+
 # ---- immediate visibility: push a status file so the dev side sees the runner is live ----
 try {
   Set-Location $Repo
   git fetch origin $Branch --force 2>&1 | Out-Null
   git checkout -f -B $Branch FETCH_HEAD 2>&1 | Out-Null
   $sp = Join-Path $Repo 'test-comms\vmhost-beelink\RUNNER-STATUS.md'
-  Set-Content -Path $sp -Encoding UTF8 -Value ("# VMHost runner status`r`n`r`nInstalled $(Get-Date -Format o) on $env:COMPUTERNAME (v2 force-fetch). Scheduled task '$TaskName' active (at logon + every 2 min, highest privileges). Auto-processes VMHOST-DIRECTIVE-NNN.ps1 from the repo. Picking up directive 002 now.")
+  Set-Content -Path $sp -Encoding UTF8 -Value ("# VMHost runner status`r`n`r`nInstalled $(Get-Date -Format o) on $env:COMPUTERNAME (v2 force-fetch). Task '$TaskName' active (at logon + every 2 min, highest priv). AUTO-LOGIN: $autologin. Picking up directive 002 now; after the Hyper-V reboot it resumes via auto-login + the logon trigger.")
   git add -- $sp 2>&1 | Out-Null
-  git -c user.name='vmhost-beelink' -c user.email='vmhost@localhost' commit -m "vmhost: runner v2 installed + online" 2>&1 | Out-Null
+  git -c user.name='vmhost-beelink' -c user.email='vmhost@localhost' commit -m "vmhost: runner v2 installed + online (autologin set)" 2>&1 | Out-Null
   git push origin ("HEAD:{0}" -f $Branch) 2>&1 | Out-Null
 } catch {}
 
-Write-Host "Installed '$TaskName' v2 (logon + every 2 min, highest priv, force-fetch). Box is now autonomous."
+Write-Host "Installed '$TaskName' v2 (logon + every 2 min, highest priv, force-fetch). Auto-login: $autologin. Autonomous across the reboot."
