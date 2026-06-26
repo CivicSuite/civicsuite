@@ -1,9 +1,10 @@
 ﻿# VMHOST-LIVE-011 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 12:44:25
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 12:44:27
 Refresh this file to watch the tester work step by step.
 
 ```
 [12:44:23] Directive 011 started. Confirming Windows Sandbox is enabled...
 [12:44:25] Windows Sandbox enabled. Checking CI build 28253830442...
+[12:44:27] Build 28253830442 is success. Preparing clean test dir...
 ```
