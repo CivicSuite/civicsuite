@@ -1,4 +1,4 @@
-{
+﻿{
     "schema_version":  1,
     "module_contract_version":  1,
     "installer_status":  "city_core_beta_ready_truth_reconciled",
@@ -246,7 +246,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.7.3",
-                        "source_commit":  "e2208827b660faa7d3fc1eab2271a8eae18526ee",
+                        "source_commit":  "538766523ad90ee7553b0ffa75b626d3d4850b17",
                         "routes":  [
                                        {
                                            "id":  "records-requests",
@@ -330,7 +330,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.0.4",
-                        "source_commit":  "fa1874edfe977bfc36ddea2939df6464b5bc16be",
+                        "source_commit":  "dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5",
                         "routes":  [
                                        {
                                            "id":  "meetings-notices",
@@ -728,7 +728,7 @@
                                                "release_artifacts"
                                            ],
                         "current_version":  "0.2.0",
-                        "source_commit":  "2bf0c9d7b764af84cd042657a972e84213a261d5",
+                        "source_commit":  "79b8d07199ee77cd425b31c0e0a44f3a0832b810",
                         "routes":  [
                                        {
                                            "id":  "notice-workbench",
