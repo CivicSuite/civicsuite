@@ -1,6 +1,6 @@
 # VMHOST-DIRECTIVE-003 (read-only autonomy probe, ASCII-only). Reports whether the scheduled-task
 # runner is installed and live. If the runner picks this up on its own, that PROVES autonomy.
-$ErrorActionPreference='Stop'
+$ErrorActionPreference='Continue'
 $Repo='C:\dev\Codex\civicsuite'; $Branch='stage-3a-baremetal-windows'
 $VDir=Join-Path $Repo 'test-comms\vmhost-beelink'; $N='003'
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {

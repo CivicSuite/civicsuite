@@ -2,7 +2,7 @@
 # Installs a scheduled task that every 2 min + at each logon FORCE-fetches the branch and executes any new
 # VMHOST-DIRECTIVE-NNN.ps1, writing results back. v2 fixes a stale-fetch bug (explicit branch fetch +
 # checkout -f -B FETCH_HEAD, immune to stale tracking refs / shallow clones).
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 $Repo     = 'C:\dev\Codex\civicsuite'
 $Branch   = 'stage-3a-baremetal-windows'
 $RunDir   = 'C:\dev\Codex\vmhost-runner'
