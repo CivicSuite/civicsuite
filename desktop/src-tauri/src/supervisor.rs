@@ -200,6 +200,11 @@ impl Default for BackupOptions {
 struct RestoreProfileOptions {
     skip_source_model_cache: bool,
     preserve_destination_model_cache: bool,
+    /// Never copy a legacy backup's secrets folder over the live install.
+    skip_source_secrets: bool,
+    /// Keep the live (per-install) secrets folder when swapping the config dir
+    /// from a backup, so the local database password survives a restore.
+    preserve_destination_secrets: bool,
 }
 
 #[derive(Serialize)]
@@ -480,6 +485,14 @@ fn copy_path_recursive(source: &Path, destination: &Path) -> Result<(), String> 
 }
 
 fn relative_path_is_model_cache(source_root: &Path, current: &Path) -> bool {
+    relative_path_first_component_is(source_root, current, "models")
+}
+
+fn relative_path_is_secrets(source_root: &Path, current: &Path) -> bool {
+    relative_path_first_component_is(source_root, current, "secrets")
+}
+
+fn relative_path_first_component_is(source_root: &Path, current: &Path, name: &str) -> bool {
     let Ok(relative) = current.strip_prefix(source_root) else {
         return false;
     };
@@ -490,7 +503,7 @@ fn relative_path_is_model_cache(source_root: &Path, current: &Path) -> bool {
             component
                 .as_os_str()
                 .to_string_lossy()
-                .eq_ignore_ascii_case("models")
+                .eq_ignore_ascii_case(name)
         })
         .unwrap_or(false)
 }
@@ -510,6 +523,9 @@ fn copy_path_recursive_for_restore(
             return Ok(());
         }
         if options.skip_source_model_cache && relative_path_is_model_cache(source_root, current) {
+            return Ok(());
+        }
+        if options.skip_source_secrets && relative_path_is_secrets(source_root, current) {
             return Ok(());
         }
         let metadata = fs::symlink_metadata(current)
@@ -572,6 +588,16 @@ fn backup_relative_path_is_model_cache(prefix: &str, source_root: &Path, current
     relative_path == "Data/models" || relative_path.starts_with("Data/models/")
 }
 
+/// The per-install secrets folder (e.g. the local Postgres password) must never
+/// be written into a backup artifact. Backups land in the user's Documents
+/// folder, so copying the plaintext database password there would expose it.
+/// The secret is per-install and stays with the install; restore preserves the
+/// live secrets folder rather than relying on the backup to carry it.
+fn backup_relative_path_is_secret(prefix: &str, source_root: &Path, current: &Path) -> bool {
+    let relative_path = backup_relative_copy_path(prefix, source_root, current);
+    relative_path == "config/secrets" || relative_path.starts_with("config/secrets/")
+}
+
 fn push_backup_copy_skip(
     skipped: &mut Vec<SkippedBackupFileEntry>,
     prefix: &str,
@@ -616,6 +642,16 @@ fn copy_path_recursive_for_backup_with_options(
         options: BackupOptions,
     ) {
         if !current.exists() {
+            return;
+        }
+        if backup_relative_path_is_secret(backup_path_prefix, source_root, current) {
+            push_backup_copy_skip(
+                skipped,
+                backup_path_prefix,
+                source_root,
+                current,
+                "per-install local secret excluded from backups; it stays with the install and is preserved across restore",
+            );
             return;
         }
         if !options.include_model_cache
@@ -1138,19 +1174,6 @@ fn move_children_except(
     Ok(moved)
 }
 
-fn replace_profile_dir_from_backup(
-    source: &Path,
-    destination: &Path,
-    label: &str,
-) -> Result<Vec<String>, String> {
-    replace_profile_dir_from_backup_with_options(
-        source,
-        destination,
-        label,
-        RestoreProfileOptions::default(),
-    )
-}
-
 fn replace_profile_dir_from_backup_with_options(
     source: &Path,
     destination: &Path,
@@ -1240,6 +1263,25 @@ fn replace_profile_dir_from_backup_with_options(
                     Err(error) => notes.push(format!(
                         "{label} restored; local model cache preservation is pending at {} because {error}.",
                         old_models.display()
+                    )),
+                }
+            }
+        }
+        if options.preserve_destination_secrets {
+            let old_secrets = old.join("secrets");
+            let restored_secrets = destination.join("secrets");
+            if old_secrets.exists() {
+                if restored_secrets.exists() {
+                    let _ = remove_profile_dir(&restored_secrets);
+                }
+                match rename_path_with_retries(&old_secrets, &restored_secrets) {
+                    Ok(()) => notes.push(format!(
+                        "{label} restored; the per-install local secret was preserved at {}.",
+                        restored_secrets.display()
+                    )),
+                    Err(error) => notes.push(format!(
+                        "{label} restored; local secret preservation is pending at {} because {error}.",
+                        old_secrets.display()
                     )),
                 }
             }
@@ -3242,12 +3284,21 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
         RestoreProfileOptions {
             skip_source_model_cache: true,
             preserve_destination_model_cache: true,
+            ..RestoreProfileOptions::default()
         },
     )?);
-    cleanup_notes.extend(replace_profile_dir_from_backup(
+    cleanup_notes.extend(replace_profile_dir_from_backup_with_options(
         &source.join("config"),
         &config_dir(),
         "Setup/config",
+        RestoreProfileOptions {
+            // The per-install secret (local DB password) is never carried in a
+            // backup and is preserved from the live install across restore, so
+            // the restored database keeps authenticating.
+            skip_source_secrets: true,
+            preserve_destination_secrets: true,
+            ..RestoreProfileOptions::default()
+        },
     )?);
     rewrite_service_state_after_restore(services)?;
     let cleanup_message = if cleanup_notes.is_empty() {
@@ -4469,6 +4520,86 @@ mod tests {
                         .reason
                         .contains("model cache skipped for restore safety backup")
             }));
+        });
+    }
+
+    #[test]
+    fn backups_exclude_per_install_secret_and_restore_preserves_it() {
+        with_temp_state_dir(|root| {
+            fs::create_dir_all(root.join("Data").join("files")).expect("data folder");
+            fs::write(root.join("Data").join("files").join("record.txt"), "before")
+                .expect("data file");
+            fs::create_dir_all(root.join("config")).expect("config folder");
+            fs::write(root.join("config").join("city.json"), "before").expect("config file");
+            let secrets = root.join("config").join("secrets");
+            fs::create_dir_all(&secrets).expect("secrets folder");
+            let secret_file = secrets.join("postgres-password.txt");
+            fs::write(&secret_file, "ORIGINAL-LOCAL-DB-PASSWORD\n").expect("secret file");
+
+            let backup_result = supervisor_action("backup", None).expect("backup response");
+            assert!(backup_result.accepted);
+
+            let manual_backup = root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .find(|entry| entry.file_name().to_string_lossy().contains("manual"))
+                .expect("manual backup folder")
+                .path();
+
+            // The plaintext secret must not be present anywhere in the backup.
+            assert!(
+                !manual_backup.join("config").join("secrets").exists(),
+                "backup must not contain the per-install secrets folder"
+            );
+            let manifest =
+                verified_backup_manifest(&manual_backup).expect("manual backup verifies");
+            assert!(
+                manifest
+                    .files
+                    .iter()
+                    .all(|entry| !entry.path.contains("secrets")),
+                "no backup manifest file entry may reference the secret"
+            );
+            assert!(
+                manifest.skipped_files.iter().any(|entry| {
+                    entry.path.starts_with("config/secrets")
+                        && entry.reason.contains("per-install local secret excluded")
+                }),
+                "the secret must be recorded as an excluded file"
+            );
+
+            // Mutating then restoring must keep the live per-install secret.
+            fs::write(root.join("config").join("city.json"), "after").expect("mutate config");
+            fs::write(&secret_file, "ROTATED-LOCAL-DB-PASSWORD\n").expect("rotate secret");
+
+            let restore_result = supervisor_action("restore", None).expect("restore response");
+            assert!(restore_result.accepted);
+            assert_eq!(
+                fs::read_to_string(root.join("config").join("city.json")).expect("restored config"),
+                "before"
+            );
+            assert!(
+                secret_file.is_file(),
+                "the live per-install secret must survive a restore"
+            );
+            assert_eq!(
+                fs::read_to_string(&secret_file).expect("live secret"),
+                "ROTATED-LOCAL-DB-PASSWORD\n",
+                "restore preserves the live secret instead of wiping or reverting it"
+            );
+
+            // The pre-restore safety backup also excludes the secret.
+            let pre_restore_backup = root
+                .join("Backups")
+                .read_dir()
+                .expect("backups")
+                .filter_map(Result::ok)
+                .find(|entry| entry.file_name().to_string_lossy().contains("pre-restore"))
+                .expect("pre-restore safety backup")
+                .path();
+            assert!(!pre_restore_backup.join("config").join("secrets").exists());
         });
     }
 
