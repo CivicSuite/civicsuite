@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-012 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:12:14
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:12:35
 Refresh this file to watch the tester work step by step.
 
 ```
@@ -11,4 +11,7 @@ Refresh this file to watch the tester work step by step.
 [13:12:09] MSI ready: CivicSuite_0.1.0_x64_en-US.msi (1569 MB). Copying into Sandbox-mapped folder...
 [13:12:11] Launching Windows Sandbox (8 GB RAM, fresh clean Windows). Install/verify/uninstall run automatically; each step streams below.
 [13:12:14] Sandbox launched. Waiting for the in-Sandbox script to report (the launcher process exits immediately - that is normal; we wait for the result file)...
+    SANDBOX> [13:12:24] Sandbox booted. Locating MSI...
+    SANDBOX> [13:12:24] MSI: CivicSuite_0.1.0_x64_en-US.msi (1569 MB)
+    SANDBOX> [13:12:24] INSTALL: msiexec /i /quiet starting (1.5 GB runtime - this takes a few minutes)...
 ```
