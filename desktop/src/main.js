@@ -770,7 +770,8 @@ const state = {
     codeQuestion: "",
     searchQuery: ""
   },
-  app: fallbackState
+  app: fallbackState,
+  appLoadError: null
 };
 
 // First-run wizard focus management.
@@ -869,16 +870,25 @@ function maybeAdvanceFirstRunFocus() {
   });
 }
 
+let appStateLoaded = false;
+
 async function loadAppState() {
   if (!("__TAURI_INTERNALS__" in window)) {
-    return;
+    return; // pure browser preview: fallback is intentional, not an error
   }
   try {
     state.app = await invoke("get_app_state");
+    state.appLoadError = null;
+    appStateLoaded = true;
     hydrateSetupDraftFromApp();
     hydrateModuleDraftFromApp();
   } catch (error) {
-    console.warn("Using browser fallback state", error);
+    // Saved data may exist but be unreadable (torn write, corrupt JSON, locked
+    // file). Do NOT keep the pristine fallback — that looks like total data
+    // loss. Surface an explicit, retryable error and refuse the first-run wizard.
+    appStateLoaded = false;
+    state.appLoadError = String(error && error.message ? error.message : error);
+    console.error("CivicSuite could not load saved state", error);
   }
 }
 
@@ -1189,7 +1199,7 @@ function renderModuleSelectionControls() {
               type="radio"
               name="module-profile"
               value="${profile.id}"
-              data-module-profile-id="${profile.id}"
+              data-module-profile-id="${escapeHtml(profile.id)}"
               ${state.moduleDraft.profileId === profile.id ? "checked" : ""}
             />
             <span>
@@ -1248,7 +1258,7 @@ function renderSetupFields(step) {
   if (step.id === "locations") {
     return `
       <div class="setup-form" aria-label="Local folders">
-        <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
+        <label>App install folder <input type="text" data-setup-field="installRoot" value="${escapeHtml(state.setupDraft.installRoot)}" autocomplete="off" readonly /></label>
         ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data")}
         ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
@@ -1258,20 +1268,20 @@ function renderSetupFields(step) {
   if (step.id === "city-profile") {
     return `
       <div class="setup-form" aria-label="City profile">
-        <label>City name <input type="text" data-setup-field="cityName" value="${state.setupDraft.cityName}" autocomplete="organization" /></label>
-        <label>State <input type="text" data-setup-field="state" value="${state.setupDraft.state}" autocomplete="address-level1" /></label>
-        <label>Time zone <input type="text" data-setup-field="timeZone" value="${state.setupDraft.timeZone}" /></label>
-        <label>Records contact <input type="email" data-setup-field="recordsContact" value="${state.setupDraft.recordsContact}" autocomplete="email" /></label>
-        <label>Clerk contact <input type="email" data-setup-field="clerkContact" value="${state.setupDraft.clerkContact}" autocomplete="email" /></label>
+        <label>City name <input type="text" data-setup-field="cityName" value="${escapeHtml(state.setupDraft.cityName)}" autocomplete="organization" /></label>
+        <label>State <input type="text" data-setup-field="state" value="${escapeHtml(state.setupDraft.state)}" autocomplete="address-level1" /></label>
+        <label>Time zone <input type="text" data-setup-field="timeZone" value="${escapeHtml(state.setupDraft.timeZone)}" /></label>
+        <label>Records contact <input type="email" data-setup-field="recordsContact" value="${escapeHtml(state.setupDraft.recordsContact)}" autocomplete="email" /></label>
+        <label>Clerk contact <input type="email" data-setup-field="clerkContact" value="${escapeHtml(state.setupDraft.clerkContact)}" autocomplete="email" /></label>
       </div>
     `;
   }
   if (step.id === "first-admin") {
     return `
       <div class="setup-form two-column" aria-label="First admin">
-        <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
-        <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
-        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${state.setupDraft.adminPasscode}" autocomplete="new-password" /></label>
+        <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
+        <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
+        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
       </div>
     `;
   }
@@ -1334,9 +1344,9 @@ function renderActionResult() {
   const result = state.actionResult;
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
-      <strong>${result.status}</strong>
-      <span>${result.message}</span>
-      <small>${result.next_action}</small>
+      <strong>${escapeHtml(result.status)}</strong>
+      <span>${escapeHtml(result.message)}</span>
+      <small>${escapeHtml(result.next_action)}</small>
     </div>
   `;
 }
@@ -1346,9 +1356,9 @@ function renderModelActionResult() {
   const result = state.modelActionResult;
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
-      <strong>${result.status}</strong>
-      <span>${result.message}</span>
-      <small>${result.next_action}</small>
+      <strong>${escapeHtml(result.status)}</strong>
+      <span>${escapeHtml(result.message)}</span>
+      <small>${escapeHtml(result.next_action)}</small>
     </div>
   `;
 }
@@ -1362,9 +1372,9 @@ function renderSupervisorActionResult() {
     : "";
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
-      <strong>${result.status}</strong>
-      <span>${result.message}</span>
-      <small>${result.next_action}</small>
+      <strong>${escapeHtml(result.status)}</strong>
+      <span>${escapeHtml(result.message)}</span>
+      <small>${escapeHtml(result.next_action)}</small>
       ${uninstallFollowUp}
     </div>
   `;
@@ -1397,9 +1407,9 @@ function renderWorkActionResult() {
   const result = state.workActionResult;
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
-      <strong>${result.status}</strong>
-      <span>${result.message}</span>
-      <small>${result.next_action}</small>
+      <strong>${escapeHtml(result.status)}</strong>
+      <span>${escapeHtml(result.message)}</span>
+      <small>${escapeHtml(result.next_action)}</small>
     </div>
   `;
 }
@@ -1409,9 +1419,9 @@ function renderAuthActionResult() {
   const result = state.authActionResult;
   return `
     <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
-      <strong>${result.status}</strong>
-      <span>${result.message}</span>
-      <small>${result.next_action}</small>
+      <strong>${escapeHtml(result.status)}</strong>
+      <span>${escapeHtml(result.message)}</span>
+      <small>${escapeHtml(result.next_action)}</small>
     </div>
   `;
 }
@@ -1442,8 +1452,8 @@ function renderAccessPanel() {
         <p>Use a local staff or administrator passcode for city work. Use a local administrator account for setup, users, modules, backups, restore, repair, model setup, or runtime services.</p>
       </div>
       <div class="workflow-form compact-form">
-        <label>Email <input type="email" data-access-field="email" value="${state.accessDraft.email}" autocomplete="email" /></label>
-        <label>Passcode <input type="password" data-access-field="passcode" value="${state.accessDraft.passcode}" autocomplete="current-password" /></label>
+        <label>Email <input type="email" data-access-field="email" value="${escapeHtml(state.accessDraft.email)}" autocomplete="email" /></label>
+        <label>Passcode <input type="password" data-access-field="passcode" value="${escapeHtml(state.accessDraft.passcode)}" autocomplete="current-password" /></label>
         <button type="button" class="primary-action" data-auth-action="sign-in">Sign In</button>
       </div>
       ${renderAuthActionResult()}
@@ -1452,6 +1462,7 @@ function renderAccessPanel() {
 }
 
 function renderFirstRunWizard({ compact = false } = {}) {
+  if (!appStateLoaded) return ""; // never render the wizard from fallback state
   const firstRun = state.app.first_run;
   if (!firstRun || firstRun.finished) return "";
   const steps = compact ? firstRun.steps.slice(0, 5) : firstRun.steps;
@@ -2792,19 +2803,19 @@ function renderPublicMeetingsWorkflow() {
         <label>Meeting
           <select data-work-field="publicCommentMeetingId" ${commentMeetings.length === 0 ? "disabled" : ""}>
             ${commentMeetings.length === 0 ? `<option>No meeting available</option>` : commentMeetings.map((meeting) => `
-              <option value="${meeting.id}" ${meeting.id === selectedCommentMeetingId ? "selected" : ""}>${meeting.meeting_date} - ${meeting.title}</option>
+              <option value="${escapeHtml(meeting.id)}" ${meeting.id === selectedCommentMeetingId ? "selected" : ""}>${escapeHtml(meeting.meeting_date)} - ${escapeHtml(meeting.title)}</option>
             `).join("")}
           </select>
         </label>
-        <label>Your name <input type="text" data-work-field="publicCommentName" value="${state.workDraft.publicCommentName}" autocomplete="name" /></label>
-        <label>Email or phone <input type="text" data-work-field="publicCommentContact" value="${state.workDraft.publicCommentContact}" autocomplete="email" /></label>
+        <label>Your name <input type="text" data-work-field="publicCommentName" value="${escapeHtml(state.workDraft.publicCommentName)}" autocomplete="name" /></label>
+        <label>Email or phone <input type="text" data-work-field="publicCommentContact" value="${escapeHtml(state.workDraft.publicCommentContact)}" autocomplete="email" /></label>
         <label>Comment type
           <select data-work-field="publicCommentMode">
             ${["written", "remote", "in-person sign-up"].map((mode) => `<option value="${mode}" ${state.workDraft.publicCommentMode === mode ? "selected" : ""}>${mode}</option>`).join("")}
           </select>
         </label>
-        <label>Agenda item or topic <input type="text" data-work-field="publicCommentTopic" value="${state.workDraft.publicCommentTopic}" /></label>
-        <label>Comment <textarea data-work-field="publicCommentBody">${state.workDraft.publicCommentBody}</textarea></label>
+        <label>Agenda item or topic <input type="text" data-work-field="publicCommentTopic" value="${escapeHtml(state.workDraft.publicCommentTopic)}" /></label>
+        <label>Comment <textarea data-work-field="publicCommentBody">${escapeHtml(state.workDraft.publicCommentBody)}</textarea></label>
         ${commentMeetings.length === 0 ? `<button type="button" class="primary-action" disabled>Submit Public Comment</button>` : `<button type="button" class="primary-action" data-work-action="submit-public-comment">Submit Public Comment</button>`}
       </div>
     </section>
@@ -2812,10 +2823,10 @@ function renderPublicMeetingsWorkflow() {
     <section class="workflow-list">
       ${meetings.length === 0 ? workflowEmpty("No public meeting materials have been posted yet.") : meetings.map((meeting) => `
         <article class="workflow-record">
-          <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : meeting.notice_status}</span>
-          <h3>${meeting.title}</h3>
+          <span class="status-ok">${meeting.status === "archived public record" ? "archived public record" : escapeHtml(meeting.notice_status)}</span>
+          <h3>${escapeHtml(meeting.title)}</h3>
           <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
-          <p>${meeting.summary || "No public summary recorded."}</p>
+          <p>${escapeHtml(meeting.summary || "No public summary recorded.")}</p>
           ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Public packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)})`).join("; ")}</p>` : ""}
           ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)})`).join("; ")}</p>` : ""}
@@ -2824,7 +2835,7 @@ function renderPublicMeetingsWorkflow() {
           ${(meeting.quorum_checks || []).length > 0 ? `<p><strong>Quorum:</strong> ${(meeting.quorum_checks || []).map((record) => `${escapeHtml(record.status)} - ${Number(record.present_count || 0) + Number(record.remote_count || 0)} of ${escapeHtml(record.required_count || 0)} required`).join("; ")}</p>` : ""}
           ${(meeting.member_votes || []).length > 0 ? `<p><strong>Roll-call votes:</strong> ${(meeting.member_votes || []).map((vote) => `${escapeHtml(vote.member_name)} ${escapeHtml(vote.vote)} on ${escapeHtml(vote.motion_text)}`).join("; ")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Public minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)}`).join("; ")}</p>` : ""}
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.attendance_records || []).length} attendance records - ${(meeting.quorum_checks || []).length} quorum checks - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
+          <small>${escapeHtml(meeting.meeting_date)} - ${escapeHtml(meeting.body_name || "City Council")} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} packet attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.attendance_records || []).length} attendance records - ${(meeting.quorum_checks || []).length} quorum checks - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${publicReadyCommentCount(meeting)} reviewed public comments - ${(meeting.exports || []).length} public exports</small>
         </article>
       `).join("")}
     </section>
@@ -2866,12 +2877,12 @@ function renderMeetingsWorkflow() {
       <div class="workflow-form">
         <h3>Meeting Bodies</h3>
         <p class="form-help">Set up the council, board, commission, or authority that holds meetings before scheduling recurring work.</p>
-        <label>Meeting body name <input type="text" data-work-field="meetingBodyName" value="${state.workDraft.meetingBodyName}" placeholder="City Council" /></label>
-        <label>Body type <input type="text" data-work-field="meetingBodyType" value="${state.workDraft.meetingBodyType}" placeholder="legislative, advisory, authority" /></label>
-        <label>Body statutory basis <input type="text" data-work-field="meetingBodyStatutoryBasis" value="${state.workDraft.meetingBodyStatutoryBasis}" placeholder="Municipal charter or ordinance section" /></label>
-        <label>Meeting cadence <input type="text" data-work-field="meetingBodyCadence" value="${state.workDraft.meetingBodyCadence}" placeholder="First and third Tuesday" /></label>
-        <label>Default notice days <input type="number" min="0" max="365" data-work-field="meetingBodyDefaultNoticeDays" value="${state.workDraft.meetingBodyDefaultNoticeDays}" /></label>
-        <label>Quorum rule <input type="text" data-work-field="meetingBodyQuorumRule" value="${state.workDraft.meetingBodyQuorumRule}" placeholder="majority of seated members" /></label>
+        <label>Meeting body name <input type="text" data-work-field="meetingBodyName" value="${escapeHtml(state.workDraft.meetingBodyName)}" placeholder="City Council" /></label>
+        <label>Body type <input type="text" data-work-field="meetingBodyType" value="${escapeHtml(state.workDraft.meetingBodyType)}" placeholder="legislative, advisory, authority" /></label>
+        <label>Body statutory basis <input type="text" data-work-field="meetingBodyStatutoryBasis" value="${escapeHtml(state.workDraft.meetingBodyStatutoryBasis)}" placeholder="Municipal charter or ordinance section" /></label>
+        <label>Meeting cadence <input type="text" data-work-field="meetingBodyCadence" value="${escapeHtml(state.workDraft.meetingBodyCadence)}" placeholder="First and third Tuesday" /></label>
+        <label>Default notice days <input type="number" min="0" max="365" data-work-field="meetingBodyDefaultNoticeDays" value="${escapeHtml(state.workDraft.meetingBodyDefaultNoticeDays)}" /></label>
+        <label>Quorum rule <input type="text" data-work-field="meetingBodyQuorumRule" value="${escapeHtml(state.workDraft.meetingBodyQuorumRule)}" placeholder="majority of seated members" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="create-meeting-body">Save Meeting Body</button>
         </div>
@@ -2883,13 +2894,13 @@ function renderMeetingsWorkflow() {
         <label>Roster body
           ${bodies.length > 0 ? `<select data-work-field="meetingBodyId">
             ${bodies.map((body) => `<option value="${escapeHtml(body.id)}" ${body.id === selectedBodyId ? "selected" : ""}>${escapeHtml(body.name)} - ${escapeHtml(body.statutory_basis)}</option>`).join("")}
-          </select>` : `<input type="text" data-work-field="meetingBodyName" value="${state.workDraft.meetingBodyName}" placeholder="City Council" />`}
+          </select>` : `<input type="text" data-work-field="meetingBodyName" value="${escapeHtml(state.workDraft.meetingBodyName)}" placeholder="City Council" />`}
         </label>
-        <label>Member name <input type="text" data-work-field="memberName" value="${state.workDraft.memberName}" /></label>
-        <label>Member role <input type="text" data-work-field="memberRole" value="${state.workDraft.memberRole}" placeholder="Mayor, Councilmember, Chair" /></label>
-        <label>Term start <input type="date" data-work-field="memberTermStart" value="${state.workDraft.memberTermStart}" /></label>
-        <label>Term end <input type="date" data-work-field="memberTermEnd" value="${state.workDraft.memberTermEnd}" /></label>
-        <label>Member email <input type="email" data-work-field="memberEmail" value="${state.workDraft.memberEmail}" /></label>
+        <label>Member name <input type="text" data-work-field="memberName" value="${escapeHtml(state.workDraft.memberName)}" /></label>
+        <label>Member role <input type="text" data-work-field="memberRole" value="${escapeHtml(state.workDraft.memberRole)}" placeholder="Mayor, Councilmember, Chair" /></label>
+        <label>Term start <input type="date" data-work-field="memberTermStart" value="${escapeHtml(state.workDraft.memberTermStart)}" /></label>
+        <label>Term end <input type="date" data-work-field="memberTermEnd" value="${escapeHtml(state.workDraft.memberTermEnd)}" /></label>
+        <label>Member email <input type="email" data-work-field="memberEmail" value="${escapeHtml(state.workDraft.memberEmail)}" /></label>
         <div class="workflow-actions">
           ${bodies.length === 0 ? `<button type="button" class="secondary-action" disabled>Save Member</button>` : `<button type="button" class="secondary-action" data-work-action="add-meeting-member">Save Member</button>`}
         </div>
@@ -2898,12 +2909,12 @@ function renderMeetingsWorkflow() {
       <div class="workflow-form">
         <h3>Agenda Intake Queue</h3>
         <p class="form-help">Capture department requests and source material before the clerk promotes an item to a meeting agenda.</p>
-        <label>Intake title <input type="text" data-work-field="agendaIntakeTitle" value="${state.workDraft.agendaIntakeTitle}" /></label>
-        <label>Submitted by <input type="text" data-work-field="agendaIntakeSubmitter" value="${state.workDraft.agendaIntakeSubmitter}" /></label>
-        <label>Department <input type="text" data-work-field="agendaIntakeDepartment" value="${state.workDraft.agendaIntakeDepartment}" /></label>
-        <label>Requested meeting date <input type="date" data-work-field="agendaIntakeMeetingDate" value="${state.workDraft.agendaIntakeMeetingDate}" /></label>
-        <label>Intake summary <textarea data-work-field="agendaIntakeSummary">${state.workDraft.agendaIntakeSummary}</textarea></label>
-        <label>Source or citation <input type="text" data-work-field="agendaIntakeSourceReference" value="${state.workDraft.agendaIntakeSourceReference}" placeholder="Department memo, staff report, code section, or file reference" /></label>
+        <label>Intake title <input type="text" data-work-field="agendaIntakeTitle" value="${escapeHtml(state.workDraft.agendaIntakeTitle)}" /></label>
+        <label>Submitted by <input type="text" data-work-field="agendaIntakeSubmitter" value="${escapeHtml(state.workDraft.agendaIntakeSubmitter)}" /></label>
+        <label>Department <input type="text" data-work-field="agendaIntakeDepartment" value="${escapeHtml(state.workDraft.agendaIntakeDepartment)}" /></label>
+        <label>Requested meeting date <input type="date" data-work-field="agendaIntakeMeetingDate" value="${escapeHtml(state.workDraft.agendaIntakeMeetingDate)}" /></label>
+        <label>Intake summary <textarea data-work-field="agendaIntakeSummary">${escapeHtml(state.workDraft.agendaIntakeSummary)}</textarea></label>
+        <label>Source or citation <input type="text" data-work-field="agendaIntakeSourceReference" value="${escapeHtml(state.workDraft.agendaIntakeSourceReference)}" placeholder="Department memo, staff report, code section, or file reference" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="submit-agenda-intake">Submit Agenda Intake</button>
         </div>
@@ -2916,7 +2927,7 @@ function renderMeetingsWorkflow() {
             ${["ready for agenda", "needs more information"].map((decision) => `<option value="${decision}" ${state.workDraft.agendaIntakeDecision === decision ? "selected" : ""}>${decision}</option>`).join("")}
           </select>
         </label>
-        <label>Clerk review note <textarea data-work-field="agendaIntakeReviewNote">${state.workDraft.agendaIntakeReviewNote}</textarea></label>
+        <label>Clerk review note <textarea data-work-field="agendaIntakeReviewNote">${escapeHtml(state.workDraft.agendaIntakeReviewNote)}</textarea></label>
         <div class="workflow-actions">
           ${selectedAgendaIntakeCanReview ? `<button type="button" class="secondary-action" data-work-action="review-agenda-intake">Review Agenda Intake</button>` : `<button type="button" class="secondary-action" disabled>Review Agenda Intake</button>`}
           ${selectedAgendaIntakeCanPromote ? `<button type="button" class="secondary-action" data-work-action="promote-agenda-intake">Promote To Agenda</button>` : `<button type="button" class="secondary-action" disabled>Promote To Agenda</button>`}
@@ -2927,13 +2938,13 @@ function renderMeetingsWorkflow() {
         <label>Meeting body
           ${bodies.length > 0 ? `<select data-work-field="meetingBodyId">
             ${bodies.map((body) => `<option value="${escapeHtml(body.id)}" ${body.id === selectedBodyId ? "selected" : ""}>${escapeHtml(body.name)} - ${escapeHtml(body.statutory_basis)}</option>`).join("")}
-          </select>` : `<input type="text" data-work-field="meetingBodyName" value="${state.workDraft.meetingBodyName}" placeholder="City Council" />`}
+          </select>` : `<input type="text" data-work-field="meetingBodyName" value="${escapeHtml(state.workDraft.meetingBodyName)}" placeholder="City Council" />`}
         </label>
         ${bodies.length === 0 ? `<p class="form-help">Save a meeting body with statutory basis before creating a meeting.</p>` : ""}
-        <label>Meeting title <input type="text" data-work-field="meetingTitle" value="${state.workDraft.meetingTitle}" /></label>
-        <label>Date <input type="date" data-work-field="meetingDate" value="${state.workDraft.meetingDate}" /></label>
-        <label>Summary <textarea data-work-field="meetingSummary">${state.workDraft.meetingSummary}</textarea></label>
-        <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${state.workDraft.agendaTitle}" /></label>
+        <label>Meeting title <input type="text" data-work-field="meetingTitle" value="${escapeHtml(state.workDraft.meetingTitle)}" /></label>
+        <label>Date <input type="date" data-work-field="meetingDate" value="${escapeHtml(state.workDraft.meetingDate)}" /></label>
+        <label>Summary <textarea data-work-field="meetingSummary">${escapeHtml(state.workDraft.meetingSummary)}</textarea></label>
+        <label>First agenda item <input type="text" data-work-field="agendaTitle" value="${escapeHtml(state.workDraft.agendaTitle)}" /></label>
         <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${escapedDraft("noticeMeetingType")}" placeholder="Regular council meeting" /></label>
         <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${escapedDraft("noticeStatutoryBasis")}" placeholder="Municipal open meetings notice" /></label>
         <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${escapedDraft("noticeLeadDays")}" /></label>
@@ -2947,10 +2958,10 @@ function renderMeetingsWorkflow() {
         <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${escapedDraft("noticeDeadline")}" /></label>
         <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${escapedDraft("noticeTimeZone")}" placeholder="America/Denver" /></label>
         <label class="checkbox-row"><input type="checkbox" data-work-field="noticeHumanApproval" ${state.workDraft.noticeHumanApproval ? "checked" : ""} /> Clerk has reviewed and approved the notice checklist</label>
-        <label>Actual posting date <input type="date" data-work-field="noticePostingDate" value="${state.workDraft.noticePostingDate}" /></label>
-        <label>Notice posting location <input type="text" data-work-field="noticeLocation" value="${state.workDraft.noticeLocation}" placeholder="City Hall bulletin board and city website" /></label>
-        <label>Notice posting method <input type="text" data-work-field="noticeMethod" value="${state.workDraft.noticeMethod}" placeholder="Posted PDF and clerk attestation" /></label>
-        <label>Posting confirmation <textarea data-work-field="noticeConfirmation">${state.workDraft.noticeConfirmation}</textarea></label>
+        <label>Actual posting date <input type="date" data-work-field="noticePostingDate" value="${escapeHtml(state.workDraft.noticePostingDate)}" /></label>
+        <label>Notice posting location <input type="text" data-work-field="noticeLocation" value="${escapeHtml(state.workDraft.noticeLocation)}" placeholder="City Hall bulletin board and city website" /></label>
+        <label>Notice posting method <input type="text" data-work-field="noticeMethod" value="${escapeHtml(state.workDraft.noticeMethod)}" placeholder="Posted PDF and clerk attestation" /></label>
+        <label>Posting confirmation <textarea data-work-field="noticeConfirmation">${escapeHtml(state.workDraft.noticeConfirmation)}</textarea></label>
         <div class="workflow-actions">
           ${bodies.length === 0 ? `<button type="button" class="primary-action" disabled>Create Meeting</button>` : `<button type="button" class="primary-action" data-work-action="create-meeting">Create Meeting</button>`}
           <button type="button" class="secondary-action" data-work-action="add-agenda-item">Add Agenda Item</button>
@@ -2970,14 +2981,14 @@ function renderMeetingsWorkflow() {
             ${selectedMeetingAgendaItems.length === 0 ? `<option>No agenda item available</option>` : selectedMeetingAgendaItems.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === selectedStaffReportAgendaItemId ? "selected" : ""}>${escapeHtml(item.title)}</option>`).join("")}
           </select>
         </label>
-        <label>Recommendation <textarea data-work-field="staffReportRecommendation">${state.workDraft.staffReportRecommendation}</textarea></label>
-        <label>Background <textarea data-work-field="staffReportBackground">${state.workDraft.staffReportBackground}</textarea></label>
-        <label>Analysis <textarea data-work-field="staffReportAnalysis">${state.workDraft.staffReportAnalysis}</textarea></label>
-        <label>Fiscal impact <textarea data-work-field="staffReportFiscalImpact">${state.workDraft.staffReportFiscalImpact}</textarea></label>
-        <label>Alternatives considered <textarea data-work-field="staffReportAlternatives">${state.workDraft.staffReportAlternatives}</textarea></label>
-        <label>Prior actions <textarea data-work-field="staffReportPriorActions">${state.workDraft.staffReportPriorActions}</textarea></label>
-        <label>Staff report prepared by <input type="text" data-work-field="staffReportPreparedBy" value="${state.workDraft.staffReportPreparedBy}" /></label>
-        <label>Revision note <input type="text" data-work-field="staffReportRevisionNote" value="${state.workDraft.staffReportRevisionNote}" /></label>
+        <label>Recommendation <textarea data-work-field="staffReportRecommendation">${escapeHtml(state.workDraft.staffReportRecommendation)}</textarea></label>
+        <label>Background <textarea data-work-field="staffReportBackground">${escapeHtml(state.workDraft.staffReportBackground)}</textarea></label>
+        <label>Analysis <textarea data-work-field="staffReportAnalysis">${escapeHtml(state.workDraft.staffReportAnalysis)}</textarea></label>
+        <label>Fiscal impact <textarea data-work-field="staffReportFiscalImpact">${escapeHtml(state.workDraft.staffReportFiscalImpact)}</textarea></label>
+        <label>Alternatives considered <textarea data-work-field="staffReportAlternatives">${escapeHtml(state.workDraft.staffReportAlternatives)}</textarea></label>
+        <label>Prior actions <textarea data-work-field="staffReportPriorActions">${escapeHtml(state.workDraft.staffReportPriorActions)}</textarea></label>
+        <label>Staff report prepared by <input type="text" data-work-field="staffReportPreparedBy" value="${escapeHtml(state.workDraft.staffReportPreparedBy)}" /></label>
+        <label>Revision note <input type="text" data-work-field="staffReportRevisionNote" value="${escapeHtml(state.workDraft.staffReportRevisionNote)}" /></label>
         <div class="workflow-actions">
           ${selectedMeetingAgendaItems.length === 0 ? `<button type="button" class="secondary-action" disabled>Save Staff Report</button>` : `<button type="button" class="secondary-action" data-work-action="record-staff-report">Save Staff Report</button>`}
         </div>
@@ -2985,18 +2996,18 @@ function renderMeetingsWorkflow() {
       <div class="workflow-form">
         <h3>Packet Attachments</h3>
         <p class="form-help">Attach source files for the agenda packet. The desktop app copies each file into the city profile and records a SHA-256 hash.</p>
-        <label>Attachment title <input type="text" data-work-field="meetingAttachmentTitle" value="${state.workDraft.meetingAttachmentTitle}" /></label>
+        <label>Attachment title <input type="text" data-work-field="meetingAttachmentTitle" value="${escapeHtml(state.workDraft.meetingAttachmentTitle)}" /></label>
         ${renderFilePathField("Attachment source file path", "meetingAttachmentSourcePath", state.workDraft.meetingAttachmentSourcePath, "C:/City/Clerk/fiscal-note.pdf")}
-        <label>Attachment citation <input type="text" data-work-field="meetingAttachmentCitation" value="${state.workDraft.meetingAttachmentCitation}" /></label>
-        <label>Packet section <input type="text" data-work-field="meetingAttachmentSection" value="${state.workDraft.meetingAttachmentSection}" placeholder="Item 6 fiscal note" /></label>
+        <label>Attachment citation <input type="text" data-work-field="meetingAttachmentCitation" value="${escapeHtml(state.workDraft.meetingAttachmentCitation)}" /></label>
+        <label>Packet section <input type="text" data-work-field="meetingAttachmentSection" value="${escapeHtml(state.workDraft.meetingAttachmentSection)}" placeholder="Item 6 fiscal note" /></label>
         <label>Attachment access
           <select data-work-field="meetingAttachmentAccess">
             ${["public packet", "closed-session addendum"].map((access) => `<option value="${access}" ${state.workDraft.meetingAttachmentAccess === access ? "selected" : ""}>${access}</option>`).join("")}
           </select>
         </label>
-        <label>Packet title <input type="text" data-work-field="packetTitle" value="${state.workDraft.packetTitle}" placeholder="Council agenda packet" /></label>
-        <label>Packet prepared by <input type="text" data-work-field="packetPreparedBy" value="${state.workDraft.packetPreparedBy}" placeholder="Deputy Clerk" /></label>
-        <label>Packet review note <textarea data-work-field="packetReviewNote">${state.workDraft.packetReviewNote}</textarea></label>
+        <label>Packet title <input type="text" data-work-field="packetTitle" value="${escapeHtml(state.workDraft.packetTitle)}" placeholder="Council agenda packet" /></label>
+        <label>Packet prepared by <input type="text" data-work-field="packetPreparedBy" value="${escapeHtml(state.workDraft.packetPreparedBy)}" placeholder="Deputy Clerk" /></label>
+        <label>Packet review note <textarea data-work-field="packetReviewNote">${escapeHtml(state.workDraft.packetReviewNote)}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="add-meeting-attachment">Attach Packet File</button>
           ${!selectedMeeting || selectedMeetingAgendaItems.length === 0 ? `<button type="button" class="secondary-action" disabled>Finalize Packet</button>` : `<button type="button" class="secondary-action" data-work-action="finalize-meeting-packet">Finalize Packet</button>`}
@@ -3004,29 +3015,29 @@ function renderMeetingsWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Closed Sessions</h3>
-        <label>Closed-session statutory basis <input type="text" data-work-field="closedSessionBasis" value="${state.workDraft.closedSessionBasis}" placeholder="Open meetings statute or ordinance section" /></label>
-        <label>Closed-session topics <textarea data-work-field="closedSessionTopics">${state.workDraft.closedSessionTopics}</textarea></label>
-        <label>Closed-session attendees <textarea data-work-field="closedSessionAttendees">${state.workDraft.closedSessionAttendees}</textarea></label>
-        <label>Entered closed session <input type="text" data-work-field="closedSessionEnteredAt" value="${state.workDraft.closedSessionEnteredAt}" placeholder="6:42 PM" /></label>
-        <label>Exited closed session <input type="text" data-work-field="closedSessionExitedAt" value="${state.workDraft.closedSessionExitedAt}" placeholder="7:05 PM" /></label>
-        <label>Reconvene statement <textarea data-work-field="closedSessionReconvene">${state.workDraft.closedSessionReconvene}</textarea></label>
-        <label>Staff-only notes reference <input type="text" data-work-field="closedSessionNotesReference" value="${state.workDraft.closedSessionNotesReference}" placeholder="Closed-session memo file, legal note, or clerk note id" /></label>
+        <label>Closed-session statutory basis <input type="text" data-work-field="closedSessionBasis" value="${escapeHtml(state.workDraft.closedSessionBasis)}" placeholder="Open meetings statute or ordinance section" /></label>
+        <label>Closed-session topics <textarea data-work-field="closedSessionTopics">${escapeHtml(state.workDraft.closedSessionTopics)}</textarea></label>
+        <label>Closed-session attendees <textarea data-work-field="closedSessionAttendees">${escapeHtml(state.workDraft.closedSessionAttendees)}</textarea></label>
+        <label>Entered closed session <input type="text" data-work-field="closedSessionEnteredAt" value="${escapeHtml(state.workDraft.closedSessionEnteredAt)}" placeholder="6:42 PM" /></label>
+        <label>Exited closed session <input type="text" data-work-field="closedSessionExitedAt" value="${escapeHtml(state.workDraft.closedSessionExitedAt)}" placeholder="7:05 PM" /></label>
+        <label>Reconvene statement <textarea data-work-field="closedSessionReconvene">${escapeHtml(state.workDraft.closedSessionReconvene)}</textarea></label>
+        <label>Staff-only notes reference <input type="text" data-work-field="closedSessionNotesReference" value="${escapeHtml(state.workDraft.closedSessionNotesReference)}" placeholder="Closed-session memo file, legal note, or clerk note id" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="record-closed-session">Record Closed Session</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>Capture Outcomes</h3>
-        <label>Minutes draft <textarea data-work-field="minutes">${state.workDraft.minutes}</textarea></label>
-        <label>Motion text <textarea data-work-field="motionText">${state.workDraft.motionText}</textarea></label>
-        <label>Moved by <input type="text" data-work-field="motionMover" value="${state.workDraft.motionMover}" /></label>
-        <label>Seconded by <input type="text" data-work-field="motionSeconder" value="${state.workDraft.motionSeconder}" /></label>
+        <label>Minutes draft <textarea data-work-field="minutes">${escapeHtml(state.workDraft.minutes)}</textarea></label>
+        <label>Motion text <textarea data-work-field="motionText">${escapeHtml(state.workDraft.motionText)}</textarea></label>
+        <label>Moved by <input type="text" data-work-field="motionMover" value="${escapeHtml(state.workDraft.motionMover)}" /></label>
+        <label>Seconded by <input type="text" data-work-field="motionSeconder" value="${escapeHtml(state.workDraft.motionSeconder)}" /></label>
         <label>Motion disposition
           <select data-work-field="motionDisposition">
             ${["pending vote", "passed", "failed", "withdrawn", "tabled"].map((disposition) => `<option value="${disposition}" ${state.workDraft.motionDisposition === disposition ? "selected" : ""}>${disposition}</option>`).join("")}
           </select>
         </label>
-        <label>Linked vote reference <input type="text" data-work-field="motionVoteReference" value="${state.workDraft.motionVoteReference}" placeholder="Optional vote or roll-call note" /></label>
+        <label>Linked vote reference <input type="text" data-work-field="motionVoteReference" value="${escapeHtml(state.workDraft.motionVoteReference)}" placeholder="Optional vote or roll-call note" /></label>
         <label>Roll-call motion
           <select data-work-field="memberVoteMotionId" ${selectedMeetingMotions.length === 0 ? "disabled" : ""}>
             ${selectedMeetingMotions.length === 0 ? `<option>No motion recorded</option>` : selectedMeetingMotions.map((motion) => `<option value="${escapeHtml(motion.id)}" ${motion.id === selectedMemberVoteMotionId ? "selected" : ""}>${escapeHtml(motion.text)} (${escapeHtml(motion.disposition)})</option>`).join("")}
@@ -3052,32 +3063,32 @@ function renderMeetingsWorkflow() {
             ${["present", "remote", "late", "absent", "recused"].map((status) => `<option value="${status}" ${state.workDraft.attendanceStatus === status ? "selected" : ""}>${status}</option>`).join("")}
           </select>
         </label>
-        <label>Attendance recorded by <input type="text" data-work-field="attendanceRecordedBy" value="${state.workDraft.attendanceRecordedBy}" placeholder="City Clerk or deputy clerk" /></label>
-        <label>Attendance note <input type="text" data-work-field="attendanceNote" value="${state.workDraft.attendanceNote}" placeholder="Optional roll-call or remote participation note" /></label>
-        <label>Quorum required count <input type="number" min="1" data-work-field="quorumRequiredCount" value="${state.workDraft.quorumRequiredCount}" placeholder="Defaults to majority of active roster" /></label>
-        <label>Quorum review note <textarea data-work-field="quorumReviewNote">${state.workDraft.quorumReviewNote}</textarea></label>
-        <label>Vote or outcome <input type="text" data-work-field="vote" value="${state.workDraft.vote}" /></label>
-        <label>Action item <input type="text" data-work-field="actionItem" value="${state.workDraft.actionItem}" /></label>
-        <label>Action owner <input type="text" data-work-field="actionItemOwner" value="${state.workDraft.actionItemOwner}" /></label>
-        <label>Action due date <input type="date" data-work-field="actionItemDueDate" value="${state.workDraft.actionItemDueDate}" /></label>
+        <label>Attendance recorded by <input type="text" data-work-field="attendanceRecordedBy" value="${escapeHtml(state.workDraft.attendanceRecordedBy)}" placeholder="City Clerk or deputy clerk" /></label>
+        <label>Attendance note <input type="text" data-work-field="attendanceNote" value="${escapeHtml(state.workDraft.attendanceNote)}" placeholder="Optional roll-call or remote participation note" /></label>
+        <label>Quorum required count <input type="number" min="1" data-work-field="quorumRequiredCount" value="${escapeHtml(state.workDraft.quorumRequiredCount)}" placeholder="Defaults to majority of active roster" /></label>
+        <label>Quorum review note <textarea data-work-field="quorumReviewNote">${escapeHtml(state.workDraft.quorumReviewNote)}</textarea></label>
+        <label>Vote or outcome <input type="text" data-work-field="vote" value="${escapeHtml(state.workDraft.vote)}" /></label>
+        <label>Action item <input type="text" data-work-field="actionItem" value="${escapeHtml(state.workDraft.actionItem)}" /></label>
+        <label>Action owner <input type="text" data-work-field="actionItemOwner" value="${escapeHtml(state.workDraft.actionItemOwner)}" /></label>
+        <label>Action due date <input type="date" data-work-field="actionItemDueDate" value="${escapeHtml(state.workDraft.actionItemDueDate)}" /></label>
         <label>Action status
           <select data-work-field="actionItemStatus">
             ${["open", "in progress", "completed", "blocked"].map((status) => `<option value="${status}" ${state.workDraft.actionItemStatus === status ? "selected" : ""}>${status}</option>`).join("")}
           </select>
         </label>
-        <label>Action source <input type="text" data-work-field="actionItemSourceReference" value="${state.workDraft.actionItemSourceReference}" placeholder="Motion, vote, agenda item, or clerk note" /></label>
-        <label>Resident comment <textarea data-work-field="residentComment">${state.workDraft.residentComment}</textarea></label>
-        <label>Minutes signed by <input type="text" data-work-field="minutesSignedBy" value="${state.workDraft.minutesSignedBy}" placeholder="City Clerk or authorized signer" /></label>
-        <label>Signature attestation <textarea data-work-field="minutesSignatureAttestation">${state.workDraft.minutesSignatureAttestation}</textarea></label>
+        <label>Action source <input type="text" data-work-field="actionItemSourceReference" value="${escapeHtml(state.workDraft.actionItemSourceReference)}" placeholder="Motion, vote, agenda item, or clerk note" /></label>
+        <label>Resident comment <textarea data-work-field="residentComment">${escapeHtml(state.workDraft.residentComment)}</textarea></label>
+        <label>Minutes signed by <input type="text" data-work-field="minutesSignedBy" value="${escapeHtml(state.workDraft.minutesSignedBy)}" placeholder="City Clerk or authorized signer" /></label>
+        <label>Signature attestation <textarea data-work-field="minutesSignatureAttestation">${escapeHtml(state.workDraft.minutesSignatureAttestation)}</textarea></label>
         <label>Adopted item type
           <select data-work-field="adoptedLegislationType">
             ${["ordinance", "resolution"].map((kind) => `<option value="${kind}" ${state.workDraft.adoptedLegislationType === kind ? "selected" : ""}>${kind}</option>`).join("")}
           </select>
         </label>
-        <label>Adopted title <input type="text" data-work-field="adoptedLegislationTitle" value="${state.workDraft.adoptedLegislationTitle}" /></label>
-        <label>Adopted text <textarea data-work-field="adoptedLegislationText">${state.workDraft.adoptedLegislationText}</textarea></label>
-        <label>Effective date <input type="date" data-work-field="adoptedLegislationEffectiveDate" value="${state.workDraft.adoptedLegislationEffectiveDate}" /></label>
-        <label>Codification section hint <input type="text" data-work-field="adoptedLegislationCodificationHint" value="${state.workDraft.adoptedLegislationCodificationHint}" placeholder="Title 2, Chapter 4, or uncodified" /></label>
+        <label>Adopted title <input type="text" data-work-field="adoptedLegislationTitle" value="${escapeHtml(state.workDraft.adoptedLegislationTitle)}" /></label>
+        <label>Adopted text <textarea data-work-field="adoptedLegislationText">${escapeHtml(state.workDraft.adoptedLegislationText)}</textarea></label>
+        <label>Effective date <input type="date" data-work-field="adoptedLegislationEffectiveDate" value="${escapeHtml(state.workDraft.adoptedLegislationEffectiveDate)}" /></label>
+        <label>Codification section hint <input type="text" data-work-field="adoptedLegislationCodificationHint" value="${escapeHtml(state.workDraft.adoptedLegislationCodificationHint)}" placeholder="Title 2, Chapter 4, or uncodified" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="suggest-minutes-draft">Generate Local AI Minutes</button>
           <button type="button" class="secondary-action" data-work-action="record-minutes">Save Minutes Draft</button>
@@ -3097,10 +3108,10 @@ function renderMeetingsWorkflow() {
       <div class="workflow-form">
         <h3>Minute Citations</h3>
         <p class="form-help">Tie each important minutes sentence to a packet item, clerk note, transcript segment, or vote record before adoption.</p>
-        <label>Minutes sentence or excerpt <textarea data-work-field="minutesCitationSentence">${state.workDraft.minutesCitationSentence}</textarea></label>
-        <label>Citation source type <input type="text" data-work-field="minutesCitationSourceType" value="${state.workDraft.minutesCitationSourceType}" placeholder="packet item, clerk note, transcript segment" /></label>
-        <label>Citation source reference <input type="text" data-work-field="minutesCitationSourceRef" value="${state.workDraft.minutesCitationSourceRef}" placeholder="Item 4 fiscal note, clerk note 2, transcript 00:14:03" /></label>
-        <label>Citation note <input type="text" data-work-field="minutesCitationNote" value="${state.workDraft.minutesCitationNote}" /></label>
+        <label>Minutes sentence or excerpt <textarea data-work-field="minutesCitationSentence">${escapeHtml(state.workDraft.minutesCitationSentence)}</textarea></label>
+        <label>Citation source type <input type="text" data-work-field="minutesCitationSourceType" value="${escapeHtml(state.workDraft.minutesCitationSourceType)}" placeholder="packet item, clerk note, transcript segment" /></label>
+        <label>Citation source reference <input type="text" data-work-field="minutesCitationSourceRef" value="${escapeHtml(state.workDraft.minutesCitationSourceRef)}" placeholder="Item 4 fiscal note, clerk note 2, transcript 00:14:03" /></label>
+        <label>Citation note <input type="text" data-work-field="minutesCitationNote" value="${escapeHtml(state.workDraft.minutesCitationNote)}" /></label>
         <label>Citation access
           <select data-work-field="minutesCitationAccess">
             ${["public record", "staff-only"].map((access) => `<option value="${access}" ${state.workDraft.minutesCitationAccess === access ? "selected" : ""}>${access}</option>`).join("")}
@@ -3112,9 +3123,9 @@ function renderMeetingsWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Public Comment Review</h3>
-        <p class="form-help">${selectedPublicComment ? `${selectedPublicComment.commenter_name} - ${selectedPublicComment.status}` : "No submitted public comment is selected for review."}</p>
-        <label>Redacted public text <textarea data-work-field="publicCommentRedactedBody">${state.workDraft.publicCommentRedactedBody}</textarea></label>
-        <label>Statutory redaction basis <input type="text" data-work-field="publicCommentRedactionBasis" value="${state.workDraft.publicCommentRedactionBasis}" /></label>
+        <p class="form-help">${selectedPublicComment ? `${escapeHtml(selectedPublicComment.commenter_name)} - ${escapeHtml(selectedPublicComment.status)}` : "No submitted public comment is selected for review."}</p>
+        <label>Redacted public text <textarea data-work-field="publicCommentRedactedBody">${escapeHtml(state.workDraft.publicCommentRedactedBody)}</textarea></label>
+        <label>Statutory redaction basis <input type="text" data-work-field="publicCommentRedactionBasis" value="${escapeHtml(state.workDraft.publicCommentRedactionBasis)}" /></label>
         <div class="workflow-actions">
           ${selectedPublicComment ? `<button type="button" class="secondary-action" data-work-action="review-public-comment">Mark Reviewed</button>` : `<button type="button" class="secondary-action" disabled>Mark Reviewed</button>`}
           ${selectedPublicComment ? `<button type="button" class="secondary-action" data-work-action="redact-public-comment">Redact Comment</button>` : `<button type="button" class="secondary-action" disabled>Redact Comment</button>`}
@@ -3125,17 +3136,17 @@ function renderMeetingsWorkflow() {
     <section class="workflow-list">
       ${work.meetings.length === 0 ? workflowEmpty("No local meetings have been created yet.") : work.meetings.map((meeting) => `
         <article class="workflow-record">
-          <span class="status-warn">${meeting.status}</span>
-          <h3>${meeting.title}</h3>
+          <span class="status-warn">${escapeHtml(meeting.status)}</span>
+          <h3>${escapeHtml(meeting.title)}</h3>
           <p><strong>Body:</strong> ${escapeHtml(meeting.body_name || "City Council")}</p>
-          <p>${meeting.summary || "No summary yet."}</p>
+          <p>${escapeHtml(meeting.summary || "No summary yet.")}</p>
           ${(meeting.agenda_items || []).length > 0 ? `<p><strong>Agenda:</strong> ${(meeting.agenda_items || []).map((item) => `${escapeHtml(item.title)}${item.source_reference ? ` (${escapeHtml(item.source_reference)})` : ""}`).join("; ")}</p>` : ""}
           ${(meeting.staff_reports || []).length > 0 ? `<p><strong>Staff reports:</strong> ${(meeting.staff_reports || []).map((report) => `${escapeHtml(report.agenda_item_title)} - ${escapeHtml(report.recommendation)} (${escapeHtml(report.prepared_by)})`).join("; ")}</p>` : ""}
           ${meeting.minutes_adopted_at_unix_seconds ? "<p><strong>Minutes:</strong> adopted</p>" : ""}
           ${meeting.minutes_signed_at_unix_seconds ? `<p><strong>Minutes signature:</strong> signed by ${escapeHtml(meeting.minutes_signed_by || "authorized signer")}</p>` : ""}
           ${(meeting.minute_citations || []).length > 0 ? `<p><strong>Minute citations:</strong> ${(meeting.minute_citations || []).map((citation) => `${escapeHtml(citation.source_type)} ${escapeHtml(citation.source_reference)} (${escapeHtml(citation.access_level)})`).join("; ")}</p>` : ""}
-          ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${entry.meeting_type}; ${entry.statutory_basis}; due ${entry.posting_deadline} ${entry.time_zone}`).join("; ")}</p>` : ""}
-          ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${entry.location} via ${entry.method}`).join("; ")}</p>` : ""}
+          ${(meeting.notice_checklists || []).length > 0 ? `<p><strong>Notice checklist:</strong> ${(meeting.notice_checklists || []).map((entry) => `${escapeHtml(entry.meeting_type)}; ${escapeHtml(entry.statutory_basis)}; due ${escapeHtml(entry.posting_deadline)} ${escapeHtml(entry.time_zone)}`).join("; ")}</p>` : ""}
+          ${(meeting.notice_postings || []).length > 0 ? `<p><strong>Notice evidence:</strong> ${(meeting.notice_postings || []).map((entry) => `${escapeHtml(entry.location)} via ${escapeHtml(entry.method)}`).join("; ")}</p>` : ""}
           ${(meeting.attachments || []).length > 0 ? `<p><strong>Packet attachments:</strong> ${(meeting.attachments || []).map((attachment) => `${escapeHtml(attachment.title)} (${escapeHtml(attachment.packet_section)}; ${escapeHtml(attachment.access_level)}; sha256 ${escapeHtml(String(attachment.sha256 || "")).slice(0, 12)})`).join("; ")}</p>` : ""}
           ${(meeting.packet_assemblies || []).length > 0 ? `<p><strong>Packet finalization:</strong> ${(meeting.packet_assemblies || []).map((packet) => `${escapeHtml(packet.packet_title)} (${escapeHtml(packet.status)}; reviewed by ${escapeHtml(packet.prepared_by)}; ${packet.agenda_item_count} agenda items; ${packet.public_attachment_count} public attachments; ${packet.closed_session_attachment_count} closed-session addenda)`).join("; ")}</p>` : ""}
           ${(meeting.export_bundles || []).length > 0 ? `<p><strong>Records-ready bundles:</strong> ${(meeting.export_bundles || []).map((bundle) => `${bundle.public_record ? "public archive" : "staff packet"} sha256 ${escapeHtml(String(bundle.export_hash || "").slice(0, 12))}; manifest ${escapeHtml(String(bundle.manifest_hash || "").slice(0, 12))}; ${bundle.agenda_item_count || 0} agenda items; ${bundle.public_attachment_count || 0} public attachments; ${bundle.closed_session_attachment_count || 0} closed-session addenda`).join("; ")}</p>` : ""}
@@ -3151,18 +3162,18 @@ function renderMeetingsWorkflow() {
           ${(meeting.public_comments || []).length > 0 ? `<p><strong>Public comments:</strong> ${(meeting.public_comments || []).length} received for clerk review</p>` : ""}
           ${(meeting.public_comments || []).map((comment) => `
             <div class="comment-review-item">
-              <strong>${comment.commenter_name}</strong>
-              <span>${comment.status}</span>
-              <p>${comment.status === "redacted for public record" && comment.redacted_body ? comment.redacted_body : comment.body}</p>
+              <strong>${escapeHtml(comment.commenter_name)}</strong>
+              <span>${escapeHtml(comment.status)}</span>
+              <p>${comment.status === "redacted for public record" && comment.redacted_body ? escapeHtml(comment.redacted_body) : escapeHtml(comment.body)}</p>
               <div class="record-actions">
-                ${selectedPublicComment?.id === comment.id ? `<span class="status-ok">Selected for review</span>` : `<button type="button" class="secondary-action" data-select-work-record="publicComment" data-record-id="${comment.id}" data-parent-meeting-id="${meeting.id}">Review This</button>`}
+                ${selectedPublicComment?.id === comment.id ? `<span class="status-ok">Selected for review</span>` : `<button type="button" class="secondary-action" data-select-work-record="publicComment" data-record-id="${escapeHtml(comment.id)}" data-parent-meeting-id="${escapeHtml(meeting.id)}">Review This</button>`}
               </div>
             </div>
           `).join("")}
           <div class="record-actions">
-            ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
+            ${selectedMeeting?.id === meeting.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${escapeHtml(meeting.id)}">Work On This</button>`}
           </div>
-          <small>${meeting.meeting_date} - ${escapeHtml(meeting.body_name || "City Council")} - ${meeting.notice_status} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.attendance_records || []).length} attendance records - ${(meeting.quorum_checks || []).length} quorum checks - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
+          <small>${escapeHtml(meeting.meeting_date)} - ${escapeHtml(meeting.body_name || "City Council")} - ${escapeHtml(meeting.notice_status)} - ${(meeting.agenda_items || []).length} agenda items - ${(meeting.staff_reports || []).length} staff reports - ${(meeting.attachments || []).length} attachments - ${(meeting.packet_assemblies || []).length} packet finalizations - ${(meeting.export_bundles || []).length} records-ready bundles - ${(meeting.attendance_records || []).length} attendance records - ${(meeting.quorum_checks || []).length} quorum checks - ${(meeting.minute_citations || []).length} minute citations - ${(meeting.motions || []).length} motions - ${(meeting.member_votes || []).length} roll-call votes - ${(meeting.votes || []).length} outcomes - ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action items - ${(meeting.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3176,7 +3187,7 @@ function renderMeetingsWorkflow() {
           <small>${escapeHtml(intake.department)} - submitted by ${escapeHtml(intake.submitter)}${intake.requested_meeting_date ? ` - requested ${escapeHtml(intake.requested_meeting_date)}` : ""}</small>
           ${intake.review_note ? `<p><strong>Review note:</strong> ${escapeHtml(intake.review_note)}</p>` : ""}
           <div class="record-actions">
-            ${selectedAgendaIntake?.id === intake.id ? `<span class="status-ok">Selected for review</span>` : `<button type="button" class="secondary-action" data-select-work-record="agendaIntake" data-record-id="${intake.id}">Review This</button>`}
+            ${selectedAgendaIntake?.id === intake.id ? `<span class="status-ok">Selected for review</span>` : `<button type="button" class="secondary-action" data-select-work-record="agendaIntake" data-record-id="${escapeHtml(intake.id)}">Review This</button>`}
           </div>
         </article>
       `).join("")}
@@ -3184,9 +3195,9 @@ function renderMeetingsWorkflow() {
     <section class="workflow-list" aria-label="CivicCode handoffs">
       ${pendingCodeHandoffs.length === 0 ? workflowEmpty("No CivicCode handoffs are waiting for the clerk.") : pendingCodeHandoffs.map((handoff) => `
         <article class="workflow-record handoff">
-          <span class="status-warn">${handoff.status}</span>
-          <h3>${handoff.title}</h3>
-          <p>${handoff.summary}</p>
+          <span class="status-warn">${escapeHtml(handoff.status)}</span>
+          <h3>${escapeHtml(handoff.title)}</h3>
+          <p>${escapeHtml(handoff.summary)}</p>
           <small>CivicCode handoff for agenda review</small>
         </article>
       `).join("")}
@@ -3385,17 +3396,17 @@ function renderNoticeWorkflow() {
       <div class="workflow-form">
         <h3>Notice Workpaper</h3>
         <p class="form-help">${selectedMeeting ? `Working on ${escapeHtml(selectedMeeting.title)}.` : "Create a meeting in Meetings & Notices before preparing notice proof."}</p>
-        <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${state.workDraft.noticeMeetingType}" placeholder="Regular council meeting" /></label>
-        <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${state.workDraft.noticeStatutoryBasis}" placeholder="Municipal open meetings notice" /></label>
-        <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${state.workDraft.noticeLeadDays}" /></label>
+        <label>Notice meeting type <input type="text" data-work-field="noticeMeetingType" value="${escapeHtml(state.workDraft.noticeMeetingType)}" placeholder="Regular council meeting" /></label>
+        <label>Statutory notice basis <input type="text" data-work-field="noticeStatutoryBasis" value="${escapeHtml(state.workDraft.noticeStatutoryBasis)}" placeholder="Municipal open meetings notice" /></label>
+        <label>Notice lead days <input type="number" min="1" max="365" step="1" data-work-field="noticeLeadDays" value="${escapeHtml(state.workDraft.noticeLeadDays)}" /></label>
         <label>Lead day type
           <select aria-label="Lead day type" data-work-field="noticeDayType">
             <option value="calendar days" ${state.workDraft.noticeDayType === "calendar days" ? "selected" : ""}>Calendar days</option>
             <option value="business days" ${state.workDraft.noticeDayType === "business days" ? "selected" : ""}>Business days</option>
           </select>
         </label>
-        <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${state.workDraft.noticeDeadline}" /></label>
-        <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${state.workDraft.noticeTimeZone}" placeholder="America/Denver" /></label>
+        <label>Notice deadline <input type="date" data-work-field="noticeDeadline" value="${escapeHtml(state.workDraft.noticeDeadline)}" /></label>
+        <label>Notice time zone <input type="text" data-work-field="noticeTimeZone" value="${escapeHtml(state.workDraft.noticeTimeZone)}" placeholder="America/Denver" /></label>
         <label class="checkbox-row"><input type="checkbox" data-work-field="noticeHumanApproval" ${state.workDraft.noticeHumanApproval ? "checked" : ""} /> Clerk has reviewed and approved the notice checklist</label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="civicnotice-calculate-deadline">Calculate Deadline</button>
@@ -3424,7 +3435,7 @@ function renderNoticeWorkflow() {
           <p>${escapeHtml(meeting.summary || "No meeting summary recorded.")}</p>
           <p><strong>Checklists:</strong> ${(meeting.notice_checklists || []).length} <strong>Posting proofs:</strong> ${(meeting.notice_postings || []).length} <strong>Archive packets:</strong> ${(meeting.export_bundles || []).length}</p>
           <div class="record-actions">
-            ${state.workSelection.meetingId === meeting.id ? `<span class="status-ok">Selected for notice work</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${meeting.id}">Work On This</button>`}
+            ${state.workSelection.meetingId === meeting.id ? `<span class="status-ok">Selected for notice work</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${escapeHtml(meeting.id)}">Work On This</button>`}
           </div>
           <small>${escapeHtml(meeting.meeting_date || "No meeting date")} - CivicNotice preserves proof; staff still verify legal sufficiency.</small>
         </article>
@@ -3445,17 +3456,17 @@ function renderPublicRecordsWorkflow() {
       <div class="workflow-form">
         <h3>Submit Public Records Request</h3>
         <p class="form-help">Describe the records clearly. Staff will review the request, set any statutory deadline, and work it in the Records staff queue.</p>
-        <label>Your name <input type="text" data-work-field="publicRequester" value="${state.workDraft.publicRequester}" autocomplete="name" /></label>
-        <label>Email or phone <input type="text" data-work-field="publicRequesterContact" value="${state.workDraft.publicRequesterContact}" autocomplete="email" /></label>
-        <label>Records requested <textarea data-work-field="publicRecordsSummary">${state.workDraft.publicRecordsSummary}</textarea></label>
+        <label>Your name <input type="text" data-work-field="publicRequester" value="${escapeHtml(state.workDraft.publicRequester)}" autocomplete="name" /></label>
+        <label>Email or phone <input type="text" data-work-field="publicRequesterContact" value="${escapeHtml(state.workDraft.publicRequesterContact)}" autocomplete="email" /></label>
+        <label>Records requested <textarea data-work-field="publicRecordsSummary">${escapeHtml(state.workDraft.publicRecordsSummary)}</textarea></label>
         <button type="button" class="primary-action" data-work-action="submit-public-records-request">Submit Records Request</button>
       </div>
       <div class="workflow-form">
         <h3>Check Status</h3>
         <p class="form-help">Use the request number returned after submission and the same email or phone you gave staff.</p>
-        <label>Request number <input type="text" data-work-field="publicRequestLookup" value="${state.workDraft.publicRequestLookup}" placeholder="REQ-0001" /></label>
-        <label>Submitted contact <input type="text" data-work-field="publicRequestContact" value="${state.workDraft.publicRequestContact}" autocomplete="email" /></label>
-        <label>Message to records staff <textarea data-work-field="publicRequestMessage">${state.workDraft.publicRequestMessage}</textarea></label>
+        <label>Request number <input type="text" data-work-field="publicRequestLookup" value="${escapeHtml(state.workDraft.publicRequestLookup)}" placeholder="REQ-0001" /></label>
+        <label>Submitted contact <input type="text" data-work-field="publicRequestContact" value="${escapeHtml(state.workDraft.publicRequestContact)}" autocomplete="email" /></label>
+        <label>Message to records staff <textarea data-work-field="publicRequestMessage">${escapeHtml(state.workDraft.publicRequestMessage)}</textarea></label>
         <button type="button" class="secondary-action" data-work-action="lookup-public-records-request">Check Request Status</button>
         <button type="button" class="secondary-action" data-work-action="add-public-records-message">Send Request Message</button>
         <small>Released responses appear below after staff approval, export, and fulfillment. Pending public intake appears only after the request number and submitted contact match.</small>
@@ -3465,14 +3476,14 @@ function renderPublicRecordsWorkflow() {
     <section class="workflow-list">
       ${requests.length === 0 ? workflowEmpty("No released records responses or matching request number are available yet.") : requests.map((request) => `
         <article class="workflow-record">
-          <span class="${request.fulfilled_at_unix_seconds || request.status === "fulfilled" || request.status === "closed" ? "status-ok" : "status-warn"}">${request.status}</span>
-          <h3>${request.public_tracking_number || "Tracking pending"}</h3>
-          <p><strong>Requester:</strong> ${request.requester}</p>
-          <p>${request.summary}</p>
-          ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
+          <span class="${request.fulfilled_at_unix_seconds || request.status === "fulfilled" || request.status === "closed" ? "status-ok" : "status-warn"}">${escapeHtml(request.status)}</span>
+          <h3>${escapeHtml(request.public_tracking_number || "Tracking pending")}</h3>
+          <p><strong>Requester:</strong> ${escapeHtml(request.requester)}</p>
+          <p>${escapeHtml(request.summary)}</p>
+          ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${escapeHtml(request.deadline_basis)}</p>` : ""}
           ${renderRecordsPublicStatusEvents(request)}
           ${renderRecordsMessages(request)}
-          <small>${request.submitted_via || "Staff intake"} - ${request.deadline} - Released exports: ${(request.exports || []).length}</small>
+          <small>${escapeHtml(request.submitted_via || "Staff intake")} - ${escapeHtml(request.deadline)} - Released exports: ${(request.exports || []).length}</small>
         </article>
       `).join("")}
     </section>
@@ -3497,8 +3508,8 @@ function renderRecordsNotificationOutbox(work) {
           <p><strong>Audience:</strong> ${escapeHtml(event.audience)} <strong>Channel:</strong> ${escapeHtml(event.channel)}</p>
           ${event.sent_at_unix_seconds ? `<p><strong>Sent/logged:</strong> ${new Date(event.sent_at_unix_seconds * 1000).toLocaleString()}</p>` : ""}
           <div class="record-actions">
-            ${selectedNotification?.id === event.id ? `<span class="status-ok">Selected notification</span>` : `<button type="button" class="secondary-action" data-select-work-record="notification" data-record-id="${event.id}">Work On This</button>`}
-            ${event.status === "sent / logged" ? "" : `<button type="button" class="secondary-action" data-select-work-record="notification" data-record-id="${event.id}" data-work-action="mark-notification-sent">Log Notification Sent</button>`}
+            ${selectedNotification?.id === event.id ? `<span class="status-ok">Selected notification</span>` : `<button type="button" class="secondary-action" data-select-work-record="notification" data-record-id="${escapeHtml(event.id)}">Work On This</button>`}
+            ${event.status === "sent / logged" ? "" : `<button type="button" class="secondary-action" data-select-work-record="notification" data-record-id="${escapeHtml(event.id)}" data-work-action="mark-notification-sent">Log Notification Sent</button>`}
           </div>
           <small>${escapeHtml(event.record_id)} - ${new Date(event.created_at_unix_seconds * 1000).toLocaleString()}</small>
         </article>
@@ -3665,12 +3676,12 @@ function renderRecordsWorkflow() {
     <section class="workflow-editor">
       <div class="workflow-form">
         <h3>Request Intake</h3>
-        <label>Requester <input type="text" data-work-field="requester" value="${state.workDraft.requester}" /></label>
-        <label>Deadline <input type="date" data-work-field="deadline" value="${state.workDraft.deadline}" /></label>
-        <label>Deadline basis <input type="text" data-work-field="recordsDeadlineBasis" value="${state.workDraft.recordsDeadlineBasis}" placeholder="State records law or city policy basis" /></label>
-        <label>Received date <input type="date" data-work-field="deadlineReceivedDate" value="${state.workDraft.deadlineReceivedDate}" /></label>
-        <label>Deadline rule <input type="text" data-work-field="deadlineRuleName" value="${state.workDraft.deadlineRuleName}" placeholder="Colorado CORA three working days" /></label>
-        <label>Deadline day count <input type="number" min="1" max="365" step="1" data-work-field="deadlineDayCount" value="${state.workDraft.deadlineDayCount}" /></label>
+        <label>Requester <input type="text" data-work-field="requester" value="${escapeHtml(state.workDraft.requester)}" /></label>
+        <label>Deadline <input type="date" data-work-field="deadline" value="${escapeHtml(state.workDraft.deadline)}" /></label>
+        <label>Deadline basis <input type="text" data-work-field="recordsDeadlineBasis" value="${escapeHtml(state.workDraft.recordsDeadlineBasis)}" placeholder="State records law or city policy basis" /></label>
+        <label>Received date <input type="date" data-work-field="deadlineReceivedDate" value="${escapeHtml(state.workDraft.deadlineReceivedDate)}" /></label>
+        <label>Deadline rule <input type="text" data-work-field="deadlineRuleName" value="${escapeHtml(state.workDraft.deadlineRuleName)}" placeholder="Colorado CORA three working days" /></label>
+        <label>Deadline day count <input type="number" min="1" max="365" step="1" data-work-field="deadlineDayCount" value="${escapeHtml(state.workDraft.deadlineDayCount)}" /></label>
         <label>Deadline day type
           <select aria-label="Deadline day type" data-work-field="deadlineDayType">
             <option value="business days" ${state.workDraft.deadlineDayType === "business days" ? "selected" : ""}>Business days</option>
@@ -3678,26 +3689,26 @@ function renderRecordsWorkflow() {
           </select>
         </label>
         <p class="form-help">Business-day calculations skip weekends. Staff must still check city/state holidays before saving.</p>
-        <label>Request summary <textarea data-work-field="recordsSummary">${state.workDraft.recordsSummary}</textarea></label>
+        <label>Request summary <textarea data-work-field="recordsSummary">${escapeHtml(state.workDraft.recordsSummary)}</textarea></label>
         <button type="button" class="primary-action" data-work-action="create-records-request">Create Request</button>
       </div>
       <div class="workflow-form">
         <h3>Scope & Search</h3>
-        <label>Assign to <input type="text" data-work-field="assignedTo" value="${state.workDraft.assignedTo}" /></label>
-        <label>Clarification note <textarea data-work-field="clarificationNote">${state.workDraft.clarificationNote}</textarea></label>
-        <label>Search source note <textarea data-work-field="sourceNote">${state.workDraft.sourceNote}</textarea></label>
-        <label>Records search query <input type="text" data-work-field="recordsSearchQuery" value="${state.workDraft.recordsSearchQuery}" placeholder="Subject, date range, requester scope" /></label>
-        <label>Searched locations <textarea data-work-field="searchLocations">${state.workDraft.searchLocations}</textarea></label>
-        <label>Search result title <input type="text" data-work-field="searchResultTitle" value="${state.workDraft.searchResultTitle}" /></label>
-        <label>Search result citation <input type="text" data-work-field="searchResultCitation" value="${state.workDraft.searchResultCitation}" /></label>
-        <label>Search result summary <textarea data-work-field="searchResultSummary">${state.workDraft.searchResultSummary}</textarea></label>
-        <label>Search result status <input type="text" data-work-field="searchResultStatus" value="${state.workDraft.searchResultStatus}" /></label>
-        <label>Search reviewer <input type="text" data-work-field="searchReviewer" value="${state.workDraft.searchReviewer}" placeholder="Records Officer" /></label>
-        <label>Citation or source note <input type="text" data-work-field="citation" value="${state.workDraft.citation}" /></label>
-        <label>Exemption review <textarea data-work-field="exemptionNote">${state.workDraft.exemptionNote}</textarea></label>
-        <label>Exemption source <input type="text" data-work-field="exemptionSource" value="${state.workDraft.exemptionSource}" placeholder="File, page, timestamp, or segment" /></label>
-        <label>Exemption category <input type="text" data-work-field="exemptionKind" value="${state.workDraft.exemptionKind}" placeholder="PII, attorney-client, personnel, other" /></label>
-        <label>Staff finding <textarea data-work-field="exemptionFinding">${state.workDraft.exemptionFinding}</textarea></label>
+        <label>Assign to <input type="text" data-work-field="assignedTo" value="${escapeHtml(state.workDraft.assignedTo)}" /></label>
+        <label>Clarification note <textarea data-work-field="clarificationNote">${escapeHtml(state.workDraft.clarificationNote)}</textarea></label>
+        <label>Search source note <textarea data-work-field="sourceNote">${escapeHtml(state.workDraft.sourceNote)}</textarea></label>
+        <label>Records search query <input type="text" data-work-field="recordsSearchQuery" value="${escapeHtml(state.workDraft.recordsSearchQuery)}" placeholder="Subject, date range, requester scope" /></label>
+        <label>Searched locations <textarea data-work-field="searchLocations">${escapeHtml(state.workDraft.searchLocations)}</textarea></label>
+        <label>Search result title <input type="text" data-work-field="searchResultTitle" value="${escapeHtml(state.workDraft.searchResultTitle)}" /></label>
+        <label>Search result citation <input type="text" data-work-field="searchResultCitation" value="${escapeHtml(state.workDraft.searchResultCitation)}" /></label>
+        <label>Search result summary <textarea data-work-field="searchResultSummary">${escapeHtml(state.workDraft.searchResultSummary)}</textarea></label>
+        <label>Search result status <input type="text" data-work-field="searchResultStatus" value="${escapeHtml(state.workDraft.searchResultStatus)}" /></label>
+        <label>Search reviewer <input type="text" data-work-field="searchReviewer" value="${escapeHtml(state.workDraft.searchReviewer)}" placeholder="Records Officer" /></label>
+        <label>Citation or source note <input type="text" data-work-field="citation" value="${escapeHtml(state.workDraft.citation)}" /></label>
+        <label>Exemption review <textarea data-work-field="exemptionNote">${escapeHtml(state.workDraft.exemptionNote)}</textarea></label>
+        <label>Exemption source <input type="text" data-work-field="exemptionSource" value="${escapeHtml(state.workDraft.exemptionSource)}" placeholder="File, page, timestamp, or segment" /></label>
+        <label>Exemption category <input type="text" data-work-field="exemptionKind" value="${escapeHtml(state.workDraft.exemptionKind)}" placeholder="PII, attorney-client, personnel, other" /></label>
+        <label>Staff finding <textarea data-work-field="exemptionFinding">${escapeHtml(state.workDraft.exemptionFinding)}</textarea></label>
         <label>Decision
           <select aria-label="Decision" data-work-field="exemptionDecision">
             <option value="release" ${state.workDraft.exemptionDecision === "release" ? "selected" : ""}>Release</option>
@@ -3705,13 +3716,13 @@ function renderRecordsWorkflow() {
             <option value="exempt" ${state.workDraft.exemptionDecision === "exempt" ? "selected" : ""}>Exempt</option>
           </select>
         </label>
-        <label>Decision basis <input type="text" data-work-field="exemptionBasis" value="${state.workDraft.exemptionBasis}" placeholder="Statute, ordinance, or policy basis" /></label>
-        <label>Exemption reviewer <input type="text" data-work-field="exemptionReviewer" value="${state.workDraft.exemptionReviewer}" placeholder="Records Officer" /></label>
-        <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${state.workDraft.feeEstimate}" /></label>
-        <label>Fee line description <input type="text" data-work-field="feeLineDescription" value="${state.workDraft.feeLineDescription}" placeholder="Search time, copies, media, or waived charge basis" /></label>
-        <label>Fee schedule or policy basis <input type="text" data-work-field="feeScheduleBasis" value="${state.workDraft.feeScheduleBasis}" placeholder="Adopted records fee schedule or waiver policy" /></label>
-        <label>Fee line amount <input type="text" inputmode="decimal" data-work-field="feeLineAmount" value="${state.workDraft.feeLineAmount}" placeholder="12.50" /></label>
-        <label>Fee waiver reason <textarea data-work-field="feeWaiverReason">${state.workDraft.feeWaiverReason}</textarea></label>
+        <label>Decision basis <input type="text" data-work-field="exemptionBasis" value="${escapeHtml(state.workDraft.exemptionBasis)}" placeholder="Statute, ordinance, or policy basis" /></label>
+        <label>Exemption reviewer <input type="text" data-work-field="exemptionReviewer" value="${escapeHtml(state.workDraft.exemptionReviewer)}" placeholder="Records Officer" /></label>
+        <label>Fee estimate <input type="text" data-work-field="feeEstimate" value="${escapeHtml(state.workDraft.feeEstimate)}" /></label>
+        <label>Fee line description <input type="text" data-work-field="feeLineDescription" value="${escapeHtml(state.workDraft.feeLineDescription)}" placeholder="Search time, copies, media, or waived charge basis" /></label>
+        <label>Fee schedule or policy basis <input type="text" data-work-field="feeScheduleBasis" value="${escapeHtml(state.workDraft.feeScheduleBasis)}" placeholder="Adopted records fee schedule or waiver policy" /></label>
+        <label>Fee line amount <input type="text" inputmode="decimal" data-work-field="feeLineAmount" value="${escapeHtml(state.workDraft.feeLineAmount)}" placeholder="12.50" /></label>
+        <label>Fee waiver reason <textarea data-work-field="feeWaiverReason">${escapeHtml(state.workDraft.feeWaiverReason)}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="set-records-deadline">Set Deadline</button>
           <button type="button" class="secondary-action" data-work-action="calculate-records-deadline">Calculate Deadline</button>
@@ -3729,19 +3740,19 @@ function renderRecordsWorkflow() {
       <div class="workflow-form">
         <h3>Request Messages</h3>
         <p class="form-help">Add requester-visible communication to the request thread. Staff-only notes stay in clarification, search, exemption, and approval fields.</p>
-        <label>Message to requester <textarea data-work-field="requestMessageBody">${state.workDraft.requestMessageBody}</textarea></label>
+        <label>Message to requester <textarea data-work-field="requestMessageBody">${escapeHtml(state.workDraft.requestMessageBody)}</textarea></label>
         <button type="button" class="secondary-action" data-work-action="add-records-message">Add Request Message</button>
       </div>
       <div class="workflow-form">
         <h3>Request Documents</h3>
         <p class="form-help">Attach a local source file or typed records reference. Readable files are copied and hashed; unreadable typed references are preserved as hashed local marker files.</p>
-        <label>Document title <input type="text" data-work-field="documentTitle" value="${state.workDraft.documentTitle}" /></label>
+        <label>Document title <input type="text" data-work-field="documentTitle" value="${escapeHtml(state.workDraft.documentTitle)}" /></label>
         ${renderFilePathField("Source file path or reference", "documentSourcePath", state.workDraft.documentSourcePath, "C:/City/Records/responsive-email.pdf")}
-        <label>Document citation <input type="text" data-work-field="documentCitation" value="${state.workDraft.documentCitation}" /></label>
+        <label>Document citation <input type="text" data-work-field="documentCitation" value="${escapeHtml(state.workDraft.documentCitation)}" /></label>
         <button type="button" class="secondary-action" data-work-action="add-records-document">Attach Document</button>
         <label>Release document
           ${selectedRequest?.documents?.length ? `<select aria-label="Release document" data-work-field="releaseDocumentId">
-            ${(selectedRequest.documents || []).map((document) => `<option value="${document.id}" ${selectedReleaseDocumentId === document.id ? "selected" : ""}>${escapeHtml(document.title)}</option>`).join("")}
+            ${(selectedRequest.documents || []).map((document) => `<option value="${escapeHtml(document.id)}" ${selectedReleaseDocumentId === document.id ? "selected" : ""}>${escapeHtml(document.title)}</option>`).join("")}
           </select>` : `<input type="text" aria-label="Release document" value="Attach an original document first" disabled />`}
         </label>
         ${renderFilePathField("Release copy file path or reference", "releaseCopyPath", state.workDraft.releaseCopyPath, "C:/City/Records/release/redacted-email.pdf")}
@@ -3750,14 +3761,14 @@ function renderRecordsWorkflow() {
             ${["redacted copy", "release-ready copy"].map((status) => `<option value="${status}" ${state.workDraft.releaseCopyStatus === status ? "selected" : ""}>${status}</option>`).join("")}
           </select>
         </label>
-        <label>Release copy note <textarea data-work-field="releaseCopyNote">${state.workDraft.releaseCopyNote}</textarea></label>
-        <label>Release copy reviewed by <input type="text" data-work-field="releaseCopyAddedBy" value="${state.workDraft.releaseCopyAddedBy}" placeholder="Records Officer" /></label>
+        <label>Release copy note <textarea data-work-field="releaseCopyNote">${escapeHtml(state.workDraft.releaseCopyNote)}</textarea></label>
+        <label>Release copy reviewed by <input type="text" data-work-field="releaseCopyAddedBy" value="${escapeHtml(state.workDraft.releaseCopyAddedBy)}" placeholder="Records Officer" /></label>
         <button type="button" class="secondary-action" data-work-action="add-records-release-copy">Attach Release Copy</button>
       </div>
       <div class="workflow-form">
         <h3>Response & Release</h3>
-        <label>Response draft <textarea data-work-field="responseDraft">${state.workDraft.responseDraft}</textarea></label>
-        <label>Approval note <input type="text" data-work-field="approvalNote" value="${state.workDraft.approvalNote}" /></label>
+        <label>Response draft <textarea data-work-field="responseDraft">${escapeHtml(state.workDraft.responseDraft)}</textarea></label>
+        <label>Approval note <input type="text" data-work-field="approvalNote" value="${escapeHtml(state.workDraft.approvalNote)}" /></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="suggest-records-response">Generate Local AI Draft</button>
           <button type="button" class="secondary-action" data-work-action="draft-records-response">Save Draft</button>
@@ -3775,15 +3786,15 @@ function renderRecordsWorkflow() {
     <section class="workflow-list">
       ${work.records_requests.length === 0 ? workflowEmpty("No local records requests have been created yet.") : work.records_requests.map((request) => `
         <article class="workflow-record">
-          <span class="status-warn">${request.status}</span>
-          <h3>${request.requester}</h3>
-          <p>${request.summary}</p>
-          ${request.public_tracking_number ? `<p><strong>Tracking:</strong> ${request.public_tracking_number}</p>` : ""}
-          ${request.requester_contact ? `<p><strong>Contact:</strong> ${request.requester_contact}</p>` : ""}
-          ${request.submitted_via ? `<p><strong>Submitted via:</strong> ${request.submitted_via}</p>` : ""}
-          ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${request.deadline_basis}</p>` : ""}
-          ${request.assigned_to ? `<p><strong>Assigned:</strong> ${request.assigned_to}</p>` : ""}
-          ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${request.fee_estimate}</p>` : ""}
+          <span class="status-warn">${escapeHtml(request.status)}</span>
+          <h3>${escapeHtml(request.requester)}</h3>
+          <p>${escapeHtml(request.summary)}</p>
+          ${request.public_tracking_number ? `<p><strong>Tracking:</strong> ${escapeHtml(request.public_tracking_number)}</p>` : ""}
+          ${request.requester_contact ? `<p><strong>Contact:</strong> ${escapeHtml(request.requester_contact)}</p>` : ""}
+          ${request.submitted_via ? `<p><strong>Submitted via:</strong> ${escapeHtml(request.submitted_via)}</p>` : ""}
+          ${request.deadline_basis ? `<p><strong>Deadline basis:</strong> ${escapeHtml(request.deadline_basis)}</p>` : ""}
+          ${request.assigned_to ? `<p><strong>Assigned:</strong> ${escapeHtml(request.assigned_to)}</p>` : ""}
+          ${request.fee_estimate ? `<p><strong>Fee estimate:</strong> ${escapeHtml(request.fee_estimate)}</p>` : ""}
           ${(request.fee_line_items || []).length > 0 ? `<p><strong>Fee lines:</strong> ${(request.fee_line_items || []).map((item) => `${escapeHtml(item.description)} ${escapeHtml(formatFeeCents(item.amount_cents))}${item.schedule_basis ? ` (${escapeHtml(item.schedule_basis)})` : ""}`).join("; ")}</p>` : ""}
           ${request.fee_waiver_reason ? `<p><strong>Fee waiver:</strong> ${escapeHtml(request.fee_waiver_reason)}</p>` : ""}
           ${request.approved_at_unix_seconds ? "<p><strong>Approval:</strong> human-approved</p>" : ""}
@@ -3796,9 +3807,9 @@ function renderRecordsWorkflow() {
           ${renderRecordsTimeline(request)}
           ${renderRecordsPublicStatusEvents(request)}
           <div class="record-actions">
-            ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${request.id}">Work On This</button>`}
+            ${selectedRequest?.id === request.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="recordsRequest" data-record-id="${escapeHtml(request.id)}">Work On This</button>`}
           </div>
-          <small>Due ${request.deadline} - ${(request.citations || []).length} citations - ${(request.exemption_reviews || []).length} exemption notes - ${(request.release_packages || []).length} release packages - ${(request.exports || []).length} exports</small>
+          <small>Due ${escapeHtml(request.deadline)} - ${(request.citations || []).length} citations - ${(request.exemption_reviews || []).length} exemption notes - ${(request.release_packages || []).length} release packages - ${(request.exports || []).length} exports</small>
         </article>
       `).join("")}
     </section>
@@ -3818,7 +3829,7 @@ function renderPublicCodeWorkflow() {
       <div class="workflow-form">
         <h3>Ask the Code</h3>
         <p class="form-help">Answers use published local code sources and citations only. They are plain-language help, not legal advice.</p>
-        <label>Question <input type="search" data-work-field="codeQuestion" value="${state.workDraft.codeQuestion}" placeholder="Can I have chickens?" /></label>
+        <label>Question <input type="search" data-work-field="codeQuestion" value="${escapeHtml(state.workDraft.codeQuestion)}" placeholder="Can I have chickens?" /></label>
         <button type="button" class="primary-action" data-work-action="answer-code-question">Answer Code Question</button>
       </div>
     </section>
@@ -3826,24 +3837,24 @@ function renderPublicCodeWorkflow() {
     <section class="workflow-list">
       ${answers.length === 0 ? workflowEmpty("Ask a question to see cited public code answers.") : answers.map((answer) => `
         <article class="workflow-record">
-          <span class="status-ok">${answer.module_id}</span>
-          <h3>${answer.title}</h3>
-          <p>${answer.snippet}</p>
-          <small>${answer.citation} - ${answer.status}</small>
+          <span class="status-ok">${escapeHtml(answer.module_id)}</span>
+          <h3>${escapeHtml(answer.title)}</h3>
+          <p>${escapeHtml(answer.snippet)}</p>
+          <small>${escapeHtml(answer.citation)} - ${escapeHtml(answer.status)}</small>
         </article>
       `).join("")}
     </section>
     <section class="workflow-list">
       ${sources.length === 0 ? workflowEmpty("No published municipal code sources are available yet.") : sources.map((source) => `
         <article class="workflow-record">
-          <span class="status-ok">${source.public_status}</span>
-          <h3>${source.title}</h3>
-          <p>${source.body}</p>
-          ${source.guidance_approved_at_unix_seconds && source.plain_language_summary ? `<p><strong>Plain-English summary:</strong> ${source.plain_language_summary}</p>` : ""}
+          <span class="status-ok">${escapeHtml(source.public_status)}</span>
+          <h3>${escapeHtml(source.title)}</h3>
+          <p>${escapeHtml(source.body)}</p>
+          ${source.guidance_approved_at_unix_seconds && source.plain_language_summary ? `<p><strong>Plain-English summary:</strong> ${escapeHtml(source.plain_language_summary)}</p>` : ""}
           ${codeSourceEvidenceSummary(source, { staff: false }) ? `<p><strong>Source evidence:</strong> ${escapeHtml(codeSourceEvidenceSummary(source, { staff: false }))}</p>` : ""}
-          ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${codeVersionHistorySummary(source)}</p>` : ""}
+          ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${escapeHtml(codeVersionHistorySummary(source))}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Update status:</strong> codifier update pending</p>" : ""}
-          <small>${source.citation} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports - contact city staff for legal interpretation</small>
+          <small>${escapeHtml(source.citation)} - ${escapeHtml(source.codifier_sync_status || "not synced")} - ${(source.public_exports || []).length} public exports - contact city staff for legal interpretation</small>
         </article>
       `).join("")}
     </section>
@@ -3870,11 +3881,11 @@ function renderCodeWorkflow() {
     <section class="workflow-editor">
       <div class="workflow-form">
         <h3>Import Code Source</h3>
-        <label>Source title <input type="text" data-work-field="codeTitle" value="${state.workDraft.codeTitle}" /></label>
-        <label>Citation <input type="text" data-work-field="codeCitation" value="${state.workDraft.codeCitation}" /></label>
+        <label>Source title <input type="text" data-work-field="codeTitle" value="${escapeHtml(state.workDraft.codeTitle)}" /></label>
+        <label>Citation <input type="text" data-work-field="codeCitation" value="${escapeHtml(state.workDraft.codeCitation)}" /></label>
         ${renderFilePathField("Source file path or reference", "codeSourcePath", state.workDraft.codeSourcePath, "C:/City/Code/noise-ordinance.pdf")}
-        <label>Imported by <input type="text" data-work-field="codeImportedBy" value="${state.workDraft.codeImportedBy}" placeholder="City Clerk or deputy clerk" /></label>
-        <label>Source text <textarea data-work-field="codeBody">${state.workDraft.codeBody}</textarea></label>
+        <label>Imported by <input type="text" data-work-field="codeImportedBy" value="${escapeHtml(state.workDraft.codeImportedBy)}" placeholder="City Clerk or deputy clerk" /></label>
+        <label>Source text <textarea data-work-field="codeBody">${escapeHtml(state.workDraft.codeBody)}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="primary-action" data-work-action="import-code-source">Import Source</button>
           <button type="button" class="secondary-action" data-work-action="publish-code-source">Publish Source</button>
@@ -3884,11 +3895,11 @@ function renderCodeWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Codifier Sync</h3>
-        <label>Codifier <input type="text" data-work-field="codifierName" value="${state.workDraft.codifierName}" /></label>
-        <label>Authoritative URL <input type="url" data-work-field="authoritativeUrl" value="${state.workDraft.authoritativeUrl}" /></label>
-        <label>Version label <input type="text" data-work-field="versionLabel" value="${state.workDraft.versionLabel}" /></label>
-        <label>Sync error <input type="text" data-work-field="syncError" value="${state.workDraft.syncError}" /></label>
-        <label>Amendment or stale note <textarea data-work-field="amendmentNote">${state.workDraft.amendmentNote}</textarea></label>
+        <label>Codifier <input type="text" data-work-field="codifierName" value="${escapeHtml(state.workDraft.codifierName)}" /></label>
+        <label>Authoritative URL <input type="url" data-work-field="authoritativeUrl" value="${escapeHtml(state.workDraft.authoritativeUrl)}" /></label>
+        <label>Version label <input type="text" data-work-field="versionLabel" value="${escapeHtml(state.workDraft.versionLabel)}" /></label>
+        <label>Sync error <input type="text" data-work-field="syncError" value="${escapeHtml(state.workDraft.syncError)}" /></label>
+        <label>Amendment or stale note <textarea data-work-field="amendmentNote">${escapeHtml(state.workDraft.amendmentNote)}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="record-codifier-sync">Record Sync</button>
           <button type="button" class="secondary-action" data-work-action="record-codifier-sync-failure">Record Sync Failure</button>
@@ -3898,8 +3909,8 @@ function renderCodeWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Guidance & Summary</h3>
-        <label>Staff guidance <textarea data-work-field="guidanceDraft">${state.workDraft.guidanceDraft}</textarea></label>
-        <label>Plain-English summary <textarea data-work-field="summaryDraft">${state.workDraft.summaryDraft}</textarea></label>
+        <label>Staff guidance <textarea data-work-field="guidanceDraft">${escapeHtml(state.workDraft.guidanceDraft)}</textarea></label>
+        <label>Plain-English summary <textarea data-work-field="summaryDraft">${escapeHtml(state.workDraft.summaryDraft)}</textarea></label>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="suggest-code-guidance">Generate Local AI Guidance</button>
           <button type="button" class="secondary-action" data-work-action="draft-code-guidance">Save Guidance Draft</button>
@@ -3908,13 +3919,13 @@ function renderCodeWorkflow() {
       </div>
       <div class="workflow-form">
         <h3>Clerk Handoff</h3>
-        <label>Handoff summary <textarea data-work-field="handoffSummary">${state.workDraft.handoffSummary}</textarea></label>
+        <label>Handoff summary <textarea data-work-field="handoffSummary">${escapeHtml(state.workDraft.handoffSummary)}</textarea></label>
         <button type="button" class="secondary-action" data-work-action="create-code-handoff">Create Clerk Handoff</button>
       </div>
       <div class="workflow-form">
         <h3>Ask Code Question</h3>
         <p class="form-help">Staff answers can use internal guidance and citations, but still stay non-authoritative.</p>
-        <label>Question <input type="search" data-work-field="codeQuestion" value="${state.workDraft.codeQuestion}" placeholder="What does the code say about noise?" /></label>
+        <label>Question <input type="search" data-work-field="codeQuestion" value="${escapeHtml(state.workDraft.codeQuestion)}" placeholder="What does the code say about noise?" /></label>
         <button type="button" class="secondary-action" data-work-action="answer-code-question">Answer Code Question</button>
       </div>
     </section>
@@ -3922,37 +3933,37 @@ function renderCodeWorkflow() {
     <section class="workflow-list">
       ${codeAnswers.length === 0 ? workflowEmpty("Ask a code question to see cited staff answers.") : codeAnswers.map((answer) => `
         <article class="workflow-record">
-          <span class="status-ok">${answer.module_id}</span>
-          <h3>${answer.title}</h3>
-          <p>${answer.snippet}</p>
-          <small>${answer.citation} - ${answer.status}</small>
+          <span class="status-ok">${escapeHtml(answer.module_id)}</span>
+          <h3>${escapeHtml(answer.title)}</h3>
+          <p>${escapeHtml(answer.snippet)}</p>
+          <small>${escapeHtml(answer.citation)} - ${escapeHtml(answer.status)}</small>
         </article>
       `).join("")}
     </section>
     <section class="workflow-list">
       ${work.code_sources.length === 0 ? workflowEmpty("No local code sources have been imported yet.") : work.code_sources.map((source) => `
         <article class="workflow-record">
-          <span class="status-ok">${source.status}</span>
-          <h3>${source.title}</h3>
-          <p>${source.body}</p>
+          <span class="status-ok">${escapeHtml(source.status)}</span>
+          <h3>${escapeHtml(source.title)}</h3>
+          <p>${escapeHtml(source.body)}</p>
           ${codeSourceEvidenceSummary(source) ? `<p><strong>Source evidence:</strong> ${escapeHtml(codeSourceEvidenceSummary(source))}</p>` : ""}
-          ${source.codifier_name ? `<p><strong>Codifier:</strong> ${source.codifier_name}</p>` : ""}
-          ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${codeVersionHistorySummary(source)}</p>` : ""}
+          ${source.codifier_name ? `<p><strong>Codifier:</strong> ${escapeHtml(source.codifier_name)}</p>` : ""}
+          ${codeVersionHistorySummary(source) ? `<p><strong>Source history:</strong> ${escapeHtml(codeVersionHistorySummary(source))}</p>` : ""}
           ${source.stale_since_unix_seconds ? "<p><strong>Stale:</strong> codifier update pending</p>" : ""}
-          ${source.staff_guidance ? `<p><strong>Staff guidance:</strong> ${source.staff_guidance}</p>` : ""}
+          ${source.staff_guidance ? `<p><strong>Staff guidance:</strong> ${escapeHtml(source.staff_guidance)}</p>` : ""}
           <div class="record-actions">
-            ${selectedSource?.id === source.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="codeSource" data-record-id="${source.id}">Work On This</button>`}
+            ${selectedSource?.id === source.id ? `<span class="status-ok">Selected for actions</span>` : `<button type="button" class="secondary-action" data-select-work-record="codeSource" data-record-id="${escapeHtml(source.id)}">Work On This</button>`}
           </div>
-          <small>${source.citation} - ${source.public_status || "internal draft"} - ${source.codifier_sync_status || "not synced"} - ${(source.public_exports || []).length} public exports</small>
+          <small>${escapeHtml(source.citation)} - ${escapeHtml(source.public_status || "internal draft")} - ${escapeHtml(source.codifier_sync_status || "not synced")} - ${(source.public_exports || []).length} public exports</small>
         </article>
       `).join("")}
       ${work.code_handoffs.map((handoff) => `
         <article class="workflow-record handoff">
-          <span class="status-warn">${handoff.status}</span>
-          <h3>${handoff.title}</h3>
-          <p>${handoff.summary}</p>
+          <span class="status-warn">${escapeHtml(handoff.status)}</span>
+          <h3>${escapeHtml(handoff.title)}</h3>
+          <p>${escapeHtml(handoff.summary)}</p>
           <div class="record-actions">
-            ${selectedHandoff?.id === handoff.id ? `<span class="status-ok">Selected for agenda action</span>` : `<button type="button" class="secondary-action" data-select-work-record="codeHandoff" data-record-id="${handoff.id}">Work On This</button>`}
+            ${selectedHandoff?.id === handoff.id ? `<span class="status-ok">Selected for agenda action</span>` : `<button type="button" class="secondary-action" data-select-work-record="codeHandoff" data-record-id="${escapeHtml(handoff.id)}">Work On This</button>`}
           </div>
         </article>
       `).join("")}
@@ -4276,24 +4287,24 @@ function renderSearchWorkflow() {
     ${publicOnly ? "" : `<section class="workflow-editor single">
       <div class="workflow-form">
         <h3>Local Search</h3>
-        <label>Search terms <input type="search" data-work-field="searchQuery" value="${state.workDraft.searchQuery}" /></label>
+        <label>Search terms <input type="search" data-work-field="searchQuery" value="${escapeHtml(state.workDraft.searchQuery)}" /></label>
         <button type="button" class="primary-action" data-work-action="search-city-knowledge">Search Local Data</button>
       </div>
     </section>`}
     ${publicOnly ? `<section class="workflow-editor single">
       <div class="workflow-form">
         <h3>Public Search</h3>
-        <label>Search terms <input type="search" data-work-field="searchQuery" value="${state.workDraft.searchQuery}" /></label>
+        <label>Search terms <input type="search" data-work-field="searchQuery" value="${escapeHtml(state.workDraft.searchQuery)}" /></label>
       </div>
     </section>` : ""}
     ${renderWorkActionResult()}
     <section class="workflow-list">
       ${results.length === 0 ? workflowEmpty(publicOnly ? "No public search results yet." : "No local search results yet.") : results.map((result) => `
         <article class="workflow-record">
-          <span class="status-ok">${result.module_id}</span>
-          <h3>${result.title}</h3>
-          <p>${result.snippet || "No snippet available."}</p>
-          <small>${result.citation} - ${result.status}</small>
+          <span class="status-ok">${escapeHtml(result.module_id)}</span>
+          <h3>${escapeHtml(result.title)}</h3>
+          <p>${escapeHtml(result.snippet || "No snippet available.")}</p>
+          <small>${escapeHtml(result.citation)} - ${escapeHtml(result.status)}</small>
         </article>
       `).join("")}
     </section>
@@ -4459,8 +4470,8 @@ function renderLocalUsersCard() {
           </article>
         `).join("")}
       </div>
-      <label>Staff name <input type="text" data-user-field="userName" value="${state.accessDraft.userName}" autocomplete="name" /></label>
-      <label>Staff email <input type="email" data-user-field="userEmail" value="${state.accessDraft.userEmail}" autocomplete="email" /></label>
+      <label>Staff name <input type="text" data-user-field="userName" value="${escapeHtml(state.accessDraft.userName)}" autocomplete="name" /></label>
+      <label>Staff email <input type="email" data-user-field="userEmail" value="${escapeHtml(state.accessDraft.userEmail)}" autocomplete="email" /></label>
       <label>Role
         <select data-user-field="userRole">
           ${["city-staff", "clerk", "records-staff", "code-staff"].map((role) => `
@@ -4468,7 +4479,7 @@ function renderLocalUsersCard() {
           `).join("")}
         </select>
       </label>
-      <label>Temporary local passcode <input type="password" data-user-field="userPasscode" value="${state.accessDraft.userPasscode}" autocomplete="new-password" /></label>
+      <label>Temporary local passcode <input type="password" data-user-field="userPasscode" value="${escapeHtml(state.accessDraft.userPasscode)}" autocomplete="new-password" /></label>
       <small>Staff users can sign in on this Windows profile. Enter a temporary passcode, then use Reset Passcode on a staff row if someone is locked out. Local administrators keep setup, runtime, backup, module, and user-management control.</small>
       <button type="button" class="secondary-action" data-auth-action="create-user">Create Staff User</button>
       ${renderAuthActionResult()}
@@ -4799,18 +4810,18 @@ function renderModules() {
     <section class="workflow-editor" data-setup-context="settings">
       <div class="workflow-form">
         <h3>City Profile</h3>
-        <label>City name <input type="text" data-setup-field="cityName" value="${state.setupDraft.cityName}" autocomplete="organization" /></label>
-        <label>State <input type="text" data-setup-field="state" value="${state.setupDraft.state}" autocomplete="address-level1" /></label>
-        <label>Time zone <input type="text" data-setup-field="timeZone" value="${state.setupDraft.timeZone}" /></label>
-        <label>Records contact <input type="email" data-setup-field="recordsContact" value="${state.setupDraft.recordsContact}" autocomplete="email" /></label>
-        <label>Clerk contact <input type="email" data-setup-field="clerkContact" value="${state.setupDraft.clerkContact}" autocomplete="email" /></label>
+        <label>City name <input type="text" data-setup-field="cityName" value="${escapeHtml(state.setupDraft.cityName)}" autocomplete="organization" /></label>
+        <label>State <input type="text" data-setup-field="state" value="${escapeHtml(state.setupDraft.state)}" autocomplete="address-level1" /></label>
+        <label>Time zone <input type="text" data-setup-field="timeZone" value="${escapeHtml(state.setupDraft.timeZone)}" /></label>
+        <label>Records contact <input type="email" data-setup-field="recordsContact" value="${escapeHtml(state.setupDraft.recordsContact)}" autocomplete="email" /></label>
+        <label>Clerk contact <input type="email" data-setup-field="clerkContact" value="${escapeHtml(state.setupDraft.clerkContact)}" autocomplete="email" /></label>
         <button type="button" class="primary-action" data-first-run-action="create-city-profile" data-step-id="city-profile">Save City Profile</button>
       </div>
       <div class="workflow-form">
         <h3>First Admin</h3>
-        <label>Admin name <input type="text" data-setup-field="adminName" value="${state.setupDraft.adminName}" autocomplete="name" /></label>
-        <label>Admin email <input type="email" data-setup-field="adminEmail" value="${state.setupDraft.adminEmail}" autocomplete="email" /></label>
-        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${state.setupDraft.adminPasscode}" autocomplete="new-password" /></label>
+        <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
+        <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
+        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
         <div class="module-meta">
           <span class="${admin ? "status-ok" : "status-warn"}">${admin ? admin.role : "Needed"}</span>
         </div>
@@ -4819,7 +4830,7 @@ function renderModules() {
       ${renderLocalUsersCard()}
       <div class="workflow-form">
         <h3>Local Folders</h3>
-        <label>App install folder <input type="text" data-setup-field="installRoot" value="${state.setupDraft.installRoot}" autocomplete="off" readonly /></label>
+        <label>App install folder <input type="text" data-setup-field="installRoot" value="${escapeHtml(state.setupDraft.installRoot)}" autocomplete="off" readonly /></label>
         ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data")}
         ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
@@ -4975,9 +4986,9 @@ function renderAuditDrawer() {
         </div>
       ` : publications.slice(0, 8).map((event) => `
         <div class="audit-entry">
-          <span class="${event.retracted_at_unix_seconds ? "status-warn" : "status-ok"}">${event.source_module}</span>
-          <p><strong>${event.record_type}</strong></p>
-          <p>${event.retracted_at_unix_seconds ? "Retracted" : "Published"} record ${event.source_record_id}</p>
+          <span class="${event.retracted_at_unix_seconds ? "status-warn" : "status-ok"}">${escapeHtml(event.source_module)}</span>
+          <p><strong>${escapeHtml(event.record_type)}</strong></p>
+          <p>${event.retracted_at_unix_seconds ? "Retracted" : "Published"} record ${escapeHtml(event.source_record_id)}</p>
           <small>Payload hash ${(event.payload_hash || "pending").slice(0, 12)}</small>
           <small>${new Date(event.published_at_unix_seconds * 1000).toLocaleString()}</small>
         </div>
@@ -4990,9 +5001,9 @@ function renderAuditDrawer() {
         </div>
       ` : entries.slice(0, 12).map((entry) => `
         <div class="audit-entry">
-          <span class="status-ok">${entry.module_id}</span>
-          <p><strong>${entry.action}</strong></p>
-          <p>${entry.summary}</p>
+          <span class="status-ok">${escapeHtml(entry.module_id)}</span>
+          <p><strong>${escapeHtml(entry.action)}</strong></p>
+          <p>${escapeHtml(entry.summary)}</p>
           <small>${new Date(entry.created_at_unix_seconds * 1000).toLocaleString()}</small>
           ${entry.entry_hash ? `<small>Audit hash ${entry.entry_hash.slice(0, 12)}${entry.previous_hash ? `; previous ${entry.previous_hash.slice(0, 12)}` : ""}</small>` : ""}
         </div>
@@ -5001,7 +5012,31 @@ function renderAuditDrawer() {
   `;
 }
 
+function renderStateLoadError(message) {
+  return `
+    <section class="section-band error-band" role="alert" aria-live="assertive">
+      <h2>CivicSuite could not open your saved city data</h2>
+      <p>Your data may exist on this machine but could not be read. This can
+         happen after an interrupted save or if CivicSuite is already open in
+         another window. Your records were <strong>not</strong> deleted.</p>
+      <pre class="error-detail">${escapeHtml(message)}</pre>
+      <button type="button" data-action="retry-load-state">Retry</button>
+      <p class="muted">If this repeats, close any other CivicSuite window, then
+         use Repair / Restore from a backup in System Health. Do not complete
+         first-run setup — that is only for a brand-new install.</p>
+    </section>`;
+}
+
 function render() {
+  if (state.appLoadError) {
+    byId("app").innerHTML = renderStateLoadError(state.appLoadError);
+    byId("app").querySelector("[data-action='retry-load-state']")
+      ?.addEventListener("click", async () => {
+        await loadAppState();
+        render();
+      });
+    return;
+  }
   if (!areaIsEnabled(state.activeArea)) {
     state.activeArea = "settings";
   }
