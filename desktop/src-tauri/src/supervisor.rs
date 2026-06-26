@@ -350,8 +350,7 @@ fn read_or_create_secret(file_name: &str, byte_count: usize) -> Result<String, S
     fs::create_dir_all(secrets_dir())
         .map_err(|error| format!("Could not create local secret folder: {error}"))?;
     let value = random_hex_secret(byte_count)?;
-    fs::write(&path, format!("{value}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))?;
+    crate::atomic_io::atomic_write_bytes(&path, format!("{value}\n").as_bytes())?;
     Ok(value)
 }
 
@@ -1415,10 +1414,7 @@ fn read_state() -> Result<RuntimeState, String> {
 fn write_state(state: &RuntimeState) -> Result<(), String> {
     fs::create_dir_all(config_dir())
         .map_err(|error| format!("Could not create runtime config folder: {error}"))?;
-    let contents = serde_json::to_string_pretty(state)
-        .map_err(|error| format!("Could not serialize runtime state: {error}"))?;
-    fs::write(state_path(), format!("{contents}\n"))
-        .map_err(|error| format!("Could not write runtime state: {error}"))
+    crate::atomic_io::atomic_write_json(&state_path(), state)
 }
 
 fn update_service_state(

@@ -273,10 +273,7 @@ fn write_json_file<T: Serialize>(path: PathBuf, value: &T) -> Result<(), String>
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
     }
-    let contents = serde_json::to_string_pretty(value)
-        .map_err(|error| format!("Could not serialize local setup state: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, value)
 }
 
 fn read_optional_json_file<T: DeserializeOwned>(path: PathBuf) -> Result<Option<T>, String> {

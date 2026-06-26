@@ -126,10 +126,7 @@ fn write_staff_users(users: &[StaffUserRecord]) -> Result<(), String> {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
     }
-    let contents = serde_json::to_string_pretty(users)
-        .map_err(|error| format!("Could not serialize local users: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, &users)
 }
 
 fn summary_from_admin(record: SavedFirstAdminRecord) -> LocalUserSummary {
@@ -245,10 +242,7 @@ fn write_local_session(session: &LocalSession) -> Result<(), String> {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
     }
-    let contents = serde_json::to_string_pretty(session)
-        .map_err(|error| format!("Could not serialize local access session: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, session)
 }
 
 fn remove_local_session() -> Result<(), String> {
