@@ -1,4 +1,4 @@
-# VMHOST-DIRECTIVE-002 (executable, resumable across reboot) — enable Hyper-V + prove the VM pipeline.
+# VMHOST-DIRECTIVE-002 (executable, resumable across reboot) - enable Hyper-V + prove the VM pipeline.
 # Run by the autonomous runner. Phase 1 enables Hyper-V then reboots; after reboot the runner re-invokes
 # this, Hyper-V is now enabled, so it does Phase 2 (confirm + create->checkpoint->revert->remove) and
 # writes+pushes VMHOST-RESULT-002.md. See VMHOST-DIRECTIVE-002.md for the human-readable version.
@@ -21,17 +21,17 @@ function Push-Result([string]$body){
 
 $hv = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
 if ($hv.State -ne 'Enabled') {
-  # PHASE 1 — enable Hyper-V incl. management tools, then reboot. Runner re-runs this after reboot.
+  # PHASE 1 - enable Hyper-V incl. management tools, then reboot. Runner re-runs this after reboot.
   Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart | Out-Null
   Start-Sleep -Seconds 3
   Restart-Computer -Force
   exit 0
 }
 
-# PHASE 2 — confirm + prove create -> checkpoint -> revert -> remove
+# PHASE 2 - confirm + prove create -> checkpoint -> revert -> remove
 $r = New-Object System.Collections.Generic.List[string]
 $ok = $true
-$r.Add("# VMHOST-RESULT-002 — Beelink Hyper-V setup + pipeline proof"); $r.Add("")
+$r.Add("# VMHOST-RESULT-002 - Beelink Hyper-V setup + pipeline proof"); $r.Add("")
 $r.Add("## Hyper-V feature"); $r.Add("Microsoft-Hyper-V-All State: $($hv.State)"); $r.Add("")
 
 $cmds = 'Get-VM','New-VM','Checkpoint-VM','Restore-VMCheckpoint','Remove-VM','Get-VMHost','Get-VMSwitch','New-VMSwitch'

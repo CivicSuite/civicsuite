@@ -1,4 +1,4 @@
-# CivicSuite VM-host autonomous runner — ONE-SHOT INSTALLER (v2, robust force-fetch). Run as administrator.
+# CivicSuite VM-host autonomous runner - ONE-SHOT INSTALLER (v2, robust force-fetch). Run as administrator.
 # Installs a scheduled task that every 2 min + at each logon FORCE-fetches the branch and executes any new
 # VMHOST-DIRECTIVE-NNN.ps1, writing results back. v2 fixes a stale-fetch bug (explicit branch fetch +
 # checkout -f -B FETCH_HEAD, immune to stale tracking refs / shallow clones).
@@ -83,7 +83,7 @@ Start-ScheduledTask -TaskName $TaskName
 # The task is logon-triggered, so after a reboot it only fires once a user session exists. Auto-login makes
 # that session come up by itself. This box's account looks passwordless, so classic auto-login applies.
 # Best-effort: if the account actually has a password we cannot set, this is neutral (box waits at the
-# login screen for ONE sign-in) — it never locks anyone out.
+# login screen for ONE sign-in) - it never locks anyone out.
 $autologin = 'unknown'
 try {
   $wl = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
@@ -95,7 +95,7 @@ try {
   $pl = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\PasswordLess\Device'
   if (Test-Path $pl) { Set-ItemProperty -Path $pl -Name 'DevicePasswordLessBuildVersion' -Value 0 -Type DWord -ErrorAction SilentlyContinue }
   $autologin = 'enabled (passwordless account)'
-} catch { $autologin = "could NOT enable ($($_.Exception.Message)) — one manual login may be needed after the reboot" }
+} catch { $autologin = "could NOT enable ($($_.Exception.Message)) - one manual login may be needed after the reboot" }
 
 # ---- immediate visibility: push a status file so the dev side sees the runner is live ----
 try {
