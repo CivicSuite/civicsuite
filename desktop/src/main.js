@@ -5271,6 +5271,16 @@ async function handleFirstRunAction(action, stepId) {
     render();
     return;
   }
+  if (stepId === "first-admin" && state.setupDraft.adminPasscode.length < 10) {
+    state.actionResult = {
+      accepted: false,
+      status: "Needs attention",
+      message: "The local administrator passcode must be at least 10 characters.",
+      next_action: "Enter a 10-character or longer local administrator passcode, then continue setup."
+    };
+    render();
+    return;
+  }
   try {
     state.actionResult = await invoke("first_run_action", {
       action,

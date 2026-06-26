@@ -469,8 +469,18 @@ fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), Strin
     write_json_file(config_dir().join("city-profile.json"), &profile)
 }
 
+/// Minimum length for the first local administrator passcode.
+/// Mirrored client-side in desktop/src/main.js and matched by the staff
+/// passcode rule in auth.rs.
+pub(crate) const MINIMUM_ADMIN_PASSCODE_LENGTH: usize = 10;
+
 fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String> {
     let passcode = payload_string(payload, "adminPasscode")?;
+    if passcode.chars().count() < MINIMUM_ADMIN_PASSCODE_LENGTH {
+        return Err(format!(
+            "The local administrator passcode must be at least {MINIMUM_ADMIN_PASSCODE_LENGTH} characters."
+        ));
+    }
     let (passcode_salt, passcode_hash) = hash_argon2id_local_passcode(&passcode)?;
     let admin = SavedFirstAdminRecord {
         display_name: payload_string(payload, "adminName")?,
@@ -1273,6 +1283,41 @@ mod tests {
                 .expect("passcode verifies");
             assert_eq!(admin.role, "local-admin");
             assert!(verify_admin_passcode("alex@example.gov", "wrong passcode").is_err());
+        });
+    }
+
+    #[test]
+    fn first_admin_passcode_must_meet_minimum_length() {
+        with_temp_state_dir(|_| {
+            mark_setup_ready_for_first_admin_step();
+            let short_payload = serde_json::json!({
+                "adminName": "Alex Clerk",
+                "adminEmail": "alex@example.gov",
+                "adminPasscode": "short9chr"
+            });
+            assert_eq!("short9chr".chars().count(), 9);
+            let rejected =
+                first_run_action("create-admin", Some("first-admin"), Some(&short_payload));
+            assert!(rejected.is_err(), "a 9-character passcode must be rejected");
+            assert!(rejected
+                .err()
+                .expect("error text")
+                .contains("at least 10 characters"));
+            assert!(
+                saved_admin_record().expect("admin record reads").is_none(),
+                "no admin record is written for a rejected short passcode"
+            );
+
+            let ok_payload = serde_json::json!({
+                "adminName": "Alex Clerk",
+                "adminEmail": "alex@example.gov",
+                "adminPasscode": "tencharsok"
+            });
+            assert_eq!("tencharsok".chars().count(), 10);
+            let accepted = first_run_action("create-admin", Some("first-admin"), Some(&ok_payload))
+                .expect("a 10-character passcode is accepted");
+            assert!(accepted.accepted);
+            assert!(verify_admin_passcode("alex@example.gov", "tencharsok").is_ok());
         });
     }
 
