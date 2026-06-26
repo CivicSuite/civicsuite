@@ -4,8 +4,11 @@ test("home surface keeps local model setup behind first-admin sign-in", async ({
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Work that needs attention" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "City Core setup checklist" })).toBeVisible();
-  await expect(page.getByText(/No Docker, WSL, terminal, or developer tooling is part of the clerk path\./)).toBeVisible();
+  // C2: the first-run wizard is gated on a confirmed real get_app_state load
+  // (appStateLoaded). In a pure browser preview there is no Tauri bridge, so the
+  // app is on intentional fallback state and the wizard must NOT render — that
+  // gate is what stops a swallowed load error from showing a pristine wizard.
+  await expect(page.getByRole("heading", { name: "City Core setup checklist" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Gemma 4 12B QAT Q4_0" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download / Resume" })).toHaveCount(0);
   await expect(page.getByText("Create the first local administrator and sign in before changing local model setup.")).toHaveCount(0);

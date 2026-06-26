@@ -109,10 +109,7 @@ pub fn save_locations(locations: &LocalLocations) -> Result<LocalLocations, Stri
     };
     fs::create_dir_all(config_dir())
         .map_err(|error| format!("Could not create local config folder: {error}"))?;
-    let contents = serde_json::to_string_pretty(&normalized)
-        .map_err(|error| format!("Could not serialize local location settings: {error}"))?;
-    fs::write(locations_path(), format!("{contents}\n"))
-        .map_err(|error| format!("Could not write local location settings: {error}"))?;
+    crate::atomic_io::atomic_write_json(&locations_path(), &normalized)?;
     Ok(normalized)
 }
 

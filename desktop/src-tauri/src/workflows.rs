@@ -4,9 +4,19 @@ use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::local_paths;
+
+/// Serializes the read-modify-write of the city-work system of record so two
+/// concurrent `city_work_action` invocations (same process, different
+/// spawn_blocking worker threads) cannot lose-update each other. Single-instance
+/// stops a SECOND process; this stops concurrent tasks WITHIN the one process.
+fn city_work_write_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct MeetingBody {
@@ -860,10 +870,7 @@ fn write_state(state: &CityWorkState) -> Result<(), String> {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
     }
-    let contents = serde_json::to_string_pretty(state)
-        .map_err(|error| format!("Could not serialize local workflow state: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, state)
 }
 
 fn safe_file_stem(value: &str) -> String {
@@ -7661,6 +7668,9 @@ pub fn city_work_action(
     action: &str,
     payload: Option<&Value>,
 ) -> Result<CityWorkActionResult, String> {
+    let _rmw_guard = city_work_write_lock()
+        .lock()
+        .map_err(|_| "City workflow lock was poisoned; restart CivicSuite.".to_string())?;
     let mut state = read_state()?;
     let mut search_results = Vec::new();
     let message = match action {
@@ -7803,6 +7813,70 @@ mod tests {
         env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
         let _ = fs::remove_dir_all(root);
         result
+    }
+
+    // --- T1: torn/corrupt config surfaces an error, never a pristine reset ---
+    // CityWorkState does not derive Debug, so we cannot format!("{state:?}") it.
+    // The load-bearing assertion is that a corrupt-but-present file is an Err
+    // (parse error), NOT an Ok(default) — that silent-default behavior IS the
+    // data-loss bug C2 fixes.
+    #[test]
+    fn corrupt_city_work_json_is_error_not_default() {
+        with_temp_state_dir(|_root| {
+            std::fs::create_dir_all(workflows_path().parent().unwrap()).unwrap();
+            std::fs::write(workflows_path(), b"{ this is : not valid json").unwrap();
+
+            let result = read_state();
+            assert!(
+                result.is_err(),
+                "corrupt city-work.json must surface an error, not a default"
+            );
+            let message = result.err().unwrap();
+            assert!(
+                message.contains("parse") || message.contains("Could not parse"),
+                "corrupt state error must be a parse error, got: {message}"
+            );
+        });
+    }
+
+    // --- T3: GENUINELY CONCURRENT no-lost-update (proves the C3.3 in-process
+    // write lock). A sequential test would NOT prove this; without
+    // city_work_write_lock these two RMW cycles race and len() == 1. ---
+    fn records_payload(requester: &str, summary: &str) -> Value {
+        serde_json::json!({
+            "requester": requester,
+            "requesterContact": format!("{requester}@example.test"),
+            "summary": summary,
+        })
+    }
+
+    #[test]
+    fn concurrent_city_work_actions_do_not_lose_updates() {
+        with_temp_state_dir(|_root| {
+            use std::thread;
+            let a = thread::spawn(|| {
+                city_work_action(
+                    "submit-public-records-request",
+                    Some(&records_payload("alice", "Budget records for FY26")),
+                )
+                .unwrap()
+            });
+            let b = thread::spawn(|| {
+                city_work_action(
+                    "submit-public-records-request",
+                    Some(&records_payload("bob", "Council emails for March")),
+                )
+                .unwrap()
+            });
+            a.join().unwrap();
+            b.join().unwrap();
+            let state = read_state().unwrap();
+            assert_eq!(
+                state.records_requests.len(),
+                2,
+                "both concurrent writers' records must survive (single-writer-within-process invariant)"
+            );
+        });
     }
 
     fn create_city_council_body() -> String {

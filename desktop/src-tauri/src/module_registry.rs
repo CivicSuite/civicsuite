@@ -631,10 +631,7 @@ fn write_selection(selection: &ModuleSelectionState) -> Result<(), String> {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
     }
-    let contents = serde_json::to_string_pretty(selection)
-        .map_err(|error| format!("Could not serialize module selection: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, selection)
 }
 
 #[cfg(test)]

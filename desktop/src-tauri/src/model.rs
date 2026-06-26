@@ -876,9 +876,9 @@ fn verify_file_checksum(
             "Model checksum mismatch: expected {expected_sha256}, got {actual_sha256}"
         ));
     }
-    fs::write(
-        checksum_marker_path(local_path),
-        format!("{expected_sha256}\n"),
+    crate::atomic_io::atomic_write_bytes(
+        &checksum_marker_path(local_path),
+        format!("{expected_sha256}\n").as_bytes(),
     )
     .map_err(|error| format!("Could not record checksum marker: {error}"))
 }
@@ -910,10 +910,7 @@ fn write_model_registry(registry: &LocalModelRegistry) -> Result<(), String> {
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create model registry folder: {error}"))?;
     }
-    let contents = serde_json::to_string_pretty(registry)
-        .map_err(|error| format!("Could not serialize model registry: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, registry)
 }
 
 fn file_size_or_zero(path: &Path) -> u64 {
@@ -1055,10 +1052,7 @@ fn write_model_download_state(
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create model download status folder: {error}"))?;
     }
-    let contents = serde_json::to_string_pretty(&state)
-        .map_err(|error| format!("Could not serialize model download status: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, &state)
 }
 
 fn write_current_model_download_state(
@@ -1072,10 +1066,7 @@ fn write_current_model_download_state(
         fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create model download status folder: {error}"))?;
     }
-    let contents = serde_json::to_string_pretty(&state)
-        .map_err(|error| format!("Could not serialize model download status: {error}"))?;
-    fs::write(&path, format!("{contents}\n"))
-        .map_err(|error| format!("Could not write {}: {error}", path.display()))
+    crate::atomic_io::atomic_write_json(&path, &state)
 }
 
 fn register_verified_model(manifest: &ModelManifest, local_path: &Path) -> Result<(), String> {
