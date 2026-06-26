@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-012 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:18:13
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:18:17
 Refresh this file to watch the tester work step by step.
 
 ```
@@ -27,4 +27,5 @@ Refresh this file to watch the tester work step by step.
     SANDBOX> [13:17:57] UNINSTALL OK: ARP entry removed
     SANDBOX> [13:17:57] VERDICT: PASS
 [13:18:13] Sandbox finished. Verdict: PASS. Writing final RESULT-012.
+[13:18:17] DONE. Verdict: PASS
 ```
