@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-012 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:00:29
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:12:09
 Refresh this file to watch the tester work step by step.
 
 ```
@@ -8,4 +8,5 @@ Refresh this file to watch the tester work step by step.
 [13:00:25] Sandbox enabled. Checking CI build 28253830442...
 [13:00:27] Build success. Preparing clean test dir...
 [13:00:29] Downloading MSI via 'gh run download' (binary-safe)...
+[13:12:09] MSI ready: CivicSuite_0.1.0_x64_en-US.msi (1569 MB). Copying into Sandbox-mapped folder...
 ```
