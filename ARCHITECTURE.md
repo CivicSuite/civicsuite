@@ -1,4 +1,4 @@
-# CivicSuite Architecture
+﻿# CivicSuite Architecture
 
 **Last verified:** 2026-05-23
 

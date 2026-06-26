@@ -56,7 +56,10 @@ CivicSuite work flows: **branch from main → produce a manifest that names the 
 
 Active CivicSuite work must use a local, non-cloud-synced workspace root. The current Windows root is:
 
-`C:\dev\Claude`
+`C:\dev\Codex`
+
+(The former `C:\dev\Claude` root is historical — `STATUS.md` already records those references as
+historical, and the current machine's new-machine handoff provisions repos under `C:\dev\Codex`.)
 
 Do not create, clone, write, branch, commit, push, or run CivicSuite product workflows from cloud-synced user-profile folders. If evidence or handoff text points at an older cloud-synced workspace path, repair the reference before relying on it for current work.
 
