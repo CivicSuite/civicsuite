@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-012 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:16:54
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:18:08
 Refresh this file to watch the tester work step by step.
 
 ```
@@ -23,4 +23,7 @@ Refresh this file to watch the tester work step by step.
     SANDBOX> [13:16:40] ARP entry: CivicSuite 0.1.0
     SANDBOX> [13:16:40] BINARY: C:\Program Files\CivicSuite\civicsuite-desktop.exe (12734 KB)
     SANDBOX> [13:16:40] UNINSTALL: msiexec /x /quiet starting...
+    SANDBOX> [13:17:57] UNINSTALL exit code: 0
+    SANDBOX> [13:17:57] UNINSTALL OK: ARP entry removed
+    SANDBOX> [13:17:57] VERDICT: PASS
 ```
