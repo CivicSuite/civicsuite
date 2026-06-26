@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-012 - clean-machine validation (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:16:16
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-26 13:16:54
 Refresh this file to watch the tester work step by step.
 
 ```
@@ -17,4 +17,10 @@ Refresh this file to watch the tester work step by step.
 [13:13:48] ...still working inside Sandbox (elapsed 92s; installing 1.5 GB runtime)
 [13:15:02] ...still working inside Sandbox (elapsed 166s; installing 1.5 GB runtime)
 [13:16:16] ...still working inside Sandbox (elapsed 239s; installing 1.5 GB runtime)
+    SANDBOX> [13:16:40] INSTALL exit code: 0
+    SANDBOX> [13:16:40] INSTALL OK
+    SANDBOX> [13:16:40] VERIFY: looking for ARP/uninstall entry...
+    SANDBOX> [13:16:40] ARP entry: CivicSuite 0.1.0
+    SANDBOX> [13:16:40] BINARY: C:\Program Files\CivicSuite\civicsuite-desktop.exe (12734 KB)
+    SANDBOX> [13:16:40] UNINSTALL: msiexec /x /quiet starting...
 ```
