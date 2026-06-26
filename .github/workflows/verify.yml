@@ -9,6 +9,7 @@ on:
       - "installer/**"
       - "scripts/**"
       - "tests/**"
+      - ".agent-workflows/**"
       - "*.md"
       - "*.txt"
       - "*.json"
