@@ -114,7 +114,8 @@ try {
   if ($rel -and $rel.Count -gt 0) {
     $rel | Select-Object -First 5 | ForEach-Object {
       $assets = ($_.assets | ForEach-Object { $_.name }) -join ', '
-      $lines.Add("  $($_.tag_name) ($($_.prerelease ? 'pre' : 'release')): $assets") | Out-Null
+      $kind = if ($_.prerelease) { 'pre' } else { 'release' }
+      $lines.Add("  $($_.tag_name) ($kind): $assets") | Out-Null
     }
   } else { $lines.Add("  (could not fetch or no releases)") | Out-Null }
 } catch { $lines.Add("  ERROR fetching releases: $($_.Exception.Message)") | Out-Null }
