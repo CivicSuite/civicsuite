@@ -8,6 +8,107 @@ use crate::first_run::{self, SavedFirstAdminRecord};
 
 const SESSION_DURATION_SECONDS: u64 = 12 * 60 * 60;
 
+/// Per-install key that authenticates the local session token. It is stored
+/// OUTSIDE the config dir (a sibling of config/ and Data/ under the install
+/// root) so that read access to the config folder alone is not enough to forge
+/// a session token. It is never copied into a backup (backups only carry
+/// Data/ and config/), and is regenerated on a fresh install — invalidating
+/// any stale session token from a previous install, which is acceptable.
+const SESSION_SECRET_FILE: &str = "session-mac-secret.key";
+const SESSION_SECRET_BYTES: usize = 32;
+const SHA256_BLOCK_SIZE: usize = 64;
+
+fn session_secret_path() -> PathBuf {
+    crate::local_paths::civic_suite_root().join(SESSION_SECRET_FILE)
+}
+
+/// Reads the per-install session MAC key, creating it on first use. Stored as
+/// hex outside the config dir.
+fn session_mac_key() -> Result<Vec<u8>, String> {
+    let path = session_secret_path();
+    if path.is_file() {
+        let value = fs::read_to_string(&path)
+            .map_err(|error| format!("Could not read local session key: {error}"))?;
+        let decoded = decode_hex(value.trim())
+            .ok_or_else(|| "The local session key is corrupt.".to_string())?;
+        if !decoded.is_empty() {
+            return Ok(decoded);
+        }
+        // Fall through and regenerate an empty/invalid key file.
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("Could not create local session key folder: {error}"))?;
+    }
+    let mut bytes = vec![0_u8; SESSION_SECRET_BYTES];
+    getrandom::getrandom(&mut bytes)
+        .map_err(|error| format!("Could not generate local session key: {error}"))?;
+    let encoded: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
+    crate::atomic_io::atomic_write_bytes(&path, format!("{encoded}\n").as_bytes())?;
+    Ok(bytes)
+}
+
+fn decode_hex(value: &str) -> Option<Vec<u8>> {
+    if value.len() % 2 != 0 {
+        return None;
+    }
+    let mut bytes = Vec::with_capacity(value.len() / 2);
+    let chars: Vec<char> = value.chars().collect();
+    for pair in chars.chunks(2) {
+        let hi = pair[0].to_digit(16)?;
+        let lo = pair[1].to_digit(16)?;
+        bytes.push(((hi << 4) | lo) as u8);
+    }
+    Some(bytes)
+}
+
+/// HMAC-SHA256 (RFC 2104), implemented on top of the sha2 crate that is
+/// already a dependency, to avoid introducing a new crate for this fix.
+fn hmac_sha256(key: &[u8], message: &[u8]) -> [u8; 32] {
+    let mut block_key = [0_u8; SHA256_BLOCK_SIZE];
+    if key.len() > SHA256_BLOCK_SIZE {
+        let mut hasher = Sha256::new();
+        hasher.update(key);
+        let digest = hasher.finalize();
+        block_key[..digest.len()].copy_from_slice(&digest);
+    } else {
+        block_key[..key.len()].copy_from_slice(key);
+    }
+
+    let mut inner_pad = [0x36_u8; SHA256_BLOCK_SIZE];
+    let mut outer_pad = [0x5c_u8; SHA256_BLOCK_SIZE];
+    for index in 0..SHA256_BLOCK_SIZE {
+        inner_pad[index] ^= block_key[index];
+        outer_pad[index] ^= block_key[index];
+    }
+
+    let mut inner = Sha256::new();
+    inner.update(inner_pad);
+    inner.update(message);
+    let inner_digest = inner.finalize();
+
+    let mut outer = Sha256::new();
+    outer.update(outer_pad);
+    outer.update(inner_digest);
+    let mut result = [0_u8; 32];
+    result.copy_from_slice(&outer.finalize());
+    result
+}
+
+/// Constant-time comparison of two equal-length hex MAC strings.
+fn constant_time_eq(left: &str, right: &str) -> bool {
+    let left = left.as_bytes();
+    let right = right.as_bytes();
+    if left.len() != right.len() {
+        return false;
+    }
+    let mut diff = 0_u8;
+    for (a, b) in left.iter().zip(right.iter()) {
+        diff |= a ^ b;
+    }
+    diff == 0
+}
+
 #[derive(Serialize, Clone)]
 pub struct AccessState {
     pub configured: bool,
@@ -208,20 +309,23 @@ fn verify_local_user(email: &str, passcode: &str) -> Result<VerifiedLocalUser, S
     Err("No active local user matched that email.".to_string())
 }
 
-fn hash_session(user: &VerifiedLocalUser, expires_at_unix_seconds: u64) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(user.email.to_lowercase().as_bytes());
-    hasher.update(b"\n");
-    hasher.update(user.role.as_bytes());
-    hasher.update(b"\n");
-    hasher.update(expires_at_unix_seconds.to_string().as_bytes());
-    hasher.update(b"\n");
-    hasher.update(user.passcode_hash.as_bytes());
-    hasher
-        .finalize()
+/// Authenticates the session token with HMAC-SHA256 keyed by the per-install
+/// session secret. Without the per-install key, an attacker who can read the
+/// config dir (which holds the passcode hashes) cannot forge a valid token.
+fn hash_session(user: &VerifiedLocalUser, expires_at_unix_seconds: u64) -> Result<String, String> {
+    let key = session_mac_key()?;
+    let mut message = Vec::new();
+    message.extend_from_slice(user.email.to_lowercase().as_bytes());
+    message.push(b'\n');
+    message.extend_from_slice(user.role.as_bytes());
+    message.push(b'\n');
+    message.extend_from_slice(expires_at_unix_seconds.to_string().as_bytes());
+    message.push(b'\n');
+    message.extend_from_slice(user.passcode_hash.as_bytes());
+    Ok(hmac_sha256(&key, &message)
         .iter()
         .map(|byte| format!("{byte:02x}"))
-        .collect()
+        .collect())
 }
 
 fn read_local_session() -> Result<Option<LocalSession>, String> {
@@ -294,9 +398,8 @@ fn valid_session() -> Result<Option<LocalSession>, String> {
         remove_local_session()?;
         return Ok(None);
     };
-    if session.role != user.role
-        || session.session_hash != hash_session(&user, session.expires_at_unix_seconds)
-    {
+    let expected_hash = hash_session(&user, session.expires_at_unix_seconds)?;
+    if session.role != user.role || !constant_time_eq(&session.session_hash, &expected_hash) {
         remove_local_session()?;
         return Ok(None);
     }
@@ -538,7 +641,7 @@ pub fn auth_action(
                 display_name: user.display_name.clone(),
                 role: user.role.clone(),
                 expires_at_unix_seconds,
-                session_hash: hash_session(&user, expires_at_unix_seconds),
+                session_hash: hash_session(&user, expires_at_unix_seconds)?,
             };
             write_local_session(&session)?;
             Ok(AuthActionResult {
@@ -665,6 +768,120 @@ mod tests {
             first_run::first_run_action("create-admin", Some("first-admin"), Some(&admin_payload))
                 .expect("admin saved");
         assert!(result.accepted);
+    }
+
+    #[test]
+    fn hmac_sha256_matches_rfc4231_vector() {
+        // RFC 4231 Test Case 2.
+        let mac = hmac_sha256(b"Jefe", b"what do ya want for nothing?");
+        let hex: String = mac.iter().map(|byte| format!("{byte:02x}")).collect();
+        assert_eq!(
+            hex,
+            "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+        );
+    }
+
+    #[test]
+    fn hmac_sha256_with_long_key_matches_reference() {
+        // A 131-byte key (longer than the 64-byte SHA-256 block) exercises the
+        // key-hashing branch. Expected value cross-checked against a trusted
+        // HMAC-SHA256 reference (Python hmac/hashlib) for the same inputs.
+        let key = vec![0xaa_u8; 131];
+        let data = vec![0xdd_u8; 50];
+        let mac = hmac_sha256(&key, &data);
+        let hex: String = mac.iter().map(|byte| format!("{byte:02x}")).collect();
+        assert_eq!(
+            hex,
+            "124c7d2385aa1743aaad12204e3464f06305fd1a6d291250fa564dceffab0c8a"
+        );
+    }
+
+    #[test]
+    fn forged_session_token_is_rejected_and_legitimate_one_verifies() {
+        with_temp_state_dir(|root| {
+            create_admin();
+            let payload = serde_json::json!({
+                "email": "alex@example.gov",
+                "passcode": "correct horse battery staple"
+            });
+            // A legitimately issued session verifies.
+            let result = auth_action("sign-in", Some(&payload)).expect("sign-in succeeds");
+            assert!(result.accepted);
+            let session_path = root.join("config").join("local-session.json");
+            assert!(session_path.is_file());
+            require_admin_session().expect("legitimate session authorizes admin actions");
+            assert!(valid_session().expect("valid session read").is_some());
+
+            // Forge a session the way an attacker with config-dir read access
+            // would: recompute the OLD unkeyed SHA-256 over the public fields
+            // plus the passcode hash from first-admin.json. Without the
+            // per-install HMAC key this must NOT verify.
+            let admin = first_run::saved_admin_record()
+                .expect("admin record")
+                .expect("admin exists");
+            let expires_at = now_unix_seconds() + SESSION_DURATION_SECONDS;
+            let mut hasher = Sha256::new();
+            hasher.update(admin.email.to_lowercase().as_bytes());
+            hasher.update(b"\n");
+            hasher.update(admin.role.as_bytes());
+            hasher.update(b"\n");
+            hasher.update(expires_at.to_string().as_bytes());
+            hasher.update(b"\n");
+            hasher.update(admin.passcode_hash.as_bytes());
+            let forged_hash: String = hasher
+                .finalize()
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect();
+            let forged = LocalSession {
+                email: admin.email.clone(),
+                display_name: admin.display_name.clone(),
+                role: admin.role.clone(),
+                expires_at_unix_seconds: expires_at,
+                session_hash: forged_hash,
+            };
+            write_local_session(&forged).expect("write forged session");
+            assert!(
+                valid_session().expect("forged session read").is_none(),
+                "a session forged without the per-install HMAC key must be rejected"
+            );
+            // The rejected forged session is cleared.
+            assert!(!session_path.is_file());
+            assert!(require_admin_session().is_err());
+
+            // A token whose HMAC byte is flipped is also rejected.
+            auth_action("sign-in", Some(&payload)).expect("re-sign-in");
+            let mut stored: LocalSession =
+                serde_json::from_str(&fs::read_to_string(&session_path).expect("read session"))
+                    .expect("parse session");
+            let mut tampered = stored.session_hash.clone().into_bytes();
+            tampered[0] = if tampered[0] == b'0' { b'1' } else { b'0' };
+            stored.session_hash = String::from_utf8(tampered).expect("tampered hex");
+            write_local_session(&stored).expect("write tampered session");
+            assert!(
+                valid_session().expect("tampered session read").is_none(),
+                "a session with a tampered HMAC must be rejected"
+            );
+        });
+    }
+
+    #[test]
+    fn session_secret_lives_outside_the_config_dir() {
+        with_temp_state_dir(|root| {
+            create_admin();
+            let payload = serde_json::json!({
+                "email": "alex@example.gov",
+                "passcode": "correct horse battery staple"
+            });
+            auth_action("sign-in", Some(&payload)).expect("sign-in succeeds");
+            let secret = session_secret_path();
+            assert!(secret.is_file(), "the per-install session key is created");
+            assert!(
+                !secret.starts_with(root.join("config")),
+                "the session key must be stored outside the config dir"
+            );
+            assert!(secret.starts_with(&root));
+        });
     }
 
     #[test]
