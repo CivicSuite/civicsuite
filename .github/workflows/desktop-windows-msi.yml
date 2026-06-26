@@ -131,3 +131,93 @@ jobs:
             civicsuite/desktop/src-tauri/target/release/bundle/msi/*.msi
             civicsuite/desktop/src-tauri/target/release/bundle/msi/*evidence*.txt
           retention-days: 7
+
+  desktop-civiccore-integration:
+    name: desktop<->CivicCore real-runtime integration test
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out CivicSuite
+        uses: actions/checkout@v5
+        with:
+          path: civicsuite
+
+      - name: Check out CivicCore runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civiccore
+          ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c
+          path: civiccore
+
+      - name: Check out CivicRecords AI runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicrecords-ai
+          ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
+          path: civicrecords-ai
+
+      - name: Check out CivicClerk runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicclerk
+          ref: fa1874edfe977bfc36ddea2939df6464b5bc16be
+          path: civicclerk
+
+      - name: Check out CivicCode runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civiccode
+          ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
+          path: civiccode
+
+      - name: Check out CivicNotice runtime source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicnotice
+          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          path: civicnotice
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: civicsuite/desktop/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install desktop dependencies
+        working-directory: civicsuite/desktop
+        run: npm ci
+
+      # Builds the portable Windows runtime payload the wired contract needs:
+      # bundled PostgreSQL 17 + pgvector, the embedded CPython city services, and
+      # the PostgreSQL-backed task-queue worker. This is the real Postgres + worker
+      # the integration test exercises -- no external service is provisioned because
+      # the product ships its own portable stack. The ~6.97 GB Gemma model is NOT
+      # downloaded here (only first-run pulls it); this job proves the
+      # desktop<->CivicCore data-plane contract without the heavy model.
+      - name: Prepare portable Windows runtime payload
+        working-directory: civicsuite/desktop
+        shell: pwsh
+        run: npm run prepare-runtime-payload
+
+      - name: Run desktop<->CivicCore real-runtime integration test
+        working-directory: civicsuite/desktop/src-tauri
+        shell: pwsh
+        env:
+          # Un-gates the real-runtime contract test that is a no-op when unset.
+          CIVICSUITE_RUN_REAL_RUNTIME_TEST: "1"
+          # Point the test at the payload just prepared above.
+          CIVICSUITE_RUNTIME_PAYLOAD_DIR: ${{ github.workspace }}\civicsuite\desktop\runtime\payload
+        run: |
+          cargo test real_postgres_payload_initializes_and_migrates_when_enabled -- --nocapture --test-threads=1
+
+      - name: Upload integration runtime logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-civiccore-integration-logs
+          path: civicsuite/desktop/runtime/payload/runtime-payload-lock.json
+          retention-days: 7
