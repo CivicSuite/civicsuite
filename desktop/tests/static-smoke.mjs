@@ -742,4 +742,56 @@ if (css.includes("blur(") || css.includes("radial-gradient")) {
   throw new Error("desktop shell should avoid blurred/orb-like decorative styling");
 }
 
+// T5 — static XSS-regression guard (text-node + fn-call + double-escape).
+// Fails the build if any raw data sink is reintroduced into main.js, or if a
+// field is double-escaped (which renders &amp;lt; instead of <).
+{
+  const src = main;
+
+  // (A) raw input/textarea draft sinks
+  const rawInput = [
+    /value="\$\{state\.workDraft\.[A-Za-z0-9_]+\}"/g,
+    /value="\$\{state\.setupDraft\.[A-Za-z0-9_]+\}"/g,
+    /value="\$\{state\.accessDraft\.[A-Za-z0-9_]+\}"/g,
+    /<textarea[^>]*>\$\{state\.(workDraft|setupDraft|accessDraft)\.[A-Za-z0-9_]+\}<\/textarea>/g,
+  ];
+  // (B) raw text-node record sinks: >${VAR.field}< not wrapped in escapeHtml/escapedDraft
+  const rawTextNode =
+    />\s*\$\{(request|meeting|source|handoff|comment|entry|event|answer|result|member|citation)\.[A-Za-z0-9_.]+\}\s*</g;
+  // (C) raw function-call text sink known to carry data
+  const rawFnCall = />\s*\$\{codeVersionHistorySummary\([^)]*\)\}\s*</g;
+  // (D) double-escape
+  const doubleEscape = [/escapeHtml\(\s*escapeHtml\(/g, /escapeHtml\(\s*escapedDraft\(/g];
+
+  for (const re of [...rawInput, rawTextNode, rawFnCall]) {
+    const hits = src.match(re) || [];
+    if (hits.length !== 0) {
+      throw new Error(`Unescaped data interpolation reintroduced: ${hits[0] || re}`);
+    }
+  }
+  for (const re of doubleEscape) {
+    const hits = src.match(re) || [];
+    if (hits.length !== 0) {
+      throw new Error(`Double-escaping introduced (renders &amp;lt;): ${hits[0] || re}`);
+    }
+  }
+}
+
+// CSP guard — the shipped CSP must lock script-src to 'self' (no unsafe-inline/
+// unsafe-eval), which is the load-bearing runtime backstop for C1.
+{
+  const config = JSON.parse(tauriConfig);
+  const csp = config?.app?.security?.csp;
+  if (!csp || typeof csp !== "object") {
+    throw new Error("tauri.conf.json security.csp must be a strict object (not null) for the shipped build");
+  }
+  if (csp["script-src"] !== "'self'") {
+    throw new Error("Production CSP script-src must be exactly 'self' (no unsafe-inline/unsafe-eval)");
+  }
+  if (!Array.isArray(config?.app?.security?.capabilities) ||
+      !config.app.security.capabilities.includes("main-capability")) {
+    throw new Error("tauri.conf.json security.capabilities must reference main-capability");
+  }
+}
+
 console.log("PASS: desktop static smoke checks passed");
