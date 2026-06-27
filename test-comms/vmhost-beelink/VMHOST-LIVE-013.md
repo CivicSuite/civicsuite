@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-013 - clean-machine BOOT proof (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:28:05
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:28:25
 Refresh to watch.
 
 ```
@@ -9,4 +9,5 @@ Refresh to watch.
 [13:28:00] MSI ready: CivicSuite_0.1.0_x64_en-US.msi (1569 MB). Copying to Sandbox folder...
 [13:28:03] Launching Windows Sandbox (8 GB). Install + boot-render + single-instance run automatically; steps stream below.
 [13:28:05] Sandbox launched. Waiting on in-Sandbox result (launcher exit is normal/ignored)...
+    SANDBOX> [
 ```
