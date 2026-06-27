@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-013 - clean-machine BOOT proof (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:34:06
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:34:10
 Refresh to watch.
 
 ```
@@ -23,4 +23,5 @@ Refresh to watch.
     SANDBOX> [13:33:45] SINGLE-INSTANCE OK: still 1 main process after 2nd launch (C3 holds)
     SANDBOX> [13:33:45] VERDICT: PASS
 [13:34:06] Sandbox finished. Verdict: PASS. Writing RESULT-013 (+ screenshot if captured).
+[13:34:10] DONE. Verdict: PASS
 ```
