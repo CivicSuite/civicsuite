@@ -75,6 +75,63 @@ This changelog will be split going forward: (a) doc / governance / spec changes 
 
 ---
 
+## [civicsuite-windows-local-v1.0.1] - 2026-06-26
+
+Security-critical patch to the Windows-local beta desktop build, published as
+`civicsuite-windows-local-v1.0.1` (built from `b64dce2`) and promoted to Latest.
+It supersedes `civicsuite-windows-local-v1.0.0` and retires the
+`windows-local-msi-firstrun-fix-rc1` candidate, whose MSI predated these fixes.
+
+This remains a **beta** build. It does not claim public-use readiness, city-ready
+status, procurement/production readiness, macOS lifecycle certification, or
+full-suite release.
+
+### Security
+
+- **C1** — stored/reflected XSS hardening across the desktop (Tauri/WebView2)
+  renderer surfaces, with an added browser XSS backstop test
+  (`desktop/tests/browser/xss-backstop.spec.mjs`, `desktop/tests/xss-and-state.mjs`).
+- **C2** — atomic state writes, eliminating torn/partial state files on a crash
+  or power loss mid-save.
+- **C3** — single-instance enforcement, preventing concurrent instances from
+  corrupting shared local state.
+- **ENG01/ENG02/ENG03** — supporting engineering hardening landed alongside the
+  criticals.
+
+### Added (CI)
+
+- **T-C1** — the desktop↔CivicCore real-runtime integration test now actually
+  runs (prepares the portable PostgreSQL/worker payload and exercises the wired
+  contract) instead of being a silent no-op when its env gate was unset.
+- **T-C2** — the Windows MSI is now installed, exercised through
+  first-run/backup-restore lifecycle logic, and uninstalled in CI. The main
+  binary is discovered by scan (`civicsuite-desktop.exe`, the Cargo binary name)
+  rather than a hardcoded `CivicSuite.exe`, and the install dir is resolved from
+  the ARP `DisplayIcon` when `InstallLocation` is empty.
+
+### Validated (QA-B1, clean machine)
+
+- The published MSI was install/verify/uninstall-validated on a **fresh Windows
+  Sandbox with no prior CivicSuite install** (8 GB RAM, disposable Windows):
+  `msiexec /i` exit 0 (~4 min for the 1.5 GB bundled runtime), ARP entry
+  `CivicSuite 0.1.0` registered, binary at
+  `C:\Program Files\CivicSuite\civicsuite-desktop.exe`, `msiexec /x` exit 0 with
+  the ARP entry removed. Verdict: PASS.
+
+### Artifacts
+
+- `CivicSuite_0.1.0_x64_en-US.msi` — SHA-256
+  `8359667ed2ab39dfaba0f745fa3fde02d8bfbbd729703ba231dae8243db21115`
+  (1,645,475,681 bytes), confirmed byte-identical to the CI build and the
+  clean-machine-validated artifact. Unsigned beta MSI; SmartScreen guidance is
+  "More info → Run anyway"; no Docker or WSL prerequisite.
+- Retired `windows-local-msi-firstrun-fix-rc1` MSI for the record:
+  SHA-256 `2f5038298a1ff36a901b885010243ab36c30e068ba36ac225907b1f98d4955cb`,
+  built `2026-06-25T23:50:50Z` (pre-fix); the unpatched installer was removed
+  from that release.
+
+---
+
 ## Historical entries (preserved; framing reset by 2026-05-09 recovery notice above)
 
 The following entries are kept as historical record. Their inline "shipping," "compatibility publication," "v1.0.0," and similar promotion language refers to release labels that are currently **frozen pending recovery**. Do not read these as ship signals.
