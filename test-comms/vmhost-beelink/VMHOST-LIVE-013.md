@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-013 - clean-machine BOOT proof (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:29:39
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:30:52
 Refresh to watch.
 
 ```
@@ -11,4 +11,5 @@ Refresh to watch.
 [13:28:05] Sandbox launched. Waiting on in-Sandbox result (launcher exit is normal/ignored)...
     SANDBOX> [
 [13:29:39] ...still working (elapsed 92s)
+[13:30:52] ...still working (elapsed 166s)
 ```
