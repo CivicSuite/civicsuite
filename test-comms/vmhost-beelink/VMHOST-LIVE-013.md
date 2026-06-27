@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-013 - clean-machine BOOT proof (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:33:04
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:33:42
 Refresh to watch.
 
 ```
@@ -17,4 +17,7 @@ Refresh to watch.
     SANDBOX> [13:32:27] BINARY: C:\Program Files\CivicSuite\civicsuite-desktop.exe
     SANDBOX> [13:32:27] Launching app with WebView2 CDP on :9222 ...
     SANDBOX> [13:32:53] WINDOW RENDERED -> CDP page target title="CivicSuite" url=http://tauri.localhost/
+    SANDBOX> [13:33:33] PROCESS ALIVE >60s (no boot crash)
+    SANDBOX> [13:33:33] Screenshot captured.
+    SANDBOX> [13:33:33] Launching 2nd instance (single-instance / C3 check)...
 ```
