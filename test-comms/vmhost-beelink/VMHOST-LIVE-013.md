@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-013 - clean-machine BOOT proof (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:32:06
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 13:32:44
 Refresh to watch.
 
 ```
@@ -13,4 +13,7 @@ Refresh to watch.
 [13:29:39] ...still working (elapsed 92s)
 [13:30:52] ...still working (elapsed 166s)
 [13:32:06] ...still working (elapsed 240s)
+    SANDBOX> [13:32:27] INSTALL exit: 0
+    SANDBOX> [13:32:27] BINARY: C:\Program Files\CivicSuite\civicsuite-desktop.exe
+    SANDBOX> [13:32:27] Launching app with WebView2 CDP on :9222 ...
 ```
