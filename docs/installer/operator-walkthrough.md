@@ -72,7 +72,7 @@ pinned Gemma model file ahead of time so first-run setup verifies it locally
 instead of downloading it. The app never downloads the model silently; staging
 just supplies the same file the download step would have fetched.
 
-Pinned model file (from `runtime/gemma4-model.json`):
+Pinned model file (from `desktop/runtime/gemma4-model.json`):
 
 - File name: `gemma-4-12b-it-qat-q4_0.gguf`
 - Size: 6,975,877,728 bytes (about 6.97 GB)

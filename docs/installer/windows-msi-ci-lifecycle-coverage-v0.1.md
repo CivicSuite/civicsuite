@@ -55,6 +55,11 @@ end-to-end on the clean VM:
   Latest Backup buttons were exercised on the clean VM and round-tripped the
   local profile.
 
+**Validated artifact:** `CivicSuite_1.0.1_x64_en-US.msi` — SHA-256
+`5a1e5e2e4d2f3d7f77c52f108c4445c85db10ff3edc2c151d6bbae1cd97ce3ea`
+(1,645,479,777 bytes) — the exact MSI attached to the `civicsuite-windows-local-v1.0.1`
+release. The end-to-end run above was performed against this artifact.
+
 This is hand-run clean-VM validation captured in the CHANGELOG, not an automated
 per-PR gate; it is recorded here as the evidence that closes the GUI/model parts
 of the gaps below. Re-run it on each RC before shipping.

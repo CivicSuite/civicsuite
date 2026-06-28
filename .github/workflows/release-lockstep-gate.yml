@@ -23,6 +23,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Verify release truth artifacts move together
+        # PR-only: the lockstep diff (release-truth files changed together) is a
+        # PR-time check. On a release-tag push the tag is an ancestor of main so
+        # the diff is empty; running it there always fails. Tag pushes are gated
+        # by the suite-state check below instead.
+        if: github.event_name == 'pull_request'
         run: python scripts/verify-release-lockstep.py
       - name: Verify suite state (pins, versions, releases)
         env:

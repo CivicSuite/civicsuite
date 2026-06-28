@@ -1,6 +1,6 @@
 # CivicSuite FAQ
 
-**Last verified:** 2026-06-13
+**Last verified:** 2026-06-28 (civicsuite-windows-local-v1.0.1)
 
 This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement officer) evaluating whether CivicSuite is right for them. For engineering-level questions, see [CONTRIBUTING.md](CONTRIBUTING.md). For module-by-module status, see [STATUS.md](STATUS.md).
 
@@ -25,7 +25,7 @@ This is still **beta**. It is not public-use ready, not city-ready, not procurem
 
 ## Can my city rely on CivicSuite for live operations today?
 
-**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
+**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
 
 That is still a bounded beta package. It is **not public-use ready, not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess is out of city-core after the 2026-05-23 NEEDS-WORK depth probe and must go through gap closure plus re-probe before inclusion. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
