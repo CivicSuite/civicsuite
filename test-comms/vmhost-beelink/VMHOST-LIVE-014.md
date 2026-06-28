@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-014 - full first-run + model + completion (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 19:45:43
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 19:46:56
 Refresh to watch. Model download is the long step.
 
 ```
@@ -11,4 +11,5 @@ Refresh to watch. Model download is the long step.
 [19:44:09] Sandbox launched. Streaming in-Sandbox steps (download is the long blocking step; heartbeat continues)...
     SANDBOX> [
 [19:45:43] ...working (elapsed 92s; model download/inference is slow on CPU)
+[19:46:56] ...working (elapsed 166s; model download/inference is slow on CPU)
 ```
