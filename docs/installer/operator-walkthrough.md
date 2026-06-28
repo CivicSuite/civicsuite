@@ -22,9 +22,11 @@ CivicCore is always installed. CivicRecords AI, CivicClerk, CivicCode, and Civic
 
 Have these ready:
 
-- A Windows workstation with enough free disk space for the app, local data, backups, and model file.
+- A 64-bit Windows 10 or Windows 11 workstation with the WebView2 runtime (already present on current Windows; the installer can provision it if missing).
+- RAM: 16 GB recommended. The local Gemma 4 model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and the city services; an 8 GB machine will struggle.
+- Free disk: at least 15 GB. That covers the ~1.5 GB MSI, the ~6.97 GB model file, and data/backup headroom. First-run setup enforces a 15 GB free-disk floor before it will download the model.
 - Permission to install normal Windows desktop software.
-- A stable internet connection for first install/model download unless the model file has already been staged by IT.
+- A stable internet connection for first install/model download unless the model file has already been staged by IT (see "Offline / Air-Gapped Model Pre-Staging").
 - A city name, records contact, clerk contact, first local administrator name/email, and a backup folder location.
 
 Do not install Docker Desktop or WSL for this product path. If the app asks for Docker, WSL, a terminal, or manual environment edits, that is a release-blocking bug for the Windows Local clerk installer.
@@ -62,6 +64,40 @@ type a folder path when IT has supplied one, but normal setup should not require
 manual Windows path copying.
 
 The app should explain failures in plain English and keep repair, backup, restore, logs, support bundle, and uninstall reachable from System Health.
+
+## Offline / Air-Gapped Model Pre-Staging
+
+If the workstation cannot reach the internet during first run, IT can stage the
+pinned Gemma model file ahead of time so first-run setup verifies it locally
+instead of downloading it. The app never downloads the model silently; staging
+just supplies the same file the download step would have fetched.
+
+Pinned model file (from `runtime/gemma4-model.json`):
+
+- File name: `gemma-4-12b-it-qat-q4_0.gguf`
+- Size: 6,975,877,728 bytes (about 6.97 GB)
+- SHA-256: `faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1`
+- Source: <https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf>
+
+Procedure:
+
+1. On a connected machine, download `gemma-4-12b-it-qat-q4_0.gguf` from the source
+   above and confirm its SHA-256 matches the value listed here.
+2. Run the installer and complete first-run setup up to the model step, confirming
+   the city data folder so the data root exists.
+3. At the model step, choose **Open Model Folder**. The app opens the `models`
+   folder under the configured city data root (by default
+   `%LOCALAPPDATA%\CivicSuite\Data\models`). Use this folder rather than typing a
+   path; the app reads the model only from this exact location.
+4. Copy the staged `gemma-4-12b-it-qat-q4_0.gguf` into that `models` folder. Keep
+   the file name exactly as listed; a renamed file will not be found.
+5. Back in first-run setup, choose **Verify Checksum**. The app checks the local
+   file against the pinned size and SHA-256, records the verification, and
+   registers the model. No download runs.
+6. Continue with **Load Runtime Model** and local health verification as normal.
+
+If verification fails, the file is the wrong build or was corrupted in transit;
+re-stage from the source and confirm the SHA-256 before copying again.
 
 ## Verify The Install
 

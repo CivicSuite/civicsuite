@@ -8,7 +8,9 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 ## Read Me First
 
-CivicSuite's active product target is the Windows Local 1.0 city-core beta package: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the Tauri/WebView2 desktop installer shell. The clerk path is local-only on Windows: no Docker, WSL, terminal, or developer tooling. It installs CivicCore plus the four city-core product modules under one desktop app, with portable local storage, local services, local file evidence, local backup/restore, and the pinned Gemma 4 12B QAT model path.
+CivicSuite's active product target is the Windows Local city-core beta package: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the Tauri/WebView2 desktop installer shell. The current release is `civicsuite-windows-local-v1.0.1` (Latest, published 2026-06-26); it supersedes `civicsuite-windows-local-v1.0.0` and retires the earlier `windows-local-msi-firstrun-fix-rc1` candidate. The clerk path is local-only on Windows: no Docker, WSL, terminal, or developer tooling. It installs CivicCore plus the four city-core product modules under one desktop app, with portable local storage, local services, local file evidence, local backup/restore, and the pinned Gemma 4 12B QAT model path.
+
+`civicsuite-windows-local-v1.0.1` is an **unsigned beta** MSI. SmartScreen shows "Unknown Publisher"; choose **More info** then **Run anyway**. It does not claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
 
 Public procurement readiness still depends on the final Windows clean-machine evidence gate. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
@@ -20,7 +22,7 @@ If you are evaluating CivicSuite for a municipality, use the Windows Local city-
 
 ## Suite Status
 
-Status snapshot: **2026-06-13**
+Status snapshot: **2026-06-26** (current release: `civicsuite-windows-local-v1.0.1`, Latest)
 
 | Tier | Count | What it means today |
 |---|---:|---|

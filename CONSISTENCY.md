@@ -2,7 +2,7 @@
 
 Every count, cross-reference, version, and named fact used in CHARTER.md and README.md is verified here against the source-of-truth spec. Update this file whenever any of those facts change. Do not let the charter or README drift from this table.
 
-Last verified: May 23, 2026.
+Last verified: June 27, 2026.
 
 ---
 
@@ -114,11 +114,18 @@ Project standardized on Apache License 2.0 for code on 2026-04-23 (Scott confirm
 | Default LLM | Gemma 4 (via Ollama, local) | `01_catalog.md` §3, `02_CivicCore.md` §6.1, all module specs |
 | Embeddings | nomic-embed-text (via Ollama, local) | All module specs |
 | Transcription (CivicClerk) | Whisper large-v3 default, configurable | `03_civicclerk.md` §19 |
-| Database | PostgreSQL 17 + pgvector | `01_catalog.md` Architecture (Part II) |
-| Cache/queue | Redis 7.2 (BSD, pinned `<8.0`) | `01_catalog.md` Architecture (Part II) |
-| API framework | FastAPI on Uvicorn | `01_catalog.md` Architecture (Part II) |
-| Workers | Celery + Celery Beat | `01_catalog.md` Architecture (Part II) |
-| Frontend | React + nginx | `01_catalog.md` Architecture (Part II) |
+| Database | Bundled portable PostgreSQL 17 + pgvector | `installer/modules.json` (civiccore `portable-postgres` service), `docs/installer/operator-walkthrough.md` |
+| Local model runtime | Bundled Ollama serving the pinned Gemma 4 12B QAT model | `desktop/runtime/gemma4-model.json`, `docs/installer/operator-walkthrough.md` |
+| Desktop shell / frontend | Tauri + WebView2 (the `desktop-shell` service) | `installer/modules.json` (civiccore `tauri-webview` service), `docs/installer/operator-walkthrough.md` |
+| City services | Embedded CPython (`bundled-python`) per module | `installer/modules.json` module `services` |
+| Task queue / workers | PostgreSQL-backed local task-queue worker (`local-worker`) | `installer/modules.json` (civiccore `task-queue` service) |
+
+The Windows-Local desktop product does **not** ship Redis, Celery/Celery Beat,
+React, nginx, or a standalone FastAPI/Uvicorn server. Those belong only to the
+legacy Linux/developer CI proof path and are **not part of the Windows-Local
+shipped stack**; the desktop shell is Tauri/WebView2 and the queue is the
+PostgreSQL-backed local worker above. Do not reintroduce them as the desktop
+stack.
 
 ---
 
