@@ -3634,22 +3634,16 @@ mod tests {
 
     #[test]
     fn command_output_times_out_instead_of_hanging() {
-        // Spawning a real shell under heavy parallel CI load can transiently fail
-        // to start (process/handle pressure) and surface a non-timeout error; the
-        // 1s timeout is comfortably longer than shell cold-start jitter but far
-        // shorter than the 5s "hang", and we retry transient spawn errors so this
-        // reliably exercises the timeout path it is meant to validate.
+        // Use a lightweight hang that needs no managed runtime. powershell.exe
+        // intermittently fails to load its CLR under heavy parallel CI load
+        // (error 8009001d), unrelated to the timeout logic under test; ping waits
+        // ~5s using only a native System32 binary. 1s timeout << the 5s hang.
+        // Retry kept as belt-and-suspenders against any transient spawn error.
         let mut last_error = String::new();
         for _ in 0..5 {
             let mut command = if cfg!(target_os = "windows") {
-                let mut command = Command::new("powershell.exe");
-                command
-                    .arg("-NoProfile")
-                    .arg("-NonInteractive")
-                    .arg("-ExecutionPolicy")
-                    .arg("Bypass")
-                    .arg("-Command")
-                    .arg("Start-Sleep -Seconds 5; Write-Output late");
+                let mut command = Command::new("ping");
+                command.arg("-n").arg("6").arg("127.0.0.1");
                 command
             } else {
                 let mut command = Command::new("sh");
