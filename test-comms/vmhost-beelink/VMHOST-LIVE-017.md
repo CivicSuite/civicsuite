@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-017 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:16:11
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:16:34
 
 ```
 [05:36:23] Directive 017 started (model load fire+poll + completion + backup/restore).
@@ -98,4 +98,11 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:16:11
     SANDBOX> [06:15:46]   ...loading model
     SANDBOX> [06:16:06]   Ollama models: civicsuite-gemma4-12b-qat:q4_0
     SANDBOX> [06:16:06] COMPLETION: civicsuite-gemma4-12b-qat:q4_0 (CPU, slow)...
+    SANDBOX> [06:16:31] REAL COMPLETION: I am running.
+    SANDBOX> [06:16:31]   OK wizard model step
+    SANDBOX> [06:16:31]   REJECTED finish: CivicSuite cannot continue this setup step until these required steps are complete: Health verification.
+    SANDBOX> [06:16:31] CLERK WORKFLOW: submit-public-records-request...
+    SANDBOX> [06:16:31]   submitted records request; tracking=REQ-0001
+    SANDBOX> [06:16:31]   lookup OK -> records request round-trips (intake persisted + retrievable)
+    SANDBOX> [06:16:31] BACKUP: fire supervisor backup, poll backup folder (up to 10m)...
 ```
