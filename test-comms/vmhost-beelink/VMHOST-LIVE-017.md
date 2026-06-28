@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-017 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:17:19
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:17:25
 
 ```
 [05:36:23] Directive 017 started (model load fire+poll + completion + backup/restore).
@@ -109,4 +109,5 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:17:19
     SANDBOX> [06:16:51] RESTORE: fire supervisor restore, poll app state (up to 10m)...
     SANDBOX> [06:17:12]   app state reloaded after restore
     SANDBOX> [06:17:12] VERDICT: PASS
+[06:17:25] Sandbox finished. Verdict: PASS.
 ```
