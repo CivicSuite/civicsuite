@@ -127,20 +127,24 @@ full-suite release.
 
 ### Validated (QA-B1, clean machine)
 
-- The published MSI was install/verify/uninstall-validated on a **fresh Windows
-  Sandbox with no prior CivicSuite install** (8 GB RAM, disposable Windows):
-  `msiexec /i` exit 0 (~4 min for the 1.5 GB bundled runtime), ARP entry
-  `CivicSuite 0.1.0` registered, binary at
-  `C:\Program Files\CivicSuite\civicsuite-desktop.exe`, `msiexec /x` exit 0 with
-  the ARP entry removed. Verdict: PASS.
+- The **shipped `CivicSuite_1.0.1_x64_en-US.msi`** was validated **end-to-end** on a
+  **fresh Windows Sandbox with no prior CivicSuite install** (20 GB RAM, disposable
+  Windows): install (`msiexec /i` exit 0) → app launches and the WebView2 window
+  renders → single-instance holds on a 2nd launch → full first-run wizard (city
+  profile, first admin, modules) → **6.97 GB Gemma model download + checksum +
+  Ollama load → a real local AI completion** → a clerk **records-intake workflow**
+  (submit + look up a public records request, round-trip through PostgreSQL) →
+  **backup + restore** → uninstall. Verdict: **PASS** (all checks). An earlier
+  install/verify/uninstall-only pass also covered the 0.1.0-internal pre-bump build.
 
 ### Artifacts
 
-- `CivicSuite_0.1.0_x64_en-US.msi` — SHA-256
-  `8359667ed2ab39dfaba0f745fa3fde02d8bfbbd729703ba231dae8243db21115`
-  (1,645,475,681 bytes), confirmed byte-identical to the CI build and the
-  clean-machine-validated artifact. Unsigned beta MSI; SmartScreen guidance is
-  "More info → Run anyway"; no Docker or WSL prerequisite.
+- `CivicSuite_1.0.1_x64_en-US.msi` — SHA-256
+  `5a1e5e2e4d2f3d7f77c52f108c4445c85db10ff3edc2c151d6bbae1cd97ce3ea`
+  (1,645,479,777 bytes); ARP/installer version reads **1.0.1**. This is the exact
+  artifact clean-machine-validated end-to-end above and attached to the
+  `civicsuite-windows-local-v1.0.1` release. Unsigned beta MSI; SmartScreen
+  guidance is "More info → Run anyway"; no Docker or WSL prerequisite.
 - Retired `windows-local-msi-firstrun-fix-rc1` MSI for the record:
   SHA-256 `2f5038298a1ff36a901b885010243ab36c30e068ba36ac225907b1f98d4955cb`,
   built `2026-06-25T23:50:50Z` (pre-fix); the unpatched installer was removed
