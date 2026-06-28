@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-014 - full first-run + model + completion (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:12:18
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:13:32
 Refresh to watch. Model download is the long step.
 
 ```
@@ -53,4 +53,5 @@ Refresh to watch. Model download is the long step.
 [20:09:50] ...working (elapsed 1539s; model download/inference is slow on CPU)
 [20:11:04] ...working (elapsed 1613s; model download/inference is slow on CPU)
 [20:12:18] ...working (elapsed 1687s; model download/inference is slow on CPU)
+[20:13:32] ...working (elapsed 1761s; model download/inference is slow on CPU)
 ```
