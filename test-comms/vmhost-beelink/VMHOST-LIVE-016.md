@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-016 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:07:49
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:08:50
 
 ```
 [21:52:23] Directive 016 started (model load fire+poll + completion + backup/restore).
@@ -11,4 +11,25 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:07:49
     SANDBOX> [
 [22:06:07] ...working (elapsed 122s)
 [22:07:49] ...working (elapsed 224s)
+    SANDBOX> [22:08:36] INSTALL exit: 0
+    SANDBOX> [22:08:36] Launching app with CDP...
+    SANDBOX> [22:08:37] CDP connected
+    SANDBOX> [22:08:37] unsigned-beta ...
+    SANDBOX> [22:08:38]   OK unsigned-beta
+    SANDBOX> [22:08:38] smartscreen ...
+    SANDBOX> [22:08:38]   OK smartscreen
+    SANDBOX> [22:08:38] locations ...
+    SANDBOX> [22:08:38]   OK locations
+    SANDBOX> [22:08:38] modules ...
+    SANDBOX> [22:08:38]   OK modules
+    SANDBOX> [22:08:38] city-profile ...
+    SANDBOX> [22:08:38]   OK city-profile
+    SANDBOX> [22:08:38] create-admin ...
+    SANDBOX> [22:08:38]   OK create-admin
+    SANDBOX> [22:08:38] sign-in ...
+    SANDBOX> [22:08:38]   OK sign-in
+    SANDBOX> [22:08:38] backup-default ...
+    SANDBOX> [22:08:38]   OK backup-default
+    SANDBOX> [22:08:38] === wizard: PASS ===
+    SANDBOX> [22:08:38] MODEL: fire resume-download, poll verify-checksum (up to 60m)...
 ```
