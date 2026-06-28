@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-015 - model + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:39:57
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:41:39
 
 ```
 [20:54:23] Directive 015 started (model fire+poll + completion + backup/restore). Checking Sandbox + build...
@@ -54,4 +54,5 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:39:57
 [21:36:33] ...working (elapsed 1822s)
 [21:38:15] ...working (elapsed 1924s)
 [21:39:57] ...working (elapsed 2026s)
+[21:41:39] ...working (elapsed 2128s)
 ```
