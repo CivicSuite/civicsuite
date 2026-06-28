@@ -1,6 +1,6 @@
 [package]
 name = "civicsuite-desktop"
-version = "0.1.0"
+version = "1.0.1"
 description = "CivicSuite Windows Local 1.0 desktop shell"
 edition = "2021"
 build = "build.rs"

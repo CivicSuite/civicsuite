@@ -1070,8 +1070,8 @@ function renderNav() {
           class="nav-item ${state.activeArea === item.id ? "active" : ""}"
           data-area="${item.id}"
         >
-          <span>${item.label}</span>
-          <small>${item.description}</small>
+          <span>${escapeHtml(item.label)}</span>
+          <small>${escapeHtml(item.description)}</small>
         </button>
       `).join("")}
     </nav>
@@ -1097,8 +1097,8 @@ function renderHome() {
         <article class="task-card">
           <div>
             <p class="eyebrow">${item.id === "health" ? "Local system" : "City work"}</p>
-            <h3>${item.label}</h3>
-            <p>${item.description}</p>
+            <h3>${escapeHtml(item.label)}</h3>
+            <p>${escapeHtml(item.description)}</p>
           </div>
           <button type="button" data-area="${item.id}">Open</button>
         </article>
@@ -1292,6 +1292,16 @@ function renderSetupFields(step) {
       </div>
     `;
   }
+  if (step.id === "model") {
+    const model = state.app.model;
+    const size = model ? formatBytes(model.download_size_bytes) : "about 7 GB";
+    return `
+      <div class="setup-note" aria-label="Model download expectation">
+        <p>The local AI weights are a one-time ${escapeHtml(size)} download (about 15-60+ minutes depending on your internet connection).</p>
+        <p>You can keep using setup while it runs, and the download resumes from where it left off if it is interrupted.</p>
+      </div>
+    `;
+  }
   return "";
 }
 
@@ -1313,15 +1323,15 @@ function renderFirstRunStep(step, index) {
       <strong>${index + 1}</strong>
       <div>
         <div class="step-header">
-          <h3>${step.label}</h3>
-          <span class="${firstRunStatusClass(step)}">${step.status}</span>
+          <h3>${escapeHtml(step.label)}</h3>
+          <span class="${firstRunStatusClass(step)}">${escapeHtml(step.status)}</span>
         </div>
-        <p>${step.summary}</p>
-        <small>${step.detail}</small>
+        <p>${escapeHtml(step.summary)}</p>
+        <small>${escapeHtml(step.detail)}</small>
         ${step.current && !isPublicSurface() && !(state.actionResult && state.actionResult.accepted === false) ? `
           <div class="first-run-action-needed action-result blocked">
             <strong>Action needed</strong>
-            <span>${step.next_action}</span>
+            <span>${escapeHtml(step.next_action)}</span>
           </div>
         ` : ""}
         ${renderSetupFields(step)}
@@ -1434,8 +1444,8 @@ function renderAccessPanel() {
       <section class="section-band access-panel" aria-label="Local access">
         <div class="section-title">
           <p class="eyebrow">Local access</p>
-          <h3>Signed in as ${access.operator_name || "local administrator"}</h3>
-          <p>${access.role || "local-admin"}</p>
+          <h3>Signed in as ${escapeHtml(access.operator_name || "local administrator")}</h3>
+          <p>${escapeHtml(access.role || "local-admin")}</p>
           ${access.role !== "local-admin" ? `<p>Sign out and use a local administrator account before changing setup, users, modules, backups, restore, repair, or runtime services.</p>` : ""}
         </div>
         <div class="health-actions">
@@ -1470,21 +1480,21 @@ function renderFirstRunWizard({ compact = false } = {}) {
     <section class="section-band first-run-panel" aria-label="First-run setup">
       <div class="section-title">
         <p class="eyebrow">First-run setup</p>
-        <h3>${firstRun.profile_label} setup checklist</h3>
+        <h3>${escapeHtml(firstRun.profile_label)} setup checklist</h3>
         <p>Install stays local to this Windows machine. No Docker, WSL, terminal, or developer tooling is part of the clerk path.</p>
       </div>
       <div class="location-grid" aria-label="Default local locations">
         <div>
           <span>Install</span>
-          <strong>${firstRun.locations.install_root}</strong>
+          <strong>${escapeHtml(firstRun.locations.install_root)}</strong>
         </div>
         <div>
           <span>City data</span>
-          <strong>${firstRun.locations.data_root}</strong>
+          <strong>${escapeHtml(firstRun.locations.data_root)}</strong>
         </div>
         <div>
           <span>Backups</span>
-          <strong>${firstRun.locations.backup_root}</strong>
+          <strong>${escapeHtml(firstRun.locations.backup_root)}</strong>
         </div>
       </div>
       <div class="first-run-list" data-setup-context="first-run">
@@ -1532,8 +1542,8 @@ function renderModelDownloadStatus(model) {
     <div class="model-download-status" aria-label="Model download progress">
       <div>
         <span>Download progress</span>
-        <strong>${downloadState.status}</strong>
-        <small>${downloadState.message}</small>
+        <strong>${escapeHtml(downloadState.status)}</strong>
+        <small>${escapeHtml(downloadState.message)}</small>
       </div>
       <div>
         <span>Saved locally</span>
@@ -1543,7 +1553,7 @@ function renderModelDownloadStatus(model) {
       ${downloadState.last_error ? `
         <div class="download-error">
           <span>Last error</span>
-          <strong>${downloadState.last_error}</strong>
+          <strong>${escapeHtml(downloadState.last_error)}</strong>
         </div>
       ` : ""}
     </div>
@@ -1558,13 +1568,13 @@ function renderModelReadiness({ compact = false } = {}) {
     <section class="section-band model-panel" aria-label="Local AI model readiness">
       <div class="section-title">
         <p class="eyebrow">Local AI model</p>
-        <h3>${model.display_name}</h3>
+        <h3>${escapeHtml(model.display_name)}</h3>
         <p>Official Google weights are pinned for local-only use. No silent download starts from this screen.</p>
       </div>
       <div class="model-meta-grid">
         <div>
           <span>Status</span>
-          <strong class="${model.ready ? "status-ok" : "status-warn"}">${model.status}</strong>
+          <strong class="${model.ready ? "status-ok" : "status-warn"}">${escapeHtml(model.status)}</strong>
         </div>
         <div>
           <span>Download</span>
@@ -1572,23 +1582,23 @@ function renderModelReadiness({ compact = false } = {}) {
         </div>
         <div>
           <span>Official source</span>
-          <strong>${model.ollama_model}</strong>
+          <strong>${escapeHtml(model.ollama_model)}</strong>
         </div>
         <div>
           <span>Runtime name</span>
-          <strong>${model.runtime_model || model.ollama_model}</strong>
+          <strong>${escapeHtml(model.runtime_model || model.ollama_model)}</strong>
         </div>
         <div>
           <span>Checksum required</span>
-          <strong>${model.artifact.expected_sha256}</strong>
+          <strong>${escapeHtml(model.artifact.expected_sha256)}</strong>
         </div>
       </div>
       <div class="model-source">
-        <span>${model.provider} source</span>
-        <strong>${model.source_repo}</strong>
-        <small>${model.download_policy}; explicit setup consent required.</small>
-        <small>Checksum source: ${model.artifact.checksum_source}</small>
-        <small>Local path: ${model.artifact.local_path}</small>
+        <span>${escapeHtml(model.provider)} source</span>
+        <strong>${escapeHtml(model.source_repo)}</strong>
+        <small>${escapeHtml(model.download_policy)}; explicit setup consent required.</small>
+        <small>Checksum source: ${escapeHtml(model.artifact.checksum_source)}</small>
+        <small>Local path: ${escapeHtml(model.artifact.local_path)}</small>
       </div>
       ${renderModelDownloadStatus(model)}
       ${renderModelActions(model)}
@@ -1596,11 +1606,11 @@ function renderModelReadiness({ compact = false } = {}) {
       <div class="readiness-list">
         ${checks.map((check) => `
           <article class="readiness-item">
-            <span class="${check.ok ? "status-ok" : "status-warn"}">${check.status}</span>
+            <span class="${check.ok ? "status-ok" : "status-warn"}">${escapeHtml(check.status)}</span>
             <div>
-              <h4>${check.label}</h4>
-              <p>${check.message}</p>
-              ${check.next_action ? `<small>${check.next_action}</small>` : ""}
+              <h4>${escapeHtml(check.label)}</h4>
+              <p>${escapeHtml(check.message)}</p>
+              ${check.next_action ? `<small>${escapeHtml(check.next_action)}</small>` : ""}
             </div>
           </article>
         `).join("")}
@@ -4387,16 +4397,16 @@ function renderModuleRow(module, { actions = false } = {}) {
   return `
     <article class="module-row ${disabled ? "module-disabled" : ""}">
       <div>
-        <h3>${module.display_name}</h3>
-        <p>${module.role}</p>
+        <h3>${escapeHtml(module.display_name)}</h3>
+        <p>${escapeHtml(module.role)}</p>
         ${contractParts.length ? `<small>${contractParts.join(" - ")}</small>` : ""}
       </div>
       <div class="module-meta">
         <span class="${moduleStatusClass(module)}">${moduleStatusLabel(module)}</span>
-        <small>${module.version || "No release yet"}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
+        <small>${escapeHtml(module.version || "No release yet")}${proofCount ? ` - ${proofCount} proof checks` : ""}</small>
         ${backupHooks.length ? `<small><strong>Backup includes:</strong> ${backupHooks.map((hook) => escapeHtml(backupHookLabel(hook))).join(", ")}</small>` : ""}
         ${disabled ? `<small>Data remains installed. Re-enable this module to show its work area.</small>` : ""}
-        ${lifecycle.map((item) => `<small><strong>${item.label}:</strong> ${item.value}</small>`).join("")}
+        ${lifecycle.map((item) => `<small><strong>${item.label}:</strong> ${escapeHtml(item.value)}</small>`).join("")}
         ${actionButtons.length ? `
           <div class="module-actions">
             ${actionButtons.map(([action, label]) => `
@@ -4780,13 +4790,13 @@ function renderProfileRow(profile) {
   return `
     <article class="module-row">
       <div>
-        <h3>${profile.label}</h3>
-        <p>${profile.description}</p>
+        <h3>${escapeHtml(profile.label)}</h3>
+        <p>${escapeHtml(profile.description)}</p>
         <small>${profile.module_count} module${profile.module_count === 1 ? "" : "s"}</small>
       </div>
       <div class="module-meta">
         <span class="${profileStatusClass(profile)}">${profileStatusLabel(profile)}</span>
-        ${profile.disabled ? `<small>${profile.disabled_reason || "Held until package proof is available."}</small>` : ""}
+        ${profile.disabled ? `<small>${escapeHtml(profile.disabled_reason || "Held until package proof is available.")}</small>` : ""}
       </div>
     </article>
   `;
@@ -4823,7 +4833,7 @@ function renderModules() {
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
         <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
         <div class="module-meta">
-          <span class="${admin ? "status-ok" : "status-warn"}">${admin ? admin.role : "Needed"}</span>
+          <span class="${admin ? "status-ok" : "status-warn"}">${admin ? escapeHtml(admin.role) : "Needed"}</span>
         </div>
         <button type="button" class="secondary-action" data-first-run-action="create-admin" data-step-id="first-admin">Save First Admin</button>
       </div>
@@ -4861,10 +4871,10 @@ function renderModules() {
       <div>
         <div class="section-title">
           <h3>City Core Package</h3>
-          <p>Installed for the ${selection.profile_label} local profile. Disabled modules stay installed and can be re-enabled here.</p>
+          <p>Installed for the ${escapeHtml(selection.profile_label)} local profile. Disabled modules stay installed and can be re-enabled here.</p>
         </div>
         <div class="empty-note">
-          Selected profile: ${selection.profile_label}. Installed modules: ${selection.installed_module_ids.length}. Enabled modules: ${enabledCount}.
+          Selected profile: ${escapeHtml(selection.profile_label)}. Installed modules: ${selection.installed_module_ids.length}. Enabled modules: ${enabledCount}.
         </div>
         <div class="module-list">${installed.map((module) => renderModuleRow(module, { actions: true })).join("")}</div>
       </div>

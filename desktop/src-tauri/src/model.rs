@@ -432,6 +432,28 @@ fn bundled_ollama_path() -> PathBuf {
         .join("ollama.exe")
 }
 
+// Resolve a known Windows system binary to its absolute path under %SystemRoot%
+// instead of relying on PATH lookup (defense-in-depth against PATH hijacking).
+#[cfg(windows)]
+fn win_system_exe(relative: &str) -> PathBuf {
+    let system_root = env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+    let mut path = PathBuf::from(system_root);
+    for part in relative.split('\\') {
+        path.push(part);
+    }
+    path
+}
+
+#[cfg(windows)]
+fn powershell_exe() -> PathBuf {
+    win_system_exe("System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+}
+
+#[cfg(not(windows))]
+fn powershell_exe() -> PathBuf {
+    PathBuf::from("powershell.exe")
+}
+
 fn ollama_models_dir() -> PathBuf {
     windows_data_root().join("models").join("ollama")
 }
@@ -444,6 +466,7 @@ fn ollama_executable() -> PathBuf {
             if bundled.is_file() || cfg!(target_os = "windows") {
                 bundled
             } else {
+                // ponytail: last-resort PATH fallback; bundled ollama.exe is always preferred above.
                 PathBuf::from("ollama")
             }
         })
@@ -469,7 +492,7 @@ fn available_disk_bytes(path: &Path) -> Result<u64, String> {
             "$item = Get-Item -LiteralPath '{}'; [int64]$item.PSDrive.Free",
             literal_path
         );
-        let output = Command::new("powershell.exe")
+        let output = Command::new(powershell_exe())
             .arg("-NoProfile")
             .arg("-NonInteractive")
             .arg("-Command")
@@ -517,6 +540,69 @@ fn ensure_minimum_free_disk(path: &Path, minimum_free_disk_bytes: u64) -> Result
         ));
     }
     Ok(())
+}
+
+fn parse_available_memory_override() -> Option<Result<u64, String>> {
+    env::var("CIVICSUITE_AVAILABLE_MEMORY_BYTES_OVERRIDE")
+        .ok()
+        .map(|value| {
+            value.parse::<u64>().map_err(|error| {
+                format!("Invalid CIVICSUITE_AVAILABLE_MEMORY_BYTES_OVERRIDE value: {error}")
+            })
+        })
+}
+
+fn available_memory_bytes() -> Result<u64, String> {
+    if let Some(override_value) = parse_available_memory_override() {
+        return override_value;
+    }
+    if cfg!(target_os = "windows") {
+        let script = "[int64]((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory) * 1024";
+        let output = Command::new(powershell_exe())
+            .arg("-NoProfile")
+            .arg("-NonInteractive")
+            .arg("-Command")
+            .arg(script)
+            .output()
+            .map_err(|error| format!("Could not check available memory: {error}"))?;
+        if !output.status.success() {
+            return Err(format!(
+                "Could not check available memory: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        return String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .parse::<u64>()
+            .map_err(|error| format!("Could not parse available memory: {error}"));
+    }
+    // ponytail: only Windows is a shipping target; non-Windows reads /proc/meminfo MemAvailable.
+    let meminfo = fs::read_to_string("/proc/meminfo")
+        .map_err(|error| format!("Could not check available memory: {error}"))?;
+    let available_kb = meminfo
+        .lines()
+        .find_map(|line| line.strip_prefix("MemAvailable:"))
+        .and_then(|rest| rest.trim().split_whitespace().next())
+        .ok_or_else(|| "Could not parse available memory output".to_string())?
+        .parse::<u64>()
+        .map_err(|error| format!("Could not parse available memory: {error}"))?;
+    Ok(available_kb * 1024)
+}
+
+// Non-fatal RAM preflight: returns Some(warning) when available physical memory is
+// below the model's approximate weight plus headroom. A probe failure is swallowed
+// (returns None) so a flaky check never blocks the install.
+fn ensure_minimum_free_memory(approximate_weight_memory_gb: f32) -> Option<String> {
+    const MEMORY_HEADROOM_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+    let required =
+        (approximate_weight_memory_gb as f64 * 1_073_741_824.0) as u64 + MEMORY_HEADROOM_BYTES;
+    let available = available_memory_bytes().ok()?;
+    if available < required {
+        return Some(format!(
+            "Low memory warning: the model needs roughly {required} bytes of free memory, but only {available} bytes are available. AI workflows may run slowly or fail to load."
+        ));
+    }
+    None
 }
 
 fn ensure_parent_dir(path: &Path) -> Result<(), String> {
@@ -1212,9 +1298,14 @@ pub(crate) fn local_model_artifact_verified() -> Result<bool, String> {
 
 fn curl_executable() -> String {
     env::var("CIVICSUITE_CURL_PATH").unwrap_or_else(|_| {
-        if cfg!(target_os = "windows") {
-            "curl.exe".to_string()
-        } else {
+        #[cfg(windows)]
+        {
+            win_system_exe("System32\\curl.exe")
+                .to_string_lossy()
+                .into_owned()
+        }
+        #[cfg(not(windows))]
+        {
             "curl".to_string()
         }
     })
@@ -1358,6 +1449,10 @@ fn download_model_artifact_inner(
         )
     })?;
     ensure_minimum_free_disk(parent, manifest.download.minimum_free_disk_bytes)?;
+    if let Some(warning) = ensure_minimum_free_memory(manifest.model.approximate_weight_memory_gb) {
+        // Non-fatal: record the low-memory warning but keep installing.
+        let _ = write_model_download_state(manifest, local_path, "Downloading", warning, None);
+    }
     let partial_path = partial_download_path(local_path);
     if finalize_partial_download(manifest, local_path, &partial_path)? {
         return Ok(());
@@ -1977,6 +2072,34 @@ mod tests {
             assert_eq!(result.status, "Needs attention");
             assert!(result.message.contains("needs at least 15000000000"));
         });
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn win_system_exe_builds_absolute_path_under_system_root() {
+        env::set_var("SystemRoot", "C:\\Windows");
+        let path = win_system_exe("System32\\curl.exe");
+        env::remove_var("SystemRoot");
+        assert!(path.is_absolute());
+        assert!(path.starts_with("C:\\Windows"));
+        assert!(path.ends_with("curl.exe"));
+    }
+
+    #[test]
+    fn memory_preflight_warns_below_floor_and_passes_above() {
+        // approximate_weight_memory_gb (6.7) + 2GB headroom ~= 9.3GB required.
+        env::set_var("CIVICSUITE_AVAILABLE_MEMORY_BYTES_OVERRIDE", "1000000000");
+        let warning = ensure_minimum_free_memory(6.7);
+        env::remove_var("CIVICSUITE_AVAILABLE_MEMORY_BYTES_OVERRIDE");
+        assert!(warning
+            .as_deref()
+            .unwrap_or_default()
+            .contains("Low memory warning"));
+
+        env::set_var("CIVICSUITE_AVAILABLE_MEMORY_BYTES_OVERRIDE", "32000000000");
+        let ok = ensure_minimum_free_memory(6.7);
+        env::remove_var("CIVICSUITE_AVAILABLE_MEMORY_BYTES_OVERRIDE");
+        assert!(ok.is_none());
     }
 
     #[test]
