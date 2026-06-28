@@ -72,7 +72,7 @@ Use the live trust path, not stale committed artifacts:
 1. Check the active run evidence path named in [README.md](README.md) and [STATUS.md](STATUS.md).
 2. Verify the generated `SHA256SUMS` or release-manifest hash for the artifact you are about to run.
 3. Confirm the package came from the official CivicSuite repo or the recorded local run evidence.
-4. Confirm source pins in `installer/modules.json` match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, and CivicCode.
+4. Confirm source pins in `installer/modules.json` match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicNotice.
 5. For CivicCode release-car assets, verify the published SHA256 and attestation assets recorded in the module release evidence.
 
 Do not restore old `installer/dist` artifacts unless Scott explicitly decides that the prior committed artifacts should be revived. The default for this run is live regenerated artifacts with evidence paths.
