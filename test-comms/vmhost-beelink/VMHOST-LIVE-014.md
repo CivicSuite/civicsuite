@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-014 - full first-run + model + completion (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 19:44:09
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 19:44:29
 Refresh to watch. Model download is the long step.
 
 ```
@@ -9,4 +9,5 @@ Refresh to watch. Model download is the long step.
 [19:44:05] MSI ready: CivicSuite_0.1.0_x64_en-US.msi (1569 MB). Copying into Sandbox folder...
 [19:44:07] Launching Windows Sandbox (20 GB). Full first-run + 7GB model download + real completion run automatically; steps stream below.
 [19:44:09] Sandbox launched. Streaming in-Sandbox steps (download is the long blocking step; heartbeat continues)...
+    SANDBOX> [
 ```
