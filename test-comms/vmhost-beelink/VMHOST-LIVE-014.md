@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-014 - full first-run + model + completion (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:47:57
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:48:35
 Refresh to watch. Model download is the long step.
 
 ```
@@ -82,4 +82,5 @@ Refresh to watch. Model download is the long step.
 [20:45:29] ...working (elapsed 3679s; model download/inference is slow on CPU)
 [20:46:43] ...working (elapsed 3752s; model download/inference is slow on CPU)
 [20:47:57] ...working (elapsed 3826s; model download/inference is slow on CPU)
+    SANDBOX> [20:48:34]   FAIL download-model: cdp timeout
 ```
