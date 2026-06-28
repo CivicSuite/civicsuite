@@ -764,11 +764,12 @@ def installer_source_commits() -> dict[str, str]:
 
 
 def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
-    """Confirm installer source pins match the checkout mode being verified.
+    """Confirm installer source pins are valid for the checkout mode being verified.
 
-    Local engagement branches may pin PR heads before the corresponding module
-    default branch has moved; remote-only verification stays tied to default
-    branches after merge.
+    Local mode: the pin must equal the local sibling checkout HEAD. Remote-only
+    mode: the pin must be a real, resolvable commit on the module repo (it may be
+    ahead of/behind the default-branch head or latest release tag by design); the
+    installer-cleanroom workflow separately enforces pin == checked-out source.
     """
     city_core_modules = {
         "civiccore",
@@ -804,7 +805,14 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
             return [fail(f"cannot read local source HEAD for {spec.name}: {output}")]
         actual = output
 
-    if actual != declared and remote_only and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+    if actual != declared and remote_only:
+        # The installer vendors a pinned source commit that is deliberately allowed
+        # to be ahead of (or behind) the module's current default-branch head or
+        # latest release tag -- post-release work is bundled on purpose. Suite-state
+        # only needs the pin to be a REAL, reachable commit on the module repo; the
+        # installer-cleanroom workflow separately enforces pin == checked-out source.
+        # Accept any resolvable commit regardless of CI event type (push/dispatch/PR)
+        # so this gate is consistent on every trigger, not just pull_request.
         code, data, message = run_json(
             [
                 "gh",
@@ -817,8 +825,8 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
         return [
             fail(
                 f"installer/modules.json source_commit for {spec.name} is {declared}, "
-                f"which is not {spec.default_branch} head {actual} and could not be read "
-                f"as a pull-request branch commit: {message}"
+                f"which is not {spec.default_branch} head {actual} and is not a "
+                f"resolvable commit on {spec.repo}: {message}"
             )
         ]
 
@@ -826,7 +834,7 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
         return [
             fail(
                 f"installer/modules.json source_commit for {spec.name} is {declared}, "
-                f"but {'remote default branch' if remote_only else 'local sibling checkout'} is {actual}"
+                f"but local sibling checkout is {actual}"
             )
         ]
     return []

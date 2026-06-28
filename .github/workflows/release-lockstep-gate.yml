@@ -1,13 +1,20 @@
 name: release-lockstep-gate
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    tags:
+      - "civicsuite-windows-local-v*"
+      - "installer-*-v*"
 
 jobs:
   release-lockstep-gate:
-    if: contains(github.event.pull_request.labels.*.name, 'release-tag')
-    runs-on: [self-hosted, linux, x64]
+    # On PRs only gate release-tag-labeled PRs; on a release tag push, always run.
+    # Hosted runner (the old self-hosted runners were offline, silently skipping the gate).
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'release-tag')
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,3 +24,7 @@ jobs:
           python-version: "3.12"
       - name: Verify release truth artifacts move together
         run: python scripts/verify-release-lockstep.py
+      - name: Verify suite state (pins, versions, releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/verify-suite-state.py --remote-only
