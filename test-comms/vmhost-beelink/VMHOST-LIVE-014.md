@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-014 - full first-run + model + completion (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 19:50:06
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 19:51:20
 Refresh to watch. Model download is the long step.
 
 ```
@@ -35,4 +35,5 @@ Refresh to watch. Model download is the long step.
     SANDBOX> [19:48:34] Step: DOWNLOAD MODEL (~6.97GB from Hugging Face + checksum - the long step; host heartbeats while this runs)
     SANDBOX> [19:48:34] download-model ...
 [19:50:06] ...working (elapsed 356s; model download/inference is slow on CPU)
+[19:51:20] ...working (elapsed 430s; model download/inference is slow on CPU)
 ```
