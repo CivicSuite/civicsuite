@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-016 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:32:46
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:33:09
 
 ```
 [21:52:23] Directive 016 started (model load fire+poll + completion + backup/restore).
@@ -102,4 +102,6 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:32:46
     SANDBOX> [22:32:38]   OK wizard model step
     SANDBOX> [22:32:38]   REJECTED finish: CivicSuite cannot continue this setup step until these required steps are complete: Health verification.
     SANDBOX> [22:32:38] BACKUP: fire supervisor backup, poll backup folder (up to 10m)...
+    SANDBOX> [22:32:58]   backup artifact appeared (31 items under backup root)
+    SANDBOX> [22:32:58] RESTORE: fire supervisor restore, poll app state (up to 10m)...
 ```
