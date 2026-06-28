@@ -41,6 +41,36 @@ provisional until the repo passes the recovery gates in
 | civiclibrary    | CivicSuite/civiclibrary        | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: library support foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicparks      | CivicSuite/civicparks          | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: parks and recreation support foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 
+## Desktop Windows-Local product
+
+The rows above track the per-module `civiccore` pairing contract. The
+Windows-Local desktop product is a different kind of artifact: a packaged MSI
+that bundles a fixed set of city-core module versions on one CivicCore platform
+version, not a module that consumes CivicCore. It is recorded here as its own
+section rather than as a module row.
+
+`civicsuite-windows-local-v1.0.1` is the Latest Windows-Local release. It
+supersedes v1.0.0; the `windows-local-msi-firstrun-fix-rc1` prerelease is
+retired. The MSI is an UNSIGNED beta: SmartScreen shows "Unknown Publisher" -
+choose "More info" then "Run anyway". Authenticode code-signing is a documented
+GA-gate item, not a beta blocker. This product is BETA. It does not claim
+public-use readiness, city-ready status, procurement/production readiness,
+macOS lifecycle certification, or full-suite release.
+
+| Product                            | Released   | CivicCore platform | Status        | Notes |
+|------------------------------------|------------|--------------------|---------------|-------|
+| civicsuite-windows-local-v1.0.1    | 2026-06-19 | 1.2.0              | unsigned beta | Latest Windows-Local release; Tauri/WebView2 desktop MSI bundling the five city-core modules on CivicCore 1.2.0. Supersedes v1.0.0; firstrun-fix-rc1 prerelease retired. |
+
+Bundled city-core modules in this release (exact versions):
+
+| Module          | Version | CivicCore platform |
+|-----------------|---------|--------------------|
+| civiccore       | 1.2.0   | n/a (platform)     |
+| civicrecords-ai | 1.7.3   | 1.2.0              |
+| civicclerk      | 1.0.4   | 1.2.0              |
+| civiccode       | 1.0.8   | 1.2.0              |
+| civicnotice     | 0.2.0   | 1.2.0              |
+
 ## CO-7 placeholder audit
 
 Audited on 2026-05-05 before the CivicCore freeze-line tag. The audit searched

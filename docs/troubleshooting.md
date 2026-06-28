@@ -1,30 +1,35 @@
 # CivicSuite Troubleshooting
 
-**Last verified:** 2026-06-19
+**Last verified:** 2026-06-27
 
-This guide covers the umbrella city-core installer and documentation truth path. Module-specific bugs still belong in the relevant module repo.
+This guide covers the umbrella city-core documentation truth path and the Windows Local MSI desktop app. Module-specific bugs still belong in the relevant module repo.
 
-## City-Core Installer Will Not Start
+The Windows Local clerk path is a Tauri/WebView2 desktop app installed from an MSI. It does not use Docker, WSL, a terminal, or developer tooling. The Docker/WSL lifecycle scripts are a legacy Linux/developer CI proof path only, never the MSI operator's path. For the full install flow, see [installer/operator-walkthrough.md](installer/operator-walkthrough.md).
 
-1. Confirm Docker is installed and running.
-2. On Windows, confirm WSL 2 and Virtual Machine Platform are enabled, then start Docker Desktop.
-3. On Linux, use Guided Setup only on supported distributions; it installs Docker Engine from Docker's signed package repositories. If Guided Setup says the host is unsupported, install Docker manually from Docker's official instructions and rerun with Manual Prerequisite.
-4. Rerun the package readiness command before install:
-   - Windows: `.\start-civicsuite-installer.ps1 -Readiness`
-   - Linux: `bash ./start-civicsuite-installer.sh readiness`
+## City-Core App Will Not Start
 
-If readiness still fails, keep the generated report and compare it with the active run evidence path in [STATUS.md](../STATUS.md).
+1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 16 GB RAM (the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services; 8 GB will struggle).
+2. If Windows Defender SmartScreen shows "Unknown Publisher", that is expected for the unsigned beta MSI. Choose **More info**, then **Run anyway**, and continue only if the file came from the expected CivicSuite release/test source.
+3. After install, open CivicSuite from the Start menu or desktop shortcut.
+4. If the app opens but a local service is unhealthy, open System Health, run **Check**, then **Repair** after reviewing the repair panel.
 
-## Suite Launcher Shows No Module Activity
+If the app asks for Docker, WSL, a terminal, or manual config-file edits, stop and record it as a Windows Local release blocker.
 
-The suite launcher is a local browser front door for the installed city-core services. It can show staff, resident, and IT-admin views, but its current shared session is browser/runtime state only.
+## Model Download, Resume, Or Checksum Fails
 
-1. Run the installer verify command.
-2. Confirm Docker containers are running.
-3. Refresh the launcher.
-4. If module links are wrong, check whether `window.CIVICSUITE_LAUNCHER_CONFIG` was provided by the runtime wrapper.
+The Gemma 4 12B QAT model (about 6.97 GB) is downloaded at first run from Hugging Face and served by the bundled Ollama runtime. The installer enforces a 15 GB free-disk floor for the model download.
 
-This is not a municipal SSO proof. Do not treat launcher session state as completed shared identity federation.
+1. If the download is interrupted, use **Download / Resume** in first-run setup.
+2. If checksum verification fails, do not continue AI setup. Download the pinned model again or ask IT for the correct file.
+3. If disk is low, free space (at least 15 GB) and run the model setup and health verification again.
+4. Until the model file is present, checksum-verified, loaded in Ollama, and registered in the local model registry, AI workflows stay disabled. Confirm all of those in System Health.
+
+## A Local Service Is Unhealthy
+
+1. Open System Health and run **Check** to see which service (desktop shell, local data store, task queue, AI model runtime) is failing and why, in plain English.
+2. Review the repair panel, then use **Repair**.
+3. If the task queue schema needs migrations, System Health explains that; complete the migration step it offers.
+4. Use **Backup Now** before any major repair, and **Restore Latest Backup** if a repair leaves data in a bad state.
 
 ## Artifact Hash Or Attestation Does Not Match
 
@@ -37,9 +42,17 @@ Use the live trust path:
 
 Do not restore old committed `installer/dist` artifacts unless Scott explicitly confirms that restoration decision in bridge/for-scott or a durable run note.
 
-## The One-Click Wrapper Says The Package Is Unsigned
+## Windows Says The MSI Is From An Unknown Publisher
 
-That warning is expected for the current city-core beta package. Continue only after the hash/trust checks above pass. If an OS warning blocks execution, ask IT to review the package source and hash before allowing it.
+The MSI is unsigned beta software, so SmartScreen shows "Unknown Publisher". Choose **More info**, then **Run anyway**. Continue only after confirming the file came from the expected CivicSuite release/test source and the hash/trust checks above pass. Authenticode code-signing is a documented GA-gate item, not a beta blocker. If an OS warning blocks execution, ask IT to review the package source and hash before allowing it.
+
+## The App Cannot Write Backups
+
+Backups are local files written under the configured backup folder.
+
+1. Confirm the backup folder is set in System Health.
+2. If writes fail, choose a folder the signed-in local user can write to and run **Backup Now** again.
+3. Keep backup folders somewhere the city can retain and protect according to its records and IT policy.
 
 ## CivicAccess Appears In A City-Core Path
 

@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-06-13
+**Last verified:** 2026-06-26 (civicsuite-windows-local-v1.0.1)
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -26,6 +26,7 @@ CivicSuite is under release-recovery review. Public "shipping," "product-ready,"
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records release car at v1.7.3.
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.4.
 - `civiccode` is the current municipal-code release car at v1.0.8.
+- `civicnotice` is the current public-notice workflow release car at v0.2.0, completing the five-module city-core set.
 - CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
 - The active city-core installer path is the Windows Local Tauri/WebView2 desktop app with portable local runtime services, local backup/restore, local file evidence, local model setup, and a normal Windows uninstall entry.
 - The desktop app is the staff, resident/public preview, and IT/admin front door for the current city-core beta package. It is local-only by default and does not require Docker, WSL, a terminal, or developer tooling for the clerk path.
@@ -52,6 +53,13 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 - Permission to install normal Windows desktop software.
 - A stable internet connection for first install and model download unless IT has already staged the model file.
 - A city name, records contact, clerk contact, first local administrator name/email, and backup folder location.
+
+### System requirements
+
+- **Operating system.** 64-bit Windows 10 or Windows 11 with the WebView2 runtime (current Windows builds include it).
+- **Memory.** 16 GB RAM recommended. The local Gemma 4 12B QAT model needs about 6.7 GB resident at runtime on top of Windows, the portable PostgreSQL store, and the local services; 8 GB will struggle.
+- **Disk.** About 15 GB free at minimum: roughly 1.5 GB for the MSI, about 7 GB for the downloaded model file, and headroom for city data and backups. First-run setup enforces a 15 GB free-disk floor before the model download.
+- **Network.** A stable internet connection for the first install and the model download, unless IT has already staged the model file.
 
 ### Install (Windows Local desktop)
 
@@ -252,4 +260,5 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 | Unsure where to file a bug | [CONTRIBUTING.md](CONTRIBUTING.md) — bug-routing decision tree. |
 | Security issue | [SECURITY.md](SECURITY.md) — open a private GitHub Security Advisory. |
 | General support question | [SUPPORT.md](SUPPORT.md). |
+| Disk still full after uninstall | By design, a plain Windows uninstall (Settings > Installed apps, or Add/Remove Programs) removes the program files but leaves the downloaded ~7 GB Gemma 4 model, your city data, and your backups on disk so a reinstall can restore them. To reclaim that space, delete the configured local data and backup folders, and the model folder, manually after uninstall once you are sure you no longer need them. |
 | First-time evaluator | [FAQ.md](FAQ.md), then [STATUS.md](STATUS.md), then this manual. |

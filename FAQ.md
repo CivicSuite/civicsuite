@@ -6,6 +6,23 @@ This FAQ is for civic operators (city CIO, clerk, IT lead, attorney, procurement
 
 ---
 
+## How does a Windows operator actually install city-core? (start here)
+
+The supported operator path is the **CivicSuite Windows Local "city-core" desktop app**: a single Tauri/WebView2 MSI installer (about 1.6 GB) that you run like any normal Windows program. It bundles a portable PostgreSQL 17 with pgvector and a portable Ollama runtime. There is **no Docker, no WSL, no terminal, and no developer tooling** on this path.
+
+What an operator does:
+
+1. Run the MSI on a 64-bit Windows 10/11 machine that has WebView2.
+2. Because the beta MSI is unsigned, SmartScreen shows "Unknown Publisher" -> choose **More info**, then **Run anyway** (only if the file came from the expected CivicSuite release/test source).
+3. Follow the installer screens, then open CivicSuite and complete first-run setup (city profile, first local administrator, backup folder).
+4. At first run the app downloads the pinned Gemma 4 12B QAT model (about 6.97 GB) from Hugging Face and verifies its checksum before AI workflows turn on. After that the model is local; no cloud account is needed.
+
+Recommended machine: **16 GB RAM** (the local model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and services; 8 GB will struggle) and **at least 15 GB free disk** (1.5 GB MSI + about 7 GB model + data/backup headroom; the installer enforces a 15 GB floor for the model download).
+
+The current release is **civicsuite-windows-local-v1.0.1** (Latest; it supersedes v1.0.0, and the earlier first-run-fix prerelease is retired). For the full step-by-step, see [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
+
+This is still **beta**. It is not public-use ready, not city-ready, not procurement-ready, and not production-ready. Use it for representative, non-production evaluation only.
+
 ## Can my city rely on CivicSuite for live operations today?
 
 **No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
@@ -28,16 +45,19 @@ In practice, use the installer profile that has evidence for your evaluation. Cl
 
 ## What does a civic operator need to run the city-core beta?
 
-For the modules that have install paths today:
+The operator path is the Windows Local "city-core" desktop MSI. You need:
 
-- A machine with **8+ CPU cores, 32 GB RAM, and 60 GB free disk space** for the full city-core lifecycle checks.
-- **Docker Engine** on Linux, or Docker Desktop on Windows/macOS for wrapper-based installs. Linux is the primary runtime proof path. Windows requires WSL 2 and Virtual Machine Platform. macOS remains beta/archive/readiness only until matching-host lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
-- A staff person comfortable running the one-click wrapper or reading the generated bash/PowerShell output.
+- A **64-bit Windows 10 or 11** workstation with **WebView2** present (WebView2 ships with current Windows; the installer relies on it for the desktop shell).
+- **16 GB RAM recommended.** The local Gemma 4 model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and the bundled services; 8 GB will struggle.
+- **At least 15 GB free disk.** That covers the roughly 1.5 GB MSI, the about 7 GB model download, and data/backup headroom. The installer enforces a 15 GB floor before it will download the model.
+- **Permission to install normal Windows desktop software**, and a stable internet connection for the first-run model download (about 6.97 GB from Hugging Face) unless IT has already staged the model file.
 - Access to city documents for representative, non-production evaluation.
 
-Linux Guided Setup uses Docker's signed package repositories where supported. If the host is unsupported, use Manual Prerequisite mode after IT installs Docker from Docker's official instructions.
+You do **not** need Docker, WSL, a terminal, a developer account, cloud accounts, SaaS subscriptions, vendor relationships, or per-seat licensing. PostgreSQL 17 with pgvector and the Ollama model runtime are bundled portably inside the app. If the installed app ever asks for Docker, WSL, terminal commands, or manual config-file edits, that is a Windows Local release-blocking bug, not an operator step.
 
-You do not need cloud accounts, SaaS subscriptions, vendor relationships, or per-seat licensing.
+The beta MSI is unsigned, so SmartScreen will show "Unknown Publisher": choose **More info**, then **Run anyway**, and continue only if the file came from the expected CivicSuite release/test source.
+
+**Legacy developer/CI path (not the operator path):** the project also keeps a Linux/Docker lifecycle as a developer and CI proof path only. That path uses Docker Engine on Linux (with Docker Desktop and WSL 2 on Windows/macOS) and larger build-host resources, and it is the source of the older "8+ cores, 32 GB RAM, 60 GB disk, Docker/WSL" guidance. It exists to prove builds in CI; it is never how a clerk or city IT operator installs city-core. If you are a city operator, ignore the Docker/WSL path and use the Windows Local MSI above.
 
 ## What is the suite launcher?
 
