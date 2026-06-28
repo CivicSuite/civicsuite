@@ -21,10 +21,15 @@ pipeline_run:
       passing tests is explicitly NOT acceptance.
 
   environment_note: >
-    The previous Beelink tester (DESKTOP-2BR3SJR) + its every-2-min runner were DECOMMISSIONED on
-    2026-06-28, so its control channel no longer exists. Phase D must stand up a fresh clean-VM
-    harness - either a new Windows Sandbox run (the QA-B1 pattern: >=20 GB RAM .wsb, mapped MSI,
-    fire-and-forget invoke + external poll for long ops) or a pristine-snapshot VM - before it can run.
+    DECIDED 2026-06-28: the clean-VM harness runs as Windows Sandbox on the dev box DESKTOP-VBMA6O5
+    (the box the Cowork session controls), NOT a rebuilt remote tester. The old Beelink tester
+    (DESKTOP-2BR3SJR) + its every-2-min runner were decommissioned 2026-06-28. Windows Sandbox
+    (Containers-DisposableClientVM) is now ENABLED on DESKTOP-VBMA6O5 via the elevated helper, pending
+    ONE reboot of that box to activate. Phase D drives the Sandbox directly from the session shell
+    (no remote runner, no passwordless auto-login, no relay), using the QA-B1 pattern: a .wsb
+    (CivicAccess has NO model, so modest RAM suffices - the 20 GB sizing was only for AI modules),
+    a mapped folder with the 6-module MSI, and fire-and-forget invoke + external poll for long ops
+    (install / health / backup). The one prerequisite is a reboot of DESKTOP-VBMA6O5.
 
   allowed_paths:
     - "docs/qa/**"
