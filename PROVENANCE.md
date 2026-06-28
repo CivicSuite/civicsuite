@@ -54,7 +54,7 @@ from the release evidence — **not** the `v1.7.3` / `v1.0.4` release tags.
 1. Read `installer/modules.json` and record each module's `source_commit`.
 2. Confirm those commits exist in the corresponding `CivicSuite/<repo>` history.
 3. Verify the MSI checksum / release manifest from the active PR/release evidence
-   (see STATUS.md, "Active City-Core Beta Target").
+   (see STATUS.md, "Active City-Core Target (GA candidate / open public beta)").
 4. For CivicRecords AI and CivicClerk, do **not** rely on the published release
    tag as the source of truth — use the pinned commit above.
 

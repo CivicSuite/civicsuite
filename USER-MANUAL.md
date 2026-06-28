@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-06-26 (civicsuite-windows-local-v1.0.1)
+**Last verified:** 2026-06-28 (civicsuite-windows-local-v1.0.1)
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -20,7 +20,7 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 ### Current honest state
 
-CivicSuite is under release-recovery review. Public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims are frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
+The Windows Local city-core package (`civicsuite-windows-local-v1.0.1`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress). For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 - `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records release car at v1.7.3.
@@ -98,7 +98,7 @@ Do not restore old generated installer artifacts unless Scott explicitly decides
 ### What you should expect
 
 - **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff.
-- **What still needs its own proof gate.** The final clean-machine walkthrough for the current MSI artifact and each future module outside the city-core set.
+- **What still needs its own proof gate.** Each future module outside the city-core set (the clean-machine walkthrough for the current 1.0.1 MSI artifact has passed).
 - **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 
 ### Where to go next
