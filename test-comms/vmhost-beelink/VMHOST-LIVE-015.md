@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-015 - model + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:13:02
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:13:25
 
 ```
 [20:54:23] Directive 015 started (model fire+poll + completion + backup/restore). Checking Sandbox + build...
@@ -35,4 +35,7 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:13:02
     SANDBOX> [21:11:30]   model: status=Partial download bytes=
     SANDBOX> [21:12:16]   model: status=Partial download bytes=
     SANDBOX> [21:13:02]   model: status=Needs runtime bytes=
+    SANDBOX> [21:13:05]   CHECKSUM VERIFIED -> download complete
+    SANDBOX> [21:13:05] === model download+checksum: PASS ===
+    SANDBOX> [21:13:05] load-runtime-model ...
 ```
