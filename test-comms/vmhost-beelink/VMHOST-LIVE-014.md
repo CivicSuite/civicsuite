@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-014 - full first-run + model + completion (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:48:55
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:49:00
 Refresh to watch. Model download is the long step.
 
 ```
@@ -86,4 +86,5 @@ Refresh to watch. Model download is the long step.
     SANDBOX> [20:48:37] First-run finished flag: False
     SANDBOX> [20:48:39] FAIL: Ollama completion error: Unable to connect to the remote server
     SANDBOX> [20:48:39] VERDICT: FAIL
+[20:49:00] Sandbox finished. Verdict: FAIL. Writing RESULT-014.
 ```
