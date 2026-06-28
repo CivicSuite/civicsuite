@@ -96,8 +96,12 @@ full-suite release.
   already escaped by C1).
 - Local sign-in passcode throttle/lockout (5 failures → 60s cooldown, reset on
   success; constant-time compare preserved).
-- External binaries (`powershell`/`curl`/`explorer`) are spawned by absolute
-  `%SystemRoot%` paths instead of bare names (PATH-hijack hardening).
+- External Windows system binaries are spawned by absolute `%SystemRoot%` paths
+  instead of bare names (PATH-hijack hardening) across the renderer/model paths
+  (`model.rs`, `local_shell.rs`) and the service supervisor (`supervisor.rs`:
+  `powershell.exe`, `compact.exe`, `tasklist.exe`, `taskkill.exe`).
+- The MSI unsigned-beta install notice lists all five city-core modules
+  (adds CivicNotice), matching the documented set.
 - First-run model step now states the ~6.97 GB download size, a rough time
   estimate, and that it resumes if interrupted; a non-fatal low-RAM preflight
   warning mirrors the existing low-disk preflight.
