@@ -33,6 +33,52 @@ worker) is proven separately and against the real prepared payload by the
 `desktop-civiccore-integration` job (audit finding T-C1), which is the only job
 that references `runtime-payload-lock.json`.
 
+## Validated end-to-end on a pristine Windows Sandbox (QA-B1 clean-VM)
+
+The interactive, model-heavy walkthrough that cannot run on a hosted CI runner
+has now been exercised by hand on a **pristine Windows Sandbox** under QA-B1.
+A clean-VM run on a real desktop session is stronger evidence than mocked CI
+Playwright would be: it is the shipped Tauri/WebView2 GUI, the real MSI, and the
+real ~6.97 GB model — not a stubbed DOM or a faked download. What was observed
+end-to-end on the clean VM:
+
+- **First-run GUI wizard.** The full click-through (notice → SmartScreen →
+  locations → modules → city profile → first admin → model setup → health →
+  finish) completed in the installed app, ending in a finished first-run profile.
+- **~6.97 GB Gemma model download + load + real completion.** The model was
+  pulled from Hugging Face, checksum-verified against the pinned SHA-256, loaded
+  into the local Ollama runtime, and reported ready — a real local AI completion
+  ran against it (not a mock).
+- **Clerk records-intake workflow.** A records request was created and worked
+  through intake in the installed GUI against the live local data store.
+- **Backup/restore from inside the running app.** The in-app Backup Now / Restore
+  Latest Backup buttons were exercised on the clean VM and round-tripped the
+  local profile.
+
+This is hand-run clean-VM validation captured in the CHANGELOG, not an automated
+per-PR gate; it is recorded here as the evidence that closes the GUI/model parts
+of the gaps below. Re-run it on each RC before shipping.
+
+## Partial / empty / error render states (now unit-covered in `npm test`)
+
+The failure and empty surfaces a first user hits are now unit-covered by the
+headless fake-DOM test `desktop/tests/xss-and-state.mjs`, which runs in CI via
+the build job's `npm test`. It imports the **real** `src/main.js` render tree and
+drives it with crafted app states:
+
+- **Load error** (T4) — corrupt/unreadable saved state renders the retryable
+  error banner, not the first-run checklist.
+- **Model-not-ready** (T10) — a finished profile whose model is not yet
+  downloaded/verified renders the Health model surface with the "Needs download"
+  status and a Download/Resume cue (no crash, no blank).
+- **Service-unhealthy** (T11) — a failing service renders its failing status and
+  a Repair cue in the Health grid rather than crashing.
+- **Empty records surface** (T12) — a clerk opening Records with no requests yet
+  gets the empty-state note, not a crash on an empty list.
+
+These are render-state guards, not a substitute for the QA-B1 walkthrough; they
+catch a blank/crash regression in the partial states cheaply on every PR.
+
 ## Documented gaps (NOT verifiable on hosted runners)
 
 1. **GUI-driven interactive first-run wizard.** The shipped product is a
@@ -45,21 +91,25 @@ that references `runtime-payload-lock.json`.
    machine (Beelink/Windows Sandbox), not on a hosted CI runner. The install /
    verify / uninstall portion of QA-B1 has been run on a fresh Windows Sandbox
    (msiexec install and uninstall exit 0, ARP entry registered then removed,
-   binary at `C:\Program Files\CivicSuite\civicsuite-desktop.exe`); the
-   interactive click-through wizard and the model-heavy steps below remain the
-   open part of that clean-VM gate.
+   binary at `C:\Program Files\CivicSuite\civicsuite-desktop.exe`), and the
+   interactive click-through wizard has now also been completed end-to-end on a
+   pristine Windows Sandbox (see "Validated end-to-end" above). It still cannot
+   run on a hosted runner, so it stays a hand-run clean-VM step to repeat per RC.
 
 2. **GUI-driven backup/restore from inside the running app.** Same reason: the
    backup/restore **logic** runs under `cargo test backup` / `cargo test
-   restore`, but exercising the buttons in the installed GUI needs the same
-   clean-VM/UI session as QA-B1.
+   restore`, and the in-app buttons have now been exercised on the clean VM under
+   QA-B1 (see "Validated end-to-end" above). Still a clean-VM/UI step, not a
+   hosted-CI one.
 
 3. **~6.97 GB Gemma model download + local AI load.** First-run pulls the model
    from Hugging Face; this is too heavy and too slow for a routine CI job and is
    intentionally **not** performed here. The model artifact integrity (SHA-256 +
    exact size pin) is enforced in product code (`model.rs`), and the live URL was
-   probed (HTTP 200, exact size, ungated) by the GauntletGate audit. A model
-   pull belongs in the clean-VM walkthrough, not per-PR CI.
+   probed (HTTP 200, exact size, ungated) by the GauntletGate audit. The actual
+   download + checksum verify + Ollama load + a real local AI completion have now
+   been run on a pristine Windows Sandbox under QA-B1 (see "Validated end-to-end"
+   above). This belongs in the clean-VM walkthrough, not per-PR CI.
 
 4. **Repair (`msiexec /f`) and in-product uninstall-elevation UX.** Not yet in
    this job. Standard MSI repair could be added cheaply; the in-product uninstall
@@ -73,8 +123,13 @@ the real installed MSI and the real runtime crate: silent install, file/registry
 integrity, the first-run/backup/restore logic, and silent uninstall. The
 remaining gap is exactly the interactive, model-heavy walkthrough that the audit
 isolates as the QA-B1 clean-VM work; it cannot be honestly claimed from a hosted
-runner, so it is named here rather than faked. QA-B1's non-interactive
-install/verify/uninstall portion has already been performed on a clean Windows
-Sandbox (see CHANGELOG, "Validated (QA-B1, clean machine)"); the interactive
-wizard and the model pull are the part that still must run on a real desktop
-session.
+runner, so it is named here rather than faked. That walkthrough — first-run
+wizard, the ~6.97 GB model download + load + a real local AI completion, a clerk
+records-intake workflow, and in-app backup/restore — has now been validated
+end-to-end on a pristine Windows Sandbox under QA-B1 (see "Validated end-to-end"
+above and the CHANGELOG, "Validated (QA-B1, clean machine)"). Because it needs a
+real desktop session it stays a hand-run clean-VM step per RC, not an automated
+hosted-CI gate; the cheap partial/empty/error render-state regressions are caught
+per-PR by `tests/xss-and-state.mjs` in `npm test`. This is beta software: these
+runs show the lifecycle works on a clean machine, not that it is production- or
+city-ready.

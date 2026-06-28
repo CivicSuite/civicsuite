@@ -281,4 +281,105 @@ if (!/resume/i.test(xssWizard)) {
   fail("T9: model step must state the download resumes if interrupted");
 }
 
-console.log("PASS: xss-and-state (T4 + T7 + T8 + T9) checks passed");
+// ===========================================================================
+// GAP #14 — partial/empty/error UI states a real first user hits are rendered
+//   (not crashed, not blank). Error state is already covered by T4. These add
+//   the model-not-ready, service-unhealthy, and empty-data surfaces. Each drives
+//   the REAL render() end-to-end at a chosen activeArea and asserts on the HTML
+//   the app actually produces (substrings grounded in main.js, cited inline).
+// ===========================================================================
+
+// Finished, unconfigured-access base state so render() routes straight to the
+// chosen area without the first-run wizard or the access panel (access.configured
+// is false in fallbackState -> renderActiveArea() access gate at the top is skipped;
+// records/health are enabled via areaIsEnabled with the city-core modules).
+function finishedBase() {
+  return {
+    ...t.fallbackState,
+    first_run: { ...t.fallbackState.first_run, finished: true }
+  };
+}
+
+// ---------------------------------------------------------------------------
+// T10 — MODEL-NOT-READY: model not yet downloaded/verified. The Health surface
+//   (renderHealth -> renderModelReadiness, main.js ~1563) must show the status
+//   "Needs download" (main.js:1577) and a download/setup cue button
+//   "Download / Resume" (main.js:1521, model.download_resumable === true), and
+//   the download progress line "Not downloaded" (renderModelDownloadStatus,
+//   from download_state.status, main.js:1545). Not a crash, not a blank.
+// ---------------------------------------------------------------------------
+{
+  const app = finishedBase();
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? app : {});
+  await t.loadAppState();
+  if (t.appStateLoaded !== true) fail("T10: appStateLoaded must be true for the model-not-ready state");
+  t.state.activeArea = "health";
+  t.render();
+  const html = appEl.innerHTML;
+  if (!html || html.length < 100) fail("T10: health surface must not render blank for a not-ready model");
+  if (!html.includes("Needs download")) {
+    fail("T10: model readiness must show the not-ready status 'Needs download' (main.js:1577)");
+  }
+  if (!html.includes("Download / Resume")) {
+    fail("T10: model readiness must show the download/setup cue 'Download / Resume' (main.js:1521)");
+  }
+  if (!html.includes("Not downloaded")) {
+    fail("T10: model download status must show 'Not downloaded' (main.js:1545 from download_state.status)");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// T11 — SERVICE-UNHEALTHY: a runtime/service health check is failing. The Health
+//   grid (renderHealth, main.js ~4927) must render the unhealthy status and a
+//   repair cue (data-supervisor-action="repair", main.js:4940) for an actionable
+//   failing service, rather than crashing. We feed an actionable health item with
+//   ok:false and a distinctive unhealthy status.
+// ---------------------------------------------------------------------------
+{
+  const app = finishedBase();
+  app.health = [
+    {
+      id: "python-services",
+      label: "City workflow services",
+      ok: false,
+      status: "Service down",
+      message: "City workflow services stopped responding on this machine.",
+      next_action: "Repair the local City workflow services.",
+      admin_detail: "Bundled CPython module services"
+    }
+  ];
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? app : {});
+  await t.loadAppState();
+  t.state.activeArea = "health";
+  t.render();
+  const html = appEl.innerHTML;
+  if (!html || html.length < 100) fail("T11: health surface must not render blank for an unhealthy service");
+  if (!html.includes("Service down")) {
+    fail("T11: unhealthy service must render its failing status 'Service down' (renderHealth, main.js:4930)");
+  }
+  if (!html.includes('data-supervisor-action="repair"')) {
+    fail("T11: unhealthy actionable service must render the repair cue data-supervisor-action=\"repair\" (main.js:4940)");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// T12 — EMPTY DATA SURFACE: a clerk opens Records with no requests yet. The
+//   records workflow (renderRecordsWorkflow, main.js ~3672) must render the
+//   empty-state note "No local records requests have been created yet."
+//   (workflowEmpty, main.js:3797) rather than crashing on an empty list.
+// ---------------------------------------------------------------------------
+{
+  const app = finishedBase();
+  app.city_work = { ...t.fallbackState.city_work, records_requests: [] };
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? app : {});
+  await t.loadAppState();
+  t.state.activeArea = "records";
+  t.render();
+  const html = appEl.innerHTML;
+  if (!html || html.length < 100) fail("T12: records surface must not render blank when there are no requests");
+  if (!html.includes("No local records requests have been created yet.")) {
+    fail("T12: empty records surface must render the empty-state note (main.js:3797 via workflowEmpty)");
+  }
+}
+
+console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12) checks passed");
