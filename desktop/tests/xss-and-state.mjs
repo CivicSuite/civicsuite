@@ -242,4 +242,43 @@ invokeImpl = async (cmd) => (cmd === "get_app_state" ? FINISHED_APP : {});
 await t.loadAppState();
 if (t.renderFirstRunWizard() !== "") fail("T7: a finished first-run must render no wizard");
 
-console.log("PASS: xss-and-state (T4 + T7) checks passed");
+// ===========================================================================
+// T8 — #17 defense-in-depth: backend-origin first-run chrome (profile_label,
+//   locations, step text) is escaped, not interpolated raw into innerHTML.
+// ===========================================================================
+const XSS_FIRST_RUN_APP = {
+  ...t.fallbackState,
+  first_run: {
+    ...t.fallbackState.first_run,
+    finished: false,
+    profile_label: XSS_PAYLOAD,
+    steps: [
+      { id: "model", label: XSS_PAYLOAD, status: "current", summary: "", detail: "", current: true }
+    ],
+    locations: { install_root: XSS_PAYLOAD, data_root: "", backup_root: "" }
+  }
+};
+invokeImpl = async (cmd) => (cmd === "get_app_state" ? XSS_FIRST_RUN_APP : {});
+await t.loadAppState();
+const xssWizard = t.renderFirstRunWizard();
+if (xssWizard.includes("<img src=x onerror=")) {
+  fail("T8: backend-origin first-run strings must be escaped, not rendered raw");
+}
+if (!xssWizard.includes("&lt;img")) {
+  fail("T8: the escaped first-run payload should appear as &lt;img...");
+}
+
+// ===========================================================================
+// T9 — #34 model download expectation: the current "model" first-run step
+//   states the download size (from state.app.model.download_size_bytes) and
+//   that it resumes if interrupted.
+// ===========================================================================
+const modelSize = `${(t.fallbackState.model.download_size_bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+if (!xssWizard.includes(modelSize)) {
+  fail(`T9: model step must show the download size ${modelSize}`);
+}
+if (!/resume/i.test(xssWizard)) {
+  fail("T9: model step must state the download resumes if interrupted");
+}
+
+console.log("PASS: xss-and-state (T4 + T7 + T8 + T9) checks passed");

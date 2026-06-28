@@ -1,7 +1,21 @@
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+// Resolve explorer.exe to its absolute path under %SystemRoot% instead of relying
+// on PATH lookup (defense-in-depth against PATH hijacking). explorer.exe lives
+// directly under the Windows root, not under System32.
+#[cfg(windows)]
+fn explorer_path() -> PathBuf {
+    let system_root = env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+    PathBuf::from(system_root).join("explorer.exe")
+}
+
+#[cfg(not(windows))]
+fn explorer_path() -> PathBuf {
+    PathBuf::from("explorer.exe")
+}
 
 pub(crate) fn open_local_folder(path: &Path) -> Result<(), String> {
     fs::create_dir_all(path)
@@ -11,7 +25,7 @@ pub(crate) fn open_local_folder(path: &Path) -> Result<(), String> {
     }
 
     let mut command = if cfg!(target_os = "windows") {
-        Command::new("explorer.exe")
+        Command::new(explorer_path())
     } else if cfg!(target_os = "macos") {
         Command::new("open")
     } else {
@@ -38,11 +52,26 @@ pub(crate) fn open_windows_uninstall_settings() -> Result<(), String> {
         );
     }
 
-    Command::new("explorer.exe")
+    Command::new(explorer_path())
         .arg("ms-settings:appsfeatures")
         .spawn()
         .map_err(|error| {
             format!("Could not open Windows Installed apps settings from the desktop app: {error}")
         })?;
     Ok(())
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn explorer_path_is_absolute_under_system_root() {
+        env::set_var("SystemRoot", "C:\\Windows");
+        let path = explorer_path();
+        env::remove_var("SystemRoot");
+        assert!(path.is_absolute());
+        assert!(path.starts_with("C:\\Windows"));
+        assert!(path.ends_with("explorer.exe"));
+    }
 }

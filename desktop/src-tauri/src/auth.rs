@@ -1,12 +1,71 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::first_run::{self, SavedFirstAdminRecord};
 
 const SESSION_DURATION_SECONDS: u64 = 12 * 60 * 60;
+
+/// Sign-in throttle: after this many consecutive failed passcode attempts for
+/// one email, further attempts are rejected for SIGN_IN_COOLDOWN_SECONDS.
+const SIGN_IN_MAX_FAILURES: u32 = 5;
+const SIGN_IN_COOLDOWN_SECONDS: u64 = 60;
+
+#[derive(Default)]
+struct FailedAttempt {
+    count: u32,
+    last_unix_seconds: u64,
+}
+
+// ponytail: in-memory throttle, resets on app restart (single-process desktop
+// app, so a restart is a deliberate user action, not an attacker channel).
+// Persist via staff-users.json write pattern only if cross-restart lockout is
+// ever required.
+fn sign_in_failures() -> &'static Mutex<HashMap<String, FailedAttempt>> {
+    static FAILURES: OnceLock<Mutex<HashMap<String, FailedAttempt>>> = OnceLock::new();
+    FAILURES.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Returns the remaining cooldown seconds if `email` is currently locked out,
+/// otherwise None. Expired cooldowns are treated as unlocked.
+fn sign_in_cooldown_remaining(email: &str, now: u64) -> Option<u64> {
+    let failures = sign_in_failures().lock().expect("sign-in throttle lock");
+    let entry = failures.get(email)?;
+    if entry.count < SIGN_IN_MAX_FAILURES {
+        return None;
+    }
+    let unlock_at = entry
+        .last_unix_seconds
+        .saturating_add(SIGN_IN_COOLDOWN_SECONDS);
+    (unlock_at > now).then(|| unlock_at - now)
+}
+
+fn record_sign_in_failure(email: &str, now: u64) {
+    let mut failures = sign_in_failures().lock().expect("sign-in throttle lock");
+    let entry = failures.entry(email.to_string()).or_default();
+    // A failure after the cooldown elapsed starts a fresh count.
+    if entry.count >= SIGN_IN_MAX_FAILURES
+        && now
+            >= entry
+                .last_unix_seconds
+                .saturating_add(SIGN_IN_COOLDOWN_SECONDS)
+    {
+        entry.count = 0;
+    }
+    entry.count = entry.count.saturating_add(1);
+    entry.last_unix_seconds = now;
+}
+
+fn reset_sign_in_failures(email: &str) {
+    sign_in_failures()
+        .lock()
+        .expect("sign-in throttle lock")
+        .remove(email);
+}
 
 /// Per-install key that authenticates the local session token. It is stored
 /// OUTSIDE the config dir (a sibling of config/ and Data/ under the install
@@ -634,7 +693,20 @@ pub fn auth_action(
         "sign-in" => {
             let email = payload_string(payload, "email")?;
             let passcode = payload_string(payload, "passcode")?;
-            let user = verify_local_user(&email, &passcode)?;
+            let throttle_key = normalize_email(&email);
+            if let Some(remaining) = sign_in_cooldown_remaining(&throttle_key, now_unix_seconds()) {
+                return Err(format!(
+                    "Too many failed sign-in attempts. Wait {remaining} seconds and try again."
+                ));
+            }
+            let user = match verify_local_user(&email, &passcode) {
+                Ok(user) => user,
+                Err(error) => {
+                    record_sign_in_failure(&throttle_key, now_unix_seconds());
+                    return Err(error);
+                }
+            };
+            reset_sign_in_failures(&throttle_key);
             let expires_at_unix_seconds = now_unix_seconds() + SESSION_DURATION_SECONDS;
             let session = LocalSession {
                 email: user.email.clone(),
@@ -905,6 +977,60 @@ mod tests {
             assert!(result.accepted);
             assert!(root.join("config").join("local-session.json").is_file());
             require_admin_session().expect("session authorizes admin actions");
+        });
+    }
+
+    #[test]
+    fn sign_in_throttle_locks_after_repeated_failures_then_clears() {
+        with_temp_state_dir(|_| {
+            create_admin();
+            let key = normalize_email("alex@example.gov");
+            // Start from a clean throttle bucket regardless of other tests.
+            reset_sign_in_failures(&key);
+            let base = now_unix_seconds();
+
+            // N consecutive failures at a fixed instant trip the lockout.
+            for _ in 0..SIGN_IN_MAX_FAILURES {
+                record_sign_in_failure(&key, base);
+            }
+            assert!(
+                sign_in_cooldown_remaining(&key, base).is_some(),
+                "account is locked once the failure threshold is reached"
+            );
+
+            // Within the cooldown window the real sign-in path is rejected with
+            // the wait message, even with the correct passcode.
+            let payload = serde_json::json!({
+                "email": "alex@example.gov",
+                "passcode": "correct horse battery staple"
+            });
+            // (auth_action uses the real clock, which is at/after `base`.)
+            let blocked = auth_action("sign-in", Some(&payload));
+            assert!(matches!(&blocked, Err(message) if message.contains("Too many")));
+
+            // After the cooldown elapses the account is no longer locked.
+            assert!(
+                sign_in_cooldown_remaining(&key, base + SIGN_IN_COOLDOWN_SECONDS).is_none(),
+                "cooldown clears once the window passes"
+            );
+
+            // A successful sign-in resets the counter so future attempts start
+            // fresh. Clear the simulated lockout first so the real-clock path
+            // is allowed through.
+            reset_sign_in_failures(&key);
+            let result = auth_action("sign-in", Some(&payload)).expect("sign-in succeeds");
+            assert!(result.accepted);
+            record_sign_in_failure(&key, now_unix_seconds());
+            assert_eq!(
+                sign_in_failures()
+                    .lock()
+                    .expect("throttle lock")
+                    .get(&key)
+                    .map(|entry| entry.count),
+                Some(1),
+                "successful sign-in reset the counter, so the next failure is the first"
+            );
+            reset_sign_in_failures(&key);
         });
     }
 
