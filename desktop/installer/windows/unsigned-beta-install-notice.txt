@@ -19,7 +19,7 @@ The Windows local install path is designed for non-technical city staff:
 - No WSL requirement.
 - No terminal requirement for normal use.
 - CivicCore is installed as the required shared platform.
-- CivicRecords AI, CivicClerk, and CivicCode are installed as the city-core module set.
+- CivicRecords AI, CivicClerk, CivicCode, and CivicNotice are installed as the city-core module set.
 - Data, logs, backups, and model files stay on the city's machine unless staff explicitly configure an external connector.
 - The installer creates a standard Windows uninstall entry so CivicSuite can be removed from Windows Settings.
 - The CivicSuite app also exposes repair, backup, restore, and uninstall guidance from System Health.

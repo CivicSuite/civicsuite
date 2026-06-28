@@ -34,6 +34,26 @@ const PROFILE_REPLACE_ATTEMPTS: usize = 12;
 const PROFILE_REPLACE_RETRY_DELAY: Duration = Duration::from_millis(750);
 const SERVICE_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 
+// Resolve a Windows system binary to its absolute path under %SystemRoot% instead of
+// relying on PATH lookup. CreateProcess searches the app dir and CWD before System32,
+// so spawning system binaries by bare name is a PATH/CWD-hijack vector.
+#[cfg(windows)]
+fn system32_exe(relative: &str) -> PathBuf {
+    let system_root = env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+    let mut path = PathBuf::from(system_root);
+    path.push("System32");
+    for part in relative.split('\\') {
+        path.push(part);
+    }
+    path
+}
+
+// Non-Windows builds keep the bare name so Linux/macOS behavior is unchanged.
+#[cfg(not(windows))]
+fn system32_exe(relative: &str) -> PathBuf {
+    PathBuf::from(relative.rsplit('\\').next().unwrap_or(relative))
+}
+
 #[derive(Deserialize)]
 struct OperatorPath {
     requires_docker: bool,
@@ -1769,7 +1789,7 @@ fn ensure_postgres_data_dir_uncompressed(data_dir: &Path) -> Result<(), String> 
             data_dir.to_string_lossy().to_string(),
             format!("/S:{}", data_dir.display()),
         ] {
-            let status = Command::new("compact.exe")
+            let status = Command::new(system32_exe("compact.exe"))
                 .arg("/U")
                 .arg("/I")
                 .arg("/Q")
@@ -2095,7 +2115,7 @@ fn http_get_response(endpoint: &str) -> Option<(u16, String)> {
 
 fn process_running(pid: u32) -> bool {
     if cfg!(target_os = "windows") {
-        Command::new("tasklist")
+        Command::new(system32_exe("tasklist.exe"))
             .arg("/FI")
             .arg(format!("PID eq {pid}"))
             .arg("/FO")
@@ -2126,7 +2146,7 @@ Get-CimInstance Win32_Process |
   Where-Object { $_.ExecutablePath -and ([System.IO.Path]::GetFullPath($_.ExecutablePath) -ieq $target) } |
   Select-Object -ExpandProperty ProcessId
 "#;
-        let mut command = Command::new("powershell.exe");
+        let mut command = Command::new(system32_exe("WindowsPowerShell\\v1.0\\powershell.exe"));
         command
             .arg("-NoProfile")
             .arg("-NonInteractive")
@@ -2746,7 +2766,7 @@ fn start_services(
 
 fn stop_pid(pid: u32) -> bool {
     if cfg!(target_os = "windows") {
-        Command::new("taskkill")
+        Command::new(system32_exe("taskkill.exe"))
             .arg("/PID")
             .arg(pid.to_string())
             .arg("/T")
@@ -3428,6 +3448,25 @@ pub fn supervisor_action(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn system32_exe_resolves_absolute_path_under_system_root() {
+        let resolved = system32_exe("tasklist.exe");
+        assert!(
+            resolved.is_absolute(),
+            "expected absolute path: {resolved:?}"
+        );
+        let system_root = env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+        assert!(
+            resolved.starts_with(&system_root),
+            "expected {resolved:?} under {system_root}"
+        );
+        assert!(
+            resolved.ends_with("System32\\tasklist.exe"),
+            "got {resolved:?}"
+        );
+    }
 
     fn with_temp_state_dir<T>(test: impl FnOnce(PathBuf) -> T) -> T {
         let _guard = crate::first_run::test_env_lock()
