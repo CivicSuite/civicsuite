@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-017 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:03:45
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:04:07
 
 ```
 [05:36:23] Directive 017 started (model load fire+poll + completion + backup/restore).
@@ -62,4 +62,5 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 06:03:45
     SANDBOX> [06:03:01]   ...waiting for Ollama
     SANDBOX> [06:03:23]   ...waiting for Ollama
     SANDBOX> [06:03:45]   ...waiting for Ollama
+    SANDBOX> [06:04:07]   ...waiting for Ollama
 ```
