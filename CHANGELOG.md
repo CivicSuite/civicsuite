@@ -86,6 +86,22 @@ This remains a **beta** build. It does not claim public-use readiness, city-read
 status, procurement/production readiness, macOS lifecycle certification, or
 full-suite release.
 
+### Hardening (post-criticals beta pass)
+
+- Build/installer version raised `0.1.0` → `1.0.1` to match the release label
+  (ARP / ProductVersion now read `1.0.1`; the same-version-upgrade WiX contract is
+  unchanged).
+- Defense-in-depth: remaining backend-origin strings are `escapeHtml`-escaped at
+  the app-chrome / setup / model / module render sinks (city-work surfaces were
+  already escaped by C1).
+- Local sign-in passcode throttle/lockout (5 failures → 60s cooldown, reset on
+  success; constant-time compare preserved).
+- External binaries (`powershell`/`curl`/`explorer`) are spawned by absolute
+  `%SystemRoot%` paths instead of bare names (PATH-hijack hardening).
+- First-run model step now states the ~6.97 GB download size, a rough time
+  estimate, and that it resumes if interrupted; a non-fatal low-RAM preflight
+  warning mirrors the existing low-disk preflight.
+
 ### Security
 
 - **C1** — stored/reflected XSS hardening across the desktop (Tauri/WebView2)
