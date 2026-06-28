@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-015 - model + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:10:56
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:11:39
 
 ```
 [20:54:23] Directive 015 started (model fire+poll + completion + backup/restore). Checking Sandbox + build...
@@ -32,4 +32,5 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:10:56
     SANDBOX> [21:10:44]   OK backup-default
     SANDBOX> [21:10:44] === first-run wizard: PASS ===
     SANDBOX> [21:10:44] MODEL: firing resume-download (fire-and-forget), then polling every 45s (up to 3h)...
+    SANDBOX> [21:11:30]   model: status=Partial download bytes=
 ```
