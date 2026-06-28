@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-015 - model + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:32:05
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:33:07
 
 ```
 [20:54:23] Directive 015 started (model fire+poll + completion + backup/restore). Checking Sandbox + build...
@@ -49,4 +49,5 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:32:05
 [21:28:41] ...working (elapsed 1350s)
 [21:30:23] ...working (elapsed 1452s)
 [21:32:05] ...working (elapsed 1554s)
+    SANDBOX> [21:33:05]   FAIL load-runtime-model: cdp timeout
 ```
