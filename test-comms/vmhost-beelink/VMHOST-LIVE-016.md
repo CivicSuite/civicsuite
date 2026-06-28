@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-016 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:11:20
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:11:42
 
 ```
 [21:52:23] Directive 016 started (model load fire+poll + completion + backup/restore).
@@ -38,4 +38,5 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 22:11:20
     SANDBOX> [22:10:42]   CHECKSUM VERIFIED
     SANDBOX> [22:10:42] HEALTH: fire verify-health (bootstraps runtime incl Ollama), poll Ollama reachable (up to 20m)...
     SANDBOX> [22:11:04]   ...waiting for Ollama
+    SANDBOX> [22:11:26]   ...waiting for Ollama
 ```
