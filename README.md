@@ -8,13 +8,11 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 ## Read Me First
 
-CivicSuite's active product target is the Windows Local city-core beta package: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the Tauri/WebView2 desktop installer shell. The current release is `civicsuite-windows-local-v1.0.1` (Latest, published 2026-06-26); it supersedes `civicsuite-windows-local-v1.0.0` and retires the earlier `windows-local-msi-firstrun-fix-rc1` candidate. The clerk path is local-only on Windows: no Docker, WSL, terminal, or developer tooling. It installs CivicCore plus the four city-core product modules under one desktop app, with portable local storage, local services, local file evidence, local backup/restore, and the pinned Gemma 4 12B QAT model path.
+CivicSuite's active product is the Windows Local city-core desktop app, and as of 2026-06-28 it is a **GA candidate now open for public beta**. The current release is `civicsuite-windows-local-v1.0.1` (Latest) — a single Tauri/WebView2 MSI (~1.6 GB) that installs CivicCore v1.2.0 plus four city-core modules (CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0) with bundled portable PostgreSQL 17 + pgvector, bundled local services, the pinned Gemma 4 12B QAT model, and local backup/restore — **no Docker, WSL, terminal, or developer tooling**. It supersedes `civicsuite-windows-local-v1.0.0` and retires the earlier `windows-local-msi-firstrun-fix-rc1` candidate. See [ANNOUNCEMENT.md](ANNOUNCEMENT.md) to start.
 
-`civicsuite-windows-local-v1.0.1` is an **unsigned beta** MSI. SmartScreen shows "Unknown Publisher"; choose **More info** then **Run anyway**. It does not claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
+**What "GA candidate, public beta" means:** the build is feature-complete for city-core and was validated end-to-end on a clean machine (install → first-run → 6.97 GB model download/verify/load → a real local AI completion → a clerk records round-trip → backup/restore → uninstall), with zero open Blocker or Critical findings across two adversarial readiness audits (the remaining items are documented, non-blocking follow-ups). The one remaining gate to General Availability is an Authenticode code-signing certificate, in progress via the SignPath Foundation (a few weeks). Until then the MSI is an **unsigned beta**: SmartScreen shows "Unknown Publisher" → **More info → Run anyway**. Use it for real hands-on evaluation and early adoption — it does **not** claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
 
-Public procurement readiness still depends on the final Windows clean-machine evidence gate. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
-
-Why the freeze: in a five-day window between 2026-05-01 and 2026-05-06, the org pushed multiple v1.0.0 / v0.22.x release labels across 7+ repos as part of a coordination sweep that the project owner subsequently halted. Two follow-on lateral sweeps (2026-05-07 and 2026-05-08) put v1.0.0 tags on `civicinspect`, `civicgrants`, and `civicprocure` against the explicit halt. None of those tags constitute promotion. The recovery-status doc is the operating truth source for which labels are real.
+Scope: city-core is the five modules above. CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels. The MSI bundles module source pinned by commit (for two modules ahead of the latest published tag); the trust path is the `source_commit` pin plus the MSI checksum — see [PROVENANCE.md](PROVENANCE.md). For the history of the 2026-05 release-label freeze and which labels are real, see [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 If you are evaluating CivicSuite for a municipality, use the Windows Local city-core desktop path and the operator walkthrough in `docs/installer/operator-walkthrough.md`.
 
@@ -22,7 +20,7 @@ If you are evaluating CivicSuite for a municipality, use the Windows Local city-
 
 ## Suite Status
 
-Status snapshot: **2026-06-26** (current release: `civicsuite-windows-local-v1.0.1`, Latest)
+Status snapshot: **2026-06-28** (current release: `civicsuite-windows-local-v1.0.1`, Latest — GA candidate, open for public beta)
 
 | Tier | Count | What it means today |
 |---|---:|---|
@@ -66,7 +64,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). A
 - City Core installs CivicCore plus CivicRecords AI, CivicClerk, CivicCode, and CivicNotice. CivicCore is always installed and cannot be deselected.
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
 - First-run setup covers the unsigned beta notice, SmartScreen explanation, local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
-- Trust path: use the MSI artifact from the active PR/release evidence, verify its checksum, and confirm the module pins in `installer/modules.json` before beta testing.
+- Trust path: download `CivicSuite_1.0.1_x64_en-US.msi` from the [civicsuite-windows-local-v1.0.1 release](https://github.com/CivicSuite/civicsuite/releases/latest), verify its SHA-256 `5a1e5e2e4d2f3d7f77c52f108c4445c85db10ff3edc2c151d6bbae1cd97ce3ea`, and confirm the module pins in `installer/modules.json`.
 - macOS and Linux package paths remain separate future or historical profiles until their own matching-host evidence is refreshed.
 
 See [docs/troubleshooting.md](docs/troubleshooting.md) for operator recovery guidance, [installer/README.md](installer/README.md) for the generated-package contract, and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.

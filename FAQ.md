@@ -17,11 +17,11 @@ What an operator does:
 3. Follow the installer screens, then open CivicSuite and complete first-run setup (city profile, first local administrator, backup folder).
 4. At first run the app downloads the pinned Gemma 4 12B QAT model (about 6.97 GB) from Hugging Face and verifies its checksum before AI workflows turn on. After that the model is local; no cloud account is needed.
 
-Recommended machine: **16 GB RAM** (the local model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and services; 8 GB will struggle) and **at least 15 GB free disk** (1.5 GB MSI + about 7 GB model + data/backup headroom; the installer enforces a 15 GB floor for the model download).
+Recommended machine: **16 GB RAM** (the local model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and services; 8 GB will struggle) and **at least 15 GB free disk** (1.6 GB MSI + about 7 GB model + data/backup headroom; the installer enforces a 15 GB floor for the model download).
 
 The current release is **civicsuite-windows-local-v1.0.1** (Latest; it supersedes v1.0.0, and the earlier first-run-fix prerelease is retired). For the full step-by-step, see [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
-This is still **beta**. It is not public-use ready, not city-ready, not procurement-ready, and not production-ready. Use it for representative, non-production evaluation only.
+This is a **GA candidate, open for public beta**: feature-complete for city-core and validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress, a few weeks). You can download and use it now for real hands-on evaluation and early adoption. It is still a **beta** — **not yet production-, city-, or procurement-ready** — so do not run your city's system of record on it yet.
 
 ## Can my city rely on CivicSuite for live operations today?
 
@@ -49,7 +49,7 @@ The operator path is the Windows Local "city-core" desktop MSI. You need:
 
 - A **64-bit Windows 10 or 11** workstation with **WebView2** present (WebView2 ships with current Windows; the installer relies on it for the desktop shell).
 - **16 GB RAM recommended.** The local Gemma 4 model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and the bundled services; 8 GB will struggle.
-- **At least 15 GB free disk.** That covers the roughly 1.5 GB MSI, the about 7 GB model download, and data/backup headroom. The installer enforces a 15 GB floor before it will download the model.
+- **At least 15 GB free disk.** That covers the roughly 1.6 GB MSI, the about 7 GB model download, and data/backup headroom. The installer enforces a 15 GB floor before it will download the model.
 - **Permission to install normal Windows desktop software**, and a stable internet connection for the first-run model download (about 6.97 GB from Hugging Face) unless IT has already staged the model file.
 - Access to city documents for representative, non-production evaluation.
 
