@@ -1,7 +1,8 @@
 ﻿# VMHOST-LIVE-016 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:52:23
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:52:26
 
 ```
 [21:52:23] Directive 016 started (model load fire+poll + completion + backup/restore).
+[21:52:26] Downloading MSI...
 ```
