@@ -1,0 +1,49 @@
+name: release-windows-msi
+
+# Automates Windows-Local MSI release publishing (audit #20): on an annotated
+# release-tag push, attach the EXACT MSI artifact built+tested by the most recent
+# successful main `desktop-windows-msi` run to the GitHub release. Reusing the
+# already-validated artifact avoids a second ~1h rebuild and guarantees the
+# release ships precisely what main built and CI exercised.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach the MSI to (e.g. civicsuite-windows-local-v1.0.1)"
+        required: true
+  push:
+    tags:
+      - "civicsuite-windows-local-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  attach-msi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Attach the main-built MSI artifact to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "Release tag: $tag"
+          run_id="$(gh run list --workflow desktop-windows-msi.yml --branch main \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$run_id" || { echo "No successful main desktop-windows-msi run found."; exit 1; }
+          echo "Using main MSI build run: $run_id"
+          gh run download "$run_id" -n civicsuite-windows-local-msi -D ./msi-artifact
+          msi="$(ls ./msi-artifact/*.msi 2>/dev/null | head -1)"
+          test -n "$msi" || { echo "No .msi in the downloaded artifact."; exit 1; }
+          echo "MSI: $msi ($(stat -c%s "$msi") bytes)"
+          # The annotated tag is expected to already exist (see RELEASING.md). If the
+          # release object does not exist yet, create it from the tag as a prerelease
+          # for a human to finalize notes + promote.
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --title "CivicSuite Windows Local $tag" --prerelease \
+              --notes "Automated MSI attach from main build run $run_id. Finalize notes and promote from prerelease after clean-machine validation."
+          fi
+          gh release upload "$tag" "$msi" ./msi-artifact/*evidence*.txt --clobber
+          echo "Attached the validated MSI to release $tag."
