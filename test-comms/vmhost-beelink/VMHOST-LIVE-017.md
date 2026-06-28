@@ -1,6 +1,6 @@
 ﻿# VMHOST-LIVE-017 - model load + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 05:51:46
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 05:52:29
 
 ```
 [05:36:23] Directive 017 started (model load fire+poll + completion + backup/restore).
@@ -11,4 +11,6 @@ Machine: DESKTOP-2BR3SJR   Updated: 2026-06-28 05:51:46
     SANDBOX> [
 [05:50:05] ...working (elapsed 122s)
 [05:51:46] ...working (elapsed 224s)
+    SANDBOX> [05:52:28] INSTALL exit: 0
+    SANDBOX> [05:52:28] Launching app with CDP...
 ```
