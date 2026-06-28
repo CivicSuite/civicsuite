@@ -1,8 +1,9 @@
 ﻿# VMHOST-LIVE-015 - model + completion + backup/restore (LIVE)
 
-Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 20:54:25
+Machine: DESKTOP-2BR3SJR   Updated: 2026-06-27 21:06:05
 
 ```
 [20:54:23] Directive 015 started (model fire+poll + completion + backup/restore). Checking Sandbox + build...
 [20:54:25] Downloading MSI (gh run download)...
+[21:06:05] MSI ready: CivicSuite_0.1.0_x64_en-US.msi (1569 MB). Copying to Sandbox folder...
 ```
