@@ -69,12 +69,17 @@ def upgrade_all() -> None:
     _run_alembic("CivicClerk", clerk_root / "alembic.ini", clerk_root, sync_url)
     _run_alembic("CivicCode", code_root / "alembic.ini", code_root, sync_url)
 
-    # CivicAccess bootstraps its schema directly (non-Alembic) via AccessibilityReviewRepository,
-    # against the same shared database. Idempotent: CREATE SCHEMA IF NOT EXISTS + create_all.
-    from civicaccess.access_review import AccessibilityReviewRepository
+    # CivicAccess bootstraps its schema directly (non-Alembic): its constructor runs migrate()
+    # (CREATE SCHEMA IF NOT EXISTS + create_all, idempotent). It is wired but not yet offered
+    # (selectable:false), so this is best-effort — a failure must NOT fail migration for the
+    # shipped city-core modules.
+    try:
+        from civicaccess.access_review import AccessibilityReviewRepository
 
-    AccessibilityReviewRepository(db_url=sync_url).migrate()
-    print("CivicAccess: schema ensured (civicaccess-windows-local-state-v1)")
+        AccessibilityReviewRepository(db_url=sync_url)
+        print("CivicAccess: schema ensured (civicaccess-windows-local-state-v1)")
+    except Exception as exc:  # noqa: BLE001 - non-fatal for a not-yet-offered module
+        print(f"CivicAccess: schema bootstrap skipped (non-fatal): {exc}")
 
 
 def main() -> int:
