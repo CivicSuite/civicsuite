@@ -69,6 +69,13 @@ def upgrade_all() -> None:
     _run_alembic("CivicClerk", clerk_root / "alembic.ini", clerk_root, sync_url)
     _run_alembic("CivicCode", code_root / "alembic.ini", code_root, sync_url)
 
+    # CivicAccess bootstraps its schema directly (non-Alembic) via AccessibilityReviewRepository,
+    # against the same shared database. Idempotent: CREATE SCHEMA IF NOT EXISTS + create_all.
+    from civicaccess.access_review import AccessibilityReviewRepository
+
+    AccessibilityReviewRepository(db_url=sync_url).migrate()
+    print("CivicAccess: schema ensured (civicaccess-windows-local-state-v1)")
+
 
 def main() -> int:
     upgrade_all()

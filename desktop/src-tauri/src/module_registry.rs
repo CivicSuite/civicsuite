@@ -337,16 +337,27 @@ fn validate_profile(registry: &ModuleRegistry, profile_id: &str) -> Result<(), S
             "Module profile {profile_id} must include CivicCore"
         ));
     }
+    validate_module_selection(registry, profile_id, &profile.modules)
+}
+
+// Validate a concrete set of module ids (dependencies present + each contract valid + required
+// modules included). Extracted from validate_profile so a candidate selection (e.g. city-core +
+// civicaccess) can be validated without defining a new profile.
+fn validate_module_selection(
+    registry: &ModuleRegistry,
+    label: &str,
+    module_ids: &[String],
+) -> Result<(), String> {
     let module_map = module_index(registry);
-    let selected_ids: HashSet<&str> = profile.modules.iter().map(String::as_str).collect();
-    for module_id in &profile.modules {
+    let selected_ids: HashSet<&str> = module_ids.iter().map(String::as_str).collect();
+    for module_id in module_ids {
         let module = module_map
             .get(module_id.as_str())
-            .ok_or_else(|| format!("Profile {profile_id} references unknown module {module_id}"))?;
+            .ok_or_else(|| format!("Profile {label} references unknown module {module_id}"))?;
         for dependency in &module.dependencies {
             if !selected_ids.contains(dependency.as_str()) {
                 return Err(format!(
-                    "Module {module_id} dependency {dependency} is not selected in profile {profile_id}"
+                    "Module {module_id} dependency {dependency} is not selected in profile {label}"
                 ));
             }
         }
@@ -355,7 +366,7 @@ fn validate_profile(registry: &ModuleRegistry, profile_id: &str) -> Result<(), S
     for module in &registry.modules {
         if module.required && !selected_ids.contains(module.id.as_str()) {
             return Err(format!(
-                "Required module {} is not selected in profile {profile_id}",
+                "Required module {} is not selected in profile {label}",
                 module.id
             ));
         }
@@ -972,6 +983,25 @@ mod tests {
     #[test]
     fn city_core_registry_contract_covers_installable_modules() {
         validate_default_registry().expect("city-core registry validates");
+    }
+
+    #[test]
+    fn candidate_city_core_with_civicaccess_validates() {
+        // Phase B: prove civicaccess would validate as a 6th city-core member WITHOUT changing the
+        // shipped 5-module profile. Uses validate_module_selection so it does not depend on the
+        // civicaccess record being selectable.
+        let registry = parse_registry(MODULES_JSON).expect("registry parses");
+        let mut candidate: Vec<String> = profile_by_id(&registry, DEFAULT_PROFILE_ID)
+            .expect("city-core profile exists")
+            .modules
+            .clone();
+        assert!(
+            !candidate.iter().any(|id| id == "civicaccess"),
+            "guard: default city-core profile must NOT contain civicaccess in Phase B"
+        );
+        candidate.push("civicaccess".to_string());
+        validate_module_selection(&registry, "city-core+civicaccess", &candidate)
+            .expect("candidate (city-core + civicaccess) must pass contract validation");
     }
 
     #[test]

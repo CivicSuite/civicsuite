@@ -21,6 +21,8 @@ MODULE_IMPORTS = [
     ("civicrecords-ai", "app.main"),
     ("civicclerk", "civicclerk.main"),
     ("civiccode", "civiccode.main"),
+    ("civicnotice", "civicnotice.main"),
+    ("civicaccess", "civicaccess.main"),
 ]
 
 
