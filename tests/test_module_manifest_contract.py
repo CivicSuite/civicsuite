@@ -46,6 +46,7 @@ def test_city_core_profile_keeps_windows_local_1_modules_in_order() -> None:
         "civicclerk",
         "civiccode",
         "civicnotice",
+        "civicaccess",
     ]
     assert profiles["custom"]["modules"] == []
 

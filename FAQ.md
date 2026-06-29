@@ -27,9 +27,9 @@ This is a **GA candidate, open for public beta**: feature-complete for city-core
 
 **No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
 
-That is still a bounded beta package. It is **not public-use ready, not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess is out of city-core after the 2026-05-23 NEEDS-WORK depth probe and must go through gap closure plus re-probe before inclusion. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
+That is still a bounded beta package. It is **not public-use ready, not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess v0.4.0 joined city-core as the sixth module on 2026-06-29 (re-probe reversed the 2026-05-23 NEEDS-WORK demotion); the current published v1.0.1 MSI bundles the first five and the six-module build is next. CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
-Any vendor or integrator claiming a completed CivicSuite municipal deployment, a current CivicAccess city-core path, or a full-suite operational release is making a claim the project docs do not support.
+Any vendor or integrator claiming a completed CivicSuite municipal deployment or a full-suite operational release is making a claim the project docs do not support.
 
 ## What is the difference between a "release tag" and a reliable operator package?
 
@@ -41,7 +41,7 @@ CivicSuite has many tags. Only the scoped package evidence in [STATUS.md](STATUS
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (for example, `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake). A single-module install is a supported design goal.
 
-In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active beta-ready profile that adds CivicCode. CivicAccess is not part of city-core today, and the Tier 2 land-use modules are not part of city-core today.
+In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active beta-ready profile that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
 
 ## What does a civic operator need to run the city-core beta?
 

@@ -36,7 +36,8 @@
     "civicrecords-ai",
     "civicclerk",
     "civiccode",
-    "civicnotice"
+    "civicnotice",
+    "civicaccess"
   ],
   "planned_repo_null_statuses": [
     "planned_spec_module_no_runtime_repo"

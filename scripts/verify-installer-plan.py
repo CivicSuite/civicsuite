@@ -85,7 +85,7 @@ REQUIRED_MODULES = {
     "civiclibrary",
     "civicparks",
 }
-PLANNED_NON_SELECTABLE_MODULES = {"civicregwatch", "civicapi", "civicaccess"}
+PLANNED_NON_SELECTABLE_MODULES = {"civicregwatch", "civicapi"}
 REQUIRED_DOC_PHRASES = (
     "zero-baseline machine",
     "CivicCore",
@@ -477,7 +477,10 @@ def check_cleanroom_workflow() -> list[str]:
         "path: modules/civiccode",
         "repository: CivicSuite/civicnotice",
         "path: modules/civicnotice",
+        "repository: CivicSuite/civicaccess",
+        "path: modules/civicaccess",
         "2bf0c9d7b764af84cd042657a972e84213a261d5",
+        "7b24516fd89584d84c12394b9385eddd1e8c6897",
         "--profile \"${{ matrix.profile }}\"",
         "CivicSuite-city-core-linux-0.1.2.tar.gz",
         "--staff-mode bearer --workflow-proof",
@@ -814,6 +817,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicclerk",
             "civiccode",
             "civicnotice",
+            "civicaccess",
         ],
     }
     for profile, expected_modules in scenarios.items():
@@ -1850,8 +1854,9 @@ def check_planner(data: dict[str, object]) -> list[str]:
             "civicclerk",
             "civiccode",
             "civicnotice",
+            "civicaccess",
         ]:
-            errors.append(fail("city-core release artifacts must package the five city-core modules"))
+            errors.append(fail("city-core release artifacts must package the six city-core modules"))
         if len(city_core_release.get("archives", [])) != 3:
             errors.append(fail("city-core release artifacts must emit one archive per platform"))
         city_manifest_path = ROOT / city_core_release.get("release_manifest", "")

@@ -35,7 +35,7 @@ Welcome to the CivicSuite community space. This post is a snapshot of where the 
 
 **Planned or queued:**
 
-- The city-core profile is active but still beta-ready pending Linux/Windows one-click lifecycle and integration proof. CivicAccess is out of city-core, and Tier 2 modules remain queued.
+- The city-core profile is active but still beta-ready pending Linux/Windows one-click lifecycle and integration proof. CivicAccess v0.4.0 is now the sixth city-core module (ships in the next MSI build); Tier 2 modules remain queued.
 
 **What's this umbrella for?**
 
