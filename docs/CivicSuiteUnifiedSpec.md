@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8. CivicAccess is OUT pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
+> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
 
 ---
 
@@ -307,7 +307,7 @@ Purpose: municipal code as a first-class product. Residents and staff ask what t
 
 Owner: Clerk / Communications / IT / ADA Coordinator  
 Depends on: CivicCore  
-Status: OUT of city-core after the 2026-05-23 depth probe recorded NEEDS-WORK. Requires gap closure and re-probe before inclusion.
+Status: v0.4.0 city-core release car on CivicCore v1.2.0; sixth city-core module (re-probe reversed the 2026-05-23 NEEDS-WORK demotion).
 Purpose: accessible forms, accessible publishing workflows, multilingual and plain-language rewrites, ADA Title II review, records-ready exports, and accessibility support reused by every module.
 
 ### Tier 2 - Land Use & Development
@@ -1016,7 +1016,7 @@ The suite launcher currently records local browser/runtime session state for ins
 | civicrecords-ai | 1.7.3 | 1.2.0 | 538766523ad90ee7553b0ffa75b626d3d4850b17 | Developer-preview records release car consuming CivicCore shared ingestion; the post-PR-#102 default branch keeps the published v1.7.3 release object while allowing services to boot without the Ollama health gate. |
 | civicclerk | 1.0.4 | 1.2.0 | dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5 | Real meeting workflow release car with protected staff auth defaults retained, persistence refresh, and a workflow-only release-upload repair on the pinned default-branch source head. |
 | civiccode | 1.0.8 | 1.2.0 | a960bba0a2249d118b593dd61bee3a65a69a9d77 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and post-PR-#76 uses `gemma4:e4b` as the suite installer default local model. |
-| civicaccess | 0.2.0 | 1.1.0 | n/a | OUT of city-core after NEEDS-WORK depth probe; requires gap closure and re-probe. |
+| civicaccess | 0.4.0 | 1.2.0 | 7b24516fd89584d84c12394b9385eddd1e8c6897 | City-core accessibility + records-ready export release car; sixth city-core module on CivicCore v1.2.0. |
 | civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicplan | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicpermit | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |

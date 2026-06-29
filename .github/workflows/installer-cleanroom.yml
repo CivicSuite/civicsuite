@@ -99,6 +99,13 @@ jobs:
           ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
           path: modules/civicnotice
 
+      - name: Check out CivicAccess bundle source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicaccess
+          ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
+          path: modules/civicaccess
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -174,6 +181,13 @@ jobs:
           repository: CivicSuite/civicnotice
           ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
           path: modules/civicnotice
+
+      - name: Check out CivicAccess bundle source
+        uses: actions/checkout@v5
+        with:
+          repository: CivicSuite/civicaccess
+          ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
+          path: modules/civicaccess
 
       - name: Set up Python
         uses: actions/setup-python@v6

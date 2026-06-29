@@ -26,8 +26,9 @@ The Windows Local city-core package (`civicsuite-windows-local-v1.0.1`) is a **G
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records release car at v1.7.3.
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.4.
 - `civiccode` is the current municipal-code release car at v1.0.8.
-- `civicnotice` is the current public-notice workflow release car at v0.2.0, completing the five-module city-core set.
-- CivicAccess is out of city-core pending gap closure and re-probe. CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
+- `civicnotice` is the current public-notice workflow release car at v0.2.0.
+- `civicaccess` v0.4.0 (accessibility + records-ready export) is the sixth city-core release car on CivicCore v1.2.0; it ships in the next MSI build.
+- CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
 - The active city-core installer path is the Windows Local Tauri/WebView2 desktop app with portable local runtime services, local backup/restore, local file evidence, local model setup, and a normal Windows uninstall entry.
 - The desktop app is the staff, resident/public preview, and IT/admin front door for the current city-core beta package. It is local-only by default and does not require Docker, WSL, a terminal, or developer tooling for the clerk path.
 
@@ -133,7 +134,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
 | `civicnotice` | v0.2.0 public-notice workflow city-core release car |
-| `civicaccess` | OUT of city-core after NEEDS-WORK depth probe |
+| `civicaccess` | v0.4.0 accessibility + records-ready export city-core release car (sixth city-core module) |
 | `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
 | `civicgrants`, `civicprocure` | v0.2.0 scaffold-depth recovery labels |
 | All others | Foundation surfaces (v0.1.x) |
@@ -195,13 +196,11 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 | CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `fa1874edfe97` | `v1_0_4_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
 | CivicNotice | 0.2.0 | public notice workflow | `civiccore`, `civicclerk` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
-
-Excluded from city-core:
-- `civicaccess`: OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe.
+| CivicAccess | 0.4.0 | accessibility + records-ready export | `civiccore` | `7b24516fd895` | `v0_4_0_city_core_release_car` |
 
 Disabled profiles:
 - `land-use` (Land Use): queued - depends on Tier 2 module work after city-core ships
-- `full-suite` (Full Suite): 15 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite
+- `full-suite` (Full Suite): 14 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite
 
 <!-- END GENERATED SUITE TOPOLOGY -->
 

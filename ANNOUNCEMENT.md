@@ -1,6 +1,6 @@
 # CivicSuite Windows Local 1.0.1 — GA candidate, now open for public beta
 
-**TL;DR:** CivicSuite city-core for Windows is now a **GA candidate**, and we're opening it as a **public beta** today. It's a single desktop installer that runs an entire local civic-records stack — database, AI model, and five modules — on one Windows machine. No cloud, no signup, no telemetry. Download it, run it, try it.
+**TL;DR:** CivicSuite city-core for Windows is now a **GA candidate**, and we're opening it as a **public beta** today. It's a single desktop installer that runs an entire local civic-records stack — database, AI model, and five modules (a sixth, CivicAccess, lands in the next build) — on one Windows machine. No cloud, no signup, no telemetry. Download it, run it, try it.
 
 Get it: <https://github.com/CivicSuite/civicsuite/releases/latest>
 
@@ -12,7 +12,7 @@ CivicSuite is open-source municipal software designed to run **locally on a city
 
 - a bundled portable **PostgreSQL 17 + pgvector** data store,
 - a bundled portable **Ollama** runtime with a pinned **Gemma 4 12B QAT** model (~6.97 GB, downloaded and checksum-verified on first run),
-- and **five city-core modules**: CivicCore (shared platform), CivicRecords AI (public records / FOIA), CivicClerk (meetings / agendas / minutes), CivicCode (municipal code), and CivicNotice (public notices).
+- and **five city-core modules**: CivicCore (shared platform), CivicRecords AI (public records / FOIA), CivicClerk (meetings / agendas / minutes), CivicCode (municipal code), and CivicNotice (public notices). **CivicAccess** (accessibility + records-ready export, v0.4.0) is now the sixth city-core module and ships in the next build.
 
 Everything — your data, your documents, your audit trail, the AI model — stays on the machine. There is no vendor cloud, no per-seat licensing, and no telemetry by design. Code is Apache-2.0; docs are CC BY 4.0.
 
@@ -42,7 +42,7 @@ Being honest about the edges matters more than the launch:
 
 - Not production-ready, not city-ready, not procurement-ready. It's a beta.
 - Not code-signed yet (certificate in progress — see above and `CODE_SIGNING_POLICY.md`).
-- Not the full suite. City-core is the five modules above. **CivicAccess** is out of city-core pending gap closure; **CivicZone / CivicPlan / CivicPermit / CivicInspect** are queued Tier 2.
+- Not the full suite. City-core is six modules — the five in this v1.0.1 build plus **CivicAccess** v0.4.0 (ships in the next build). **CivicZone / CivicPlan / CivicPermit / CivicInspect** are queued Tier 2.
 - macOS lifecycle is not certified; Windows Local is the supported operator path.
 - The MSI bundles module source pinned by commit; for two modules the bundled commit is *ahead* of the latest published release tag. The trust path is the `source_commit` pin plus the MSI checksum — see [PROVENANCE.md](PROVENANCE.md).
 

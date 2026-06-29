@@ -54,9 +54,9 @@ Backups are local files written under the configured backup folder.
 2. If writes fail, choose a folder the signed-in local user can write to and run **Backup Now** again.
 3. Keep backup folders somewhere the city can retain and protect according to its records and IT policy.
 
-## CivicAccess Appears In A City-Core Path
+## CivicAccess City-Core Status
 
-CivicAccess is out of city-core after the 2026-05-23 NEEDS-WORK depth probe. If a doc, launcher label, installer plan, or status surface frames CivicAccess as part of the current city-core path, treat it as drift and file it against the umbrella repo truth docs.
+CivicAccess is the sixth city-core module as of v0.4.0 (2026-06-29), after a passing depth re-probe reversed the 2026-05-23 NEEDS-WORK demotion. A doc, launcher label, installer plan, or status surface that still frames CivicAccess as OUT of city-core is stale drift — file it against the umbrella repo truth docs. (The current published v1.0.1 MSI bundles the first five city-core modules; CivicAccess ships in the next build.)
 
 ## Where To Check Current Truth
 

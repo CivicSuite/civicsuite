@@ -59,8 +59,8 @@ EXPECTED_CITY_CORE_PROFILE_STATUS = "beta_ready_truth_reconciled"
 CITY_CORE_SOURCE_PIN_RECOVERY = (
     "2026-06-13 source-pin refresh includes CivicCore Windows-local platform "
     "contracts, CivicRecords AI post-PR-#102, CivicClerk v1.0.4 "
-    "post-PR-#176 default-branch heads, CivicCode v1.0.8, and "
-    "CivicNotice v0.2.0 installed-module source pins"
+    "post-PR-#176 default-branch heads, CivicCode v1.0.8, "
+    "CivicNotice v0.2.0, and CivicAccess v0.4.0 installed-module source pins"
 )
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",
@@ -168,9 +168,9 @@ REPOS: tuple[RepoSpec, ...] = (
         "civicaccess",
         "CivicSuite/civicaccess",
         "civicaccess",
-        "0.2.0",
-        civiccore_required=DEMOTION_CIVICCORE,
-        release_required=False,
+        "0.4.0",
+        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        release_required=True,
     ),
     RepoSpec(
         "civicplan",
@@ -407,11 +407,12 @@ def check_city_core_profile_truth() -> list[str]:
         "civicclerk",
         "civiccode",
         "civicnotice",
+        "civicaccess",
     ]
     if city_core.get("modules") != expected_modules:
         errors.append(
             fail(
-                "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice"
+                "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice,civicaccess"
             )
         )
     if installer_data.get("installer_status") != CURRENT_CITY_CORE_INSTALLER_STATUS:
@@ -423,16 +424,6 @@ def check_city_core_profile_truth() -> list[str]:
     if city_core.get("status") != EXPECTED_CITY_CORE_PROFILE_STATUS:
         errors.append(
             fail("city-core profile status must be beta_ready_truth_reconciled")
-        )
-    excluded = city_core.get("excluded_modules")
-    if not isinstance(excluded, list) or not any(
-        isinstance(item, dict)
-        and item.get("id") == "civicaccess"
-        and "NEEDS-WORK" in str(item.get("reason"))
-        for item in excluded
-    ):
-        errors.append(
-            fail("city-core profile must explicitly exclude CivicAccess with NEEDS-WORK probe reason")
         )
     land_use = profiles.get("land-use")
     if not isinstance(land_use, dict) or land_use.get("disabled") is not True:
@@ -777,6 +768,7 @@ def check_source_commit_pin(spec: RepoSpec, *, remote_only: bool) -> list[str]:
         "civicclerk",
         "civiccode",
         "civicnotice",
+        "civicaccess",
     }
     if spec.name not in city_core_modules:
         return []
@@ -1058,7 +1050,7 @@ def main() -> int:
         for error in city_core_errors:
             print(f"  {error}")
     else:
-        print("[city-core-profile] PASS civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice")
+        print("[city-core-profile] PASS civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice,civicaccess")
 
     workflow_errors = check_clerk_core_workflow_proof_truth()
     if workflow_errors:

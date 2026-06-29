@@ -1726,6 +1726,32 @@ def _package_launcher_text(
     *, platform_id: str, profile_id: str, menu_style: str
 ) -> str:
     copy = _distribution_copy(profile_id)
+    # Default-profile lifecycle modules = this profile's modules minus civiccore (always installed),
+    # derived from modules.json so a city-core membership change can never desync the launcher
+    # (a hard-coded list here previously dropped the 6th module from install/verify/backup/restore).
+    _manifest = load_manifest()
+    _profile = next(
+        (p for p in _manifest.get("profiles", []) if isinstance(p, dict) and p.get("id") == profile_id),
+        None,
+    )
+    _default_modules = [
+        str(module_id)
+        for module_id in ((_profile or {}).get("modules", []) or [])
+        if module_id != "civiccore"
+    ]
+    if profile_id == "city-core" and _default_modules:
+        _ps_default_block = (
+            "$DefaultProfileModules = @("
+            + ", ".join(f'"{m}"' for m in _default_modules)
+            + ")\n"
+            "foreach ($DefaultModule in $DefaultProfileModules) {\n"
+            '    $LifecycleModuleArgs += @("--module", $DefaultModule)\n'
+            "}\n"
+        )
+        _sh_default_args = " ".join(f'"--module" "{m}"' for m in _default_modules)
+    else:
+        _ps_default_block = ""
+        _sh_default_args = ""
     if platform_id == "windows":
         return f"""param(
     [switch]$Readiness,
@@ -2006,11 +2032,7 @@ Write-Host "{copy['project_status']}"
 $PlannerArgs = @("--menu-style", "{menu_style}", "--dry-run")
 $LifecycleModuleArgs = @()
 $LifecycleModeArgs = @("--staff-mode", $StaffMode)
-{'''$DefaultProfileModules = @("civicrecords-ai", "civicclerk", "civiccode", "civicnotice")
-foreach ($DefaultModule in $DefaultProfileModules) {
-    $LifecycleModuleArgs += @("--module", $DefaultModule)
-}
-''' if profile_id == "city-core" else ""}
+{_ps_default_block}
 if ($WorkflowProof) {{
     $LifecycleModeArgs += "--workflow-proof"
 }}
@@ -2122,7 +2144,7 @@ if [[ "$#" -gt 0 ]]; then
 fi
 
 PLANNER_ARGS=(--menu-style "{menu_style}" --dry-run)
-LIFECYCLE_MODULE_ARGS=({'"--module" "civicrecords-ai" "--module" "civicclerk" "--module" "civiccode" "--module" "civicnotice"' if profile_id == "city-core" else ""})
+LIFECYCLE_MODULE_ARGS=({_sh_default_args})
 LIFECYCLE_MODE_ARGS=(--staff-mode protected)
 SELECTED_MODULES=()
 first_run_wizard() {{

@@ -927,6 +927,7 @@ mod tests {
             "civicclerk",
             "civiccode",
             "civicnotice",
+            "civicaccess",
         ] {
             let module = modules
                 .iter()
@@ -1478,7 +1479,7 @@ mod tests {
                 .expect("module selection persists");
             let state = app_state().expect("app state");
             assert_eq!(state.module_selection.profile_id, "city-core");
-            assert_eq!(state.module_selection.installed_module_ids.len(), 5);
+            assert_eq!(state.module_selection.installed_module_ids.len(), 6);
             assert!(state
                 .module_profiles
                 .iter()

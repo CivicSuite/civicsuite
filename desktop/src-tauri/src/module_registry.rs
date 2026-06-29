@@ -341,8 +341,8 @@ fn validate_profile(registry: &ModuleRegistry, profile_id: &str) -> Result<(), S
 }
 
 // Validate a concrete set of module ids (dependencies present + each contract valid + required
-// modules included). Extracted from validate_profile so a candidate selection (e.g. city-core +
-// civicaccess) can be validated without defining a new profile.
+// modules included). Used by validate_profile and by the custom-selection path
+// (resolve_custom_module_order / validate_custom_selection) to enforce dependency + contract rules.
 fn validate_module_selection(
     registry: &ModuleRegistry,
     label: &str,
@@ -986,25 +986,6 @@ mod tests {
     }
 
     #[test]
-    fn candidate_city_core_with_civicaccess_validates() {
-        // Phase B: prove civicaccess would validate as a 6th city-core member WITHOUT changing the
-        // shipped 5-module profile. Uses validate_module_selection so it does not depend on the
-        // civicaccess record being selectable.
-        let registry = parse_registry(MODULES_JSON).expect("registry parses");
-        let mut candidate: Vec<String> = profile_by_id(&registry, DEFAULT_PROFILE_ID)
-            .expect("city-core profile exists")
-            .modules
-            .clone();
-        assert!(
-            !candidate.iter().any(|id| id == "civicaccess"),
-            "guard: default city-core profile must NOT contain civicaccess in Phase B"
-        );
-        candidate.push("civicaccess".to_string());
-        validate_module_selection(&registry, "city-core+civicaccess", &candidate)
-            .expect("candidate (city-core + civicaccess) must pass contract validation");
-    }
-
-    #[test]
     fn module_selection_defaults_to_city_core_profile() {
         with_temp_state_dir(|_| {
             let selection = module_selection_state().expect("selection state builds");
@@ -1016,7 +997,8 @@ mod tests {
                     "civicrecords-ai".to_string(),
                     "civicclerk".to_string(),
                     "civiccode".to_string(),
-                    "civicnotice".to_string()
+                    "civicnotice".to_string(),
+                    "civicaccess".to_string()
                 ]
             );
             assert_eq!(selection.enabled_module_ids, selection.installed_module_ids);

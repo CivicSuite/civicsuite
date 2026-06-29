@@ -114,6 +114,25 @@
       "type": "install_module"
     },
     {
+      "civiccore_requirement": "1.2.0",
+      "display_name": "CivicAccess",
+      "module": "civicaccess",
+      "proof_required": [
+        "module_selection",
+        "install_plan",
+        "artifact_resolution",
+        "health_check",
+        "restart",
+        "backup",
+        "restore",
+        "release_artifacts",
+        "accessibility_audit",
+        "export_correctness"
+      ],
+      "repo": "CivicSuite/civicaccess",
+      "type": "install_module"
+    },
+    {
       "component": "suite-launcher",
       "modules": [
         {
@@ -175,7 +194,8 @@
     "civicrecords-ai",
     "civicclerk",
     "civiccode",
-    "civicnotice"
+    "civicnotice",
+    "civicaccess"
   ],
   "mutates_host": false,
   "profile": "city-core",

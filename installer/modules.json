@@ -57,21 +57,16 @@
                      {
                          "id":  "city-core",
                          "label":  "City Core",
-                        "description":  "Install the beta-ready city-core profile: records, clerk, municipal code, and public notices on CivicCore.",
+                        "description":  "Install the beta-ready city-core profile: records, clerk, municipal code, public notices, and accessibility on CivicCore.",
                          "modules":  [
                                          "civiccore",
                                          "civicrecords-ai",
                                          "civicclerk",
                                          "civiccode",
-                                         "civicnotice"
+                                         "civicnotice",
+                                         "civicaccess"
                                      ],
-                         "status":  "beta_ready_truth_reconciled",
-                         "excluded_modules":  [
-                                                {
-                                                    "id":  "civicaccess",
-                                                    "reason":  "OUT after NEEDS-WORK depth probe on branch probe/civicaccess-depth-2026-05-23; re-evaluate only after gap closure and re-probe."
-                                                }
-                                            ]
+                         "status":  "beta_ready_truth_reconciled"
                      },
                      {
                          "id":  "land-use",
@@ -123,7 +118,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  true,
-                         "disabled_reason":  "15 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite"
+                         "disabled_reason":  "14 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite"
                      },
                      {
                          "id":  "custom",
@@ -564,14 +559,14 @@
                         "repo":  "CivicSuite/civicaccess",
                         "tier":  3,
                         "role":  "accessibility + records-ready export",
-                        "selectable":  false,
+                        "selectable":  true,
                         "required":  false,
                         "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8060,
-                        "installer_status":  "contract_declared_runtime_pending",
+                        "installer_status":  "v0_4_0_city_core_release_car",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
