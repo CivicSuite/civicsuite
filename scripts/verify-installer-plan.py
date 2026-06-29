@@ -85,7 +85,7 @@ REQUIRED_MODULES = {
     "civiclibrary",
     "civicparks",
 }
-PLANNED_NON_SELECTABLE_MODULES = {"civicregwatch", "civicapi"}
+PLANNED_NON_SELECTABLE_MODULES = {"civicregwatch", "civicapi", "civicaccess"}
 REQUIRED_DOC_PHRASES = (
     "zero-baseline machine",
     "CivicCore",

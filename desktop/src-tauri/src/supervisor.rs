@@ -383,6 +383,10 @@ fn postgres_password() -> Result<String, String> {
     read_or_create_secret("postgres-password.txt", 32)
 }
 
+fn civicaccess_trusted_write_token() -> Result<String, String> {
+    read_or_create_secret("civicaccess-trusted-write-token.txt", 32)
+}
+
 fn local_database_url(driver: &str) -> Result<String, String> {
     Ok(format!(
         "{driver}://{LOCAL_DB_USER}:{}@127.0.0.1:{LOCAL_DB_PORT}/{LOCAL_DB_NAME}",
@@ -2036,6 +2040,12 @@ fn service_environment(service: &ServiceDefinition) -> Result<Vec<(String, Strin
     ];
     if service.kind.contains("python") || service.binary.ends_with("python.exe") {
         env.push(("PYTHONNOUSERSITE".to_string(), "1".to_string()));
+        // Configure CivicAccess's durable-write guard so its persistence-write routes accept the
+        // staff surface's token (pairs with the module's server-side X-CivicAccess-Write-Token).
+        env.push((
+            "CIVICACCESS_TRUSTED_WRITE_TOKEN".to_string(),
+            civicaccess_trusted_write_token()?,
+        ));
     }
     if service.id == "model-runtime" {
         env.push(("OLLAMA_HOST".to_string(), "127.0.0.1:15434".to_string()));

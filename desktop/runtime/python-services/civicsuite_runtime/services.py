@@ -21,6 +21,13 @@ MODULE_IMPORTS = [
     ("civicrecords-ai", "app.main"),
     ("civicclerk", "civicclerk.main"),
     ("civiccode", "civiccode.main"),
+    ("civicnotice", "civicnotice.main"),
+]
+
+# Wired but not yet offered (selectable:false until Phase C). Reported by /health for
+# observability, but a failure here must NOT degrade overall health for the shipped modules.
+OPTIONAL_MODULE_IMPORTS = [
+    ("civicaccess", "civicaccess.main"),
 ]
 
 
@@ -141,12 +148,17 @@ def _database_status() -> dict[str, Any]:
 def health_payload() -> dict[str, Any]:
     _set_local_defaults()
     modules = [_module_status(module_id, import_name) for module_id, import_name in MODULE_IMPORTS]
+    # Optional modules are reported for observability but do NOT gate overall status.
+    optional_modules = [
+        {**_module_status(module_id, import_name), "optional": True}
+        for module_id, import_name in OPTIONAL_MODULE_IMPORTS
+    ]
     database = _database_status()
     return {
         "status": "ok" if all(item["ok"] for item in modules) and database["ok"] else "degraded",
         "service": "civicsuite-runtime",
         "version": __version__,
-        "modules": modules,
+        "modules": modules + optional_modules,
         "database": database,
         "local_only": True,
     }

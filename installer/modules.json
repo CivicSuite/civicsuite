@@ -562,27 +562,83 @@
                         "id":  "civicaccess",
                         "display_name":  "CivicAccess",
                         "repo":  "CivicSuite/civicaccess",
-                        "tier":  2,
-                        "role":  "accessibility and public access workflow",
-                        "selectable":  true,
+                        "tier":  3,
+                        "role":  "accessibility + records-ready export",
+                        "selectable":  false,
                         "required":  false,
-                        "civiccore_requirement":  "1.1.0",
+                        "civiccore_requirement":  "1.2.0",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8060,
-                        "installer_status":  "excluded_from_city_core_needs_work_probe",
+                        "installer_status":  "contract_declared_runtime_pending",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
                                                "artifact_resolution",
                                                "health_check",
                                                "restart",
-                                               "gap_closure",
-                                               "re_probe",
-                                               "public_use_gate"
+                                               "backup",
+                                               "restore",
+                                               "release_artifacts",
+                                               "accessibility_audit",
+                                               "export_correctness"
                                            ],
-                        "current_version":  "0.2.0"
+                        "current_version":  "0.4.0",
+                        "source_commit":  "7b24516fd89584d84c12394b9385eddd1e8c6897",
+                        "routes":  [
+                                       {
+                                           "id":  "accessibility-staff",
+                                           "label":  "Accessibility",
+                                           "path":  "/civicaccess/staff",
+                                           "surface":  "Staff"
+                                       },
+                                       {
+                                           "id":  "accessibility-public",
+                                           "label":  "Accessible Content",
+                                           "path":  "/civicaccess",
+                                           "surface":  "Public"
+                                       }
+                                   ],
+                        "permissions":  [
+                                            "access.review",
+                                            "access.plainlanguage",
+                                            "access.export",
+                                            "access.audit"
+                                        ],
+                        "services":  [
+                                         {
+                                             "id":  "python-services",
+                                             "kind":  "bundled-python",
+                                             "health_check":  "python-services"
+                                         },
+                                         {
+                                             "id":  "file-storage",
+                                             "kind":  "local-file-store",
+                                             "health_check":  "file-storage"
+                                         }
+                                     ],
+                        "migrations":  [
+                                           "civicaccess-windows-local-state-v1"
+                                       ],
+                        "tasks":  [
+                                      "accessibility-review",
+                                      "records-export"
+                                  ],
+                        "backup_restore_hooks":  [
+                                                     "Data/workflows/access",
+                                                     "Data/exports/access",
+                                                     "Data/files/access"
+                                                 ],
+                        "model_needs":  [
+
+                                        ],
+                        "lifecycle":  {
+                                          "install":  "profile-selected",
+                                          "update":  "manifest-versioned",
+                                          "disable":  "allowed-after-backup",
+                                          "uninstall":  "backup-first-module-data-removal"
+                                      }
                     },
                     {
                         "id":  "civicinspect",

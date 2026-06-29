@@ -253,11 +253,13 @@ fn city_work_action_module_requirement(
             Some("records") => Some((vec!["civicrecords-ai"], false)),
             Some("code") => Some((vec!["civiccode"], false)),
             Some("notice") => Some((vec!["civicnotice"], false)),
+            Some("access") => Some((vec!["civicaccess"], false)),
             _ => Some((
                 vec!["civicclerk", "civicrecords-ai", "civiccode", "civicnotice"],
                 true,
             )),
         },
+        "accessibility-review" | "records-export" => Some((vec!["civicaccess"], false)),
         _ => None,
     }
 }
@@ -280,6 +282,7 @@ fn module_exports_folder(module_id: &str) -> Option<(&'static str, &'static str)
         "civicrecords-ai" => Some(("records", "records exports")),
         "civiccode" => Some(("code", "code exports")),
         "civicnotice" => Some(("notice", "notice exports")),
+        "civicaccess" => Some(("access", "accessibility/records exports")),
         _ => None,
     }
 }
