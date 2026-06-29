@@ -118,7 +118,7 @@
                                          "civicparks"
                                      ],
                          "disabled":  true,
-                         "disabled_reason":  "15 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite"
+                         "disabled_reason":  "14 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite"
                      },
                      {
                          "id":  "custom",

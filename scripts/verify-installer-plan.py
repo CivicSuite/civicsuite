@@ -1879,18 +1879,33 @@ def check_planner(data: dict[str, object]) -> list[str]:
             for name in ("README.md", "install-plan.json", launcher):
                 if not (package_dir / name).is_file():
                     errors.append(fail(f"city-core package missing {platform_id}/{name}"))
+            # Derive expected members from the city-core profile so adding a module can never
+            # silently desync this gate (a hard-coded list previously let the launcher drop the
+            # 6th module while CI stayed green).
+            city_core_profile = next(
+                (
+                    profile
+                    for profile in data.get("profiles", [])
+                    if isinstance(profile, dict) and profile.get("id") == "city-core"
+                ),
+                {},
+            )
+            expected_city_core_modules = [
+                str(module_id) for module_id in city_core_profile.get("modules", [])
+            ]
+            # The launcher installs civiccore separately; its default-profile list is the rest.
+            expected_launcher_modules = [
+                module_id
+                for module_id in expected_city_core_modules
+                if module_id != "civiccore"
+            ]
             plan_path = package_dir / "install-plan.json"
             if plan_path.is_file():
                 plan_data = json.loads(plan_path.read_text(encoding="utf-8"))
                 if plan_data.get("profile") != "city-core":
                     errors.append(fail(f"city-core package {platform_id} plan has wrong profile"))
                 plan_modules = plan_data.get("modules", [])
-                for required_module in (
-                    "civiccore",
-                    "civicrecords-ai",
-                    "civicclerk",
-                    "civiccode",
-                ):
+                for required_module in expected_city_core_modules:
                     if required_module not in plan_modules:
                         errors.append(
                             fail(
@@ -1904,7 +1919,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 ]
                 for action in install_actions:
                     module_id = action.get("module")
-                    if module_id in {"civicrecords-ai", "civicclerk", "civiccode", "civicnotice"} and action.get("civiccore_requirement") != "1.2.0":
+                    if module_id in set(expected_launcher_modules) and action.get("civiccore_requirement") != "1.2.0":
                         errors.append(
                             fail(
                                 f"city-core package {platform_id} {module_id} must install against CivicCore 1.2.0"
@@ -1913,9 +1928,18 @@ def check_planner(data: dict[str, object]) -> list[str]:
             launcher_path = package_dir / launcher
             if launcher_path.is_file():
                 launcher_text = launcher_path.read_text(encoding="utf-8")
-                if "civiccode" not in launcher_text or "civicnotice" not in launcher_text:
+                missing_in_launcher = [
+                    module_id
+                    for module_id in expected_launcher_modules
+                    if module_id not in launcher_text
+                ]
+                if missing_in_launcher:
                     errors.append(
-                        fail(f"city-core package {platform_id} launcher must pass CivicCode and CivicNotice through lifecycle commands")
+                        fail(
+                            "city-core package "
+                            f"{platform_id} launcher must pass every city-core module through "
+                            f"lifecycle commands; missing: {', '.join(missing_in_launcher)}"
+                        )
                     )
 
     if has_local_civiccore_wheel():

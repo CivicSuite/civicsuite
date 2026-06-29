@@ -200,7 +200,7 @@ Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topo
 
 Disabled profiles:
 - `land-use` (Land Use): queued - depends on Tier 2 module work after city-core ships
-- `full-suite` (Full Suite): 15 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite
+- `full-suite` (Full Suite): 14 modules remain pre-1.0 scaffolds pinned to older CivicCore lines; not installable as a coherent suite
 
 <!-- END GENERATED SUITE TOPOLOGY -->
 

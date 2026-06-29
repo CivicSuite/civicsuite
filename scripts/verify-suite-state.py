@@ -59,8 +59,8 @@ EXPECTED_CITY_CORE_PROFILE_STATUS = "beta_ready_truth_reconciled"
 CITY_CORE_SOURCE_PIN_RECOVERY = (
     "2026-06-13 source-pin refresh includes CivicCore Windows-local platform "
     "contracts, CivicRecords AI post-PR-#102, CivicClerk v1.0.4 "
-    "post-PR-#176 default-branch heads, CivicCode v1.0.8, and "
-    "CivicNotice v0.2.0 installed-module source pins"
+    "post-PR-#176 default-branch heads, CivicCode v1.0.8, "
+    "CivicNotice v0.2.0, and CivicAccess v0.4.0 installed-module source pins"
 )
 CLERK_CORE_WORKFLOW_PROOF_SCOPE = (
     "civicrecords-ai request/search-surface/review/response",

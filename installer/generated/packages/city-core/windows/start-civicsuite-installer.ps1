@@ -277,7 +277,7 @@ Write-Host "Project status: city-core beta; Linux and Windows matching-host life
 $PlannerArgs = @("--menu-style", "guided", "--dry-run")
 $LifecycleModuleArgs = @()
 $LifecycleModeArgs = @("--staff-mode", $StaffMode)
-$DefaultProfileModules = @("civicrecords-ai", "civicclerk", "civiccode", "civicnotice")
+$DefaultProfileModules = @("civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess")
 foreach ($DefaultModule in $DefaultProfileModules) {
     $LifecycleModuleArgs += @("--module", $DefaultModule)
 }

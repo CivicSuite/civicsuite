@@ -341,8 +341,8 @@ fn validate_profile(registry: &ModuleRegistry, profile_id: &str) -> Result<(), S
 }
 
 // Validate a concrete set of module ids (dependencies present + each contract valid + required
-// modules included). Extracted from validate_profile so a candidate selection (e.g. city-core +
-// civicaccess) can be validated without defining a new profile.
+// modules included). Used by validate_profile and by the custom-selection path
+// (resolve_custom_module_order / validate_custom_selection) to enforce dependency + contract rules.
 fn validate_module_selection(
     registry: &ModuleRegistry,
     label: &str,
