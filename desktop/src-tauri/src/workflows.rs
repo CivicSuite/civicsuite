@@ -796,11 +796,17 @@ pub struct StoredAccessibilityReview {
     pub review_id: String,
     pub title: String,
     pub body: String,
+    #[serde(default)]
     pub has_alt_text: bool,
+    #[serde(default)]
     pub language: String,
+    #[serde(default)]
     pub status: String,
+    #[serde(default)]
     pub findings: Vec<AccessibilityFinding>,
+    #[serde(default)]
     pub disclaimer: String,
+    #[serde(default)]
     pub created_at_unix_seconds: u64,
 }
 
@@ -822,6 +828,10 @@ pub struct CityWorkActionResult {
     pub next_action: String,
     pub state: CityWorkState,
     pub search_results: Vec<SearchResult>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub next_steps: Vec<String>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub disclaimer: String,
 }
 
 fn workflows_path() -> PathBuf {
@@ -1242,6 +1252,66 @@ fn payload_text_list(payload: Option<&Value>, key: &str) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .collect()
+}
+
+fn payload_string_with_cap(
+    payload: Option<&Value>,
+    key: &str,
+    max_len: usize,
+) -> Result<String, String> {
+    let value = payload_string(payload, key)?;
+    if value.chars().count() > max_len {
+        return Err(format!("{key} exceeds the {max_len}-character limit."));
+    }
+    Ok(value)
+}
+
+// Replaces the generic "Missing required workflow field" error with a
+// friendlier message, while preserving cap-exceeded errors (which are
+// already actionable) so they don't get silently swallowed.
+fn friendly_required(
+    result: Result<String, String>,
+    missing_message: &str,
+) -> Result<String, String> {
+    result.map_err(|error| {
+        if error.contains("exceeds the") {
+            error
+        } else {
+            missing_message.to_string()
+        }
+    })
+}
+
+fn payload_optional_string_with_cap(
+    payload: Option<&Value>,
+    key: &str,
+    max_len: usize,
+) -> Result<String, String> {
+    let value = payload_optional_string(payload, key);
+    if value.chars().count() > max_len {
+        return Err(format!("{key} exceeds the {max_len}-character limit."));
+    }
+    Ok(value)
+}
+
+fn payload_text_list_with_cap(
+    payload: Option<&Value>,
+    key: &str,
+    max_item_len: usize,
+    max_items: usize,
+) -> Result<Vec<String>, String> {
+    let items = payload_text_list(payload, key);
+    if items.len() > max_items {
+        return Err(format!("{key} has too many entries (limit {max_items})."));
+    }
+    for item in &items {
+        if item.chars().count() > max_item_len {
+            return Err(format!(
+                "{key} entries must be {max_item_len} characters or fewer."
+            ));
+        }
+    }
+    Ok(items)
 }
 
 fn payload_bool(payload: Option<&Value>, key: &str) -> bool {
@@ -5046,6 +5116,8 @@ fn add_public_records_message(
                     .to_string(),
             state: city_work_public_projection(state),
             search_results: Vec::new(),
+            next_steps: Vec::new(),
+            disclaimer: String::new(),
         });
     };
     let (request_id, requester) = {
@@ -5112,6 +5184,8 @@ fn add_public_records_message(
         next_action: "Staff can review the message in the local Records workflow.".to_string(),
         state: public_state,
         search_results: Vec::new(),
+        next_steps: Vec::new(),
+        disclaimer: String::new(),
     })
 }
 
@@ -7665,6 +7739,8 @@ fn public_records_status_lookup(
                     .to_string(),
             state: public_state,
             search_results: Vec::new(),
+            next_steps: Vec::new(),
+            disclaimer: String::new(),
         });
     }
     Ok(CityWorkActionResult {
@@ -7676,6 +7752,8 @@ fn public_records_status_lookup(
             .to_string(),
         state: public_state,
         search_results: Vec::new(),
+        next_steps: Vec::new(),
+        disclaimer: String::new(),
     })
 }
 
@@ -7748,6 +7826,11 @@ pub fn public_city_work_state() -> Result<CityWorkState, String> {
 
 const CIVICACCESS_DISCLAIMER: &str = "Accessibility review is advisory support only; it does not replace legal review, a certified accessibility audit, or an ADA coordinator's decision.";
 
+// Per-module mirror of civicaccess's standalone audit_events table; capped FIFO
+// because the authoritative tamper-evident record is the global hash-chained
+// audit_entries (push_audit), which this mirror does not replace.
+const CIVICACCESS_MAX_AUDIT_EVENTS: usize = 5000;
+
 fn civicaccess_record_audit(
     state: &mut CityWorkState,
     action: &str,
@@ -7762,6 +7845,10 @@ fn civicaccess_record_audit(
         actor: actor.to_string(),
         created_at_unix_seconds: now_unix_seconds(),
     });
+    if state.access.audit_events.len() > CIVICACCESS_MAX_AUDIT_EVENTS {
+        let overflow = state.access.audit_events.len() - CIVICACCESS_MAX_AUDIT_EVENTS;
+        state.access.audit_events.drain(0..overflow);
+    }
     event_id
 }
 
@@ -7825,14 +7912,14 @@ fn build_accessibility_findings(
 fn accessibility_review(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
+) -> Result<(String, Vec<String>, String), String> {
     // Match civicaccess Python semantics: empty title or body becomes a finding,
     // not a rejected request. The deterministic finding rules below catch them.
-    let title = payload_optional_string(payload, "title");
-    let body = payload_optional_string(payload, "body");
+    let title = payload_optional_string_with_cap(payload, "title", 500)?;
+    let body = payload_optional_string_with_cap(payload, "body", 5000)?;
     let has_alt_text = payload_bool(payload, "hasAltText");
     let language = {
-        let provided = payload_optional_string(payload, "language");
+        let provided = payload_optional_string_with_cap(payload, "language", 80)?;
         if provided.is_empty() {
             "en".to_string()
         } else {
@@ -7846,7 +7933,7 @@ fn accessibility_review(
     } else {
         "needs-fixes".to_string()
     };
-    let review_id = new_id("access-review", state.access.reviews.len());
+    let review_id = format!("access-review-{}", uuid::Uuid::new_v4());
     let created_at_unix_seconds = now_unix_seconds();
     let high_severity_count = findings.iter().filter(|f| f.severity == "high").count();
     let total_count = findings.len();
@@ -7862,23 +7949,35 @@ fn accessibility_review(
         created_at_unix_seconds,
     });
     civicaccess_record_audit(state, "review.create", Some(&review_id), "staff");
+    // Strip newlines from the interpolated title so a pasted title can't forge
+    // additional audit-log lines for anyone line-parsing audit_entries.
+    let audit_safe_title = title.replace(['\n', '\r'], " ");
     push_audit(
         state,
         "civicaccess",
         "accessibility-review",
         format!(
-            "Accessibility review {review_id} for \"{title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high)."
+            "Accessibility review {review_id} for \"{audit_safe_title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high)."
         ),
     );
-    Ok(format!(
-        "Accessibility review saved as {review_id}: {status} ({total_count} finding(s), {high_severity_count} high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit."
+    let next_steps = vec![
+        "Resolve each high-severity finding before publication.".to_string(),
+        "Have staff or an ADA coordinator review findings that require human judgment.".to_string(),
+        "Preserve the review record with the publication's audit trail.".to_string(),
+    ];
+    Ok((
+        format!(
+            "Accessibility review saved as {review_id}: {status} ({total_count} finding(s), {high_severity_count} high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit."
+        ),
+        next_steps,
+        CIVICACCESS_DISCLAIMER.to_string(),
     ))
 }
 
 fn civicaccess_records_export(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
+) -> Result<(String, Vec<String>, String), String> {
     let review_id = payload_string(payload, "reviewId")
         .map_err(|_| "Select a saved review to export.".to_string())?;
     let exists = state
@@ -7895,27 +7994,68 @@ fn civicaccess_records_export(
     push_audit(
         state,
         "civicaccess",
-        "records-export",
+        "civicaccess-records-export",
         format!(
             "Records-ready export prepared for accessibility review {review_id}. Advisory checklist only; not a certified tagged PDF."
         ),
     );
-    Ok(format!(
-        "Records-ready export checklist prepared for {review_id}. Open the access exports folder to package the artifact; the export is an advisory JSON checklist, not a certified tagged PDF."
+    Ok((
+        format!(
+            "Records-ready export checklist prepared for {review_id}. Open the access exports folder to package the artifact; the export is an advisory JSON checklist, not a certified tagged PDF."
+        ),
+        vec!["Open the access exports folder to package the artifact.".to_string()],
+        CIVICACCESS_DISCLAIMER.to_string(),
+    ))
+}
+
+fn civicaccess_delete_review(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<(String, Vec<String>, String), String> {
+    let review_id = payload_string(payload, "reviewId")
+        .map_err(|_| "Select a saved review to delete.".to_string())?;
+    let before = state.access.reviews.len();
+    state
+        .access
+        .reviews
+        .retain(|review| review.review_id != review_id);
+    if state.access.reviews.len() == before {
+        return Err(format!(
+            "Saved accessibility review {review_id} is not in the local store."
+        ));
+    }
+    civicaccess_record_audit(state, "review.delete", Some(&review_id), "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-delete-review",
+        format!("Accessibility review {review_id} deleted from the local store."),
+    );
+    Ok((
+        format!("Accessibility review {review_id} deleted from the saved-review list."),
+        vec![
+            "The review's audit-trail entry remains in the hash-chained audit log even though it no longer appears in the saved-review list."
+                .to_string(),
+        ],
+        CIVICACCESS_DISCLAIMER.to_string(),
     ))
 }
 
 fn civicaccess_plain_language(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
-    let text = payload_string(payload, "text")
-        .map_err(|_| "Enter the public-facing text that should be rewritten.".to_string())?;
+) -> Result<(String, Vec<String>, String), String> {
+    let text = friendly_required(
+        payload_string_with_cap(payload, "text", 5000),
+        "Enter the public-facing text that should be rewritten.",
+    )?;
     let mut rewritten = text.trim().to_string();
     for (jargon, replacement) in CIVICACCESS_JARGON_MAP {
         rewritten = rewritten.replace(jargon, replacement);
-        let title_jargon = title_case_word(jargon);
-        let title_replacement = title_case_word(replacement);
+        // ponytail: ASCII-only assumption (jargon map is hand-authored lowercase
+        // ASCII). If non-ASCII jargon is ever added, switch to a caseless crate.
+        let title_jargon = title_case_word(&jargon.to_lowercase());
+        let title_replacement = title_case_word(&replacement.to_lowercase());
         rewritten = rewritten.replace(&title_jargon, &title_replacement);
     }
     if rewritten.is_empty() {
@@ -7932,8 +8072,12 @@ fn civicaccess_plain_language(
             rewritten.len()
         ),
     );
-    Ok(format!(
-        "Sample plain-language rewrite ready (human review required before publication):\n{rewritten}"
+    Ok((
+        format!(
+            "Sample plain-language rewrite ready (human review required before publication):\n{rewritten}"
+        ),
+        vec!["Have staff review the rewrite for accuracy before publication.".to_string()],
+        CIVICACCESS_DISCLAIMER.to_string(),
     ))
 }
 
@@ -7968,11 +8112,15 @@ fn title_case_word(input: &str) -> String {
 fn civicaccess_language_variant(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
-    let text = payload_string(payload, "text")
-        .map_err(|_| "Enter the public text that should be translated.".to_string())?;
-    let language = payload_string(payload, "language")
-        .map_err(|_| "Enter the target language (e.g. es, vi).".to_string())?;
+) -> Result<(String, Vec<String>, String), String> {
+    let text = friendly_required(
+        payload_string_with_cap(payload, "text", 5000),
+        "Enter the public text that should be translated.",
+    )?;
+    let language = friendly_required(
+        payload_string_with_cap(payload, "language", 80),
+        "Enter the target language (e.g. es, vi).",
+    )?;
     let normalized = language.trim().to_lowercase();
     let (variant, status) = match normalized.as_str() {
         "es" => (
@@ -7995,31 +8143,43 @@ fn civicaccess_language_variant(
         "civicaccess-language-variant",
         format!("Multilingual variant requested for language {language}: {status}."),
     );
-    Ok(format!(
-        "{status}: {variant}\nHuman review required before publication."
+    Ok((
+        format!("{status}: {variant}\nHuman review required before publication."),
+        vec![
+            "Route the variant to a qualified human translator/reviewer before publication."
+                .to_string(),
+        ],
+        CIVICACCESS_DISCLAIMER.to_string(),
     ))
 }
 
 fn civicaccess_form_plan(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
-    let form_name = payload_string(payload, "formName")
-        .map_err(|_| "Give the form a descriptive name.".to_string())?;
-    let fields: Vec<String> = payload_text_list(payload, "fields")
+) -> Result<(String, Vec<String>, String), String> {
+    let form_name = payload_optional_string_with_cap(payload, "formName", 500)?;
+    let fields: Vec<String> = payload_text_list_with_cap(payload, "fields", 100, 50)?
         .into_iter()
         .map(|field| field.trim().to_lowercase())
         .collect();
     let required = ["name", "contact", "request"];
-    let missing: Vec<&str> = required
+    let mut missing: Vec<&str> = required
         .iter()
         .filter(|needed| !fields.iter().any(|f| f == *needed))
         .copied()
         .collect();
+    if form_name.trim().is_empty() {
+        missing.insert(0, "form-name");
+    }
     let status = if missing.is_empty() {
         "form-plan-created"
     } else {
         "needs-fixes"
+    };
+    let display_name = if form_name.trim().is_empty() {
+        "(untitled form)".to_string()
+    } else {
+        form_name.clone()
     };
     civicaccess_record_audit(state, "form.plan", None, "staff");
     push_audit(
@@ -8027,7 +8187,7 @@ fn civicaccess_form_plan(
         "civicaccess",
         "civicaccess-form-plan",
         format!(
-            "Accessible form plan for {form_name}: {status} (missing required fields: {}).",
+            "Accessible form plan for {display_name}: {status} (missing required fields: {}).",
             if missing.is_empty() {
                 "none".to_string()
             } else {
@@ -8036,13 +8196,21 @@ fn civicaccess_form_plan(
         ),
     );
     if missing.is_empty() {
-        Ok(format!(
-            "Form plan for {form_name}: form-plan-created. Use visible labels for every input; keep keyboard focus order aligned with reading order; show actionable validation errors beside each field; preserve submissions with the publication record."
+        Ok((
+            format!(
+                "Form plan for {display_name}: form-plan-created. Use visible labels for every input; keep keyboard focus order aligned with reading order; show actionable validation errors beside each field; preserve submissions with the publication record."
+            ),
+            vec!["Keep validation errors next to the fields they describe.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
         ))
     } else {
-        Ok(format!(
-            "Form plan for {form_name}: needs-fixes. Missing required fields: {}. Give the form a descriptive title; label every required field in text; provide help text for contact and request fields; keep validation errors next to the fields they describe.",
-            missing.join(", ")
+        Ok((
+            format!(
+                "Form plan for {display_name}: needs-fixes. Missing required fields: {}. Give the form a descriptive title; label every required field in text; provide help text for contact and request fields; keep validation errors next to the fields they describe.",
+                missing.join(", ")
+            ),
+            vec![format!("Resolve missing fields: {}.", missing.join(", "))],
+            CIVICACCESS_DISCLAIMER.to_string(),
         ))
     }
 }
@@ -8050,14 +8218,13 @@ fn civicaccess_form_plan(
 fn civicaccess_publishing_workflow(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
-    let title =
-        payload_string(payload, "title").map_err(|_| "Enter the publication title.".to_string())?;
+) -> Result<(String, Vec<String>, String), String> {
+    let title = payload_optional_string_with_cap(payload, "title", 500)?;
     let has_review = payload_bool(payload, "hasReview");
     let has_plain_language = payload_bool(payload, "hasPlainLanguage");
     let has_translation_review = payload_bool(payload, "hasTranslationReview");
     let mut blockers: Vec<&str> = Vec::new();
-    if title.is_empty() {
+    if title.trim().is_empty() {
         blockers.push("missing-publication-title");
     }
     if !has_review {
@@ -8074,24 +8241,37 @@ fn civicaccess_publishing_workflow(
     } else {
         "blocked"
     };
+    let display_title = if title.trim().is_empty() {
+        "(untitled publication)".to_string()
+    } else {
+        title.clone()
+    };
     civicaccess_record_audit(state, "publishing.plan", None, "staff");
     push_audit(
         state,
         "civicaccess",
         "civicaccess-publishing-workflow",
         format!(
-            "Publishing workflow for {title}: {status} ({} blocker(s)).",
+            "Publishing workflow for {display_title}: {status} ({} blocker(s)).",
             blockers.len()
         ),
     );
     if blockers.is_empty() {
-        Ok(format!(
-            "Publishing workflow for {title}: publication-workflow-created. Steps: run accessibility review and resolve high-severity findings; attach plain-language summary; route multilingual variants to a qualified human reviewer; package the accessible export and retention record; record staff approval before publication."
+        Ok((
+            format!(
+                "Publishing workflow for {display_title}: publication-workflow-created. Steps: run accessibility review and resolve high-severity findings; attach plain-language summary; route multilingual variants to a qualified human reviewer; package the accessible export and retention record; record staff approval before publication."
+            ),
+            vec!["Record staff approval before publication.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
         ))
     } else {
-        Ok(format!(
-            "Publishing workflow for {title}: blocked. Complete each blocker before publication: {}.",
-            blockers.join(", ")
+        Ok((
+            format!(
+                "Publishing workflow for {display_title}: blocked. Complete each blocker before publication: {}.",
+                blockers.join(", ")
+            ),
+            vec![format!("Complete each blocker before publication: {}.", blockers.join(", "))],
+            CIVICACCESS_DISCLAIMER.to_string(),
         ))
     }
 }
@@ -8099,9 +8279,11 @@ fn civicaccess_publishing_workflow(
 fn civicaccess_ada_title_ii(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
-    let service_area = payload_string(payload, "serviceArea")
-        .map_err(|_| "Name the public service, program, or activity being reviewed.".to_string())?;
+) -> Result<(String, Vec<String>, String), String> {
+    let service_area = friendly_required(
+        payload_string_with_cap(payload, "serviceArea", 500),
+        "Name the public service, program, or activity being reviewed.",
+    )?;
     let has_coordinator_review = payload_bool(payload, "hasCoordinatorReview");
     let status = if has_coordinator_review {
         "review-support-package-created"
@@ -8116,12 +8298,20 @@ fn civicaccess_ada_title_ii(
         format!("ADA Title II review-support plan for {service_area}: {status}."),
     );
     if has_coordinator_review {
-        Ok(format!(
-            "ADA Title II review-support package created for {service_area}. Service area named; access needs and alternate formats checked; coordinator or qualified staff review recorded; remediation notes preserved."
+        Ok((
+            format!(
+                "ADA Title II review-support package created for {service_area}. Service area named; access needs and alternate formats checked; coordinator or qualified staff review recorded; remediation notes preserved."
+            ),
+            vec!["Preserve remediation notes with the publication record.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
         ))
     } else {
-        Ok(format!(
-            "ADA Title II review for {service_area}: needs-staff-review. Confirm communication access needs and alternate formats; record ADA coordinator or qualified staff review; preserve remediation notes with the publication record."
+        Ok((
+            format!(
+                "ADA Title II review for {service_area}: needs-staff-review. Confirm communication access needs and alternate formats; record ADA coordinator or qualified staff review; preserve remediation notes with the publication record."
+            ),
+            vec!["Record ADA coordinator or qualified staff review.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
         ))
     }
 }
@@ -8129,8 +8319,8 @@ fn civicaccess_ada_title_ii(
 fn civicaccess_tagged_pdf(
     state: &mut CityWorkState,
     payload: Option<&Value>,
-) -> Result<String, String> {
-    let raw_levels = payload_text_list(payload, "headingLevels");
+) -> Result<(String, Vec<String>, String), String> {
+    let raw_levels = payload_text_list_with_cap(payload, "headingLevels", 200, 50)?;
     if raw_levels.is_empty() {
         let status = "needs-headings";
         civicaccess_record_audit(state, "tagged_pdf.plan", None, "staff");
@@ -8140,20 +8330,17 @@ fn civicaccess_tagged_pdf(
             "civicaccess-tagged-pdf",
             format!("Tagged-PDF expectation plan: {status} (no heading levels provided)."),
         );
-        return Ok(
-            "Tagged-PDF plan: needs-headings. Add one H1 for the document title; use H2 and H3 headings in reading order; confirm PDF tags preserve the same heading order.".to_string()
-        );
+        return Ok((
+            "Tagged-PDF plan: needs-headings. Add one H1 for the document title; use H2 and H3 headings in reading order; confirm PDF tags preserve the same heading order.".to_string(),
+            vec!["Add one H1 for the document title before planning the tagged-PDF export.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
+        ));
     }
     let mut levels: Vec<u32> = Vec::with_capacity(raw_levels.len());
     for raw in &raw_levels {
         let parsed = raw
             .parse::<u32>()
             .map_err(|_| format!("Heading level \"{raw}\" must be a whole number."))?;
-        if !(1..=6).contains(&parsed) {
-            return Err(format!(
-                "Heading level {parsed} is out of range; use values 1-6."
-            ));
-        }
         levels.push(parsed);
     }
     let starts_at_one = levels.first().copied() == Some(1);
@@ -8180,9 +8367,17 @@ fn civicaccess_tagged_pdf(
         ),
     );
     if status == "tagged-pdf-plan-created" {
-        Ok("Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication.".to_string())
+        Ok((
+            "Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication.".to_string(),
+            vec!["Verify tag order in the exported PDF before publication.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
+        ))
     } else {
-        Ok("Tagged-PDF plan: needs-fixes. Start with one H1; do not skip heading levels; verify tag order in the exported PDF before publication.".to_string())
+        Ok((
+            "Tagged-PDF plan: needs-fixes. Start with one H1; do not skip heading levels; verify tag order in the exported PDF before publication.".to_string(),
+            vec!["Start with one H1 and do not skip heading levels.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
+        ))
     }
 }
 
@@ -8206,6 +8401,8 @@ pub fn city_work_action(
         .map_err(|_| "City workflow lock was poisoned; restart CivicSuite.".to_string())?;
     let mut state = read_state()?;
     let mut search_results = Vec::new();
+    let mut next_steps: Vec<String> = Vec::new();
+    let mut disclaimer = String::new();
     let message = match action {
         "create-meeting-body" => create_meeting_body(&mut state, payload)?,
         "add-meeting-member" => add_meeting_member(&mut state, payload)?,
@@ -8225,14 +8422,60 @@ pub fn city_work_action(
         "civicnotice-complete-checklist" => complete_notice_checklist(&mut state, payload)?,
         "civicnotice-post-notice" => post_notice(&mut state, payload)?,
         "civicnotice-export-archive-packet" => export_notice_archive_packet(&mut state, payload)?,
-        "accessibility-review" => accessibility_review(&mut state, payload)?,
-        "records-export" => civicaccess_records_export(&mut state, payload)?,
-        "civicaccess-plain-language" => civicaccess_plain_language(&mut state, payload)?,
-        "civicaccess-language-variant" => civicaccess_language_variant(&mut state, payload)?,
-        "civicaccess-form-plan" => civicaccess_form_plan(&mut state, payload)?,
-        "civicaccess-publishing-workflow" => civicaccess_publishing_workflow(&mut state, payload)?,
-        "civicaccess-ada-title-ii" => civicaccess_ada_title_ii(&mut state, payload)?,
-        "civicaccess-tagged-pdf" => civicaccess_tagged_pdf(&mut state, payload)?,
+        "accessibility-review" => {
+            let (text, steps, disc) = accessibility_review(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-records-export" => {
+            let (text, steps, disc) = civicaccess_records_export(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-delete-review" => {
+            let (text, steps, disc) = civicaccess_delete_review(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-plain-language" => {
+            let (text, steps, disc) = civicaccess_plain_language(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-language-variant" => {
+            let (text, steps, disc) = civicaccess_language_variant(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-form-plan" => {
+            let (text, steps, disc) = civicaccess_form_plan(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-publishing-workflow" => {
+            let (text, steps, disc) = civicaccess_publishing_workflow(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-ada-title-ii" => {
+            let (text, steps, disc) = civicaccess_ada_title_ii(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
+        "civicaccess-tagged-pdf" => {
+            let (text, steps, disc) = civicaccess_tagged_pdf(&mut state, payload)?;
+            next_steps = steps;
+            disclaimer = disc;
+            text
+        }
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-motion" => record_motion(&mut state, payload)?,
         "add-minute-citation" => add_minute_citation(&mut state, payload)?,
@@ -8332,6 +8575,8 @@ pub fn city_work_action(
         next_action: "Continue the workflow or review the audit trail.".to_string(),
         state,
         search_results,
+        next_steps,
+        disclaimer,
     })
 }
 
@@ -8724,7 +8969,7 @@ mod tests {
 
             // Records-export against the passes-sample-checks review ID.
             let export_message = city_work_action(
-                "records-export",
+                "civicaccess-records-export",
                 Some(&serde_json::json!({"reviewId": passes.review_id})),
             )
             .expect("records-export prepared");
@@ -8732,17 +8977,27 @@ mod tests {
                 .message
                 .contains("Records-ready export checklist"));
             assert!(export_message.message.contains("advisory"));
+            assert!(!export_message.next_steps.is_empty());
+            assert!(!export_message.disclaimer.is_empty());
 
-            // Plain language: deterministic jargon-map replacement.
+            // Plain language: deterministic jargon-map replacement, all six entries
+            // plus the title-cased variant of one of them.
             let plain = city_work_action(
                 "civicaccess-plain-language",
                 Some(&serde_json::json!({
-                    "text": "Residents must remit payment prior to the deadline."
+                    "text": "Residents must remit payment prior to the deadline. Pursuant To this notice, work will commence subsequent to approval and terminate at year end."
                 })),
             )
             .expect("plain-language rewrite ran");
             assert!(plain.message.contains("pay"));
             assert!(plain.message.contains("before"));
+            assert!(
+                plain.message.contains("Under"),
+                "title-cased jargon mapping"
+            );
+            assert!(plain.message.contains("start"));
+            assert!(plain.message.contains("after"));
+            assert!(plain.message.contains("end"));
 
             // Multilingual variants: es / vi sample, unsupported → placeholder.
             let es = city_work_action(
@@ -8751,6 +9006,12 @@ mod tests {
             )
             .expect("es variant ran");
             assert!(es.message.contains("sample-created"));
+            let vi = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": "vi"})),
+            )
+            .expect("vi variant ran");
+            assert!(vi.message.contains("Mau:"));
             let unsupported = city_work_action(
                 "civicaccess-language-variant",
                 Some(&serde_json::json!({"text": "Hello", "language": "xx"})),
@@ -8783,6 +9044,15 @@ mod tests {
             .expect("good form plan ran");
             assert!(good_form.message.contains("form-plan-created"));
 
+            // Form plan: empty formName is now a structured needs-fixes, not a hard reject.
+            let no_name_form = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({"fields": "name, contact, request"})),
+            )
+            .expect("form plan with empty name still runs");
+            assert!(no_name_form.message.contains("needs-fixes"));
+            assert!(no_name_form.message.contains("form-name"));
+
             // Publishing workflow blockers when nothing is approved.
             let blocked = city_work_action(
                 "civicaccess-publishing-workflow",
@@ -8797,6 +9067,31 @@ mod tests {
             assert!(blocked.message.contains("blocked"));
             assert!(blocked.message.contains("missing-accessibility-review"));
 
+            // Publishing workflow: empty title is now a structured blocker, not a hard reject.
+            let no_title_pub = city_work_action(
+                "civicaccess-publishing-workflow",
+                Some(&serde_json::json!({
+                    "hasReview": false,
+                    "hasPlainLanguage": false,
+                    "hasTranslationReview": false
+                })),
+            )
+            .expect("publishing workflow with empty title still runs");
+            assert!(no_title_pub.message.contains("missing-publication-title"));
+
+            // Publishing workflow happy path: every blocker cleared.
+            let pub_created = city_work_action(
+                "civicaccess-publishing-workflow",
+                Some(&serde_json::json!({
+                    "title": "Meeting notice",
+                    "hasReview": true,
+                    "hasPlainLanguage": true,
+                    "hasTranslationReview": true
+                })),
+            )
+            .expect("publishing workflow happy path ran");
+            assert!(pub_created.message.contains("publication-workflow-created"));
+
             // ADA Title II review: missing coordinator → needs-staff-review.
             let ada = city_work_action(
                 "civicaccess-ada-title-ii",
@@ -8808,6 +9103,25 @@ mod tests {
             .expect("ada ran");
             assert!(ada.message.contains("needs-staff-review"));
 
+            // ADA Title II review happy path: coordinator review recorded.
+            let ada_created = city_work_action(
+                "civicaccess-ada-title-ii",
+                Some(&serde_json::json!({
+                    "serviceArea": "Records",
+                    "hasCoordinatorReview": true
+                })),
+            )
+            .expect("ada happy path ran");
+            assert!(ada_created
+                .message
+                .contains("review-support package created"));
+
+            // Tagged PDF: no heading levels at all → needs-headings early-return branch.
+            let tagged_empty =
+                city_work_action("civicaccess-tagged-pdf", Some(&serde_json::json!({})))
+                    .expect("tagged-pdf with empty payload ran");
+            assert!(tagged_empty.message.contains("needs-headings"));
+
             // Tagged PDF: skipped headings → needs-fixes.
             let tagged_bad = city_work_action(
                 "civicaccess-tagged-pdf",
@@ -8816,6 +9130,21 @@ mod tests {
             .expect("tagged-pdf ran");
             assert!(tagged_bad.message.contains("needs-fixes"));
 
+            // Tagged PDF: out-of-range heading levels (0, 7) no longer hard-reject;
+            // they fold into needs-fixes since neither starts the sequence at H1.
+            let tagged_zero = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "0"})),
+            )
+            .expect("tagged-pdf with level 0 still runs");
+            assert!(tagged_zero.message.contains("needs-fixes"));
+            let tagged_seven = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "7"})),
+            )
+            .expect("tagged-pdf with level 7 still runs");
+            assert!(tagged_seven.message.contains("needs-fixes"));
+
             // Tagged PDF: clean sequence → plan created.
             let tagged_good = city_work_action(
                 "civicaccess-tagged-pdf",
@@ -8823,6 +9152,73 @@ mod tests {
             )
             .expect("tagged-pdf clean ran");
             assert!(tagged_good.message.contains("Tagged-PDF plan created"));
+
+            // Accessibility review with long copy (>80 words) → long-copy finding.
+            let long_body = (0..90).map(|_| "word").collect::<Vec<_>>().join(" ");
+            city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "Long notice",
+                    "body": long_body,
+                    "hasAltText": true,
+                    "language": "en"
+                })),
+            )
+            .expect("long-copy review saved");
+            let state_after_long = city_work_state().expect("state reads after long-copy review");
+            let long_copy_review = state_after_long
+                .access
+                .reviews
+                .last()
+                .expect("long-copy review persists");
+            assert!(long_copy_review
+                .findings
+                .iter()
+                .any(|f| f.code == "long-copy"));
+
+            // Delete a saved review: it disappears from the list, and a second
+            // delete of the same id now errors (the review is genuinely gone).
+            // Uses a dedicated throwaway review, not `passes`, so the
+            // search-city-knowledge assertions below still have "Water main" to find.
+            city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "Disposable test review",
+                    "body": "Temporary content for the delete-review test.",
+                    "hasAltText": true,
+                    "language": "en"
+                })),
+            )
+            .expect("disposable review saved");
+            let disposable_state = city_work_state().expect("state reads after disposable review");
+            let delete_target = disposable_state
+                .access
+                .reviews
+                .last()
+                .expect("disposable review persists")
+                .review_id
+                .clone();
+            let deleted = city_work_action(
+                "civicaccess-delete-review",
+                Some(&serde_json::json!({"reviewId": delete_target})),
+            )
+            .expect("delete-review ran");
+            assert!(deleted.message.contains("deleted"));
+            let state_after_delete = city_work_state().expect("state reads after delete-review");
+            assert!(!state_after_delete
+                .access
+                .reviews
+                .iter()
+                .any(|review| review.review_id == delete_target));
+            let delete_again = city_work_action(
+                "civicaccess-delete-review",
+                Some(&serde_json::json!({"reviewId": delete_target})),
+            );
+            assert!(delete_again.is_err());
+            assert!(delete_again
+                .err()
+                .unwrap()
+                .contains("not in the local store"));
 
             // Civicaccess audit events accumulated (one per action above + per-review event).
             let state = city_work_state().expect("state reads after civicaccess flow");
@@ -8880,17 +9276,28 @@ mod tests {
     fn civicaccess_actions_reject_invalid_inputs() {
         with_temp_state_dir(|_| {
             // records-export with no reviewId payload
-            let missing_id = city_work_action("records-export", None);
+            let missing_id = city_work_action("civicaccess-records-export", None);
             assert!(missing_id.is_err());
             assert!(missing_id.err().unwrap().contains("Select a saved review"));
 
             // records-export with an unknown reviewId
             let fake_id = city_work_action(
-                "records-export",
+                "civicaccess-records-export",
                 Some(&serde_json::json!({"reviewId": "fake-id-does-not-exist"})),
             );
             assert!(fake_id.is_err());
             assert!(fake_id.err().unwrap().contains("not in the local store"));
+
+            // delete-review with an unknown reviewId
+            let fake_delete = city_work_action(
+                "civicaccess-delete-review",
+                Some(&serde_json::json!({"reviewId": "fake-id-does-not-exist"})),
+            );
+            assert!(fake_delete.is_err());
+            assert!(fake_delete
+                .err()
+                .unwrap()
+                .contains("not in the local store"));
 
             // plain-language with no text payload
             let no_text =
@@ -8917,26 +9324,6 @@ mod tests {
             assert!(no_lang.is_err());
             assert!(no_lang.err().unwrap().contains("target language"));
 
-            // form-plan with missing formName
-            let no_form = city_work_action(
-                "civicaccess-form-plan",
-                Some(&serde_json::json!({"fields": "name, contact, request"})),
-            );
-            assert!(no_form.is_err());
-            assert!(no_form.err().unwrap().contains("descriptive name"));
-
-            // publishing-workflow with missing title
-            let no_pub_title = city_work_action(
-                "civicaccess-publishing-workflow",
-                Some(&serde_json::json!({
-                    "hasReview": true,
-                    "hasPlainLanguage": true,
-                    "hasTranslationReview": true
-                })),
-            );
-            assert!(no_pub_title.is_err());
-            assert!(no_pub_title.err().unwrap().contains("publication title"));
-
             // ada-title-ii with missing serviceArea
             let no_area = city_work_action(
                 "civicaccess-ada-title-ii",
@@ -8953,27 +9340,169 @@ mod tests {
             assert!(bad_heading.is_err());
             assert!(bad_heading.err().unwrap().contains("whole number"));
 
-            // tagged-pdf with out-of-range heading level (0)
-            let zero_heading = city_work_action(
-                "civicaccess-tagged-pdf",
-                Some(&serde_json::json!({"headingLevels": "0"})),
-            );
-            assert!(zero_heading.is_err());
-            assert!(zero_heading.err().unwrap().contains("out of range"));
+            // --- QA-1 / TEST-4: input-length caps mirroring upstream Pydantic models ---
 
-            // tagged-pdf with out-of-range heading level (7)
-            let seven_heading = city_work_action(
-                "civicaccess-tagged-pdf",
-                Some(&serde_json::json!({"headingLevels": "7"})),
+            let over_title = "A".repeat(501);
+            let title_capped = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({"title": over_title, "body": "ok", "language": "en"})),
             );
-            assert!(seven_heading.is_err());
-            assert!(seven_heading.err().unwrap().contains("out of range"));
+            assert!(title_capped.is_err());
+            assert!(title_capped.err().unwrap().contains("500-character limit"));
 
-            // State did not get a partial write on any error path
+            let over_body = "A".repeat(5001);
+            let body_capped = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({"title": "ok", "body": over_body, "language": "en"})),
+            );
+            assert!(body_capped.is_err());
+            assert!(body_capped.err().unwrap().contains("5000-character limit"));
+
+            let over_language = "a".repeat(81);
+            let language_capped = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({"title": "ok", "body": "ok", "language": over_language})),
+            );
+            assert!(language_capped.is_err());
+            assert!(language_capped
+                .err()
+                .unwrap()
+                .contains("80-character limit"));
+
+            let over_plain_text = "A".repeat(5001);
+            let plain_text_capped = city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({"text": over_plain_text})),
+            );
+            assert!(plain_text_capped.is_err());
+            assert!(plain_text_capped
+                .err()
+                .unwrap()
+                .contains("5000-character limit"));
+
+            let over_variant_text = "A".repeat(5001);
+            let variant_text_capped = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": over_variant_text, "language": "es"})),
+            );
+            assert!(variant_text_capped.is_err());
+            assert!(variant_text_capped
+                .err()
+                .unwrap()
+                .contains("5000-character limit"));
+
+            let over_variant_language = "a".repeat(81);
+            let variant_language_capped = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": over_variant_language})),
+            );
+            assert!(variant_language_capped.is_err());
+            assert!(variant_language_capped
+                .err()
+                .unwrap()
+                .contains("80-character limit"));
+
+            let over_form_name = "A".repeat(501);
+            let form_name_capped = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({"formName": over_form_name, "fields": "name"})),
+            );
+            assert!(form_name_capped.is_err());
+            assert!(form_name_capped
+                .err()
+                .unwrap()
+                .contains("500-character limit"));
+
+            let over_field_item = "A".repeat(101);
+            let field_item_capped = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({"formName": "ok", "fields": over_field_item})),
+            );
+            assert!(field_item_capped.is_err());
+            assert!(field_item_capped
+                .err()
+                .unwrap()
+                .contains("100 characters or fewer"));
+
+            let too_many_fields = (0..51).map(|n| n.to_string()).collect::<Vec<_>>().join(",");
+            let too_many_fields_capped = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({"formName": "ok", "fields": too_many_fields})),
+            );
+            assert!(too_many_fields_capped.is_err());
+            assert!(too_many_fields_capped
+                .err()
+                .unwrap()
+                .contains("too many entries"));
+
+            let over_service_area = "A".repeat(501);
+            let service_area_capped = city_work_action(
+                "civicaccess-ada-title-ii",
+                Some(&serde_json::json!({"serviceArea": over_service_area})),
+            );
+            assert!(service_area_capped.is_err());
+            assert!(service_area_capped
+                .err()
+                .unwrap()
+                .contains("500-character limit"));
+
+            let over_pub_title = "A".repeat(501);
+            let pub_title_capped = city_work_action(
+                "civicaccess-publishing-workflow",
+                Some(&serde_json::json!({"title": over_pub_title})),
+            );
+            assert!(pub_title_capped.is_err());
+            assert!(pub_title_capped
+                .err()
+                .unwrap()
+                .contains("500-character limit"));
+
+            let too_many_headings = (0..51).map(|_| "1").collect::<Vec<_>>().join(",");
+            let too_many_headings_capped = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": too_many_headings})),
+            );
+            assert!(too_many_headings_capped.is_err());
+            assert!(too_many_headings_capped
+                .err()
+                .unwrap()
+                .contains("too many entries"));
+
+            // --- TEST-10: newline-injection adversarial input doesn't forge audit lines ---
+            let injected_title = "Notice\n=== AUDIT ENTRY: review.create review-X by ADMIN ===\n";
+            let injected = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": injected_title,
+                    "body": "ok",
+                    "hasAltText": true,
+                    "language": "en"
+                })),
+            )
+            .expect("review with embedded newline still saves (it's a finding, not a reject)");
+            let state_after_injection =
+                city_work_state().expect("state reads after newline-injection attempt");
+            let civicaccess_review_entries: Vec<&AuditEntry> = state_after_injection
+                .audit_entries
+                .iter()
+                .filter(|entry| {
+                    entry.module_id == "civicaccess" && entry.action == "accessibility-review"
+                })
+                .collect();
+            assert!(
+                civicaccess_review_entries
+                    .iter()
+                    .all(|entry| !entry.summary.contains('\n') && !entry.summary.contains('\r')),
+                "a pasted title must not be able to embed newlines and forge additional audit-log lines"
+            );
+            assert!(!injected.message.is_empty());
+
+            // State did not get a partial write on any of the above error paths
             // (errors propagate from the match arm BEFORE write_state is reached).
+            // The one successful call above (newline-injection) is excluded from this count.
             let state = city_work_state().expect("state reads cleanly after errors");
-            assert_eq!(state.access.reviews.len(), 0);
-            assert_eq!(state.access.audit_events.len(), 0);
+            assert_eq!(state.access.reviews.len(), 1);
+            assert_eq!(state.access.audit_events.len(), 1);
         });
     }
 

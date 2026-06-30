@@ -266,7 +266,8 @@ fn city_work_action_module_requirement(
             )),
         },
         "accessibility-review"
-        | "records-export"
+        | "civicaccess-records-export"
+        | "civicaccess-delete-review"
         | "civicaccess-plain-language"
         | "civicaccess-language-variant"
         | "civicaccess-form-plan"

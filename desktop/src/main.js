@@ -580,6 +580,7 @@ const state = {
   modelActionResult: null,
   supervisorActionResult: null,
   workActionResult: null,
+  workActionInFlight: null,
   authActionResult: null,
   searchResults: [],
   publicRecordsLookup: {
@@ -1006,6 +1007,10 @@ function hasTauriBridge() {
   return "__TAURI_INTERNALS__" in window;
 }
 
+function desktopAppRequiredNextAction(whatToDoInApp) {
+  return `${whatToDoInApp} If CivicSuite desktop is already running, switch to it from the taskbar; if not, open it from the Start menu. (You are viewing the browser preview, which cannot save local data.)`;
+}
+
 function accessState() {
   return state.app.access || fallbackState.access;
 }
@@ -1109,7 +1114,7 @@ function renderNav() {
         <button
           type="button"
           class="nav-item ${state.activeArea === item.id ? "active" : ""}"
-          data-area="${item.id}"
+          data-area="${item.id}"${state.activeArea === item.id ? ' aria-current="page"' : ""}
         >
           <span>${escapeHtml(item.label)}</span>
           <small>${escapeHtml(item.description)}</small>
@@ -3496,95 +3501,137 @@ function renderNoticeWorkflow() {
   `;
 }
 
+const CIVICACCESS_DISCLAIMER_TEXT = "Persisted reviews are advisory clerk support, not a certified accessibility audit.";
+
+const CIVICACCESS_STATUS_LABELS = {
+  "passes-sample-checks": "No findings (advisory)",
+  "needs-fixes": "Findings to address"
+};
+
+function jsonAttr(value) {
+  return escapeHtml(JSON.stringify(value));
+}
+
+function civicaccessActionBusy(action) {
+  return state.workActionInFlight === action;
+}
+
 function renderAccessibilityWorkflow() {
   if (isPublicSurface()) return renderPublicMeetingsWorkflow();
   const reviews = (cityWork().access && cityWork().access.reviews) || [];
   const sortedReviews = reviews.slice().sort((a, b) => b.created_at_unix_seconds - a.created_at_unix_seconds);
+  const civicaccessBusy = [
+    "accessibility-review",
+    "civicaccess-plain-language",
+    "civicaccess-language-variant",
+    "civicaccess-form-plan",
+    "civicaccess-publishing-workflow",
+    "civicaccess-ada-title-ii",
+    "civicaccess-tagged-pdf",
+    "civicaccess-records-export",
+    "civicaccess-delete-review"
+  ].includes(state.workActionInFlight);
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
       <h2>Accessibility</h2>
-      <p>Run WCAG sample reviews, draft plain-language rewrites, request multilingual variants, and prepare records-ready export checklists. All work is local; persisted reviews are advisory support, not a certified accessibility audit.</p>
+      <p>Run WCAG sample reviews, draft plain-language rewrites, request multilingual variants, and prepare records-ready export checklists. All work is local.</p>
+      <div class="workflow-actions">
+        <button type="button" class="secondary-action" data-work-action="open-exports-folder" data-action-payload='{"folder":"access"}'>Open Access Exports Folder</button>
+      </div>
     </section>
-    <section class="workflow-editor">
+    <section class="workflow-editor"${civicaccessBusy ? ' aria-busy="true"' : ""}>
+      <aside class="section-band" role="note">${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)} Final compliance review must come from a qualified human reviewer.</aside>
+      <p class="form-help">Fields marked * become findings or blockers when left empty; they don't block saving.</p>
       <div class="workflow-form">
         <h3>Accessibility Review (WCAG sample)</h3>
         <p class="form-help">Saves a deterministic review against the same local audit chain Meetings, Records, and Notice use. Empty title or body becomes a finding, not an error.</p>
-        <label>Document title <input type="text" data-work-field="accessTitle" value="${escapeHtml(state.workDraft.accessTitle)}" placeholder="Water main repair notice" /></label>
-        <label>Public text <textarea data-work-field="accessBody" placeholder="Paste the resident-facing text here.">${escapeHtml(state.workDraft.accessBody)}</textarea></label>
+        <label for="access-title">Document title *</label>
+        <input type="text" id="access-title" aria-required="true" data-work-field="accessTitle" value="${escapeHtml(state.workDraft.accessTitle)}" placeholder="Water main repair notice" />
+        <label for="access-body">Public text *</label>
+        <textarea id="access-body" aria-required="true" data-work-field="accessBody" placeholder="Paste the resident-facing text here.">${escapeHtml(state.workDraft.accessBody)}</textarea>
         <label class="checkbox-row"><input type="checkbox" data-work-field="accessHasAltText" ${state.workDraft.accessHasAltText ? "checked" : ""} /> All images / visuals have alternative text (or are marked decorative)</label>
-        <label>Language tag <input type="text" data-work-field="accessLanguage" value="${escapeHtml(state.workDraft.accessLanguage)}" placeholder="en" /></label>
+        <label for="access-language">Language tag</label>
+        <input type="text" id="access-language" data-work-field="accessLanguage" value="${escapeHtml(state.workDraft.accessLanguage)}" placeholder="en" />
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="accessibility-review">Run Review &amp; Save</button>
+          <button type="button" class="primary-action" data-work-action="accessibility-review" ${civicaccessActionBusy("accessibility-review") ? "disabled" : ""}>Run Review &amp; Save</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>Plain-Language Rewrite</h3>
         <p class="form-help">Deterministic jargon swap (e.g. "remit payment" -> "pay"). Output requires human review before publication.</p>
-        <label>Text to rewrite <textarea data-work-field="accessPlainText" placeholder="Residents must remit payment prior to the deadline.">${escapeHtml(state.workDraft.accessPlainText)}</textarea></label>
+        <label for="access-plain-text">Text to rewrite</label>
+        <textarea id="access-plain-text" data-work-field="accessPlainText" placeholder="Residents must remit payment prior to the deadline.">${escapeHtml(state.workDraft.accessPlainText)}</textarea>
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-plain-language">Suggest Plain-Language Rewrite</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-plain-language" ${civicaccessActionBusy("civicaccess-plain-language") ? "disabled" : ""}>Suggest Plain-Language Rewrite</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>Multilingual Variant (sample)</h3>
         <p class="form-help">Returns a sample for es / vi; everything else returns an explicit placeholder for a qualified human translator.</p>
-        <label>Source text <textarea data-work-field="accessVariantText" placeholder="Residents may request an accommodation.">${escapeHtml(state.workDraft.accessVariantText)}</textarea></label>
-        <label>Target language <input type="text" data-work-field="accessVariantLanguage" value="${escapeHtml(state.workDraft.accessVariantLanguage)}" placeholder="es" /></label>
+        <label for="access-variant-text">Source text</label>
+        <textarea id="access-variant-text" data-work-field="accessVariantText" placeholder="Residents may request an accommodation.">${escapeHtml(state.workDraft.accessVariantText)}</textarea>
+        <label for="access-variant-language">Target language</label>
+        <input type="text" id="access-variant-language" data-work-field="accessVariantLanguage" value="${escapeHtml(state.workDraft.accessVariantLanguage)}" placeholder="es" />
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-language-variant">Create Sample Variant</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-language-variant" ${civicaccessActionBusy("civicaccess-language-variant") ? "disabled" : ""}>Create Sample Variant</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>Accessible Form Plan</h3>
         <p class="form-help">Checks for required fields (name, contact, request) and returns a publication checklist.</p>
-        <label>Form name <input type="text" data-work-field="accessFormName" value="${escapeHtml(state.workDraft.accessFormName)}" placeholder="Records Request" /></label>
-        <label>Fields (comma or newline separated) <textarea data-work-field="accessFormFields" placeholder="name, contact, request">${escapeHtml(state.workDraft.accessFormFields)}</textarea></label>
+        <label for="access-form-name">Form name *</label>
+        <input type="text" id="access-form-name" aria-required="true" data-work-field="accessFormName" value="${escapeHtml(state.workDraft.accessFormName)}" placeholder="Records Request" />
+        <label for="access-form-fields">Fields (comma or newline separated) *</label>
+        <textarea id="access-form-fields" aria-required="true" data-work-field="accessFormFields" placeholder="name, contact, request">${escapeHtml(state.workDraft.accessFormFields)}</textarea>
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-form-plan">Plan Accessible Form</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-form-plan" ${civicaccessActionBusy("civicaccess-form-plan") ? "disabled" : ""}>Plan Accessible Form</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>Publishing Workflow Checklist</h3>
         <p class="form-help">Returns blockers when review, plain-language summary, or translation review are missing.</p>
-        <label>Publication title <input type="text" data-work-field="accessPublishingTitle" value="${escapeHtml(state.workDraft.accessPublishingTitle)}" /></label>
+        <label for="access-publishing-title">Publication title *</label>
+        <input type="text" id="access-publishing-title" aria-required="true" data-work-field="accessPublishingTitle" value="${escapeHtml(state.workDraft.accessPublishingTitle)}" />
         <label class="checkbox-row"><input type="checkbox" data-work-field="accessPublishingHasReview" ${state.workDraft.accessPublishingHasReview ? "checked" : ""} /> Accessibility review complete</label>
         <label class="checkbox-row"><input type="checkbox" data-work-field="accessPublishingHasPlainLanguage" ${state.workDraft.accessPublishingHasPlainLanguage ? "checked" : ""} /> Plain-language summary attached</label>
         <label class="checkbox-row"><input type="checkbox" data-work-field="accessPublishingHasTranslationReview" ${state.workDraft.accessPublishingHasTranslationReview ? "checked" : ""} /> Translation review on file</label>
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-publishing-workflow">Build Publishing Plan</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-publishing-workflow" ${civicaccessActionBusy("civicaccess-publishing-workflow") ? "disabled" : ""}>Build Publishing Plan</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>ADA Title II Review-Support Plan</h3>
-        <label>Service area <input type="text" data-work-field="accessAdaServiceArea" value="${escapeHtml(state.workDraft.accessAdaServiceArea)}" placeholder="Records intake" /></label>
+        <label for="access-ada-service-area">Service area *</label>
+        <input type="text" id="access-ada-service-area" aria-required="true" data-work-field="accessAdaServiceArea" value="${escapeHtml(state.workDraft.accessAdaServiceArea)}" placeholder="Records intake" />
         <label class="checkbox-row"><input type="checkbox" data-work-field="accessAdaHasCoordinatorReview" ${state.workDraft.accessAdaHasCoordinatorReview ? "checked" : ""} /> ADA coordinator or qualified reviewer has reviewed</label>
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-ada-title-ii">Build ADA Review Plan</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-ada-title-ii" ${civicaccessActionBusy("civicaccess-ada-title-ii") ? "disabled" : ""}>Build ADA Review Plan</button>
         </div>
       </div>
       <div class="workflow-form">
         <h3>Tagged-PDF Expectation Plan</h3>
         <p class="form-help">Heading sequence must start with 1 and never skip a level. Example: 1, 2, 3 (clean); 1, 3 (skipped H2).</p>
-        <label>Heading levels (comma separated) <input type="text" data-work-field="accessTaggedPdfHeadings" value="${escapeHtml(state.workDraft.accessTaggedPdfHeadings)}" placeholder="1, 2, 3" /></label>
+        <label for="access-tagged-pdf-headings">Heading levels (comma separated) *</label>
+        <input type="text" id="access-tagged-pdf-headings" aria-required="true" data-work-field="accessTaggedPdfHeadings" value="${escapeHtml(state.workDraft.accessTaggedPdfHeadings)}" placeholder="1, 2, 3" />
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-tagged-pdf">Plan Tagged-PDF Expectations</button>
-          <button type="button" class="secondary-action" data-work-action="open-exports-folder" data-action-payload='{"folder":"access"}'>Open Access Exports Folder</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-tagged-pdf" ${civicaccessActionBusy("civicaccess-tagged-pdf") ? "disabled" : ""}>Plan Tagged-PDF Expectations</button>
         </div>
       </div>
     </section>
     ${renderWorkActionResult()}
     <section class="workflow-list" aria-label="Saved accessibility reviews">
-      ${sortedReviews.length === 0 ? workflowEmpty("No accessibility reviews have been saved yet. Use the form above; reviews persist on the local city-work.json next to Meetings and Notice work.") : sortedReviews.map((review) => `
+      ${sortedReviews.length === 0 ? workflowEmpty(`No accessibility reviews saved yet. Start with "Run Review & Save" above. ${CIVICACCESS_DISCLAIMER_TEXT}`) : sortedReviews.map((review) => `
         <article class="workflow-record">
-          <span class="${review.status === "passes-sample-checks" ? "status-ok" : "status-warn"}">${escapeHtml(review.status)}</span>
+          <span class="${review.status === "passes-sample-checks" ? "status-ok" : "status-warn"}">${escapeHtml(CIVICACCESS_STATUS_LABELS[review.status] || review.status)}</span>
           <h3>${escapeHtml(review.title || "(no title)")}</h3>
-          <p>${escapeHtml((review.findings || []).length + " finding(s); language: " + (review.language || "en") + "; alt text: " + (review.has_alt_text ? "yes" : "no"))}</p>
+          <p>${(review.findings || []).length} ${(review.findings || []).length === 1 ? "finding" : "findings"} &middot; language ${escapeHtml((review.language || "en").toUpperCase())} &middot; alt text ${review.has_alt_text ? "present" : "missing"}</p>
           ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
           <div class="record-actions">
-            <button type="button" class="secondary-action" data-work-action="records-export" data-action-payload='${JSON.stringify({reviewId: review.review_id})}'>Prepare Records-Ready Export</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-records-export") ? "disabled" : ""}>Generate Records-Ready Export</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-delete-review") ? "disabled" : ""}>Delete Review</button>
           </div>
-          <small>${escapeHtml(review.review_id)} - advisory only; not a certified accessibility audit.</small>
+          <small>${escapeHtml(review.review_id)} &mdash; ${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)}</small>
         </article>
       `).join("")}
     </section>
@@ -5372,6 +5419,12 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-work-action]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (button.dataset.workAction === "civicaccess-delete-review") {
+        const confirmed = window.confirm(
+          "Delete this saved accessibility review? This can't be undone from the saved-review list; the audit-trail entry remains."
+        );
+        if (!confirmed) return;
+      }
       const overridePayloadJson = button.dataset.actionPayload;
       let overridePayload = null;
       if (overridePayloadJson) {
@@ -5445,7 +5498,7 @@ async function handleFirstRunAction(action, stepId) {
       accepted: false,
       status: "Desktop app required",
       message: "Setup changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to continue setup."
+      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to continue setup.")
     };
     render();
     return;
@@ -5494,7 +5547,7 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
       accepted: false,
       status: "Desktop app required",
       message: "Module actions are handled by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to install, update, enable, disable, remove modules, or open local module exports."
+      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to install, update, enable, disable, remove modules, or open local module exports.")
     };
     render();
     return;
@@ -5538,7 +5591,7 @@ async function handleModelAction(action) {
       accepted: false,
       status: "Desktop app required",
       message: "Model setup changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to continue local model setup."
+      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to continue local model setup.")
     };
     render();
     return;
@@ -5581,7 +5634,7 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
       accepted: false,
       status: "Desktop app required",
       message: "Runtime service changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to manage local runtime services."
+      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to manage local runtime services.")
     };
     render();
     return;
@@ -5630,7 +5683,7 @@ async function handleChooseFilePath(field) {
       accepted: false,
       status: "Desktop app required",
       message: "Native file selection is available in the Windows desktop app, not the browser preview.",
-      next_action: "Open CivicSuite on Windows and choose the source file from the file picker."
+      next_action: desktopAppRequiredNextAction("Open CivicSuite on Windows and choose the source file from the file picker.")
     };
     render();
     return;
@@ -5673,7 +5726,7 @@ async function handleChooseFolderPath(field) {
       accepted: false,
       status: "Desktop app required",
       message: "Native folder selection is available in the Windows desktop app, not the browser preview.",
-      next_action: "Open CivicSuite on Windows and choose the city data or backup folder from the folder picker."
+      next_action: desktopAppRequiredNextAction("Open CivicSuite on Windows and choose the city data or backup folder from the folder picker.")
     };
     render();
     return;
@@ -5740,7 +5793,7 @@ async function handleAuthAction(action, payloadOverride = null) {
       accepted: false,
       status: "Desktop app required",
       message: "Local access is managed by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to sign in or manage local users."
+      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to sign in or manage local users.")
     };
     render();
     return;
@@ -6149,9 +6202,10 @@ function workPayloadForAction(action) {
       hasAltText: draft.accessHasAltText,
       language: draft.accessLanguage
     },
-    // records-export gets its reviewId from the per-row button's data-action-payload override.
-    // No draft binding intentionally — the action is row-scoped, not form-scoped.
-    "records-export": {},
+    // records-export and delete-review get their reviewId from the per-row button's
+    // data-action-payload override. No draft binding intentionally — row-scoped, not form-scoped.
+    "civicaccess-records-export": {},
+    "civicaccess-delete-review": {},
     "civicaccess-plain-language": { text: draft.accessPlainText },
     "civicaccess-language-variant": {
       text: draft.accessVariantText,
@@ -6374,11 +6428,13 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
       accepted: false,
       status: "Desktop app required",
       message: "City workflow changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: "Open the CivicSuite desktop app to save local city work."
+      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to save local city work.")
     };
     render();
     return;
   }
+  state.workActionInFlight = action;
+  render();
   try {
     const previousWork = cityWork();
     const builtPayload = workPayloadForAction(action);
@@ -6417,6 +6473,8 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
       message: String(error),
       next_action: "Review the required fields and try again."
     };
+  } finally {
+    state.workActionInFlight = null;
   }
   render();
 }

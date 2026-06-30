@@ -793,8 +793,38 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   await expect(page.getByText("Open the CivicSuite desktop app to save local city work.")).toBeVisible();
 
   // Empty list message until reviews land.
-  await expect(page.getByText("No accessibility reviews have been saved yet")).toBeVisible();
+  await expect(page.getByText("No accessibility reviews saved yet")).toBeVisible();
 
-  // The advisory disclaimer language is on the page.
-  await expect(page.getByText(/advisory support, not a certified accessibility audit/i)).toBeVisible();
+  // The canonical advisory disclaimer is pinned at the top of the workflow editor
+  // (UX-5) and repeated in the empty state and per saved review (TW-4) — same
+  // wording everywhere, so it legitimately appears more than once on the page.
+  await expect(page.getByRole("note").getByText(/advisory clerk support, not a certified accessibility audit/i)).toBeVisible();
+
+  // TEST-8: every other form-submit button is also wired to a real action and
+  // refuses persistence the same way in preview mode (previously only "Run
+  // Review & Save" was click-tested; the other six were render-asserted only).
+  const otherFormButtons = [
+    "Suggest Plain-Language Rewrite",
+    "Create Sample Variant",
+    "Plan Accessible Form",
+    "Build Publishing Plan",
+    "Build ADA Review Plan",
+    "Plan Tagged-PDF Expectations"
+  ];
+  for (const buttonName of otherFormButtons) {
+    await page.getByRole("button", { name: buttonName }).click();
+    await expect(page.getByText("Desktop app required")).toBeVisible();
+  }
+
+  // TEST-8 (cargo-test half, adapted to JS): the data-action-payload JSON.parse
+  // fallback is JS-side click-handler logic, not a Rust path, so it's exercised
+  // here. Corrupt the static export-folder button's payload to invalid JSON and
+  // confirm the click still falls through to the built-in payload instead of
+  // throwing — the silent-fallback contract main.js documents at the parse catch.
+  await page.evaluate(() => {
+    const button = document.querySelector('[data-work-action="open-exports-folder"]');
+    button.dataset.actionPayload = '{not valid json';
+  });
+  await page.getByRole("button", { name: "Open Access Exports Folder" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
 });
