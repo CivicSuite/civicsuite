@@ -848,6 +848,22 @@ if (css.includes("blur(") || css.includes("radial-gradient")) {
       }
     }
   }
+  // Reverse direction: a SHIPPED city-core module with no fallbackState entry at
+  // all means browser-preview silently omits that module's card — the exact bug
+  // class this guard exists to catch (fallbackState.modules was missing civicaccess
+  // until commit 32e08da). Scoped to CITY_CORE_PRODUCT_MODULE_IDS (the actual
+  // shipped profile), not every id in installer/modules.json — most canonical
+  // entries are queued Tier 2+ modules that have never had a fallback card and
+  // aren't expected to until they ship.
+  const cityCoreIdsMatch = /CITY_CORE_PRODUCT_MODULE_IDS\s*=\s*\[([^\]]*)\]/.exec(main);
+  const cityCoreIds = cityCoreIdsMatch
+    ? [...cityCoreIdsMatch[1].matchAll(/"([\w-]+)"/g)].map((m) => m[1])
+    : [];
+  for (const id of cityCoreIds) {
+    if (!seen.has(id)) {
+      driftErrors.push(`fallbackState.modules is missing shipped city-core module ${id}`);
+    }
+  }
   if (driftErrors.length > 0) {
     throw new Error(
       "fallbackState module-card metadata is out of sync with installer/modules.json:\n  " +
