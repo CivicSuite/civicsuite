@@ -1273,8 +1273,15 @@ fn friendly_required(
     result: Result<String, String>,
     missing_message: &str,
 ) -> Result<String, String> {
+    // Recognize every cap-helper error shape (payload_string_with_cap /
+    // payload_optional_string_with_cap / payload_text_list_with_cap) so a
+    // cap-exceeded message is never silently swallowed back into the generic
+    // missing-field message, even if a future caller wraps a list-cap result.
     result.map_err(|error| {
-        if error.contains("exceeds the") {
+        if error.contains("exceeds the")
+            || error.contains("too many entries")
+            || error.contains("characters or fewer")
+        {
             error
         } else {
             missing_message.to_string()
@@ -1550,6 +1557,12 @@ fn audit_entry_hash(
 }
 
 fn push_audit(state: &mut CityWorkState, module_id: &str, action: &str, summary: String) {
+    // Strip newlines/carriage-returns so no caller-supplied free text (a title,
+    // a service area, anything echoed into a summary) can forge what looks like
+    // additional audit-log lines to a tool that line-parses an exported dump.
+    // Sanitizing here, once, covers every module and every future caller --
+    // round-1's TEST-10 fix patched only one caller; this is the root cause.
+    let summary = summary.replace(['\n', '\r'], " ");
     let id = new_id("audit", state.audit_entries.len());
     let created_at_unix_seconds = now_unix_seconds();
     let previous_hash = state
@@ -7824,7 +7837,13 @@ pub fn public_city_work_state() -> Result<CityWorkState, String> {
 // AND a per-module audit_events vec that mirrors civicaccess's Postgres
 // audit_events table so the persistence shape matches the standalone module.
 
-const CIVICACCESS_DISCLAIMER: &str = "Accessibility review is advisory support only; it does not replace legal review, a certified accessibility audit, or an ADA coordinator's decision.";
+// Must stay byte-identical to main.js's CIVICACCESS_DISCLAIMER_TEXT -- this value
+// is persisted into every saved review and every action result's disclaimer
+// field. Not yet rendered by the UI (it reads its own hardcoded copy instead),
+// but matching wording now means whoever eventually wires it up doesn't
+// introduce a third disclaimer sentence.
+const CIVICACCESS_DISCLAIMER: &str =
+    "Persisted reviews are advisory clerk support, not a certified accessibility audit.";
 
 // Per-module mirror of civicaccess's standalone audit_events table; capped FIFO
 // because the authoritative tamper-evident record is the global hash-chained
@@ -7837,7 +7856,10 @@ fn civicaccess_record_audit(
     subject_id: Option<&str>,
     actor: &str,
 ) -> String {
-    let event_id = new_id("access-audit", state.access.audit_events.len());
+    // UUIDv4, not new_id's timestamp+count scheme: once the FIFO cap below
+    // stabilizes the vec at a fixed length, a count-derived id would mint the
+    // exact same string for every event from that point on.
+    let event_id = format!("access-audit-{}", uuid::Uuid::new_v4());
     state.access.audit_events.push(CivicAccessAuditEvent {
         event_id: event_id.clone(),
         action: action.to_string(),
@@ -7949,15 +7971,13 @@ fn accessibility_review(
         created_at_unix_seconds,
     });
     civicaccess_record_audit(state, "review.create", Some(&review_id), "staff");
-    // Strip newlines from the interpolated title so a pasted title can't forge
-    // additional audit-log lines for anyone line-parsing audit_entries.
-    let audit_safe_title = title.replace(['\n', '\r'], " ");
+    // push_audit() strips newlines from summary itself, so no per-caller sanitization needed here.
     push_audit(
         state,
         "civicaccess",
         "accessibility-review",
         format!(
-            "Accessibility review {review_id} for \"{audit_safe_title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high)."
+            "Accessibility review {review_id} for \"{title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high)."
         ),
     );
     let next_steps = vec![
@@ -8121,6 +8141,9 @@ fn civicaccess_language_variant(
         payload_string_with_cap(payload, "language", 80),
         "Enter the target language (e.g. es, vi).",
     )?;
+    // ponytail: ASCII-only assumption (only "es"/"vi" are matched today). If a
+    // non-ASCII language key is ever added, to_lowercase() diverges from
+    // Python's .casefold() for some scripts -- switch to a caseless crate then.
     let normalized = language.trim().to_lowercase();
     let (variant, status) = match normalized.as_str() {
         "es" => (
@@ -8907,6 +8930,33 @@ mod tests {
                     && result.title.contains("CivicNotice public hearing")
             }));
         });
+    }
+
+    #[test]
+    fn civicaccess_audit_events_fifo_cap_holds_at_boundary_and_ids_stay_unique() {
+        // QA-2 (round 2): the FIFO cap on state.access.audit_events had no
+        // permanent regression test. Push well past the cap directly against
+        // an in-memory state (no file I/O -- this isn't exercising city-work.json
+        // persistence, just the cap/eviction/id-generation logic in isolation).
+        let mut state = CityWorkState::default();
+        for _ in 0..(CIVICACCESS_MAX_AUDIT_EVENTS + 50) {
+            civicaccess_record_audit(&mut state, "test.push", None, "staff");
+        }
+        assert_eq!(
+            state.access.audit_events.len(),
+            CIVICACCESS_MAX_AUDIT_EVENTS
+        );
+        let unique_ids: std::collections::HashSet<&str> = state
+            .access
+            .audit_events
+            .iter()
+            .map(|event| event.event_id.as_str())
+            .collect();
+        assert_eq!(
+            unique_ids.len(),
+            CIVICACCESS_MAX_AUDIT_EVENTS,
+            "every retained event_id must be unique even after the cap stabilizes the vec length"
+        );
     }
 
     #[test]

@@ -581,6 +581,7 @@ const state = {
   supervisorActionResult: null,
   workActionResult: null,
   workActionInFlight: null,
+  accessReviewsShowAll: false,
   authActionResult: null,
   searchResults: [],
   publicRecordsLookup: {
@@ -600,7 +601,8 @@ const state = {
     recordsRequestId: "",
     codeSourceId: "",
     codeHandoffId: "",
-    notificationId: ""
+    notificationId: "",
+    accessDeleteReviewId: ""
   },
   setupDraft: {
     installRoot: "",
@@ -1007,8 +1009,8 @@ function hasTauriBridge() {
   return "__TAURI_INTERNALS__" in window;
 }
 
-function desktopAppRequiredNextAction(whatToDoInApp) {
-  return `${whatToDoInApp} If CivicSuite desktop is already running, switch to it from the taskbar; if not, open it from the Start menu. (You are viewing the browser preview, which cannot save local data.)`;
+function desktopAppRequiredNextAction(purpose) {
+  return `To ${purpose}, switch to the CivicSuite desktop app if it's already running, or open it from the Start menu. (You are viewing the browser preview, which cannot save local data.)`;
 }
 
 function accessState() {
@@ -1756,7 +1758,8 @@ const GUIDED_WORK_ACTIONS = new Set([
   "import-code-source",
   "publish-code-source",
   "unpublish-code-source",
-  "create-code-handoff"
+  "create-code-handoff",
+  "civicaccess-delete-review"
 ]);
 
 const GUIDED_SUPERVISOR_ACTIONS = new Set([
@@ -2692,7 +2695,27 @@ function guidedReviewForAction(action) {
       ],
       audit: "Creates a CivicCode audit entry for the clerk handoff.",
       retry: "If no source exists, the desktop app blocks handoff creation."
-    }
+    },
+    "civicaccess-delete-review": (() => {
+      const targetReview = (work.access?.reviews || []).find(
+        (review) => review.review_id === state.workSelection.accessDeleteReviewId
+      );
+      return {
+        title: "Review Before Deleting Accessibility Review",
+        confirmLabel: "Delete Review",
+        module: "CivicAccess",
+        subject: targetReview ? (targetReview.title || "(no title)") : "Selected accessibility review",
+        status: targetReview ? targetReview.status : "Review no longer found.",
+        changes: "Removes this review from the saved-review list. The review's audit-trail entry remains in the hash-chained audit log.",
+        visibility: "Staff-only saved-review list. The audit-trail entry stays visible to anyone who can read the audit log.",
+        sources: [
+          targetReview ? `Review ID: ${targetReview.review_id}` : "This review may have already been deleted.",
+          "This cannot be undone from the saved-review list."
+        ],
+        audit: "Creates a CivicAccess audit entry recording the deletion.",
+        retry: "If the review was already deleted, the desktop app reports it is no longer in the local store."
+      };
+    })()
   };
   return reviews[action] || null;
 }
@@ -3512,8 +3535,12 @@ function jsonAttr(value) {
   return escapeHtml(JSON.stringify(value));
 }
 
-function civicaccessActionBusy(action) {
-  return state.workActionInFlight === action;
+function civicaccessActionInFlight(action) {
+  return state.workActionInFlight === action || String(state.workActionInFlight || "").startsWith(`${action}:`);
+}
+
+function civicaccessActionBusy(action, reviewId) {
+  return state.workActionInFlight === (reviewId ? `${action}:${reviewId}` : action);
 }
 
 function renderAccessibilityWorkflow() {
@@ -3530,7 +3557,7 @@ function renderAccessibilityWorkflow() {
     "civicaccess-tagged-pdf",
     "civicaccess-records-export",
     "civicaccess-delete-review"
-  ].includes(state.workActionInFlight);
+  ].some((action) => civicaccessActionInFlight(action));
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
@@ -3542,7 +3569,7 @@ function renderAccessibilityWorkflow() {
     </section>
     <section class="workflow-editor"${civicaccessBusy ? ' aria-busy="true"' : ""}>
       <aside class="section-band" role="note">${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)} Final compliance review must come from a qualified human reviewer.</aside>
-      <p class="form-help">Fields marked * become findings or blockers when left empty; they don't block saving.</p>
+      <p class="form-help">Fields marked * are required. Most show a finding or blocker if left empty instead of an error; the others must have a value before the tool can run.</p>
       <div class="workflow-form">
         <h3>Accessibility Review (WCAG sample)</h3>
         <p class="form-help">Saves a deterministic review against the same local audit chain Meetings, Records, and Notice use. Empty title or body becomes a finding, not an error.</p>
@@ -3560,8 +3587,8 @@ function renderAccessibilityWorkflow() {
       <div class="workflow-form">
         <h3>Plain-Language Rewrite</h3>
         <p class="form-help">Deterministic jargon swap (e.g. "remit payment" -> "pay"). Output requires human review before publication.</p>
-        <label for="access-plain-text">Text to rewrite</label>
-        <textarea id="access-plain-text" data-work-field="accessPlainText" placeholder="Residents must remit payment prior to the deadline.">${escapeHtml(state.workDraft.accessPlainText)}</textarea>
+        <label for="access-plain-text">Text to rewrite *</label>
+        <textarea id="access-plain-text" aria-required="true" data-work-field="accessPlainText" placeholder="Residents must remit payment prior to the deadline.">${escapeHtml(state.workDraft.accessPlainText)}</textarea>
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="civicaccess-plain-language" ${civicaccessActionBusy("civicaccess-plain-language") ? "disabled" : ""}>Suggest Plain-Language Rewrite</button>
         </div>
@@ -3569,10 +3596,10 @@ function renderAccessibilityWorkflow() {
       <div class="workflow-form">
         <h3>Multilingual Variant (sample)</h3>
         <p class="form-help">Returns a sample for es / vi; everything else returns an explicit placeholder for a qualified human translator.</p>
-        <label for="access-variant-text">Source text</label>
-        <textarea id="access-variant-text" data-work-field="accessVariantText" placeholder="Residents may request an accommodation.">${escapeHtml(state.workDraft.accessVariantText)}</textarea>
-        <label for="access-variant-language">Target language</label>
-        <input type="text" id="access-variant-language" data-work-field="accessVariantLanguage" value="${escapeHtml(state.workDraft.accessVariantLanguage)}" placeholder="es" />
+        <label for="access-variant-text">Source text *</label>
+        <textarea id="access-variant-text" aria-required="true" data-work-field="accessVariantText" placeholder="Residents may request an accommodation.">${escapeHtml(state.workDraft.accessVariantText)}</textarea>
+        <label for="access-variant-language">Target language *</label>
+        <input type="text" id="access-variant-language" aria-required="true" data-work-field="accessVariantLanguage" value="${escapeHtml(state.workDraft.accessVariantLanguage)}" placeholder="es" />
         <div class="workflow-actions">
           <button type="button" class="secondary-action" data-work-action="civicaccess-language-variant" ${civicaccessActionBusy("civicaccess-language-variant") ? "disabled" : ""}>Create Sample Variant</button>
         </div>
@@ -3621,19 +3648,24 @@ function renderAccessibilityWorkflow() {
     </section>
     ${renderWorkActionResult()}
     <section class="workflow-list" aria-label="Saved accessibility reviews">
-      ${sortedReviews.length === 0 ? workflowEmpty(`No accessibility reviews saved yet. Start with "Run Review & Save" above. ${CIVICACCESS_DISCLAIMER_TEXT}`) : sortedReviews.map((review) => `
+      ${sortedReviews.length === 0 ? workflowEmpty(`No accessibility reviews saved yet. Start with "Run Review & Save" above. ${CIVICACCESS_DISCLAIMER_TEXT}`) : (state.accessReviewsShowAll ? sortedReviews : sortedReviews.slice(0, 20)).map((review) => `
         <article class="workflow-record">
           <span class="${review.status === "passes-sample-checks" ? "status-ok" : "status-warn"}">${escapeHtml(CIVICACCESS_STATUS_LABELS[review.status] || review.status)}</span>
           <h3>${escapeHtml(review.title || "(no title)")}</h3>
           <p>${(review.findings || []).length} ${(review.findings || []).length === 1 ? "finding" : "findings"} &middot; language ${escapeHtml((review.language || "en").toUpperCase())} &middot; alt text ${review.has_alt_text ? "present" : "missing"}</p>
           ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
           <div class="record-actions">
-            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-records-export") ? "disabled" : ""}>Generate Records-Ready Export</button>
-            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-delete-review") ? "disabled" : ""}>Delete Review</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-records-export", review.review_id) ? "disabled" : ""}>Generate Records-Ready Export</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
           </div>
           <small>${escapeHtml(review.review_id)} &mdash; ${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)}</small>
         </article>
       `).join("")}
+      ${sortedReviews.length > 20 ? `
+        <button type="button" class="secondary-action" data-access-reviews-show-all="${state.accessReviewsShowAll ? "0" : "1"}">
+          ${state.accessReviewsShowAll ? "Show fewer reviews" : `Show all ${sortedReviews.length} reviews`}
+        </button>
+      ` : ""}
     </section>
   `;
 }
@@ -5419,12 +5451,6 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-work-action]").forEach((button) => {
     button.addEventListener("click", async () => {
-      if (button.dataset.workAction === "civicaccess-delete-review") {
-        const confirmed = window.confirm(
-          "Delete this saved accessibility review? This can't be undone from the saved-review list; the audit-trail entry remains."
-        );
-        if (!confirmed) return;
-      }
       const overridePayloadJson = button.dataset.actionPayload;
       let overridePayload = null;
       if (overridePayloadJson) {
@@ -5439,6 +5465,13 @@ function bindEvents() {
           overridePayload = null;
         }
       }
+      if (button.dataset.workAction === "civicaccess-delete-review" && overridePayload) {
+        // Row-scoped action with no form binding: remember which review is
+        // targeted so it survives into the guided-review confirm step, which
+        // (like every other GUIDED_WORK_ACTIONS entry) re-derives its payload
+        // from state rather than from this click's overridePayload.
+        state.workSelection.accessDeleteReviewId = overridePayload.reviewId || "";
+      }
       await handleCityWorkAction(button.dataset.workAction, { overridePayload });
     });
   });
@@ -5450,6 +5483,12 @@ function bindEvents() {
   document.querySelectorAll("[data-review-cancel]").forEach((button) => {
     button.addEventListener("click", () => {
       state.pendingWorkReviewAction = null;
+      render();
+    });
+  });
+  document.querySelectorAll("[data-access-reviews-show-all]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.accessReviewsShowAll = button.dataset.accessReviewsShowAll === "1";
       render();
     });
   });
@@ -5498,7 +5537,7 @@ async function handleFirstRunAction(action, stepId) {
       accepted: false,
       status: "Desktop app required",
       message: "Setup changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to continue setup.")
+      next_action: desktopAppRequiredNextAction("continue setup")
     };
     render();
     return;
@@ -5547,7 +5586,7 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
       accepted: false,
       status: "Desktop app required",
       message: "Module actions are handled by the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to install, update, enable, disable, remove modules, or open local module exports.")
+      next_action: desktopAppRequiredNextAction("install, update, enable, disable, remove modules, or open local module exports")
     };
     render();
     return;
@@ -5591,7 +5630,7 @@ async function handleModelAction(action) {
       accepted: false,
       status: "Desktop app required",
       message: "Model setup changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to continue local model setup.")
+      next_action: desktopAppRequiredNextAction("continue local model setup")
     };
     render();
     return;
@@ -5634,7 +5673,7 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
       accepted: false,
       status: "Desktop app required",
       message: "Runtime service changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to manage local runtime services.")
+      next_action: desktopAppRequiredNextAction("manage local runtime services")
     };
     render();
     return;
@@ -5683,7 +5722,7 @@ async function handleChooseFilePath(field) {
       accepted: false,
       status: "Desktop app required",
       message: "Native file selection is available in the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open CivicSuite on Windows and choose the source file from the file picker.")
+      next_action: desktopAppRequiredNextAction("choose the source file from the file picker")
     };
     render();
     return;
@@ -5726,7 +5765,7 @@ async function handleChooseFolderPath(field) {
       accepted: false,
       status: "Desktop app required",
       message: "Native folder selection is available in the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open CivicSuite on Windows and choose the city data or backup folder from the folder picker.")
+      next_action: desktopAppRequiredNextAction("choose the city data or backup folder from the folder picker")
     };
     render();
     return;
@@ -5793,7 +5832,7 @@ async function handleAuthAction(action, payloadOverride = null) {
       accepted: false,
       status: "Desktop app required",
       message: "Local access is managed by the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to sign in or manage local users.")
+      next_action: desktopAppRequiredNextAction("sign in or manage local users")
     };
     render();
     return;
@@ -6202,10 +6241,14 @@ function workPayloadForAction(action) {
       hasAltText: draft.accessHasAltText,
       language: draft.accessLanguage
     },
-    // records-export and delete-review get their reviewId from the per-row button's
-    // data-action-payload override. No draft binding intentionally — row-scoped, not form-scoped.
+    // records-export gets its reviewId from the per-row button's data-action-payload
+    // override. No draft binding intentionally — the action is row-scoped, not form-scoped.
     "civicaccess-records-export": {},
-    "civicaccess-delete-review": {},
+    // delete-review goes through the guided-review confirm step (GUIDED_WORK_ACTIONS),
+    // which re-derives its payload here rather than from the original click's
+    // overridePayload -- workSelection.accessDeleteReviewId is set by the click
+    // handler before the guided-review panel renders, and survives into Confirm.
+    "civicaccess-delete-review": { reviewId: state.workSelection.accessDeleteReviewId },
     "civicaccess-plain-language": { text: draft.accessPlainText },
     "civicaccess-language-variant": {
       text: draft.accessVariantText,
@@ -6428,12 +6471,17 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
       accepted: false,
       status: "Desktop app required",
       message: "City workflow changes are saved by the Windows desktop app, not the browser preview.",
-      next_action: desktopAppRequiredNextAction("Open the CivicSuite desktop app to save local city work.")
+      next_action: desktopAppRequiredNextAction("save local city work")
     };
     render();
     return;
   }
-  state.workActionInFlight = action;
+  // delete-review's confirm step carries no overridePayload (it goes through the
+  // guided-review re-derivation in workPayloadForAction instead), so fall back to
+  // workSelection for the row-scoped busy key on that one action.
+  const inFlightReviewId = overridePayload?.reviewId
+    || (action === "civicaccess-delete-review" ? state.workSelection.accessDeleteReviewId : null);
+  state.workActionInFlight = inFlightReviewId ? `${action}:${inFlightReviewId}` : action;
   render();
   try {
     const previousWork = cityWork();

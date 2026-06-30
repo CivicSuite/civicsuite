@@ -790,7 +790,7 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   // preview, persistence routes correctly refuse (no Tauri bridge).
   await page.getByRole("button", { name: "Run Review & Save" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();
-  await expect(page.getByText("Open the CivicSuite desktop app to save local city work.")).toBeVisible();
+  await expect(page.getByText("To save local city work, switch to the CivicSuite desktop app")).toBeVisible();
 
   // Empty list message until reviews land.
   await expect(page.getByText("No accessibility reviews saved yet")).toBeVisible();
