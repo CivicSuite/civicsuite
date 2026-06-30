@@ -1,5 +1,7 @@
 # FINAL REPORT — CivicSuite Module 6 (CivicAccess) integration (2026-06-29 deep-read)
 
+> **Historical snapshot — 2026-06-29.** All "does not work" findings below describe the pre-v1.0.2 (commit `4e0f103`) state. v1.0.2 closed Findings #1-#3 (civicaccess UI tab + IPC dispatcher + audit-chain integration) via [PR #216](https://github.com/CivicSuite/civicsuite/pull/216); see the `CHANGELOG.md` v1.0.2 entry and `docs/evidence/civicaccess-v102-phaseD-<DATE>/` (once the Phase D Sandbox run is committed) for the current state.
+
 _35 subagents read every repo in github.com/CivicSuite (27 repos, 2.9M tokens, 1301 tool calls, 30 minutes). Adversarial panel refuted two earlier hypotheses; this is the survived recommendation._
 
 ---
