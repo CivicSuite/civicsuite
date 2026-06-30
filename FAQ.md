@@ -93,7 +93,7 @@ CivicClerk's spec lists imports from these platforms as priority integrations, a
 
 ## Does CivicAccess satisfy our ADA Title II compliance obligation?
 
-No. **Persisted reviews are advisory clerk support, not a certified accessibility audit.** CivicAccess gives clerks a starting checklist for WCAG sample review, plain-language rewrites, multilingual sample variants, accessible form planning, publishing-workflow blockers, ADA Title II review-support planning, and tagged-PDF heading-order checks — every one of those is advisory, deterministic, sample-based local compute, not a legal or accessibility-vendor determination. Final ADA Title II compliance review must come from a qualified human reviewer or certified accessibility vendor. The same disclaimer is repeated on every page of the in-app Accessibility tab (see [USER-MANUAL.md Part 1.6](USER-MANUAL.md#part-16--accessibility-tab-first-clerk-walkthrough)).
+No. **Persisted reviews are advisory clerk support, not a certified accessibility audit.** CivicAccess gives clerks a starting checklist for WCAG sample review, plain-language rewrites, multilingual sample variants, accessible form planning, publishing-workflow blockers, ADA Title II review-support planning, and tagged-PDF heading-order checks — every one of those is advisory, deterministic, sample-based local compute, not a legal or accessibility-vendor determination. Final ADA Title II compliance review must come from a qualified human reviewer or certified accessibility vendor. The same disclaimer is repeated on every page of the in-app Accessibility tab (see Part 1.6 of [USER-MANUAL.md](USER-MANUAL.md)).
 
 ## Does CivicSuite document any municipal live deployments?
 
