@@ -7444,6 +7444,41 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             });
         }
     }
+    for review in &state.access.reviews {
+        // Each persisted accessibility review is searchable across title, body, language, status,
+        // and finding messages so clerks can locate prior advisory reviews from the Search tab.
+        let finding_summary = review
+            .findings
+            .iter()
+            .map(|f| format!("{}: {}", f.code, f.message))
+            .collect::<Vec<_>>()
+            .join("; ");
+        if contains_query(
+            &[
+                &review.title,
+                &review.body,
+                &review.language,
+                &review.status,
+                &finding_summary,
+            ],
+            query,
+        ) {
+            results.push(SearchResult {
+                module_id: "civicaccess".to_string(),
+                record_id: review.review_id.clone(),
+                title: format!("Accessibility review: {}", if review.title.is_empty() { "(no title)".to_string() } else { review.title.clone() }),
+                snippet: format!(
+                    "{} ({} finding(s); language: {}; alt text: {})",
+                    review.status,
+                    review.findings.len(),
+                    review.language,
+                    if review.has_alt_text { "yes" } else { "no" }
+                ),
+                citation: format!("Accessibility advisory review {}", review.review_id),
+                status: review.status.clone(),
+            });
+        }
+    }
     results
 }
 
@@ -8804,6 +8839,18 @@ mod tests {
                 .map(|f| f.code.as_str())
                 .collect();
             assert!(medium_codes.contains(&"language-confirmation"));
+
+            // Civicaccess reviews surface in the cross-module Search City Knowledge results,
+            // matching the civicnotice parity: every persisted record is findable.
+            let title_hits = search_city_work(&state, "Water main");
+            assert!(title_hits
+                .iter()
+                .any(|r| r.module_id == "civicaccess" && r.title.contains("Water main")));
+            let status_hits = search_city_work(&state, "passes-sample-checks");
+            assert!(status_hits.iter().any(|r| r.module_id == "civicaccess"));
+            // Body text search hits too (the finding's "missing-body" message).
+            let body_hits = search_city_work(&state, "public text is empty");
+            assert!(body_hits.iter().any(|r| r.module_id == "civicaccess"));
         });
     }
 

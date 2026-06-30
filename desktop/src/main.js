@@ -4419,6 +4419,22 @@ function localSearchResults(query, { publicOnly = false } = {}) {
       }
     });
   }
+  const reviews = (work.access && work.access.reviews) || [];
+  reviews.forEach((review) => {
+    const findingSummary = (review.findings || [])
+      .map((f) => `${f.code}: ${f.message}`)
+      .join("; ");
+    const reviewSearchText = [review.title, review.body, review.language, review.status, findingSummary];
+    if (reviewSearchText.some((value) => String(value || "").toLowerCase().includes(normalized))) {
+      results.push({
+        module_id: "civicaccess",
+        title: `Accessibility review: ${review.title || "(no title)"}`,
+        snippet: `${review.status} (${(review.findings || []).length} finding(s); language: ${review.language}; alt text: ${review.has_alt_text ? "yes" : "no"})`,
+        citation: `Accessibility advisory review ${review.review_id}`,
+        status: review.status
+      });
+    }
+  });
   return results.filter((result) => moduleIsEnabled(result.module_id));
 }
 
