@@ -188,10 +188,10 @@ const fallbackState = {
     {
       id: "city-core",
       label: "City Core",
-      description: "CivicCore, CivicRecords AI, CivicClerk, and CivicCode",
+      description: "CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess",
       selected: true,
       disabled: false,
-      module_count: 4
+      module_count: 6
     },
     {
       id: "full-suite",
