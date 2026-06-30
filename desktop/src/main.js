@@ -4445,7 +4445,7 @@ function renderSearchWorkflow() {
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
       <h2>Search City Knowledge</h2>
-      <p>${publicOnly ? "Search public meeting materials, released records, and published code sources." : "Search local meetings, records requests, and imported code sources with citations and owning module labels."}</p>
+      <p>${publicOnly ? "Search public meeting materials, released records, and published code sources." : "Search local meetings, notice workpapers, records requests, imported code sources, and accessibility reviews with citations and owning module labels."}</p>
     </section>
     ${publicOnly ? "" : `<section class="workflow-editor single">
       <div class="workflow-form">
