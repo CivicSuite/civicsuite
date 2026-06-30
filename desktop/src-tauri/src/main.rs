@@ -242,7 +242,13 @@ fn city_work_action_module_requirement(
         | "create-code-handoff"
         | "answer-code-question" => Some((vec!["civiccode"], false)),
         "search-city-knowledge" => Some((
-            vec!["civicclerk", "civicrecords-ai", "civiccode", "civicnotice", "civicaccess"],
+            vec![
+                "civicclerk",
+                "civicrecords-ai",
+                "civiccode",
+                "civicnotice",
+                "civicaccess",
+            ],
             true,
         )),
         "open-exports-folder" => match payload

@@ -7466,7 +7466,14 @@ pub fn search_city_work(state: &CityWorkState, query: &str) -> Vec<SearchResult>
             results.push(SearchResult {
                 module_id: "civicaccess".to_string(),
                 record_id: review.review_id.clone(),
-                title: format!("Accessibility review: {}", if review.title.is_empty() { "(no title)".to_string() } else { review.title.clone() }),
+                title: format!(
+                    "Accessibility review: {}",
+                    if review.title.is_empty() {
+                        "(no title)".to_string()
+                    } else {
+                        review.title.clone()
+                    }
+                ),
                 snippet: format!(
                     "{} ({} finding(s); language: {}; alt text: {})",
                     review.status,
@@ -7779,7 +7786,8 @@ fn build_accessibility_findings(
             code: "missing-title".to_string(),
             severity: "high".to_string(),
             message: "The document needs a descriptive title.".to_string(),
-            fix: "Add a short title that names the service, deadline, or public action.".to_string(),
+            fix: "Add a short title that names the service, deadline, or public action."
+                .to_string(),
             wcag_reference: "WCAG 2.4.2 Page Titled".to_string(),
         });
     }
@@ -7825,7 +7833,11 @@ fn accessibility_review(
     let has_alt_text = payload_bool(payload, "hasAltText");
     let language = {
         let provided = payload_optional_string(payload, "language");
-        if provided.is_empty() { "en".to_string() } else { provided }
+        if provided.is_empty() {
+            "en".to_string()
+        } else {
+            provided
+        }
     };
 
     let findings = build_accessibility_findings(&title, &body, has_alt_text, &language);
@@ -7983,7 +7995,9 @@ fn civicaccess_language_variant(
         "civicaccess-language-variant",
         format!("Multilingual variant requested for language {language}: {status}."),
     );
-    Ok(format!("{status}: {variant}\nHuman review required before publication."))
+    Ok(format!(
+        "{status}: {variant}\nHuman review required before publication."
+    ))
 }
 
 fn civicaccess_form_plan(
@@ -8014,7 +8028,11 @@ fn civicaccess_form_plan(
         "civicaccess-form-plan",
         format!(
             "Accessible form plan for {form_name}: {status} (missing required fields: {}).",
-            if missing.is_empty() { "none".to_string() } else { missing.join(", ") }
+            if missing.is_empty() {
+                "none".to_string()
+            } else {
+                missing.join(", ")
+            }
         ),
     );
     if missing.is_empty() {
@@ -8033,8 +8051,8 @@ fn civicaccess_publishing_workflow(
     state: &mut CityWorkState,
     payload: Option<&Value>,
 ) -> Result<String, String> {
-    let title = payload_string(payload, "title")
-        .map_err(|_| "Enter the publication title.".to_string())?;
+    let title =
+        payload_string(payload, "title").map_err(|_| "Enter the publication title.".to_string())?;
     let has_review = payload_bool(payload, "hasReview");
     let has_plain_language = payload_bool(payload, "hasPlainLanguage");
     let has_translation_review = payload_bool(payload, "hasTranslationReview");
@@ -8702,9 +8720,7 @@ mod tests {
                 .find(|review| review.status == "passes-sample-checks")
                 .expect("passes-sample-checks review persists");
             assert!(passes.findings.is_empty());
-            assert!(!passes
-                .disclaimer
-                .is_empty(), "disclaimer always present");
+            assert!(!passes.disclaimer.is_empty(), "disclaimer always present");
 
             // Records-export against the passes-sample-checks review ID.
             let export_message = city_work_action(
@@ -8712,7 +8728,9 @@ mod tests {
                 Some(&serde_json::json!({"reviewId": passes.review_id})),
             )
             .expect("records-export prepared");
-            assert!(export_message.message.contains("Records-ready export checklist"));
+            assert!(export_message
+                .message
+                .contains("Records-ready export checklist"));
             assert!(export_message.message.contains("advisory"));
 
             // Plain language: deterministic jargon-map replacement.
@@ -8738,7 +8756,9 @@ mod tests {
                 Some(&serde_json::json!({"text": "Hello", "language": "xx"})),
             )
             .expect("unsupported variant ran");
-            assert!(unsupported.message.contains("unsupported-language-placeholder"));
+            assert!(unsupported
+                .message
+                .contains("unsupported-language-placeholder"));
 
             // Form plan: missing required fields list.
             let bad_form = city_work_action(
@@ -8873,12 +8893,13 @@ mod tests {
             assert!(fake_id.err().unwrap().contains("not in the local store"));
 
             // plain-language with no text payload
-            let no_text = city_work_action(
-                "civicaccess-plain-language",
-                Some(&serde_json::json!({})),
-            );
+            let no_text =
+                city_work_action("civicaccess-plain-language", Some(&serde_json::json!({})));
             assert!(no_text.is_err());
-            assert!(no_text.err().unwrap().contains("Enter the public-facing text"));
+            assert!(no_text
+                .err()
+                .unwrap()
+                .contains("Enter the public-facing text"));
 
             // language-variant with missing text
             let no_variant_text = city_work_action(
