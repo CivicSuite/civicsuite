@@ -770,6 +770,47 @@ pub struct CityWorkState {
     pub publication_events: Vec<PublicationEvent>,
     #[serde(default)]
     pub notification_events: Vec<NotificationEvent>,
+    #[serde(default)]
+    pub access: CivicAccessState,
+}
+
+#[derive(Deserialize, Serialize, Clone, Default)]
+pub struct CivicAccessState {
+    #[serde(default)]
+    pub reviews: Vec<StoredAccessibilityReview>,
+    #[serde(default)]
+    pub audit_events: Vec<CivicAccessAuditEvent>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct AccessibilityFinding {
+    pub code: String,
+    pub severity: String,
+    pub message: String,
+    pub fix: String,
+    pub wcag_reference: String,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct StoredAccessibilityReview {
+    pub review_id: String,
+    pub title: String,
+    pub body: String,
+    pub has_alt_text: bool,
+    pub language: String,
+    pub status: String,
+    pub findings: Vec<AccessibilityFinding>,
+    pub disclaimer: String,
+    pub created_at_unix_seconds: u64,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct CivicAccessAuditEvent {
+    pub event_id: String,
+    pub action: String,
+    pub subject_id: Option<String>,
+    pub actor: String,
+    pub created_at_unix_seconds: u64,
 }
 
 #[derive(Serialize)]
@@ -7646,11 +7687,450 @@ pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkStat
             .cloned()
             .collect(),
         notification_events: Vec::new(),
+        access: CivicAccessState::default(),
     }
 }
 
 pub fn public_city_work_state() -> Result<CityWorkState, String> {
     read_state().map(|state| city_work_public_projection(&state))
+}
+
+// ===== CivicAccess (module 6) =====
+//
+// Native Rust port of civicaccess v0.4.0 deterministic helpers
+// (access_review.py, plain_language.py, multilingual.py, workflows.py).
+// State persists on CityWorkState.access via the same city-work.json file the
+// other modules use; audit events ride the existing audit_entries hash chain
+// AND a per-module audit_events vec that mirrors civicaccess's Postgres
+// audit_events table so the persistence shape matches the standalone module.
+
+const CIVICACCESS_DISCLAIMER: &str = "Accessibility review is advisory support only; it does not replace legal review, a certified accessibility audit, or an ADA coordinator's decision.";
+
+fn civicaccess_record_audit(
+    state: &mut CityWorkState,
+    action: &str,
+    subject_id: Option<&str>,
+    actor: &str,
+) -> String {
+    let event_id = new_id("access-audit", state.access.audit_events.len());
+    state.access.audit_events.push(CivicAccessAuditEvent {
+        event_id: event_id.clone(),
+        action: action.to_string(),
+        subject_id: subject_id.map(str::to_string),
+        actor: actor.to_string(),
+        created_at_unix_seconds: now_unix_seconds(),
+    });
+    event_id
+}
+
+fn build_accessibility_findings(
+    title: &str,
+    body: &str,
+    has_alt_text: bool,
+    language: &str,
+) -> Vec<AccessibilityFinding> {
+    let mut findings: Vec<AccessibilityFinding> = Vec::new();
+    if body.trim().is_empty() {
+        findings.push(AccessibilityFinding {
+            code: "missing-body".to_string(),
+            severity: "high".to_string(),
+            message: "The public text is empty.".to_string(),
+            fix: "Add the resident-facing text before running an accessibility review.".to_string(),
+            wcag_reference: "WCAG 3.1.5 Reading Level".to_string(),
+        });
+    }
+    if title.trim().is_empty() {
+        findings.push(AccessibilityFinding {
+            code: "missing-title".to_string(),
+            severity: "high".to_string(),
+            message: "The document needs a descriptive title.".to_string(),
+            fix: "Add a short title that names the service, deadline, or public action.".to_string(),
+            wcag_reference: "WCAG 2.4.2 Page Titled".to_string(),
+        });
+    }
+    if !has_alt_text {
+        findings.push(AccessibilityFinding {
+            code: "missing-alt-text".to_string(),
+            severity: "high".to_string(),
+            message: "At least one image or visual element is missing alternative text.".to_string(),
+            fix: "Add concise alt text that explains the purpose of the visual, or mark decorative images as decorative.".to_string(),
+            wcag_reference: "WCAG 1.1.1 Non-text Content".to_string(),
+        });
+    }
+    if body.split_whitespace().count() > 80 {
+        findings.push(AccessibilityFinding {
+            code: "long-copy".to_string(),
+            severity: "medium".to_string(),
+            message: "The sample text is long enough to need headings or a plain-language summary.".to_string(),
+            fix: "Break the content into sections and add a plain-language summary before the detailed text.".to_string(),
+            wcag_reference: "WCAG 3.1.5 Reading Level".to_string(),
+        });
+    }
+    let lang_normalized = language.trim().to_lowercase();
+    if lang_normalized != "en" && lang_normalized != "english" {
+        findings.push(AccessibilityFinding {
+            code: "language-confirmation".to_string(),
+            severity: "medium".to_string(),
+            message: "The document language should be declared and checked by a qualified reviewer.".to_string(),
+            fix: "Set the document language metadata and confirm the translation with a human reviewer.".to_string(),
+            wcag_reference: "WCAG 3.1.1 Language of Page".to_string(),
+        });
+    }
+    findings
+}
+
+fn accessibility_review(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    // Match civicaccess Python semantics: empty title or body becomes a finding,
+    // not a rejected request. The deterministic finding rules below catch them.
+    let title = payload_optional_string(payload, "title");
+    let body = payload_optional_string(payload, "body");
+    let has_alt_text = payload_bool(payload, "hasAltText");
+    let language = {
+        let provided = payload_optional_string(payload, "language");
+        if provided.is_empty() { "en".to_string() } else { provided }
+    };
+
+    let findings = build_accessibility_findings(&title, &body, has_alt_text, &language);
+    let status = if findings.is_empty() {
+        "passes-sample-checks".to_string()
+    } else {
+        "needs-fixes".to_string()
+    };
+    let review_id = new_id("access-review", state.access.reviews.len());
+    let created_at_unix_seconds = now_unix_seconds();
+    let high_severity_count = findings.iter().filter(|f| f.severity == "high").count();
+    let total_count = findings.len();
+    state.access.reviews.push(StoredAccessibilityReview {
+        review_id: review_id.clone(),
+        title: title.clone(),
+        body: body.clone(),
+        has_alt_text,
+        language: language.clone(),
+        status: status.clone(),
+        findings,
+        disclaimer: CIVICACCESS_DISCLAIMER.to_string(),
+        created_at_unix_seconds,
+    });
+    civicaccess_record_audit(state, "review.create", Some(&review_id), "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "accessibility-review",
+        format!(
+            "Accessibility review {review_id} for \"{title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high)."
+        ),
+    );
+    Ok(format!(
+        "Accessibility review saved as {review_id}: {status} ({total_count} finding(s), {high_severity_count} high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit."
+    ))
+}
+
+fn civicaccess_records_export(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let review_id = payload_string(payload, "reviewId")
+        .map_err(|_| "Select a saved review to export.".to_string())?;
+    let exists = state
+        .access
+        .reviews
+        .iter()
+        .any(|review| review.review_id == review_id);
+    if !exists {
+        return Err(format!(
+            "Saved accessibility review {review_id} is not in the local store; save a review before exporting."
+        ));
+    }
+    civicaccess_record_audit(state, "review.records_export", Some(&review_id), "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "records-export",
+        format!(
+            "Records-ready export prepared for accessibility review {review_id}. Advisory checklist only; not a certified tagged PDF."
+        ),
+    );
+    Ok(format!(
+        "Records-ready export checklist prepared for {review_id}. Open the access exports folder to package the artifact; the export is an advisory JSON checklist, not a certified tagged PDF."
+    ))
+}
+
+fn civicaccess_plain_language(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let text = payload_string(payload, "text")
+        .map_err(|_| "Enter the public-facing text that should be rewritten.".to_string())?;
+    let mut rewritten = text.trim().to_string();
+    for (jargon, replacement) in CIVICACCESS_JARGON_MAP {
+        rewritten = rewritten.replace(jargon, replacement);
+        let title_jargon = title_case_word(jargon);
+        let title_replacement = title_case_word(replacement);
+        rewritten = rewritten.replace(&title_jargon, &title_replacement);
+    }
+    if rewritten.is_empty() {
+        rewritten = "Add the public-facing text that should be rewritten.".to_string();
+    }
+    civicaccess_record_audit(state, "plain_language.rewrite", None, "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-plain-language",
+        format!(
+            "Plain-language pass produced sample rewrite ({} -> {} characters); human review required before publication.",
+            text.len(),
+            rewritten.len()
+        ),
+    );
+    Ok(format!(
+        "Sample plain-language rewrite ready (human review required before publication):\n{rewritten}"
+    ))
+}
+
+const CIVICACCESS_JARGON_MAP: &[(&str, &str)] = &[
+    ("pursuant to", "under"),
+    ("commence", "start"),
+    ("terminate", "end"),
+    ("remit payment", "pay"),
+    ("prior to", "before"),
+    ("subsequent to", "after"),
+];
+
+fn title_case_word(input: &str) -> String {
+    let mut result = String::with_capacity(input.len());
+    let mut at_word_start = true;
+    for character in input.chars() {
+        if character.is_whitespace() {
+            at_word_start = true;
+            result.push(character);
+        } else if at_word_start {
+            for upper in character.to_uppercase() {
+                result.push(upper);
+            }
+            at_word_start = false;
+        } else {
+            result.push(character);
+        }
+    }
+    result
+}
+
+fn civicaccess_language_variant(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let text = payload_string(payload, "text")
+        .map_err(|_| "Enter the public text that should be translated.".to_string())?;
+    let language = payload_string(payload, "language")
+        .map_err(|_| "Enter the target language (e.g. es, vi).".to_string())?;
+    let normalized = language.trim().to_lowercase();
+    let (variant, status) = match normalized.as_str() {
+        "es" => (
+            "Muestra: comuniquese con la ciudad para recibir ayuda con este aviso.".to_string(),
+            "sample-created".to_string(),
+        ),
+        "vi" => (
+            "Mau: lien he voi thanh pho de duoc tro giup ve thong bao nay.".to_string(),
+            "sample-created".to_string(),
+        ),
+        _ => (
+            format!("Sample variant placeholder for {language}: {}", text.trim()),
+            "unsupported-language-placeholder".to_string(),
+        ),
+    };
+    civicaccess_record_audit(state, "multilingual.variant", None, "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-language-variant",
+        format!("Multilingual variant requested for language {language}: {status}."),
+    );
+    Ok(format!("{status}: {variant}\nHuman review required before publication."))
+}
+
+fn civicaccess_form_plan(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let form_name = payload_string(payload, "formName")
+        .map_err(|_| "Give the form a descriptive name.".to_string())?;
+    let fields: Vec<String> = payload_text_list(payload, "fields")
+        .into_iter()
+        .map(|field| field.trim().to_lowercase())
+        .collect();
+    let required = ["name", "contact", "request"];
+    let missing: Vec<&str> = required
+        .iter()
+        .filter(|needed| !fields.iter().any(|f| f == *needed))
+        .copied()
+        .collect();
+    let status = if missing.is_empty() {
+        "form-plan-created"
+    } else {
+        "needs-fixes"
+    };
+    civicaccess_record_audit(state, "form.plan", None, "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-form-plan",
+        format!(
+            "Accessible form plan for {form_name}: {status} (missing required fields: {}).",
+            if missing.is_empty() { "none".to_string() } else { missing.join(", ") }
+        ),
+    );
+    if missing.is_empty() {
+        Ok(format!(
+            "Form plan for {form_name}: form-plan-created. Use visible labels for every input; keep keyboard focus order aligned with reading order; show actionable validation errors beside each field; preserve submissions with the publication record."
+        ))
+    } else {
+        Ok(format!(
+            "Form plan for {form_name}: needs-fixes. Missing required fields: {}. Give the form a descriptive title; label every required field in text; provide help text for contact and request fields; keep validation errors next to the fields they describe.",
+            missing.join(", ")
+        ))
+    }
+}
+
+fn civicaccess_publishing_workflow(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let title = payload_string(payload, "title")
+        .map_err(|_| "Enter the publication title.".to_string())?;
+    let has_review = payload_bool(payload, "hasReview");
+    let has_plain_language = payload_bool(payload, "hasPlainLanguage");
+    let has_translation_review = payload_bool(payload, "hasTranslationReview");
+    let mut blockers: Vec<&str> = Vec::new();
+    if title.is_empty() {
+        blockers.push("missing-publication-title");
+    }
+    if !has_review {
+        blockers.push("missing-accessibility-review");
+    }
+    if !has_plain_language {
+        blockers.push("missing-plain-language-summary");
+    }
+    if !has_translation_review {
+        blockers.push("missing-translation-review");
+    }
+    let status = if blockers.is_empty() {
+        "publication-workflow-created"
+    } else {
+        "blocked"
+    };
+    civicaccess_record_audit(state, "publishing.plan", None, "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-publishing-workflow",
+        format!(
+            "Publishing workflow for {title}: {status} ({} blocker(s)).",
+            blockers.len()
+        ),
+    );
+    if blockers.is_empty() {
+        Ok(format!(
+            "Publishing workflow for {title}: publication-workflow-created. Steps: run accessibility review and resolve high-severity findings; attach plain-language summary; route multilingual variants to a qualified human reviewer; package the accessible export and retention record; record staff approval before publication."
+        ))
+    } else {
+        Ok(format!(
+            "Publishing workflow for {title}: blocked. Complete each blocker before publication: {}.",
+            blockers.join(", ")
+        ))
+    }
+}
+
+fn civicaccess_ada_title_ii(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let service_area = payload_string(payload, "serviceArea")
+        .map_err(|_| "Name the public service, program, or activity being reviewed.".to_string())?;
+    let has_coordinator_review = payload_bool(payload, "hasCoordinatorReview");
+    let status = if has_coordinator_review {
+        "review-support-package-created"
+    } else {
+        "needs-staff-review"
+    };
+    civicaccess_record_audit(state, "ada_title_ii.plan", None, "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-ada-title-ii",
+        format!("ADA Title II review-support plan for {service_area}: {status}."),
+    );
+    if has_coordinator_review {
+        Ok(format!(
+            "ADA Title II review-support package created for {service_area}. Service area named; access needs and alternate formats checked; coordinator or qualified staff review recorded; remediation notes preserved."
+        ))
+    } else {
+        Ok(format!(
+            "ADA Title II review for {service_area}: needs-staff-review. Confirm communication access needs and alternate formats; record ADA coordinator or qualified staff review; preserve remediation notes with the publication record."
+        ))
+    }
+}
+
+fn civicaccess_tagged_pdf(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<String, String> {
+    let raw_levels = payload_text_list(payload, "headingLevels");
+    if raw_levels.is_empty() {
+        let status = "needs-headings";
+        civicaccess_record_audit(state, "tagged_pdf.plan", None, "staff");
+        push_audit(
+            state,
+            "civicaccess",
+            "civicaccess-tagged-pdf",
+            format!("Tagged-PDF expectation plan: {status} (no heading levels provided)."),
+        );
+        return Ok(
+            "Tagged-PDF plan: needs-headings. Add one H1 for the document title; use H2 and H3 headings in reading order; confirm PDF tags preserve the same heading order.".to_string()
+        );
+    }
+    let mut levels: Vec<u32> = Vec::with_capacity(raw_levels.len());
+    for raw in &raw_levels {
+        let parsed = raw
+            .parse::<u32>()
+            .map_err(|_| format!("Heading level \"{raw}\" must be a whole number."))?;
+        if !(1..=6).contains(&parsed) {
+            return Err(format!(
+                "Heading level {parsed} is out of range; use values 1-6."
+            ));
+        }
+        levels.push(parsed);
+    }
+    let starts_at_one = levels.first().copied() == Some(1);
+    let skipped = levels
+        .windows(2)
+        .any(|window| window[1] > window[0] && window[1] - window[0] > 1);
+    let status = if starts_at_one && !skipped {
+        "tagged-pdf-plan-created"
+    } else {
+        "needs-fixes"
+    };
+    civicaccess_record_audit(state, "tagged_pdf.plan", None, "staff");
+    push_audit(
+        state,
+        "civicaccess",
+        "civicaccess-tagged-pdf",
+        format!(
+            "Tagged-PDF expectation plan: {status} (heading sequence: {}).",
+            levels
+                .iter()
+                .map(u32::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    );
+    if status == "tagged-pdf-plan-created" {
+        Ok("Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication.".to_string())
+    } else {
+        Ok("Tagged-PDF plan: needs-fixes. Start with one H1; do not skip heading levels; verify tag order in the exported PDF before publication.".to_string())
+    }
 }
 
 pub(crate) fn city_work_action_allows_public(action: &str) -> bool {
@@ -7692,6 +8172,14 @@ pub fn city_work_action(
         "civicnotice-complete-checklist" => complete_notice_checklist(&mut state, payload)?,
         "civicnotice-post-notice" => post_notice(&mut state, payload)?,
         "civicnotice-export-archive-packet" => export_notice_archive_packet(&mut state, payload)?,
+        "accessibility-review" => accessibility_review(&mut state, payload)?,
+        "records-export" => civicaccess_records_export(&mut state, payload)?,
+        "civicaccess-plain-language" => civicaccess_plain_language(&mut state, payload)?,
+        "civicaccess-language-variant" => civicaccess_language_variant(&mut state, payload)?,
+        "civicaccess-form-plan" => civicaccess_form_plan(&mut state, payload)?,
+        "civicaccess-publishing-workflow" => civicaccess_publishing_workflow(&mut state, payload)?,
+        "civicaccess-ada-title-ii" => civicaccess_ada_title_ii(&mut state, payload)?,
+        "civicaccess-tagged-pdf" => civicaccess_tagged_pdf(&mut state, payload)?,
         "record-minutes" => record_minutes(&mut state, payload)?,
         "record-motion" => record_motion(&mut state, payload)?,
         "add-minute-citation" => add_minute_citation(&mut state, payload)?,
@@ -8120,6 +8608,177 @@ mod tests {
                 result.module_id == "civicnotice"
                     && result.title.contains("CivicNotice public hearing")
             }));
+        });
+    }
+
+    #[test]
+    fn civicaccess_actions_save_review_export_and_emit_deterministic_findings() {
+        with_temp_state_dir(|_| {
+            // Empty title + body + no alt + non-English → 4 deterministic findings.
+            let message_a = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "",
+                    "body": "",
+                    "hasAltText": false,
+                    "language": "es"
+                })),
+            )
+            .expect("accessibility review saved");
+            assert!(message_a.message.contains("needs-fixes"));
+
+            // A clean publication: passes-sample-checks, zero findings.
+            let message_b = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "Water main repair notice",
+                    "body": "The city water department will repair a main on Tuesday morning.",
+                    "hasAltText": true,
+                    "language": "en"
+                })),
+            )
+            .expect("clean accessibility review saved");
+            assert!(message_b.message.contains("passes-sample-checks"));
+
+            let state = city_work_state().expect("state reads after reviews");
+            assert_eq!(state.access.reviews.len(), 2);
+            let needs_fixes = state
+                .access
+                .reviews
+                .iter()
+                .find(|review| review.status == "needs-fixes")
+                .expect("needs-fixes review persists");
+            // Empty-body + empty-title + no-alt + non-English → exactly 4 findings (long-copy is body-length based).
+            assert_eq!(needs_fixes.findings.len(), 4);
+            let codes: Vec<&str> = needs_fixes
+                .findings
+                .iter()
+                .map(|f| f.code.as_str())
+                .collect();
+            assert!(codes.contains(&"missing-title"));
+            assert!(codes.contains(&"missing-body"));
+            assert!(codes.contains(&"missing-alt-text"));
+            assert!(codes.contains(&"language-confirmation"));
+
+            let passes = state
+                .access
+                .reviews
+                .iter()
+                .find(|review| review.status == "passes-sample-checks")
+                .expect("passes-sample-checks review persists");
+            assert!(passes.findings.is_empty());
+            assert!(!passes
+                .disclaimer
+                .is_empty(), "disclaimer always present");
+
+            // Records-export against the passes-sample-checks review ID.
+            let export_message = city_work_action(
+                "records-export",
+                Some(&serde_json::json!({"reviewId": passes.review_id})),
+            )
+            .expect("records-export prepared");
+            assert!(export_message.message.contains("Records-ready export checklist"));
+            assert!(export_message.message.contains("advisory"));
+
+            // Plain language: deterministic jargon-map replacement.
+            let plain = city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({
+                    "text": "Residents must remit payment prior to the deadline."
+                })),
+            )
+            .expect("plain-language rewrite ran");
+            assert!(plain.message.contains("pay"));
+            assert!(plain.message.contains("before"));
+
+            // Multilingual variants: es / vi sample, unsupported → placeholder.
+            let es = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": "es"})),
+            )
+            .expect("es variant ran");
+            assert!(es.message.contains("sample-created"));
+            let unsupported = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": "xx"})),
+            )
+            .expect("unsupported variant ran");
+            assert!(unsupported.message.contains("unsupported-language-placeholder"));
+
+            // Form plan: missing required fields list.
+            let bad_form = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({
+                    "formName": "Records Request",
+                    "fields": "name, email"
+                })),
+            )
+            .expect("form plan ran");
+            assert!(bad_form.message.contains("needs-fixes"));
+            assert!(bad_form.message.contains("contact"));
+            assert!(bad_form.message.contains("request"));
+
+            let good_form = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({
+                    "formName": "Records Request",
+                    "fields": "name, contact, request"
+                })),
+            )
+            .expect("good form plan ran");
+            assert!(good_form.message.contains("form-plan-created"));
+
+            // Publishing workflow blockers when nothing is approved.
+            let blocked = city_work_action(
+                "civicaccess-publishing-workflow",
+                Some(&serde_json::json!({
+                    "title": "Meeting notice",
+                    "hasReview": false,
+                    "hasPlainLanguage": false,
+                    "hasTranslationReview": false
+                })),
+            )
+            .expect("publishing workflow ran");
+            assert!(blocked.message.contains("blocked"));
+            assert!(blocked.message.contains("missing-accessibility-review"));
+
+            // ADA Title II review: missing coordinator → needs-staff-review.
+            let ada = city_work_action(
+                "civicaccess-ada-title-ii",
+                Some(&serde_json::json!({
+                    "serviceArea": "Records",
+                    "hasCoordinatorReview": false
+                })),
+            )
+            .expect("ada ran");
+            assert!(ada.message.contains("needs-staff-review"));
+
+            // Tagged PDF: skipped headings → needs-fixes.
+            let tagged_bad = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "1, 3"})),
+            )
+            .expect("tagged-pdf ran");
+            assert!(tagged_bad.message.contains("needs-fixes"));
+
+            // Tagged PDF: clean sequence → plan created.
+            let tagged_good = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "1, 2, 3"})),
+            )
+            .expect("tagged-pdf clean ran");
+            assert!(tagged_good.message.contains("Tagged-PDF plan created"));
+
+            // Civicaccess audit events accumulated (one per action above + per-review event).
+            let state = city_work_state().expect("state reads after civicaccess flow");
+            assert!(state.access.audit_events.len() >= 11);
+            // And every civicaccess audit event surfaces in the global audit chain too.
+            let civicaccess_chain_entries = state
+                .audit_entries
+                .iter()
+                .filter(|entry| entry.module_id == "civicaccess")
+                .count();
+            assert!(civicaccess_chain_entries >= 11);
         });
     }
 

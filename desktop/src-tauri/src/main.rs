@@ -259,7 +259,14 @@ fn city_work_action_module_requirement(
                 true,
             )),
         },
-        "accessibility-review" | "records-export" => Some((vec!["civicaccess"], false)),
+        "accessibility-review"
+        | "records-export"
+        | "civicaccess-plain-language"
+        | "civicaccess-language-variant"
+        | "civicaccess-form-plan"
+        | "civicaccess-publishing-workflow"
+        | "civicaccess-ada-title-ii"
+        | "civicaccess-tagged-pdf" => Some((vec!["civicaccess"], false)),
         _ => None,
     }
 }

@@ -12,7 +12,7 @@ test("home surface keeps local model setup behind first-admin sign-in", async ({
   await expect(page.getByRole("heading", { name: "Gemma 4 12B QAT Q4_0" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download / Resume" })).toHaveCount(0);
   await expect(page.getByText("Create the first local administrator and sign in before changing local model setup.")).toHaveCount(0);
-  await expect(page.getByText("4 local components are part of this Windows profile.")).toBeVisible();
+  await expect(page.getByText("5 local components are part of this Windows profile.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
 
   await expect(page.getByText("Start Docker")).toHaveCount(0);

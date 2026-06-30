@@ -715,17 +715,18 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.locator('[data-module-toggle="civicrecords-ai"]')).toBeChecked();
   await expect(page.locator('[data-module-toggle="civicclerk"]')).toBeChecked();
   await expect(page.locator('[data-module-toggle="civiccode"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civicaccess"]')).toBeChecked();
   await expect(page.locator('[data-module-toggle="civiczone"]')).toBeDisabled();
   await expect(page.getByText("Not ready for Windows Local 1.0")).toBeVisible();
   await page.getByLabel(/Custom/).check();
-  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
+  await expect(page.getByText("Custom selection will install CivicCore plus 4 selected product modules.")).toBeVisible();
   await page.locator('[data-module-toggle="civicrecords-ai"]').uncheck();
-  await expect(page.getByText("Custom selection will install CivicCore plus 2 selected product modules.")).toBeVisible();
+  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Apply Module Selection" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
-  await expect(page.getByText("Selected profile: City Core. Installed modules: 4. Enabled modules: 4.")).toBeVisible();
+  await expect(page.getByText("Selected profile: City Core. Installed modules: 5. Enabled modules: 5.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
@@ -763,4 +764,37 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
   await expect(page.getByText("Package waiting")).toBeVisible();
   await expect(page.getByText("Scaffold")).toHaveCount(0);
+});
+
+test("civicaccess accessibility tab renders the seven workflow forms and refuses persistence from preview", async ({ page }) => {
+  await page.goto("/");
+  const primaryNav = page.getByRole("navigation", { name: "Primary" });
+  await primaryNav.getByRole("button", { name: /Accessibility/ }).click();
+
+  // Page heading + the seven civicaccess workflow forms render.
+  await expect(page.getByRole("heading", { name: "Accessibility", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Accessibility Review (WCAG sample)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plain-Language Rewrite" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Multilingual Variant (sample)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Accessible Form Plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Publishing Workflow Checklist" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ADA Title II Review-Support Plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tagged-PDF Expectation Plan" })).toBeVisible();
+
+  // Form fields accept input + are escaped properly (XSS payload kept as text).
+  await page.getByLabel("Document title").fill("Water main \"repair\" notice");
+  await page.getByLabel("Public text").fill("Pursuant to municipal code, residents must remit payment prior to the deadline.");
+  await expect(page.getByLabel("Document title")).toHaveValue("Water main \"repair\" notice");
+
+  // Empty title + non-English language are findings, not errors — but in browser
+  // preview, persistence routes correctly refuse (no Tauri bridge).
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+  await expect(page.getByText("Open the CivicSuite desktop app to save local city work.")).toBeVisible();
+
+  // Empty list message until reviews land.
+  await expect(page.getByText("No accessibility reviews have been saved yet")).toBeVisible();
+
+  // The advisory disclaimer language is on the page.
+  await expect(page.getByText(/advisory support, not a certified accessibility audit/i)).toBeVisible();
 });

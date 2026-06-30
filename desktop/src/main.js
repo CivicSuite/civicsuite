@@ -2,12 +2,13 @@
 import "./styles.css";
 
 const LOCKED_FOUNDATION_MODULE_ID = "civiccore";
-const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccode"];
+const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccode", "civicaccess"];
 const MODULE_AREA_BY_ID = {
   meetings: "civicclerk",
   records: "civicrecords-ai",
   code: "civiccode",
-  notice: "civicnotice"
+  notice: "civicnotice",
+  access: "civicaccess"
 };
 
 const fallbackState = {
@@ -20,6 +21,7 @@ const fallbackState = {
     ["records", "Records Requests", "Intake, review, response, exports"],
     ["code", "Code & Ordinances", "Search, imports, guidance, handoffs"],
     ["notice", "Public Notices", "Deadlines, proof, archive packets"],
+    ["access", "Accessibility", "WCAG review, plain language, multilingual, exports"],
     ["search", "Search City Knowledge", "Cross-module search with citations"],
     ["health", "System Health", "Local services, model, backup, repair"],
     ["settings", "Settings", "City profile, users, modules"]
@@ -135,6 +137,29 @@ const fallbackState = {
       lifecycle_uninstall: "backup-first-module-data-removal"
     },
     {
+      id: "civicaccess",
+      display_name: "CivicAccess",
+      role: "accessibility + records-ready export workflow",
+      version: "0.4.0",
+      civiccore_requirement: "1.2.0",
+      required: false,
+      selectable: true,
+      installed: true,
+      enabled: true,
+      contract_ready: true,
+      blocked_reason: null,
+      dependencies: ["civiccore"],
+      route_count: 2,
+      service_count: 1,
+      task_count: 8,
+      backup_restore_hooks: ["Data/workflows/access", "Data/exports/access", "Data/files/access"],
+      model_required: false,
+      lifecycle_install: "profile-selected",
+      lifecycle_update: "manifest-versioned",
+      lifecycle_disable: "allowed-after-backup",
+      lifecycle_uninstall: "backup-first-module-data-removal"
+    },
+    {
       id: "civiczone",
       display_name: "CivicZone",
       role: "zoning workflow",
@@ -181,8 +206,8 @@ const fallbackState = {
   module_selection: {
     profile_id: "city-core",
     profile_label: "City Core",
-    installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"],
-    enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode"],
+    installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicaccess"],
+    enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicaccess"],
     disabled_module_ids: [],
     last_updated_unix_seconds: 0
   },
@@ -768,7 +793,24 @@ const state = {
     summaryDraft: "",
     handoffSummary: "",
     codeQuestion: "",
-    searchQuery: ""
+    searchQuery: "",
+    accessTitle: "",
+    accessBody: "",
+    accessHasAltText: false,
+    accessLanguage: "en",
+    accessExportReviewId: "",
+    accessPlainText: "",
+    accessVariantText: "",
+    accessVariantLanguage: "es",
+    accessFormName: "",
+    accessFormFields: "name, contact, request",
+    accessPublishingTitle: "",
+    accessPublishingHasReview: false,
+    accessPublishingHasPlainLanguage: false,
+    accessPublishingHasTranslationReview: false,
+    accessAdaServiceArea: "",
+    accessAdaHasCoordinatorReview: false,
+    accessTaggedPdfHeadings: "1, 2, 3"
   },
   app: fallbackState,
   appLoadError: null
@@ -1653,6 +1695,7 @@ function exportFolderForActiveArea() {
   if (state.activeArea === "records") return "records";
   if (state.activeArea === "code") return "code";
   if (state.activeArea === "notice") return "notice";
+  if (state.activeArea === "access") return "access";
   return "all";
 }
 
@@ -3454,6 +3497,101 @@ function renderNoticeWorkflow() {
   `;
 }
 
+function renderAccessibilityWorkflow() {
+  if (isPublicSurface()) return renderPublicMeetingsWorkflow();
+  const reviews = (cityWork().access && cityWork().access.reviews) || [];
+  const sortedReviews = reviews.slice().sort((a, b) => b.created_at_unix_seconds - a.created_at_unix_seconds);
+  return `
+    <section class="page-heading">
+      <p class="eyebrow">${state.activeSurface}</p>
+      <h2>Accessibility</h2>
+      <p>Run WCAG sample reviews, draft plain-language rewrites, request multilingual variants, and prepare records-ready export checklists. All work is local; persisted reviews are advisory support, not a certified accessibility audit.</p>
+    </section>
+    <section class="workflow-editor">
+      <div class="workflow-form">
+        <h3>Accessibility Review (WCAG sample)</h3>
+        <p class="form-help">Saves a deterministic review against the same local audit chain Meetings, Records, and Notice use. Empty title or body becomes a finding, not an error.</p>
+        <label>Document title <input type="text" data-work-field="accessTitle" value="${escapeHtml(state.workDraft.accessTitle)}" placeholder="Water main repair notice" /></label>
+        <label>Public text <textarea data-work-field="accessBody" placeholder="Paste the resident-facing text here.">${escapeHtml(state.workDraft.accessBody)}</textarea></label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="accessHasAltText" ${state.workDraft.accessHasAltText ? "checked" : ""} /> All images / visuals have alternative text (or are marked decorative)</label>
+        <label>Language tag <input type="text" data-work-field="accessLanguage" value="${escapeHtml(state.workDraft.accessLanguage)}" placeholder="en" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="accessibility-review">Run Review &amp; Save</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Plain-Language Rewrite</h3>
+        <p class="form-help">Deterministic jargon swap (e.g. "remit payment" -> "pay"). Output requires human review before publication.</p>
+        <label>Text to rewrite <textarea data-work-field="accessPlainText" placeholder="Residents must remit payment prior to the deadline.">${escapeHtml(state.workDraft.accessPlainText)}</textarea></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicaccess-plain-language">Suggest Plain-Language Rewrite</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Multilingual Variant (sample)</h3>
+        <p class="form-help">Returns a sample for es / vi; everything else returns an explicit placeholder for a qualified human translator.</p>
+        <label>Source text <textarea data-work-field="accessVariantText" placeholder="Residents may request an accommodation.">${escapeHtml(state.workDraft.accessVariantText)}</textarea></label>
+        <label>Target language <input type="text" data-work-field="accessVariantLanguage" value="${escapeHtml(state.workDraft.accessVariantLanguage)}" placeholder="es" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicaccess-language-variant">Create Sample Variant</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Accessible Form Plan</h3>
+        <p class="form-help">Checks for required fields (name, contact, request) and returns a publication checklist.</p>
+        <label>Form name <input type="text" data-work-field="accessFormName" value="${escapeHtml(state.workDraft.accessFormName)}" placeholder="Records Request" /></label>
+        <label>Fields (comma or newline separated) <textarea data-work-field="accessFormFields" placeholder="name, contact, request">${escapeHtml(state.workDraft.accessFormFields)}</textarea></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicaccess-form-plan">Plan Accessible Form</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Publishing Workflow Checklist</h3>
+        <p class="form-help">Returns blockers when review, plain-language summary, or translation review are missing.</p>
+        <label>Publication title <input type="text" data-work-field="accessPublishingTitle" value="${escapeHtml(state.workDraft.accessPublishingTitle)}" /></label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="accessPublishingHasReview" ${state.workDraft.accessPublishingHasReview ? "checked" : ""} /> Accessibility review complete</label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="accessPublishingHasPlainLanguage" ${state.workDraft.accessPublishingHasPlainLanguage ? "checked" : ""} /> Plain-language summary attached</label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="accessPublishingHasTranslationReview" ${state.workDraft.accessPublishingHasTranslationReview ? "checked" : ""} /> Translation review on file</label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicaccess-publishing-workflow">Build Publishing Plan</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>ADA Title II Review-Support Plan</h3>
+        <label>Service area <input type="text" data-work-field="accessAdaServiceArea" value="${escapeHtml(state.workDraft.accessAdaServiceArea)}" placeholder="Records intake" /></label>
+        <label class="checkbox-row"><input type="checkbox" data-work-field="accessAdaHasCoordinatorReview" ${state.workDraft.accessAdaHasCoordinatorReview ? "checked" : ""} /> ADA coordinator or qualified reviewer has reviewed</label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicaccess-ada-title-ii">Build ADA Review Plan</button>
+        </div>
+      </div>
+      <div class="workflow-form">
+        <h3>Tagged-PDF Expectation Plan</h3>
+        <p class="form-help">Heading sequence must start with 1 and never skip a level. Example: 1, 2, 3 (clean); 1, 3 (skipped H2).</p>
+        <label>Heading levels (comma separated) <input type="text" data-work-field="accessTaggedPdfHeadings" value="${escapeHtml(state.workDraft.accessTaggedPdfHeadings)}" placeholder="1, 2, 3" /></label>
+        <div class="workflow-actions">
+          <button type="button" class="secondary-action" data-work-action="civicaccess-tagged-pdf">Plan Tagged-PDF Expectations</button>
+          <button type="button" class="secondary-action" data-work-action="open-exports-folder" data-action-payload='{"folder":"access"}'>Open Access Exports Folder</button>
+        </div>
+      </div>
+    </section>
+    ${renderWorkActionResult()}
+    <section class="workflow-list" aria-label="Saved accessibility reviews">
+      ${sortedReviews.length === 0 ? workflowEmpty("No accessibility reviews have been saved yet. Use the form above; reviews persist on the local city-work.json next to Meetings and Notice work.") : sortedReviews.map((review) => `
+        <article class="workflow-record">
+          <span class="${review.status === "passes-sample-checks" ? "status-ok" : "status-warn"}">${escapeHtml(review.status)}</span>
+          <h3>${escapeHtml(review.title || "(no title)")}</h3>
+          <p>${escapeHtml((review.findings || []).length + " finding(s); language: " + (review.language || "en") + "; alt text: " + (review.has_alt_text ? "yes" : "no"))}</p>
+          ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
+          <div class="record-actions">
+            <button type="button" class="secondary-action" data-work-action="records-export" data-action-payload='${escapeHtml(JSON.stringify({reviewId: review.review_id}))}'>Prepare Records-Ready Export</button>
+          </div>
+          <small>${escapeHtml(review.review_id)} - advisory only; not a certified accessibility audit.</small>
+        </article>
+      `).join("")}
+    </section>
+  `;
+}
+
 function renderPublicRecordsWorkflow() {
   const requests = publicRecordsRequests(cityWork());
   return `
@@ -4968,6 +5106,8 @@ function renderActiveArea() {
       return renderCodeWorkflow();
     case "notice":
       return renderNoticeWorkflow();
+    case "access":
+      return renderAccessibilityWorkflow();
     case "search":
       return renderSearchWorkflow();
     case "health":
@@ -5217,7 +5357,12 @@ function bindEvents() {
   });
   document.querySelectorAll("[data-work-action]").forEach((button) => {
     button.addEventListener("click", async () => {
-      await handleCityWorkAction(button.dataset.workAction);
+      const overridePayloadJson = button.dataset.actionPayload;
+      let overridePayload = null;
+      if (overridePayloadJson) {
+        try { overridePayload = JSON.parse(overridePayloadJson); } catch (_) { overridePayload = null; }
+      }
+      await handleCityWorkAction(button.dataset.workAction, { overridePayload });
     });
   });
   document.querySelectorAll("[data-review-confirm]").forEach((button) => {
@@ -5973,7 +6118,36 @@ function workPayloadForAction(action) {
       query: draft.codeQuestion,
       publicOnly: isPublicSurface()
     },
-    "search-city-knowledge": { query: draft.searchQuery }
+    "search-city-knowledge": { query: draft.searchQuery },
+    "accessibility-review": {
+      title: draft.accessTitle,
+      body: draft.accessBody,
+      hasAltText: draft.accessHasAltText,
+      language: draft.accessLanguage
+    },
+    "records-export": {
+      reviewId: draft.accessExportReviewId
+    },
+    "civicaccess-plain-language": { text: draft.accessPlainText },
+    "civicaccess-language-variant": {
+      text: draft.accessVariantText,
+      language: draft.accessVariantLanguage
+    },
+    "civicaccess-form-plan": {
+      formName: draft.accessFormName,
+      fields: draft.accessFormFields
+    },
+    "civicaccess-publishing-workflow": {
+      title: draft.accessPublishingTitle,
+      hasReview: draft.accessPublishingHasReview,
+      hasPlainLanguage: draft.accessPublishingHasPlainLanguage,
+      hasTranslationReview: draft.accessPublishingHasTranslationReview
+    },
+    "civicaccess-ada-title-ii": {
+      serviceArea: draft.accessAdaServiceArea,
+      hasCoordinatorReview: draft.accessAdaHasCoordinatorReview
+    },
+    "civicaccess-tagged-pdf": { headingLevels: draft.accessTaggedPdfHeadings }
   };
   return payloads[action] || {};
 }
@@ -6138,7 +6312,7 @@ function syncWorkSelectionAfterAction(action, work, previousWork = {}) {
   reconcileWorkSelection(work);
 }
 
-async function handleCityWorkAction(action, { confirmed = false } = {}) {
+async function handleCityWorkAction(action, { confirmed = false, overridePayload = null } = {}) {
   if (requiresGuidedWorkReview(action) && !confirmed) {
     state.pendingWorkReviewAction = action;
     state.workActionResult = null;
@@ -6183,9 +6357,11 @@ async function handleCityWorkAction(action, { confirmed = false } = {}) {
   }
   try {
     const previousWork = cityWork();
+    const builtPayload = workPayloadForAction(action);
+    const payload = overridePayload ? { ...builtPayload, ...overridePayload } : builtPayload;
     const result = await invoke("city_work_action", {
       action,
-      payload: workPayloadForAction(action)
+      payload
     });
     state.workActionResult = result;
     state.app.city_work = result.state;
