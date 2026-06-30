@@ -798,7 +798,6 @@ const state = {
     accessBody: "",
     accessHasAltText: false,
     accessLanguage: "en",
-    accessExportReviewId: "",
     accessPlainText: "",
     accessVariantText: "",
     accessVariantLanguage: "es",
@@ -3583,7 +3582,7 @@ function renderAccessibilityWorkflow() {
           <p>${escapeHtml((review.findings || []).length + " finding(s); language: " + (review.language || "en") + "; alt text: " + (review.has_alt_text ? "yes" : "no"))}</p>
           ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
           <div class="record-actions">
-            <button type="button" class="secondary-action" data-work-action="records-export" data-action-payload='${escapeHtml(JSON.stringify({reviewId: review.review_id}))}'>Prepare Records-Ready Export</button>
+            <button type="button" class="secondary-action" data-work-action="records-export" data-action-payload='${JSON.stringify({reviewId: review.review_id})}'>Prepare Records-Ready Export</button>
           </div>
           <small>${escapeHtml(review.review_id)} - advisory only; not a certified accessibility audit.</small>
         </article>
@@ -5360,7 +5359,16 @@ function bindEvents() {
       const overridePayloadJson = button.dataset.actionPayload;
       let overridePayload = null;
       if (overridePayloadJson) {
-        try { overridePayload = JSON.parse(overridePayloadJson); } catch (_) { overridePayload = null; }
+        try {
+          overridePayload = JSON.parse(overridePayloadJson);
+        } catch (parseError) {
+          console.warn("Ignoring malformed data-action-payload", {
+            action: button.dataset.workAction,
+            payload: overridePayloadJson,
+            error: parseError && parseError.message
+          });
+          overridePayload = null;
+        }
       }
       await handleCityWorkAction(button.dataset.workAction, { overridePayload });
     });
@@ -6125,9 +6133,9 @@ function workPayloadForAction(action) {
       hasAltText: draft.accessHasAltText,
       language: draft.accessLanguage
     },
-    "records-export": {
-      reviewId: draft.accessExportReviewId
-    },
+    // records-export gets its reviewId from the per-row button's data-action-payload override.
+    // No draft binding intentionally — the action is row-scoped, not form-scoped.
+    "records-export": {},
     "civicaccess-plain-language": { text: draft.accessPlainText },
     "civicaccess-language-variant": {
       text: draft.accessVariantText,

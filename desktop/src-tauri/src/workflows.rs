@@ -8779,6 +8779,133 @@ mod tests {
                 .filter(|entry| entry.module_id == "civicaccess")
                 .count();
             assert!(civicaccess_chain_entries >= 11);
+
+            // Validate the persisted accessibility findings carry the documented severity
+            // (block-before-publication logic depends on severity, not just code).
+            let needs_fixes_2 = state
+                .access
+                .reviews
+                .iter()
+                .find(|review| review.status == "needs-fixes")
+                .expect("needs-fixes review still present");
+            let high_codes: Vec<&str> = needs_fixes_2
+                .findings
+                .iter()
+                .filter(|f| f.severity == "high")
+                .map(|f| f.code.as_str())
+                .collect();
+            assert!(high_codes.contains(&"missing-title"));
+            assert!(high_codes.contains(&"missing-body"));
+            assert!(high_codes.contains(&"missing-alt-text"));
+            let medium_codes: Vec<&str> = needs_fixes_2
+                .findings
+                .iter()
+                .filter(|f| f.severity == "medium")
+                .map(|f| f.code.as_str())
+                .collect();
+            assert!(medium_codes.contains(&"language-confirmation"));
+        });
+    }
+
+    // Err-path coverage for the civicaccess dispatcher arms (review #216 critical fix).
+    // Validates the trust-boundary behavior — required-field rejection and invalid-id paths.
+    #[test]
+    fn civicaccess_actions_reject_invalid_inputs() {
+        with_temp_state_dir(|_| {
+            // records-export with no reviewId payload
+            let missing_id = city_work_action("records-export", None);
+            assert!(missing_id.is_err());
+            assert!(missing_id.err().unwrap().contains("Select a saved review"));
+
+            // records-export with an unknown reviewId
+            let fake_id = city_work_action(
+                "records-export",
+                Some(&serde_json::json!({"reviewId": "fake-id-does-not-exist"})),
+            );
+            assert!(fake_id.is_err());
+            assert!(fake_id.err().unwrap().contains("not in the local store"));
+
+            // plain-language with no text payload
+            let no_text = city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({})),
+            );
+            assert!(no_text.is_err());
+            assert!(no_text.err().unwrap().contains("Enter the public-facing text"));
+
+            // language-variant with missing text
+            let no_variant_text = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"language": "es"})),
+            );
+            assert!(no_variant_text.is_err());
+            assert!(no_variant_text.err().unwrap().contains("public text"));
+
+            // language-variant with missing language
+            let no_lang = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello"})),
+            );
+            assert!(no_lang.is_err());
+            assert!(no_lang.err().unwrap().contains("target language"));
+
+            // form-plan with missing formName
+            let no_form = city_work_action(
+                "civicaccess-form-plan",
+                Some(&serde_json::json!({"fields": "name, contact, request"})),
+            );
+            assert!(no_form.is_err());
+            assert!(no_form.err().unwrap().contains("descriptive name"));
+
+            // publishing-workflow with missing title
+            let no_pub_title = city_work_action(
+                "civicaccess-publishing-workflow",
+                Some(&serde_json::json!({
+                    "hasReview": true,
+                    "hasPlainLanguage": true,
+                    "hasTranslationReview": true
+                })),
+            );
+            assert!(no_pub_title.is_err());
+            assert!(no_pub_title.err().unwrap().contains("publication title"));
+
+            // ada-title-ii with missing serviceArea
+            let no_area = city_work_action(
+                "civicaccess-ada-title-ii",
+                Some(&serde_json::json!({"hasCoordinatorReview": true})),
+            );
+            assert!(no_area.is_err());
+            assert!(no_area.err().unwrap().contains("public service"));
+
+            // tagged-pdf with non-numeric heading level
+            let bad_heading = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "abc"})),
+            );
+            assert!(bad_heading.is_err());
+            assert!(bad_heading.err().unwrap().contains("whole number"));
+
+            // tagged-pdf with out-of-range heading level (0)
+            let zero_heading = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "0"})),
+            );
+            assert!(zero_heading.is_err());
+            assert!(zero_heading.err().unwrap().contains("out of range"));
+
+            // tagged-pdf with out-of-range heading level (7)
+            let seven_heading = city_work_action(
+                "civicaccess-tagged-pdf",
+                Some(&serde_json::json!({"headingLevels": "7"})),
+            );
+            assert!(seven_heading.is_err());
+            assert!(seven_heading.err().unwrap().contains("out of range"));
+
+            // State did not get a partial write on any error path
+            // (errors propagate from the match arm BEFORE write_state is reached).
+            let state = city_work_state().expect("state reads cleanly after errors");
+            assert_eq!(state.access.reviews.len(), 0);
+            assert_eq!(state.access.audit_events.len(), 0);
         });
     }
 
