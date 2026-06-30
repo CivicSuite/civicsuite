@@ -1223,7 +1223,7 @@ function renderModuleSelectionControls() {
     {
       id: "city-core",
       label: "City Core",
-      description: "Installs CivicRecords AI, CivicClerk, and CivicCode with CivicCore."
+      description: "Installs CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess with CivicCore."
     },
     {
       id: "custom",
@@ -1285,7 +1285,7 @@ function renderModuleSelectionControls() {
       <p class="empty-note">
         ${customMode
           ? `Custom selection will install CivicCore plus ${readySelectedCount} selected product module${readySelectedCount === 1 ? "" : "s"}.`
-          : "City Core installs the complete current 1.0 package: CivicRecords AI, CivicClerk, and CivicCode."}
+          : "City Core installs the complete current 1.0 package: CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess."}
       </p>
     </div>
   `;
