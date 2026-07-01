@@ -580,7 +580,14 @@ const state = {
   modelActionResult: null,
   supervisorActionResult: null,
   workActionResult: null,
-  workActionInFlight: null,
+  // GauntletGate round-7 (W-3): upgraded from a single scalar to a Set so N
+  // simultaneously in-flight civicaccess actions can each be independently
+  // tracked -- a completing action's tag no longer clobbers a different,
+  // still-pending action's busy indicator no matter how many are in flight at
+  // once. `has()`/`add()`/`delete()` on a Set are the whole implementation;
+  // unlike the scalar this replaces, `delete()` is naturally idempotent so no
+  // equality guard is needed in the caller.
+  workActionInFlightTags: new Set(),
   accessReviewsShowAll: false,
   authActionResult: null,
   searchResults: [],
@@ -3534,14 +3541,18 @@ function jsonAttr(value) {
 }
 
 function civicaccessActionInFlight(action) {
-  return state.workActionInFlight === action || String(state.workActionInFlight || "").startsWith(`${action}:`);
+  for (const tag of state.workActionInFlightTags) {
+    if (tag === action || tag.startsWith(`${action}:`)) return true;
+  }
+  return false;
 }
 
 function civicaccessActionBusy(action, reviewId) {
-  if (state.workActionInFlight === (reviewId ? `${action}:${reviewId}` : action)) return true;
+  if (state.workActionInFlightTags.has(reviewId ? `${action}:${reviewId}` : action)) return true;
   // A guided-review confirmation pending for this exact row also counts as busy
-  // (handleCityWorkAction returns before setting workActionInFlight while the
-  // confirm panel is showing, so that state alone wouldn't otherwise disable it).
+  // (handleCityWorkAction returns before adding to workActionInFlightTags while
+  // the confirm panel is showing, so that state alone wouldn't otherwise
+  // disable it).
   if (action === "civicaccess-delete-review" && state.pendingWorkReviewAction === "civicaccess-delete-review") {
     return state.workSelection.accessDeleteReviewId === reviewId;
   }
@@ -3662,7 +3673,7 @@ function renderAccessibilityWorkflow() {
           ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
           <div class="record-actions">
             <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Generate Records-Ready Export for ${review.title || "(no title)"} (${review.review_id})`)}" ${civicaccessActionBusy("civicaccess-records-export", review.review_id) ? "disabled" : ""}>Generate Records-Ready Export</button>
-            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Delete review: ${review.title || "(no title)"} (${review.review_id})`)}" ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
+            <button type="button" class="destructive-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Delete review: ${review.title || "(no title)"} (${review.review_id})`)}" ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
           </div>
           <small>${escapeHtml(review.review_id)} &mdash; ${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)}</small>
         </article>
@@ -5300,6 +5311,18 @@ function render() {
   `;
   bindEvents();
   maybeAdvanceFirstRunFocus();
+  // GauntletGate round-7 (W-1): every render() call replaces #app's entire
+  // subtree, which drops focus to <body> as a side effect of the DOM swap
+  // itself -- app-wide, at all ~35 call sites, not just civicaccess. Root-cause
+  // fix here instead of at each call site. maybeAdvanceFirstRunFocus() above
+  // defers its own focus-move via requestAnimationFrame, so this synchronous
+  // check still runs first; its RAF callback checks `el.contains(active)`
+  // where el is a descendant of #main-content, so focusing #main-content here
+  // doesn't block it from correctly stealing focus to the real wizard field
+  // one frame later.
+  if (document.activeElement === document.body) {
+    byId("main-content")?.focus({ preventScroll: true });
+  }
 }
 
 function bindEvents() {
@@ -5313,7 +5336,6 @@ function bindEvents() {
       state.pendingModuleReviewAction = null;
       state.pendingModuleReviewId = null;
       render();
-      byId("main-content")?.focus();
     });
   });
   document.querySelectorAll("[data-surface]").forEach((button) => {
@@ -6488,15 +6510,8 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
   // workSelection for the row-scoped busy key on that one action.
   const inFlightReviewId = overridePayload?.reviewId
     || (action === "civicaccess-delete-review" ? state.workSelection.accessDeleteReviewId : null);
-  // ponytail: workActionInFlight is a single shared scalar, not a per-row set,
-  // so starting a second row's action already overwrites the first row's own
-  // busy tag (the finally-block guard below only stops a THIRD action's
-  // resolution from clobbering it further -- it doesn't track >1 row busy at
-  // once). Upgrade to a Set of in-flight tags if simultaneous multi-row busy
-  // indicators for 3+ overlapping actions ever matters in practice; today's
-  // demonstrated exposure is bounded to a harmless duplicate/idempotent retry.
   const myWorkTag = inFlightReviewId ? `${action}:${inFlightReviewId}` : action;
-  state.workActionInFlight = myWorkTag;
+  state.workActionInFlightTags.add(myWorkTag);
   render();
   try {
     const previousWork = cityWork();
@@ -6537,16 +6552,15 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
       next_action: "Review the required fields and try again."
     };
   } finally {
-    // Only clear workActionInFlight if it still holds THIS call's own tag --
-    // a different row's action can legitimately overwrite it while this one
-    // is still in flight (that's how per-row busy isolation works at all),
-    // and this call's completion must not clobber that newer in-flight tag
-    // and falsely re-enable a row whose own request hasn't resolved yet.
-    if (state.workActionInFlight === myWorkTag) {
-      state.workActionInFlight = null;
-    }
-    // Same reasoning for accessDeleteReviewId: only clear it if it still
-    // points at the review THIS call was processing.
+    // Set.delete is naturally idempotent and per-tag -- no equality guard
+    // needed here, unlike the scalar this replaced. A different row's own tag
+    // is a different Set entry, so it's untouched regardless of how many
+    // actions are in flight at once.
+    state.workActionInFlightTags.delete(myWorkTag);
+    // accessDeleteReviewId is a different kind of value (which review the
+    // single app-wide guided-review confirm panel currently targets, not a
+    // busy/in-flight tracker) so it keeps its own equality guard: only clear
+    // it if it still points at the review THIS call was processing.
     if (action === "civicaccess-delete-review" && state.workSelection.accessDeleteReviewId === inFlightReviewId) {
       state.workSelection.accessDeleteReviewId = "";
     }

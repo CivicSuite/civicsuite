@@ -104,8 +104,26 @@ main:focus-visible {
   font-weight: 700;
 }
 
+/* GauntletGate round-7 (W-2): reusable destructive-action styling, distinct
+   from .secondary-action, so an irreversible action reads differently from a
+   safe one. Same box model as .secondary-action (border/radius/padding/height
+   already shared above); scoped to Delete Review only, matching the actual
+   audit finding -- not applied to other quasi-destructive buttons
+   (Uninstall/Disable/Repair/Stop) that were never flagged. */
+.destructive-action {
+  background: #ffffff;
+  border-color: #c94a3b;
+  color: #b3271a;
+  font-weight: 700;
+}
+
+.destructive-action:hover {
+  background: #fdecea;
+}
+
 .primary-action:disabled,
-.secondary-action:disabled {
+.secondary-action:disabled,
+.destructive-action:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -312,7 +330,8 @@ main {
   gap: 8px;
 }
 
-.record-actions .secondary-action {
+.record-actions .secondary-action,
+.record-actions .destructive-action {
   min-height: 32px;
   padding-bottom: 5px;
   padding-top: 5px;
