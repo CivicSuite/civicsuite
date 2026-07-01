@@ -1148,7 +1148,7 @@ test("civicaccess an earlier request resolving does not clear a later request's 
   const rowA = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
   const rowB = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review B" }) });
 
-  // Confirm A (50ms) then, without waiting, confirm B (400ms) -- B's confirm
+  // Confirm A (300ms) then, without waiting, confirm B (1500ms) -- B's confirm
   // is now the most-recently-set in-flight tag, while both requests are
   // genuinely in flight simultaneously.
   await rowA.getByRole("button", { name: "Delete Review" }).click();
