@@ -6488,7 +6488,15 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
   // workSelection for the row-scoped busy key on that one action.
   const inFlightReviewId = overridePayload?.reviewId
     || (action === "civicaccess-delete-review" ? state.workSelection.accessDeleteReviewId : null);
-  state.workActionInFlight = inFlightReviewId ? `${action}:${inFlightReviewId}` : action;
+  // ponytail: workActionInFlight is a single shared scalar, not a per-row set,
+  // so starting a second row's action already overwrites the first row's own
+  // busy tag (the finally-block guard below only stops a THIRD action's
+  // resolution from clobbering it further -- it doesn't track >1 row busy at
+  // once). Upgrade to a Set of in-flight tags if simultaneous multi-row busy
+  // indicators for 3+ overlapping actions ever matters in practice; today's
+  // demonstrated exposure is bounded to a harmless duplicate/idempotent retry.
+  const myWorkTag = inFlightReviewId ? `${action}:${inFlightReviewId}` : action;
+  state.workActionInFlight = myWorkTag;
   render();
   try {
     const previousWork = cityWork();
@@ -6529,11 +6537,16 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
       next_action: "Review the required fields and try again."
     };
   } finally {
-    state.workActionInFlight = null;
-    // Only clear accessDeleteReviewId if it still points at the review THIS
-    // call was processing -- a second row's delete can legitimately retarget
-    // it while this one is still in flight (per-row busy isolation allows
-    // that), and this call's completion must not clobber that newer target.
+    // Only clear workActionInFlight if it still holds THIS call's own tag --
+    // a different row's action can legitimately overwrite it while this one
+    // is still in flight (that's how per-row busy isolation works at all),
+    // and this call's completion must not clobber that newer in-flight tag
+    // and falsely re-enable a row whose own request hasn't resolved yet.
+    if (state.workActionInFlight === myWorkTag) {
+      state.workActionInFlight = null;
+    }
+    // Same reasoning for accessDeleteReviewId: only clear it if it still
+    // points at the review THIS call was processing.
     if (action === "civicaccess-delete-review" && state.workSelection.accessDeleteReviewId === inFlightReviewId) {
       state.workSelection.accessDeleteReviewId = "";
     }

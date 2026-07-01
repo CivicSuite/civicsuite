@@ -1074,6 +1074,98 @@ test("civicaccess delete-review survives an overlapping second delete and a mid-
   await expect(reviewList.getByRole("heading", { name: "Error Review" })).not.toBeVisible();
 });
 
+test("civicaccess an earlier request resolving does not clear a later request's own busy indicator", async ({ page }) => {
+  // Regression test for GauntletGate round-5 ENG-R5-1/UX-R5-1: state.workActionInFlight
+  // had the same unguarded-clear shape round 4 fixed for accessDeleteReviewId, but for
+  // the per-row busy/disabled indicator instead of the confirm-panel target. Confirm
+  // review A (fast backend response) first, then confirm review B (slow response)
+  // while A is still in flight -- B's confirm becomes the most-recently-set tag. When
+  // A resolves shortly after, its completion must not clear B's still-pending busy
+  // indicator. Note: this two-request case is what the one-line mirrored guard fixes;
+  // a third simultaneous request would still only track the most-recently-started
+  // action (a deeper, accepted architectural limit of a single shared scalar, not
+  // attempted here -- see the ponytail comment in handleCityWorkAction).
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          } else if (args.action === "civicaccess-delete-review") {
+            // Review A (review-1) is fast and confirmed first; Review B
+            // (review-2) is slow and confirmed second, so A resolves first
+            // while B (the most-recently-confirmed) is still genuinely pending.
+            const delayMs = args.payload.reviewId === "review-1" ? 300 : 1500;
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            const reviews = window.__cityWorkState.access.reviews.filter((r) => r.review_id !== args.payload.reviewId);
+            window.__cityWorkState = { ...window.__cityWorkState, access: { ...window.__cityWorkState.access, reviews } };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  const reviewList = page.locator("section.workflow-list");
+  await page.getByLabel("Document title *").fill("Review A");
+  await page.getByLabel("Public text *").fill("Review A body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await page.getByLabel("Document title *").fill("Review B");
+  await page.getByLabel("Public text *").fill("Review B body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  const rowA = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
+  const rowB = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review B" }) });
+
+  // Confirm A (50ms) then, without waiting, confirm B (400ms) -- B's confirm
+  // is now the most-recently-set in-flight tag, while both requests are
+  // genuinely in flight simultaneously.
+  await rowA.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await rowB.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+
+  // Wait past A's resolution (300ms) but well before B's (1500ms): B's own
+  // row must still be reported busy -- A resolving first must not clear it.
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).not.toBeVisible({ timeout: 2000 });
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).toBeVisible();
+  await expect(rowB.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+
+  // Once B also resolves, its row disappears entirely (nothing left to check).
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).not.toBeVisible({ timeout: 3000 });
+});
+
 test("civicaccess saved-review list paginates at 20 with a working show-all toggle", async ({ page }) => {
   // Regression test for QA-2-residual/W2R-3 (round 2) and TEST-5 (round 3):
   // only state.access.audit_events had a cap; the reviews list itself is
