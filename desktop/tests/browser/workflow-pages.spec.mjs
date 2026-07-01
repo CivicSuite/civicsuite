@@ -1317,6 +1317,25 @@ test("civicaccess Delete Review is visually distinct from safe secondary actions
   await expect(deleteButton).not.toHaveClass(/secondary-action/);
   await expect(exportButton).toHaveClass(/secondary-action/);
   await expect(exportButton).not.toHaveClass(/destructive-action/);
+
+  // GauntletGate round-7 W7-1: a className-only check passes even if the CSS rule
+  // for that class is empty. Also assert the computed box model so a future
+  // regression that leaves .destructive-action out of the shared button styling
+  // (border/radius/cursor) fails here instead of shipping unstyled.
+  const [deleteBoxModel, exportBoxModel] = await Promise.all([
+    deleteButton.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { borderStyle: s.borderStyle, borderRadius: s.borderRadius, cursor: s.cursor };
+    }),
+    exportButton.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { borderStyle: s.borderStyle, borderRadius: s.borderRadius, cursor: s.cursor };
+    })
+  ]);
+  expect(deleteBoxModel).toEqual(exportBoxModel);
+  expect(deleteBoxModel.borderStyle).toBe("solid");
+  expect(deleteBoxModel.borderRadius).not.toBe("0px");
+  expect(deleteBoxModel.cursor).toBe("pointer");
 });
 
 test("focus returns to main content after a workflow action, across modules", async ({ page }) => {
@@ -1339,6 +1358,60 @@ test("focus returns to main content after a workflow action, across modules", as
 
   await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Records Requests/ }).click();
   await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
+});
+
+test("focus returns to main content after a non-nav workflow action (form submit)", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W7-3: the nav-click test above only
+  // exercises render() calls triggered by clicking a nav button. That call site is
+  // not a representative stand-in for the other ~34 render() call sites the fix's
+  // own comment claims to cover -- confirm the generic fallback also holds for a
+  // render() triggered by something other than a nav click, e.g. a form submission.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__TAURI_INTERNALS__ = {
+      invoke: async () => ({ accepted: true, status: "Saved", message: "", next_action: "", state: window.__cityWorkState, search_results: [] })
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  await page.getByLabel("Document title *").fill("Focus check");
+  await page.getByLabel("Public text *").fill("Focus check body.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
+});
+
+test("focus lands on Retry when the saved-state load itself fails", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W7-4: state.appLoadError is its own
+  // render() branch that returns before the generic #main-content fallback used to
+  // run, so a load-time failure left focus stuck on <body>. render() now shares one
+  // fallback tail across both branches; on this branch the natural landing target is
+  // the Retry button (there is no #main-content on this screen).
+  await page.addInitScript(() => {
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "get_app_state") {
+          throw new Error("corrupt JSON at line 1");
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+  await page.goto("/");
+
+  const retryButton = page.getByRole("button", { name: "Retry" });
+  await expect(retryButton).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const retry = document.querySelector("[data-action='retry-load-state']");
+    return document.activeElement === retry;
+  })).toBe(true);
 });
 
 test("civicaccess saved-review list paginates at 20 with a working show-all toggle", async ({ page }) => {

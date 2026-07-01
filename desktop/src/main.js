@@ -5296,32 +5296,34 @@ function render() {
         await loadAppState();
         render();
       });
-    return;
+  } else {
+    if (!areaIsEnabled(state.activeArea)) {
+      state.activeArea = "settings";
+    }
+    byId("app").innerHTML = `
+      ${renderTopbar()}
+      <div class="layout">
+        ${renderNav()}
+        <main id="main-content" tabindex="-1">${renderActiveArea()}</main>
+        ${renderAuditDrawer()}
+      </div>
+    `;
+    bindEvents();
+    maybeAdvanceFirstRunFocus();
   }
-  if (!areaIsEnabled(state.activeArea)) {
-    state.activeArea = "settings";
-  }
-  byId("app").innerHTML = `
-    ${renderTopbar()}
-    <div class="layout">
-      ${renderNav()}
-      <main id="main-content" tabindex="-1">${renderActiveArea()}</main>
-      ${renderAuditDrawer()}
-    </div>
-  `;
-  bindEvents();
-  maybeAdvanceFirstRunFocus();
-  // GauntletGate round-7 (W-1): every render() call replaces #app's entire
-  // subtree, which drops focus to <body> as a side effect of the DOM swap
-  // itself -- app-wide, at all ~35 call sites, not just civicaccess. Root-cause
-  // fix here instead of at each call site. maybeAdvanceFirstRunFocus() above
-  // defers its own focus-move via requestAnimationFrame, so this synchronous
-  // check still runs first; its RAF callback checks `el.contains(active)`
-  // where el is a descendant of #main-content, so focusing #main-content here
-  // doesn't block it from correctly stealing focus to the real wizard field
-  // one frame later.
+  // GauntletGate round-7 (W-1, extended per W7-4): every render() call
+  // replaces #app's entire subtree, which drops focus to <body> as a side
+  // effect of the DOM swap itself -- app-wide, at all ~36 call sites,
+  // including the appLoadError branch above, not just civicaccess. One
+  // shared tail check covers both branches instead of patching each one.
+  // maybeAdvanceFirstRunFocus() above defers its own focus-move via
+  // requestAnimationFrame, so this synchronous check still runs first; its
+  // RAF callback checks `el.contains(active)` where el is a descendant of
+  // #main-content, so focusing #main-content here doesn't block it from
+  // correctly stealing focus to the real wizard field one frame later.
   if (document.activeElement === document.body) {
-    byId("main-content")?.focus({ preventScroll: true });
+    (byId("main-content") ?? byId("app").querySelector("[data-action='retry-load-state']"))
+      ?.focus({ preventScroll: true });
   }
 }
 

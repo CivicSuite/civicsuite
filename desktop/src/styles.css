@@ -76,7 +76,8 @@ main:focus-visible {
 .icon-text,
 .task-card button,
 .primary-action,
-.secondary-action {
+.secondary-action,
+.destructive-action {
   border: 1px solid transparent;
   border-radius: 5px;
   cursor: pointer;
