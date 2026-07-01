@@ -9270,6 +9270,56 @@ mod tests {
                 .unwrap()
                 .contains("not in the local store"));
 
+            // R3-WALK-04: explicit id-keyed survivor assertion (not just implicit,
+            // via the later search-still-finds-Water-main check) — create three
+            // reviews, delete the middle one by id, assert the exact remaining set.
+            for title in ["Survivor One", "Delete Me", "Survivor Two"] {
+                city_work_action(
+                    "accessibility-review",
+                    Some(&serde_json::json!({
+                        "title": title,
+                        "body": "Body text for the survivor-set delete test.",
+                        "hasAltText": true,
+                        "language": "en"
+                    })),
+                )
+                .expect("survivor-set review saved");
+            }
+            let before_survivor_delete =
+                city_work_state().expect("state reads before survivor-set delete");
+            let survivor_reviews: Vec<&StoredAccessibilityReview> = before_survivor_delete
+                .access
+                .reviews
+                .iter()
+                .filter(|review| {
+                    ["Survivor One", "Delete Me", "Survivor Two"].contains(&review.title.as_str())
+                })
+                .collect();
+            assert_eq!(survivor_reviews.len(), 3);
+            let middle_id = survivor_reviews
+                .iter()
+                .find(|review| review.title == "Delete Me")
+                .expect("middle review present")
+                .review_id
+                .clone();
+            city_work_action(
+                "civicaccess-delete-review",
+                Some(&serde_json::json!({"reviewId": middle_id})),
+            )
+            .expect("middle review deleted");
+            let after_survivor_delete =
+                city_work_state().expect("state reads after survivor-set delete");
+            let remaining_titles: Vec<&str> = after_survivor_delete
+                .access
+                .reviews
+                .iter()
+                .filter(|review| {
+                    ["Survivor One", "Delete Me", "Survivor Two"].contains(&review.title.as_str())
+                })
+                .map(|review| review.title.as_str())
+                .collect();
+            assert_eq!(remaining_titles, vec!["Survivor One", "Survivor Two"]);
+
             // Civicaccess audit events accumulated (one per action above + per-review event).
             let state = city_work_state().expect("state reads after civicaccess flow");
             assert!(state.access.audit_events.len() >= 11);

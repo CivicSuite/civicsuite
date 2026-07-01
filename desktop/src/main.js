@@ -1876,6 +1876,9 @@ function guidedReviewForAction(action) {
   const sourceSubject = source ? `${source.title} (${source.citation})` : "Current code source";
   const handoffSubject = handoff ? handoff.title : "Current code handoff";
   const notificationSubject = notification ? notification.subject : "Current local notification";
+  const targetDeleteReview = (work.access?.reviews || []).find(
+    (review) => review.review_id === state.workSelection.accessDeleteReviewId
+  );
   const reviews = {
     "create-meeting-body": {
       title: "Review Before Saving Meeting Body",
@@ -2696,26 +2699,21 @@ function guidedReviewForAction(action) {
       audit: "Creates a CivicCode audit entry for the clerk handoff.",
       retry: "If no source exists, the desktop app blocks handoff creation."
     },
-    "civicaccess-delete-review": (() => {
-      const targetReview = (work.access?.reviews || []).find(
-        (review) => review.review_id === state.workSelection.accessDeleteReviewId
-      );
-      return {
-        title: "Review Before Deleting Accessibility Review",
-        confirmLabel: "Delete Review",
-        module: "CivicAccess",
-        subject: targetReview ? (targetReview.title || "(no title)") : "Selected accessibility review",
-        status: targetReview ? targetReview.status : "Review no longer found.",
-        changes: "Removes this review from the saved-review list. The review's audit-trail entry remains in the hash-chained audit log.",
-        visibility: "Staff-only saved-review list. The audit-trail entry stays visible to anyone who can read the audit log.",
-        sources: [
-          targetReview ? `Review ID: ${targetReview.review_id}` : "This review may have already been deleted.",
-          "This cannot be undone from the saved-review list."
-        ],
-        audit: "Creates a CivicAccess audit entry recording the deletion.",
-        retry: "If the review was already deleted, the desktop app reports it is no longer in the local store."
-      };
-    })()
+    "civicaccess-delete-review": {
+      title: "Review Before Deleting Accessibility Review",
+      confirmLabel: "Delete Review",
+      module: "CivicAccess",
+      subject: targetDeleteReview ? (targetDeleteReview.title || "(no title)") : "Selected accessibility review",
+      status: targetDeleteReview ? targetDeleteReview.status : "Review no longer found.",
+      changes: "Removes this review from the saved-review list. The review's audit-trail entry remains in the hash-chained audit log.",
+      visibility: "Staff-only saved-review list. The audit-trail entry stays visible to anyone who can read the audit log.",
+      sources: [
+        targetDeleteReview ? `Review ID: ${targetDeleteReview.review_id}` : "This review may have already been deleted.",
+        "This cannot be undone from the saved-review list."
+      ],
+      audit: "Creates a CivicAccess audit entry recording the deletion.",
+      retry: "If the review was already deleted, the desktop app reports it is no longer in the local store."
+    }
   };
   return reviews[action] || null;
 }
@@ -3540,7 +3538,14 @@ function civicaccessActionInFlight(action) {
 }
 
 function civicaccessActionBusy(action, reviewId) {
-  return state.workActionInFlight === (reviewId ? `${action}:${reviewId}` : action);
+  if (state.workActionInFlight === (reviewId ? `${action}:${reviewId}` : action)) return true;
+  // A guided-review confirmation pending for this exact row also counts as busy
+  // (handleCityWorkAction returns before setting workActionInFlight while the
+  // confirm panel is showing, so that state alone wouldn't otherwise disable it).
+  if (action === "civicaccess-delete-review" && state.pendingWorkReviewAction === "civicaccess-delete-review") {
+    return state.workSelection.accessDeleteReviewId === reviewId;
+  }
+  return false;
 }
 
 function renderAccessibilityWorkflow() {
@@ -3567,6 +3572,7 @@ function renderAccessibilityWorkflow() {
         <button type="button" class="secondary-action" data-work-action="open-exports-folder" data-action-payload='{"folder":"access"}'>Open Access Exports Folder</button>
       </div>
     </section>
+    ${renderGuidedWorkReview()}
     <section class="workflow-editor"${civicaccessBusy ? ' aria-busy="true"' : ""}>
       <aside class="section-band" role="note">${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)} Final compliance review must come from a qualified human reviewer.</aside>
       <p class="form-help">Fields marked * are required. Most show a finding or blocker if left empty instead of an error; the others must have a value before the tool can run.</p>
@@ -3655,8 +3661,8 @@ function renderAccessibilityWorkflow() {
           <p>${(review.findings || []).length} ${(review.findings || []).length === 1 ? "finding" : "findings"} &middot; language ${escapeHtml((review.language || "en").toUpperCase())} &middot; alt text ${review.has_alt_text ? "present" : "missing"}</p>
           ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
           <div class="record-actions">
-            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-records-export", review.review_id) ? "disabled" : ""}>Generate Records-Ready Export</button>
-            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Generate Records-Ready Export for ${review.title || "(no title)"}`)}" ${civicaccessActionBusy("civicaccess-records-export", review.review_id) ? "disabled" : ""}>Generate Records-Ready Export</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Delete review: ${review.title || "(no title)"}`)}" ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
           </div>
           <small>${escapeHtml(review.review_id)} &mdash; ${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)}</small>
         </article>
@@ -5483,6 +5489,7 @@ function bindEvents() {
   document.querySelectorAll("[data-review-cancel]").forEach((button) => {
     button.addEventListener("click", () => {
       state.pendingWorkReviewAction = null;
+      state.workSelection.accessDeleteReviewId = "";
       render();
     });
   });
@@ -6523,6 +6530,9 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
     };
   } finally {
     state.workActionInFlight = null;
+    if (action === "civicaccess-delete-review") {
+      state.workSelection.accessDeleteReviewId = "";
+    }
   }
   render();
 }

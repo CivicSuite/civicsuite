@@ -94,6 +94,18 @@ jobs:
         working-directory: civicsuite/desktop
         run: npm test
 
+      # QA3-2/UX3-2 (GauntletGate round 3): npm test above is JSON/string
+      # contract checks only -- it cannot see broken render wiring or event
+      # bindings. Nothing in required CI exercised the Playwright browser
+      # suite, which is exactly why a fully-broken UI feature (civicaccess
+      # delete-review's guided-review panel never rendering) shipped through
+      # 3 rounds of green CI. windows-latest ships Microsoft Edge, which
+      # playwright.config.mjs's channel: "msedge" uses directly -- no browser
+      # download needed.
+      - name: Run desktop browser (Playwright) tests
+        working-directory: civicsuite/desktop
+        run: npm run test:browser
+
       - name: Prepare portable Windows runtime payload
         working-directory: civicsuite/desktop
         shell: pwsh
