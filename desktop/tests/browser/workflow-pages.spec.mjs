@@ -944,6 +944,134 @@ test("civicaccess delete-review guided-review panel renders, retargets, and dele
   await page.getByRole("button", { name: "Cancel Review" }).click();
   await expect(guidedPanel).not.toBeVisible();
   await expect(reviewList.getByRole("heading", { name: "Review A" })).toBeVisible();
+
+  // TEST4-1: Delete -> Cancel -> Delete on the SAME review re-arms cleanly
+  // (accessDeleteReviewId, cleared on Cancel, is correctly re-set by the
+  // second click rather than staying stale/empty).
+  await reviewARow.getByRole("button", { name: "Delete Review" }).click();
+  await expect(guidedPanel).toBeVisible();
+  await expect(guidedPanel).toContainText("Review A");
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).not.toBeVisible();
+  const finalDeleteCalls = await page.evaluate(() => window.__cityWorkCalls.filter((c) => c.action === "civicaccess-delete-review"));
+  expect(finalDeleteCalls).toHaveLength(2);
+  expect(finalDeleteCalls[1].payload.reviewId).toBe("review-1");
+});
+
+test("civicaccess delete-review survives an overlapping second delete and a mid-confirm error", async ({ page }) => {
+  // Regression test for GauntletGate round-4 ENG-R4-1/QA4-1: handleCityWorkAction's
+  // finally block used to unconditionally clear state.workSelection.accessDeleteReviewId
+  // whenever any civicaccess-delete-review call settled -- so confirming a delete on
+  // review A while review B's confirm panel was already open (retargeted, per-row busy
+  // isolation allows this) would wipe B's target out from under it the moment A's
+  // slower request resolved, silently failing B's delete. Fixed by only clearing the id
+  // if it still matches the id the completing call actually processed.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__cityWorkCalls = [];
+    window.__cityWorkFailNext = false;
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          window.__cityWorkCalls.push({ action: args.action, payload: args.payload });
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          } else if (args.action === "civicaccess-delete-review") {
+            if (window.__cityWorkFailNext) {
+              window.__cityWorkFailNext = false;
+              throw new Error("Simulated network error");
+            }
+            // Review A's delete is deliberately slow, to open a window where
+            // review B's confirm panel can be opened (and retarget the shared
+            // accessDeleteReviewId) before A's request actually resolves.
+            if (args.payload.reviewId === "review-1") {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+            }
+            const reviews = window.__cityWorkState.access.reviews.filter((r) => r.review_id !== args.payload.reviewId);
+            window.__cityWorkState = { ...window.__cityWorkState, access: { ...window.__cityWorkState.access, reviews } };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  const reviewList = page.locator("section.workflow-list");
+  await page.getByLabel("Document title *").fill("Slow Review");
+  await page.getByLabel("Public text *").fill("Slow review body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await page.getByLabel("Document title *").fill("Fast Review");
+  await page.getByLabel("Public text *").fill("Fast review body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  const slowRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Slow Review" }) });
+  const fastRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Fast Review" }) });
+  const guidedPanel = page.locator('[data-guided-review="work"]');
+
+  // Confirm the slow review's delete (its backend call takes 300ms) without
+  // awaiting the UI to settle, then immediately open the fast review's delete
+  // panel while the slow one is still in flight.
+  await slowRow.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await fastRow.getByRole("button", { name: "Delete Review" }).click();
+  await expect(guidedPanel).toContainText("Fast Review");
+
+  // Wait past the slow request's resolution: the fast review's panel must
+  // still show its own correct target, not "Review no longer found."
+  await page.waitForTimeout(500);
+  await expect(guidedPanel).toContainText("Fast Review");
+  await expect(guidedPanel).not.toContainText("Review no longer found");
+
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Fast Review" })).not.toBeVisible();
+  await expect(reviewList.getByRole("heading", { name: "Slow Review" })).not.toBeVisible();
+  const deleteCalls = await page.evaluate(() => window.__cityWorkCalls.filter((c) => c.action === "civicaccess-delete-review"));
+  expect(deleteCalls.map((c) => c.payload.reviewId).sort()).toEqual(["review-1", "review-2"]);
+
+  // A mid-confirm backend error doesn't leave the row's Delete button stuck
+  // disabled -- a fresh Delete click on the same (still-existing) review works.
+  await page.getByLabel("Document title *").fill("Error Review");
+  await page.getByLabel("Public text *").fill("Error review body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  const errorRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Error Review" }) });
+  await page.evaluate(() => { window.__cityWorkFailNext = true; });
+  await errorRow.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Error Review" })).toBeVisible();
+  await expect(errorRow.getByRole("button", { name: "Delete Review" })).toBeEnabled();
+  await errorRow.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Error Review" })).not.toBeVisible();
 });
 
 test("civicaccess saved-review list paginates at 20 with a working show-all toggle", async ({ page }) => {

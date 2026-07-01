@@ -3661,8 +3661,8 @@ function renderAccessibilityWorkflow() {
           <p>${(review.findings || []).length} ${(review.findings || []).length === 1 ? "finding" : "findings"} &middot; language ${escapeHtml((review.language || "en").toUpperCase())} &middot; alt text ${review.has_alt_text ? "present" : "missing"}</p>
           ${(review.findings || []).length === 0 ? "" : `<ul class="finding-list">${(review.findings || []).map((finding) => `<li><strong>${escapeHtml(finding.severity)}</strong> ${escapeHtml(finding.message)} <em>${escapeHtml(finding.fix)}</em> <small>${escapeHtml(finding.wcag_reference)}</small></li>`).join("")}</ul>`}
           <div class="record-actions">
-            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Generate Records-Ready Export for ${review.title || "(no title)"}`)}" ${civicaccessActionBusy("civicaccess-records-export", review.review_id) ? "disabled" : ""}>Generate Records-Ready Export</button>
-            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Delete review: ${review.title || "(no title)"}`)}" ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-records-export" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Generate Records-Ready Export for ${review.title || "(no title)"} (${review.review_id})`)}" ${civicaccessActionBusy("civicaccess-records-export", review.review_id) ? "disabled" : ""}>Generate Records-Ready Export</button>
+            <button type="button" class="secondary-action" data-work-action="civicaccess-delete-review" data-action-payload='${jsonAttr({reviewId: review.review_id})}' aria-label="${escapeHtml(`Delete review: ${review.title || "(no title)"} (${review.review_id})`)}" ${civicaccessActionBusy("civicaccess-delete-review", review.review_id) ? "disabled" : ""}>Delete Review</button>
           </div>
           <small>${escapeHtml(review.review_id)} &mdash; ${escapeHtml(CIVICACCESS_DISCLAIMER_TEXT)}</small>
         </article>
@@ -6530,7 +6530,11 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
     };
   } finally {
     state.workActionInFlight = null;
-    if (action === "civicaccess-delete-review") {
+    // Only clear accessDeleteReviewId if it still points at the review THIS
+    // call was processing -- a second row's delete can legitimately retarget
+    // it while this one is still in flight (per-row busy isolation allows
+    // that), and this call's completion must not clobber that newer target.
+    if (action === "civicaccess-delete-review" && state.workSelection.accessDeleteReviewId === inFlightReviewId) {
       state.workSelection.accessDeleteReviewId = "";
     }
   }
