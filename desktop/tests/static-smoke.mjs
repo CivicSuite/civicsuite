@@ -797,4 +797,79 @@ if (css.includes("blur(") || css.includes("radial-gradient")) {
   }
 }
 
+// fallbackState module-card metadata parity with canonical installer/modules.json.
+// Locks in route_count / service_count / task_count so fallback drift can't recur
+// (this caught civicrecords-ai 6->4 and civicclerk 6->5 stale task_counts that
+// shipped silently for months because fallbackState is only used in browser preview).
+{
+  const modulesJson = JSON.parse(readFileSync(
+    join(root, "..", "installer", "modules.json"),
+    "utf8"
+  ));
+  const canonical = new Map();
+  for (const mod of modulesJson.modules || []) {
+    canonical.set(mod.id, {
+      route_count: Array.isArray(mod.routes) ? mod.routes.length : null,
+      service_count: Array.isArray(mod.services) ? mod.services.length : null,
+      task_count: Array.isArray(mod.tasks) ? mod.tasks.length : null,
+    });
+  }
+  // Parse each fallbackState.modules entry from main.js.
+  // Match `id: "X"` to find the start of an entry; then the next 18 lines hold
+  // the metadata fields we care about — far enough to never overshoot into the
+  // next entry's `id: "Y"`.
+  const modulePattern = /id:\s*"([\w-]+)",[\s\S]{0,2000}?\{?\s*$/gm;
+  const fallbackPattern = /\{\s*id:\s*"([\w-]+)",([\s\S]*?)(?=\},\s*\{|\},?\s*\],?\s*module_profiles)/g;
+  const seen = new Map();
+  let match;
+  while ((match = fallbackPattern.exec(main)) !== null) {
+    const id = match[1];
+    const body = match[2];
+    const r = /route_count:\s*(\d+)/.exec(body);
+    const s = /service_count:\s*(\d+)/.exec(body);
+    const t = /task_count:\s*(\d+)/.exec(body);
+    if (!r && !s && !t) continue; // Skip entries without count fields (e.g. civiccore foundation)
+    seen.set(id, {
+      route_count: r ? Number(r[1]) : null,
+      service_count: s ? Number(s[1]) : null,
+      task_count: t ? Number(t[1]) : null,
+    });
+  }
+  const driftErrors = [];
+  for (const [id, fallback] of seen.entries()) {
+    const canon = canonical.get(id);
+    if (!canon) continue; // Fallback entry has no canonical match (e.g. civiczone preview-only) — skip.
+    for (const field of ["route_count", "service_count", "task_count"]) {
+      if (canon[field] === null) continue; // Canonical doesn't expose this field for this module.
+      if (fallback[field] !== null && fallback[field] !== canon[field]) {
+        driftErrors.push(
+          `fallbackState.modules[${id}].${field}=${fallback[field]} but installer/modules.json says ${canon[field]}`
+        );
+      }
+    }
+  }
+  // Reverse direction: a SHIPPED city-core module with no fallbackState entry at
+  // all means browser-preview silently omits that module's card — the exact bug
+  // class this guard exists to catch (fallbackState.modules was missing civicaccess
+  // until commit 32e08da). Scoped to CITY_CORE_PRODUCT_MODULE_IDS (the actual
+  // shipped profile), not every id in installer/modules.json — most canonical
+  // entries are queued Tier 2+ modules that have never had a fallback card and
+  // aren't expected to until they ship.
+  const cityCoreIdsMatch = /CITY_CORE_PRODUCT_MODULE_IDS\s*=\s*\[([^\]]*)\]/.exec(main);
+  const cityCoreIds = cityCoreIdsMatch
+    ? [...cityCoreIdsMatch[1].matchAll(/"([\w-]+)"/g)].map((m) => m[1])
+    : [];
+  for (const id of cityCoreIds) {
+    if (!seen.has(id)) {
+      driftErrors.push(`fallbackState.modules is missing shipped city-core module ${id}`);
+    }
+  }
+  if (driftErrors.length > 0) {
+    throw new Error(
+      "fallbackState module-card metadata is out of sync with installer/modules.json:\n  " +
+      driftErrors.join("\n  ")
+    );
+  }
+}
+
 console.log("PASS: desktop static smoke checks passed");

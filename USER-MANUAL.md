@@ -34,6 +34,12 @@ The Windows Local city-core package (`civicsuite-windows-local-v1.0.1`) is a **G
 
 A municipality should evaluate the Windows Local city-core package as a beta package, not as a completed full-suite procurement product.
 
+### Callout — about the CivicAccess module (v1.0.1 → v1.0.2)
+
+> **In plain English.** CivicSuite v1.0.1 (and the upcoming six-module MSI build that follows it) bundle the **CivicAccess** module — its code is installed on disk, its database tables are created on first run, a secret token is provisioned for it, and the system reports it as available. **The on-screen "Accessibility" workflow tab and its buttons land in v1.0.2** (the next release after this one). Until v1.0.2, a clerk will see the same five workflow areas the v1.0.1 build has today (Meetings, Records, Code, Notice, Search) — no Accessibility tab. CivicAccess as a standalone module is fully usable today by a developer who runs it separately, but a typical city clerk should expect the in-app Accessibility tab to arrive with v1.0.2.
+
+> **For IT.** Per the [2026-06-29 deep-read audit](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md), Phase B (PR [#213](https://github.com/CivicSuite/civicsuite/pull/213)) wired CivicAccess into the desktop runtime (module loads, schema bootstraps, `CIVICACCESS_TRUSTED_WRITE_TOKEN` provisions via `supervisor.rs:386-388,2043-2048`, clerk role grants it at `auth.rs:539`) but did not add UI panels in `desktop/src/main.js` or workflow handler arms in `desktop/src-tauri/src/workflows.rs`. Phase C (PR [#214](https://github.com/CivicSuite/civicsuite/pull/214)) was a registry/truth flip 5→6 and explicitly did not add UI. As a result, the shipping 6-module MSI built from `4e0f103` exposes the same eight nav tabs as v1.0.1. The v1.0.2 PR will mirror the CivicNotice precedent ([PR #193](https://github.com/CivicSuite/civicsuite/pull/193)) — `renderAccessWorkflow()` panel + `data-work-action` buttons in `main.js`, port the deterministic civicaccess Python helpers (`access_review.py`, `plain_language.py`, `multilingual.py`, `workflows.py`) into Rust against a new `state.access` field on `CityWorkState`, one cargo end-to-end test, one Playwright spec, version bump `1.0.1 → 1.0.2`.
+
 ### What this means for your city
 
 - **No vendor lock-in.** You run the software on your own hardware.
@@ -154,7 +160,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
 | `civicnotice` | v0.2.0 public-notice workflow city-core release car |
-| `civicaccess` | v0.4.0 accessibility + records-ready export city-core release car (sixth city-core module) |
+| `civicaccess` | v0.4.0 accessibility + records-ready export city-core release car (sixth city-core module — module bundled in v1.0.1; on-screen UI tab lands in v1.0.2, see Part 1 callout) |
 | `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
 | `civicgrants`, `civicprocure` | v0.2.0 scaffold-depth recovery labels |
 | All others | Foundation surfaces (v0.1.x) |
