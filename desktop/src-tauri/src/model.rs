@@ -16,8 +16,8 @@ const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
 const MODEL_RUNTIME_READY_ATTEMPTS: usize = 80;
 const MODEL_RUNTIME_READY_INTERVAL: Duration = Duration::from_millis(500);
 const LOCAL_GENERATION_TIMEOUT_MILLIS: u64 = 180_000;
-const LOCAL_GENERATION_NUM_PREDICT: u16 = 192;
-const LOCAL_GENERATION_NUM_CTX: u16 = 3072;
+const LOCAL_GENERATION_NUM_PREDICT: u16 = 512;
+const LOCAL_GENERATION_NUM_CTX: u16 = 8192;
 const REQUIRED_ACTIONS: [&str; 6] = [
     "download",
     "resume-download",
@@ -1986,8 +1986,8 @@ mod tests {
         assert!(payload["options"].get("stop").is_none());
         assert_eq!(payload["think"], false);
         assert_eq!(payload["options"]["temperature"], 0.2);
-        assert_eq!(payload["options"]["num_predict"], 192);
-        assert_eq!(payload["options"]["num_ctx"], 3072);
+        assert_eq!(payload["options"]["num_predict"], 512);
+        assert_eq!(payload["options"]["num_ctx"], 8192);
         let messages = payload["messages"].as_array().expect("messages array");
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0]["role"], "user");
