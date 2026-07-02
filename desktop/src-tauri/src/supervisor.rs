@@ -3583,15 +3583,31 @@ mod tests {
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&root);
+        // Restore each var's PRIOR value on exit instead of blindly removing:
+        // CIVICSUITE_RUNTIME_PAYLOAD_DIR is supplied by the CI step env, and
+        // the first gated test's cleanup used to delete it out from under the
+        // second gated test in the same process (the helper predates running
+        // more than one payload test per invocation).
+        let prior: Vec<(&str, Option<std::ffi::OsString>)> = [
+            "CIVICSUITE_DESKTOP_STATE_DIR",
+            "CIVICSUITE_RUNTIME_ROOT",
+            "CIVICSUITE_RUNTIME_PAYLOAD_DIR",
+            "CIVICSUITE_BACKUP_DIR",
+        ]
+        .iter()
+        .map(|name| (*name, env::var_os(name)))
+        .collect();
         env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
         env::set_var("CIVICSUITE_RUNTIME_ROOT", root.join("Runtime"));
         env::set_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR", &payload_dir);
         env::set_var("CIVICSUITE_BACKUP_DIR", root.join("Backups"));
         let result = test(root.clone());
-        env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
-        env::remove_var("CIVICSUITE_RUNTIME_ROOT");
-        env::remove_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR");
-        env::remove_var("CIVICSUITE_BACKUP_DIR");
+        for (name, value) in prior {
+            match value {
+                Some(value) => env::set_var(name, value),
+                None => env::remove_var(name),
+            }
+        }
         remove_payload_runtime_links(&root);
         let _ = fs::remove_dir_all(root);
         result

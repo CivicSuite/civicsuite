@@ -67,7 +67,7 @@ pipeline_run:
       migrations: ["civicaccess-windows-local-state-v1"]
       tasks: ["accessibility-review","records-export"]   # workflow ids (deterministic; not queue jobs)
       backup_restore_hooks: ["Data/workflows/access","Data/exports/access","Data/files/access"]
-      model_needs: []                            # EMPTY - deterministic, no AI  [SUPERSEDED 2026-07-02: now the pinned gemma-4-12b-it-qat-q4_0 required:true (PR #220, owner directive) -- see ../README.md amendment]
+      model_needs: []                            # EMPTY - deterministic, no AI  [SUPERSEDED 2026-07-02: now the pinned gemma-4-12b-it-qat-q4_0 required:true (PR #220, owner directive) -- see the AMENDED note atop README.md in this directory]
       lifecycle: {install: "profile-selected", update: "manifest-versioned", disable: "allowed-after-backup", uninstall: "backup-first-module-data-removal"}
 
   work_items:
