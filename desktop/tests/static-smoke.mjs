@@ -587,7 +587,10 @@ for (const phrase of [
 
 for (const phrase of [
   "generate_local_text",
-  "/api/generate",
+  // /api/chat (not raw /api/generate): the pinned gemma4 model requires its
+  // own template+parser; raw:true bypassed it and produced garbage output
+  // (found in Phase D). Pin the corrected endpoint so it can't silently revert.
+  "/api/chat",
   "num_predict",
   "LOCAL_GENERATION_NUM_CTX",
   "Local AI model is not ready"

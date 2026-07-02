@@ -1785,24 +1785,28 @@ fn local_generation_prompt(prompt: &str) -> String {
     )
 }
 
-fn gemma_raw_generation_prompt(prompt: &str) -> String {
-    format!(
-        "<start_of_turn>user\n{}<end_of_turn>\n<start_of_turn>model\n",
-        local_generation_prompt(prompt)
-    )
-}
-
 fn local_generation_request_body(runtime_model: &str, prompt: &str) -> String {
+    // Use Ollama's /api/chat so the model's OWN chat template AND its
+    // architecture parser (this pinned model loads with RENDERER/PARSER
+    // "gemma4") are applied. The previous /api/generate + raw:true +
+    // hand-built <start_of_turn> turn format BYPASSED that parser, so the
+    // model's internal control tokens (e.g. <|channel>) leaked into the
+    // output and every draft came back as garbage or an echo -- verified
+    // live against the real model in Phase D (chat -> clean rewrite/
+    // translation/analysis; raw:true -> digit spam). No manual turn markers
+    // and no stop tokens here: the chat template + parser own turn
+    // boundaries. think:false keeps any reasoning channel out of content.
     serde_json::json!({
         "model": runtime_model,
-        "prompt": gemma_raw_generation_prompt(prompt),
-        "raw": true,
+        "messages": [
+            { "role": "user", "content": local_generation_prompt(prompt) }
+        ],
+        "think": false,
         "stream": false,
         "options": {
             "temperature": 0.2,
             "num_predict": LOCAL_GENERATION_NUM_PREDICT,
-            "num_ctx": LOCAL_GENERATION_NUM_CTX,
-            "stop": ["<end_of_turn>", "<start_of_turn>"]
+            "num_ctx": LOCAL_GENERATION_NUM_CTX
         }
     })
     .to_string()
@@ -1836,7 +1840,7 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
         );
     }
     let body = local_generation_request_body(runtime_model.as_str(), prompt);
-    let endpoint = format!("{}/api/generate", ollama_base_url());
+    let endpoint = format!("{}/api/chat", ollama_base_url());
     let response = http_post_json_text(&endpoint, &body, LOCAL_GENERATION_TIMEOUT_MILLIS)?;
     let generated = parse_ollama_generate_text(&response)?;
     if generated.is_empty() {
@@ -1966,7 +1970,7 @@ mod tests {
     }
 
     #[test]
-    fn local_generation_request_bounds_slow_ollama_outputs() {
+    fn local_generation_request_uses_chat_api_through_model_parser() {
         let body = local_generation_request_body(
             "civicsuite-gemma4-12b-qat:q4_0",
             "Draft a staff response for marker D100-AI-MODEL-MARKER-20260620.",
@@ -1974,16 +1978,23 @@ mod tests {
         let payload: serde_json::Value = serde_json::from_str(&body).expect("valid json");
 
         assert_eq!(payload["model"], "civicsuite-gemma4-12b-qat:q4_0");
-        assert_eq!(payload["raw"], true);
         assert_eq!(payload["stream"], false);
+        // /api/chat, NOT raw /api/generate: the model's own template + parser
+        // must run, so no raw flag, no hand-built turn markers, no stop tokens.
+        assert!(payload.get("raw").is_none());
+        assert!(payload.get("prompt").is_none());
+        assert!(payload["options"].get("stop").is_none());
+        assert_eq!(payload["think"], false);
         assert_eq!(payload["options"]["temperature"], 0.2);
         assert_eq!(payload["options"]["num_predict"], 192);
         assert_eq!(payload["options"]["num_ctx"], 3072);
-        assert_eq!(payload["options"]["stop"][0], "<end_of_turn>");
-        let prompt = payload["prompt"].as_str().expect("prompt string");
-        assert!(prompt.starts_with("<start_of_turn>user\n"));
-        assert!(prompt.contains("under 180 words"));
-        assert!(prompt.ends_with("<start_of_turn>model\n"));
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0]["role"], "user");
+        let content = messages[0]["content"].as_str().expect("content string");
+        assert!(!content.contains("<start_of_turn>"));
+        assert!(content.contains("under 180 words"));
+        assert!(content.contains("D100-AI-MODEL-MARKER-20260620"));
     }
 
     #[test]
