@@ -715,17 +715,18 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.locator('[data-module-toggle="civicrecords-ai"]')).toBeChecked();
   await expect(page.locator('[data-module-toggle="civicclerk"]')).toBeChecked();
   await expect(page.locator('[data-module-toggle="civiccode"]')).toBeChecked();
+  await expect(page.locator('[data-module-toggle="civicaccess"]')).toBeChecked();
   await expect(page.locator('[data-module-toggle="civiczone"]')).toBeDisabled();
   await expect(page.getByText("Not ready for Windows Local 1.0")).toBeVisible();
   await page.getByLabel(/Custom/).check();
-  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
+  await expect(page.getByText("Custom selection will install CivicCore plus 4 selected product modules.")).toBeVisible();
   await page.locator('[data-module-toggle="civicrecords-ai"]').uncheck();
-  await expect(page.getByText("Custom selection will install CivicCore plus 2 selected product modules.")).toBeVisible();
+  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Apply Module Selection" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
-  await expect(page.getByText("Selected profile: City Core. Installed modules: 4. Enabled modules: 4.")).toBeVisible();
+  await expect(page.getByText("Selected profile: City Core. Installed modules: 5. Enabled modules: 5.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
@@ -763,4 +764,709 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
   await expect(page.getByText("Package waiting")).toBeVisible();
   await expect(page.getByText("Scaffold")).toHaveCount(0);
+});
+
+test("civicaccess accessibility tab renders the seven workflow forms and refuses persistence from preview", async ({ page }) => {
+  await page.goto("/");
+  const primaryNav = page.getByRole("navigation", { name: "Primary" });
+  await primaryNav.getByRole("button", { name: /Accessibility/ }).click();
+
+  // Page heading + the seven civicaccess workflow forms render.
+  await expect(page.getByRole("heading", { name: "Accessibility", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Accessibility Review (WCAG sample)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plain-Language Rewrite" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Multilingual Variant (sample)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Accessible Form Plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Publishing Workflow Checklist" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ADA Title II Review-Support Plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tagged-PDF Expectation Plan" })).toBeVisible();
+
+  // Form fields accept input + are escaped properly (XSS payload kept as text).
+  await page.getByLabel("Document title").fill("Water main \"repair\" notice");
+  await page.getByLabel("Public text").fill("Pursuant to municipal code, residents must remit payment prior to the deadline.");
+  await expect(page.getByLabel("Document title")).toHaveValue("Water main \"repair\" notice");
+
+  // R3-WALK-03: the 3 fields that are genuinely hard-required server-side (not
+  // just "becomes a finding") carry a visible * and aria-required, and the
+  // shared help line accurately describes the mixed hard/soft behavior.
+  await expect(page.getByLabel("Text to rewrite *")).toHaveAttribute("aria-required", "true");
+  await expect(page.getByLabel("Source text *")).toHaveAttribute("aria-required", "true");
+  await expect(page.getByLabel("Target language *")).toHaveAttribute("aria-required", "true");
+  await expect(page.getByText(/Fields marked \* are required/)).toBeVisible();
+
+  // Empty title + non-English language are findings, not errors — but in browser
+  // preview, persistence routes correctly refuse (no Tauri bridge).
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+  await expect(page.getByText("To save local city work, switch to the CivicSuite desktop app")).toBeVisible();
+
+  // Empty list message until reviews land.
+  await expect(page.getByText("No accessibility reviews saved yet")).toBeVisible();
+
+  // The canonical advisory disclaimer is pinned at the top of the workflow editor
+  // (UX-5) and repeated in the empty state and per saved review (TW-4) — same
+  // wording everywhere, so it legitimately appears more than once on the page.
+  await expect(page.getByRole("note").getByText(/advisory clerk support, not a certified accessibility audit/i)).toBeVisible();
+
+  // TEST-8: every other form-submit button is also wired to a real action and
+  // refuses persistence the same way in preview mode (previously only "Run
+  // Review & Save" was click-tested; the other six were render-asserted only).
+  const otherFormButtons = [
+    "Suggest Plain-Language Rewrite",
+    "Create Sample Variant",
+    "Plan Accessible Form",
+    "Build Publishing Plan",
+    "Build ADA Review Plan",
+    "Plan Tagged-PDF Expectations"
+  ];
+  for (const buttonName of otherFormButtons) {
+    await page.getByRole("button", { name: buttonName }).click();
+    await expect(page.getByText("Desktop app required")).toBeVisible();
+  }
+
+  // TEST-8 (cargo-test half, adapted to JS): the data-action-payload JSON.parse
+  // fallback is JS-side click-handler logic, not a Rust path, so it's exercised
+  // here. Corrupt the static export-folder button's payload to invalid JSON and
+  // confirm the click still falls through to the built-in payload instead of
+  // throwing — the silent-fallback contract main.js documents at the parse catch.
+  await page.evaluate(() => {
+    const button = document.querySelector('[data-work-action="open-exports-folder"]');
+    button.dataset.actionPayload = '{not valid json';
+  });
+  await page.getByRole("button", { name: "Open Access Exports Folder" }).click();
+  await expect(page.getByText("Desktop app required")).toBeVisible();
+});
+
+test("civicaccess delete-review guided-review panel renders, retargets, and deletes the confirmed review", async ({ page }) => {
+  // Regression test for GauntletGate round-3 ENG-1/QA3-1/UX3-1: renderAccessibilityWorkflow()
+  // was missing the renderGuidedWorkReview() call every other GUIDED_WORK_ACTIONS page has,
+  // making civicaccess-delete-review a 100% silent no-op. Also covers TEST-3's cross-contamination
+  // scenario (click Delete on review A, then review B without confirming, then Confirm) and
+  // Cancel's safety, using the mocked Tauri-bridge pattern already established at line 553.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__cityWorkCalls = [];
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          window.__cityWorkCalls.push({ action: args.action, payload: args.payload });
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          } else if (args.action === "civicaccess-delete-review") {
+            const reviews = window.__cityWorkState.access.reviews.filter((r) => r.review_id !== args.payload.reviewId);
+            window.__cityWorkState = { ...window.__cityWorkState, access: { ...window.__cityWorkState.access, reviews } };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  const primaryNav = page.getByRole("navigation", { name: "Primary" });
+  await primaryNav.getByRole("button", { name: /Accessibility/ }).click();
+
+  // Seed two real saved reviews through the actual form + Tauri bridge, not by
+  // pre-injecting state (loadAppState() only runs once, before the mock exists).
+  const reviewList = page.locator("section.workflow-list");
+  await page.getByLabel("Document title *").fill("Review A");
+  await page.getByLabel("Public text *").fill("Review A body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).toBeVisible();
+
+  await page.getByLabel("Document title *").fill("Review B");
+  await page.getByLabel("Public text *").fill("Review B body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).toBeVisible();
+
+  // Click Delete on Review A: the guided-review panel must actually render.
+  const reviewARow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
+  const reviewBRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review B" }) });
+  await reviewARow.getByRole("button", { name: "Delete Review" }).click();
+  const guidedPanel = page.locator('[data-guided-review="work"]');
+  await expect(guidedPanel).toBeVisible();
+  await expect(guidedPanel).toContainText("Review A");
+
+  // TEST-4: only Review A's own Delete button is busy-disabled while its
+  // confirmation is pending; Review B's Delete and Export buttons, and Review
+  // A's own Export button, stay clickable (per-row, per-action busy keying).
+  await expect(reviewARow.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+  await expect(reviewARow.getByRole("button", { name: "Generate Records-Ready Export" })).toBeEnabled();
+  await expect(reviewBRow.getByRole("button", { name: "Delete Review" })).toBeEnabled();
+
+  // Click Delete on Review B without confirming: the panel must retarget, not
+  // stack or ignore the second click (TEST-3's cross-contamination scenario).
+  await reviewBRow.getByRole("button", { name: "Delete Review" }).click();
+  await expect(guidedPanel).toContainText("Review B");
+  await expect(guidedPanel).not.toContainText("Review A");
+  await expect(reviewARow.getByRole("button", { name: "Delete Review" })).toBeEnabled();
+  await expect(reviewBRow.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+
+  // Confirm: only Review B is deleted, and the backend call targets B, not A.
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).not.toBeVisible();
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).toBeVisible();
+  const deleteCalls = await page.evaluate(() => window.__cityWorkCalls.filter((c) => c.action === "civicaccess-delete-review"));
+  expect(deleteCalls).toHaveLength(1);
+  expect(deleteCalls[0].payload.reviewId).toBe("review-2");
+
+  // Cancel is also safe: clicking Delete then Cancel leaves the review intact.
+  await reviewARow.getByRole("button", { name: "Delete Review" }).click();
+  await expect(guidedPanel).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await expect(guidedPanel).not.toBeVisible();
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).toBeVisible();
+
+  // TEST4-1: Delete -> Cancel -> Delete on the SAME review re-arms cleanly
+  // (accessDeleteReviewId, cleared on Cancel, is correctly re-set by the
+  // second click rather than staying stale/empty).
+  await reviewARow.getByRole("button", { name: "Delete Review" }).click();
+  await expect(guidedPanel).toBeVisible();
+  await expect(guidedPanel).toContainText("Review A");
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).not.toBeVisible();
+  const finalDeleteCalls = await page.evaluate(() => window.__cityWorkCalls.filter((c) => c.action === "civicaccess-delete-review"));
+  expect(finalDeleteCalls).toHaveLength(2);
+  expect(finalDeleteCalls[1].payload.reviewId).toBe("review-1");
+});
+
+test("civicaccess delete-review survives an overlapping second delete and a mid-confirm error", async ({ page }) => {
+  // Regression test for GauntletGate round-4 ENG-R4-1/QA4-1: handleCityWorkAction's
+  // finally block used to unconditionally clear state.workSelection.accessDeleteReviewId
+  // whenever any civicaccess-delete-review call settled -- so confirming a delete on
+  // review A while review B's confirm panel was already open (retargeted, per-row busy
+  // isolation allows this) would wipe B's target out from under it the moment A's
+  // slower request resolved, silently failing B's delete. Fixed by only clearing the id
+  // if it still matches the id the completing call actually processed.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__cityWorkCalls = [];
+    window.__cityWorkFailNext = false;
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          window.__cityWorkCalls.push({ action: args.action, payload: args.payload });
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          } else if (args.action === "civicaccess-delete-review") {
+            if (window.__cityWorkFailNext) {
+              window.__cityWorkFailNext = false;
+              throw new Error("Simulated network error");
+            }
+            // Review A's delete is deliberately slow, to open a window where
+            // review B's confirm panel can be opened (and retarget the shared
+            // accessDeleteReviewId) before A's request actually resolves.
+            if (args.payload.reviewId === "review-1") {
+              await new Promise((resolve) => setTimeout(resolve, 300));
+            }
+            const reviews = window.__cityWorkState.access.reviews.filter((r) => r.review_id !== args.payload.reviewId);
+            window.__cityWorkState = { ...window.__cityWorkState, access: { ...window.__cityWorkState.access, reviews } };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  const reviewList = page.locator("section.workflow-list");
+  await page.getByLabel("Document title *").fill("Slow Review");
+  await page.getByLabel("Public text *").fill("Slow review body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await page.getByLabel("Document title *").fill("Fast Review");
+  await page.getByLabel("Public text *").fill("Fast review body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  const slowRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Slow Review" }) });
+  const fastRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Fast Review" }) });
+  const guidedPanel = page.locator('[data-guided-review="work"]');
+
+  // Confirm the slow review's delete (its backend call takes 300ms) without
+  // awaiting the UI to settle, then immediately open the fast review's delete
+  // panel while the slow one is still in flight.
+  await slowRow.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await fastRow.getByRole("button", { name: "Delete Review" }).click();
+  await expect(guidedPanel).toContainText("Fast Review");
+
+  // Wait past the slow request's resolution: the fast review's panel must
+  // still show its own correct target, not "Review no longer found."
+  await page.waitForTimeout(500);
+  await expect(guidedPanel).toContainText("Fast Review");
+  await expect(guidedPanel).not.toContainText("Review no longer found");
+
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Fast Review" })).not.toBeVisible();
+  await expect(reviewList.getByRole("heading", { name: "Slow Review" })).not.toBeVisible();
+  const deleteCalls = await page.evaluate(() => window.__cityWorkCalls.filter((c) => c.action === "civicaccess-delete-review"));
+  expect(deleteCalls.map((c) => c.payload.reviewId).sort()).toEqual(["review-1", "review-2"]);
+
+  // A mid-confirm backend error doesn't leave the row's Delete button stuck
+  // disabled -- a fresh Delete click on the same (still-existing) review works.
+  await page.getByLabel("Document title *").fill("Error Review");
+  await page.getByLabel("Public text *").fill("Error review body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  const errorRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Error Review" }) });
+  await page.evaluate(() => { window.__cityWorkFailNext = true; });
+  await errorRow.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Error Review" })).toBeVisible();
+  await expect(errorRow.getByRole("button", { name: "Delete Review" })).toBeEnabled();
+  await errorRow.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await expect(reviewList.getByRole("heading", { name: "Error Review" })).not.toBeVisible();
+});
+
+test("civicaccess an earlier request resolving does not clear a later request's own busy indicator", async ({ page }) => {
+  // Regression test for GauntletGate round-5 ENG-R5-1/UX-R5-1: state.workActionInFlight
+  // had the same unguarded-clear shape round 4 fixed for accessDeleteReviewId, but for
+  // the per-row busy/disabled indicator instead of the confirm-panel target. Confirm
+  // review A (fast backend response) first, then confirm review B (slow response)
+  // while A is still in flight -- B's confirm becomes the most-recently-set tag. When
+  // A resolves shortly after, its completion must not clear B's still-pending busy
+  // indicator. Note: this two-request case is what the one-line mirrored guard fixes;
+  // a third simultaneous request would still only track the most-recently-started
+  // action (a deeper, accepted architectural limit of a single shared scalar, not
+  // attempted here -- see the ponytail comment in handleCityWorkAction).
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          } else if (args.action === "civicaccess-delete-review") {
+            // Review A (review-1) is fast and confirmed first; Review B
+            // (review-2) is slow and confirmed second, so A resolves first
+            // while B (the most-recently-confirmed) is still genuinely pending.
+            const delayMs = args.payload.reviewId === "review-1" ? 300 : 1500;
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            const reviews = window.__cityWorkState.access.reviews.filter((r) => r.review_id !== args.payload.reviewId);
+            window.__cityWorkState = { ...window.__cityWorkState, access: { ...window.__cityWorkState.access, reviews } };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  const reviewList = page.locator("section.workflow-list");
+  await page.getByLabel("Document title *").fill("Review A");
+  await page.getByLabel("Public text *").fill("Review A body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await page.getByLabel("Document title *").fill("Review B");
+  await page.getByLabel("Public text *").fill("Review B body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  const rowA = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
+  const rowB = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review B" }) });
+
+  // Confirm A (300ms) then, without waiting, confirm B (1500ms) -- B's confirm
+  // is now the most-recently-set in-flight tag, while both requests are
+  // genuinely in flight simultaneously.
+  await rowA.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  await rowB.getByRole("button", { name: "Delete Review" }).click();
+  await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+
+  // Wait past A's resolution (300ms) but well before B's (1500ms): B's own
+  // row must still be reported busy -- A resolving first must not clear it.
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).not.toBeVisible({ timeout: 2000 });
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).toBeVisible();
+  await expect(rowB.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+
+  // Once B also resolves, its row disappears entirely (nothing left to check).
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).not.toBeVisible({ timeout: 3000 });
+});
+
+test("civicaccess three simultaneously in-flight deletes each keep their own busy indicator", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W-3: state.workActionInFlight was a
+  // single shared scalar, so confirming a THIRD row's delete while two others were
+  // already in flight would immediately flip the scalar to the third tag alone --
+  // making the first two rows' Delete buttons incorrectly re-enable right away,
+  // even though their backend requests were still genuinely pending. The round-4/5
+  // guards fixed ordering-dependent clearing on resolution but never fixed this:
+  // a single scalar can only ever hold one tag no matter how many actions are
+  // really in flight. state.workActionInFlightTags (a Set) fixes this structurally
+  // -- each row's tag is independently tracked regardless of how many others exist.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          } else if (args.action === "civicaccess-delete-review") {
+            // All three reviews share the same delay -- confirming all three in
+            // quick succession puts all three genuinely in flight at once.
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            const reviews = window.__cityWorkState.access.reviews.filter((r) => r.review_id !== args.payload.reviewId);
+            window.__cityWorkState = { ...window.__cityWorkState, access: { ...window.__cityWorkState.access, reviews } };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  const reviewList = page.locator("section.workflow-list");
+  for (const title of ["Review A", "Review B", "Review C"]) {
+    await page.getByLabel("Document title *").fill(title);
+    await page.getByLabel("Public text *").fill(`${title} body text.`);
+    await page.getByRole("button", { name: "Run Review & Save" }).click();
+  }
+
+  const rowA = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
+  const rowB = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review B" }) });
+  const rowC = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review C" }) });
+
+  // Confirm all three deletes back-to-back, before any of them resolve.
+  for (const row of [rowA, rowB, rowC]) {
+    await row.getByRole("button", { name: "Delete Review" }).click();
+    await page.getByRole("button", { name: "Confirm Delete Review" }).click();
+  }
+
+  // With the old single-scalar design, confirming C would already have wiped A's
+  // and B's busy indicators at this exact moment (before anything resolves) --
+  // assert all three are still correctly disabled while genuinely in flight.
+  await expect(rowA.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+  await expect(rowB.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+  await expect(rowC.getByRole("button", { name: "Delete Review" })).toBeDisabled();
+
+  // Once all three resolve, all three rows disappear.
+  await expect(reviewList.getByRole("heading", { name: "Review A" })).not.toBeVisible({ timeout: 3000 });
+  await expect(reviewList.getByRole("heading", { name: "Review B" })).not.toBeVisible({ timeout: 3000 });
+  await expect(reviewList.getByRole("heading", { name: "Review C" })).not.toBeVisible({ timeout: 3000 });
+});
+
+test("civicaccess Delete Review is visually distinct from safe secondary actions", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W-2: Delete Review previously shared
+  // the same .secondary-action class (and therefore the same look) as every
+  // non-destructive button in the app. It now carries its own .destructive-action
+  // class, distinct from the sibling Generate Records-Ready Export button.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd, args = {}) => {
+        if (cmd === "city_work_action") {
+          if (args.action === "accessibility-review") {
+            const review = {
+              review_id: `review-${window.__cityWorkState.access.reviews.length + 1}`,
+              title: args.payload.title,
+              body: args.payload.body,
+              has_alt_text: Boolean(args.payload.hasAltText),
+              language: args.payload.language || "en",
+              status: "passes-sample-checks",
+              findings: [],
+              disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+              created_at_unix_seconds: 1700000000 + window.__cityWorkState.access.reviews.length
+            };
+            window.__cityWorkState = {
+              ...window.__cityWorkState,
+              access: { ...window.__cityWorkState.access, reviews: [...window.__cityWorkState.access.reviews, review] }
+            };
+          }
+          return {
+            accepted: true,
+            status: "Saved",
+            message: `${args.action} saved`,
+            next_action: "Continue the workflow.",
+            state: window.__cityWorkState,
+            search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  await page.getByLabel("Document title *").fill("Review A");
+  await page.getByLabel("Public text *").fill("Review A body text.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  const row = page.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
+  const deleteButton = row.getByRole("button", { name: "Delete Review" });
+  const exportButton = row.getByRole("button", { name: "Generate Records-Ready Export" });
+
+  await expect(deleteButton).toHaveClass(/destructive-action/);
+  await expect(deleteButton).not.toHaveClass(/secondary-action/);
+  await expect(exportButton).toHaveClass(/secondary-action/);
+  await expect(exportButton).not.toHaveClass(/destructive-action/);
+
+  // GauntletGate round-7 W7-1: a className-only check passes even if the CSS rule
+  // for that class is empty. Also assert the computed box model so a future
+  // regression that leaves .destructive-action out of the shared button styling
+  // (border/radius/cursor) fails here instead of shipping unstyled.
+  const [deleteBoxModel, exportBoxModel] = await Promise.all([
+    deleteButton.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { borderStyle: s.borderStyle, borderRadius: s.borderRadius, cursor: s.cursor };
+    }),
+    exportButton.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { borderStyle: s.borderStyle, borderRadius: s.borderRadius, cursor: s.cursor };
+    })
+  ]);
+  expect(deleteBoxModel).toEqual(exportBoxModel);
+  expect(deleteBoxModel.borderStyle).toBe("solid");
+  expect(deleteBoxModel.borderRadius).not.toBe("0px");
+  expect(deleteBoxModel.cursor).toBe("pointer");
+});
+
+test("focus returns to main content after a workflow action, across modules", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W-1: render() replaces #app's entire
+  // subtree on every action, which drops document.activeElement to <body> as a
+  // side effect of the DOM swap -- app-wide, not just in civicaccess. Check the
+  // fix holds in at least two different modules, not just the one it was found in.
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.__TAURI_INTERNALS__ = {
+      invoke: async () => ({ accepted: true, status: "Saved", message: "", next_action: "", state: window.__cityWorkState, search_results: [] })
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Meetings & Notices/ }).click();
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Records Requests/ }).click();
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
+});
+
+test("focus returns to main content after a non-nav workflow action (form submit)", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W7-3: the nav-click test above only
+  // exercises render() calls triggered by clicking a nav button. That call site is
+  // not a representative stand-in for the other ~34 render() call sites the fix's
+  // own comment claims to cover -- confirm the generic fallback also holds for a
+  // render() triggered by something other than a nav click, e.g. a form submission.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const emptyWork = () => ({
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [], audit_events: [] }
+    });
+    window.__cityWorkState = emptyWork();
+    window.__TAURI_INTERNALS__ = {
+      invoke: async () => ({ accepted: true, status: "Saved", message: "", next_action: "", state: window.__cityWorkState, search_results: [] })
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  await page.getByLabel("Document title *").fill("Focus check");
+  await page.getByLabel("Public text *").fill("Focus check body.");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
+});
+
+test("focus lands on Retry when the saved-state load itself fails", async ({ page }) => {
+  // Regression test for GauntletGate round-7 W7-4: state.appLoadError is its own
+  // render() branch that returns before the generic #main-content fallback used to
+  // run, so a load-time failure left focus stuck on <body>. render() now shares one
+  // fallback tail across both branches; on this branch the natural landing target is
+  // the Retry button (there is no #main-content on this screen).
+  await page.addInitScript(() => {
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "get_app_state") {
+          throw new Error("corrupt JSON at line 1");
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+  await page.goto("/");
+
+  const retryButton = page.getByRole("button", { name: "Retry" });
+  await expect(retryButton).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const retry = document.querySelector("[data-action='retry-load-state']");
+    return document.activeElement === retry;
+  })).toBe(true);
+});
+
+test("civicaccess saved-review list paginates at 20 with a working show-all toggle", async ({ page }) => {
+  // Regression test for QA-2-residual/W2R-3 (round 2) and TEST-5 (round 3):
+  // only state.access.audit_events had a cap; the reviews list itself is
+  // paginated client-side via state.accessReviewsShowAll + a 20-item slice.
+  await page.goto("/");
+  await page.evaluate(() => {
+    const review = (n) => ({
+      review_id: `review-${n}`,
+      title: `Seeded review ${n}`,
+      body: "Seeded body text.",
+      has_alt_text: true,
+      language: "en",
+      status: "passes-sample-checks",
+      findings: [],
+      disclaimer: "Persisted reviews are advisory clerk support, not a certified accessibility audit.",
+      created_at_unix_seconds: 1700000000 + n
+    });
+    window.__cityWorkState = {
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: Array.from({ length: 21 }, (_, i) => review(i + 1)), audit_events: [] }
+    };
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "city_work_action") {
+          return {
+            accepted: true, status: "Saved", message: "noop", next_action: "",
+            state: window.__cityWorkState, search_results: []
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+  // Something must trigger a re-render against the seeded state: the only
+  // civicaccess action reachable without a saved review is a form submit.
+  await page.getByLabel("Document title *").fill("trigger");
+  await page.getByLabel("Public text *").fill("trigger");
+  await page.getByRole("button", { name: "Run Review & Save" }).click();
+
+  const reviewList = page.locator("section.workflow-list");
+  await expect(reviewList.locator(".workflow-record")).toHaveCount(20);
+  const showAll = page.getByRole("button", { name: /Show all \d+ reviews/ });
+  await expect(showAll).toBeVisible();
+
+  await showAll.click();
+  await expect(reviewList.locator(".workflow-record")).toHaveCount(21);
+  const showFewer = page.getByRole("button", { name: "Show fewer reviews" });
+  await expect(showFewer).toBeVisible();
+
+  await showFewer.click();
+  await expect(reviewList.locator(".workflow-record")).toHaveCount(20);
 });

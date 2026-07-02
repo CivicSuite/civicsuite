@@ -148,6 +148,18 @@ jobs:
         working-directory: civicsuite/desktop
         run: npm test
 
+      # QA3-2/UX3-2 (GauntletGate round 3): npm test above is JSON/string
+      # contract checks only -- it cannot see broken render wiring or event
+      # bindings. Nothing in required CI exercised the Playwright browser
+      # suite, which is exactly why a fully-broken UI feature (civicaccess
+      # delete-review's guided-review panel never rendering) shipped through
+      # 3 rounds of green CI. windows-latest ships Microsoft Edge, which
+      # playwright.config.mjs's channel: "msedge" uses directly -- no browser
+      # download needed.
+      - name: Run desktop browser (Playwright) tests
+        working-directory: civicsuite/desktop
+        run: npm run test:browser
+
       - name: Prepare portable Windows runtime payload
         working-directory: civicsuite/desktop
         shell: pwsh
@@ -415,6 +427,11 @@ jobs:
           cargo test first_run -- --nocapture
           cargo test backup -- --nocapture
           cargo test restore -- --nocapture
+          # civicaccess: same headless-feasible proof, for the module this lifecycle
+          # job previously never ran (TEST-7) -- the desktop-windows-msi build job
+          # runs the full civicaccess suite too, but this job is the one that
+          # follows a real msiexec install/uninstall cycle, so cover it here as well.
+          cargo test civicaccess -- --nocapture
 
       # ---- UNINSTALL ----------------------------------------------------------
       - name: Uninstall the MSI silently
@@ -443,7 +460,18 @@ jobs:
           $exe = Get-ChildItem -LiteralPath $installDir -Filter "*.exe" -ErrorAction SilentlyContinue |
             Where-Object { $_.Name -notlike "unins*" } | Select-Object -First 1
           if ($exe) { throw "Application exe still present under $installDir after uninstall: $($exe.FullName)." }
-          Write-Host "Uninstall verified: product deregistered and main binary removed."
+          # QA-4: also confirm the uninstaller didn't leave city-work.json behind under
+          # the real per-user data path (not the isolated CIVICSUITE_DESKTOP_STATE_DIR
+          # used by the cargo lifecycle tests above). NOTE -- the interactive GUI
+          # first-run wizard does not execute in this job (see QA-5 / the comment
+          # above "Exercise first-run..."), so this job never writes real user data to
+          # %LOCALAPPDATA%\CivicSuite in the first place; this check therefore proves
+          # "the uninstaller and this job's own actions did not leak state into the
+          # real per-user path," not "a real clerk's saved city-work.json is purged on
+          # uninstall." That stronger claim needs a real GUI walkthrough (Phase D).
+          $realUserData = Join-Path $env:LOCALAPPDATA "CivicSuite\workflows\city-work.json"
+          if (Test-Path $realUserData) { throw "city-work.json still present under the real per-user data path after uninstall: $realUserData." }
+          Write-Host "Uninstall verified: product deregistered, main binary removed, no real per-user data path leak."
 
       - name: Upload MSI lifecycle logs
         if: always()

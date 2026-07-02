@@ -91,6 +91,10 @@ Architecturally yes; verified under the full standard no. Every module is design
 
 CivicClerk's spec lists imports from these platforms as priority integrations, and `civicclerk` ships local-payload importers for them today. **Local-payload** means: you provide an export file from your incumbent system, and the CivicClerk import path normalizes it through CivicCore's connector contract. This is **not** a live API connection to those vendors. There is no "click here to migrate from Legistar" flow yet. A real migration today is a hands-on exercise with a clerk, an integrator, and exported data files.
 
+## Does CivicAccess satisfy our ADA Title II compliance obligation?
+
+No. **Persisted reviews are advisory clerk support, not a certified accessibility audit.** CivicAccess gives clerks a starting checklist for WCAG sample review, plain-language rewrites, multilingual sample variants, accessible form planning, publishing-workflow blockers, ADA Title II review-support planning, and tagged-PDF heading-order checks — every one of those is advisory, deterministic, sample-based local compute, not a legal or accessibility-vendor determination. Final ADA Title II compliance review must come from a qualified human reviewer or certified accessibility vendor. The same disclaimer is repeated on every page of the in-app Accessibility tab (see Part 1.6 of [USER-MANUAL.md](USER-MANUAL.md)).
+
 ## Does CivicSuite document any municipal live deployments?
 
 No. There are mock-city test fixtures, demo seed data ("City of Brookfield"), and Docker Compose product rehearsals, but no documented live municipal deployment in the project docs as of 2026-05-27.

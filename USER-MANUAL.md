@@ -27,7 +27,7 @@ The Windows Local city-core package (`civicsuite-windows-local-v1.0.1`) is a **G
 - `civicclerk` (meetings) is the current meeting workflow release car at v1.0.4.
 - `civiccode` is the current municipal-code release car at v1.0.8.
 - `civicnotice` is the current public-notice workflow release car at v0.2.0.
-- `civicaccess` v0.4.0 (accessibility + records-ready export) is the sixth city-core release car on CivicCore v1.2.0; the next MSI build bundles its module code, database schema, and write-token secret. **Its clerk-facing workflow tab in the desktop UI lands in v1.0.2** (see callout below).
+- `civicaccess` v0.4.0 (accessibility + records-ready export) is the sixth city-core release car on CivicCore v1.2.0; the Accessibility tab ships in the desktop shell as of v1.0.2 (see Part 1.6).
 - CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued Tier 2 modules, not city-core products.
 - The active city-core installer path is the Windows Local Tauri/WebView2 desktop app with portable local runtime services, local backup/restore, local file evidence, local model setup, and a normal Windows uninstall entry.
 - The desktop app is the staff, resident/public preview, and IT/admin front door for the current city-core beta package. It is local-only by default and does not require Docker, WSL, a terminal, or developer tooling for the clerk path.
@@ -113,6 +113,26 @@ Do not restore old generated installer artifacts unless Scott explicitly decides
 - For real evaluation: stand up a non-production tenant, ingest a representative document corpus, and run a week of internal staff requests through it.
 - For procurement: wait for a later procurement-readiness gate; this beta-ready truth-reconciled package is not procurement-ready.
 - For development: read [CONTRIBUTING.md](CONTRIBUTING.md) and the records-ai `docs/`.
+
+---
+
+## Part 1.6 — Accessibility tab: first-clerk walkthrough
+
+**For clerks.** Starting in v1.0.2, the desktop app has an **Accessibility** tab between Public Notices and Search City Knowledge. It gives you seven small tools for getting public-facing text and forms in better shape before you publish them:
+
+- **Accessibility Review (WCAG sample)** — paste a document's title and body text and run a sample check. It flags things like a missing title, missing alt text on images, very long unbroken paragraphs, or text that isn't tagged as English. An empty field just becomes a flagged item, not an error — you can save a review with findings and come back to fix them.
+- **Plain-Language Rewrite** — swaps common legal/bureaucratic phrases ("remit payment," "pursuant to") for plainer ones. It's a starting draft, not a finished rewrite — a person still needs to read it before it goes out.
+- **Multilingual Variant (sample)** — gives you a sample line in Spanish or Vietnamese, or a placeholder for any other language. It is not a certified translation; route anything real to a qualified human translator.
+- **Accessible Form Plan** — checks that a form you're planning has a name field, a contact field, and a way to describe the request, and gives you a short checklist either way.
+- **Publishing Workflow Checklist** — tells you what's still missing (review done? plain-language summary attached? translation reviewed?) before you publish something.
+- **ADA Title II Review-Support Plan** — a starting checklist for a service or program review; it does not replace your ADA coordinator's sign-off.
+- **Tagged-PDF Expectation Plan** — checks that the heading levels you plan to use in a PDF start at 1 and don't skip a level (e.g., jumping from H1 straight to H3), which is one of the most common ways PDFs fail accessibility checks.
+
+Every review you save shows up in a list below the forms (the most recent 20 by default; use the "Show all" button if you have more). Each row has a **Generate Records-Ready Export** button (packages an advisory checklist, not a certified document) and a **Delete Review** button if you saved one by mistake — clicking Delete Review opens a confirmation screen showing that review's title and status before anything is removed, the same review-before-you-commit pattern used throughout the app. **Persisted reviews are advisory clerk support, not a certified accessibility audit.** That line is on every page in this tab. Final compliance sign-off always comes from a qualified human reviewer, not this tool.
+
+One known gap as of v1.0.2: there is no standalone "build me an export checklist" tool that works without first saving a review — you save a review, then export it. A separate before-you-save preview tool is planned for a later release.
+
+**For IT/technical readers.** The Accessibility tab is a native Rust port of the standalone CivicAccess module's deterministic helpers (`access_review.py`, `plain_language.py`, `multilingual.py`, `workflows.py`), run against a `state.access` field on the same `city-work.json` the other five city-core modules use — no separate database call for this tab. Every action writes to both a per-module `audit_events` mirror and the platform-wide hash-chained `audit_entries` (capped FIFO past 5,000 per-module events; the global chain is uncapped). Saved reviews surface in cross-module Search City Knowledge alongside meetings, records, code, and notices. Input length caps mirror the upstream Pydantic models (title 500 chars, body/text 5000 chars, language tag 80 chars).
 
 ---
 

@@ -242,7 +242,13 @@ fn city_work_action_module_requirement(
         | "create-code-handoff"
         | "answer-code-question" => Some((vec!["civiccode"], false)),
         "search-city-knowledge" => Some((
-            vec!["civicclerk", "civicrecords-ai", "civiccode", "civicnotice"],
+            vec![
+                "civicclerk",
+                "civicrecords-ai",
+                "civiccode",
+                "civicnotice",
+                "civicaccess",
+            ],
             true,
         )),
         "open-exports-folder" => match payload
@@ -259,7 +265,15 @@ fn city_work_action_module_requirement(
                 true,
             )),
         },
-        "accessibility-review" | "records-export" => Some((vec!["civicaccess"], false)),
+        "accessibility-review"
+        | "civicaccess-records-export"
+        | "civicaccess-delete-review"
+        | "civicaccess-plain-language"
+        | "civicaccess-language-variant"
+        | "civicaccess-form-plan"
+        | "civicaccess-publishing-workflow"
+        | "civicaccess-ada-title-ii"
+        | "civicaccess-tagged-pdf" => Some((vec!["civicaccess"], false)),
         _ => None,
     }
 }
@@ -1303,6 +1317,49 @@ mod tests {
                 .err()
                 .expect("disabled module error")
                 .contains("CivicCode is not enabled"));
+        });
+    }
+
+    #[test]
+    fn civicaccess_only_profile_can_still_reach_search_city_knowledge() {
+        // TEST-3 (GauntletGate round 1, refuted) claimed civicaccess was missing
+        // from the search-city-knowledge module allow-list; it was already
+        // present, but no test proved a civicaccess-only profile could actually
+        // reach search through the module-guard gate (the civicaccess-specific
+        // search assertions elsewhere call search_city_work() directly,
+        // bypassing require_enabled_city_modules entirely). This test closes
+        // that gap by disabling every other allow_any module before searching.
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+            sign_in_as_first_admin();
+            let review_payload = serde_json::json!({
+                "title": "Water main repair notice",
+                "body": "The city water department will repair a main on Tuesday morning.",
+                "hasAltText": true,
+                "language": "en"
+            });
+            city_work_action_authorized("accessibility-review".to_string(), Some(review_payload))
+                .expect("accessibility review saved");
+
+            // Disable dependents before their dependencies (civiccode and
+            // civicnotice both depend on civicclerk; set_module_enabled refuses
+            // to disable a module while an enabled module still depends on it).
+            for module_id in ["civiccode", "civicnotice", "civicclerk", "civicrecords-ai"] {
+                module_action("disable-module".to_string(), module_id.to_string())
+                    .unwrap_or_else(|_| panic!("{module_id} disabled"));
+            }
+
+            let search_payload = serde_json::json!({ "query": "Water main" });
+            let result = city_work_action_authorized(
+                "search-city-knowledge".to_string(),
+                Some(search_payload),
+            )
+            .expect("civicaccess-only profile can still reach search-city-knowledge");
+
+            assert!(result
+                .search_results
+                .iter()
+                .any(|hit| hit.module_id == "civicaccess" && hit.title.contains("Water main")));
         });
     }
 
