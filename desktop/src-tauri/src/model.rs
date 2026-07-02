@@ -1764,6 +1764,11 @@ pub(crate) fn local_generation_available() -> Result<bool, String> {
                 return Ok(true);
             }
         }
+        if let Ok(fake_error) = env::var("CIVICSUITE_FAKE_MODEL_ERROR") {
+            if !fake_error.trim().is_empty() {
+                return Ok(true);
+            }
+        }
     }
     local_model_ready()
 }
@@ -1811,6 +1816,16 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
         if let Ok(fake_response) = env::var("CIVICSUITE_FAKE_MODEL_RESPONSE") {
             if !fake_response.trim().is_empty() {
                 return Ok((runtime_model, fake_response.trim().to_string()));
+            }
+        }
+        // Mirrors the success seam for the ready-then-fails arms: the engine
+        // reports available (local_generation_available honors this var too),
+        // then generation fails mid-flight -- the only way cargo tests can
+        // reach the handlers' generation-failure branches (a real not-ready
+        // state is caught by the availability probe before generate is called).
+        if let Ok(fake_error) = env::var("CIVICSUITE_FAKE_MODEL_ERROR") {
+            if !fake_error.trim().is_empty() {
+                return Err(fake_error.trim().to_string());
             }
         }
     }

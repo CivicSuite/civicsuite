@@ -4145,12 +4145,23 @@ mod tests {
                 .expect("install python service payload");
             let start = supervisor_action("start", Some("postgres")).expect("start postgres");
             assert!(start.accepted);
+            // Reverse-order drop guards: stop the services even if an assert
+            // below panics (see ServiceStopGuard).
+            let _postgres_guard = ServiceStopGuard {
+                service_id: "postgres",
+            };
             let python_start =
                 supervisor_action("start", Some("python-services")).expect("start python services");
             assert!(python_start.accepted);
+            let _python_guard = ServiceStopGuard {
+                service_id: "python-services",
+            };
             let worker_start =
                 supervisor_action("start", Some("task-queue")).expect("start task queue");
             assert!(worker_start.accepted);
+            let _worker_guard = ServiceStopGuard {
+                service_id: "task-queue",
+            };
             for _ in 0..40 {
                 let health = runtime_health().expect("health builds");
                 if health
@@ -4191,11 +4202,18 @@ mod tests {
         let linked_payload_dir = payload_dir.clone();
         with_temp_state_dir_and_payload(payload_dir, |root| {
             env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            env::remove_var("CIVICSUITE_FAKE_MODEL_ERROR");
             #[cfg(windows)]
             link_payload_runtime_set(&root, &linked_payload_dir, &["ollama"]);
             supervisor_action("install", Some("model-runtime")).expect("install ollama payload");
             let start = supervisor_action("start", Some("model-runtime")).expect("start ollama");
             assert!(start.accepted);
+            // Stop the spawned ollama even if an assert below panics -- an
+            // orphaned server would leak into the runner and poison the shared
+            // test lock for the sibling gated test.
+            let _stop_guard = ServiceStopGuard {
+                service_id: "model-runtime",
+            };
             let mut runtime_ok = false;
             for _ in 0..60 {
                 let health = runtime_health().expect("health builds");
@@ -4233,9 +4251,23 @@ mod tests {
                 fallback.message.contains("AI engine not ready"),
                 "fallback result carries the explicit marker through the real probe path"
             );
-            assert!(fallback.message.contains("pay"));
-            supervisor_action("stop", Some("model-runtime")).expect("stop ollama");
+            // "must pay before" only exists if the jargon-map rewrite really
+            // ran ("remit payment" -> "pay", "prior to" -> "before"); a bare
+            // "pay" would be satisfied by the input's own "payment".
+            assert!(fallback.message.contains("must pay before"));
         });
+    }
+
+    // Drop-guard: best-effort service stop that also runs on panic, so a
+    // failing gated test cannot orphan its spawned process into the runner.
+    struct ServiceStopGuard {
+        service_id: &'static str,
+    }
+
+    impl Drop for ServiceStopGuard {
+        fn drop(&mut self) {
+            let _ = supervisor_action("stop", Some(self.service_id));
+        }
     }
 
     #[test]

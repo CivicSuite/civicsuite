@@ -2764,7 +2764,9 @@ function guidedReviewForAction(action) {
       status: aiEngineReady()
         ? "Local AI engine ready — drafts a real plain-language rewrite."
         : "AI engine not ready — deterministic sample pass only.",
-      changes: "Uses the verified local AI model to draft a plain-language rewrite of the entered text for staff review. Facts, dates, deadlines, and obligations must be preserved; a human reviews before publication.",
+      changes: aiEngineReady()
+        ? "Uses the verified local AI model to draft a plain-language rewrite of the entered text for staff review. Facts, dates, deadlines, and obligations must be preserved; a human reviews before publication."
+        : "Runs the deterministic jargon-map sample pass on the entered text and labels the output \"AI engine not ready\" — no AI draft is generated. A human reviews before publication.",
       visibility: "Internal staff draft only. Nothing is published or persisted beyond the audit trail.",
       sources: [
         detailOrFallback(state.workDraft.accessPlainText, "No text entered yet."),
@@ -2783,7 +2785,9 @@ function guidedReviewForAction(action) {
       status: aiEngineReady()
         ? "Local AI engine ready — drafts a real translation of your text."
         : "AI engine not ready — canned sample or placeholder only.",
-      changes: "Uses the verified local AI model to draft a translation of the entered text into the requested language. Every draft requires a qualified human translator's review before publication.",
+      changes: aiEngineReady()
+        ? "Uses the verified local AI model to draft a translation of the entered text into the requested language. Every draft requires a qualified human translator's review before publication."
+        : "Returns the canned es/vi sample or an explicit placeholder, labeled \"AI engine not ready\" — no AI translation is drafted. Every variant requires a qualified human translator's review before publication.",
       visibility: "Internal staff draft only. Nothing is published or persisted beyond the audit trail.",
       sources: [
         detailOrFallback(state.workDraft.accessVariantText, "No text entered yet."),
@@ -3657,7 +3661,7 @@ function renderAccessibilityWorkflow() {
       </div>
     </section>
     ${renderGuidedWorkReview()}
-    ${state.app.model && !state.app.model.ready ? `
+    ${state.app.model && !aiEngineReady() ? `
     <aside class="section-band" role="status" aria-label="Local AI engine status">
       <strong>AI engine not ready — ${escapeHtml(state.app.model.status)}.</strong>
       Plain-Language Rewrite, Multilingual Variant, and the review's AI analysis run in
@@ -3688,7 +3692,7 @@ function renderAccessibilityWorkflow() {
         <label for="access-plain-text">Text to rewrite *</label>
         <textarea id="access-plain-text" aria-required="true" data-work-field="accessPlainText" placeholder="Residents must remit payment prior to the deadline.">${escapeHtml(state.workDraft.accessPlainText)}</textarea>
         <div class="workflow-actions">
-          <button type="button" class="secondary-action" data-work-action="civicaccess-plain-language" ${civicaccessActionBusy("civicaccess-plain-language") ? "disabled" : ""}>Suggest Plain-Language Rewrite</button>
+          <button type="button" class="secondary-action" data-work-action="civicaccess-plain-language" ${civicaccessActionBusy("civicaccess-plain-language") ? "disabled" : ""}>Draft Plain-Language Rewrite</button>
         </div>
       </div>
       <div class="workflow-form">

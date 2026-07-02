@@ -726,6 +726,20 @@ main {
   color: inherit;
 }
 
+/* GauntletGate AI round-1 (P3): multi-line model output now flows into the
+   result box and the saved-review AI-analysis block -- preserve its paragraph
+   breaks and wrap long unbroken tokens (URLs the prompts tell the model to
+   keep verbatim) instead of stretching the page. */
+.action-result span,
+.comment-review-item p {
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.workflow-record h3 {
+  overflow-wrap: anywhere;
+}
+
 .step-header {
   align-items: center;
   display: flex;

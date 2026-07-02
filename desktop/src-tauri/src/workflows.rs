@@ -7976,52 +7976,57 @@ fn accessibility_review(
     } else {
         "needs-fixes".to_string()
     };
-    let (ai_analysis, ai_analysis_model, ai_note) = if crate::model::local_generation_available()
-        .unwrap_or(false)
-    {
-        let findings_lines = if findings.is_empty() {
-            "none".to_string()
-        } else {
-            findings
-                .iter()
-                .map(|f| format!("{} ({}): {}", f.code, f.severity, f.message))
-                .collect::<Vec<_>>()
-                .join("\n")
-        };
-        let prompt = format!(
+    // Each arm carries (stored analysis, stored model, audit-chain note,
+    // user-visible result note) -- the result box must disclose the AI outcome
+    // in every arm, not just success (design 2c; gate round-1 P2).
+    let (ai_analysis, ai_analysis_model, ai_note, ai_result_note) =
+        // ponytail: unwrap_or(false) deliberately reads a readiness-computation
+        // error as "engine unavailable" -- the review is records-bearing and a
+        // broken readiness probe must degrade to deterministic-only, never
+        // block the save (asymmetric with rewrite/variant, where the AI output
+        // IS the product and errors fail fast).
+        if crate::model::local_generation_available().unwrap_or(false) {
+            let findings_lines = if findings.is_empty() {
+                "none".to_string()
+            } else {
+                findings
+                    .iter()
+                    .map(|f| format!("{} ({}): {}", f.code, f.severity, f.message))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            let prompt = format!(
                 "You are helping city staff review a public document for accessibility. Deterministic checks already produced these findings (do not add or remove findings):\n{findings_lines}\n\nDocument title: {title}\nLanguage: {language}\nAlt text present: {}\nDocument text:\n{}\n\nWrite a short, prioritized remediation analysis for staff: which finding to fix first and why, plus any plain-language or structure concerns a human reviewer should double-check. Advisory only; a qualified human reviewer makes the final call.",
                 if has_alt_text { "yes" } else { "no" },
                 body.trim()
             );
-        match crate::model::generate_local_text(&prompt) {
+            match crate::model::generate_local_text(&prompt) {
                 Ok((runtime_model, generated)) => (
-                    Some(generated),
+                    Some(generated.clone()),
                     Some(runtime_model.clone()),
                     format!("; local AI analysis added with {runtime_model} (advisory, human review required)"),
+                    format!("\nLocal AI analysis ({runtime_model}) — advisory, human review required:\n{generated}"),
                 ),
                 Err(error) => (
                     None,
                     None,
                     format!("; local AI analysis skipped (generation failed: {error})"),
+                    format!("\nLocal AI analysis was skipped ({error}) — the review saved with its deterministic findings; human review still applies."),
                 ),
             }
-    } else {
-        (
-            None,
-            None,
-            "; AI engine not ready — deterministic findings only".to_string(),
-        )
-    };
+        } else {
+            (
+                None,
+                None,
+                "; AI engine not ready — deterministic findings only".to_string(),
+                "\nAI engine not ready — the review saved with deterministic findings only."
+                    .to_string(),
+            )
+        };
     let review_id = format!("access-review-{}", uuid::Uuid::new_v4());
     let created_at_unix_seconds = now_unix_seconds();
     let high_severity_count = findings.iter().filter(|f| f.severity == "high").count();
     let total_count = findings.len();
-    let ai_result_note = match (&ai_analysis, &ai_analysis_model) {
-        (Some(analysis), Some(model)) => {
-            format!("\nLocal AI analysis ({model}) — advisory, human review required:\n{analysis}")
-        }
-        _ => String::new(),
-    };
     state.access.reviews.push(StoredAccessibilityReview {
         review_id: review_id.clone(),
         title: title.clone(),
@@ -9715,8 +9720,14 @@ mod tests {
             .expect("review saves with no model -- AI never blocks reviews");
             assert!(saved.message.contains("passes-sample-checks"));
             assert!(
-                !saved.message.contains("Local AI analysis"),
+                !saved.message.contains("Local AI analysis ("),
                 "no AI block claimed when none ran"
+            );
+            assert!(
+                saved.message.contains(
+                    "AI engine not ready — the review saved with deterministic findings only"
+                ),
+                "the visible result discloses the AI outcome, not just the audit chain"
             );
             let state = city_work_state().expect("state reads after deterministic review");
             let review = state.access.reviews.last().expect("review persists");
@@ -9730,6 +9741,101 @@ mod tests {
             assert!(audit
                 .summary
                 .contains("AI engine not ready — deterministic findings only"));
+        });
+    }
+
+    // ===== Mid-flight generation-failure arms (gate round-1 P1) =====
+    //
+    // CIVICSUITE_FAKE_MODEL_ERROR makes local_generation_available() report
+    // true and then generate_local_text() fail -- the only way to reach the
+    // ready-then-fails branches (a genuinely not-ready state is caught by the
+    // availability probe before generation is attempted).
+
+    #[test]
+    fn accessibility_review_degrades_and_saves_when_generation_fails_mid_flight() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            env::set_var("CIVICSUITE_FAKE_MODEL_ERROR", "Ollama died mid-request.");
+            let saved = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "Water main repair notice",
+                    "body": "The city water department will repair a main on Tuesday morning.",
+                    "hasAltText": false,
+                    "language": "en"
+                })),
+            );
+            env::remove_var("CIVICSUITE_FAKE_MODEL_ERROR");
+            let saved =
+                saved.expect("a dead engine mid-flight never blocks the records-bearing save");
+            // Visible result discloses the skip (design 2c) -- not audit-only.
+            assert!(saved.message.contains("Local AI analysis was skipped"));
+            assert!(saved.message.contains("Ollama died mid-request."));
+            assert!(saved.message.contains("needs-fixes"));
+            let state = city_work_state().expect("state reads after degraded review");
+            let review = state.access.reviews.last().expect("review persists");
+            assert!(review.ai_analysis.is_none());
+            assert!(review.ai_analysis_model.is_none());
+            // Determinism floor holds through the failure arm.
+            assert_eq!(review.status, "needs-fixes");
+            assert_eq!(review.findings.len(), 1);
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for degraded review");
+            assert!(audit.summary.contains("local AI analysis skipped"));
+        });
+    }
+
+    #[test]
+    fn plain_language_fails_fast_with_state_untouched_when_generation_fails() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            env::set_var("CIVICSUITE_FAKE_MODEL_ERROR", "Ollama died mid-request.");
+            let result = city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({
+                    "text": "Residents must remit payment prior to the deadline."
+                })),
+            );
+            env::remove_var("CIVICSUITE_FAKE_MODEL_ERROR");
+            // The rewrite IS the product: mid-flight failure fails fast...
+            let error = match result {
+                Ok(_) => panic!("mid-flight generation failure must surface as an error"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Ollama died mid-request."));
+            // ...with state untouched: no audit entry, no module audit event.
+            let state = city_work_state().expect("state reads after failed rewrite");
+            assert!(
+                state.audit_entries.is_empty(),
+                "failed generation must not write audit entries"
+            );
+            assert!(
+                state.access.audit_events.is_empty(),
+                "failed generation must not write module audit events"
+            );
+        });
+    }
+
+    #[test]
+    fn language_variant_fails_fast_with_state_untouched_when_generation_fails() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            env::set_var("CIVICSUITE_FAKE_MODEL_ERROR", "Ollama died mid-request.");
+            let result = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": "es"})),
+            );
+            env::remove_var("CIVICSUITE_FAKE_MODEL_ERROR");
+            let error = match result {
+                Ok(_) => panic!("mid-flight generation failure must surface as an error"),
+                Err(error) => error,
+            };
+            assert!(error.contains("Ollama died mid-request."));
+            let state = city_work_state().expect("state reads after failed variant");
+            assert!(state.audit_entries.is_empty());
+            assert!(state.access.audit_events.is_empty());
         });
     }
 

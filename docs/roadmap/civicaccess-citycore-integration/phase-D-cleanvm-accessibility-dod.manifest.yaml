@@ -27,7 +27,9 @@ pipeline_run:
     (Containers-DisposableClientVM) is now ENABLED on DESKTOP-VBMA6O5 via the elevated helper, pending
     ONE reboot of that box to activate. Phase D drives the Sandbox directly from the session shell
     (no remote runner, no passwordless auto-login, no relay), using the QA-B1 pattern: a .wsb
-    (CivicAccess has NO model, so modest RAM suffices - the 20 GB sizing was only for AI modules),
+    (SUPERSEDED 2026-07-02: CivicAccess's desktop port now uses the suite's local model (PR #220) --
+    Phase D must run on AI-module sizing AND additionally exercise the three CivicAccess AI features
+    live plus their stopped-runtime fallback state, per the v0.2 execution playbook Step 5b),
     a mapped folder with the 6-module MSI, and fire-and-forget invoke + external poll for long ops
     (install / health / backup). The one prerequisite is a reboot of DESKTOP-VBMA6O5.
 

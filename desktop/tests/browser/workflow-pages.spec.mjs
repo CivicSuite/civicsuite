@@ -841,7 +841,7 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   // Review & Save" was click-tested; the other six were render-asserted only).
   // The two AI-capable drafting tools confirm through their guided panels.
   const guidedFormButtons = [
-    ["Suggest Plain-Language Rewrite", "Confirm Draft Rewrite"],
+    ["Draft Plain-Language Rewrite", "Confirm Draft Rewrite"],
     ["Draft Translation Variant", "Confirm Draft Variant"]
   ];
   for (const [buttonName, confirmName] of guidedFormButtons) {
@@ -1470,6 +1470,16 @@ test("civicaccess shows the explicit AI-engine-not-ready state with a guided pat
   await expect(page.getByText(/jargon swap/)).toBeVisible();
   await expect(page.getByText(/canned sample for es \/ vi/)).toBeVisible();
 
+  // Not-ready guided panels are honest: "what will change" describes the
+  // deterministic fallback, not an AI draft (gate round-1 UX-1/TW-3).
+  await page.getByRole("button", { name: "Draft Plain-Language Rewrite" }).click();
+  const notReadyPanel = page.locator('[data-guided-review="work"]');
+  await expect(notReadyPanel.getByText(/Runs the deterministic jargon-map sample pass/)).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+  await page.getByRole("button", { name: "Draft Translation Variant" }).click();
+  await expect(notReadyPanel.getByText(/Returns the canned es\/vi sample or an explicit placeholder/)).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
   // The banner's button is a real route to the model readiness panel.
   await banner.getByRole("button", { name: "Open model setup" }).click();
   await expect(page.getByRole("heading", { name: "System Health" })).toBeVisible();
@@ -1544,13 +1554,101 @@ test("civicaccess shows AI-ready framing when the local model reports ready", as
   await expect(page.getByText(/Drafts a translation of your text into any target language/)).toBeVisible();
   await expect(page.getByText(/advisory AI remediation analysis/)).toBeVisible();
 
-  // The guided confirm panel for the review action carries the AI framing.
+  // The guided confirm panels carry the AI framing for all three actions:
+  // review, rewrite, and variant each state the ready-mode behavior honestly.
   await page.getByRole("button", { name: "Run Review & Save", exact: true }).click();
   const panel = page.locator('[data-guided-review="work"]');
   await expect(panel.getByRole("heading", { name: "Review Before Running Accessibility Review" })).toBeVisible();
   await expect(panel.getByText(/Local AI engine ready/)).toBeVisible();
   await expect(panel.getByText(/never adds, removes, or reclassifies a finding/)).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Draft Plain-Language Rewrite" }).click();
+  await expect(panel.getByText(/Uses the verified local AI model to draft a plain-language rewrite/)).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+
+  await page.getByRole("button", { name: "Draft Translation Variant" }).click();
+  await expect(panel.getByText(/Uses the verified local AI model to draft a translation/)).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
+});
+
+test("civicaccess stored AI analysis renders labeled, escaped, wrapped, and with line breaks preserved", async ({ page }) => {
+  // Permanent re-land of the gate round-1 QA probe: the saved-review AI
+  // analysis block is the suite's first surface persisting multi-line model
+  // output into a rendered record. It must (a) stay inert under a hostile
+  // analysis/model string, (b) preserve the model's paragraph breaks
+  // (white-space: pre-line), and (c) contain long unbroken tokens
+  // (overflow-wrap: anywhere) instead of stretching the page.
+  const xssAnalysis = '"><img src=x onerror=window.__xssFired=1>\n1. Fix alt text first.\n2. ' + "verylongtoken".repeat(20);
+  await page.addInitScript(({ analysis }) => {
+    const review = {
+      review_id: "review-xss-1",
+      title: "xss probe",
+      body: "body",
+      has_alt_text: true,
+      language: "en",
+      status: "passes-sample-checks",
+      findings: [],
+      disclaimer: "Advisory only.",
+      created_at_unix_seconds: 1700000000,
+      ai_analysis: analysis,
+      ai_analysis_model: "<em>evil-model</em>"
+    };
+    const cityWork = {
+      meeting_bodies: [], meeting_members: [], agenda_intakes: [], meetings: [],
+      records_requests: [], code_sources: [], code_handoffs: [], adopted_legislation: [],
+      notification_events: [], code_answers: [],
+      access: { reviews: [review], audit_events: [] }
+    };
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "get_app_state") {
+          return {
+            city_work: cityWork,
+            modules: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"].map((id) => ({
+              id, display_name: id, role: "test module",
+              required: id === "civiccore", selectable: id !== "civiccore",
+              installed: true, enabled: true, contract_ready: true
+            })),
+            module_selection: {
+              profile_id: "city-core", profile_label: "City Core",
+              installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"],
+              enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"]
+            }
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  }, { analysis: xssAnalysis });
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+
+  const aiBlock = page.locator(".workflow-record .comment-review-item");
+  await expect(aiBlock).toBeVisible();
+  // Model label renders as literal text -- no <em> element materializes.
+  await expect(aiBlock.getByText(/Local AI analysis \(<em>evil-model<\/em>\) — advisory/)).toBeVisible();
+  expect(await aiBlock.locator("em, img, script, button").count()).toBe(0);
+  expect(await page.evaluate(() => window.__xssFired)).toBeUndefined();
+  // Payload text is visible as inert text.
+  await expect(aiBlock.getByText(/"><img src=x onerror=/)).toBeVisible();
+
+  // Layout contract: line breaks preserved, long tokens wrapped, no page blowout.
+  const layout = await page.evaluate(() => {
+    const block = document.querySelector(".workflow-record .comment-review-item");
+    const analysisP = block.querySelectorAll("p")[1];
+    const style = getComputedStyle(analysisP);
+    return {
+      whiteSpace: style.whiteSpace,
+      overflowWrap: style.overflowWrap,
+      titleOverflowWrap: getComputedStyle(document.querySelector(".workflow-record h3")).overflowWrap,
+      pageOverflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth
+    };
+  });
+  expect(layout.whiteSpace).toBe("pre-line");
+  expect(layout.overflowWrap).toBe("anywhere");
+  expect(layout.titleOverflowWrap).toBe("anywhere");
+  expect(layout.pageOverflowX).toBe(0);
 });
 
 test("civicaccess saved-review list paginates at 20 with a working show-all toggle", async ({ page }) => {
