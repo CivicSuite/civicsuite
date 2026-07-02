@@ -283,6 +283,75 @@ function Get-MsvcDevCmdPath {
     return $null
 }
 
+function Get-VcRuntimeRedistDir {
+    # Locate the x64 Visual C++ runtime redistributable folder (Microsoft.VC*.CRT)
+    # shipped with the installed Visual Studio / Build Tools. These DLLs are
+    # redistributable and are what the portable EnterpriseDB PostgreSQL binaries
+    # link against but do NOT ship (the EDB *installer* normally lays down the
+    # VC++ redist; the portable ZIP extraction skips it).
+    $VsWhereCandidates = @(
+        "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+    )
+    $VsWhereCommand = Get-Command vswhere.exe -ErrorAction SilentlyContinue
+    if ($VsWhereCommand) {
+        $VsWhereCandidates += $VsWhereCommand.Source
+    }
+    foreach ($VsWhere in $VsWhereCandidates | Select-Object -Unique) {
+        if (-not (Test-Path -LiteralPath $VsWhere)) {
+            continue
+        }
+        $InstallPath = & $VsWhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if (-not $InstallPath) {
+            continue
+        }
+        $RedistRoot = Join-Path $InstallPath "VC\Redist\MSVC"
+        if (-not (Test-Path -LiteralPath $RedistRoot)) {
+            continue
+        }
+        $CrtDir = Get-ChildItem -LiteralPath $RedistRoot -Recurse -Directory -Filter "Microsoft.VC*.CRT" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\x64\\" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+        if ($CrtDir -and (Test-Path -LiteralPath (Join-Path $CrtDir.FullName "vcruntime140.dll"))) {
+            return $CrtDir.FullName
+        }
+    }
+    return $null
+}
+
+function Copy-PostgresVcRuntime {
+    # Stage the VC++ runtime DLLs next to the PostgreSQL binaries so pg_ctl.exe /
+    # initdb.exe / postgres.exe start on a clean Windows machine that has no
+    # system-wide VC++ redistributable (e.g. a fresh clerk PC or Windows Sandbox).
+    # Windows resolves an EXE's imports from its own directory first, so placing
+    # the DLLs in postgres\bin is sufficient and self-contained.
+    param([string]$PostgresRoot)
+    $BinDir = Join-Path $PostgresRoot "bin"
+    if (-not (Test-Path -LiteralPath $BinDir)) {
+        throw "PostgreSQL bin directory not found for VC++ runtime staging: $BinDir"
+    }
+    $Essential = @("vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll")
+    $Present = @($Essential | Where-Object { Test-Path -LiteralPath (Join-Path $BinDir $_) })
+    if ($Present.Count -eq $Essential.Count) {
+        return [ordered]@{ status = "present"; dlls = $Present }
+    }
+    $CrtDir = Get-VcRuntimeRedistDir
+    if (-not $CrtDir) {
+        throw "Could not locate the x64 Visual C++ runtime redistributable (Microsoft.VC*.CRT) via vswhere. The bundled PostgreSQL requires VCRUNTIME140.dll et al. to start on a clean machine; install the 'Desktop development with C++' workload or the VC++ redistributable in the build environment."
+    }
+    $Copied = @()
+    foreach ($Dll in (Get-ChildItem -LiteralPath $CrtDir -Filter *.dll)) {
+        Copy-Item -LiteralPath $Dll.FullName -Destination (Join-Path $BinDir $Dll.Name) -Force
+        $Copied += $Dll.Name
+    }
+    foreach ($Required in $Essential) {
+        if (-not (Test-Path -LiteralPath (Join-Path $BinDir $Required))) {
+            throw "VC++ runtime staging did not produce required $Required in $BinDir (source: $CrtDir)"
+        }
+    }
+    return [ordered]@{ status = "installed"; source = $CrtDir; dlls = $Copied }
+}
+
 function Invoke-PgvectorBuild {
     param(
         [string]$SourceDir,
@@ -730,6 +799,7 @@ $Report = [ordered]@{
     ollama = Install-OllamaPayload -Source $Manifest.sources.ollama -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
 }
 $Report.pgvector = Install-PgvectorPayload -Source $Manifest.sources.pgvector -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
+$Report.postgres_vcruntime = Copy-PostgresVcRuntime -PostgresRoot (Join-Path $PayloadRoot "postgres")
 $PayloadLock = New-RuntimePayloadLock -PayloadManifest $PayloadManifest -PayloadRoot $PayloadRoot
 $Report.payloads = $PayloadLock.payloads
 
