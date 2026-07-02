@@ -1,5 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+// The three CivicAccess AI-capable actions (accessibility-review,
+// civicaccess-plain-language, civicaccess-language-variant) go through the
+// guided-review confirm panel before dispatching -- when the model is ready
+// they can hold the global city-work write lock for a full generation call,
+// so a human confirm precedes taking that lock (same as the suggest-* AI
+// actions in Clerk/Records/Code).
+async function runReviewAndSave(page) {
+  await page.getByRole("button", { name: "Run Review & Save", exact: true }).click();
+  await page.getByRole("button", { name: "Confirm Run Review & Save" }).click();
+}
+
 test("city workflow pages expose real local task controls", async ({ page }) => {
   await page.goto("/");
 
@@ -731,6 +742,13 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
+  // CivicAccess's contract line carries the model_required badge (its AI
+  // features run on the pinned local model); CivicClerk's must NOT -- its
+  // registry entry is required:false and this mirror previously drifted.
+  const civicaccessRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicAccess" }) });
+  await expect(civicaccessRow.getByText("local AI required")).toBeVisible();
+  const civicclerkRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicClerk" }) });
+  await expect(civicclerkRow.getByText("local AI required")).toHaveCount(0);
   await expect(page.getByText("Backup includes: code workflow history, code exports, code files")).toBeVisible();
   await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Exports CivicCode" })).toBeVisible();
@@ -775,7 +793,7 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   await expect(page.getByRole("heading", { name: "Accessibility", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Accessibility Review (WCAG sample)" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Plain-Language Rewrite" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Multilingual Variant (sample)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Multilingual Variant", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Accessible Form Plan" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Publishing Workflow Checklist" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "ADA Title II Review-Support Plan" })).toBeVisible();
@@ -795,8 +813,13 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   await expect(page.getByText(/Fields marked \* are required/)).toBeVisible();
 
   // Empty title + non-English language are findings, not errors — but in browser
-  // preview, persistence routes correctly refuse (no Tauri bridge).
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  // preview, persistence routes correctly refuse (no Tauri bridge). The review
+  // action now goes through the guided-review confirm panel first (it can run a
+  // local AI analysis when the engine is ready), so assert the panel renders
+  // before confirming through to the preview refusal.
+  await page.getByRole("button", { name: "Run Review & Save", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Review Before Running Accessibility Review" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm Run Review & Save" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();
   await expect(page.getByText("To save local city work, switch to the CivicSuite desktop app")).toBeVisible();
 
@@ -808,12 +831,25 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   // wording everywhere, so it legitimately appears more than once on the page.
   await expect(page.getByRole("note").getByText(/advisory clerk support, not a certified accessibility audit/i)).toBeVisible();
 
+  // The browser-preview fallback state carries no ready model, so the tab shows
+  // the explicit AI-engine state banner with its guided path to model setup.
+  await expect(page.getByText(/AI engine not ready/).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open model setup" })).toBeVisible();
+
   // TEST-8: every other form-submit button is also wired to a real action and
   // refuses persistence the same way in preview mode (previously only "Run
   // Review & Save" was click-tested; the other six were render-asserted only).
+  // The two AI-capable drafting tools confirm through their guided panels.
+  const guidedFormButtons = [
+    ["Suggest Plain-Language Rewrite", "Confirm Draft Rewrite"],
+    ["Draft Translation Variant", "Confirm Draft Variant"]
+  ];
+  for (const [buttonName, confirmName] of guidedFormButtons) {
+    await page.getByRole("button", { name: buttonName }).click();
+    await page.getByRole("button", { name: confirmName }).click();
+    await expect(page.getByText("Desktop app required")).toBeVisible();
+  }
   const otherFormButtons = [
-    "Suggest Plain-Language Rewrite",
-    "Create Sample Variant",
     "Plan Accessible Form",
     "Build Publishing Plan",
     "Build ADA Review Plan",
@@ -899,12 +935,12 @@ test("civicaccess delete-review guided-review panel renders, retargets, and dele
   const reviewList = page.locator("section.workflow-list");
   await page.getByLabel("Document title *").fill("Review A");
   await page.getByLabel("Public text *").fill("Review A body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
   await expect(reviewList.getByRole("heading", { name: "Review A" })).toBeVisible();
 
   await page.getByLabel("Document title *").fill("Review B");
   await page.getByLabel("Public text *").fill("Review B body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
   await expect(reviewList.getByRole("heading", { name: "Review B" })).toBeVisible();
 
   // Click Delete on Review A: the guided-review panel must actually render.
@@ -1029,10 +1065,10 @@ test("civicaccess delete-review survives an overlapping second delete and a mid-
   const reviewList = page.locator("section.workflow-list");
   await page.getByLabel("Document title *").fill("Slow Review");
   await page.getByLabel("Public text *").fill("Slow review body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
   await page.getByLabel("Document title *").fill("Fast Review");
   await page.getByLabel("Public text *").fill("Fast review body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
 
   const slowRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Slow Review" }) });
   const fastRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Fast Review" }) });
@@ -1062,7 +1098,7 @@ test("civicaccess delete-review survives an overlapping second delete and a mid-
   // disabled -- a fresh Delete click on the same (still-existing) review works.
   await page.getByLabel("Document title *").fill("Error Review");
   await page.getByLabel("Public text *").fill("Error review body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
   const errorRow = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Error Review" }) });
   await page.evaluate(() => { window.__cityWorkFailNext = true; });
   await errorRow.getByRole("button", { name: "Delete Review" }).click();
@@ -1140,10 +1176,10 @@ test("civicaccess an earlier request resolving does not clear a later request's 
   const reviewList = page.locator("section.workflow-list");
   await page.getByLabel("Document title *").fill("Review A");
   await page.getByLabel("Public text *").fill("Review A body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
   await page.getByLabel("Document title *").fill("Review B");
   await page.getByLabel("Public text *").fill("Review B body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
 
   const rowA = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
   const rowB = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review B" }) });
@@ -1230,7 +1266,7 @@ test("civicaccess three simultaneously in-flight deletes each keep their own bus
   for (const title of ["Review A", "Review B", "Review C"]) {
     await page.getByLabel("Document title *").fill(title);
     await page.getByLabel("Public text *").fill(`${title} body text.`);
-    await page.getByRole("button", { name: "Run Review & Save" }).click();
+    await runReviewAndSave(page);
   }
 
   const rowA = reviewList.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
@@ -1307,7 +1343,7 @@ test("civicaccess Delete Review is visually distinct from safe secondary actions
   await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
   await page.getByLabel("Document title *").fill("Review A");
   await page.getByLabel("Public text *").fill("Review A body text.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
 
   const row = page.locator(".workflow-record", { has: page.getByRole("heading", { name: "Review A" }) });
   const deleteButton = row.getByRole("button", { name: "Delete Review" });
@@ -1383,7 +1419,7 @@ test("focus returns to main content after a non-nav workflow action (form submit
   await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
   await page.getByLabel("Document title *").fill("Focus check");
   await page.getByLabel("Public text *").fill("Focus check body.");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
 
   await expect.poll(() => page.evaluate(() => document.activeElement === document.getElementById("main-content"))).toBe(true);
 });
@@ -1412,6 +1448,109 @@ test("focus lands on Retry when the saved-state load itself fails", async ({ pag
     const retry = document.querySelector("[data-action='retry-load-state']");
     return document.activeElement === retry;
   })).toBe(true);
+});
+
+test("civicaccess shows the explicit AI-engine-not-ready state with a guided path to model setup", async ({ page }) => {
+  // The browser-preview fallback state ships model.ready = false, which is the
+  // same shape a broken post-install machine reports (weights deleted, dead
+  // runtime). The tab must present a guided state -- banner + sample-mode form
+  // copy + a working route to the model-setup panel -- never a dead end.
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+
+  const banner = page.locator('[aria-label="Local AI engine status"]');
+  await expect(banner).toBeVisible();
+  await expect(banner.getByText(/AI engine not ready/)).toBeVisible();
+  await expect(banner.getByText(/deterministic sample mode/)).toBeVisible();
+  // Note: regex matching does not normalize whitespace, so keep the asserted
+  // fragment inside one source line of the banner template.
+  await expect(banner.getByText(/checklist tools work normally/)).toBeVisible();
+
+  // Sample-mode helper copy on the AI-capable forms.
+  await expect(page.getByText(/jargon swap/)).toBeVisible();
+  await expect(page.getByText(/canned sample for es \/ vi/)).toBeVisible();
+
+  // The banner's button is a real route to the model readiness panel.
+  await banner.getByRole("button", { name: "Open model setup" }).click();
+  await expect(page.getByRole("heading", { name: "System Health" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Gemma 4 12B QAT Q4_0" })).toBeVisible();
+});
+
+test("civicaccess shows AI-ready framing when the local model reports ready", async ({ page }) => {
+  // Mirror of the not-ready test: with model.ready = true from the (mocked)
+  // desktop bridge, the banner disappears and the AI-capable forms describe
+  // the local engine instead of sample mode.
+  await page.addInitScript(() => {
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (cmd) => {
+        if (cmd === "get_app_state") {
+          return {
+            model: {
+              profile: "windows-local-1.0",
+              local_only: true,
+              ready: true,
+              status: "Ready",
+              display_name: "Gemma 4 12B QAT Q4_0",
+              model_id: "gemma-4-12b-it-qat-q4_0",
+              provider: "Google",
+              runtime: "ollama",
+              ollama_model: "hf.co/google/gemma-4-12B-it-qat-q4_0-gguf:Q4_0",
+              runtime_model: "civicsuite-gemma4-12b-qat:q4_0",
+              download_size_bytes: 6975877728,
+              download_policy: "Explicit model setup only",
+              source_repo: "google/gemma-4-12B-it-qat-q4_0-gguf",
+              artifact: {
+                file_name: "gemma-4-12b-it-qat-q4_0.gguf",
+                local_path: "(test)",
+                expected_size_bytes: 6975877728,
+                expected_sha256: "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+                checksum_required: true,
+                checksum_source: "(test)",
+                etag_blob_id: "(test)"
+              },
+              download_state: null,
+              checks: []
+            },
+            // Navigation filters areas by module enablement and the Home
+            // screen maps over modules, so the mocked state must carry both
+            // (same shape the CivicNotice test uses) or nothing renders.
+            modules: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"].map((id) => ({
+              id,
+              display_name: id,
+              role: "test module",
+              required: id === "civiccore",
+              selectable: id !== "civiccore",
+              installed: true,
+              enabled: true,
+              contract_ready: true
+            })),
+            module_selection: {
+              profile_id: "city-core",
+              profile_label: "City Core",
+              installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"],
+              enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"]
+            }
+          };
+        }
+        throw new Error(`Unexpected Tauri command: ${cmd}`);
+      }
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("navigation", { name: "Primary" }).getByRole("button", { name: /Accessibility/ }).click();
+
+  await expect(page.locator('[aria-label="Local AI engine status"]')).toHaveCount(0);
+  await expect(page.getByText(/Drafts a plain-language rewrite on the local AI engine/)).toBeVisible();
+  await expect(page.getByText(/Drafts a translation of your text into any target language/)).toBeVisible();
+  await expect(page.getByText(/advisory AI remediation analysis/)).toBeVisible();
+
+  // The guided confirm panel for the review action carries the AI framing.
+  await page.getByRole("button", { name: "Run Review & Save", exact: true }).click();
+  const panel = page.locator('[data-guided-review="work"]');
+  await expect(panel.getByRole("heading", { name: "Review Before Running Accessibility Review" })).toBeVisible();
+  await expect(panel.getByText(/Local AI engine ready/)).toBeVisible();
+  await expect(panel.getByText(/never adds, removes, or reclassifies a finding/)).toBeVisible();
+  await page.getByRole("button", { name: "Cancel Review" }).click();
 });
 
 test("civicaccess saved-review list paginates at 20 with a working show-all toggle", async ({ page }) => {
@@ -1455,7 +1594,7 @@ test("civicaccess saved-review list paginates at 20 with a working show-all togg
   // civicaccess action reachable without a saved review is a form submit.
   await page.getByLabel("Document title *").fill("trigger");
   await page.getByLabel("Public text *").fill("trigger");
-  await page.getByRole("button", { name: "Run Review & Save" }).click();
+  await runReviewAndSave(page);
 
   const reviewList = page.locator("section.workflow-list");
   await expect(reviewList.locator(".workflow-record")).toHaveCount(20);

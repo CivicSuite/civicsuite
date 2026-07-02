@@ -3599,9 +3599,14 @@ mod tests {
 
     #[cfg(windows)]
     fn link_payload_runtime(root: &Path, payload_dir: &Path) {
+        link_payload_runtime_set(root, payload_dir, &["postgres", "python"]);
+    }
+
+    #[cfg(windows)]
+    fn link_payload_runtime_set(root: &Path, payload_dir: &Path, payloads: &[&str]) {
         let runtime_dir = root.join("Runtime").join("runtime");
         fs::create_dir_all(&runtime_dir).expect("runtime dir");
-        for payload in ["postgres", "python"] {
+        for payload in payloads {
             let source = payload_dir.join(payload);
             assert!(
                 source.is_dir(),
@@ -3632,7 +3637,7 @@ mod tests {
 
     fn remove_payload_runtime_links(root: &Path) {
         let runtime_dir = root.join("Runtime").join("runtime");
-        for payload in ["postgres", "python"] {
+        for payload in ["postgres", "python", "ollama"] {
             let _ = fs::remove_dir(runtime_dir.join(payload));
         }
     }
@@ -4166,6 +4171,70 @@ mod tests {
             supervisor_action("stop", Some("task-queue")).expect("stop task queue");
             supervisor_action("stop", Some("python-services")).expect("stop python services");
             supervisor_action("stop", Some("postgres")).expect("stop postgres");
+        });
+    }
+
+    // Proves the real "AI engine not ready" plumbing the CivicAccess dual-path
+    // handlers depend on: a genuine Ollama server (from the prepared payload)
+    // with ZERO models installed serves /api/tags health fine, model readiness
+    // still reports not-ready (weights/checksum/registry absent), and a
+    // CivicAccess AI-capable action returns the labeled deterministic fallback
+    // through the real HTTP probe path -- not the compile-time test stub.
+    #[test]
+    fn real_ollama_runtime_with_no_model_serves_the_not_ready_contract_when_enabled() {
+        if env::var("CIVICSUITE_RUN_REAL_RUNTIME_TEST").ok().as_deref() != Some("1") {
+            return;
+        }
+        let payload_dir = env::var("CIVICSUITE_RUNTIME_PAYLOAD_DIR")
+            .map(PathBuf::from)
+            .expect("CIVICSUITE_RUNTIME_PAYLOAD_DIR points at prepared desktop runtime payload");
+        let linked_payload_dir = payload_dir.clone();
+        with_temp_state_dir_and_payload(payload_dir, |root| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            #[cfg(windows)]
+            link_payload_runtime_set(&root, &linked_payload_dir, &["ollama"]);
+            supervisor_action("install", Some("model-runtime")).expect("install ollama payload");
+            let start = supervisor_action("start", Some("model-runtime")).expect("start ollama");
+            assert!(start.accepted);
+            let mut runtime_ok = false;
+            for _ in 0..60 {
+                let health = runtime_health().expect("health builds");
+                if health
+                    .iter()
+                    .any(|item| item.id == "model-runtime" && item.ok)
+                {
+                    runtime_ok = true;
+                    break;
+                }
+                thread::sleep(Duration::from_millis(500));
+            }
+            assert!(runtime_ok, "ollama serves /api/tags with zero models");
+            let state = crate::model::model_state().expect("model state builds");
+            assert!(
+                !state.ready,
+                "runtime up + weights absent must stay not-ready"
+            );
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "runtime" && check.ok));
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "artifact-file" && !check.ok));
+            let fallback = crate::workflows::city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({
+                    "text": "Residents must remit payment prior to the deadline."
+                })),
+            )
+            .expect("fallback rewrite succeeds against a model-less runtime");
+            assert!(
+                fallback.message.contains("AI engine not ready"),
+                "fallback result carries the explicit marker through the real probe path"
+            );
+            assert!(fallback.message.contains("pay"));
+            supervisor_action("stop", Some("model-runtime")).expect("stop ollama");
         });
     }
 

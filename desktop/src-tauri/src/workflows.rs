@@ -808,6 +808,14 @@ pub struct StoredAccessibilityReview {
     pub disclaimer: String,
     #[serde(default)]
     pub created_at_unix_seconds: u64,
+    // Advisory local-AI remediation analysis layered on top of the
+    // deterministic findings; never affects status. None when the AI engine
+    // was not ready (or failed) at review time. serde(default) keeps older
+    // saved city-work.json states loading.
+    #[serde(default)]
+    pub ai_analysis: Option<String>,
+    #[serde(default)]
+    pub ai_analysis_model: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -7830,8 +7838,17 @@ pub fn public_city_work_state() -> Result<CityWorkState, String> {
 
 // ===== CivicAccess (module 6) =====
 //
-// Native Rust port of civicaccess v0.4.0 deterministic helpers
-// (access_review.py, plain_language.py, multilingual.py, workflows.py).
+// Native Rust port of civicaccess v0.4.0 helpers (access_review.py,
+// plain_language.py, multilingual.py, workflows.py), extended with local-AI
+// dual paths: plain-language rewrite, multilingual variant, and the review's
+// advisory analysis call the suite's local model (generate_local_text, same
+// engine as CivicClerk/CivicRecords/CivicCode) when it is ready, and fall back
+// to the original deterministic behavior -- explicitly labeled "AI engine not
+// ready" -- when it is not. The review's five deterministic WCAG rule checks
+// are the records-bearing floor: AI never adds, removes, or reclassifies a
+// finding, and a dead engine never blocks saving a review. The four
+// checklist-shaped tools (form plan, publishing workflow, ADA Title II,
+// tagged-PDF) stay deterministic on purpose.
 // State persists on CityWorkState.access via the same city-work.json file the
 // other modules use; audit events ride the existing audit_entries hash chain
 // AND a per-module audit_events vec that mirrors civicaccess's Postgres
@@ -7950,15 +7967,61 @@ fn accessibility_review(
     };
 
     let findings = build_accessibility_findings(&title, &body, has_alt_text, &language);
+    // Deterministic floor: the saved status derives ONLY from the rule checks.
+    // The AI analysis below is advisory prose layered on top -- it never adds,
+    // removes, or reclassifies a finding, and a dead AI engine never blocks
+    // saving a review (reviews are records-bearing).
     let status = if findings.is_empty() {
         "passes-sample-checks".to_string()
     } else {
         "needs-fixes".to_string()
     };
+    let (ai_analysis, ai_analysis_model, ai_note) = if crate::model::local_generation_available()
+        .unwrap_or(false)
+    {
+        let findings_lines = if findings.is_empty() {
+            "none".to_string()
+        } else {
+            findings
+                .iter()
+                .map(|f| format!("{} ({}): {}", f.code, f.severity, f.message))
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        let prompt = format!(
+                "You are helping city staff review a public document for accessibility. Deterministic checks already produced these findings (do not add or remove findings):\n{findings_lines}\n\nDocument title: {title}\nLanguage: {language}\nAlt text present: {}\nDocument text:\n{}\n\nWrite a short, prioritized remediation analysis for staff: which finding to fix first and why, plus any plain-language or structure concerns a human reviewer should double-check. Advisory only; a qualified human reviewer makes the final call.",
+                if has_alt_text { "yes" } else { "no" },
+                body.trim()
+            );
+        match crate::model::generate_local_text(&prompt) {
+                Ok((runtime_model, generated)) => (
+                    Some(generated),
+                    Some(runtime_model.clone()),
+                    format!("; local AI analysis added with {runtime_model} (advisory, human review required)"),
+                ),
+                Err(error) => (
+                    None,
+                    None,
+                    format!("; local AI analysis skipped (generation failed: {error})"),
+                ),
+            }
+    } else {
+        (
+            None,
+            None,
+            "; AI engine not ready — deterministic findings only".to_string(),
+        )
+    };
     let review_id = format!("access-review-{}", uuid::Uuid::new_v4());
     let created_at_unix_seconds = now_unix_seconds();
     let high_severity_count = findings.iter().filter(|f| f.severity == "high").count();
     let total_count = findings.len();
+    let ai_result_note = match (&ai_analysis, &ai_analysis_model) {
+        (Some(analysis), Some(model)) => {
+            format!("\nLocal AI analysis ({model}) — advisory, human review required:\n{analysis}")
+        }
+        _ => String::new(),
+    };
     state.access.reviews.push(StoredAccessibilityReview {
         review_id: review_id.clone(),
         title: title.clone(),
@@ -7969,6 +8032,8 @@ fn accessibility_review(
         findings,
         disclaimer: CIVICACCESS_DISCLAIMER.to_string(),
         created_at_unix_seconds,
+        ai_analysis,
+        ai_analysis_model,
     });
     civicaccess_record_audit(state, "review.create", Some(&review_id), "staff");
     // push_audit() strips newlines from summary itself, so no per-caller sanitization needed here.
@@ -7977,7 +8042,7 @@ fn accessibility_review(
         "civicaccess",
         "accessibility-review",
         format!(
-            "Accessibility review {review_id} for \"{title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high)."
+            "Accessibility review {review_id} for \"{title}\" ({language}): {status} ({total_count} finding(s), {high_severity_count} high){ai_note}."
         ),
     );
     let next_steps = vec![
@@ -7987,7 +8052,7 @@ fn accessibility_review(
     ];
     Ok((
         format!(
-            "Accessibility review saved as {review_id}: {status} ({total_count} finding(s), {high_severity_count} high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit."
+            "Accessibility review saved as {review_id}: {status} ({total_count} finding(s), {high_severity_count} high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit.{ai_result_note}"
         ),
         next_steps,
         CIVICACCESS_DISCLAIMER.to_string(),
@@ -8061,14 +8126,7 @@ fn civicaccess_delete_review(
     ))
 }
 
-fn civicaccess_plain_language(
-    state: &mut CityWorkState,
-    payload: Option<&Value>,
-) -> Result<(String, Vec<String>, String), String> {
-    let text = friendly_required(
-        payload_string_with_cap(payload, "text", 5000),
-        "Enter the public-facing text that should be rewritten.",
-    )?;
+fn civicaccess_jargon_rewrite(text: &str) -> String {
     let mut rewritten = text.trim().to_string();
     for (jargon, replacement) in CIVICACCESS_JARGON_MAP {
         rewritten = rewritten.replace(jargon, replacement);
@@ -8081,22 +8139,65 @@ fn civicaccess_plain_language(
     if rewritten.is_empty() {
         rewritten = "Add the public-facing text that should be rewritten.".to_string();
     }
+    rewritten
+}
+
+fn civicaccess_plain_language(
+    state: &mut CityWorkState,
+    payload: Option<&Value>,
+) -> Result<(String, Vec<String>, String), String> {
+    let text = friendly_required(
+        payload_string_with_cap(payload, "text", 5000),
+        "Enter the public-facing text that should be rewritten.",
+    )?;
+    if crate::model::local_generation_available()? {
+        // AI path: the rewrite itself is the product, so a mid-flight
+        // generation failure fails fast with state untouched (records
+        // precedent) rather than silently downgrading to the sample pass.
+        let prompt = format!(
+            "Rewrite the following public-facing city text in plain language for residents. Keep every fact, date, deadline, dollar amount, name, and legal obligation exactly as written. Do not add information that is not in the original. Do not shorten it into a summary.\n\nText:\n{}",
+            text.trim()
+        );
+        let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
+        civicaccess_record_audit(state, "plain_language.rewrite", None, "staff");
+        push_audit(
+            state,
+            "civicaccess",
+            "civicaccess-plain-language",
+            format!(
+                "Local AI plain-language draft generated with {runtime_model} ({} -> {} characters); human review required before publication.",
+                text.len(),
+                generated.len()
+            ),
+        );
+        return Ok((
+            format!(
+                "Local AI plain-language draft ({runtime_model}) — human review required before publication:\n{generated}"
+            ),
+            vec!["Have staff review the rewrite for accuracy before publication.".to_string()],
+            CIVICACCESS_DISCLAIMER.to_string(),
+        ));
+    }
+    let rewritten = civicaccess_jargon_rewrite(&text);
     civicaccess_record_audit(state, "plain_language.rewrite", None, "staff");
     push_audit(
         state,
         "civicaccess",
         "civicaccess-plain-language",
         format!(
-            "Plain-language pass produced sample rewrite ({} -> {} characters); human review required before publication.",
+            "AI engine not ready; deterministic jargon-map rewrite returned ({} -> {} characters); human review required before publication.",
             text.len(),
             rewritten.len()
         ),
     );
     Ok((
         format!(
-            "Sample plain-language rewrite ready (human review required before publication):\n{rewritten}"
+            "AI engine not ready — deterministic sample rewrite returned (jargon-map pass; human review required before publication):\n{rewritten}"
         ),
-        vec!["Have staff review the rewrite for accuracy before publication.".to_string()],
+        vec![
+            "Have staff review the rewrite for accuracy before publication.".to_string(),
+            "Open System Health to download, verify, and load the local AI model for real plain-language drafts.".to_string(),
+        ],
         CIVICACCESS_DISCLAIMER.to_string(),
     ))
 }
@@ -8141,6 +8242,36 @@ fn civicaccess_language_variant(
         payload_string_with_cap(payload, "language", 80),
         "Enter the target language (e.g. es, vi).",
     )?;
+    if crate::model::local_generation_available()? {
+        // AI path: real draft translation of the actual input text, any target
+        // language. The translation is the product, so mid-flight generation
+        // failures fail fast with state untouched (records precedent).
+        let prompt = format!(
+            "Translate the following public-facing city text into {}. Keep the meaning exact; keep dates, amounts, addresses, and names unchanged. Use plain, resident-friendly wording. Return only the translation, no commentary.\n\nText:\n{}",
+            language.trim(),
+            text.trim()
+        );
+        let (runtime_model, generated) = crate::model::generate_local_text(&prompt)?;
+        civicaccess_record_audit(state, "multilingual.variant", None, "staff");
+        push_audit(
+            state,
+            "civicaccess",
+            "civicaccess-language-variant",
+            format!(
+                "Multilingual variant for {language}: ai-draft-translation via {runtime_model}; qualified human translator review required."
+            ),
+        );
+        return Ok((
+            format!(
+                "ai-draft-translation ({runtime_model}): {generated}\nHuman review required before publication."
+            ),
+            vec![
+                "Route the variant to a qualified human translator/reviewer before publication."
+                    .to_string(),
+            ],
+            CIVICACCESS_DISCLAIMER.to_string(),
+        ));
+    }
     // ponytail: ASCII-only assumption (only "es"/"vi" are matched today). If a
     // non-ASCII language key is ever added, to_lowercase() diverges from
     // Python's .casefold() for some scripts -- switch to a caseless crate then.
@@ -8164,13 +8295,18 @@ fn civicaccess_language_variant(
         state,
         "civicaccess",
         "civicaccess-language-variant",
-        format!("Multilingual variant requested for language {language}: {status}."),
+        format!(
+            "Multilingual variant for {language}: {status} via deterministic sample (AI engine not ready); qualified human translator review required."
+        ),
     );
     Ok((
-        format!("{status}: {variant}\nHuman review required before publication."),
+        format!(
+            "AI engine not ready — sample variant returned. {status}: {variant}\nHuman review required before publication."
+        ),
         vec![
             "Route the variant to a qualified human translator/reviewer before publication."
                 .to_string(),
+            "Open System Health to download, verify, and load the local AI model for real draft translations.".to_string(),
         ],
         CIVICACCESS_DISCLAIMER.to_string(),
     ))
@@ -9368,6 +9504,255 @@ mod tests {
             let body_hits = search_city_work(&state, "public text is empty");
             assert!(body_hits.iter().any(|r| r.module_id == "civicaccess"));
         });
+    }
+
+    // ===== CivicAccess local-AI dual-path coverage =====
+    //
+    // Each AI-touched feature gets three tests: the AI path (fake model seam
+    // set), the not-ready fallback (seam unset; a temp state dir is never
+    // model-ready), and the determinism floor. The not-ready class is new
+    // suite-wide -- no prior test exercised any AI action with the model
+    // absent (the three existing AI features hard-stop there instead of
+    // falling back, so they had nothing to assert).
+
+    #[test]
+    fn civicaccess_plain_language_uses_local_ai_when_available() {
+        with_temp_state_dir(|_| {
+            env::set_var(
+                "CIVICSUITE_FAKE_MODEL_RESPONSE",
+                "Pay before the deadline. Work starts after approval and ends at year end.",
+            );
+            let plain = city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({
+                    "text": "Residents must remit payment prior to the deadline."
+                })),
+            );
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            let plain = plain.expect("AI plain-language draft generated");
+            assert!(plain.message.contains("Local AI plain-language draft"));
+            assert!(
+                plain.message.contains("civicsuite-gemma4-12b-qat:q4_0"),
+                "result names the runtime model"
+            );
+            assert!(plain
+                .message
+                .contains("human review required before publication"));
+            assert!(plain.message.contains("Pay before the deadline."));
+            let state = city_work_state().expect("state reads after AI rewrite");
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for AI rewrite");
+            assert!(audit.summary.contains("Local AI plain-language draft"));
+            assert!(audit.summary.contains("civicsuite-gemma4-12b-qat:q4_0"));
+            assert!(audit.summary.contains("human review required"));
+        });
+    }
+
+    #[test]
+    fn civicaccess_plain_language_falls_back_when_model_not_ready() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            let plain = city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({
+                    "text": "Residents must remit payment prior to the deadline."
+                })),
+            )
+            .expect("fallback rewrite still succeeds with no model");
+            assert!(
+                plain.message.contains("AI engine not ready"),
+                "fallback result is explicitly marked"
+            );
+            assert!(
+                plain.message.contains("pay") && plain.message.contains("before"),
+                "deterministic jargon-map pass still applied"
+            );
+            assert!(plain
+                .next_steps
+                .iter()
+                .any(|step| step.contains("System Health")));
+            let state = city_work_state().expect("state reads after fallback rewrite");
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for fallback rewrite");
+            assert!(audit.summary.contains("AI engine not ready"));
+            assert!(audit.summary.contains("deterministic jargon-map rewrite"));
+        });
+    }
+
+    #[test]
+    fn civicaccess_language_variant_uses_local_ai_for_any_language() {
+        with_temp_state_dir(|_| {
+            env::set_var(
+                "CIVICSUITE_FAKE_MODEL_RESPONSE",
+                "La ciudad reparara una tuberia principal el martes por la manana.",
+            );
+            let es = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({
+                    "text": "The city will repair a water main on Tuesday morning.",
+                    "language": "es"
+                })),
+            );
+            // AI path serves ANY target language, not just the canned es/vi pair.
+            let de = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({
+                    "text": "The city will repair a water main on Tuesday morning.",
+                    "language": "de"
+                })),
+            );
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            let es = es.expect("es AI translation drafted");
+            let de = de.expect("de AI translation drafted");
+            for result in [&es, &de] {
+                assert!(result.message.contains("ai-draft-translation"));
+                assert!(result.message.contains("civicsuite-gemma4-12b-qat:q4_0"));
+                assert!(result.message.contains("Human review required"));
+                assert!(result
+                    .next_steps
+                    .iter()
+                    .any(|step| step.contains("qualified human translator")));
+            }
+            let state = city_work_state().expect("state reads after AI variants");
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for AI variant");
+            assert!(audit.summary.contains("ai-draft-translation"));
+            assert!(audit.summary.contains("qualified human translator"));
+        });
+    }
+
+    #[test]
+    fn civicaccess_language_variant_falls_back_when_model_not_ready() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            let es = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": "es"})),
+            )
+            .expect("es fallback variant still runs");
+            assert!(es.message.contains("AI engine not ready"));
+            assert!(es.message.contains("sample-created"));
+            assert!(es.message.contains("Muestra:"));
+            let unsupported = city_work_action(
+                "civicaccess-language-variant",
+                Some(&serde_json::json!({"text": "Hello", "language": "xx"})),
+            )
+            .expect("unsupported fallback variant still runs");
+            assert!(unsupported.message.contains("AI engine not ready"));
+            assert!(unsupported
+                .message
+                .contains("unsupported-language-placeholder"));
+            let state = city_work_state().expect("state reads after fallback variants");
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for fallback variant");
+            assert!(audit.summary.contains("AI engine not ready"));
+        });
+    }
+
+    #[test]
+    fn accessibility_review_attaches_ai_analysis_when_available() {
+        with_temp_state_dir(|_| {
+            env::set_var(
+                "CIVICSUITE_FAKE_MODEL_RESPONSE",
+                "Fix the missing alt text first; it blocks screen-reader users entirely.",
+            );
+            let saved = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "Water main repair notice",
+                    "body": "The city water department will repair a main on Tuesday morning.",
+                    "hasAltText": false,
+                    "language": "en"
+                })),
+            );
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            let saved = saved.expect("review with AI analysis saved");
+            assert!(saved.message.contains("Local AI analysis"));
+            assert!(saved.message.contains("advisory, human review required"));
+            let state = city_work_state().expect("state reads after AI review");
+            let review = state.access.reviews.last().expect("review persists");
+            assert_eq!(
+                review.ai_analysis.as_deref(),
+                Some("Fix the missing alt text first; it blocks screen-reader users entirely.")
+            );
+            assert_eq!(
+                review.ai_analysis_model.as_deref(),
+                Some("civicsuite-gemma4-12b-qat:q4_0")
+            );
+            // Determinism floor: status and findings come only from the rules.
+            assert_eq!(review.status, "needs-fixes");
+            assert_eq!(review.findings.len(), 1);
+            assert_eq!(review.findings[0].code, "missing-alt-text");
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for AI review");
+            assert!(audit.summary.contains("local AI analysis added"));
+        });
+    }
+
+    #[test]
+    fn accessibility_review_saves_without_ai_when_model_not_ready() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            let saved = city_work_action(
+                "accessibility-review",
+                Some(&serde_json::json!({
+                    "title": "Water main repair notice",
+                    "body": "The city water department will repair a main on Tuesday morning.",
+                    "hasAltText": true,
+                    "language": "en"
+                })),
+            )
+            .expect("review saves with no model -- AI never blocks reviews");
+            assert!(saved.message.contains("passes-sample-checks"));
+            assert!(
+                !saved.message.contains("Local AI analysis"),
+                "no AI block claimed when none ran"
+            );
+            let state = city_work_state().expect("state reads after deterministic review");
+            let review = state.access.reviews.last().expect("review persists");
+            assert!(review.ai_analysis.is_none());
+            assert!(review.ai_analysis_model.is_none());
+            assert_eq!(review.status, "passes-sample-checks");
+            let audit = state
+                .audit_entries
+                .last()
+                .expect("audit entry written for deterministic review");
+            assert!(audit
+                .summary
+                .contains("AI engine not ready — deterministic findings only"));
+        });
+    }
+
+    #[test]
+    fn stored_review_without_ai_fields_still_deserializes() {
+        // Older city-work.json states predate ai_analysis/ai_analysis_model;
+        // serde(default) must keep them loading.
+        let legacy = serde_json::json!({
+            "review_id": "access-review-legacy",
+            "title": "Legacy review",
+            "body": "Saved before the AI fields existed.",
+            "has_alt_text": true,
+            "language": "en",
+            "status": "passes-sample-checks",
+            "findings": [],
+            "disclaimer": "Advisory only.",
+            "created_at_unix_seconds": 1700000000
+        });
+        let review: StoredAccessibilityReview =
+            serde_json::from_value(legacy).expect("legacy review deserializes");
+        assert!(review.ai_analysis.is_none());
+        assert!(review.ai_analysis_model.is_none());
+        assert_eq!(review.review_id, "access-review-legacy");
     }
 
     // Err-path coverage for the civicaccess dispatcher arms (review #216 critical fix).

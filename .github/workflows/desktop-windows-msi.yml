@@ -245,7 +245,7 @@ jobs:
           # Point the test at the payload just prepared above.
           CIVICSUITE_RUNTIME_PAYLOAD_DIR: ${{ github.workspace }}\civicsuite\desktop\runtime\payload
         run: |
-          cargo test real_postgres_payload_initializes_and_migrates_when_enabled -- --nocapture --test-threads=1
+          cargo test -- --nocapture --test-threads=1 real_postgres_payload_initializes_and_migrates_when_enabled real_ollama_runtime_with_no_model_serves_the_not_ready_contract_when_enabled
 
       - name: Upload integration runtime logs
         if: always()

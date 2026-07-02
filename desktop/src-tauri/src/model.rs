@@ -1751,6 +1751,23 @@ pub(crate) fn local_model_ready() -> Result<bool, String> {
     Ok(model_state()?.ready)
 }
 
+/// Whether an AI-generation call would succeed right now. Handlers that branch
+/// AI-vs-deterministic-fallback must use this instead of local_model_ready()
+/// directly: the CIVICSUITE_FAKE_MODEL_RESPONSE test seam fires inside
+/// generate_local_text() before its readiness check, so a fallback branch keyed
+/// on raw readiness alone could never reach the AI path under cargo test (a
+/// temp state dir is never model-ready).
+pub(crate) fn local_generation_available() -> Result<bool, String> {
+    if cfg!(test) {
+        if let Ok(fake_response) = env::var("CIVICSUITE_FAKE_MODEL_RESPONSE") {
+            if !fake_response.trim().is_empty() {
+                return Ok(true);
+            }
+        }
+    }
+    local_model_ready()
+}
+
 pub(crate) fn pinned_runtime_model() -> Result<String, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -2049,6 +2066,18 @@ mod tests {
                 .checks
                 .iter()
                 .any(|check| check.id == "runtime-model" && !check.ok));
+        });
+    }
+
+    #[test]
+    fn local_generation_available_honors_fake_seam_and_fresh_state() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(!local_generation_available().expect("readiness computes"));
+            env::set_var("CIVICSUITE_FAKE_MODEL_RESPONSE", "Fake local draft.");
+            assert!(local_generation_available().expect("fake seam counts as available"));
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(!local_generation_available().expect("readiness computes again"));
         });
     }
 
