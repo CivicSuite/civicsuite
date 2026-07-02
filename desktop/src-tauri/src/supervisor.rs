@@ -3583,15 +3583,31 @@ mod tests {
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&root);
+        // Restore each var's PRIOR value on exit instead of blindly removing:
+        // CIVICSUITE_RUNTIME_PAYLOAD_DIR is supplied by the CI step env, and
+        // the first gated test's cleanup used to delete it out from under the
+        // second gated test in the same process (the helper predates running
+        // more than one payload test per invocation).
+        let prior: Vec<(&str, Option<std::ffi::OsString>)> = [
+            "CIVICSUITE_DESKTOP_STATE_DIR",
+            "CIVICSUITE_RUNTIME_ROOT",
+            "CIVICSUITE_RUNTIME_PAYLOAD_DIR",
+            "CIVICSUITE_BACKUP_DIR",
+        ]
+        .iter()
+        .map(|name| (*name, env::var_os(name)))
+        .collect();
         env::set_var("CIVICSUITE_DESKTOP_STATE_DIR", &root);
         env::set_var("CIVICSUITE_RUNTIME_ROOT", root.join("Runtime"));
         env::set_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR", &payload_dir);
         env::set_var("CIVICSUITE_BACKUP_DIR", root.join("Backups"));
         let result = test(root.clone());
-        env::remove_var("CIVICSUITE_DESKTOP_STATE_DIR");
-        env::remove_var("CIVICSUITE_RUNTIME_ROOT");
-        env::remove_var("CIVICSUITE_RUNTIME_PAYLOAD_DIR");
-        env::remove_var("CIVICSUITE_BACKUP_DIR");
+        for (name, value) in prior {
+            match value {
+                Some(value) => env::set_var(name, value),
+                None => env::remove_var(name),
+            }
+        }
         remove_payload_runtime_links(&root);
         let _ = fs::remove_dir_all(root);
         result
@@ -3599,9 +3615,14 @@ mod tests {
 
     #[cfg(windows)]
     fn link_payload_runtime(root: &Path, payload_dir: &Path) {
+        link_payload_runtime_set(root, payload_dir, &["postgres", "python"]);
+    }
+
+    #[cfg(windows)]
+    fn link_payload_runtime_set(root: &Path, payload_dir: &Path, payloads: &[&str]) {
         let runtime_dir = root.join("Runtime").join("runtime");
         fs::create_dir_all(&runtime_dir).expect("runtime dir");
-        for payload in ["postgres", "python"] {
+        for payload in payloads {
             let source = payload_dir.join(payload);
             assert!(
                 source.is_dir(),
@@ -3632,7 +3653,7 @@ mod tests {
 
     fn remove_payload_runtime_links(root: &Path) {
         let runtime_dir = root.join("Runtime").join("runtime");
-        for payload in ["postgres", "python"] {
+        for payload in ["postgres", "python", "ollama"] {
             let _ = fs::remove_dir(runtime_dir.join(payload));
         }
     }
@@ -4140,12 +4161,23 @@ mod tests {
                 .expect("install python service payload");
             let start = supervisor_action("start", Some("postgres")).expect("start postgres");
             assert!(start.accepted);
+            // Reverse-order drop guards: stop the services even if an assert
+            // below panics (see ServiceStopGuard).
+            let _postgres_guard = ServiceStopGuard {
+                service_id: "postgres",
+            };
             let python_start =
                 supervisor_action("start", Some("python-services")).expect("start python services");
             assert!(python_start.accepted);
+            let _python_guard = ServiceStopGuard {
+                service_id: "python-services",
+            };
             let worker_start =
                 supervisor_action("start", Some("task-queue")).expect("start task queue");
             assert!(worker_start.accepted);
+            let _worker_guard = ServiceStopGuard {
+                service_id: "task-queue",
+            };
             for _ in 0..40 {
                 let health = runtime_health().expect("health builds");
                 if health
@@ -4167,6 +4199,91 @@ mod tests {
             supervisor_action("stop", Some("python-services")).expect("stop python services");
             supervisor_action("stop", Some("postgres")).expect("stop postgres");
         });
+    }
+
+    // Proves the real "AI engine not ready" plumbing the CivicAccess dual-path
+    // handlers depend on: a genuine Ollama server (from the prepared payload)
+    // with ZERO models installed serves /api/tags health fine, model readiness
+    // still reports not-ready (weights/checksum/registry absent), and a
+    // CivicAccess AI-capable action returns the labeled deterministic fallback
+    // through the real HTTP probe path -- not the compile-time test stub.
+    #[test]
+    fn real_ollama_runtime_with_no_model_serves_the_not_ready_contract_when_enabled() {
+        if env::var("CIVICSUITE_RUN_REAL_RUNTIME_TEST").ok().as_deref() != Some("1") {
+            return;
+        }
+        let payload_dir = env::var("CIVICSUITE_RUNTIME_PAYLOAD_DIR")
+            .map(PathBuf::from)
+            .expect("CIVICSUITE_RUNTIME_PAYLOAD_DIR points at prepared desktop runtime payload");
+        let linked_payload_dir = payload_dir.clone();
+        with_temp_state_dir_and_payload(payload_dir, |root| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            env::remove_var("CIVICSUITE_FAKE_MODEL_ERROR");
+            #[cfg(windows)]
+            link_payload_runtime_set(&root, &linked_payload_dir, &["ollama"]);
+            supervisor_action("install", Some("model-runtime")).expect("install ollama payload");
+            let start = supervisor_action("start", Some("model-runtime")).expect("start ollama");
+            assert!(start.accepted);
+            // Stop the spawned ollama even if an assert below panics -- an
+            // orphaned server would leak into the runner and poison the shared
+            // test lock for the sibling gated test.
+            let _stop_guard = ServiceStopGuard {
+                service_id: "model-runtime",
+            };
+            let mut runtime_ok = false;
+            for _ in 0..60 {
+                let health = runtime_health().expect("health builds");
+                if health
+                    .iter()
+                    .any(|item| item.id == "model-runtime" && item.ok)
+                {
+                    runtime_ok = true;
+                    break;
+                }
+                thread::sleep(Duration::from_millis(500));
+            }
+            assert!(runtime_ok, "ollama serves /api/tags with zero models");
+            let state = crate::model::model_state().expect("model state builds");
+            assert!(
+                !state.ready,
+                "runtime up + weights absent must stay not-ready"
+            );
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "runtime" && check.ok));
+            assert!(state
+                .checks
+                .iter()
+                .any(|check| check.id == "artifact-file" && !check.ok));
+            let fallback = crate::workflows::city_work_action(
+                "civicaccess-plain-language",
+                Some(&serde_json::json!({
+                    "text": "Residents must remit payment prior to the deadline."
+                })),
+            )
+            .expect("fallback rewrite succeeds against a model-less runtime");
+            assert!(
+                fallback.message.contains("AI engine not ready"),
+                "fallback result carries the explicit marker through the real probe path"
+            );
+            // "must pay before" only exists if the jargon-map rewrite really
+            // ran ("remit payment" -> "pay", "prior to" -> "before"); a bare
+            // "pay" would be satisfied by the input's own "payment".
+            assert!(fallback.message.contains("must pay before"));
+        });
+    }
+
+    // Drop-guard: best-effort service stop that also runs on panic, so a
+    // failing gated test cannot orphan its spawned process into the runner.
+    struct ServiceStopGuard {
+        service_id: &'static str,
+    }
+
+    impl Drop for ServiceStopGuard {
+        fn drop(&mut self) {
+            let _ = supervisor_action("stop", Some(self.service_id));
+        }
     }
 
     #[test]

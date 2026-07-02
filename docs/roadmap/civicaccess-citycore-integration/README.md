@@ -3,7 +3,23 @@
 **Created:** 2026-06-28. **Status:** DRAFT plan-of-record, awaiting per-phase approval gates.
 **Supersedes:** `.agent-runs/2026-06-25-civicaccess-city-core-phase1/manifest.yaml` (single registry-first Phase 1 — see why below).
 
-Goal: make **CivicAccess the sixth city-core module** (CivicCore + CivicRecords AI + CivicClerk + CivicCode + CivicNotice + **CivicAccess**), installable end-to-end per the full-suite program Definition of Done. CivicAccess is deterministic / **no live AI** -> it follows the shipped **CivicNotice** no-AI pattern.
+Goal: make **CivicAccess the sixth city-core module** (CivicCore + CivicRecords AI + CivicClerk + CivicCode + CivicNotice + **CivicAccess**), installable end-to-end per the full-suite program Definition of Done. ~~CivicAccess is deterministic / **no live AI** -> it follows the shipped **CivicNotice** no-AI pattern.~~
+
+> **AMENDED 2026-07-02 (project owner directive, supersedes the no-AI rule below).**
+> CivicAccess's desktop port now uses the suite's local AI engine (the pinned
+> Gemma model via `model.rs::generate_local_text`, same engine as
+> CivicClerk/CivicRecords/CivicCode) for plain-language rewrite drafts,
+> multilingual variant drafts, and an advisory accessibility-review analysis —
+> each with a deterministic fallback and an explicit "AI engine not ready" UI
+> state when the model is absent. The five deterministic WCAG rule checks remain
+> the records-bearing floor (AI never adds/removes/reclassifies a finding), and
+> the four checklist tools stay deterministic. `model_needs` now declares the
+> pinned Gemma model `required: true`. The upstream Python module stays
+> deterministic v0.4.0; the AI lives in the desktop Rust port, matching how the
+> other three AI-capable modules ship. The UnifiedSpec never excluded AI from
+> CivicAccess (§12) and its non-negotiables ("AI drafts; humans decide", "local
+> inference is the default", "degrades gracefully when the LLM is unavailable")
+> are exactly the shape of this integration.
 
 ## Why the original Phase-1-first plan was scrapped
 
@@ -33,4 +49,4 @@ The profile only becomes 6 modules in Phase C, **after** the runtime exists (Pha
 - **Binding gate:** the umbrella Python contract verifier does NOT validate desktop contract fields. The authoritative gate is **`cargo test` in `desktop/src-tauri`** (`validate_profile`). Add it to required gates.
 - **Pin guard:** pin CivicAccess to the **v0.4.0** commit. Explicit non-goal in every phase: never pin v1.0.0.
 - **DoD honesty:** a green CI run / passing tests / a label is NOT done. Only the **clean-VM evidence kit committed with the release tag** is done (program DoD).
-- **`model_needs: []`** (empty) everywhere — deterministic, no Ollama/model dependency.
+- ~~**`model_needs: []`** (empty) everywhere — deterministic, no Ollama/model dependency.~~ **Superseded 2026-07-02** by the owner directive above: `model_needs` declares the pinned `gemma-4-12b-it-qat-q4_0` with `required: true` for the AI-backed features (deterministic fallback preserved).

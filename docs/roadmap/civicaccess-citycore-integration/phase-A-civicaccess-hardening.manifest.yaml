@@ -88,4 +88,5 @@ pipeline_run:
   director_notes:
     - "researcher: diff civicnotice's _authorize_persistent_write + its Postgres release gate (CIVICNOTICE_POSTGRES_TEST_URL) and mirror them 1:1 for civicaccess."
     - "executor: deterministic module - do NOT add any Ollama/model/queue dependency."
+    - "SUPERSEDED 2026-07-02 (owner directive, see the AMENDED note atop README.md in this directory): the DESKTOP PORT now uses the suite local AI engine with deterministic fallback (PR #220); the upstream Python module this phase hardened stays deterministic as shipped."
     - "critic: verify the write-token guard actually covers /civicaccess/staff and ALL write routes (the v0.3.0 staff/public split is cosmetic); a missing guard repeats the exact reason CivicAccess was demoted."

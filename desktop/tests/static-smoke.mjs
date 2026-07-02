@@ -555,16 +555,42 @@ for (const phrase of [
   "deadlineBasis",
   "Generated local AI minutes draft",
   "Generated local AI records response draft",
-  "Generated local AI code guidance draft"
+  "Generated local AI code guidance draft",
+  "Local AI plain-language draft",
+  "ai-draft-translation",
+  "local AI analysis added",
+  "AI engine not ready",
+  "Rewrite the following public-facing city text in plain language",
+  "Translate the following public-facing city text into"
 ]) {
   if (!workflowRust.includes(phrase)) {
     throw new Error(`desktop workflow missing local AI action phrase: ${phrase}`);
   }
 }
 
+// CivicAccess dual-path UI state: the not-ready banner and the guided-review
+// copy for the three AI-touched actions must stay in main.js so the Playwright
+// asserts and the Rust result strings cannot silently drift apart.
+for (const phrase of [
+  "AI engine not ready",
+  "Open model setup",
+  "civicaccess-plain-language",
+  "civicaccess-language-variant",
+  "Review Before Running Accessibility Review",
+  "Review Before Drafting Plain-Language Rewrite",
+  "Review Before Drafting Translation Variant"
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop civicaccess AI state missing phrase: ${phrase}`);
+  }
+}
+
 for (const phrase of [
   "generate_local_text",
-  "/api/generate",
+  // /api/chat (not raw /api/generate): the pinned gemma4 model requires its
+  // own template+parser; raw:true bypassed it and produced garbage output
+  // (found in Phase D). Pin the corrected endpoint so it can't silently revert.
+  "/api/chat",
   "num_predict",
   "LOCAL_GENERATION_NUM_CTX",
   "Local AI model is not ready"

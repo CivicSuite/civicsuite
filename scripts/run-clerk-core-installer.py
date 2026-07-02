@@ -30,6 +30,7 @@ DEFAULT_RECORDS_PORTS = {"api": 18000, "web": 18080}
 DEFAULT_CLERK_PORTS = {"api": 18776, "web": 18081}
 DEFAULT_CODE_PORTS = {"api": 18820}
 DEFAULT_NOTICE_PORTS = {"api": 18866}
+DEFAULT_ACCESS_PORTS = {"api": 18860}
 DEFAULT_SUITE_LAUNCHER_PORT = 18082
 SUITE_LAUNCHER_SOURCE = ROOT / "installer" / "runtime" / "suite-launcher"
 SUITE_LAUNCHER_DIR_NAME = "suite-launcher"
@@ -43,13 +44,15 @@ MODULE_RECORDS = "civicrecords-ai"
 MODULE_CLERK = "civicclerk"
 MODULE_CODE = "civiccode"
 MODULE_NOTICE = "civicnotice"
-SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE, MODULE_NOTICE)
+MODULE_ACCESS = "civicaccess"
+SELECTABLE_MODULES = (MODULE_RECORDS, MODULE_CLERK, MODULE_CODE, MODULE_NOTICE, MODULE_ACCESS)
 DEFAULT_SELECTED_MODULES = (MODULE_RECORDS, MODULE_CLERK)
 EXPECTED_CIVICCORE_VERSION = "1.2.0"
 EXPECTED_RECORDS_VERSION = "1.7.3"
 EXPECTED_CLERK_VERSION = "1.0.4"
 EXPECTED_CODE_VERSION = "1.0.8"
 EXPECTED_NOTICE_VERSION = "0.2.0"
+EXPECTED_ACCESS_VERSION = "0.4.0"
 SELECTED_MODULES_FILE = "selected-modules.json"
 BACKUPS_DIR = "backups"
 CLERK_STAFF_MODE_PROTECTED = "protected"
@@ -123,6 +126,9 @@ def resolve_isolation(
     notice_ports = {
         "api": DEFAULT_NOTICE_PORTS["api"] + resolved_offset,
     }
+    access_ports = {
+        "api": DEFAULT_ACCESS_PORTS["api"] + resolved_offset,
+    }
     launcher_ports = {
         "web": DEFAULT_SUITE_LAUNCHER_PORT,
     }
@@ -134,6 +140,7 @@ def resolve_isolation(
             "civicclerk": clerk_ports,
             "civiccode": code_ports,
             "civicnotice": notice_ports,
+            "civicaccess": access_ports,
             "suite-launcher": launcher_ports,
         },
         "compose_projects": {
@@ -141,6 +148,7 @@ def resolve_isolation(
             "civicclerk": f"civicsuite-{suffix}-clerk",
             "civiccode": f"civicsuite-{suffix}-code",
             "civicnotice": f"civicsuite-{suffix}-notice",
+            "civicaccess": f"civicsuite-{suffix}-access",
         },
         "shared_network": f"civicsuite-{suffix}-citycore",
     }
@@ -338,7 +346,7 @@ def normalize_selected_modules(selected_modules: list[str] | tuple[str, ...] | N
     requested = list(selected_modules or DEFAULT_SELECTED_MODULES)
     if not requested:
         raise InstallerError(
-            "Select at least one module: civicrecords-ai, civicclerk, civiccode, or civicnotice."
+            "Select at least one module: civicrecords-ai, civicclerk, civiccode, civicnotice, or civicaccess."
         )
     normalized: list[str] = []
     for module in requested:
@@ -963,6 +971,86 @@ volumes:
         )
 
 
+def write_access_env(target: Path, ports: dict[str, int]) -> None:
+    if target.is_file():
+        return
+    password = secrets.token_hex(24)
+    db_url = f"postgresql+psycopg2://civicaccess:{password}@postgres:5432/civicaccess"
+    values = {
+        "POSTGRES_DB": "civicaccess",
+        "POSTGRES_USER": "civicaccess",
+        "POSTGRES_PASSWORD": password,
+        "CIVICACCESS_API_PORT": str(ports["api"]),
+        "CIVICACCESS_REVIEW_DB_URL": db_url,
+        "CIVICACCESS_TRUSTED_WRITE_TOKEN": secrets.token_urlsafe(32),
+    }
+    target.write_text(
+        "\n".join(f"{key}={value}" for key, value in values.items()) + "\n",
+        encoding="utf-8",
+    )
+
+
+def write_access_compose(source: Path) -> None:
+    dockerfile = source / "Dockerfile.civicsuite"
+    if not dockerfile.is_file():
+        dockerfile.write_text(
+            """FROM python:3.11-slim
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+COPY . /app
+RUN pip install --no-cache-dir . "psycopg2-binary>=2.9,<3.0"
+EXPOSE 8000
+CMD ["uvicorn", "civicaccess.main:app", "--host", "0.0.0.0", "--port", "8000"]
+""",
+            encoding="utf-8",
+            newline="\n",
+        )
+    compose_file = source / "docker-compose.yml"
+    if not compose_file.is_file():
+        compose_file.write_text(
+            """services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-civicaccess}
+      POSTGRES_USER: ${POSTGRES_USER:-civicaccess}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-civicaccess}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-civicaccess} -d ${POSTGRES_DB:-civicaccess}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - access-postgres:/var/lib/postgresql/data
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.civicsuite
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      CIVICACCESS_REVIEW_DB_URL: ${CIVICACCESS_REVIEW_DB_URL}
+      CIVICACCESS_TRUSTED_WRITE_TOKEN: ${CIVICACCESS_TRUSTED_WRITE_TOKEN}
+    ports:
+      - "${CIVICACCESS_API_PORT:-18860}:8000"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read()"
+      interval: 10s
+      timeout: 5s
+      retries: 18
+volumes:
+  access-postgres:
+""",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+
 def compose(project: str, source: Path, *args: str) -> list[str]:
     command = [docker_command(), "compose", "-p", project, "-f", "docker-compose.yml"]
     override = source / "docker-compose.civicsuite.override.yml"
@@ -1264,6 +1352,7 @@ def verify_civiccore_contract(
     clerk_ports: dict[str, int],
     code_ports: dict[str, int] | None = None,
     notice_ports: dict[str, int] | None = None,
+    access_ports: dict[str, int] | None = None,
     *,
     selected_modules: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, object]:
@@ -1290,6 +1379,11 @@ def verify_civiccore_contract(
             if MODULE_NOTICE in modules and notice_ports is not None
             else (None, {})
         )
+        access_status, access_health = (
+            get_json(f"http://127.0.0.1:{access_ports['api']}/health")
+            if MODULE_ACCESS in modules and access_ports is not None
+            else (None, {})
+        )
     except (OSError, json.JSONDecodeError) as exc:
         return {"name": "starter_set_civiccore_contract", "status": "failed", "error": str(exc), "checks": checks}
 
@@ -1297,6 +1391,7 @@ def verify_civiccore_contract(
     clerk_ok = True
     code_ok = True
     notice_ok = True
+    access_ok = True
     if MODULE_RECORDS in modules:
         checks.append({"name": "civicrecords_health", "status_code": records_status, "payload": records_health})
         records_ok = records_status == 200 and records_health.get("version") == EXPECTED_RECORDS_VERSION
@@ -1324,6 +1419,14 @@ def verify_civiccore_contract(
             and notice_health.get("version") == EXPECTED_NOTICE_VERSION
             and notice_health.get("civiccore_version") == EXPECTED_CIVICCORE_VERSION
         )
+    if MODULE_ACCESS in modules:
+        checks.append({"name": "civicaccess_health", "status_code": access_status, "payload": access_health})
+        access_ok = (
+            access_status == 200
+            and access_health.get("service") == "civicaccess"
+            and access_health.get("version") == EXPECTED_ACCESS_VERSION
+            and access_health.get("civiccore_version") == EXPECTED_CIVICCORE_VERSION
+        )
     expected: dict[str, object] = {}
     if MODULE_RECORDS in modules:
         expected[MODULE_RECORDS] = {"version": EXPECTED_RECORDS_VERSION}
@@ -1336,10 +1439,15 @@ def verify_civiccore_contract(
             "version": EXPECTED_NOTICE_VERSION,
             "civiccore_version": EXPECTED_CIVICCORE_VERSION,
         }
+    if MODULE_ACCESS in modules:
+        expected[MODULE_ACCESS] = {
+            "version": EXPECTED_ACCESS_VERSION,
+            "civiccore_version": EXPECTED_CIVICCORE_VERSION,
+        }
     expected["civiccore"] = {
         "role": "base dependency installed before selected modules through the installer plan"
     }
-    status = "passed" if records_ok and clerk_ok and code_ok and notice_ok else "failed"
+    status = "passed" if records_ok and clerk_ok and code_ok and notice_ok and access_ok else "failed"
     return {
         "name": "starter_set_civiccore_contract",
         "status": status,
@@ -1850,6 +1958,59 @@ def verify_code_workflow(ports: dict[str, int]) -> dict[str, object]:
     return {"name": "civiccode_workflow", "status": "passed", "checks": checks}
 
 
+def verify_access_workflow(access_source: Path, ports: dict[str, int]) -> dict[str, object]:
+    base = f"http://127.0.0.1:{ports['api']}"
+    checks: list[dict[str, object]] = []
+    write_token = parse_env_file(access_source / ".env").get("CIVICACCESS_TRUSTED_WRITE_TOKEN", "")
+    if not write_token:
+        return {
+            "name": "civicaccess_workflow",
+            "status": "failed",
+            "error": f"CIVICACCESS_TRUSTED_WRITE_TOKEN missing from {access_source / '.env'}",
+            "checks": checks,
+        }
+    write_headers = {"X-CivicAccess-Write-Token": write_token}
+    review_payload = {
+        "title": "Installer workflow proof publication",
+        "body": "City-core installer proof: confirm this public notice reads clearly and remains accessible.",
+        "has_alt_text": True,
+        "language": "en",
+    }
+    try:
+        health_status, health = get_json(f"{base}/health")
+        checks.append({"name": "health", "status_code": health_status, "payload": health})
+        if (
+            health_status != 200
+            or health.get("service") != "civicaccess"
+            or health.get("version") != EXPECTED_ACCESS_VERSION
+            or health.get("civiccore_version") != EXPECTED_CIVICCORE_VERSION
+        ):
+            return {"name": "civicaccess_workflow", "status": "failed", "checks": checks}
+        create_status, created = post_json(f"{base}/api/v1/civicaccess/review", review_payload, headers=write_headers)
+        review_id = created.get("review_id")
+        checks.append({"name": "create_accessibility_review", "status_code": create_status, "review_id_present": bool(review_id)})
+        if create_status != 200 or not review_id:
+            return {"name": "civicaccess_workflow", "status": "failed", "checks": checks}
+        read_status, read_back = get_json(f"{base}/api/v1/civicaccess/reviews/{review_id}")
+        checks.append(
+            {
+                "name": "read_accessibility_review_back",
+                "status_code": read_status,
+                "review_id_matches": read_back.get("review_id") == review_id,
+                "title_matches": read_back.get("title") == review_payload["title"],
+            }
+        )
+        if read_status != 200 or read_back.get("review_id") != review_id or read_back.get("title") != review_payload["title"]:
+            return {"name": "civicaccess_workflow", "status": "failed", "checks": checks}
+        forged_status, forged = post_json(f"{base}/api/v1/civicaccess/review", review_payload)
+        checks.append({"name": "missing_write_token_boundary", "status_code": forged_status, "payload": forged})
+        if forged_status != 403:
+            return {"name": "civicaccess_workflow", "status": "failed", "checks": checks}
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"name": "civicaccess_workflow", "status": "failed", "error": str(exc), "checks": checks}
+    return {"name": "civicaccess_workflow", "status": "passed", "checks": checks}
+
+
 def verify_clerk_to_code_handoff(ctx: dict[str, object]) -> dict[str, object]:
     ports = ctx["ports"]
     if not isinstance(ports, dict):
@@ -2039,6 +2200,9 @@ def verify_starter_set_workflow_contract(
     if MODULE_CODE in modules:
         code_ports = ports["civiccode"]
         checks.append(verify_code_workflow(code_ports))  # type: ignore[arg-type]
+    if MODULE_ACCESS in modules:
+        access_ports = ports["civicaccess"]
+        checks.append(verify_access_workflow(Path(ctx["access_source"]), access_ports))  # type: ignore[arg-type]
     if MODULE_CLERK in modules and MODULE_CODE in modules:
         checks.append(verify_clerk_to_code_handoff(ctx))
     status = "passed" if checks and all(check.get("status") == "passed" for check in checks) else "failed"
@@ -2071,10 +2235,12 @@ def lifecycle_context(
         "clerk_source": install_root / "sources" / "civicclerk",
         "code_source": install_root / "sources" / "civiccode",
         "notice_source": install_root / "sources" / "civicnotice",
+        "access_source": install_root / "sources" / "civicaccess",
         "records_project": compose_projects["civicrecords-ai"],
         "clerk_project": compose_projects["civicclerk"],
         "code_project": compose_projects["civiccode"],
         "notice_project": compose_projects["civicnotice"],
+        "access_project": compose_projects["civicaccess"],
         "ports": ports,
         "compose_projects": compose_projects,
         "isolation_id": isolation["isolation_id"],
@@ -2098,6 +2264,7 @@ def prepare_sources(
     clerk_ports = ports["civicclerk"]  # type: ignore[index]
     code_ports = ports["civiccode"]  # type: ignore[index]
     notice_ports = ports["civicnotice"]  # type: ignore[index]
+    access_ports = ports["civicaccess"]  # type: ignore[index]
     shared_network = str(ctx["shared_network"])
     civiccode_intake_secret = secrets.token_urlsafe(32) if MODULE_CLERK in modules and MODULE_CODE in modules else ""
     civiccode_intake_url = (
@@ -2152,6 +2319,10 @@ def prepare_sources(
         copy_source(source_root(MODULE_NOTICE), ctx["notice_source"])  # type: ignore[arg-type]
         write_notice_env(ctx["notice_source"] / ".env", notice_ports)  # type: ignore[operator]
         write_notice_compose(ctx["notice_source"])  # type: ignore[arg-type]
+    if MODULE_ACCESS in modules:
+        copy_source(source_root(MODULE_ACCESS), ctx["access_source"])  # type: ignore[arg-type]
+        write_access_env(ctx["access_source"] / ".env", access_ports)  # type: ignore[operator]
+        write_access_compose(ctx["access_source"])  # type: ignore[arg-type]
     if suite_session_path is not None:
         ctx["suite_session_path"] = suite_session_path
     if suite_session_revocation_path is not None:
@@ -2204,6 +2375,7 @@ def install(
         ("civicclerk", "clerk_source", "clerk_project", ("api", "frontend")),
         ("civiccode", "code_source", "code_project", ("api",)),
         ("civicnotice", "notice_source", "notice_project", ("api",)),
+        ("civicaccess", "access_source", "access_project", ("api",)),
     ):
         if name not in modules:
             steps.append({"module": name, "step": "compose_build", "status": "skipped_not_selected"})
@@ -2375,11 +2547,13 @@ def verify(
     clerk_ports = ports["civicclerk"]  # type: ignore[index]
     code_ports = ports["civiccode"]  # type: ignore[index]
     notice_ports = ports["civicnotice"]  # type: ignore[index]
+    access_ports = ports["civicaccess"]  # type: ignore[index]
     checks: list[dict[str, object]] = []
     records_api_passed = False
     clerk_api_passed = False
     code_api_passed = False
     notice_api_passed = False
+    access_api_passed = False
     if uses_suite_runtime(modules):
         checks.extend(verify_suite_runtime_wiring(ctx))
     if MODULE_RECORDS in modules:
@@ -2401,10 +2575,14 @@ def verify(
         notice_api = {"name": "civicnotice_api", "url": f"http://127.0.0.1:{notice_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{notice_ports['api']}/health", timeout_seconds=180)}
         checks.append(notice_api)
         notice_api_passed = notice_api["status"] == "passed"
+    if MODULE_ACCESS in modules:
+        access_api = {"name": "civicaccess_api", "url": f"http://127.0.0.1:{access_ports['api']}/health", **wait_for_url(f"http://127.0.0.1:{access_ports['api']}/health", timeout_seconds=180)}
+        checks.append(access_api)
+        access_api_passed = access_api["status"] == "passed"
     if clerk_api_passed and not workflow_proof and staff_mode == CLERK_STAFF_MODE_PROTECTED:
         checks.append(verify_clerk_protected_default(clerk_ports))  # type: ignore[arg-type]
-    if records_api_passed or clerk_api_passed or code_api_passed or notice_api_passed:
-        checks.append(verify_civiccore_contract(records_ports, clerk_ports, code_ports, notice_ports, selected_modules=modules))  # type: ignore[arg-type]
+    if records_api_passed or clerk_api_passed or code_api_passed or notice_api_passed or access_api_passed:
+        checks.append(verify_civiccore_contract(records_ports, clerk_ports, code_ports, notice_ports, access_ports, selected_modules=modules))  # type: ignore[arg-type]
     if workflow_proof:
         checks.append(verify_starter_set_workflow_contract(ctx, selected_modules=modules))
     if records_api_passed:
@@ -2434,6 +2612,7 @@ def uninstall(
         ("civicclerk", "clerk_source", "clerk_project"),
         ("civiccode", "code_source", "code_project"),
         ("civicnotice", "notice_source", "notice_project"),
+        ("civicaccess", "access_source", "access_project"),
     ):
         if name not in modules:
             steps.append({"module": name, "step": "compose_down", "status": "skipped_not_selected"})
@@ -2532,6 +2711,17 @@ def module_database_contract(ctx: dict[str, object], module: str) -> dict[str, s
             "postgres_service": "postgres",
             "postgres_user": env_values.get("POSTGRES_USER", "civicnotice"),
             "postgres_db": env_values.get("POSTGRES_DB", "civicnotice"),
+        }
+    if module == MODULE_ACCESS:
+        source = ctx["access_source"]  # type: ignore[assignment]
+        env_values = parse_env_file(Path(source) / ".env")
+        return {
+            "module": module,
+            "source": source,
+            "project": str(ctx["access_project"]),
+            "postgres_service": "postgres",
+            "postgres_user": env_values.get("POSTGRES_USER", "civicaccess"),
+            "postgres_db": env_values.get("POSTGRES_DB", "civicaccess"),
         }
     raise InstallerError(f"Unsupported module for backup/restore: {module}")
 

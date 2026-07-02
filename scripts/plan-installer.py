@@ -2272,7 +2272,7 @@ while [[ "$#" -gt 0 ]]; do
       ;;
     --module)
       if [[ "$#" -lt 2 ]]; then
-        echo "--module requires civicrecords-ai, civicclerk, civiccode, or civicnotice" >&2
+        echo "--module requires civicrecords-ai, civicclerk, civiccode, civicnotice, or civicaccess" >&2
         exit 2
       fi
       SELECTED_MODULES+=("$2")
@@ -2441,7 +2441,7 @@ case "${{MODE}}" in
     python3 "${{PLANNER}}" "${{PLANNER_ARGS[@]}}" --show-readiness --detect-host
     ;;
   *)
-    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode] [--module civicnotice]" >&2
+    echo "Usage: $0 [first-run|bootstrap-prerequisites|readiness|plan|launcher|install|verify|repair|backup|restore|uninstall] [--staff-mode protected|bearer|open] [--workflow-proof] [--module civicrecords-ai] [--module civicclerk] [--module civiccode] [--module civicnotice] [--module civicaccess]" >&2
     exit 2
     ;;
 esac
@@ -2464,6 +2464,7 @@ def _package_readme_text(
         clerk_only_plan = f".\\{launcher} -Plan -Module civicclerk"
         code_only_plan = f".\\{launcher} -Plan -Module civiccode"
         notice_only_plan = f".\\{launcher} -Plan -Module civicnotice"
+        access_only_plan = f".\\{launcher} -Plan -Module civicaccess"
         both_install = (
             f".\\{launcher} -Install {lifecycle_module_args_ps}".strip()
         )
@@ -2476,6 +2477,7 @@ def _package_readme_text(
         clerk_only_plan = f"bash ./{launcher} plan --module civicclerk"
         code_only_plan = f"bash ./{launcher} plan --module civiccode"
         notice_only_plan = f"bash ./{launcher} plan --module civicnotice"
+        access_only_plan = f"bash ./{launcher} plan --module civicaccess"
         both_install = (
             f"bash ./{launcher} install {lifecycle_module_args_sh}".strip()
         )
@@ -2588,6 +2590,7 @@ CivicCore base contract. Operators can choose one module or the whole profile:
 {clerk_only_plan}
 {code_only_plan}
 {notice_only_plan}
+{access_only_plan}
 {both_install}
 ```
 
@@ -2610,8 +2613,9 @@ protected while the proof creates real starter-set test records:
 - Verify mode checks live service endpoints. `--workflow-proof` /
   `-WorkflowProof` also creates live CivicRecords AI request/search/review/
   response proof records, CivicClerk agenda/packet/minutes/vote/notice/
-  archive proof records, and CivicCode health/public lookup proof when
-  CivicCode is selected.
+  archive proof records, CivicCode health/public lookup proof when
+  CivicCode is selected, and a CivicAccess accessibility-review record
+  round-trip proof when CivicAccess is selected.
 - Backup mode writes per-module PostgreSQL custom dumps plus a manifest under
   the installer runtime backup directory.
 - Restore mode verifies the latest backup by restoring each dump into a

@@ -1263,6 +1263,17 @@ mod tests {
             assert!(civiccode.contract_ready);
             assert!(civiccode.blocked_reason.is_none());
 
+            let civicaccess = modules
+                .iter()
+                .find(|module| module.id == "civicaccess")
+                .expect("civicaccess module");
+            assert!(
+                civicaccess.model_required,
+                "civicaccess AI features (plain-language, variants, review analysis) require the pinned local model"
+            );
+            assert!(civicaccess.contract_ready);
+            assert!(civicaccess.blocked_reason.is_none());
+
             let civiczone = modules
                 .iter()
                 .find(|module| module.id == "civiczone")

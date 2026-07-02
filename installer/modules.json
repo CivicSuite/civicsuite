@@ -626,7 +626,11 @@
                                                      "Data/files/access"
                                                  ],
                         "model_needs":  [
-
+                                            {
+                                                "id":  "gemma-4-12b-it-qat-q4_0",
+                                                "required":  true,
+                                                "purpose":  "plain-language rewrite drafts, multilingual variant drafts, accessibility review analysis"
+                                            }
                                         ],
                         "lifecycle":  {
                                           "install":  "profile-selected",

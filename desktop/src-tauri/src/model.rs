@@ -16,8 +16,8 @@ const DEFAULT_OLLAMA_BASE_URL: &str = "http://127.0.0.1:15434";
 const MODEL_RUNTIME_READY_ATTEMPTS: usize = 80;
 const MODEL_RUNTIME_READY_INTERVAL: Duration = Duration::from_millis(500);
 const LOCAL_GENERATION_TIMEOUT_MILLIS: u64 = 180_000;
-const LOCAL_GENERATION_NUM_PREDICT: u16 = 192;
-const LOCAL_GENERATION_NUM_CTX: u16 = 3072;
+const LOCAL_GENERATION_NUM_PREDICT: u16 = 512;
+const LOCAL_GENERATION_NUM_CTX: u16 = 8192;
 const REQUIRED_ACTIONS: [&str; 6] = [
     "download",
     "resume-download",
@@ -1751,6 +1751,28 @@ pub(crate) fn local_model_ready() -> Result<bool, String> {
     Ok(model_state()?.ready)
 }
 
+/// Whether an AI-generation call would succeed right now. Handlers that branch
+/// AI-vs-deterministic-fallback must use this instead of local_model_ready()
+/// directly: the CIVICSUITE_FAKE_MODEL_RESPONSE test seam fires inside
+/// generate_local_text() before its readiness check, so a fallback branch keyed
+/// on raw readiness alone could never reach the AI path under cargo test (a
+/// temp state dir is never model-ready).
+pub(crate) fn local_generation_available() -> Result<bool, String> {
+    if cfg!(test) {
+        if let Ok(fake_response) = env::var("CIVICSUITE_FAKE_MODEL_RESPONSE") {
+            if !fake_response.trim().is_empty() {
+                return Ok(true);
+            }
+        }
+        if let Ok(fake_error) = env::var("CIVICSUITE_FAKE_MODEL_ERROR") {
+            if !fake_error.trim().is_empty() {
+                return Ok(true);
+            }
+        }
+    }
+    local_model_ready()
+}
+
 pub(crate) fn pinned_runtime_model() -> Result<String, String> {
     let manifest = parse_manifest()?;
     validate_manifest(&manifest)?;
@@ -1763,24 +1785,28 @@ fn local_generation_prompt(prompt: &str) -> String {
     )
 }
 
-fn gemma_raw_generation_prompt(prompt: &str) -> String {
-    format!(
-        "<start_of_turn>user\n{}<end_of_turn>\n<start_of_turn>model\n",
-        local_generation_prompt(prompt)
-    )
-}
-
 fn local_generation_request_body(runtime_model: &str, prompt: &str) -> String {
+    // Use Ollama's /api/chat so the model's OWN chat template AND its
+    // architecture parser (this pinned model loads with RENDERER/PARSER
+    // "gemma4") are applied. The previous /api/generate + raw:true +
+    // hand-built <start_of_turn> turn format BYPASSED that parser, so the
+    // model's internal control tokens (e.g. <|channel>) leaked into the
+    // output and every draft came back as garbage or an echo -- verified
+    // live against the real model in Phase D (chat -> clean rewrite/
+    // translation/analysis; raw:true -> digit spam). No manual turn markers
+    // and no stop tokens here: the chat template + parser own turn
+    // boundaries. think:false keeps any reasoning channel out of content.
     serde_json::json!({
         "model": runtime_model,
-        "prompt": gemma_raw_generation_prompt(prompt),
-        "raw": true,
+        "messages": [
+            { "role": "user", "content": local_generation_prompt(prompt) }
+        ],
+        "think": false,
         "stream": false,
         "options": {
             "temperature": 0.2,
             "num_predict": LOCAL_GENERATION_NUM_PREDICT,
-            "num_ctx": LOCAL_GENERATION_NUM_CTX,
-            "stop": ["<end_of_turn>", "<start_of_turn>"]
+            "num_ctx": LOCAL_GENERATION_NUM_CTX
         }
     })
     .to_string()
@@ -1796,6 +1822,16 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
                 return Ok((runtime_model, fake_response.trim().to_string()));
             }
         }
+        // Mirrors the success seam for the ready-then-fails arms: the engine
+        // reports available (local_generation_available honors this var too),
+        // then generation fails mid-flight -- the only way cargo tests can
+        // reach the handlers' generation-failure branches (a real not-ready
+        // state is caught by the availability probe before generate is called).
+        if let Ok(fake_error) = env::var("CIVICSUITE_FAKE_MODEL_ERROR") {
+            if !fake_error.trim().is_empty() {
+                return Err(fake_error.trim().to_string());
+            }
+        }
     }
     if !model_state()?.ready {
         return Err(
@@ -1804,7 +1840,7 @@ pub(crate) fn generate_local_text(prompt: &str) -> Result<(String, String), Stri
         );
     }
     let body = local_generation_request_body(runtime_model.as_str(), prompt);
-    let endpoint = format!("{}/api/generate", ollama_base_url());
+    let endpoint = format!("{}/api/chat", ollama_base_url());
     let response = http_post_json_text(&endpoint, &body, LOCAL_GENERATION_TIMEOUT_MILLIS)?;
     let generated = parse_ollama_generate_text(&response)?;
     if generated.is_empty() {
@@ -1934,7 +1970,7 @@ mod tests {
     }
 
     #[test]
-    fn local_generation_request_bounds_slow_ollama_outputs() {
+    fn local_generation_request_uses_chat_api_through_model_parser() {
         let body = local_generation_request_body(
             "civicsuite-gemma4-12b-qat:q4_0",
             "Draft a staff response for marker D100-AI-MODEL-MARKER-20260620.",
@@ -1942,16 +1978,23 @@ mod tests {
         let payload: serde_json::Value = serde_json::from_str(&body).expect("valid json");
 
         assert_eq!(payload["model"], "civicsuite-gemma4-12b-qat:q4_0");
-        assert_eq!(payload["raw"], true);
         assert_eq!(payload["stream"], false);
+        // /api/chat, NOT raw /api/generate: the model's own template + parser
+        // must run, so no raw flag, no hand-built turn markers, no stop tokens.
+        assert!(payload.get("raw").is_none());
+        assert!(payload.get("prompt").is_none());
+        assert!(payload["options"].get("stop").is_none());
+        assert_eq!(payload["think"], false);
         assert_eq!(payload["options"]["temperature"], 0.2);
-        assert_eq!(payload["options"]["num_predict"], 192);
-        assert_eq!(payload["options"]["num_ctx"], 3072);
-        assert_eq!(payload["options"]["stop"][0], "<end_of_turn>");
-        let prompt = payload["prompt"].as_str().expect("prompt string");
-        assert!(prompt.starts_with("<start_of_turn>user\n"));
-        assert!(prompt.contains("under 180 words"));
-        assert!(prompt.ends_with("<start_of_turn>model\n"));
+        assert_eq!(payload["options"]["num_predict"], 512);
+        assert_eq!(payload["options"]["num_ctx"], 8192);
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0]["role"], "user");
+        let content = messages[0]["content"].as_str().expect("content string");
+        assert!(!content.contains("<start_of_turn>"));
+        assert!(content.contains("under 180 words"));
+        assert!(content.contains("D100-AI-MODEL-MARKER-20260620"));
     }
 
     #[test]
@@ -2049,6 +2092,18 @@ mod tests {
                 .checks
                 .iter()
                 .any(|check| check.id == "runtime-model" && !check.ok));
+        });
+    }
+
+    #[test]
+    fn local_generation_available_honors_fake_seam_and_fresh_state() {
+        with_temp_state_dir(|_| {
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(!local_generation_available().expect("readiness computes"));
+            env::set_var("CIVICSUITE_FAKE_MODEL_RESPONSE", "Fake local draft.");
+            assert!(local_generation_available().expect("fake seam counts as available"));
+            env::remove_var("CIVICSUITE_FAKE_MODEL_RESPONSE");
+            assert!(!local_generation_available().expect("readiness computes again"));
         });
     }
 
