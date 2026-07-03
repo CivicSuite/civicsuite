@@ -12,7 +12,7 @@ CivicSuite's active product is the Windows Local city-core desktop app, a **GA c
 
 **What "GA candidate, public beta" means:** the build is feature-complete for city-core and passed the Phase D clean-machine acceptance gate — two full clean Windows Sandbox runs of the real installer (install → the full first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → the three CivicAccess AI features producing clean, correctly-labeled output through the real app bridge). The one remaining gate to General Availability is an Authenticode code-signing certificate, in progress via the SignPath Foundation (a few weeks). Until then the MSI is an **unsigned beta**: SmartScreen shows "Unknown Publisher" → **More info → Run anyway**. Use it for real hands-on evaluation and early adoption — it does **not** claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
 
-Scope: city-core is six modules, and the current v1.0.2 build ships all six — including **CivicAccess v0.4.0** (accessibility + records-ready export), whose on-screen **Accessibility** workflow tab is this release's headline. A clerk sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Background: [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels. The MSI bundles module source pinned by commit (for two modules ahead of the latest published tag); the trust path is the `source_commit` pin plus the MSI checksum — see [PROVENANCE.md](PROVENANCE.md). For the history of the 2026-05 release-label freeze and which labels are real, see [docs/release-recovery-status.md](docs/release-recovery-status.md).
+Scope: city-core is six modules, and the current v1.0.2 build ships all six — including **CivicAccess v0.4.0** (accessibility + records-ready export), whose on-screen **Accessibility** workflow tab is this release's headline. A clerk sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Background: [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on corrected version labels (version lowered to match actual maturity). The MSI bundles module source pinned by commit (for two modules ahead of the latest published tag); the trust path is the `source_commit` pin plus the MSI checksum — see [PROVENANCE.md](PROVENANCE.md). For the history of the 2026-05 release-label freeze and which labels are real, see [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 **What v1.0.2 changed, for a city (plain English):** the new Accessibility tab helps a clerk make public documents easier to use — it drafts plain-language rewrites of your text, drafts translations into any language you name, and adds a short "fix this first, and here's why" analysis to saved accessibility reviews. All of it runs on the office computer; nothing is sent to the cloud. Every AI output is a labeled draft a human must review, translations go to a qualified human translator before public use, and a review's status comes only from the deterministic rule checks — never from the AI. If the AI engine isn't ready, every tool says so plainly and keeps working in a labeled sample mode. v1.0.2 also fixes a first-run failure on factory-fresh PCs: the bundled database needed a Microsoft runtime component a clean Windows machine doesn't have, and the installer now bundles it.
 
@@ -28,24 +28,24 @@ Status snapshot: **2026-07-02** (current release: `civicsuite-windows-local-v1.0
 
 | Tier | Scope | What it means today |
 |---|---:|---|
-| City-core release cars | CivicCore plus 5 product repos | CivicCore v1.2.0 is the shared platform release and now carries the Windows-local platform contracts plus PostgreSQL-backed task queue/worker. CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0 are the city-core module cars. The active suite integration target is the Windows Local Tauri/WebView2 desktop app with a portable-native runtime and local-only clerk path. |
-| Queued modules | Tier 2 | CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued on demotion-truth labels, not city-core public-use releases. |
+| City-core module releases | CivicCore plus 5 product repos | CivicCore v1.2.0 is the shared platform release and now carries the Windows-local platform contracts plus PostgreSQL-backed task queue/worker. CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0 are the city-core module releases. The shipped product path is the Windows Local Tauri/WebView2 desktop app with a portable-native runtime and local-only clerk path. |
+| Queued modules | Tier 2 | CivicZone, CivicPlan, CivicPermit, and CivicInspect are queued on corrected version labels, not city-core public-use releases. |
 | Foundation / planned | 18 named product modules | The rest of the visible catalog has bounded runtime foundations or implementation specs. These are not city-ready products. `CivicRegWatch` and `CivicAPI` are planned modules with detailed specs but no runtime repos yet. The reconciled unified spec, installer metadata, and live GitHub org state now enumerate 27 product modules plus CivicCore. |
 
 `civiccore` is the shared platform package consumed by every module; v1.2.0 is the current city-core platform release with shared document ingestion, Windows-local platform contracts, the PostgreSQL-backed local task queue/worker, shared `staff_key_gate` support, and the earlier auth-error-payload hardening included.
 
-The most important distinction: **"all repos have releases" is not the same thing as "a city can run on this suite."** That gap is what the recovery gates exist to close.
+The most important distinction: **"all repos have releases" is not the same thing as "a city can run on this suite."** That gap is what the [release-verification gates](docs/release-recovery-status.md) exist to close.
 
 ## What Is Available Today
 
 - **`civicrecords-ai`** (FOIA / public records) - v1.7.3 — city-core records module, shipped in the v1.0.2 build, on CivicCore v1.2.0. Repo: <https://github.com/CivicSuite/civicrecords-ai>
 - **`civiccore`** (shared platform) - v1.2.0 is the current shared-platform release for city-core. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk`** (meetings/agendas/minutes) - v1.0.4 is the current meeting workflow release car with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
-- **`civiccode`** - v1.0.8 is the current municipal-code city-core release car on CivicCore v1.2.0.
-- **`civicnotice`** - v0.2.0 is the current public-notice city-core release car on CivicCore v1.2.0.
-- **`civicaccess`** - v0.4.0 accessibility and records-ready export city-core release car on CivicCore v1.2.0 (sixth city-core module; its clerk-facing Accessibility workflow tab — with three local-AI features — is the headline of the current v1.0.2 build).
-- **`civiczone`, `civicplan`, `civicpermit`, `civicinspect`** - queued Tier 2 modules on demotion-truth labels; not part of city-core.
-- **`civicgrants`, `civicprocure`** - recently tagged v1.0.0 against the 2026-05-07 halt; false labels are being superseded by v0.2.0 recovery releases.
+- **`civicclerk`** (meetings/agendas/minutes) - v1.0.4 is the current meeting workflow module release with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civiccode`** - v1.0.8 is the current municipal-code city-core module release on CivicCore v1.2.0.
+- **`civicnotice`** - v0.2.0 is the current public-notice city-core module release on CivicCore v1.2.0.
+- **`civicaccess`** - v0.4.0 accessibility and records-ready export city-core module release on CivicCore v1.2.0 (sixth city-core module; its clerk-facing Accessibility workflow tab — with three local-AI features — is the headline of the current v1.0.2 build).
+- **`civiczone`, `civicplan`, `civicpermit`, `civicinspect`** - queued Tier 2 modules on corrected version labels; not part of city-core.
+- **`civicgrants`, `civicprocure`** - tagged v1.0.0 after (in violation of) the 2026-05-07 release halt; those false labels are being superseded by early-stage v0.2.0 recovery releases ([history](docs/release-recovery-status.md)).
 - **`CivicRegWatch` and `CivicAPI`** — planned modules. Detailed specs in [specs/05_civicregwatch.md](specs/05_civicregwatch.md) and [specs/06_civicapi.md](specs/06_civicapi.md); no runtime repos yet.
 - **The remaining 14 modules** are foundation-tier: schemas, sample workflow slices, tests, and release gates. They do not yet ship the workflow, security, identity, connector, or operational depth required for municipal use.
 
@@ -68,14 +68,14 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). A
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
 - First-run setup covers the unsigned beta notice, SmartScreen explanation, local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
 - Trust path: download `CivicSuite_1.0.2_x64_en-US.msi` from the [civicsuite-windows-local-v1.0.2 release](https://github.com/CivicSuite/civicsuite/releases/latest), verify its SHA-256 `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`, and confirm the module pins in [installer/modules.json](installer/modules.json).
-- macOS and Linux package paths remain separate future or historical profiles until their own matching-host evidence is refreshed.
+- macOS and Linux package paths remain separate future or historical profiles until each has refreshed install-lifecycle testing on the same operating system it ships for.
 
 See [docs/troubleshooting.md](docs/troubleshooting.md) for operator recovery guidance, [installer/README.md](installer/README.md) for the generated-package contract, and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
 Operators evaluating the Windows Local city-core beta path should use [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
 **Per-module install path:**
 
-- FOIA / public records: <https://github.com/CivicSuite/civicrecords-ai> - module release car consumed by the Windows Local city-core package.
+- FOIA / public records: <https://github.com/CivicSuite/civicrecords-ai> - module release consumed by the Windows Local city-core package.
 - Other modules: see each module's README for install instructions. Most modules ship as Python packages depending on `civiccore`.
 
 If you are orienting yourself for the first time, read in this order:
@@ -95,15 +95,15 @@ If you are orienting yourself for the first time, read in this order:
 | `civicsuite` | Umbrella: roadmap, governance, specs, ADRs, compatibility matrix, suite-installer scaffolding |
 | `civiccore` | Shared platform package consumed by every module |
 | `civicrecords-ai` | v1.7.3 — city-core records module (FOIA/public records), shipped in the v1.0.2 build |
-| `civicclerk` | v1.0.4 meeting workflow city-core release car |
-| `civiccode` | v1.0.8 municipal-code city-core release car |
-| `civicnotice` | v0.2.0 public-notice workflow city-core release car |
-| `civicaccess` | v0.4.0 city-core release car (sixth city-core module — its Accessibility tab, with three local-AI features, shipped in v1.0.2) |
-| `civiczone` | Queued Tier 2 land-use module on demotion-truth label |
-| `civicplan` | Queued Tier 2 planning module on demotion-truth label |
-| `civicpermit` | Queued Tier 2 permit module on demotion-truth label |
-| `civicinspect` | Queued Tier 2 inspection module on demotion-truth label |
-| `civicgrants`, `civicprocure` | v0.2.0 demoted recovery labels; remaining modules are foundation-tier |
+| `civicclerk` | v1.0.4 meeting workflow city-core module release |
+| `civiccode` | v1.0.8 municipal-code city-core module release |
+| `civicnotice` | v0.2.0 public-notice workflow city-core module release |
+| `civicaccess` | v0.4.0 city-core module release (sixth city-core module — its Accessibility tab, with three local-AI features, shipped in v1.0.2) |
+| `civiczone` | Queued Tier 2 land-use module on a corrected version label |
+| `civicplan` | Queued Tier 2 planning module on a corrected version label |
+| `civicpermit` | Queued Tier 2 permit module on a corrected version label |
+| `civicinspect` | Queued Tier 2 inspection module on a corrected version label |
+| `civicgrants`, `civicprocure` | v0.2.0 early-stage recovery releases; remaining modules are foundation-tier |
 | `civicregwatch` | Planned federal regulatory intelligence module; spec exists, repo not scaffolded |
 | `civicapi` | Planned public read-only data gateway module; spec exists, repo not scaffolded |
 
