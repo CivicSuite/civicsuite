@@ -122,6 +122,8 @@
   .cs .module.headline .tile{ background:var(--navy); color:var(--gold-soft); }
   .cs .module .tile svg{ width:20px; height:20px; }
   .cs .module .m-name{ font-family:var(--font-serif); font-size:17px; font-weight:600; }
+  .cs .module .m-name a{ color:inherit; text-decoration:none; border-bottom:1px solid transparent; }
+  .cs .module .m-name a:hover, .cs .module .m-name a:focus-visible{ color:var(--navy); border-bottom-color:var(--gold); }
   .cs .module .ver{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-3);
     background:var(--paper-2); border:1px solid var(--rule); padding:1px 7px; border-radius:6px;
     display:inline-block; margin-top:2px; }
@@ -257,30 +259,30 @@
     <section>
       <p class="section-eyebrow">The city-core profile</p>
       <h2>Six modules, one shared platform</h2>
-      <div class="section-intro"><p>You don't install modules one at a time — <strong>the installer ships all six as one suite</strong>. First-run setup defaults to the full City Core profile; <code>CivicCore</code> is the shared platform every module depends on and is always installed. The modules share one identity, one audit trail, and one search.</p></div>
+      <div class="section-intro"><p>You don't install modules one at a time — <strong>the installer ships all six as one suite</strong>. First-run setup defaults to the full City Core profile; <code>CivicCore</code> is the shared platform every module depends on and is always installed. The modules share one identity, one audit trail, and one search. Each module name below links to its source repository on GitHub for the deeper dive.</p></div>
       <div class="modules">
         <div class="module">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 4v16" stroke-linecap="round"/></svg></span><div><div class="m-name">CivicCore</div><span class="ver">v1.2.0</span></div></div>
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 4v16" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civiccore">CivicCore</a></div><span class="ver">v1.2.0</span></div></div>
           <p>Shared platform: identity, audit, retention, the local task queue/worker, and document ingestion. Every module depends on it; it depends on none.</p>
         </div>
         <div class="module">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6" stroke-linecap="round"/></svg></span><div><div class="m-name">CivicRecords AI</div><span class="ver">v1.7.3</span></div></div>
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h6M9 16h6" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicrecords-ai">CivicRecords AI</a></div><span class="ver">v1.7.3</span></div></div>
           <p>Public-records / FOIA request intake, search, and AI-assisted response drafting.</p>
         </div>
         <div class="module">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M5 11v5l7 4 7-4v-5" stroke-linecap="round"/></svg></span><div><div class="m-name">CivicClerk</div><span class="ver">v1.0.4</span></div></div>
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M5 11v5l7 4 7-4v-5" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicclerk">CivicClerk</a></div><span class="ver">v1.0.4</span></div></div>
           <p>Meetings, agendas, packets, minutes, and votes.</p>
         </div>
         <div class="module">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h10v18H6a2 2 0 0 1-2-2z"/><path d="M16 3l4 2v16l-4-2M8 8h5" stroke-linecap="round"/></svg></span><div><div class="m-name">CivicCode</div><span class="ver">v1.0.8</span></div></div>
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5a2 2 0 0 1 2-2h10v18H6a2 2 0 0 1-2-2z"/><path d="M16 3l4 2v16l-4-2M8 8h5" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civiccode">CivicCode</a></div><span class="ver">v1.0.8</span></div></div>
           <p>Municipal code: searchable ordinances with AI-assisted guidance.</p>
         </div>
         <div class="module">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l15-6v14L3 13z"/><path d="M7 12v5a2 2 0 0 0 4 0" stroke-linecap="round"/></svg></span><div><div class="m-name">CivicNotice</div><span class="ver">v0.2.0</span></div></div>
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l15-6v14L3 13z"/><path d="M7 12v5a2 2 0 0 0 4 0" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicnotice">CivicNotice</a></div><span class="ver">v0.2.0</span></div></div>
           <p>Public-notice creation and publishing workflow.</p>
         </div>
         <div class="module headline">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="1.6"/><path d="M4 8h16M12 8v5m0 0l-3 6m3-6l3 6" stroke-linecap="round"/></svg></span><div><div class="m-name">CivicAccess</div><span class="ver">v0.4.0 · new tab in v1.0.2</span></div></div>
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="1.6"/><path d="M4 8h16M12 8v5m0 0l-3 6m3-6l3 6" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicaccess">CivicAccess</a></div><span class="ver">v0.4.0 · new tab in v1.0.2</span></div></div>
           <p>Accessibility workflows and records-ready export. Its on-screen Accessibility tab, with three local-AI features, is the headline addition in v1.0.2.</p>
         </div>
       </div>
