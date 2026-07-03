@@ -983,8 +983,8 @@ refusal\_conditions:
 
 **C. Compliance notes**
 
--   ADA Title II public-facing compliance dates (2027 for cities \>50k,
-    2028 for smaller) apply. Every public page meets WCAG 2.2 AA.
+-   ADA Title II public-facing compliance dates (April 24, 2026 for
+    cities \>50k; April 26, 2027 for smaller) apply. Every public page meets WCAG 2.2 AA.
 
 -   Fair Housing Act considerations: CivicZone avoids any feature that
     could be used to screen parcels by protected class (e.g., "how many

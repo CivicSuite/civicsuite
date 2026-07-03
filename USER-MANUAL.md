@@ -65,13 +65,13 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 
 - **Operating system.** 64-bit Windows 10 or Windows 11 with the WebView2 runtime (current Windows builds include it).
 - **Memory.** 32 GB RAM recommended (16 GB is a workable minimum). The local Gemma 4 12B QAT model needs about 6.7 GB resident at runtime on top of Windows, the portable PostgreSQL store, and the local services; 32 GB leaves comfortable headroom for the local database and the generation context.
-- **Disk.** About 15 GB free at minimum: roughly 1.5 GB for the MSI, about 7 GB for the downloaded model file, and headroom for city data and backups. First-run setup enforces a 15 GB free-disk floor before the model download.
+- **Disk.** About 15 GB free at minimum: roughly 1.65 GB for the MSI, about 7 GB for the downloaded model file, and headroom for city data and backups. First-run setup enforces a 15 GB free-disk floor before the model download.
 - **Network.** A stable internet connection for the first install and the model download, unless IT has already staged the model file.
 
 ### Install (Windows Local desktop)
 
-1. Download the current Windows Local MSI artifact from the active PR/release evidence or the matching GitHub release attestation when one is published.
-2. Verify the SHA-256 checksum or release manifest from the same source.
+1. Download `CivicSuite_1.0.2_x64_en-US.msi` from the current GitHub release: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
+2. Verify the SHA-256 checksum matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
 3. Open the installer. Windows SmartScreen can warn "Unknown publisher" for this unsigned beta. Use **More info** and **Run anyway** only when the checksum matches the trusted artifact source.
 4. Follow the installer screens and open CivicSuite after install.
 5. Complete first-run setup: unsigned beta notice, SmartScreen review, local folders, City Core module selection, city profile, first local administrator sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
@@ -84,10 +84,10 @@ Linux and macOS are not the current clerk install promise for Windows Local 1.0.
 
 ### Trust path for city-core artifacts
 
-City-core artifacts for this run are live regenerated evidence artifacts, not restored committed `installer/dist` files. Before testing a package:
+City-core artifacts ship from the published GitHub release, not restored committed `installer/dist` files. Before testing a package:
 
-1. Use the active PR/release evidence path recorded in [README.md](README.md) and [STATUS.md](STATUS.md).
-2. Verify the generated MSI checksum or release-manifest hash for the package you will run.
+1. Download from the published release tag: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
+2. Verify the MSI SHA-256 matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
 3. Confirm the source pins in `installer/modules.json` match the city-core module commits.
 4. For module release-car assets, confirm the published SHA256 and attestation assets recorded in the module release evidence where applicable.
 
@@ -104,8 +104,8 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 
 ### What you should expect
 
-- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff.
-- **What still needs its own proof gate.** Each future module outside the city-core set (the current v1.0.2 MSI artifact has passed its clean-machine gates: the QA-B1 walkthrough on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2).
+- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff. The current v1.0.2 MSI artifact has passed its clean-machine gates: the QA-B1 walkthrough on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2.
+- **What still needs its own proof gate.** Each future module outside the city-core set.
 - **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 
 ### Where to go next
@@ -209,8 +209,9 @@ The full suite architecture, dependency graph, data-flow rules, and CivicCore ex
 ### Suite topology (generated summary)
 
 <!-- BEGIN GENERATED SUITE TOPOLOGY -->
+<!-- Maintainers: re-run `python scripts/docs/render_topology.py --check` before publishing docs. -->
 
-Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topology.py --check` before publishing docs.
+Generated from `installer/modules.json`.
 
 - Root installer truth label: `city_core_beta_ready_truth_reconciled`.
 - City-core profile status: `beta_ready_truth_reconciled`.
@@ -253,7 +254,7 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 
 ## Glossary
 
-- **ADA Title II** — accessibility compliance requirement for public-sector digital services. Cities >50K must comply by 2027; smaller cities by 2028.
+- **ADA Title II** — accessibility compliance requirement for public-sector digital services. Under the DOJ's April 2024 web/mobile rule, public entities of 50,000+ population had to comply by April 24, 2026 (that deadline has passed); smaller entities and special districts must comply by April 26, 2027.
 - **ADR** — Architecture Decision Record.
 - **Air-gap** — operating without an outbound network connection.
 - **CC BY 4.0** — Creative Commons Attribution license used for documentation.

@@ -1204,8 +1204,8 @@ refusal\_conditions:
 -   Open Meetings Act / sunshine law: every state rule set is data;
     updates ship as data releases.
 
--   ADA Title II public-facing compliance dates (2027 \>50k, 2028
-    smaller) apply. Tagged-heading PDFs, accessible transcripts,
+-   ADA Title II public-facing compliance dates (April 24, 2026 \>50k;
+    April 26, 2027 smaller) apply. Tagged-heading PDFs, accessible transcripts,
     plain-English summaries.
 
 -   Records retention: adopted minutes are typically retained

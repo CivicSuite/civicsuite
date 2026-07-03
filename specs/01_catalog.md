@@ -718,7 +718,7 @@ CivicAccess --- Accessible Forms, Publishing, ADA Review
   **Purpose**              The horizontal compliance layer. Accessible forms, accessible publishing workflows, multilingual and plain-language rewrites, ADA Title II review, and records-ready exports --- available to every other module so they all publish compliant content.
   **Tier**                 Tier 1 --- Clerk Core
   **Depends on**           CivicCore
-  **Why local LLM fits**   DOJ Title II web/mobile accessibility rule applies to all state and local governments with current compliance dates of 2027 (\>50K pop) and 2028 (\<50K and special districts). Smaller cities have no budget for dedicated accessibility consultants. A local-AI reviewer that flags WCAG 2.2 AA issues before publish is high-leverage and low-risk.
+  **Why local LLM fits**   DOJ Title II web/mobile accessibility rule applies to all state and local governments with compliance dates of April 24, 2026 (\>50K pop) and April 26, 2027 (\<50K and special districts). Smaller cities have no budget for dedicated accessibility consultants. A local-AI reviewer that flags WCAG 2.2 AA issues before publish is high-leverage and low-risk.
   ------------------------ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 **Key capabilities**
@@ -771,8 +771,9 @@ CivicAccess --- Accessible Forms, Publishing, ADA Review
 
 -   WCAG 2.2 AA as baseline; Section 508 alignment
 
--   DOJ Title II web/mobile accessibility rule compliance timelines
-    (2027/2028)
+-   DOJ Title II web/mobile accessibility rule compliance deadlines
+    (April 24, 2026 for entities of 50,000+; April 26, 2027 for smaller
+    entities and special districts)
 
 -   Language access obligations under Title VI for covered cities
 
@@ -2439,8 +2440,8 @@ Part VI. Cross-Cutting Concerns
 
 WCAG 2.2 AA is the baseline for every module\'s UI. CivicAccess provides
 the content-review layer that every other module uses for public-facing
-publishing. Title II compliance dates (2027 for cities \>50K; 2028 for
-smaller) are firm. The suite\'s value here is genuinely differentiated
+publishing. Title II compliance dates (April 24, 2026 for cities \>50K; April 26,
+2027 for smaller) are firm. The suite\'s value here is genuinely differentiated
 --- incumbents typically don\'t ship accessibility review out of the
 box.
 

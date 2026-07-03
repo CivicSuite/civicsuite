@@ -1,4 +1,4 @@
-﻿# CivicSuite Architecture
+# CivicSuite Architecture
 
 **Last verified:** 2026-07-02
 
@@ -231,7 +231,7 @@ Reserved namespaces (`civiccore.catalog`, `civiccore.exemptions`, `civiccore.sca
 
 ## Compatibility versioning
 
-Modules pin to CivicCore as a released dependency. The exact form is:
+Modules pin to CivicCore as a released dependency. The exact form (example shown against an older CivicCore release) is:
 
 ```toml
 [project]
@@ -265,13 +265,13 @@ When CivicCore ships a breaking change:
 - **Air-gapped deployment** is a first-class operational mode, not a checkbox feature.
 - **Operator owns data.** Connectors are read-first; write-back connectors only after audited read paths are stable.
 
-These are architectural commitments, not aspirational marketing. Verifying them under the recovery gates is in progress.
+These are architectural commitments, not aspirational marketing. The clean-machine, fully-local install path was verified end to end for the v1.0.2 MSI (Phase D); broader per-module verification continues.
 
 ---
 
 ## Suite installer architecture
 
-The suite-level installer (currently YELLOW beta) is module-aware and CivicCore-first:
+The suite-level installer (in beta — the Docker-based multi-module path, separate from the shipped Windows Local MSI described below) is module-aware and CivicCore-first:
 
 1. Detect host OS and capacity.
 2. Verify baseline dependencies (Docker, WSL on Windows, etc.).
@@ -311,7 +311,7 @@ These are documented at length in `specs/01_catalog.md` §16–20 and `docs/Civi
 
 ## Diagrams to add
 
-This audit notes the following architecture-doc gaps for future work:
+Known gaps / planned diagrams:
 
 - A request-lifecycle sequence diagram for `civicrecords-ai` (received → assigned → in-review → released).
 - An agenda-and-meeting lifecycle sequence diagram for `civicclerk` (DRAFTED → SUBMITTED → ON_AGENDA → IN_PACKET → POSTED → HEARD → DISPOSED).

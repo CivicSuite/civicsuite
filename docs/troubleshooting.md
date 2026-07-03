@@ -1,6 +1,6 @@
 # CivicSuite Troubleshooting
 
-**Last verified:** 2026-06-27
+**Last verified:** 2026-07-02
 
 This guide covers the umbrella city-core documentation truth path and the Windows Local MSI desktop app. Module-specific bugs still belong in the relevant module repo.
 
@@ -13,7 +13,7 @@ The Windows Local clerk path is a Tauri/WebView2 desktop app installed from an M
 3. After install, open CivicSuite from the Start menu or desktop shortcut.
 4. If the app opens but a local service is unhealthy, open System Health, run **Check**, then **Repair** after reviewing the repair panel.
 
-If the app asks for Docker, WSL, a terminal, or manual config-file edits, stop and record it as a Windows Local release blocker.
+If the app asks for Docker, WSL, a terminal, or manual config-file edits, this is a bug — please report it on the CivicSuite GitHub issue tracker (<https://github.com/CivicSuite/civicsuite/issues>).
 
 ## Model Download, Resume, Or Checksum Fails
 
@@ -37,10 +37,10 @@ Use the live trust path:
 
 1. Verify the generated `SHA256SUMS` or release manifest that belongs to the package you are running.
 2. Confirm the package came from the official CivicSuite source or the recorded active run evidence path.
-3. Confirm `installer/modules.json` `source_commit` values match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicNotice.
+3. Confirm `installer/modules.json` `source_commit` values match the vendored source commits for all six city-core modules (CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess).
 4. For CivicCode module release assets, compare the published SHA256 and attestation bundle recorded in module release evidence.
 
-Do not restore old committed `installer/dist` artifacts unless Scott explicitly confirms that restoration decision in bridge/for-scott or a durable run note.
+Do not reuse old installer artifacts; always download the current release from the official GitHub Releases page and verify its SHA-256.
 
 ## Windows Says The MSI Is From An Unknown Publisher
 
@@ -56,7 +56,7 @@ Backups are local files written under the configured backup folder.
 
 ## CivicAccess City-Core Status
 
-CivicAccess is the sixth city-core module as of v0.4.0 (2026-06-29), after a passing depth re-probe reversed the 2026-05-23 NEEDS-WORK demotion. A doc, launcher label, installer plan, or status surface that still frames CivicAccess as OUT of city-core is stale drift — file it against the umbrella repo truth docs. (The current v1.0.2 MSI installs all six city-core modules, including CivicAccess v0.4.0 with its on-screen Accessibility tab.)
+CivicAccess v0.4.0 is the sixth city-core module. The current v1.0.2 MSI installs all six city-core modules, including CivicAccess with its on-screen Accessibility tab. If a doc or status surface says otherwise, check the current truth surfaces below.
 
 ## Where To Check Current Truth
 
