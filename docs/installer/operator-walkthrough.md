@@ -25,7 +25,7 @@ Have these ready:
 
 - A 64-bit Windows 10 or Windows 11 workstation with the WebView2 runtime (already present on current Windows; the installer can provision it if missing).
 - RAM: 32 GB recommended (16 GB is a workable minimum). The local Gemma 4 model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and the city services; 32 GB leaves comfortable headroom for the local database and the generation context.
-- Free disk: at least 15 GB. That covers the ~1.5 GB MSI, the ~6.97 GB model file, and data/backup headroom. First-run setup enforces a 15 GB free-disk floor before it will download the model.
+- Free disk: at least 15 GB. That covers the ~1.65 GB MSI, the ~6.97 GB model file, and data/backup headroom. First-run setup enforces a 15 GB free-disk floor before it will download the model.
 - Permission to install normal Windows desktop software.
 - A stable internet connection for first install/model download unless the model file has already been staged by IT (see "Offline / Air-Gapped Model Pre-Staging").
 - A city name, records contact, clerk contact, first local administrator name/email, and a backup folder location.

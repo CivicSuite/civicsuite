@@ -19,15 +19,15 @@ What an operator does:
 
 Recommended machine: **32 GB RAM** (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and services, and 32 GB leaves headroom for the local database and the generation context) and **at least 15 GB free disk** (1.6 GB MSI + about 7 GB model + data/backup headroom; the installer enforces a 15 GB floor for the model download).
 
-The current release is **civicsuite-windows-local-v1.0.1** (Latest; it supersedes v1.0.0, and the earlier first-run-fix prerelease is retired). For the full step-by-step, see [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
+The current release is **civicsuite-windows-local-v1.0.2** (Latest; it supersedes v1.0.1, which superseded v1.0.0; the earlier first-run-fix prerelease is retired). For the full step-by-step, see [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
 This is a **GA candidate, open for public beta**: feature-complete for city-core and validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress, a few weeks). You can download and use it now for real hands-on evaluation and early adoption. It is still a **beta** — **not yet production-, city-, or procurement-ready** — so do not run your city's system of record on it yet.
 
 ## Can my city rely on CivicSuite for live operations today?
 
-**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
+**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, CivicAccess v0.4.0, and the suite installer. That profile has Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
 
-That is still a bounded beta package. It is **not public-use ready, not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess v0.4.0 joined city-core as the sixth module on 2026-06-29 (re-probe reversed the 2026-05-23 NEEDS-WORK demotion); the current published v1.0.1 MSI bundles the first five and the six-module build is next — **the next build bundles the CivicAccess module code, database schema, and write-token secret, but its on-screen Accessibility workflow tab in the desktop UI lands in v1.0.2** (see [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md)). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
+That is still a bounded beta package. It is **not public-use ready, not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess v0.4.0 joined city-core as the sixth module on 2026-06-29 (re-probe reversed the 2026-05-23 NEEDS-WORK demotion); the current v1.0.2 MSI installs all six city-core modules — **the CivicAccess module code, database schema, and write-token secret are bundled, and its on-screen Accessibility workflow tab, with three local-AI tools, ships in the desktop UI as of v1.0.2** (see [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md)). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
 
 Any vendor or integrator claiming a completed CivicSuite municipal deployment or a full-suite operational release is making a claim the project docs do not support.
 
@@ -75,7 +75,7 @@ Use the live trust path, not stale committed artifacts:
 4. Confirm source pins in `installer/modules.json` match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicNotice.
 5. For CivicCode release-car assets, verify the published SHA256 and attestation assets recorded in the module release evidence.
 
-Do not restore old `installer/dist` artifacts unless Scott explicitly decides that the prior committed artifacts should be revived. The default for this run is live regenerated artifacts with evidence paths.
+Do not restore old `installer/dist` artifacts unless the maintainers explicitly decide that the prior committed artifacts should be revived. The default for this run is live regenerated artifacts with evidence paths.
 
 ## Why are some modules called "CivicCourt Assist" and others bare "CivicCourt"?
 

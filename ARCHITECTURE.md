@@ -151,6 +151,8 @@ Every module inherits the same deliberately boring stack unless an ADR explicitl
 | Frontend | React behind nginx | — |
 | Migrations | Alembic | CivicCore baseline first, then per-module |
 
+The shipped Windows Local desktop profile overrides three of these rows per [ADR-0008](docs/architecture/ADR-0008-portable-native-windows-runtime.md) and [ADR-0009](docs/architecture/ADR-0009-postgres-backed-queue-windows-profile.md): cache/queue → the PostgreSQL-backed CivicCore task queue, workers → bundled CPython city services, frontend → the Tauri/WebView2 desktop shell (see "Windows Local desktop distribution" below).
+
 This stack is local-first by design. No outbound calls in the default deployment profile. External LLM providers and external connectors are **opt-in adapters**, never default.
 
 ---
@@ -279,6 +281,16 @@ The suite-level installer (currently YELLOW beta) is module-aware and CivicCore-
 6. Run health checks and record a proof bundle.
 
 See [installer/README.md](installer/README.md) for the contract and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
+
+### Windows Local desktop distribution
+
+Separate from the Docker-based installer above, the shipped Windows artifact is a single MSI (CivicSuite Windows Local, currently v1.0.2) built around a Tauri/WebView2 desktop shell. It bundles its full runtime rather than assuming host dependencies:
+
+- **PostgreSQL 17 + `pgvector`** as portable binaries, with the Microsoft VC++ runtime DLLs (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) staged into `postgres\bin` so the database starts on a factory-fresh Windows machine with no system VC++ redistributable installed.
+- **Embedded CPython** running the module services.
+- **Bundled Ollama** on `127.0.0.1:15434` serving the pinned `gemma-4-12b-it-qat-q4_0` model; the suite's shared local-generation helper calls it via `/api/chat`. The model itself (~7 GB) is downloaded and SHA-256-verified on first run, with a pre-staged path for air-gapped installs.
+
+One MSI installs the six-module city-core profile: CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess. Module source is pinned by `source_commit` in [installer/modules.json](installer/modules.json); see [PROVENANCE.md](PROVENANCE.md) for how the bundled commits relate to each module's published releases.
 
 ---
 

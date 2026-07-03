@@ -56,7 +56,7 @@ Backups are local files written under the configured backup folder.
 
 ## CivicAccess City-Core Status
 
-CivicAccess is the sixth city-core module as of v0.4.0 (2026-06-29), after a passing depth re-probe reversed the 2026-05-23 NEEDS-WORK demotion. A doc, launcher label, installer plan, or status surface that still frames CivicAccess as OUT of city-core is stale drift — file it against the umbrella repo truth docs. (The current published v1.0.1 MSI bundles the first five city-core modules; CivicAccess ships in the next build.)
+CivicAccess is the sixth city-core module as of v0.4.0 (2026-06-29), after a passing depth re-probe reversed the 2026-05-23 NEEDS-WORK demotion. A doc, launcher label, installer plan, or status surface that still frames CivicAccess as OUT of city-core is stale drift — file it against the umbrella repo truth docs. (The current v1.0.2 MSI installs all six city-core modules, including CivicAccess v0.4.0 with its on-screen Accessibility tab.)
 
 ## Where To Check Current Truth
 

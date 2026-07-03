@@ -20,7 +20,7 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 ### Current honest state
 
-The Windows Local city-core package (`civicsuite-windows-local-v1.0.1`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress). For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
+The Windows Local city-core package (`civicsuite-windows-local-v1.0.2`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress). For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 - `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records release car at v1.7.3.
@@ -34,11 +34,11 @@ The Windows Local city-core package (`civicsuite-windows-local-v1.0.1`) is a **G
 
 A municipality should evaluate the Windows Local city-core package as a beta package, not as a completed full-suite procurement product.
 
-### Callout — about the CivicAccess module (v1.0.1 → v1.0.2)
+### Callout — how the CivicAccess module arrived (v1.0.1 → v1.0.2)
 
-> **In plain English.** CivicSuite v1.0.1 (and the upcoming six-module MSI build that follows it) bundle the **CivicAccess** module — its code is installed on disk, its database tables are created on first run, a secret token is provisioned for it, and the system reports it as available. **The on-screen "Accessibility" workflow tab and its buttons land in v1.0.2** (the next release after this one). Until v1.0.2, a clerk will see the same five workflow areas the v1.0.1 build has today (Meetings, Records, Code, Notice, Search) — no Accessibility tab. CivicAccess as a standalone module is fully usable today by a developer who runs it separately, but a typical city clerk should expect the in-app Accessibility tab to arrive with v1.0.2.
+> **In plain English.** CivicSuite v1.0.1 bundled the **CivicAccess** module under the hood — its code was installed on disk, its database tables were created on first run, a secret token was provisioned for it, and the system reported it as available — but there was no on-screen tab yet. **The current v1.0.2 release ships the on-screen "Accessibility" workflow tab and its buttons**, so a clerk now sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Three of the tab's tools draft with the suite's local AI engine — see Part 1.6 for what they do and the human-review rules that apply.
 
-> **For IT.** Per the [2026-06-29 deep-read audit](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md), Phase B (PR [#213](https://github.com/CivicSuite/civicsuite/pull/213)) wired CivicAccess into the desktop runtime (module loads, schema bootstraps, `CIVICACCESS_TRUSTED_WRITE_TOKEN` provisions via `supervisor.rs:386-388,2043-2048`, clerk role grants it at `auth.rs:539`) but did not add UI panels in `desktop/src/main.js` or workflow handler arms in `desktop/src-tauri/src/workflows.rs`. Phase C (PR [#214](https://github.com/CivicSuite/civicsuite/pull/214)) was a registry/truth flip 5→6 and explicitly did not add UI. As a result, the shipping 6-module MSI built from `4e0f103` exposes the same eight nav tabs as v1.0.1. The v1.0.2 PR will mirror the CivicNotice precedent ([PR #193](https://github.com/CivicSuite/civicsuite/pull/193)) — `renderAccessWorkflow()` panel + `data-work-action` buttons in `main.js`, port the deterministic civicaccess Python helpers (`access_review.py`, `plain_language.py`, `multilingual.py`, `workflows.py`) into Rust against a new `state.access` field on `CityWorkState`, one cargo end-to-end test, one Playwright spec, version bump `1.0.1 → 1.0.2`.
+> **For IT.** Per the [2026-06-29 deep-read audit](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md), Phase B (PR [#213](https://github.com/CivicSuite/civicsuite/pull/213)) wired CivicAccess into the desktop runtime (module loads, schema bootstraps, `CIVICACCESS_TRUSTED_WRITE_TOKEN` provisions via `supervisor.rs:386-388,2043-2048`, clerk role grants it at `auth.rs:539`) without adding UI panels, and Phase C (PR [#214](https://github.com/CivicSuite/civicsuite/pull/214)) was the registry/truth flip 5→6. v1.0.2 closed the gap: PR [#216](https://github.com/CivicSuite/civicsuite/pull/216) delivered the native Rust Accessibility tab following the CivicNotice precedent ([PR #193](https://github.com/CivicSuite/civicsuite/pull/193)) — `renderAccessWorkflow()` panel + `data-work-action` buttons in `main.js`, workflow handlers in `workflows.rs` against the `state.access` field on `CityWorkState` — and PR [#220](https://github.com/CivicSuite/civicsuite/pull/220) put its three drafting tools on the suite's shared local AI engine, with the deterministic helpers retained as labeled fallbacks.
 
 ### What this means for your city
 
@@ -91,7 +91,7 @@ City-core artifacts for this run are live regenerated evidence artifacts, not re
 3. Confirm the source pins in `installer/modules.json` match the city-core module commits.
 4. For module release-car assets, confirm the published SHA256 and attestation assets recorded in the module release evidence where applicable.
 
-Do not restore old generated installer artifacts unless Scott explicitly decides that those artifacts should be restored.
+Do not restore old generated installer artifacts unless the maintainers explicitly decide that those artifacts should be restored.
 
 ### First task: complete local setup
 
@@ -105,7 +105,7 @@ Do not restore old generated installer artifacts unless Scott explicitly decides
 ### What you should expect
 
 - **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff.
-- **What still needs its own proof gate.** Each future module outside the city-core set (the clean-machine walkthrough for the current 1.0.1 MSI artifact has passed).
+- **What still needs its own proof gate.** Each future module outside the city-core set (the current v1.0.2 MSI artifact has passed its clean-machine gates: the QA-B1 walkthrough on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2).
 - **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 
 ### Where to go next
@@ -162,7 +162,7 @@ The umbrella does **not** contain runtime code for individual products — that 
 | `civicclerk` | v1.0.4 meeting workflow city-core release car |
 | `civiccode` | v1.0.8 municipal-code city-core release car |
 | `civicnotice` | v0.2.0 public-notice workflow city-core release car |
-| `civicaccess` | v0.4.0 accessibility + records-ready export city-core release car (sixth city-core module — module bundled in v1.0.1; on-screen UI tab lands in v1.0.2, see Part 1 callout) |
+| `civicaccess` | v0.4.0 accessibility + records-ready export city-core release car (sixth city-core module — bundled since v1.0.1; its on-screen Accessibility tab ships as of v1.0.2, see Part 1 callout) |
 | `civiczone`, `civicplan`, `civicpermit`, `civicinspect` | Queued Tier 2 modules on demotion-truth labels |
 | `civicgrants`, `civicprocure` | v0.2.0 scaffold-depth recovery labels |
 | All others | Foundation surfaces (v0.1.x) |
@@ -281,7 +281,7 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 |---|---|
 | Module will not install | Open Settings > Module Catalog, review dependencies and proof status, then use the guided install/update/repair action for ready modules. CivicCore stays installed. |
 | Desktop app opens but shows no module activity | Open System Health, check local services, task queue schema, local model, and enabled module state, then use Repair after reviewing the repair panel. |
-| Unsure whether an artifact is current | Verify the live `SHA256SUMS` or release manifest from the active run evidence path; do not rely on restored `installer/dist` files unless Scott explicitly approved restoration. |
+| Unsure whether an artifact is current | Verify the live `SHA256SUMS` or release manifest from the active run evidence path; do not rely on restored `installer/dist` files unless the maintainers explicitly approved restoration. |
 | `civiccore` version mismatch | [docs/compatibility/index.md](docs/compatibility/index.md) is the canonical pairing source. |
 | README says "shipping," recovery doc says "frozen" | The recovery doc wins. See [docs/release-recovery-status.md](docs/release-recovery-status.md). |
 | Unsure where to file a bug | [CONTRIBUTING.md](CONTRIBUTING.md) — bug-routing decision tree. |
