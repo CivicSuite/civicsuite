@@ -1,0 +1,20 @@
+EXIT=0
+killed hung initdb/pg/WerFault (if any)
+--- system MSVC runtime present? ---
+System32\VCRUNTIME140.dll : False
+System32\VCRUNTIME140_1.dll : False
+System32\MSVCP140.dll : False
+--- is the VC++ runtime bundled in the payload postgres bin? ---
+payload pg bin exists: True
+payload pg bin has VCRUNTIME140.dll: False
+icudt67.dll, icuin67.dll, icuio67.dll, icutu67.dll, icuuc67.dll, libcrypto-3-x64.dll, libcurl.dll, libecpg.dll, libecpg_compat.dll, libiconv-2.dll, libintl-9.dll, liblz4.dll, libpgtypes.dll, libpq.dll, libssl-3-x64.dll, libwinpthread-1.dll, libxml2.dll, libxslt.dll, libzstd.dll, testplug.dll, wxbase3210u_net_vc_x64_custom.dll, wxbase3210u_vc_x64_custom.dll, wxbase3210u_xml_vc_x64_custom.dll, wxmsw3210u_adv_vc_x64_custom.dll, wxmsw3210u_aui_vc_x64_custom.dll, wxmsw3210u_core_vc_x64_custom.dll, wxmsw3210u_html_vc_x64_custom.dll, wxmsw3210u_xrc_vc_x64_custom.dll, zlib1.dll
+--- VCRUNTIME anywhere in the install tree? ---
+C:\Program Files\CivicSuite\_up_\runtime\payload\ollama\lib\ollama\cuda_v12\vcruntime140.dll
+C:\Program Files\CivicSuite\_up_\runtime\payload\ollama\lib\ollama\cuda_v12\vcruntime140_1.dll
+C:\Program Files\CivicSuite\_up_\runtime\payload\ollama\lib\ollama\cuda_v12\vcruntime140_threads.dll
+C:\Program Files\CivicSuite\_up_\runtime\payload\ollama\lib\ollama\cuda_v13\vcruntime140.dll
+C:\Program Files\CivicSuite\_up_\runtime\payload\ollama\lib\ollama\cuda_v13\vcruntime140_1.dll
+--- copied runtime pg bin ---
+runtime pg bin exists: True
+runtime pg bin has VCRUNTIME140.dll: False
+

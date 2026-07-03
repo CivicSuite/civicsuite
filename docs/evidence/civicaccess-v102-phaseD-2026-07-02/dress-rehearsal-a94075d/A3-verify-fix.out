@@ -1,0 +1,26 @@
+EXIT=0
+=== plain-language rewrite (real prompt, chat) ===
+[eval=19 done=stop]
+Residents must pay before the deadline. According to the ordinance, service will start after approval.
+
+=== translation de (real prompt, chat) ===
+[eval=25 done=stop]
+Die Stadtwasserwerke werden am Dienstagmorgen eine Wasserleitung reparieren. Bitte legen Sie vorab Wasser vor.
+
+=== review analysis (real prompt, chat) ===
+[eval=256 done=length]
+### Accessibility Remediation Analysis: Water main repair notice
+
+**Priority Finding to Fix First:**
+*   **Missing Alt Text (High):** This is your primary and only finding. Because this document contains visual elements without descriptions, users who rely on screen readers may miss critical information or experience a confusing navigation flow. 
+
+**Why it matters:**
+For a public notice regarding utility repairs, accessibility is vital for ensuring all residents—including those with visual impairments—receive timely information about service disruptions. If an image conveys the location of the repair or a map of affected areas, that information must be converted into text so it can be "read" by assistive technology.
+
+**Human Reviewer Recommendations:**
+While the automated check identified the missing alt text, please have a human reviewer double-check the following:
+
+*   **Contextual Accuracy:** When adding alt text, ensure it describes the *purpose* of the image rather than just its appearance. (e.g., instead of "Map of street," use "Map showing the repair zone on Main Street.")
+*   **Information Redundancy:** If the image contains a lot of text (like a flyer), ensure that all the important details from that image are also included in the main body of the document
+
+

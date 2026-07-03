@@ -1,0 +1,33 @@
+EXIT=0
+=== payload postgres\bin VC++ runtime DLLs (the fix) ===
+vcruntime140.dll   : True
+vcruntime140_1.dll : True
+msvcp140.dll       : True
+all VC*140 dlls staged: concrt140.dll, msvcp140.dll, msvcp140_1.dll, msvcp140_2.dll, msvcp140_atomic_wait.dll, msvcp140_codecvt_ids.dll, vccorlib140.dll, vcruntime140.dll, vcruntime140_1.dll, vcruntime140_threads.dll
+=== the smoking-gun test: run the binaries that failed before (initdb/pg_ctl) ===
+powershell.exe : You cannot call a method on a null-valued expression.
+At C:\CivicSuitePhaseD\sandbox-setup.ps1:56 char:27
++ ...   $output = & powershell.exe -ExecutionPolicy Bypass -File $_.FullNam ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (You cannot call...ued expression. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+At C:\CivicSuitePhaseD\commands\03-verify-vcruntime-fix.ps1:12 char:138
++ ... )  stderr=$((Get-Content "$env:TEMP\pgctl.err" -Raw -ErrorAction Sile ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+pg_ctl --version exit=0  stdout=pg_ctl (PostgreSQL) 17.10  stderr=
+You cannot call a method on a null-valued expression.
+At C:\CivicSuitePhaseD\commands\03-verify-vcruntime-fix.ps1:15 char:140
++ ... )  stderr=$((Get-Content "$env:TEMP\initdb.err" -Raw -ErrorAction Sil ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : InvokeMethodOnNull
+ 
+initdb --version exit=0  stdout=initdb (PostgreSQL) 17.10  stderr=
+=== confirm system still has NO VC++ redist (proving the DLLs come from the bundle, not the OS) ===
+System32\VCRUNTIME140.dll present: False
+

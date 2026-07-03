@@ -1,0 +1,12 @@
+{
+    "staging_dir":  "C:\\dev\\civicsuite-phaseD-1.0.2",
+    "msi_head_sha":  "a94075d706f0a77f6d66f8f52f9afef9d3e686b2",
+    "launched_at_local":  "2026-07-02T00:23:40-06:00",
+    "wsb_file":  "C:\\dev\\civicsuite-phaseD-1.0.2\\civicsuite-phaseD.wsb",
+    "setup_script":  "C:\\dev\\civicsuite-phaseD-1.0.2\\sandbox-setup.ps1",
+    "msi_built_at":  "2026-07-02T04:35:20Z",
+    "msi_sha256":  "633a16abd2860b279442c99e31b2bd4446f2ba2377512c863f6814157d30f679",
+    "msi_file":  "CivicSuite_1.0.2_x64_en-US.msi",
+    "msi_run_id":  "28565687506",
+    "msi_size_bytes":  1646211598
+}

@@ -1,0 +1,14 @@
+EXIT=0
+=== C) /api/chat (messages, model template + parser applied) ===
+CHAT RESPONSE:
+
+
+=== D) /api/generate raw:false (Prompt through template+parser) ===
+GEN(raw:false) RESPONSE:
+
+
+=== E) /api/chat translation de ===
+CHAT(de) RESPONSE:
+
+
+
