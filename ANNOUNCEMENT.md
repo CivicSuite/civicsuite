@@ -1,4 +1,4 @@
-# CivicSuite Windows Local 1.0.2 — GA candidate, public beta — the suite's local AI, now real everywhere
+# CivicSuite Windows Local 1.0.2 — GA candidate, public beta — local AI now behind every AI feature in the suite, including the new Accessibility tab
 
 **TL;DR:** CivicSuite city-core for Windows v1.0.2 is out. One MSI still installs the whole six-module suite — database, local AI model, and clerk workflows on one Windows machine — and this release makes the suite better in three ways: the **Accessibility tab is now on screen and three of its tools run on the suite's local AI**, a shared engine fix **improved the output quality of every AI feature in the suite**, and a clean-machine fix means **first-run setup now completes on a factory-fresh Windows PC**. No cloud, no signup, no telemetry. Download it, run it, try it.
 
@@ -23,7 +23,7 @@ Everything runs on the model already on your machine — nothing leaves it. Ever
 
 **3. First-run setup now works on a truly fresh PC.** On a factory-fresh Windows machine with no other software installed, the bundled database could fail to start on the very first launch (a standard Microsoft runtime component that most PCs already have was missing). v1.0.2 bundles that component alongside the database, so setup completes on a clean machine with no extra downloads or installs. This affected every v1.0.x build, not just this one — v1.0.2 fixes it.
 
-The two-month CivicAccess city-core integration runway is complete: Phase A (module hardening to v0.4.0) done, Phase B (desktop runtime wiring) done, Phase C (city-core registry flip 5→6) done, and **Phase D (clean-machine acceptance) — PASS**. Phase D was two full runs of the real MSI in a clean Windows Sandbox — the canonical "fresh clerk PC." Run 1 verified the whole chain end to end — install → the full 10-step first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → all three Accessibility AI features producing clean, correctly-labeled output through the real app bridge — **and** caught the clean-machine database bug described above. The fix shipped in this release, and run 2 proved it: on a clean machine with no system runtime present, the bundled PostgreSQL initializes a full working database. The full Phase D story is in the [v1.0.2 release notes](https://github.com/CivicSuite/civicsuite/releases/latest).
+The two-month CivicAccess city-core integration runway is complete: Phase A (module hardening to v0.4.0) done, Phase B (desktop runtime wiring) done, Phase C (city-core registry flip 5→6) done, and **Phase D (clean-machine acceptance) — PASS**. Phase D was two full runs of the real MSI in a clean Windows Sandbox — the canonical "fresh clerk PC." Run 1 verified the whole chain end to end — install → the full 10-step first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → all three Accessibility AI features producing clean, correctly-labeled output through the real app bridge — **and** caught the clean-machine database bug described above. The fix shipped in this release, and run 2 proved it: on a clean machine with no system runtime present, the bundled PostgreSQL initializes a full working database. The full Phase D story is in the [v1.0.2 release notes](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2).
 
 ### For IT: the technical specifics
 
@@ -46,7 +46,7 @@ Everything — your data, your documents, your audit trail, the AI model — sta
 
 Same posture as v1.0.1; the bundled scope grew:
 
-- **GA candidate** describes maturity. The v1.0.2 MSI passed CI lifecycle validation (install → first-run → backup-restore → uninstall on a fresh `windows-latest` runner, run `28626482190`), and **Phase D clean-machine acceptance passed** — two full Windows Sandbox runs of the shipped installer covering install, the complete first-run wizard, admin sign-in, the model download/verify/load chain, and the three Accessibility AI features live against the real model, including the run that caught (and this release's fix that closed) the clean-machine database bug. See "What changed" above and the [v1.0.2 release notes](https://github.com/CivicSuite/civicsuite/releases/latest) for the full story.
+- **GA candidate** describes maturity. The v1.0.2 MSI passed CI lifecycle validation (install → first-run → backup-restore → uninstall on a fresh `windows-latest` runner, run `28626482190`), and **Phase D clean-machine acceptance passed** — two full Windows Sandbox runs of the shipped installer covering install, the complete first-run wizard, admin sign-in, the model download/verify/load chain, and the three Accessibility AI features live against the real model, including the run that caught (and this release's fix that closed) the clean-machine database bug. See "What changed" above and the [v1.0.2 release notes](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2) for the full story.
 - **Public beta** describes the stage. **Authenticode code-signing remains the single remaining gate to General Availability** — in progress via the SignPath Foundation. Until it lands, SmartScreen shows "Unknown Publisher" — see the install section for the honest walkthrough.
 
 ## Install (60-second version, unsigned-beta warning included)
@@ -63,7 +63,7 @@ Verify your download: SHA-256 `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9
 
 ## Upgrade from v1.0.1
 
-In-place upgrade supported via same product code. No uninstall needed. Existing `city-work.json` files load unchanged — files saved by v1.0.1 simply don't have the new fields yet, and that's fine. No data loss. First run after upgrade does NOT re-download the Gemma model — the new AI features use the model you already have.
+In-place upgrade supported via same product code. No uninstall needed. Your saved work (the `city-work.json` data file) loads unchanged — files saved by v1.0.1 simply don't have the new fields yet, and that's fine. No data loss. First run after upgrade does NOT re-download the Gemma model — the new AI features use the model you already have.
 
 ## What it is *not* (yet)
 

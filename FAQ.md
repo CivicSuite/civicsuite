@@ -15,7 +15,7 @@ The supported operator path is the **CivicSuite Windows Local "city-core" deskto
 What an operator does:
 
 1. Run the MSI on a 64-bit Windows 10/11 machine that has WebView2.
-2. Because the beta MSI is unsigned, SmartScreen shows "Unknown Publisher" -> choose **More info**, then **Run anyway** (only if the file came from the expected CivicSuite release/test source).
+2. Because the beta MSI is unsigned, SmartScreen shows "Unknown Publisher", then choose **More info**, then **Run anyway** (only if the file came from the expected CivicSuite release/test source).
 3. Follow the installer screens, then open CivicSuite and complete first-run setup (city profile, first local administrator, backup folder).
 4. At first run the app downloads the pinned Gemma 4 12B QAT model (about 6.97 GB) from Hugging Face and verifies its checksum before AI workflows turn on. After that the model is local; no cloud account is needed.
 
@@ -27,9 +27,9 @@ This is a **GA candidate, open for public beta**: feature-complete for city-core
 
 ## Can my city rely on CivicSuite for live operations today?
 
-**No.** The honest current package is the city-core beta-ready, truth-reconciled installer profile: CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, CivicAccess v0.4.0, and the suite installer. That profile has current Windows matching-host lifecycle evidence (older Linux lifecycle evidence is historical), first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
+**No.** The honest current package is the city-core beta installer profile (version labels reconciled with what actually works): CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, CivicAccess v0.4.0, and the suite installer. That profile has current install-lifecycle testing on Windows — the same operating system it ships for (older Linux lifecycle evidence is historical) — plus first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
 
-That is still a bounded beta package. It is **not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess v0.4.0 joined city-core as the sixth module on 2026-06-29 (re-probe reversed the 2026-05-23 NEEDS-WORK demotion); the current v1.0.2 MSI installs all six city-core modules — **the CivicAccess module code, database schema, and write-token secret are bundled, and its on-screen Accessibility workflow tab, with three local-AI tools, ships in the desktop UI as of v1.0.2** (see [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md)). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on demotion-truth labels.
+That is still a bounded beta package. It is **not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess v0.4.0 joined city-core as the sixth module on 2026-06-29 (a follow-up in-depth review qualified it for city-core, reversing the 2026-05-23 "needs work" demotion — a failed depth review); the current v1.0.2 MSI installs all six city-core modules — **the CivicAccess module code, database schema, and write-token secret are bundled, and its on-screen Accessibility workflow tab, with three local-AI tools, ships in the desktop UI as of v1.0.2** (see [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md)). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on corrected version labels (versions lowered to match actual maturity).
 
 Any vendor or integrator claiming a completed CivicSuite municipal deployment or a full-suite operational release is making a claim the project docs do not support.
 
@@ -43,7 +43,7 @@ CivicSuite has many tags. Only the scoped package evidence in [STATUS.md](STATUS
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (for example, `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake). A single-module install is a supported design goal.
 
-In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active beta-ready profile that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
+In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active truth-reconciled beta profile that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
 
 ## What does a civic operator need to run the city-core beta?
 
@@ -63,9 +63,9 @@ The beta MSI is unsigned, so SmartScreen will show "Unknown Publisher": choose *
 
 ## What is the suite launcher?
 
-The suite launcher is a local browser front door packaged with the city-core installer runtime. It gives staff, resident, and IT-admin views over the installed local services and can be overridden by runtime configuration through `window.CIVICSUITE_LAUNCHER_CONFIG`.
+If you installed the Windows Local desktop app, the desktop app itself is your front door: a clerk opens CivicSuite from the Start menu like any other program and works entirely inside that window. You will not see a separate "launcher" page on this path.
 
-The current launcher session is a local browser/runtime session. It is useful for operator orientation and QA state checks, but it is **not** a claim that CivicSuite has completed municipal SSO, shared identity federation, or a cross-city managed service.
+The suite launcher is a browser page that belongs to the separate Docker/server profile (the developer and CI path described above, not the operator path). In that profile it gives staff, resident, and IT-admin views over the locally running services. It is useful for operator orientation and QA state checks, but it is **not** a claim that CivicSuite has completed municipal SSO, shared identity federation, or a cross-city managed service.
 
 ## How do I know an installer package is the one I should test?
 
@@ -75,13 +75,13 @@ Use the live trust path, not stale committed artifacts:
 2. Verify the generated `SHA256SUMS` or release-manifest hash for the artifact you are about to run.
 3. Confirm the package came from the official CivicSuite repo or the recorded local run evidence.
 4. Confirm source pins in `installer/modules.json` match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess.
-5. For module release-car assets, verify the published SHA256 and attestation assets recorded in each module's release evidence.
+5. For module release assets, verify the published SHA256 and attestation assets recorded in each module's release evidence.
 
-Do not restore old `installer/dist` artifacts unless the maintainers explicitly decide that the prior committed artifacts should be revived. The default for this run is live regenerated artifacts with evidence paths.
+Do not restore old `installer/dist` artifacts unless the maintainers explicitly decide that the prior committed artifacts should be revived. The default is live regenerated artifacts with evidence paths.
 
 ## Why are some modules called "CivicCourt Assist" and others bare "CivicCourt"?
 
-Both names refer to the same module. The "Assist" / "Bridge" / "Research" suffix is the canonical product name when the module needs to be clearly described as a copilot or bridge, not a system-of-record replacement. The bare name is the casual reference used in tier rollout lists. The `CONSISTENCY.md` section 3 documents this convention.
+Both names refer to the same thing: CivicCourt, a planned specialized-tier module. The "Assist" / "Bridge" / "Research" suffix is the canonical product name when the module needs to be clearly described as a copilot or bridge, not a system-of-record replacement. The bare name is the casual reference used in tier rollout lists. [CONSISTENCY.md](https://github.com/CivicSuite/civicsuite/blob/main/CONSISTENCY.md) section 3 documents this convention.
 
 CivicSuite is deliberately not a system-of-record replacement for ERP, utility billing, permitting, CAD/RMS, or court case management. The "Assist" naming is the suite's way of being explicit about that scope boundary.
 
@@ -137,4 +137,4 @@ Open a private GitHub Security Advisory on the affected repo. See [SECURITY.md](
 
 That CivicSuite is a credible open-source civic-tech project under active development, and that it is **not yet ready for production procurement**. A pilot evaluation is reasonable; a procurement decision based on the current state is not.
 
-Re-evaluate after the recovery gates pass. The recovery-status doc and STATUS.md will tell you when that has happened, repo by repo.
+Re-evaluate after the [release-verification gates](docs/release-recovery-status.md) pass. The recovery-status doc and STATUS.md will tell you when that has happened, repo by repo.
