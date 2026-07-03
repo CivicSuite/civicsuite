@@ -26,18 +26,18 @@ release tag for that repo.
 
 | Module | Repo | Bundled `source_commit` | Published release tag | Bundled vs published |
 |---|---|---|---|---|
-| CivicCore | CivicSuite/civiccore | `1a53f0680fffce34efeb939cbeb9915b6e208d6c` | v1.2.0 | at/derived from v1.2.0 line |
+| CivicCore | CivicSuite/civiccore | `1a53f0680fffce34efeb939cbeb9915b6e208d6c` | **v1.2.0** | **AHEAD of v1.2.0 (undisclosed until this note)** |
 | CivicRecords AI | CivicSuite/civicrecords-ai | `e2208827b660faa7d3fc1eab2271a8eae18526ee` | **v1.7.3** | **AHEAD of v1.7.3 (undisclosed until this note)** |
 | CivicClerk | CivicSuite/civicclerk | `fa1874edfe977bfc36ddea2939df6464b5bc16be` | **v1.0.4** | **AHEAD of v1.0.4 (undisclosed until this note)** |
-| CivicCode | CivicSuite/civiccode | `a960bba0a2249d118b593dd61bee3a65a69a9d77` | v1.0.8 | at/derived from v1.0.8 line |
-| CivicNotice | CivicSuite/civicnotice | `2bf0c9d7b764af84cd042657a972e84213a261d5` | v0.2.0 (bundled source; see note) | at/derived from v0.2.0 line |
+| CivicCode | CivicSuite/civiccode | `a960bba0a2249d118b593dd61bee3a65a69a9d77` | **v1.0.8** | **AHEAD of v1.0.8 (undisclosed until this note)** |
+| CivicNotice | CivicSuite/civicnotice | `2bf0c9d7b764af84cd042657a972e84213a261d5` | [v0.2.0](https://github.com/CivicSuite/civicnotice/releases/tag/v0.2.0) (published 2026-07-03 from the 2026-06-19 tag) | **at v0.2.0** — the pin is exactly the commit the v0.2.0 tag points to |
 | CivicAccess | CivicSuite/civicaccess | `7b24516fd89584d84c12394b9385eddd1e8c6897` | v0.4.0 | **at v0.4.0** — the pin is exactly the commit the v0.4.0 tag points to |
 
 > Short commit forms used elsewhere: civicrecords-ai `e2208827`, civicclerk
 > `fa1874ed`, civiccore `1a53f06`, civiccode `a960bba0`, civicnotice `2bf0c9d`,
 > civicaccess `7b24516f`.
 
-### Specifically disclosed (the two ahead-of-release modules)
+### Specifically disclosed (the four ahead-of-release modules)
 
 - **CivicRecords AI** ships commit `e2208827`, which is **ahead of** the latest
   published release **v1.7.3**. The MSI's installed code is therefore newer than
@@ -45,11 +45,18 @@ release tag for that repo.
 - **CivicClerk** ships commit `fa1874ed`, which is **ahead of** the latest
   published release **v1.0.4**. The MSI's installed code is therefore newer than
   anything available under the `v1.0.4` release tag on GitHub.
+- **CivicCode** ships commit `a960bba0`, which is **ahead of** the latest
+  published release **v1.0.8**. The MSI's installed code is therefore newer than
+  anything available under the `v1.0.8` release tag on GitHub.
+- **CivicCore** ships commit `1a53f068`, which is **ahead of** the latest
+  published release **v1.2.0**. The MSI's installed code is therefore newer than
+  anything available under the `v1.2.0` release tag on GitHub.
 
-These two cases were previously undisclosed. Until each repo cuts a release tag
+These four cases were previously undisclosed. Until each repo cuts a release tag
 at (or above) its bundled commit, the trust path for these modules is the
 `source_commit` pin in `installer/modules.json` plus the MSI checksum/manifest
-from the release evidence — **not** the `v1.7.3` / `v1.0.4` release tags.
+from the release evidence — **not** the `v1.7.3` / `v1.0.4` / `v1.0.8` /
+`v1.2.0` release tags.
 
 ## How to verify what the MSI actually ships
 
@@ -57,13 +64,15 @@ from the release evidence — **not** the `v1.7.3` / `v1.0.4` release tags.
 2. Confirm those commits exist in the corresponding `CivicSuite/<repo>` history.
 3. Verify the MSI checksum / release manifest from the active PR/release evidence
    (see STATUS.md, "Active City-Core Target (GA candidate / open public beta)").
-4. For CivicRecords AI and CivicClerk, do **not** rely on the published release
-   tag as the source of truth — use the pinned commit above.
+4. For CivicRecords AI, CivicClerk, CivicCode, and CivicCore, do **not** rely
+   on the published release tag as the source of truth — use the pinned commit
+   above.
 
 ## Restoring a clean trust path (follow-up, not blocking this disclosure)
 
 The durable fix is to cut release tags at or above the bundled commits (e.g. a
-`v1.7.4` for civicrecords-ai and a `v1.0.5` for civicclerk that include
-`e2208827` / `fa1874ed`), then re-pin `installer/modules.json` to those tagged
+`v1.7.4` for civicrecords-ai, a `v1.0.5` for civicclerk, a `v1.0.9` for
+civiccode, and a `v1.2.1` for civiccore that include `e2208827` / `fa1874ed` /
+`a960bba0` / `1a53f068`), then re-pin `installer/modules.json` to those tagged
 commits so "what ships" once again equals "a published release." Until then,
 this file is the authoritative disclosure of the gap.

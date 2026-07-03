@@ -27,7 +27,7 @@ provisional until the repo passes the recovery gates in
 | civicprocure    | CivicSuite/civicprocure        | 0.2.0           | 2026-05-10 | `==1.1.0`                  | 2026-05-11    | D2/B3 rollout consumes CivicCore v1.1.0 shared `staff_key_gate`; module remains scaffold-depth, not v1.0 product-ready. |
 | civiccontracts  | CivicSuite/civiccontracts      | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: contract repository foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicboards     | CivicSuite/civicboards         | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: board administration foundation preserved while moving to civiccore 0.3.0 shared primitives. |
-| civicnotice     | CivicSuite/civicnotice         | 0.2.0           | 2026-06-19 | `==1.2.0`                  | 2026-06-19    | City-core public-notice release car with checklist, posting proof, archive export, backup/restore, and Windows Local installer integration. |
+| civicnotice     | CivicSuite/civicnotice         | 0.2.0           | 2026-06-19 (tag); release published 2026-07-03 | `==1.2.0`     | 2026-07-03    | City-core public-notice release car with checklist, posting proof, archive export, backup/restore, and Windows Local installer integration. The [v0.2.0 release](https://github.com/CivicSuite/civicnotice/releases/tag/v0.2.0) is published from the 2026-06-19 tag. |
 | civic311        | CivicSuite/civic311            | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: resident service request foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civiccomms      | CivicSuite/civiccomms          | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: public communications foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicdata       | CivicSuite/civicdata           | 0.1.2           | 2026-04-29 | `==0.4.0`                  | 2026-04-29    | Auth-protected persisted retrieval rollout consumes the published `civiccore v0.4.0` release. |
@@ -63,7 +63,7 @@ macOS lifecycle certification, or full-suite release.
 | civicsuite-windows-local-v1.0.2    | 2026-07-02 | 1.2.0              | unsigned beta | Latest Windows-Local release; Tauri/WebView2 desktop MSI bundling the six-module city-core profile (adds CivicAccess 0.4.0 with real local-AI accessibility features) on CivicCore 1.2.0. Supersedes v1.0.1. |
 | civicsuite-windows-local-v1.0.1    | 2026-06-19 | 1.2.0              | unsigned beta | Superseded by v1.0.2. Tauri/WebView2 desktop MSI bundling the five city-core modules on CivicCore 1.2.0. Supersedes v1.0.0; firstrun-fix-rc1 prerelease retired. |
 
-Bundled city-core modules in the latest release (release-line versions; civicrecords-ai and civicclerk bundle `source_commit` pins ahead of these tags — see [PROVENANCE.md](../../PROVENANCE.md)):
+Bundled city-core modules in the latest release (release-line versions; four of the six modules — civiccore, civicrecords-ai, civicclerk, and civiccode — bundle `source_commit` pins ahead of their published tags — see [PROVENANCE.md](../../PROVENANCE.md)):
 
 | Module          | Version | CivicCore platform |
 |-----------------|---------|--------------------|

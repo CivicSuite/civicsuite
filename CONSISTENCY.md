@@ -133,8 +133,8 @@ stack.
 
 | Item | Value | Source |
 |---|---|---|
-| ADA Title II compliance — cities >50K | 2027 | `04_civiczone.md` Appendix C, `03_civicclerk.md` Appendix C |
-| ADA Title II compliance — smaller cities | 2028 | same |
+| ADA Title II compliance — entities 50,000+ population | April 24, 2026 (deadline has passed) | DOJ ADA Title II web/mobile rule (April 2024) |
+| ADA Title II compliance — smaller entities and special districts | April 26, 2027 | same |
 | Open Meetings Act named examples | Florida §286.011 (Sunshine Law); California Brown Act; Texas Chapter 551; New York Open Meetings Law; Colorado §24-6-401 et seq. | `03_civicclerk.md` §21 |
 
 ---

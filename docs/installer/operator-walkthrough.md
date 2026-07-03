@@ -30,7 +30,7 @@ Have these ready:
 - A stable internet connection for first install/model download unless the model file has already been staged by IT (see "Offline / Air-Gapped Model Pre-Staging").
 - A city name, records contact, clerk contact, first local administrator name/email, and a backup folder location.
 
-Do not install Docker Desktop or WSL for this product path. If the app asks for Docker, WSL, a terminal, or manual environment edits, that is a release-blocking bug for the Windows Local clerk installer.
+Do not install Docker Desktop or WSL for this product path. If the app asks for Docker, WSL, a terminal, or manual environment edits, this is a bug — please report it on the CivicSuite GitHub issue tracker (<https://github.com/CivicSuite/civicsuite/issues>).
 
 ## Install
 
@@ -118,7 +118,7 @@ After first-run setup, open System Health. Verify:
 Use the module manager in Settings to confirm:
 
 - City Core profile is selected.
-- CivicCore, CivicRecords AI, CivicClerk, CivicCode, and CivicNotice are installed.
+- CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess are installed.
 - Each installed module shows install, update, disable, remove, backup coverage, and export access state.
 - Future modules are not presented as installed.
 
@@ -148,6 +148,7 @@ Windows folders manually for normal file evidence work.
 - Records Requests: create or submit a request, calculate the response deadline from received date/rule/day-count/day-type with staff review, manually override the response deadline and basis when needed, review the Request Timeline, public-safe Status Updates, Request Messages, Search Sessions, Request Documents, Exemption Decisions, Release Packages, and Notification Outbox, log generated notifications as sent after staff sends them, record search/citation notes, save durable search sessions with query/location/result evidence, attach local source documents with hash/citation evidence, attach release-ready or redacted copies with their own hash/reviewer/note evidence before package build, save release/redact/exempt decisions with source and basis evidence, build a checksummed release package manifest, add fee line items with the fee schedule or policy basis, record a fee waiver reason, generate or type a response draft, approve, export, mark fulfilled, and close.
 - Resident/Public Records Requests: submit a public request, keep the returned request number, check status with the same submitted contact, and confirm Status Updates show safe progress without staff notes, search details, exemption reasoning, local paths, or internal audit details.
 - Code & Ordinances: import a code source with title/citation/searchable text, preserve the source file as local evidence when available, verify the saved source shows filename/hash evidence without publishing local workstation paths, record sync state, generate or type guidance, approve guidance, publish source, answer a code question with citations, and create a clerk handoff.
+- Accessibility: open the Accessibility tab, run a WCAG sample review, save it, confirm the saved review appears in the review list with its export button, and confirm it appears in Search City Knowledge.
 - Search City Knowledge: search across local meeting, records, and code data with citations and module labels.
 
 Risky civic actions should open a review panel before saving. Backup, restore, support bundle, repair, service stop, and uninstall should also open a review panel before running.
@@ -197,4 +198,4 @@ If disk space is low, free space and run health verification again.
 
 If the app cannot write backups, choose a folder the local user can write and run backup again.
 
-If the app asks for Docker, WSL, terminal commands, or manual config-file edits, stop and record it as a Windows Local release blocker.
+If the app asks for Docker, WSL, terminal commands, or manual config-file edits, this is a bug — please report it on the CivicSuite GitHub issue tracker (<https://github.com/CivicSuite/civicsuite/issues>).

@@ -38,8 +38,10 @@ PostgreSQL 17.10 cluster — with `System32\VCRUNTIME140.dll` still absent from 
 The three CivicAccess prompts run at the shipped configuration (`/api/chat`, temperature 0.2,
 `num_predict` 512, `num_ctx` 8192) against the pinned model: clean rewrite, correct German,
 460-token structured review analysis, all `done_reason=stop` (nothing truncated), within timeout.
+This verification ran at main `0b0170a`; the only delta to the released `0b797c4` is the
+PR #221 VC++ bundling fix, which does not touch generation config.
 
-- `00-provenance.json` — model/runtime provenance for the verification.
+- `00-provenance.json` — staging provenance for the dress-rehearsal MSI (`a94075d`) whose payload supplied the pinned model bits used in this verification (the pinned model is identical across builds).
 - `host-shipped-config-ai-verify.out` — full transcript.
 
 ### `dress-rehearsal-a94075d/` — the pre-release run that caught the generation-format bug
