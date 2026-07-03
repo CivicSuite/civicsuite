@@ -24,13 +24,54 @@ Phase D clean-VM acceptance ([manifest](docs/roadmap/civicaccess-citycore-integr
 
 The four earlier overstated version labels for CivicZone, CivicPlan, CivicPermit, and CivicInspect have been displaced by narrow `v0.2.2` corrective releases that lowered the version labels to match actual maturity. Those releases add no functionality and do not promote Tier 2. The reconciled unified spec, installer metadata, and live GitHub org state enumerate 27 product modules plus CivicCore.
 
+<!-- BEGIN GENERATED MODULE STATUS (scripts/docs/render_public_status.py) -->
+
 ## Status Legend
 
-- **Corrective patch required:** real code exists, but the current public version label needs a corrective patch before the module can advance.
-- **Developer preview:** meaningful product-shaped runtime exists, but municipal procurement readiness has not been proven.
-- **Corrected version label** (version lowered to match actual maturity): a previous v1.0.0 label overstated the module's maturity and is being superseded by a lower honest version.
-- **Foundation only:** package/schema/sample API/sample UI depth only; not product-ready.
-- **Planned:** spec exists, no runtime repo yet.
+Status labels below are the suite's shared status set, generated from
+[`installer/modules.public-status.json`](installer/modules.public-status.json) — the same source the [module explorer](docs/module-explorer.html) renders.
+
+- **Shared platform:** The shared platform every module depends on; always installed.
+- **Released · city-core:** Released city-core module — ships in the current Windows Local release.
+- **Queued · Tier 2:** Early scaffold with a corrected version label; full build queued for Tier 2.
+- **Early scaffold:** Early scaffold; not city-ready.
+- **Foundation:** Package/schema/sample-depth foundation only; not product-ready.
+- **Planned:** Spec exists; no runtime repo yet.
+
+## Module Status (all 28)
+
+| Module | Version | Status | Released | Note |
+|---|---|---|---|---|
+| CivicCore | 1.2.0 | Shared platform | 2026-05-23 | Shared platform every module depends on — identity, audit, retention, local task queue, document ingestion. Always installed. |
+| CivicRecords AI | 1.7.3 | Released · city-core | 2026-05-24 | FOIA / public-records intake, search, and AI-assisted response drafting. Ships in v1.0.2; the deeper records workflows are still maturing. |
+| CivicClerk | 1.0.4 | Released · city-core | 2026-06-13 | Meetings, agendas, packets, minutes, and votes. Ships in v1.0.2. |
+| CivicCode | 1.0.8 | Released · city-core | 2026-05-23 | Searchable municipal code and ordinances with AI-assisted guidance. Ships in v1.0.2. |
+| CivicAccess | 0.4.0 | Released · city-core | 2026-06-28 | Accessibility workflows and records-ready export — plain-language rewrites, translations, WCAG review. The v1.0.2 headline. |
+| CivicZone | 0.2.2 | Queued · Tier 2 | 2026-05-23 | Parcel-aware zoning and land-use Q&A. Early scaffold; full build queued as the next Tier 2 lane. |
+| CivicPlan | 0.2.2 | Queued · Tier 2 | 2026-05-23 | Comprehensive-plan policy lookup. Early scaffold; full build queued. |
+| CivicPermit Assist | 0.2.2 | Queued · Tier 2 | 2026-05-23 | Permit pre-application and development-review intake. Early scaffold; full build queued. |
+| CivicInspect | 0.2.2 | Queued · Tier 2 | 2026-05-23 | Inspection assistant foundation. Early scaffold; full build queued. |
+| CivicGrants | 0.2.0 | Early scaffold | 2026-05-10 | Grant-opportunity triage and compliance support. Early scaffold; not city-ready. |
+| CivicProcure Assist | 0.2.0 | Early scaffold | 2026-05-10 | Procurement RFP drafting and award-packet support. Early scaffold; not city-ready. |
+| CivicContracts | 0.1.1 | Foundation | 2026-04-28 | Contract repository and renewal visibility. Schema/spec foundation; not city-ready. |
+| CivicBoards | 0.1.1 | Foundation | 2026-04-28 | Board and commission administration. Schema/spec foundation; not city-ready. |
+| CivicNotice | 0.2.0 | Released · city-core | 2026-07-03 | Public-notice creation and publishing workflow. Ships in v1.0.2 (city-core). |
+| Civic311 | 0.1.1 | Foundation | 2026-04-28 | Resident service-request intake and Open311 export. Schema/spec foundation; not city-ready. |
+| CivicComms | 0.1.1 | Foundation | 2026-04-28 | Source-backed public explainers and communications support. Schema/spec foundation; not city-ready. |
+| CivicData Bridge | 0.1.2 | Foundation | 2026-04-29 | Open-data and transparency publishing. Schema/spec foundation; not city-ready. |
+| CivicRegWatch | — | Planned | — | Federal regulatory-intelligence module. Detailed spec exists; no runtime repo yet. |
+| CivicAPI | — | Planned | — | Public read-only data gateway. Detailed spec exists; no runtime repo yet. |
+| CivicHR Assist | 0.1.1 | Foundation | 2026-04-28 | Personnel-policy and HR knowledge support. Schema/spec foundation; not city-ready. |
+| CivicBudget Assist | 0.1.2 | Foundation | 2026-04-29 | Budget-narrative and transparency support. Schema/spec foundation; not city-ready. |
+| CivicLegal Research | 0.1.2 | Foundation | 2026-04-29 | Internal legal-record research support. Schema/spec foundation; not city-ready. |
+| CivicElections Assist | 0.1.1 | Foundation | 2026-04-28 | Election-administration support. Schema/spec foundation; not city-ready. |
+| CivicUtility Assist | 0.1.1 | Foundation | 2026-04-28 | Utility-operations support. Schema/spec foundation; not city-ready. |
+| CivicCourt Assist | 0.1.2 | Foundation | 2026-04-29 | Municipal-court support. Schema/spec foundation; not city-ready. |
+| CivicSafety Assist | 0.1.1 | Foundation | 2026-04-28 | Public-safety administrative support. Schema/spec foundation; not city-ready. |
+| CivicLibrary | 0.1.1 | Foundation | 2026-04-28 | Library-operations support. Schema/spec foundation; not city-ready. |
+| CivicParks | 0.1.1 | Foundation | 2026-04-28 | Parks-and-recreation support. Schema/spec foundation; not city-ready. |
+
+<!-- END GENERATED MODULE STATUS -->
 
 ## Corrective Release Decision
 

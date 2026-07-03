@@ -99,3 +99,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CIVICSUITE_GITHUB_TOKEN || secrets.CIVICSUITE_GH_TOKEN || secrets.GH_TOKEN || github.token }}
         run: python scripts/verify-suite-state.py --remote-only
+
+      - name: Verify public module status blocks
+        run: python scripts/docs/render_public_status.py --check
+
+      - name: Verify vendored design tokens match the civiccore authority
+        env:
+          GH_TOKEN: ${{ secrets.CIVICSUITE_GITHUB_TOKEN || secrets.CIVICSUITE_GH_TOKEN || secrets.GH_TOKEN || github.token }}
+        run: python scripts/design/check_tokens_vendored.py
