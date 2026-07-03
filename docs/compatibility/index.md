@@ -19,7 +19,7 @@ provisional until the repo passes the recovery gates in
 | civicapi        | CivicSuite/civicapi            | planned         | not released | TBD                      | 2026-04-30    | New planned public read-only data gateway module. Implementation spec exists in `specs/06_civicapi.md`; repo and civiccore pin are not scaffolded yet. |
 | civiccode       | CivicSuite/civiccode           | 1.0.8           | 2026-05-23 | `==1.2.0`                  | 2026-05-23    | City-core municipal-code release car; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
 | civiczone       | CivicSuite/civiczone           | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | No-functional-upgrade demotion release; queued for Tier 2 real work. |
-| civicaccess     | CivicSuite/civicaccess         | 0.4.0           | 2026-06-28 | `==1.2.0`                  | 2026-06-29    | City-core accessibility + records-ready export release car on CivicCore v1.2.0; sixth city-core module (re-probe reversed the 2026-05-23 NEEDS-WORK demotion). |
+| civicaccess     | CivicSuite/civicaccess         | 0.4.0           | 2026-06-28 | `==1.2.0`                  | 2026-07-02    | City-core accessibility + records-ready export release car on CivicCore v1.2.0; sixth city-core module (re-probe reversed the 2026-05-23 NEEDS-WORK demotion). Bundled in the Windows-Local city-core MSI as of v1.0.2 with real local-AI accessibility features (plain-language rewrite, translation, advisory review analysis). |
 | civicplan       | CivicSuite/civicplan           | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | No-functional-upgrade demotion release; queued for Tier 2 real work. |
 | civicpermit     | CivicSuite/civicpermit         | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | No-functional-upgrade demotion release; queued for Tier 2 real work. |
 | civicinspect    | CivicSuite/civicinspect        | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | No-functional-upgrade demotion release; queued for Tier 2 real work. |
@@ -49,9 +49,10 @@ that bundles a fixed set of city-core module versions on one CivicCore platform
 version, not a module that consumes CivicCore. It is recorded here as its own
 section rather than as a module row.
 
-`civicsuite-windows-local-v1.0.1` is the Latest Windows-Local release. It
-supersedes v1.0.0; the `windows-local-msi-firstrun-fix-rc1` prerelease is
-retired. The MSI is an UNSIGNED beta: SmartScreen shows "Unknown Publisher" -
+`civicsuite-windows-local-v1.0.2` is the Latest Windows-Local release
+(2026-07-02). It supersedes v1.0.1, which superseded v1.0.0; the
+`windows-local-msi-firstrun-fix-rc1` prerelease is retired. The MSI is an
+UNSIGNED beta: SmartScreen shows "Unknown Publisher" -
 choose "More info" then "Run anyway". Authenticode code-signing is a documented
 GA-gate item, not a beta blocker. This product is BETA. It does not claim
 public-use readiness, city-ready status, procurement/production readiness,
@@ -59,9 +60,10 @@ macOS lifecycle certification, or full-suite release.
 
 | Product                            | Released   | CivicCore platform | Status        | Notes |
 |------------------------------------|------------|--------------------|---------------|-------|
-| civicsuite-windows-local-v1.0.1    | 2026-06-19 | 1.2.0              | unsigned beta | Latest Windows-Local release; Tauri/WebView2 desktop MSI bundling the five city-core modules on CivicCore 1.2.0. Supersedes v1.0.0; firstrun-fix-rc1 prerelease retired. |
+| civicsuite-windows-local-v1.0.2    | 2026-07-02 | 1.2.0              | unsigned beta | Latest Windows-Local release; Tauri/WebView2 desktop MSI bundling the six-module city-core profile (adds CivicAccess 0.4.0 with real local-AI accessibility features) on CivicCore 1.2.0. Supersedes v1.0.1. |
+| civicsuite-windows-local-v1.0.1    | 2026-06-19 | 1.2.0              | unsigned beta | Superseded by v1.0.2. Tauri/WebView2 desktop MSI bundling the five city-core modules on CivicCore 1.2.0. Supersedes v1.0.0; firstrun-fix-rc1 prerelease retired. |
 
-Bundled city-core modules in this release (exact versions):
+Bundled city-core modules in the latest release (release-line versions; civicrecords-ai and civicclerk bundle `source_commit` pins ahead of these tags — see [PROVENANCE.md](../../PROVENANCE.md)):
 
 | Module          | Version | CivicCore platform |
 |-----------------|---------|--------------------|
@@ -70,6 +72,7 @@ Bundled city-core modules in this release (exact versions):
 | civicclerk      | 1.0.4   | 1.2.0              |
 | civiccode       | 1.0.8   | 1.2.0              |
 | civicnotice     | 0.2.0   | 1.2.0              |
+| civicaccess     | 0.4.0   | 1.2.0              |
 
 ## CO-7 placeholder audit
 

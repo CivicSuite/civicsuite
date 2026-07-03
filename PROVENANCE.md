@@ -1,7 +1,7 @@
 # CivicSuite Windows Local — Bundled Module Provenance
 
-**Last updated:** 2026-06-25
-**Scope:** the Windows Local city-core MSI artifact and the source it bundles.
+**Last updated:** 2026-07-02
+**Scope:** the CivicSuite Windows Local v1.0.2 city-core MSI artifact and the source it bundles.
 **Companion to:** [STATUS.md](STATUS.md), [`installer/modules.json`](installer/modules.json) (`source_commit` pins).
 
 ## Why this file exists
@@ -13,14 +13,14 @@ the latest published release tag. This file discloses exactly which commits the
 MSI ships and how they relate to the published releases, so a city can verify
 the trust path instead of assuming "release tag == what runs."
 
-This is a deliberate, disclosed state for the pre-release city-core beta: the
+This is a deliberate, disclosed state for the released city-core public beta: the
 bundled commits carry fixes that are not yet cut as formal release tags. It is
 **not** a claim that the published release tags contain this code.
 
 ## City-core bundled commits vs published releases
 
 The MSI (city-core profile: CivicCore, CivicRecords AI, CivicClerk, CivicCode,
-CivicNotice) bundles these exact commits. The "Bundled vs published" column
+CivicNotice, CivicAccess) bundles these exact commits. The "Bundled vs published" column
 states whether the pinned commit is ahead of, or equal to, the latest published
 release tag for that repo.
 
@@ -31,9 +31,11 @@ release tag for that repo.
 | CivicClerk | CivicSuite/civicclerk | `fa1874edfe977bfc36ddea2939df6464b5bc16be` | **v1.0.4** | **AHEAD of v1.0.4 (undisclosed until this note)** |
 | CivicCode | CivicSuite/civiccode | `a960bba0a2249d118b593dd61bee3a65a69a9d77` | v1.0.8 | at/derived from v1.0.8 line |
 | CivicNotice | CivicSuite/civicnotice | `2bf0c9d7b764af84cd042657a972e84213a261d5` | v0.2.0 (bundled source; see note) | at/derived from v0.2.0 line |
+| CivicAccess | CivicSuite/civicaccess | `7b24516fd89584d84c12394b9385eddd1e8c6897` | v0.4.0 | **at v0.4.0** — the pin is exactly the commit the v0.4.0 tag points to |
 
 > Short commit forms used elsewhere: civicrecords-ai `e2208827`, civicclerk
-> `fa1874ed`, civiccore `1a53f06`, civiccode `a960bba0`, civicnotice `2bf0c9d`.
+> `fa1874ed`, civiccore `1a53f06`, civiccode `a960bba0`, civicnotice `2bf0c9d`,
+> civicaccess `7b24516f`.
 
 ### Specifically disclosed (the two ahead-of-release modules)
 

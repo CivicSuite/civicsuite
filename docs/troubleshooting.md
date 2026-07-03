@@ -8,7 +8,7 @@ The Windows Local clerk path is a Tauri/WebView2 desktop app installed from an M
 
 ## City-Core App Will Not Start
 
-1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 16 GB RAM (the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services; 8 GB will struggle).
+1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 32 GB RAM (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services).
 2. If Windows Defender SmartScreen shows "Unknown Publisher", that is expected for the unsigned beta MSI. Choose **More info**, then **Run anyway**, and continue only if the file came from the expected CivicSuite release/test source.
 3. After install, open CivicSuite from the Start menu or desktop shortcut.
 4. If the app opens but a local service is unhealthy, open System Health, run **Check**, then **Repair** after reviewing the repair panel.
@@ -56,7 +56,7 @@ Backups are local files written under the configured backup folder.
 
 ## CivicAccess City-Core Status
 
-CivicAccess is the sixth city-core module as of v0.4.0 (2026-06-29), after a passing depth re-probe reversed the 2026-05-23 NEEDS-WORK demotion. A doc, launcher label, installer plan, or status surface that still frames CivicAccess as OUT of city-core is stale drift — file it against the umbrella repo truth docs. (The current published v1.0.1 MSI bundles the first five city-core modules; CivicAccess ships in the next build.)
+CivicAccess is the sixth city-core module as of v0.4.0 (2026-06-29), after a passing depth re-probe reversed the 2026-05-23 NEEDS-WORK demotion. A doc, launcher label, installer plan, or status surface that still frames CivicAccess as OUT of city-core is stale drift — file it against the umbrella repo truth docs. (The current v1.0.2 MSI installs all six city-core modules, including CivicAccess v0.4.0 with its on-screen Accessibility tab.)
 
 ## Where To Check Current Truth
 
