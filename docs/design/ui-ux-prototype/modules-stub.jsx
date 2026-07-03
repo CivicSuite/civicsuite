@@ -124,7 +124,6 @@ function DesignSystemPage() {
             <button className="btn primary"><Icon name="check" size={13} /> Primary</button>
             <button className="btn">Default</button>
             <button className="btn ghost">Ghost</button>
-            <button className="btn gold">Gold accent</button>
             <button className="btn danger">Danger</button>
             <span style={{ width: 16 }} />
             <span className="badge ok dot">Approved</span>

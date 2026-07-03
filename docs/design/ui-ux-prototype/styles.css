@@ -477,8 +477,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .btn:hover { background: var(--paper-2); }
 .btn.primary { background: var(--navy); color: #fff; border-color: var(--navy-2); }
 .btn.primary:hover { background: var(--navy-2); }
-.btn.gold { background: var(--gold); color: #fff; border-color: var(--gold-2); }
-.btn.gold:hover { background: var(--gold-2); }
+/* .btn.gold removed: white-on-gold is 3.22:1, fails WCAG AA. Gold is accent/border
+   only; use .btn.primary for a solid CTA, or --gold-2 for text-bearing gold. */
 .btn.ghost { background: transparent; border-color: transparent; }
 .btn.ghost:hover { background: var(--paper-2); border-color: var(--rule); }
 .btn.danger { color: var(--err); border-color: var(--err-soft); }
