@@ -182,6 +182,40 @@ Forbidden release-facing behavior:
 - Calling the suite city-ready, procurement-ready, production-ready, or
   full-suite ready without the matching release gate
 
+## Token Authority
+
+**Token authority.** The suite's design **tokens** — color, ink ramp, status
+palette, type families, density metrics, radii — live in
+`civiccore-ui/tokens/tokens.css` (in the `civiccore` repo). That file is the
+single source of truth for token *values*. This prototype's
+`docs/design/ui-ux-prototype/styles.css` remains canonical for the **component
+layer** (the classes and layout that consume those tokens), but it no longer
+owns token values: it consumes a vendored copy of `tokens.css` and must not
+redefine a `:root` custom property that `tokens.css` already defines.
+
+**Consumption rule (offline binaries cannot `@import` at runtime).** Every
+consumer — the Tauri/WebView2 desktop app (`desktop/src/styles.css`) and this
+prototype's `styles.css` — vendors a **generated copy** of `tokens.css` pinned
+to a `civiccore` version. A CI `--check` gate fails the build if a vendored copy
+drifts from the pinned source, in the same idiom as the `source_commit` pins and
+the generated topology block. Any JS/JSON token mirror is **generated** from
+`tokens.css`, never hand-maintained.
+
+**Accessibility floor.** Token values ship WCAG-AA-validated. Three rules are
+load-bearing and encoded in the token comments:
+
+- `--gold` is **accent / border / large-text only** (white-on-`--gold` is
+  3.22:1 — a fail for body text). Text-bearing gold is `--gold-2`.
+- Gold text on pale gold surfaces uses `--gold-strong` (`--gold-2` on
+  `--gold-soft` is only 4.31:1).
+- `--ink-4` is **decorative only** (2.48:1 on `--paper`) — never body copy,
+  labels, or metadata.
+
+Changing a token value requires re-verifying its contrast pairings against the
+ledger in `civiccore-ui/tokens/tokens-reference.html`. The shipped desktop
+interaction patterns that consume these tokens are documented in
+[civicsuite-ui-patterns.md](civicsuite-ui-patterns.md).
+
 ## Accessibility And Density
 
 The desktop shell follows the canonical prototype tokens and shared shell
