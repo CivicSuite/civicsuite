@@ -1,0 +1,33 @@
+EXIT=0
+=== initdb (create cluster) ===
+initdb exit=0
+ |     ^"C^:^\Program^ Files^\CivicSuite^\^_up^_^\runtime^\payload^\postgres^\bin^\pg^_ctl^" -D ^"C^:^\Users^\WDAGUtilityAccount^\AppData^\Local^\Temp^\pd^-pgcluster^" -l logfile start | 
+=== pg_ctl start (port 15499) ===
+powershell.exe : pg_ctl: unrecognized operation mode "15499"
+At C:\CivicSuitePhaseD\sandbox-setup.ps1:56 char:27
++ ...   $output = & powershell.exe -ExecutionPolicy Bypass -File $_.FullNam ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (pg_ctl: unrecog...on mode "15499" 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Try "pg_ctl --help" for more information.
+pg_ctl start exit=1
+POSTGRES LISTENING on 15499: False
+=== psql connect + query the running server ===
+psql version(): psql.exe : psql: error: connection to server at "localhost" (::1), port 15499 
+failed: Connection refused (0x0000274D/10061)
+At C:\CivicSuitePhaseD\commands\04-full-postgres-bringup.ps1:25 char:8
++   $q = & $psql "-p" "15499" "-U" "postgres" "-d" "postgres" "-t" "-A" ...
++        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (psql: error: co...0000274D/10061) 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 15499 failed: Connection 
+refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+=== stop ===
+stopped; cleaning up
+

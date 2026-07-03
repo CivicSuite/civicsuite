@@ -1,0 +1,19 @@
+EXIT=0
+ollama version:
+0.30.10
+Warning: could not connect to a running Ollama instance
+Warning: client version is 0.30.10
+
+=== F) chat, BIG num_predict (2048), think disabled ===
+content: >>>
+hello
+
+thinking field present: False
+done_reason: stop
+eval_count: 2
+=== G) raw generate, plain 'hello', big tokens, capture everything ===
+response: >>>
+1??1017183164151718112222222222222222222222221111111111111111111111111111111
+
+done_reason:  eval_count: 
+

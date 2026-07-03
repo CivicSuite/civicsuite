@@ -1,0 +1,39 @@
+EXIT=0
+=== runtime dir ===
+
+Name  
+----  
+ollama
+
+
+
+=== runtime\postgres (recurse depth) ===
+
+=== runtime\python ===
+
+pg_ctl in runtime: False
+=== payload under Program Files ===
+pg_ctl in payload: 
+
+FullName                                                                
+--------                                                                
+C:\Program Files\CivicSuite\_up_\runtime\payload\postgres\bin\pg_ctl.exe
+
+
+
+payload postgres dirs: 
+
+FullName                                                 
+--------                                                 
+C:\Program Files\CivicSuite\_up_\runtime\payload\postgres
+
+
+
+=== symlink privilege check (whoami /priv) ===
+
+SeCreateSymbolicLinkPrivilege             Create symbolic links                
+                              Disabled
+
+
+
+

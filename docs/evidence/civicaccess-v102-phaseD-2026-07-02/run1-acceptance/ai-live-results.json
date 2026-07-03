@@ -1,0 +1,31 @@
+{
+  "plainLanguage": {
+    "ok": true,
+    "ms": 36539,
+    "message": "Local AI plain-language draft (civicsuite-gemma4-12b-qat:q4_0) — human review required before publication:\nYou must pay before the deadline. According to the ordinance, service will start after it is approved.",
+    "next_steps": [
+      "Have staff review the rewrite for accuracy before publication."
+    ],
+    "status": "Saved"
+  },
+  "variantDe": {
+    "ok": true,
+    "ms": 8918,
+    "message": "ai-draft-translation (civicsuite-gemma4-12b-qat:q4_0): Die Stadtwerke werden am Dienstagmorgen eine Wasserleitung reparieren. Bitte legen Sie vorab einen Vorrat an Wasser an.\nHuman review required before publication.",
+    "next_steps": [
+      "Route the variant to a qualified human translator/reviewer before publication."
+    ],
+    "status": "Saved"
+  },
+  "review": {
+    "ok": true,
+    "ms": 39074,
+    "message": "Accessibility review saved as access-review-02c2661b-00b4-404b-bfd9-db5f59d5338b: needs-fixes (1 finding(s), 1 high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit.\nLocal AI analysis (civicsuite-gemma4-12b-qat:q4_0) — advisory, human review required:\nRemediation Analysis: Water main repair notice\n\nPriority Finding:\n1. missing-alt-text (High): This must be addressed first. Because the document contains visual elements without descriptions, screen reader users may miss critical information regarding the location or scope of the water repairs. Ensure all images have concise, descriptive alt text.\n\nHuman Reviewer Checkpoints:\n- Clarity: Verify that the specific location of the \"main\" is clearly stated in the text. If it is only shown in an image, it must be moved to the body text.\n- Structure: Ensure the document uses a logical heading structure (e.g., Heading 1 for the title) so users can navigate quickly to the time and date.\n- Plain Language: Confirm that \"water main\" and any technical terms are understandable to a general audience.\n\nAdvisory: This is an automated analysis; a qualified human reviewer must make the final determination before publication.",
+    "next_steps": [
+      "Resolve each high-severity finding before publication.",
+      "Have staff or an ADA coordinator review findings that require human judgment.",
+      "Preserve the review record with the publication's audit trail."
+    ],
+    "status": "Saved"
+  }
+}
