@@ -209,8 +209,8 @@ The full suite architecture, dependency graph, data-flow rules, and CivicCore ex
 ### Suite topology (generated summary)
 
 <!-- BEGIN GENERATED SUITE TOPOLOGY -->
-<!-- Maintainers: re-run `python scripts/docs/render_topology.py --check` before publishing docs. -->
 
+<!-- Maintainers: re-run `python scripts/docs/render_topology.py --check` before publishing docs. -->
 Generated from `installer/modules.json`.
 
 - Root installer truth label: `city_core_beta_ready_truth_reconciled`.

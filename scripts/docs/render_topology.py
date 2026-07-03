@@ -39,7 +39,8 @@ def render(data: dict[str, Any]) -> str:
     lines: list[str] = [
         START,
         "",
-        "Generated from `installer/modules.json`. Re-run `python scripts/docs/render_topology.py --check` before publishing docs.",
+        "<!-- Maintainers: re-run `python scripts/docs/render_topology.py --check` before publishing docs. -->",
+        "Generated from `installer/modules.json`.",
         "",
         f"- Root installer truth label: `{data.get('installer_status', 'unknown')}`.",
         f"- City-core profile status: `{city_core.get('status', 'unknown')}`.",
