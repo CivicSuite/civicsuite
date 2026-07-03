@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-06-28 (civicsuite-windows-local-v1.0.1)
+**Last verified:** 2026-07-02 (civicsuite-windows-local-v1.0.2)
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -64,7 +64,7 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 ### System requirements
 
 - **Operating system.** 64-bit Windows 10 or Windows 11 with the WebView2 runtime (current Windows builds include it).
-- **Memory.** 16 GB RAM recommended. The local Gemma 4 12B QAT model needs about 6.7 GB resident at runtime on top of Windows, the portable PostgreSQL store, and the local services; 8 GB will struggle.
+- **Memory.** 32 GB RAM recommended (16 GB is a workable minimum). The local Gemma 4 12B QAT model needs about 6.7 GB resident at runtime on top of Windows, the portable PostgreSQL store, and the local services; 32 GB leaves comfortable headroom for the local database and the generation context.
 - **Disk.** About 15 GB free at minimum: roughly 1.5 GB for the MSI, about 7 GB for the downloaded model file, and headroom for city data and backups. First-run setup enforces a 15 GB free-disk floor before the model download.
 - **Network.** A stable internet connection for the first install and the model download, unless IT has already staged the model file.
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="CivicSuite is an open-source municipal product suite that runs on the city's own hardware.">
-<title>CivicSuite | municipal product suite roadmap</title>
+<meta name="description" content="CivicSuite Windows Local is a local-first, offline municipal operations suite for small cities that runs on the city's own hardware — no cloud, no telemetry.">
+<title>CivicSuite | local-first municipal operations suite</title>
 <style>
   :root {
     --text: #1f2328;
@@ -73,6 +73,12 @@
     font-weight: 600;
     letter-spacing: -0.005em;
   }
+  h3 {
+    font-size: 18px;
+    line-height: 1.35;
+    margin: 24px 0 8px;
+    font-weight: 600;
+  }
   p { margin: 0 0 16px; overflow-wrap: anywhere; }
   .lede {
     font-size: 19px;
@@ -136,9 +142,31 @@
     border-radius: 4px;
     padding: 14px 16px;
   }
+  .card { margin: 0 0 16px; }
   .pillars strong { display: block; margin-bottom: 4px; }
   .pillars span,
   .muted { color: var(--muted); }
+  .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 3px;
+    vertical-align: middle;
+  }
+  .note {
+    background: #f6f8fa;
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 15px;
+    border-radius: 0 4px 4px 0;
+  }
+  .note strong { color: var(--accent); }
   nav.quicklinks {
     margin: 32px 0 0;
     padding: 18px 20px;
@@ -165,6 +193,17 @@
     gap: 8px 18px;
   }
   nav.quicklinks li { margin: 0; }
+  /* Architecture diagram */
+  .arch-figure {
+    margin: 20px 0 12px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--card);
+    padding: 20px 16px;
+    overflow-x: auto;
+  }
+  .arch-figure svg { display: block; width: 100%; height: auto; min-width: 520px; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; }
   footer {
     margin-top: 64px;
     padding-top: 24px;
@@ -206,9 +245,11 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
-    td:nth-child(1)::before { content: "Tier"; }
-    td:nth-child(2)::before { content: "Count"; }
-    td:nth-child(3)::before { content: "Meaning"; }
+  }
+  @media (max-width: 520px) {
+    .modules td:nth-child(1)::before { content: "Module"; }
+    .modules td:nth-child(2)::before { content: "Version"; }
+    .modules td:nth-child(3)::before { content: "What it does"; }
   }
 </style>
 </head>
@@ -216,28 +257,28 @@
 <a class="skip-link" href="#main">Skip to main content</a>
 <div class="container">
 <header class="site">
-  <p class="eyebrow">CivicSuite</p>
-  <h1>An open-source municipal product suite that runs on the city's own hardware.</h1>
-  <p class="lede">CivicSuite is a sovereignly deployable, local-first product program for municipal operations. Public shipping, product-ready, and v1.0 maturity claims are frozen while the suite re-earns release status through stronger recovery gates.</p>
+  <p class="eyebrow">CivicSuite Windows Local</p>
+  <h1>A local-first municipal operations suite that runs on the city's own computer.</h1>
+  <p class="lede">CivicSuite Windows Local is an offline, sovereignly deployable operations suite for small cities. It installs as one Windows desktop app — bundling its own database and a local AI model — so a clerk can do real work with no cloud account, no telemetry, and no per-seat pricing. The current build is <strong>v1.0.2</strong>, a GA-candidate public beta.</p>
 
   <ul class="pillars">
-    <li><strong>Local first</strong><span>No cloud requirement, no telemetry, no per-seat pricing.</span></li>
-    <li><strong>Product depth over repo count</strong><span>The roadmap treats "all repos have releases" and "a city can run on this" as different milestones.</span></li>
-    <li><strong>Continuity is gated</strong><span>Platform expansion does not continue until continuity and succession work is in place.</span></li>
+    <li><strong>Local first</strong><span>No cloud requirement, no telemetry, no per-seat pricing. Data stays on the city's machine.</span></li>
+    <li><strong>One-app install</strong><span>A single Windows installer sets up everything — database, services, and the local AI model. No Docker, WSL, or terminal.</span></li>
+    <li><strong>Honest about status</strong><span>A GA-candidate beta. The one remaining gate to General Availability is a code-signing certificate.</span></li>
   </ul>
 
   <nav class="quicklinks">
     <strong>Quick links</strong>
     <ul>
       <li><a href="../README.md">README</a></li>
+      <li><a href="../CHANGELOG.md">Changelog</a></li>
+      <li><a href="../USER-MANUAL.md">User manual</a></li>
+      <li><a href="../ARCHITECTURE.md">Architecture</a></li>
+      <li><a href="../CODE_SIGNING_POLICY.md">Code signing policy</a></li>
+      <li><a href="../PROVENANCE.md">Provenance</a></li>
       <li><a href="../SUCCESSION.md">Continuity plan</a></li>
-      <li><a href="roadmap/index.md">Roadmap</a></li>
-      <li><a href="roadmap/shared-extraction-consumer-rollout.md">Rollout playbook</a></li>
-      <li><a href="compatibility/index.md">Compatibility matrix</a></li>
-      <li><a href="installer/suite-installer-plan.md">Installer plan</a></li>
       <li><a href="troubleshooting.md">Troubleshooting</a></li>
       <li><a href="../CHARTER.md">Charter</a></li>
-      <li><a href="../USER-MANUAL.md">User manual</a></li>
     </ul>
   </nav>
 </header>
@@ -245,69 +286,160 @@
 <main id="main">
   <section>
     <h2>Status today</h2>
-    <p>Status snapshot: <strong>2026-05-28</strong>.</p>
-    <table>
-      <thead>
-        <tr><th>Tier</th><th>Count</th><th>Meaning</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>City-core package</td><td>3 product modules plus CivicCore</td><td><code>civiccore</code> v1.2.0, <code>civicrecords-ai</code> v1.7.3, <code>civicclerk</code> v1.0.4, and <code>civiccode</code> v1.0.8 are the active city-core profile. The active run has current Linux/Windows lifecycle, suite launcher and first-run browser QA, green PR CI, live hash/source-pin trust evidence, and audit-full evidence. The 2026-05-28 all-findings closure pass is in progress at <code>C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-28-city-core-real-non-technical-release\</code>; status remains beta-ready truth-reconciled until independent audit-team closure, with no public-use, city-ready, procurement-ready, production-ready, macOS lifecycle, or full-suite release claim.</td></tr>
-        <tr><td>Excluded / queued modules</td><td>Tier 2 and CivicAccess</td><td><code>civicaccess</code> is out of city-core after a NEEDS-WORK depth probe. <code>civiczone</code>, <code>civicplan</code>, <code>civicpermit</code>, and <code>civicinspect</code> are queued Tier 2 modules on demotion-truth labels.</td></tr>
-        <tr><td>Recovery / scaffold labels</td><td>Remaining product repos</td><td><code>civicgrants</code>, <code>civicprocure</code>, and the remaining catalog have bounded foundations or specs and must not be treated as product-ready modules.</td></tr>
-        <tr><td>Foundation / planned</td><td>Remaining catalog</td><td>The rest of the catalog has bounded runtime foundations or implementation specs. These are not city-ready products. <code>CivicRegWatch</code> and <code>CivicAPI</code> are planned modules with specs but no runtime repos yet.</td></tr>
-      </tbody>
-    </table>
-    <p><code>civiccore</code> is the shared-platform package. The city-core package must prove the four release cars together before any status beyond beta-ready is promoted.</p>
-  </section>
-
-  <section>
-    <h2>What happens next</h2>
-    <div class="card">
-      <p><strong>The active work is city-core real nontechnical release closure.</strong> The profile has current Linux and Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, audit-full evidence, and a 2026-05-28 all-findings closure pass in progress. The honest state remains beta-ready truth-reconciled until independent audit-team evidence clears the final heads.</p>
-      <ul>
-        <li>Keep macOS explicitly beta/archive/readiness only.</li>
-        <li>Keep CivicAccess and Tier 2 modules outside this run.</li>
-        <li>Use live regenerated artifact hashes, source pins, and attestations as the trust path.</li>
-        <li>Keep Linux Guided Setup tied to Docker's signed package repositories where supported.</li>
-        <li>Record real terminal and screenshot evidence for every integration claim.</li>
-        <li>Advance later modules one at a time only after city-core closes with evidence.</li>
-      </ul>
+    <p>Status snapshot: <strong>2026-07-02</strong>. Current build: <strong>CivicSuite Windows Local v1.0.2</strong> <span class="badge">GA candidate · public beta</span> (predecessor: v1.0.1).</p>
+    <div class="note">
+      <p><strong>What "GA candidate, public beta" means.</strong> The build is feature-complete for the city-core profile and was validated end to end on a clean Windows machine. The one remaining gate to General Availability is an <strong>Authenticode code-signing certificate</strong> (in progress). Until then the MSI ships <strong>unsigned</strong>: Windows SmartScreen shows "Unknown Publisher" — verify the published SHA-256, then choose <strong>More info → Run anyway</strong>. This is not a public-use, city-ready, procurement, production, or full-suite promotion claim.</p>
     </div>
   </section>
 
   <section>
-    <h2>Why this framing changed</h2>
-    <p>The suite now documents release labels as provisional until they are re-earned. That distinction matters because a city evaluates deployability, recoverability, identity, security, and operations, not just repo count or tag count.</p>
-    <p>The roadmap is designed to move the suite from a broad portfolio of promising repos into a proven municipal starter set, then into a city-scale product platform.</p>
+    <h2>The city-core profile</h2>
+    <p>CivicSuite Windows Local ships the <strong>city-core profile: six modules</strong>. CivicCore is the shared platform every module depends on; it is always installed and cannot be deselected. All six are bundled in the v1.0.2 desktop app.</p>
+    <table class="modules">
+      <thead>
+        <tr><th>Module</th><th>Version</th><th>What it does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>CivicCore</code></td><td>v1.2.0</td><td>Shared platform: identity, audit, retention, the local task queue/worker, and document ingestion. Every module depends on it; it depends on none.</td></tr>
+        <tr><td><code>CivicRecords AI</code></td><td>v1.7.3</td><td>Public records / FOIA request intake, search, and AI-assisted response drafting.</td></tr>
+        <tr><td><code>CivicClerk</code></td><td>v1.0.4</td><td>Meetings, agendas, packets, minutes, and votes.</td></tr>
+        <tr><td><code>CivicCode</code></td><td>v1.0.8</td><td>Municipal code: searchable ordinances with AI-assisted guidance.</td></tr>
+        <tr><td><code>CivicNotice</code></td><td>v0.2.0</td><td>Public-notice creation and publishing workflow.</td></tr>
+        <tr><td><code>CivicAccess</code></td><td>v0.4.0</td><td>Accessibility workflows and records-ready export. Its on-screen Accessibility tab, with three local-AI features, is the headline addition in v1.0.2.</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules and are not part of city-core. The rest of the wider catalog is foundation-tier (schemas and specs), not city-ready product.</p>
   </section>
 
   <section>
-    <h2>Architecture</h2>
-    <p>Every module inherits the same deliberately boring stack: FastAPI, PostgreSQL 17 with <code>pgvector</code>, Redis 7.2, Celery, Ollama, and React behind nginx. Modules depend on <code>civiccore</code>; <code>civiccore</code> never depends on modules. Cities run the stack on their own hardware.</p>
-    <p>The first deployable target is not "all 27 product modules at once." It is a coherent starter set with shared identity, audit, retention, export, and upgrade behavior.</p>
+    <h2>New in v1.0.2</h2>
+
+    <h3>The CivicAccess Accessibility tab</h3>
+    <p>v1.0.2 adds the on-screen <strong>Accessibility</strong> workflow tab to the desktop app. Alongside deterministic checklist tools (form plans, publishing workflow, ADA Title II, tagged-PDF expectations), it introduces <strong>three features that run on the bundled local Gemma model</strong>:</p>
+    <ul>
+      <li><strong>Plain-Language Rewrite</strong> — drafts a plain-language version of text a clerk enters.</li>
+      <li><strong>Multilingual Variant</strong> — drafts a translation of the entered text into any target language.</li>
+      <li><strong>Accessibility Review</strong> — runs deterministic WCAG rule checks and stores a short model-drafted remediation analysis alongside them.</li>
+    </ul>
+    <div class="note">
+      <p><strong>How the AI is scoped — read this.</strong> Each AI feature is <strong>dual-path</strong>: when the local model isn't ready, it falls back to a deterministic result clearly labeled <em>"AI engine not ready."</em> Every AI output is labeled a <strong>draft requiring human review</strong>. Translations must go to a <strong>qualified human translator</strong> before public use. A saved Accessibility Review is <strong>advisory clerk support, not a certified accessibility audit</strong> — the records-bearing status derives only from the deterministic rule checks; the AI never adds, removes, or reclassifies a finding.</p>
+    </div>
+
+    <h3>Clean-machine fix (bundled VC++ runtime)</h3>
+    <p>v1.0.2 also fixes a start-up failure on a fresh Windows PC. The bundled PostgreSQL binaries depend on the Microsoft Visual C++ runtime, which a clean machine may not have. v1.0.2 <strong>bundles the required VC++ runtime DLLs next to the database binaries</strong>, so PostgreSQL — and everything that depends on it — starts on a fresh Windows computer with no separate redistributable install.</p>
+  </section>
+
+  <!-- ============ CIVIC / NON-TECHNICAL VOICE ============ -->
+  <section>
+    <h2>For clerks and decision-makers</h2>
+    <p>You do not need an IT department to use this. CivicSuite installs the way any Windows program does — one installer — and then it just runs on that computer. There is no website to log into, no monthly subscription, and nothing about your city's records is sent anywhere off the machine.</p>
+    <p>What that buys a small city:</p>
+    <ul>
+      <li><strong>Your data stays yours.</strong> Records, meeting minutes, notices, and requests live on your own computer. There is no cloud service that could go dark, change its price, or be subpoenaed out from under you.</li>
+      <li><strong>No recurring bill.</strong> No per-seat licensing and no per-user fees. The software runs on hardware you already own.</li>
+      <li><strong>Works offline.</strong> The AI features run from a model bundled inside the app on your machine — not a paid API — so they keep working with no internet connection.</li>
+      <li><strong>Everyday municipal work in one place.</strong> Public-records requests, meetings and minutes, municipal code, public notices, and accessibility support — six connected modules that share one identity, audit trail, and search.</li>
+      <li><strong>AI that stays in its lane.</strong> The AI drafts and suggests; a person always reviews and decides. Plain-language rewrites and translations are starting points for a qualified human, not finished official output.</li>
+    </ul>
+    <p>Recommended hardware: <strong>32 GB of RAM is recommended</strong> (16 GB is a workable minimum), about <strong>15 GB of free disk space</strong>, and 64-bit Windows 10 or 11 with WebView2. Most office desktops bought in the last few years meet this.</p>
+  </section>
+
+  <!-- ============ IT / TECHNICAL VOICE ============ -->
+  <section>
+    <h2>For IT and technical evaluators</h2>
+    <p>CivicSuite Windows Local is a single Tauri/WebView2 desktop application that bundles its full runtime. There is no external service dependency, no container runtime, and no developer tooling required on the target machine. Everything below runs as local processes supervised by the desktop shell.</p>
+
+    <figure class="arch-figure">
+      <svg viewBox="0 0 720 430" role="img" aria-labelledby="arch-title arch-desc" xmlns="http://www.w3.org/2000/svg">
+        <title id="arch-title">CivicSuite Windows Local topology</title>
+        <desc id="arch-desc">All components run locally on one Windows machine: a Tauri/WebView2 desktop shell drives embedded Python services, which talk to a bundled PostgreSQL 17 with pgvector database and to Ollama serving a local Gemma model. Nothing leaves the machine.</desc>
+        <style>
+          .box { fill: #ffffff; stroke: #d0d7de; stroke-width: 1.5; rx: 6; }
+          .accent-box { fill: #ffffff; stroke: #0a4d75; stroke-width: 2; }
+          .lbl { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; fill: #1f2328; }
+          .lbl-title { font-weight: 700; font-size: 15px; }
+          .lbl-sub { fill: #57606a; font-size: 12px; }
+          .boundary { fill: none; stroke: #0a4d75; stroke-width: 1.5; stroke-dasharray: 6 5; }
+          .boundary-lbl { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; fill: #0a4d75; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+          .flow { stroke: #57606a; stroke-width: 1.6; fill: none; }
+          .flow-lbl { font-family: ui-monospace, Menlo, Consolas, monospace; fill: #57606a; font-size: 11px; }
+        </style>
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#57606a"></path>
+          </marker>
+        </defs>
+
+        <!-- Machine boundary -->
+        <rect class="boundary" x="12" y="34" width="696" height="382" rx="10"></rect>
+        <text class="boundary-lbl" x="28" y="26">ONE WINDOWS 10 / 11 MACHINE · NO CLOUD · NO TELEMETRY</text>
+
+        <!-- Desktop shell -->
+        <rect class="accent-box" x="250" y="52" width="220" height="62" rx="6"></rect>
+        <text class="lbl lbl-title" x="360" y="80" text-anchor="middle">Tauri / WebView2</text>
+        <text class="lbl lbl-sub" x="360" y="99" text-anchor="middle">desktop shell &amp; UI (six modules)</text>
+
+        <!-- Python services -->
+        <rect class="box" x="250" y="168" width="220" height="62" rx="6"></rect>
+        <text class="lbl lbl-title" x="360" y="196" text-anchor="middle">Embedded Python services</text>
+        <text class="lbl lbl-sub" x="360" y="215" text-anchor="middle">bundled CPython · local task queue</text>
+
+        <!-- PostgreSQL -->
+        <rect class="box" x="40" y="300" width="290" height="80" rx="6"></rect>
+        <text class="lbl lbl-title" x="185" y="330" text-anchor="middle">PostgreSQL 17 + pgvector</text>
+        <text class="lbl lbl-sub" x="185" y="349" text-anchor="middle">portable · bundled VC++ runtime</text>
+        <text class="lbl lbl-sub" x="185" y="366" text-anchor="middle">records, minutes, notices, audit, vectors</text>
+
+        <!-- Ollama / Gemma -->
+        <rect class="box" x="390" y="300" width="290" height="80" rx="6"></rect>
+        <text class="lbl lbl-title" x="535" y="330" text-anchor="middle">Ollama + local Gemma</text>
+        <text class="lbl lbl-sub" x="535" y="349" text-anchor="middle">pinned model, downloaded &amp; SHA-verified</text>
+        <text class="lbl lbl-sub" x="535" y="366" text-anchor="middle">on-device inference — no API</text>
+
+        <!-- Flows -->
+        <line class="flow" x1="360" y1="114" x2="360" y2="166" marker-end="url(#arrow)"></line>
+        <text class="flow-lbl" x="368" y="144">local IPC</text>
+
+        <line class="flow" x1="300" y1="230" x2="185" y2="298" marker-end="url(#arrow)"></line>
+        <text class="flow-lbl" x="150" y="270">SQL</text>
+
+        <line class="flow" x1="420" y1="230" x2="535" y2="298" marker-end="url(#arrow)"></line>
+        <text class="flow-lbl" x="470" y="270">HTTP (localhost)</text>
+      </svg>
+      <figcaption>Every component is a local process on the same machine. The desktop shell drives embedded Python services; those talk to a bundled PostgreSQL 17 + pgvector data store and to a local Ollama instance serving a pinned Gemma model. No traffic leaves the machine.</figcaption>
+    </figure>
+
+    <h3>Bundled components</h3>
+    <ul>
+      <li><strong>Desktop shell:</strong> Tauri / WebView2. One MSI installs the app and its full runtime; the end-user clerk path needs no Docker, WSL, terminal, browser URL, or developer tooling.</li>
+      <li><strong>Database:</strong> portable PostgreSQL 17 with <code>pgvector</code> for vector search. v1.0.2 stages the Microsoft Visual C++ runtime DLLs next to the PostgreSQL binaries so the data store starts on a clean Windows machine.</li>
+      <li><strong>Services:</strong> embedded CPython city services with a PostgreSQL-backed local task queue and worker — the queue and workers are the Windows-local profile, replacing the server-profile Redis/Celery stack.</li>
+      <li><strong>Local AI:</strong> Ollama serving a pinned local Gemma model, registered through an explicit download / checksum / runtime step on first run. Inference is on-device; the four AI-capable areas (CivicClerk minutes, CivicRecords response, CivicCode guidance, and the three CivicAccess features) share one local-generation path.</li>
+      <li><strong>Local operations:</strong> local file storage, local backup/restore, and repair/support-bundle flows. No telemetry, no per-seat licensing.</li>
+    </ul>
+
+    <h3>Dependency and trust</h3>
+    <p>The dependency rule is one-directional: modules depend on <code>CivicCore</code>; <code>CivicCore</code> never depends on modules. The MSI is unsigned during the beta — the trust path is the published <strong>MSI SHA-256</strong> plus the per-module <code>source_commit</code> pins (see <a href="../PROVENANCE.md">PROVENANCE.md</a> and <a href="../CODE_SIGNING_POLICY.md">CODE_SIGNING_POLICY.md</a>). Verify the checksum before running, then <em>More info → Run anyway</em> past SmartScreen. For the full data-flow rules see <a href="../ARCHITECTURE.md">ARCHITECTURE.md</a>.</p>
   </section>
 
   <section>
     <h2>Where to go next</h2>
     <ul>
-      <li><a href="roadmap/index.md">Canonical roadmap</a></li>
-      <li><a href="roadmap/shared-extraction-consumer-rollout.md">Shared extraction consumer rollout playbook</a></li>
+      <li><a href="../USER-MANUAL.md">User manual</a> — Part 1.6 covers the CivicAccess Accessibility tab</li>
+      <li><a href="../CHANGELOG.md">Changelog</a> — the full v1.0.2 record</li>
+      <li><a href="../README.md">README</a> — front-door orientation</li>
+      <li><a href="../ARCHITECTURE.md">Architecture</a> — the full stack and data-flow rules</li>
+      <li><a href="../PROVENANCE.md">Provenance</a> — checksum and source-pin trust path</li>
+      <li><a href="../CODE_SIGNING_POLICY.md">Code signing policy</a> — the remaining GA gate</li>
+      <li><a href="troubleshooting.md">Troubleshooting</a> — operator recovery guidance</li>
       <li><a href="../SUCCESSION.md">Continuity and succession plan</a></li>
-      <li><a href="governance/index.md">Governance overview</a></li>
-      <li><a href="compatibility/index.md">Compatibility matrix</a></li>
-      <li><a href="troubleshooting.md">Troubleshooting and trust path</a></li>
-      <li><a href="installer/starter-set-public-use-readiness-gate.md">Clerk-Core public-use readiness gate</a></li>
-      <li><a href="installer/clerk-core-final-package-evidence-2026-05-21.md">Clerk-Core final package evidence (2026-05-21)</a></li>
-      <li><a href="installer/clerk-core-public-use-release-gate-audit-2026-05-21.md">Clerk-Core public-use release-gate audit (2026-05-21)</a></li>
-      <li><a href="../specs/01_catalog.md">Module catalog</a></li>
-      <li><a href="../docs/CivicSuiteUnifiedSpec.md">Unified suite specification</a></li>
     </ul>
   </section>
 </main>
 
 <footer>
   <p><strong>Licensing.</strong> Code is Apache License 2.0. Documentation is CC BY 4.0.</p>
-  <p>Built in the open. Run on the city's own hardware. No telemetry, no cloud lock-in, no per-seat pricing.</p>
+  <p>Built in the open. Runs on the city's own hardware. No telemetry, no cloud lock-in, no per-seat pricing.</p>
 </footer>
 </div>
 </body>

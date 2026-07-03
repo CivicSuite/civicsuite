@@ -32,7 +32,7 @@ So: it's ready to download and use for **real, hands-on evaluation and early ado
 3. Follow the installer, open CivicSuite, and complete first-run setup (city profile, first admin, backup folder).
 4. On first run the app downloads and verifies the ~6.97 GB model. After that it's fully local.
 
-**Recommended machine:** 64-bit Windows 10/11 with WebView2, **16 GB RAM** (the model needs ~6.7 GB resident), **~15 GB free disk**. No Docker, no WSL, no terminal.
+**Recommended machine:** 64-bit Windows 10/11 with WebView2, **32 GB RAM** recommended (16 GB is a workable minimum; the model needs ~6.7 GB resident, plus headroom for the local database, services, and generation context), **~15 GB free disk**. No Docker, no WSL, no terminal.
 
 Verify your download: SHA-256 `5a1e5e2e4d2f3d7f77c52f108c4445c85db10ff3edc2c151d6bbae1cd97ce3ea` (1,645,479,777 bytes).
 

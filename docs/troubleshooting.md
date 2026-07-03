@@ -8,7 +8,7 @@ The Windows Local clerk path is a Tauri/WebView2 desktop app installed from an M
 
 ## City-Core App Will Not Start
 
-1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 16 GB RAM (the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services; 8 GB will struggle).
+1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 32 GB RAM (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services).
 2. If Windows Defender SmartScreen shows "Unknown Publisher", that is expected for the unsigned beta MSI. Choose **More info**, then **Run anyway**, and continue only if the file came from the expected CivicSuite release/test source.
 3. After install, open CivicSuite from the Start menu or desktop shortcut.
 4. If the app opens but a local service is unhealthy, open System Health, run **Check**, then **Repair** after reviewing the repair panel.
