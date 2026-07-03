@@ -25,6 +25,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 AUTHORITY_REPO = "CivicSuite/civiccore"
 AUTHORITY_PATH = "civiccore-ui/tokens/tokens.css"
+# Pinned to the exact civiccore commit the vendored copy was taken from
+# (the PR #66 merge that established civiccore-ui/tokens/). This makes the gate
+# deterministic: it fails only when OUR vendored copy drifts, never because an
+# unrelated change landed on civiccore main. Bump this SHA when re-vendoring.
+# TODO: switch to a civiccore release tag once one ships containing civiccore-ui/.
+AUTHORITY_REF = "78033cc8aa945446d7fb0576a9026d42e2f905d8"
 VENDORED = [ROOT / "docs" / "tokens.css"]
 
 
@@ -34,7 +40,7 @@ def normalize(text: str) -> str:
 
 def fetch_authority() -> str:
     result = subprocess.run(
-        ["gh", "api", f"repos/{AUTHORITY_REPO}/contents/{AUTHORITY_PATH}",
+        ["gh", "api", f"repos/{AUTHORITY_REPO}/contents/{AUTHORITY_PATH}?ref={AUTHORITY_REF}",
          "-H", "Accept: application/vnd.github.raw+json"],
         capture_output=True, text=True, encoding="utf-8", timeout=60)
     if result.returncode != 0:
