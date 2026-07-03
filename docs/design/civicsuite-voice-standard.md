@@ -51,7 +51,7 @@ column. (Internal roadmap/ADR/audit docs may keep the private vocabulary.)
 | truth-repair demotion release · no-functional-upgrade demotion release | early scaffold; full build still queued |
 | promotion package | the modules in the current release |
 | post-starter module labels | *(rephrase around what the module actually is)* |
-| truth-reconciled · beta-ready truth-reconciled · `city_core_beta_ready_truth_reconciled` | verified beta |
+| truth-reconciled · beta-ready truth-reconciled · `city_core_beta_ready_truth_reconciled` | beta (version labels reconciled with what actually works) |
 | matching-host lifecycle · matching-host evidence | tested on the same operating system it ships for |
 | wrapper profile | *(name the actual packaging, e.g. "the earlier Docker packaging")* |
 | recovery gates · release-recovery gates | our release-integrity checks |
