@@ -115,15 +115,14 @@
   @media(min-width:900px){ .cs .modules{ grid-template-columns:1fr 1fr 1fr; } }
   .cs .module{ background:var(--card); border:1px solid var(--rule); border-radius:var(--radius-lg);
     padding:18px; display:flex; flex-direction:column; gap:8px; }
-  .cs .module.headline{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold); background:linear-gradient(180deg,var(--gold-soft) 0%,var(--card) 40%); }
   .cs .module .m-top{ display:flex; align-items:center; gap:12px; }
   .cs .module .tile{ width:40px; height:40px; border-radius:9px; background:var(--navy-soft);
     color:var(--navy); display:grid; place-items:center; flex-shrink:0; }
-  .cs .module.headline .tile{ background:var(--navy); color:var(--gold-soft); }
   .cs .module .tile svg{ width:20px; height:20px; }
   .cs .module .m-name{ font-family:var(--font-serif); font-size:17px; font-weight:600; }
-  .cs .module .m-name a{ color:inherit; text-decoration:none; border-bottom:1px solid transparent; }
-  .cs .module .m-name a:hover, .cs .module .m-name a:focus-visible{ color:var(--navy); border-bottom-color:var(--gold); }
+  .cs .module .m-name a{ color:var(--navy); text-decoration:none; border-bottom:1px solid var(--gold); padding-bottom:1px; }
+  .cs .module .m-name a::after{ content:" ↗"; font-size:12px; color:var(--gold-2); }
+  .cs .module .m-name a:hover, .cs .module .m-name a:focus-visible{ color:var(--gold-2); border-bottom-color:var(--gold-2); text-decoration:none; }
   .cs .module .ver{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-3);
     background:var(--paper-2); border:1px solid var(--rule); padding:1px 7px; border-radius:6px;
     display:inline-block; margin-top:2px; }
@@ -223,7 +222,7 @@
       <p class="lede">CivicSuite Windows Local is an offline operations suite for small cities. <strong>One Windows installer sets up the whole city-core suite</strong> — six connected modules, their shared database, and a local AI model — so a clerk can do real work with no cloud account, no telemetry, and no per-seat pricing. Current release: <strong>v1.0.2</strong>.</p>
       <div class="hero-cta">
         <a class="btn primary" href="https://github.com/CivicSuite/civicsuite/releases">Download CivicSuite Windows Local</a>
-        <a class="btn" href="../USER-MANUAL.md">Read the manual</a>
+        <a class="btn" href="https://github.com/CivicSuite/civicsuite/blob/main/USER-MANUAL.md">Read the manual</a>
         <span class="badge dot" style="margin-left:4px;">v1.0.2 · GA candidate · public beta</span>
       </div>
     </div>
@@ -251,7 +250,7 @@
         <span class="n-ic" aria-hidden="true">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5" stroke-linecap="round"/><circle cx="12" cy="16" r="0.6" fill="currentColor" stroke="none"/></svg>
         </span>
-        <p><b>What "GA candidate, public beta" means.</b> The build is feature-complete for the city-core profile and was validated end to end on a clean Windows machine. The one remaining gate to General Availability is an Authenticode code-signing certificate (in progress). Until then the MSI ships <b>unsigned</b>: Windows SmartScreen shows "Unknown Publisher" — verify the published SHA-256, then choose <b>More info → Run anyway</b>. This is not a public-use, city-ready, procurement, production, or full-suite promotion claim. Beyond city-core, <b>public shipping, product-ready, and v1.0 maturity claims are frozen</b> until each module repo re-earns them through the <a href="release-recovery-status.md">release-recovery gates</a>.</p>
+        <p><b>What "GA candidate, public beta" means.</b> The build is feature-complete for the city-core profile and was validated end to end on a clean Windows machine. The one remaining gate to General Availability is an Authenticode code-signing certificate (in progress). Until then the MSI ships <b>unsigned</b>: Windows SmartScreen shows "Unknown Publisher" — verify the published SHA-256, then choose <b>More info → Run anyway</b>. This is not a public-use, city-ready, procurement, production, or full-suite promotion claim. Beyond city-core, <b>public shipping, product-ready, and v1.0 maturity claims are frozen</b> until each module repo re-earns them through the <a href="https://github.com/CivicSuite/civicsuite/blob/main/docs/release-recovery-status.md">release-recovery gates</a>.</p>
       </div>
     </section>
 
@@ -281,9 +280,9 @@
           <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l15-6v14L3 13z"/><path d="M7 12v5a2 2 0 0 0 4 0" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicnotice">CivicNotice</a></div><span class="ver">v0.2.0</span></div></div>
           <p>Public-notice creation and publishing workflow.</p>
         </div>
-        <div class="module headline">
-          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="1.6"/><path d="M4 8h16M12 8v5m0 0l-3 6m3-6l3 6" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicaccess">CivicAccess</a></div><span class="ver">v0.4.0 · new tab in v1.0.2</span></div></div>
-          <p>Accessibility workflows and records-ready export. Its on-screen Accessibility tab, with three local-AI features, is the headline addition in v1.0.2.</p>
+        <div class="module">
+          <div class="m-top"><span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="5" r="1.6"/><path d="M4 8h16M12 8v5m0 0l-3 6m3-6l3 6" stroke-linecap="round"/></svg></span><div><div class="m-name"><a href="https://github.com/CivicSuite/civicaccess">CivicAccess</a></div><span class="ver">v0.4.0</span></div></div>
+          <p>Accessibility workflows and records-ready export: plain-language rewrites, translations, and WCAG review support.</p>
         </div>
       </div>
       <p class="tier2">CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier&nbsp;2 modules and are not part of city-core. The wider catalog is foundation-tier (schemas and specs), not city-ready product.</p>
@@ -315,8 +314,6 @@
         <span class="n-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 4v5c0 5-3.5 8-9 9-5.5-1-9-4-9-9V7z"/></svg></span>
         <p><b>How the AI is scoped — read this.</b> Each AI feature is <b>dual-path</b>: when the local model isn't ready, it falls back to a deterministic result clearly labeled <em>"AI engine not ready."</em> Every AI output is labeled a <b>draft requiring human review</b>. Translations must go to a <b>qualified human translator</b> before public use. A saved Accessibility Review is <b>advisory clerk support, not a certified accessibility audit</b> — the records-bearing status derives only from the deterministic rule checks; the AI never adds, removes, or reclassifies a finding.</p>
       </div>
-      <h3 style="margin-top:28px;">Clean-machine fix</h3>
-      <p style="color:var(--ink-2); max-width:720px;">v1.0.2 also fixes a start-up failure on a fresh Windows PC: the bundled PostgreSQL binaries need the Microsoft Visual C++ runtime, which a clean machine may not have. v1.0.2 bundles those runtime DLLs next to the database, so the data store — and everything that depends on it — starts on a fresh computer with no separate install.</p>
     </section>
 
     <!-- Two-voice -->
@@ -339,10 +336,10 @@
           <h3 style="font-size:17px;">For IT &amp; technical evaluators</h3>
           <p style="color:var(--ink-2);">A single Tauri/WebView2 desktop app that bundles its full runtime — no external service dependency, no container runtime, no developer tooling on the target machine. Everything runs as local processes supervised by the shell.</p>
           <ul class="speclist">
-            <li><b>Database:</b> portable PostgreSQL&nbsp;17 with <code>pgvector</code>. v1.0.2 stages the Microsoft VC++ runtime DLLs next to the binaries so it starts on a clean machine.</li>
+            <li><b>Database:</b> portable PostgreSQL&nbsp;17 with <code>pgvector</code> — fully bundled; first-run setup completes on a factory-fresh Windows PC with no prerequisites.</li>
             <li><b>Services:</b> embedded CPython city services with a PostgreSQL-backed local task queue and worker (the Windows-local profile, replacing the server-profile Redis/Celery stack).</li>
             <li><b>Local AI:</b> Ollama serving a pinned local Gemma model, registered through an explicit download / checksum / runtime step on first run — on-device inference, no API.</li>
-            <li><b>Trust path:</b> unsigned during beta — verify the published <b>MSI SHA-256</b> plus per-module <code>source_commit</code> pins (<a href="../PROVENANCE.md">PROVENANCE</a>, <a href="../CODE_SIGNING_POLICY.md">signing policy</a>), then <em>More info → Run anyway</em>.</li>
+            <li><b>Trust path:</b> unsigned during beta — verify the published <b>MSI SHA-256</b> plus per-module <code>source_commit</code> pins (<a href="https://github.com/CivicSuite/civicsuite/blob/main/PROVENANCE.md">PROVENANCE</a>, <a href="https://github.com/CivicSuite/civicsuite/blob/main/CODE_SIGNING_POLICY.md">signing policy</a>), then <em>More info → Run anyway</em>.</li>
           </ul>
         </div>
       </div>
@@ -372,7 +369,7 @@
 
           <rect x="44" y="300" width="300" height="86" rx="9" fill="#fff" stroke="#cabe9f" stroke-width="1.5"/>
           <text x="194" y="330" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#1a2330" font-weight="600">PostgreSQL 17 + pgvector</text>
-          <text x="194" y="350" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#6b7280">portable · bundled VC++ runtime</text>
+          <text x="194" y="350" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#6b7280">portable · fully self-contained</text>
           <text x="194" y="368" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#6b7280">records, minutes, notices, audit, vectors</text>
 
           <rect x="416" y="300" width="300" height="86" rx="9" fill="#fff" stroke="#b08a2e" stroke-width="1.5"/>
@@ -403,12 +400,12 @@
       <p class="section-eyebrow">Where to go next</p>
       <h2>Documentation &amp; trust path</h2>
       <div class="links">
-        <a class="linkcard" href="../USER-MANUAL.md"><div><div class="lk-t">User manual</div><div class="lk-s">Part 1.6 covers the CivicAccess Accessibility tab</div></div><span class="arr" aria-hidden="true">→</span></a>
-        <a class="linkcard" href="../CHANGELOG.md"><div><div class="lk-t">Changelog</div><div class="lk-s">The full v1.0.2 record</div></div><span class="arr" aria-hidden="true">→</span></a>
-        <a class="linkcard" href="../ARCHITECTURE.md"><div><div class="lk-t">Architecture</div><div class="lk-s">The full stack and data-flow rules</div></div><span class="arr" aria-hidden="true">→</span></a>
-        <a class="linkcard" href="../PROVENANCE.md"><div><div class="lk-t">Provenance</div><div class="lk-s">Checksum and source-pin trust path</div></div><span class="arr" aria-hidden="true">→</span></a>
-        <a class="linkcard" href="../CODE_SIGNING_POLICY.md"><div><div class="lk-t">Code-signing policy</div><div class="lk-s">The remaining gate to General Availability</div></div><span class="arr" aria-hidden="true">→</span></a>
-        <a class="linkcard" href="troubleshooting.md"><div><div class="lk-t">Troubleshooting</div><div class="lk-s">Operator recovery guidance</div></div><span class="arr" aria-hidden="true">→</span></a>
+        <a class="linkcard" href="https://github.com/CivicSuite/civicsuite/blob/main/USER-MANUAL.md"><div><div class="lk-t">User manual</div><div class="lk-s">Part 1.6 covers the CivicAccess Accessibility tab</div></div><span class="arr" aria-hidden="true">→</span></a>
+        <a class="linkcard" href="https://github.com/CivicSuite/civicsuite/blob/main/CHANGELOG.md"><div><div class="lk-t">Changelog</div><div class="lk-s">The full v1.0.2 record</div></div><span class="arr" aria-hidden="true">→</span></a>
+        <a class="linkcard" href="https://github.com/CivicSuite/civicsuite/blob/main/ARCHITECTURE.md"><div><div class="lk-t">Architecture</div><div class="lk-s">The full stack and data-flow rules</div></div><span class="arr" aria-hidden="true">→</span></a>
+        <a class="linkcard" href="https://github.com/CivicSuite/civicsuite/blob/main/PROVENANCE.md"><div><div class="lk-t">Provenance</div><div class="lk-s">Checksum and source-pin trust path</div></div><span class="arr" aria-hidden="true">→</span></a>
+        <a class="linkcard" href="https://github.com/CivicSuite/civicsuite/blob/main/CODE_SIGNING_POLICY.md"><div><div class="lk-t">Code-signing policy</div><div class="lk-s">The remaining gate to General Availability</div></div><span class="arr" aria-hidden="true">→</span></a>
+        <a class="linkcard" href="https://github.com/CivicSuite/civicsuite/blob/main/docs/troubleshooting.md"><div><div class="lk-t">Troubleshooting</div><div class="lk-s">Operator recovery guidance</div></div><span class="arr" aria-hidden="true">→</span></a>
       </div>
     </section>
   </div>
