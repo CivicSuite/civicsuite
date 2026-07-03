@@ -104,7 +104,7 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 
 ### What you should expect
 
-- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff. The current v1.0.2 MSI artifact has passed its clean-machine gates: the clean-machine install walkthrough (QA-B1) on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2.
+- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff. The current v1.0.2 MSI artifact has passed its clean-machine gates: the clean-machine install test on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2.
 - **What still needs its own proof gate.** Each future module outside the city-core set.
 - **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 

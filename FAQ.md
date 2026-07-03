@@ -43,7 +43,7 @@ CivicSuite has many tags. Only the scoped package evidence in [STATUS.md](STATUS
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (for example, `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake). A single-module install is a supported design goal.
 
-In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active truth-reconciled beta profile that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
+In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active beta profile (version labels reconciled with what actually works) that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
 
 ## What does a civic operator need to run the city-core beta?
 

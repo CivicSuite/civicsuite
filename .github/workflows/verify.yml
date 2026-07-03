@@ -68,6 +68,9 @@ jobs:
       - name: Verify documentation
         run: bash scripts/verify-docs.sh
 
+      - name: Verify visitor-facing voice standard
+        run: python scripts/docs/check_voice.py
+
       - name: Verify no committed secret patterns
         run: python scripts/verify-secret-scan.py
 
