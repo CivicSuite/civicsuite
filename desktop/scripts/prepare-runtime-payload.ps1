@@ -352,6 +352,45 @@ function Copy-PostgresVcRuntime {
     return [ordered]@{ status = "installed"; source = $CrtDir; dlls = $Copied }
 }
 
+function Copy-PythonVcRuntime {
+    # The embedded CPython distribution ships vcruntime140.dll (and _1) but NOT
+    # msvcp140.dll. Native extensions built with the C++ runtime need it:
+    # greenlet's _greenlet.cp313-win_amd64.pyd fails to load without it, which
+    # aborts SQLAlchemy's async engine and therefore every city-core migration on
+    # a clean machine with no system-wide VC++ redistributable. v1.0.2 shipped
+    # this way. Stage the same CRT set next to python.exe, which Windows resolves
+    # first for that process and its extension modules.
+    param([string]$PythonRoot)
+    if (-not (Test-Path -LiteralPath $PythonRoot)) {
+        throw "Python payload directory not found for VC++ runtime staging: $PythonRoot"
+    }
+    $Essential = @("vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll")
+    $Present = @($Essential | Where-Object { Test-Path -LiteralPath (Join-Path $PythonRoot $_) })
+    if ($Present.Count -eq $Essential.Count) {
+        return [ordered]@{ status = "present"; dlls = $Present }
+    }
+    $CrtDir = Get-VcRuntimeRedistDir
+    if (-not $CrtDir) {
+        throw "Could not locate the x64 Visual C++ runtime redistributable (Microsoft.VC*.CRT) via vswhere. The embedded Python requires msvcp140.dll for native extensions (greenlet) to import on a clean machine."
+    }
+    # Copy the whole CRT redist set (same as Copy-PostgresVcRuntime) rather than a
+    # hand-maintained allowlist: a future native wheel that links an additional CRT
+    # DLL (msvcp140_1.dll, concrt140.dll, ...) would otherwise silently reproduce
+    # the exact clean-machine import failure F-A11Y-3 was. $Essential is only the
+    # post-copy verification floor.
+    $Copied = @()
+    foreach ($Dll in (Get-ChildItem -LiteralPath $CrtDir -Filter *.dll)) {
+        Copy-Item -LiteralPath $Dll.FullName -Destination (Join-Path $PythonRoot $Dll.Name) -Force
+        $Copied += $Dll.Name
+    }
+    foreach ($Required in $Essential) {
+        if (-not (Test-Path -LiteralPath (Join-Path $PythonRoot $Required))) {
+            throw "VC++ runtime staging did not produce required $Required in $PythonRoot (source: $CrtDir)"
+        }
+    }
+    return [ordered]@{ status = "installed"; source = $CrtDir; dlls = $Copied }
+}
+
 function Invoke-PgvectorBuild {
     param(
         [string]$SourceDir,
@@ -800,6 +839,7 @@ $Report = [ordered]@{
 }
 $Report.pgvector = Install-PgvectorPayload -Source $Manifest.sources.pgvector -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
 $Report.postgres_vcruntime = Copy-PostgresVcRuntime -PostgresRoot (Join-Path $PayloadRoot "postgres")
+$Report.python_vcruntime = Copy-PythonVcRuntime -PythonRoot (Join-Path $PayloadRoot "python")
 $PayloadLock = New-RuntimePayloadLock -PayloadManifest $PayloadManifest -PayloadRoot $PayloadRoot
 $Report.payloads = $PayloadLock.payloads
 

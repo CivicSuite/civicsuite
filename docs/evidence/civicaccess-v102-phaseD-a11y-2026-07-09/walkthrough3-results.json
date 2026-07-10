@@ -1,0 +1,83 @@
+[
+  {
+    "name": "review-blank-es",
+    "fill": "accessTitle,accessBody,accessHasAltText,accessLanguage",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "needs-fixes",
+    "pass": false
+  },
+  {
+    "name": "review-filled-en",
+    "fill": "accessTitle,accessBody,accessHasAltText,accessLanguage",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "passes|0 issue",
+    "pass": false
+  },
+  {
+    "name": "form-plan-missing",
+    "fill": "accessFormName,accessFormFields",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "contact.*request|missing",
+    "pass": false
+  },
+  {
+    "name": "form-plan-complete",
+    "fill": "accessFormName,accessFormFields",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "created|complete|plan",
+    "pass": false
+  },
+  {
+    "name": "publishing-unchecked",
+    "fill": "accessPublishingTitle,accessPublishingHasReview,accessPublishingHasPlainLanguage,accessPublishingHasTranslationReview",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "missing|needed|not.*complete|needs",
+    "pass": false
+  },
+  {
+    "name": "ada-unreviewed",
+    "fill": "accessAdaServiceArea,accessAdaHasCoordinatorReview",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "review|staff|needed",
+    "pass": false
+  },
+  {
+    "name": "tagged-pdf-skip",
+    "fill": "accessTaggedPdfHeadings",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "skip|fix|level",
+    "pass": false
+  },
+  {
+    "name": "tagged-pdf-clean",
+    "fill": "accessTaggedPdfHeadings",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 25000ms) last=",
+    "expect": "created|no heading levels are skipped",
+    "pass": false
+  },
+  {
+    "name": "records-export",
+    "fill": "(no fill)",
+    "act": "action:accessibility-review",
+    "guided": "no confirm btn; buttons=",
+    "result": "(no result change in 30000ms) last=",
+    "expect": "export|bundle|generated",
+    "pass": false
+  }
+]

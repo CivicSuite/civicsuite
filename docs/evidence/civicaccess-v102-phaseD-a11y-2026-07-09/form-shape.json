@@ -1,0 +1,74 @@
+[
+  {
+    "h3": "Accessibility Review (WCAG sample)",
+    "fields": [
+      "accessTitle",
+      "accessBody",
+      "accessHasAltText",
+      "accessLanguage"
+    ],
+    "actions": [
+      "accessibility-review"
+    ]
+  },
+  {
+    "h3": "Plain-Language Rewrite",
+    "fields": [
+      "accessPlainText"
+    ],
+    "actions": [
+      "civicaccess-plain-language"
+    ]
+  },
+  {
+    "h3": "Multilingual Variant",
+    "fields": [
+      "accessVariantText",
+      "accessVariantLanguage"
+    ],
+    "actions": [
+      "civicaccess-language-variant"
+    ]
+  },
+  {
+    "h3": "Accessible Form Plan",
+    "fields": [
+      "accessFormName",
+      "accessFormFields"
+    ],
+    "actions": [
+      "civicaccess-form-plan"
+    ]
+  },
+  {
+    "h3": "Publishing Workflow Checklist",
+    "fields": [
+      "accessPublishingTitle",
+      "accessPublishingHasReview",
+      "accessPublishingHasPlainLanguage",
+      "accessPublishingHasTranslationReview"
+    ],
+    "actions": [
+      "civicaccess-publishing-workflow"
+    ]
+  },
+  {
+    "h3": "ADA Title II Review-Support Plan",
+    "fields": [
+      "accessAdaServiceArea",
+      "accessAdaHasCoordinatorReview"
+    ],
+    "actions": [
+      "civicaccess-ada-title-ii"
+    ]
+  },
+  {
+    "h3": "Tagged-PDF Expectation Plan",
+    "fields": [
+      "accessTaggedPdfHeadings"
+    ],
+    "actions": [
+      "civicaccess-tagged-pdf"
+    ]
+  }
+]
