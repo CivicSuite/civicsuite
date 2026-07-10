@@ -1,19 +1,19 @@
 # Local Demo Deployment Profile
 
 Status: evaluation profile, not production packaging  
-Stack target: CivicRecords AI + CivicClerk + CivicCode + CivicZone  
+Stack target: CivicSunshine + CivicMeetings + CivicCode + CivicZone  
 Default network posture: local-first, no cloud LLM requirement
 
 ## What This Profile Is
 
 This profile gives a city evaluator or developer one bounded way to run the first post-foundation stack:
 
-- CivicRecords AI for records intake/search workflows.
-- CivicClerk for agenda, meeting, packet, notice, vote, minutes, archive, and staff workflow foundations.
+- CivicSunshine for records intake/search workflows.
+- CivicMeetings for agenda, meeting, packet, notice, vote, minutes, archive, and staff workflow foundations.
 - CivicCode for municipal-code lookup, citations, plain-language summaries, and clerk handoff foundations.
 - CivicZone for parcel/zoning lookup, rule prechecks, cited sample Q&A, and planner escalation foundations.
-- PostgreSQL 17 with pgvector for CivicRecords AI.
-- Redis 7.2 for CivicRecords AI background-work dependencies.
+- PostgreSQL 17 with pgvector for CivicSunshine.
+- Redis 7.2 for CivicSunshine background-work dependencies.
 - Optional Ollama for local LLM experiments.
 
 It intentionally does not claim production deployment readiness. Production pilot packaging still needs environment hardening, secrets handling, backup/restore guidance, reverse proxy guidance, TLS, auth/RBAC policy, and operator runbooks.
@@ -28,9 +28,9 @@ It intentionally does not claim production deployment readiness. Production pilo
 
 | Service | URL | Purpose |
 |---|---|---|
-| CivicRecords AI frontend | `http://localhost:8080` | Records AI browser UI |
-| CivicRecords AI API | `http://localhost:8000/health` | Records AI API health |
-| CivicClerk | `http://localhost:8010/health` | CivicClerk module API health |
+| CivicSunshine frontend | `http://localhost:8080` | Records AI browser UI |
+| CivicSunshine API | `http://localhost:8000/health` | Records AI API health |
+| CivicMeetings | `http://localhost:8010/health` | CivicMeetings module API health |
 | CivicCode | `http://localhost:8020/health` | CivicCode module API health |
 | CivicZone | `http://localhost:8030/health` | CivicZone module API health |
 
@@ -42,7 +42,7 @@ It intentionally does not claim production deployment readiness. Production pilo
   - `../civicclerk`
   - `../civiccode`
   - `../civiczone`
-- CivicRecords AI `.env` file in `../civicrecords-ai/.env`.
+- CivicSunshine `.env` file in `../civicrecords-ai/.env`.
 - Internet access during first image/wheel download.
 - Optional: Ollama model already pulled if testing LLM-backed behavior.
 
@@ -83,7 +83,7 @@ This checks that:
 - Local in-process smoke checks use the current sibling-clone `civiccore` checkout and therefore verify local import compatibility, not only the compose wheel pins.
 - Module services set `CIVICCORE_LLM_PROVIDER=ollama`.
 - No cloud LLM provider is configured by default.
-- Local no-network smoke checks can import CivicClerk, CivicCode, and CivicZone and call their `/health` endpoints in process.
+- Local no-network smoke checks can import CivicMeetings, CivicCode, and CivicZone and call their `/health` endpoints in process.
 
 The `--static-only` mode is for CI and skips the Docker Compose config execution plus the local sibling-clone `/health` imports. It still verifies compose shape, wheel pins, local-first LLM defaults, and this guide.
 
@@ -91,8 +91,8 @@ The `--static-only` mode is for CI and skips the Docker Compose config execution
 
 The default local deployment profile must not require outbound runtime calls for core behavior. In this profile:
 
-- CivicClerk, CivicCode, and CivicZone expose deterministic foundation APIs that can be smoke-tested in process without network calls.
-- CivicRecords AI uses local PostgreSQL, Redis, and optional Ollama.
+- CivicMeetings, CivicCode, and CivicZone expose deterministic foundation APIs that can be smoke-tested in process without network calls.
+- CivicSunshine uses local PostgreSQL, Redis, and optional Ollama.
 - Cloud LLM providers are not configured by default.
 - The compose profile may need internet access to download images or release wheels before the stack is cached locally.
 

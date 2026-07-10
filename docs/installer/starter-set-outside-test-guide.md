@@ -1,7 +1,7 @@
 # Starter-Set Outside Test Guide
 
-Status: outside-party test path for the CivicCore + CivicRecords AI +
-CivicClerk starter set.
+Status: outside-party test path for the CivicCore + CivicSunshine +
+CivicMeetings starter set.
 
 Last verified: 2026-05-19.
 
@@ -109,19 +109,19 @@ bash ./start-civicsuite-installer.sh verify --staff-mode bearer --workflow-proof
 ## Expected Proof
 
 The default `clerk-core` profile installs CivicCore first and then starts
-CivicRecords AI and CivicClerk. A passing verify run must prove:
+CivicSunshine and CivicMeetings. A passing verify run must prove:
 
-- CivicRecords AI API health returns `status=ok` and `version=1.7.3`.
-- CivicRecords AI web responds.
-- CivicClerk API health returns `status=ok`, `version=1.0.4`, and
+- CivicSunshine API health returns `status=ok` and `version=1.7.3`.
+- CivicSunshine web responds.
+- CivicMeetings API health returns `status=ok`, `version=1.0.4`, and
   `civiccore=1.2.0`.
-- CivicClerk web responds.
-- CivicClerk staff auth is protected by default and anonymous staff writes are
+- CivicMeetings web responds.
+- CivicMeetings staff auth is protected by default and anonymous staff writes are
   denied.
-- Optional workflow proof creates and fetches a real CivicRecords AI records
+- Optional workflow proof creates and fetches a real CivicSunshine records
   request, runs search, submits review, drafts a staff-reviewable response, and
   marks the request ready for release.
-- Optional workflow proof also runs CivicClerk agenda intake/review/promotion,
+- Optional workflow proof also runs CivicMeetings agenda intake/review/promotion,
   meeting creation, packet finalization, notice posting proof, motion/vote
   capture, citation-gated minutes draft creation, automatic-minutes-posting
   refusal, and public archive calendar/search visibility through
@@ -154,7 +154,7 @@ uninstall on the regenerated package.
 - macOS support is beta-level archive/readiness proof in this package. Full
   matching-host macOS lifecycle evidence still requires a Darwin/macOS Docker
   Desktop host run before any macOS lifecycle certification claim.
-- CivicRecords AI and CivicClerk are co-installed and contract-verified against
+- CivicSunshine and CivicMeetings are co-installed and contract-verified against
   CivicCore, but this guide does not claim live workflow-record exchange
   between the two modules yet.
 - This is outside-party testable software, not a municipal procurement-ready

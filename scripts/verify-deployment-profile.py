@@ -2,7 +2,7 @@
 
 This is a profile guard, not a production readiness certification. It verifies
 that the umbrella deployment docs/compose file stay aligned with the current
-bounded demo target: CivicRecords AI + CivicClerk + CivicCode + CivicZone with
+bounded demo target: CivicSunshine + CivicMeetings + CivicCode + CivicZone with
 local-first defaults and no cloud LLM provider enabled by default.
 """
 
@@ -191,7 +191,7 @@ def check_docs() -> list[str]:
     text = DOC_FILE.read_text(encoding="utf-8")
     required_phrases = (
         "evaluation profile, not production packaging",
-        "CivicRecords AI + CivicClerk + CivicCode + CivicZone",
+        "CivicSunshine + CivicMeetings + CivicCode + CivicZone",
         "No-Network Meaning",
         "Production Pilot Install",
         "Do not treat this compose file as production pilot packaging",

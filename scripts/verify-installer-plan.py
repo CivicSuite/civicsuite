@@ -197,12 +197,12 @@ def check_docs() -> list[str]:
         contract = STARTER_SET_CONTRACT.read_text(encoding="utf-8")
         for phrase in (
             "CivicCore installs first",
-            "CivicRecords AI and CivicClerk are selectable",
+            "CivicSunshine and CivicMeetings are selectable",
             "Windows and Linux package lifecycle proof are required",
             "macOS archives and wrapper manifests are generated and supported at beta",
             "before any macOS lifecycle certification claim",
-            "CivicRecords AI reports v1.7.3",
-            "CivicClerk reports v1.0.4 with CivicCore v1.2.0",
+            "CivicSunshine reports v1.7.3",
+            "CivicMeetings reports v1.0.4 with CivicCore v1.2.0",
             "install --staff-mode bearer --workflow-proof",
             "first-admin JWT auth",
             "bearer-protected staff auth",
@@ -210,13 +210,13 @@ def check_docs() -> list[str]:
             "submit the request for review",
             "motion/vote capture",
             "automatic-minutes-posting",
-            "Reports must not persist the CivicRecords admin password or bearer token",
+            "Reports must not persist the CivicSunshine admin password or bearer token",
             "Package Cleanroom Contract",
             "run-installer-package-cleanroom.py --archive installer\\dist\\CivicSuite-clerk-core-windows-0.1.0.zip --platform windows --staff-mode bearer --workflow-proof",
             "workflow_proof_requested=true",
             "civicclerk_staff_mode=bearer",
             "Windows package workflow proof has been run on a Windows 11 host with",
-            "not yet a claim that CivicRecords AI and CivicClerk exchange workflow records",
+            "not yet a claim that CivicSunshine and CivicMeetings exchange workflow records",
         ):
             if phrase not in contract:
                 errors.append(
@@ -240,8 +240,8 @@ def check_docs() -> list[str]:
             "Verify",
             "Repair",
             "Uninstall",
-            "CivicRecords AI API health returns `status=ok` and `version=1.7.3`",
-            "CivicClerk API health returns `status=ok`, `version=1.0.4`, and",
+            "CivicSunshine API health returns `status=ok` and `version=1.7.3`",
+            "CivicMeetings API health returns `status=ok`, `version=1.0.4`, and",
             "anonymous staff writes are",
             "submits review",
             "staff-reviewable response",
@@ -370,13 +370,13 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
         if '"8000:8000"' in normalized or '"8080:80"' in normalized:
             errors.append(
                 fail(
-                    "clerk-core installer must replace CivicRecords default host ports"
+                    "clerk-core installer must replace CivicSunshine default host ports"
                 )
             )
         if '"18123:8000"' not in normalized or '"18124:80"' not in normalized:
             errors.append(
                 fail(
-                    "clerk-core installer must normalize CivicRecords ports to resolved installer ports"
+                    "clerk-core installer must normalize CivicSunshine ports to resolved installer ports"
                 )
             )
         env_file = Path(temp_dir) / ".env"
@@ -388,13 +388,13 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
         ):
             errors.append(
                 fail(
-                    "clerk-core installer must write CivicRecords resolved host ports into .env"
+                    "clerk-core installer must write CivicSunshine resolved host ports into .env"
                 )
             )
         if "PORTAL_MODE=private" not in env_text:
             errors.append(
                 fail(
-                    "clerk-core installer must keep CivicRecords private mode as the default for smaller profiles"
+                    "clerk-core installer must keep CivicSunshine private mode as the default for smaller profiles"
                 )
             )
         module.write_records_env(env_file, {"api": 18125, "web": 18126})
@@ -405,7 +405,7 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
         ):
             errors.append(
                 fail(
-                    "clerk-core installer must refresh CivicRecords host ports in existing .env files"
+                    "clerk-core installer must refresh CivicSunshine host ports in existing .env files"
                 )
             )
         module.write_records_env(env_file, {"api": 18127, "web": 18128}, portal_mode="public")
@@ -413,16 +413,16 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
         if "PORTAL_MODE=public" not in public_env_text:
             errors.append(
                 fail(
-                    "city-core installer must be able to write CivicRecords public portal mode"
+                    "city-core installer must be able to write CivicSunshine public portal mode"
                 )
             )
         if module.records_portal_mode_for_modules(["civicrecords-ai", "civicclerk"]) != "private":
-            errors.append(fail("clerk-core selected modules must resolve CivicRecords private portal mode"))
+            errors.append(fail("clerk-core selected modules must resolve CivicSunshine private portal mode"))
         if (
             module.records_portal_mode_for_modules(["civicrecords-ai", "civicclerk", "civiccode"])
             != "public"
         ):
-            errors.append(fail("city-core selected modules must resolve CivicRecords public portal mode"))
+            errors.append(fail("city-core selected modules must resolve CivicSunshine public portal mode"))
     isolation = module.resolve_isolation(run_id="verify-isolation-run", port_offset=37)
     ports = isolation.get("ports", {})
     projects = isolation.get("compose_projects", {})
@@ -432,7 +432,7 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
     ):
         errors.append(
             fail(
-                "clerk-core installer must derive CivicRecords API port from the run isolation model"
+                "clerk-core installer must derive CivicSunshine API port from the run isolation model"
             )
         )
     if not isinstance(projects, dict) or projects.get(
@@ -1668,7 +1668,7 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 if actual_records_requirement != expected_records_requirement:
                     errors.append(
                         fail(
-                            f"profile package {platform_id} CivicRecords AI CivicCore requirement "
+                            f"profile package {platform_id} CivicSunshine CivicCore requirement "
                             f"drifted from manifest: {actual_records_requirement!r} != {expected_records_requirement!r}"
                         )
                     )
