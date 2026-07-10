@@ -373,14 +373,15 @@ function Copy-PythonVcRuntime {
     if (-not $CrtDir) {
         throw "Could not locate the x64 Visual C++ runtime redistributable (Microsoft.VC*.CRT) via vswhere. The embedded Python requires msvcp140.dll for native extensions (greenlet) to import on a clean machine."
     }
+    # Copy the whole CRT redist set (same as Copy-PostgresVcRuntime) rather than a
+    # hand-maintained allowlist: a future native wheel that links an additional CRT
+    # DLL (msvcp140_1.dll, concrt140.dll, ...) would otherwise silently reproduce
+    # the exact clean-machine import failure F-A11Y-3 was. $Essential is only the
+    # post-copy verification floor.
     $Copied = @()
-    foreach ($Required in $Essential) {
-        $SourceDll = Join-Path $CrtDir $Required
-        if (-not (Test-Path -LiteralPath $SourceDll)) {
-            throw "VC++ runtime redistributable is missing $Required (source: $CrtDir)"
-        }
-        Copy-Item -LiteralPath $SourceDll -Destination (Join-Path $PythonRoot $Required) -Force
-        $Copied += $Required
+    foreach ($Dll in (Get-ChildItem -LiteralPath $CrtDir -Filter *.dll)) {
+        Copy-Item -LiteralPath $Dll.FullName -Destination (Join-Path $PythonRoot $Dll.Name) -Force
+        $Copied += $Dll.Name
     }
     foreach ($Required in $Essential) {
         if (-not (Test-Path -LiteralPath (Join-Path $PythonRoot $Required))) {
