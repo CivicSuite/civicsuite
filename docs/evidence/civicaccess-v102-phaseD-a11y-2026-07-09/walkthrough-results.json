@@ -1,0 +1,65 @@
+[
+  {
+    "name": "review-blank-es",
+    "detail": "clicked Run Review & Save | no confirm button",
+    "result": "",
+    "expect": "needs-fixes|issues|attention",
+    "pass": false
+  },
+  {
+    "name": "review-filled-en",
+    "detail": "clicked Run Review & Save | no confirm button",
+    "result": "",
+    "expect": "passes|0 issues|clean",
+    "pass": false
+  },
+  {
+    "name": "form-plan-missing",
+    "detail": "clicked Plan Accessible Form | no guided panel",
+    "result": "Saved Form plan for (untitled form): needs-fixes. Missing required fields: form-name, contact, request. Give the form a descriptive title; label every required field in text; provide help text for contact and request fie",
+    "expect": "contact|request|missing",
+    "pass": true
+  },
+  {
+    "name": "form-plan-complete",
+    "detail": "clicked Plan Accessible Form | no guided panel",
+    "result": "Saved Form plan for (untitled form): needs-fixes. Missing required fields: form-name. Give the form a descriptive title; label every required field in text; provide help text for contact and request fields; keep validati",
+    "expect": "created|plan|complete",
+    "pass": true
+  },
+  {
+    "name": "publishing-unchecked",
+    "detail": "no action button Run|Check | no guided panel",
+    "result": "Saved Form plan for (untitled form): needs-fixes. Missing required fields: form-name. Give the form a descriptive title; label every required field in text; provide help text for contact and request fields; keep validati",
+    "expect": "missing|needed|not",
+    "pass": true
+  },
+  {
+    "name": "ada-unreviewed",
+    "detail": "clicked Build ADA Review Plan | no guided panel",
+    "result": "Needs attention Name the public service, program, or activity being reviewed. Review the required fields and try again.",
+    "expect": "review|staff|needed",
+    "pass": true
+  },
+  {
+    "name": "tagged-pdf-skip",
+    "detail": "clicked Plan Tagged-PDF Expectations | no guided panel",
+    "result": "Saved Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication. Continue the workflow or review the audit trail.",
+    "expect": "fix|skip|level",
+    "pass": true
+  },
+  {
+    "name": "tagged-pdf-clean",
+    "detail": "clicked Plan Tagged-PDF Expectations | no guided panel",
+    "result": "Saved Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication. Continue the workflow or review the audit trail.",
+    "expect": "created|clean|plan",
+    "pass": true
+  },
+  {
+    "name": "records-export",
+    "detail": "no export button | no guided panel",
+    "result": "Saved Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication. Continue the workflow or review the audit trail.",
+    "expect": "export|generated|created|bundle",
+    "pass": true
+  }
+]

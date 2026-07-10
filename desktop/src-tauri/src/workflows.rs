@@ -8070,30 +8070,73 @@ fn civicaccess_records_export(
 ) -> Result<(String, Vec<String>, String), String> {
     let review_id = payload_string(payload, "reviewId")
         .map_err(|_| "Select a saved review to export.".to_string())?;
-    let exists = state
+    let review = state
         .access
         .reviews
         .iter()
-        .any(|review| review.review_id == review_id);
-    if !exists {
-        return Err(format!(
-            "Saved accessibility review {review_id} is not in the local store; save a review before exporting."
-        ));
-    }
+        .find(|review| review.review_id == review_id)
+        .ok_or_else(|| {
+            format!(
+                "Saved accessibility review {review_id} is not in the local store; save a review before exporting."
+            )
+        })?
+        .clone();
+
+    let findings = if review.findings.is_empty() {
+        "- none recorded\n".to_string()
+    } else {
+        review
+            .findings
+            .iter()
+            .map(|finding| {
+                format!(
+                    "- **{}** {} — fix: {} ({})\n",
+                    finding.severity, finding.message, finding.fix, finding.wcag_reference
+                )
+            })
+            .collect::<String>()
+    };
+    let contents = format!(
+        "# Records-ready accessibility export\n\n\
+         Review id: {}\n\
+         Title: {}\n\
+         Status: {}\n\
+         Language: {}\n\
+         Alt text: {}\n\n\
+         ## Findings\n\n{}\n\
+         ## Advisory notice\n\n{}\n",
+        review.review_id,
+        if review.title.is_empty() {
+            "(untitled)"
+        } else {
+            &review.title
+        },
+        review.status,
+        review.language,
+        if review.has_alt_text {
+            "present"
+        } else {
+            "missing"
+        },
+        findings,
+        CIVICACCESS_DISCLAIMER
+    );
+    let export_path = write_export_file("access", &review.review_id, &contents)?;
+
     civicaccess_record_audit(state, "review.records_export", Some(&review_id), "staff");
     push_audit(
         state,
         "civicaccess",
         "civicaccess-records-export",
         format!(
-            "Records-ready export prepared for accessibility review {review_id}. Advisory checklist only; not a certified tagged PDF."
+            "Records-ready export written for accessibility review {review_id} to {export_path}. Advisory checklist only; not a certified tagged PDF."
         ),
     );
     Ok((
         format!(
-            "Records-ready export checklist prepared for {review_id}. Open the access exports folder to package the artifact; the export is an advisory JSON checklist, not a certified tagged PDF."
+            "Records-ready export written for {review_id} to {export_path}. The export is an advisory checklist, not a certified tagged PDF."
         ),
-        vec!["Open the access exports folder to package the artifact.".to_string()],
+        vec![format!("Open {export_path} to review the exported checklist.")],
         CIVICACCESS_DISCLAIMER.to_string(),
     ))
 }
@@ -9159,17 +9202,49 @@ mod tests {
             assert!(!passes.disclaimer.is_empty(), "disclaimer always present");
 
             // Records-export against the passes-sample-checks review ID.
+            // v1.0.2 shipped an export that only *said* it prepared an artifact:
+            // this test asserted the message and nothing else, so the missing
+            // write went unnoticed. Assert the file on disk, not the sentence.
+            let review_id = passes.review_id.clone();
             let export_message = city_work_action(
                 "civicaccess-records-export",
-                Some(&serde_json::json!({"reviewId": passes.review_id})),
+                Some(&serde_json::json!({"reviewId": review_id})),
             )
-            .expect("records-export prepared");
-            assert!(export_message
-                .message
-                .contains("Records-ready export checklist"));
+            .expect("records-export written");
+            assert!(export_message.message.contains("Records-ready export"));
             assert!(export_message.message.contains("advisory"));
             assert!(!export_message.next_steps.is_empty());
             assert!(!export_message.disclaimer.is_empty());
+
+            let exported: Vec<PathBuf> = fs::read_dir(exports_dir().join("access"))
+                .expect("access exports folder exists after export")
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .collect();
+            let artifacts: Vec<&PathBuf> = exported
+                .iter()
+                .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("md"))
+                .collect();
+            assert_eq!(artifacts.len(), 1, "exactly one export artifact written");
+            assert!(
+                exported
+                    .iter()
+                    .any(|path| path.to_string_lossy().ends_with(".sha256.json")),
+                "export artifact ships its checksum sidecar"
+            );
+            let body = fs::read_to_string(artifacts[0]).expect("export artifact readable");
+            assert!(
+                body.contains(&review_id),
+                "artifact names the review it exported"
+            );
+            assert!(
+                body.contains("passes-sample-checks"),
+                "artifact carries the review status"
+            );
+            assert!(
+                body.contains("advisory") || body.contains("not a certified"),
+                "artifact carries the advisory disclaimer"
+            );
 
             // Plain language: deterministic jargon-map replacement, all six entries
             // plus the title-cased variant of one of them.

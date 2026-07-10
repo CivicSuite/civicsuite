@@ -85,6 +85,11 @@ fn navigation() -> Vec<NavigationItem> {
             description: "Deadlines, proof, archive packets",
         },
         NavigationItem {
+            id: "access",
+            label: "Accessibility",
+            description: "WCAG review, plain language, multilingual, exports",
+        },
+        NavigationItem {
             id: "search",
             label: "Search City Knowledge",
             description: "Cross-module local search with citations",
@@ -962,6 +967,47 @@ mod tests {
         assert!(labels.contains(&"Code & Ordinances"));
         assert!(!labels.contains(&"Docker"));
         assert!(!labels.contains(&"WSL"));
+    }
+
+    #[test]
+    fn navigation_matches_frontend_fallback_state() {
+        // The live shell renders navigation() while main.js keeps a hardcoded
+        // fallbackState list for the offline path. v1.0.2 shipped with `access`
+        // present in the fallback but absent here, so the Accessibility tab was
+        // unreachable on every install. Keep the two ids in lockstep.
+        let main_js = include_str!("../../src/main.js");
+        let start = main_js
+            .find("navigation: [")
+            .expect("fallbackState.navigation block");
+        let end = main_js[start..]
+            .find("].map(")
+            .expect("end of fallbackState.navigation");
+        let block = &main_js[start..start + end];
+
+        for item in navigation() {
+            let needle = format!("[\"{}\"", item.id);
+            assert!(
+                block.contains(&needle),
+                "navigation() id `{}` is missing from main.js fallbackState.navigation",
+                item.id
+            );
+        }
+        let rust_ids: Vec<&str> = navigation().into_iter().map(|item| item.id).collect();
+        for line in block.lines() {
+            let trimmed = line.trim();
+            if !trimmed.starts_with("[\"") {
+                continue;
+            }
+            let id = trimmed
+                .trim_start_matches("[\"")
+                .split('"')
+                .next()
+                .expect("fallback nav id");
+            assert!(
+                rust_ids.contains(&id),
+                "main.js fallbackState.navigation id `{id}` is missing from navigation()"
+            );
+        }
     }
 
     #[test]

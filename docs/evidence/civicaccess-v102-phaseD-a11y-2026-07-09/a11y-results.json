@@ -1,0 +1,750 @@
+{
+  "started_at": "2026-07-09",
+  "msi_sha256": "bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02",
+  "surfaces": {
+    "staff-accessibility": {
+      "axe": {
+        "violations": [],
+        "passes": 23,
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "count": 1
+          }
+        ]
+      },
+      "keyboard": {
+        "tabStops": 59,
+        "noVisibleFocus": 0,
+        "noVisibleFocusSample": [],
+        "sequence": [
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Open Access Exports Folder",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "Water main repair notice",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "Paste the resident-facing text here.",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "en",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Run Review & Save",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "Residents must remit payment prior to th",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Draft Plain-Language Rewrite",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "Residents may request an accommodation.",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "es",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Draft Translation Variant",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "Records Request",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "name, contact, request",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Plan Accessible Form",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Build Publishing Plan",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "Records intake",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Build ADA Review Plan",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "1, 2, 3",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Plan Tagged-PDF Expectations",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "body"
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Staff",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Resident/Public",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "IT/Admin",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Audit Trail",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Sign Out",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Home\n          Work that needs attention",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Meetings & Notices\n          Agendas, no",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Records Requests\n          Intake, revie",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Code & Ordinances\n          Search, impo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Public Notices\n          Deadlines, proo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Search City Knowledge\n          Cross-mo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "System Health\n          Local services, ",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Settings\n          City profile, users, ",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Open Access Exports Folder",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "Water main repair notice",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "Paste the resident-facing text here.",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "en",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Run Review & Save",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "Residents must remit payment prior to th",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Draft Plain-Language Rewrite",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "Residents may request an accommodation.",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "es",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Draft Translation Variant",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "Records Request",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "name, contact, request",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Plan Accessible Form",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Build Publishing Plan",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "Records intake",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Build ADA Review Plan",
+            "visibleFocus": true,
+            "inViewport": true
+          }
+        ]
+      },
+      "ariaLive": [
+        {
+          "tag": "div",
+          "ariaLive": "polite",
+          "role": "status",
+          "cls": "sr-only"
+        }
+      ],
+      "landmarks": {
+        "nav": true,
+        "main": true,
+        "h1": "CivicSuite",
+        "unlabeledInputs": 0
+      }
+    },
+    "public-area": {
+      "axe": {
+        "violations": [],
+        "passes": 24,
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "count": 1
+          }
+        ]
+      },
+      "keyboard": {
+        "tabStops": 39,
+        "noVisibleFocus": 0,
+        "noVisibleFocusSample": [],
+        "sequence": [
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "label": "writtenremotein-person sign-up",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Staff",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Resident/Public",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "IT/Admin",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Audit Trail",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Sign Out",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Home\n          Work that needs attention",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Meetings & Notices\n          Agendas, no",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Records Requests\n          Intake, revie",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Code & Ordinances\n          Search, impo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Public Notices\n          Deadlines, proo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Search City Knowledge\n          Cross-mo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "System Health\n          Local services, ",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Settings\n          City profile, users, ",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "label": "writtenremotein-person sign-up",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "body"
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Staff",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Resident/Public",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "IT/Admin",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Audit Trail",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Sign Out",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Home\n          Work that needs attention",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Meetings & Notices\n          Agendas, no",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Records Requests\n          Intake, revie",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Code & Ordinances\n          Search, impo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Public Notices\n          Deadlines, proo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Search City Knowledge\n          Cross-mo",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "System Health\n          Local services, ",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "button",
+            "type": "button",
+            "label": "Settings\n          City profile, users, ",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "label": "",
+            "visibleFocus": true,
+            "inViewport": true
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "label": "writtenremotein-person sign-up",
+            "visibleFocus": true,
+            "inViewport": true
+          }
+        ]
+      }
+    }
+  }
+}

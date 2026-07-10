@@ -1,0 +1,168 @@
+{
+  "review-blank-es": {
+    "ok": true,
+    "ms": 88452,
+    "status": "Saved",
+    "message": "Accessibility review saved as access-review-b9c02314-ab26-4f96-828e-414b40cca25f: needs-fixes (4 finding(s), 3 high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit.\nLocal AI analysis (civicsuite-gemma4-12b-qat:q4_0) — advisory, human review required:\nREMEDIATION ANALYSIS:\n\nPriority 1: missing-body (High) and missing-title (High).\nThe document currently contains no content or title. You must provide the primary public information and a clear, descriptive heading before any other accessibility fixes can be validated.\n\nPriority 2: missing-alt-text (High).\nOnce text is added, ensure every image has a concise description of its content or function to assist screen reader users.\n\nPriority 3: language-confirmation (Medium).\nVerify that the Spanish (es) text is grammatically correct and appropriate for your target audience.\n\nHuman Reviewer Notes:\n1. Structure: Ensure headings follow a logical nested order (H1, H2, H3) rather than just using bold or large fonts.\n2. Readability: Check that the language is plain and easy to understand for all residents.\n3. Navigation: If the document is long, ensure there are clear sections to help users navigate quickly.\n\nAdvisory only; a qualified human reviewer makes the final call.",
+    "next_steps": [
+      "Resolve each high-severity finding before publication.",
+      "Have staff or an ADA coordinator review findings that require human judgment.",
+      "Preserve the review record with the publication's audit trail."
+    ],
+    "data": null,
+    "expect": "needs-fixes|missing|issue",
+    "pass": true
+  },
+  "review-filled-en": {
+    "ok": true,
+    "ms": 46749,
+    "status": "Saved",
+    "message": "Accessibility review saved as access-review-03e08fa5-a02c-4b25-b4be-2901224dca80: passes-sample-checks (0 finding(s), 0 high-severity). Resolve high-severity findings before publication; this is advisory support, not a certified audit.\nLocal AI analysis (civicsuite-gemma4-12b-qat:q4_0) — advisory, human review required:\nStaff Review Draft:\n\nAccessibility Analysis: No automated issues were detected. However, please review the following for clarity and usability:\n\nPriority 1: Clarity of Location\nThe document does not specify which street or area will be affected. To ensure residents can plan accordingly, clearly state the specific location (e.g., \"Main Street between 1st and 2nd Ave\").\n\nPriority 2: Contact Information\nInclude a phone number or website for residents to report issues or ask questions during the repair window.\n\nHuman Reviewer Checklist:\n- Structure: Ensure the date and time are prominent (e.g., bolded) so they are easy to find at a glance.\n- Plain Language: Confirm that \"water main\" is understood by all residents; if not, consider adding \"underground water pipe.\"\n- Visuals: If any maps or images are added later, ensure they have descriptive alt text.",
+    "next_steps": [
+      "Resolve each high-severity finding before publication.",
+      "Have staff or an ADA coordinator review findings that require human judgment.",
+      "Preserve the review record with the publication's audit trail."
+    ],
+    "data": null,
+    "expect": "passes|0|clean|sample",
+    "pass": true
+  },
+  "form-plan-missing": {
+    "ok": true,
+    "ms": 18,
+    "status": "Saved",
+    "message": "Form plan for Records request form: needs-fixes. Missing required fields: contact, request. Give the form a descriptive title; label every required field in text; provide help text for contact and request fields; keep validation errors next to the fields they describe.",
+    "next_steps": [
+      "Resolve missing fields: contact, request."
+    ],
+    "data": null,
+    "expect": "contact|request|missing",
+    "pass": true
+  },
+  "form-plan-complete": {
+    "ok": true,
+    "ms": 10,
+    "status": "Saved",
+    "message": "Form plan for Records request form: form-plan-created. Use visible labels for every input; keep keyboard focus order aligned with reading order; show actionable validation errors beside each field; preserve submissions with the publication record.",
+    "next_steps": [
+      "Keep validation errors next to the fields they describe."
+    ],
+    "data": null,
+    "expect": "created|complete|ready",
+    "pass": true
+  },
+  "publishing-unchecked": {
+    "ok": true,
+    "ms": 10,
+    "status": "Saved",
+    "message": "Publishing workflow for Street closure: blocked. Complete each blocker before publication: missing-accessibility-review, missing-plain-language-summary, missing-translation-review.",
+    "next_steps": [
+      "Complete each blocker before publication: missing-accessibility-review, missing-plain-language-summary, missing-translation-review."
+    ],
+    "data": null,
+    "expect": "missing|needed|incomplete|not",
+    "pass": true
+  },
+  "ada-unreviewed": {
+    "ok": true,
+    "ms": 9,
+    "status": "Saved",
+    "message": "ADA Title II review for Public meetings program: needs-staff-review. Confirm communication access needs and alternate formats; record ADA coordinator or qualified staff review; preserve remediation notes with the publication record.",
+    "next_steps": [
+      "Record ADA coordinator or qualified staff review."
+    ],
+    "data": null,
+    "expect": "review|staff|coordinator|needed",
+    "pass": true
+  },
+  "pdf-skip": {
+    "ok": true,
+    "ms": 12,
+    "status": "Saved",
+    "message": "Tagged-PDF plan: needs-fixes. Start with one H1; do not skip heading levels; verify tag order in the exported PDF before publication.",
+    "next_steps": [
+      "Start with one H1 and do not skip heading levels."
+    ],
+    "expect": "skip",
+    "pass": true
+  },
+  "pdf-clean": {
+    "ok": true,
+    "ms": 6,
+    "status": "Saved",
+    "message": "Tagged-PDF plan created. Heading order starts at H1; no heading levels are skipped; PDF tags and reading order must be verified before publication.",
+    "next_steps": [
+      "Verify tag order in the exported PDF before publication."
+    ],
+    "expect": "no heading levels are skipped",
+    "pass": true
+  },
+  "plain-language": {
+    "ok": true,
+    "ms": 9326,
+    "status": "Saved",
+    "message": "Local AI plain-language draft (civicsuite-gemma4-12b-qat:q4_0) — human review required before publication:\nYou must pay before the deadline. According to the ordinance, service will start after it is approved.",
+    "next_steps": [
+      "Have staff review the rewrite for accuracy before publication."
+    ],
+    "data": null,
+    "expect": "ok",
+    "pass": true
+  },
+  "variant-de": {
+    "ok": true,
+    "ms": 7227,
+    "status": "Saved",
+    "message": "ai-draft-translation (civicsuite-gemma4-12b-qat:q4_0): Die Stadtwasserwerke werden am Dienstagmorgen eine Wasserleitung reparieren.\nHuman review required before publication.",
+    "next_steps": [
+      "Route the variant to a qualified human translator/reviewer before publication."
+    ],
+    "data": null,
+    "expect": "ok",
+    "pass": true
+  },
+  "staffBoundary": {
+    "noToken": {
+      "error": "TypeError: Failed to fetch"
+    },
+    "badToken": {
+      "error": "TypeError: Failed to fetch"
+    }
+  },
+  "records-export": {
+    "ok": true,
+    "ms": 10,
+    "status": "Saved",
+    "message": "Records-ready export checklist prepared for access-review-03e08fa5-a02c-4b25-b4be-2901224dca80. Open the access exports folder to package the artifact; the export is an advisory JSON checklist, not a certified tagged PDF.",
+    "next_steps": [
+      "Open the access exports folder to package the artifact."
+    ],
+    "expect": "export|checklist|prepared",
+    "pass": true
+  },
+  "exportReviewId": "access-review-03e08fa5-a02c-4b25-b4be-2901224dca80",
+  "delete-review": {
+    "ok": true,
+    "ms": 6,
+    "status": "Saved",
+    "message": "Accessibility review access-review-03e08fa5-a02c-4b25-b4be-2901224dca80 deleted from the saved-review list.",
+    "next_steps": [
+      "The review's audit-trail entry remains in the hash-chained audit log even though it no longer appears in the saved-review list."
+    ],
+    "expect": "delete|removed",
+    "pass": true
+  },
+  "authBoundary": {
+    "signedInWrite": {
+      "ok": true,
+      "status": "Saved",
+      "message": "Accessibility review saved as access-review-f1608aac-42cd-4c0c-abed-b1cfaf1febdf: passes-sample-checks (0 finding(s), 0 high-severity). Resolve high-severity fi"
+    },
+    "signedOutWrite": {
+      "ok": false,
+      "error": "Sign in with a local staff or administrator account before changing city work."
+    },
+    "enforced": true,
+    "note": "Windows-Local bundle serves CivicAccess via the Tauri invoke bridge, not HTTP; port 15480 exposes only /health and /modules (501 on POST). The manifest's X-CivicAccess-Write-Token item applies to the Docker deployment. The installed-stack equivalent is the local-admin session gate, tested here."
+  }
+}
