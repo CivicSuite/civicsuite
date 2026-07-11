@@ -152,13 +152,28 @@ jobs:
             scope         = "https://codesigning.azure.net/.default"
           }
           $uri = "https://login.microsoftonline.com/$($env:AZURE_TENANT_ID)/oauth2/v2.0/token"
+          # Match the proven sibling-repo preflight: hard-fail ONLY on error codes
+          # that mean the secret itself is bad/expired. Anything else (transient,
+          # scope/role not-yet-propagated, network) is inconclusive -- don't kill the
+          # ~1h build on it; let the real sign step surface a genuine auth problem.
           try {
-            $resp = Invoke-RestMethod -Method Post -Uri $uri -Body $body -ContentType "application/x-www-form-urlencoded"
+            $resp = Invoke-RestMethod -Method Post -Uri $uri -Body $body -ContentType "application/x-www-form-urlencoded" -ErrorAction Stop
+            if ($resp.access_token) {
+              Write-Host "Preflight OK: signing service principal acquired a code-signing token (expires_in=$($resp.expires_in)s)."
+              exit 0
+            }
+            Write-Error "Preflight: token endpoint returned no access_token."
+            exit 1
           } catch {
-            throw "Azure signing-credential preflight FAILED: the service-principal client secret could not obtain a Trusted Signing token. $($_.Exception.Message)"
+            $code = ""
+            try { $code = ($_.ErrorDetails.Message | ConvertFrom-Json).error } catch {}
+            if ($code -in @("invalid_client","unauthorized_client","invalid_grant")) {
+              Write-Error "Preflight FAILED - bad or expired AZURE_CLIENT_SECRET ($code). Fix the secret before rebuilding."
+              exit 1
+            }
+            Write-Warning "Preflight inconclusive ($code): $($_.Exception.Message). Not blocking; the sign step will surface any real auth issue."
+            exit 0
           }
-          if (-not $resp.access_token) { throw "Azure signing-credential preflight FAILED: no access_token returned." }
-          Write-Host "Preflight OK: obtained a Trusted Signing data-plane token (expires_in=$($resp.expires_in)s)."
 
       - name: Set up Node
         uses: actions/setup-node@v6
