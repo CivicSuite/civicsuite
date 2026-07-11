@@ -18,10 +18,10 @@ The repeatable process for publishing a CivicSuite Windows-Local (`civicsuite-wi
    git push origin civicsuite-windows-local-vX.Y.Z
    ```
 5. The **`release-windows-msi` workflow** fires on that tag: it downloads the MSI from the latest successful `main` build and attaches it (plus evidence) to the release, creating the release as a prerelease if it does not exist yet.
-6. **Finalize**: edit the release notes (security fixes, validation evidence, SHA-256, unsigned-beta/SmartScreen guidance), then promote from prerelease to Latest.
+6. **Finalize**: edit the release notes (security fixes, validation evidence, SHA-256), then promote from prerelease to Latest.
 7. **Retire** any superseded release candidate (mark `[RETIRED]`, prerelease, remove its unpatched assets).
 
 ## Notes
 
-- The MSI is an **unsigned beta**: SmartScreen shows "Unknown Publisher" -> "More info" -> "Run anyway". Authenticode code-signing is a **GA-gate** item, not a beta blocker.
+- The MSI is Authenticode code-signed via Azure Trusted Signing (in CI, HSM-held certificate; see CODE_SIGNING_POLICY.md).
 - Always release the EXACT artifact `main` built and CI/clean-machine validated -- never a separate ad-hoc rebuild.

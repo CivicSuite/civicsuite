@@ -8,10 +8,9 @@ source contract the Tauri shell reads while the installer and portable runtime
 bundle are implemented.
 
 `windows-first-run.json` is the structured installer and first-run checklist
-for the same Windows Local 1.0 profile. It keeps the unsigned beta notice,
-SmartScreen guidance, local paths, module selection, city profile, first admin,
-backup, model download, health, repair, and uninstall steps testable before the
-native installer executor mutates host state.
+for the same Windows Local 1.0 profile. It keeps local paths, module selection,
+city profile, first admin, backup, model download, health, repair, and uninstall
+steps testable before the native installer executor mutates host state.
 
 `windows-runtime-payloads.json` defines the portable runtime payloads that the
 desktop supervisor installs or repairs from the bundled Tauri resource folder:

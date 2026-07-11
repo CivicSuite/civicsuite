@@ -9,7 +9,7 @@ The Windows Local clerk path is a Tauri/WebView2 desktop app installed from an M
 ## City-Core App Will Not Start
 
 1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 32 GB RAM (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services).
-2. If Windows Defender SmartScreen shows "Unknown Publisher", that is expected for the unsigned beta MSI. Choose **More info**, then **Run anyway**, and continue only if the file came from the expected CivicSuite release/test source.
+2. Download the MSI from the official CivicSuite release page and verify its SHA-256 checksum matches the published hash.
 3. After install, open CivicSuite from the Start menu or desktop shortcut.
 4. If the app opens but a local service is unhealthy, open System Health, run **Check**, then **Repair** after reviewing the repair panel.
 
@@ -42,9 +42,12 @@ Use the live trust path:
 
 Do not reuse old installer artifacts; always download the current release from the official GitHub Releases page and verify its SHA-256.
 
-## Windows Says The MSI Is From An Unknown Publisher
+## Verifying The MSI Is Authentic
 
-The MSI is unsigned beta software, so SmartScreen shows "Unknown Publisher". Choose **More info**, then **Run anyway**. Continue only after confirming the file came from the expected CivicSuite release/test source and the hash/trust checks above pass. Authenticode code-signing is a documented GA-gate item, not a beta blocker. If an OS warning blocks execution, ask IT to review the package source and hash before allowing it.
+The Windows MSI ships Authenticode-signed via Azure Trusted Signing starting with the next release (the signing pipeline is wired and proven in CI). To verify any download came from an authorized source:
+
+1. Compare the MSI's SHA-256 checksum with the hash published on the official CivicSuite releases page.
+2. On signed releases, also right-click the MSI file, select **Properties**, open the **Digital Signatures** tab, and verify the signature is from an authorized publisher.
 
 ## The App Cannot Write Backups
 

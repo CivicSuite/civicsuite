@@ -14,9 +14,7 @@ use crate::local_paths;
 use crate::{model, module_registry, supervisor};
 
 const FIRST_RUN_MANIFEST_JSON: &str = include_str!("../../runtime/windows-first-run.json");
-const REQUIRED_STEP_IDS: [&str; 10] = [
-    "unsigned-beta",
-    "smartscreen",
+const REQUIRED_STEP_IDS: [&str; 8] = [
     "locations",
     "modules",
     "city-profile",
@@ -26,8 +24,7 @@ const REQUIRED_STEP_IDS: [&str; 10] = [
     "health",
     "finish",
 ];
-const REQUIRED_ACTIONS: [&str; 12] = [
-    "review",
+const REQUIRED_ACTIONS: [&str; 11] = [
     "choose-location",
     "select-modules",
     "create-city-profile",
@@ -845,8 +842,7 @@ pub fn first_run_action(
         },
         "create-city-profile" => persist_city_profile(payload)?,
         "create-admin" => persist_first_admin(payload)?,
-        "review" | "download-model" | "verify-health" | "open-app" | "repair" | "backup"
-        | "uninstall" => {}
+        "download-model" | "verify-health" | "open-app" | "repair" | "backup" | "uninstall" => {}
         _ => {
             return Err(format!(
                 "First-run action {action} has no desktop executor yet"
@@ -888,8 +884,6 @@ mod tests {
     fn mark_setup_ready_for_first_admin_step() {
         write_progress(&FirstRunProgress {
             completed_step_ids: vec![
-                "unsigned-beta".to_string(),
-                "smartscreen".to_string(),
                 "locations".to_string(),
                 "modules".to_string(),
                 "city-profile".to_string(),
@@ -902,22 +896,8 @@ mod tests {
 
     fn mark_setup_ready_for_city_profile_step() {
         write_progress(&FirstRunProgress {
-            completed_step_ids: vec![
-                "unsigned-beta".to_string(),
-                "smartscreen".to_string(),
-                "locations".to_string(),
-                "modules".to_string(),
-            ],
+            completed_step_ids: vec!["locations".to_string(), "modules".to_string()],
             last_action: Some("select-modules".to_string()),
-            last_updated_unix_seconds: now_unix_seconds(),
-        })
-        .expect("progress writes");
-    }
-
-    fn mark_setup_ready_for_location_step() {
-        write_progress(&FirstRunProgress {
-            completed_step_ids: vec!["unsigned-beta".to_string(), "smartscreen".to_string()],
-            last_action: Some("review".to_string()),
             last_updated_unix_seconds: now_unix_seconds(),
         })
         .expect("progress writes");
@@ -925,11 +905,7 @@ mod tests {
 
     fn mark_setup_ready_for_module_step() {
         write_progress(&FirstRunProgress {
-            completed_step_ids: vec![
-                "unsigned-beta".to_string(),
-                "smartscreen".to_string(),
-                "locations".to_string(),
-            ],
+            completed_step_ids: vec!["locations".to_string()],
             last_action: Some("choose-location".to_string()),
             last_updated_unix_seconds: now_unix_seconds(),
         })
@@ -939,8 +915,6 @@ mod tests {
     fn mark_setup_ready_for_model_step() {
         write_progress(&FirstRunProgress {
             completed_step_ids: vec![
-                "unsigned-beta".to_string(),
-                "smartscreen".to_string(),
                 "locations".to_string(),
                 "modules".to_string(),
                 "city-profile".to_string(),
@@ -956,8 +930,6 @@ mod tests {
     fn mark_setup_ready_for_health_step() {
         write_progress(&FirstRunProgress {
             completed_step_ids: vec![
-                "unsigned-beta".to_string(),
-                "smartscreen".to_string(),
                 "locations".to_string(),
                 "modules".to_string(),
                 "city-profile".to_string(),
@@ -985,7 +957,7 @@ mod tests {
     fn manifest_includes_required_first_run_steps() {
         let manifest = parse_manifest().expect("manifest parses");
         let step_ids: Vec<&str> = manifest.steps.iter().map(|step| step.id.as_str()).collect();
-        assert_eq!(step_ids.first(), Some(&"unsigned-beta"));
+        assert_eq!(step_ids.first(), Some(&"locations"));
         for step_id in REQUIRED_STEP_IDS {
             assert!(step_ids.contains(&step_id), "missing {step_id}");
         }
@@ -1007,17 +979,16 @@ mod tests {
 
     #[test]
     fn first_run_state_advances_to_next_unfinished_step() {
-        let state = first_run_state(&["unsigned-beta".to_string(), "smartscreen".to_string()])
-            .expect("state builds");
-        assert_eq!(state.current_step_id.as_deref(), Some("locations"));
+        let state = first_run_state(&["locations".to_string()]).expect("state builds");
+        assert_eq!(state.current_step_id.as_deref(), Some("modules"));
         assert!(state
             .steps
             .iter()
-            .any(|step| step.id == "smartscreen" && step.completed));
+            .any(|step| step.id == "locations" && step.completed));
         assert!(state
             .steps
             .iter()
-            .any(|step| step.id == "locations" && step.current));
+            .any(|step| step.id == "modules" && step.current));
     }
 
     #[test]
@@ -1028,9 +999,9 @@ mod tests {
 
             assert!(!result.accepted);
             assert_eq!(result.status, "Setup incomplete");
-            assert!(result.message.contains("Welcome and unsigned beta notice"));
+            assert!(result.message.contains("Install and local data locations"));
             let state = first_run_state(&[]).expect("state remains unfinished");
-            assert_eq!(state.current_step_id.as_deref(), Some("unsigned-beta"));
+            assert_eq!(state.current_step_id.as_deref(), Some("locations"));
             assert!(!state.finished);
         });
     }
@@ -1111,7 +1082,7 @@ mod tests {
             assert!(result.message.contains("First admin user"));
             assert!(result.next_action.contains("current setup step"));
             let state = first_run_state(&[]).expect("state remains at first step");
-            assert_eq!(state.current_step_id.as_deref(), Some("unsigned-beta"));
+            assert_eq!(state.current_step_id.as_deref(), Some("locations"));
             assert!(!state
                 .steps
                 .iter()
@@ -1161,26 +1132,8 @@ mod tests {
     }
 
     #[test]
-    fn first_run_review_action_persists_progress() {
-        with_temp_state_dir(|root| {
-            let result = first_run_action("review", Some("unsigned-beta"), None)
-                .expect("review can be saved");
-            assert!(result.accepted);
-            let state = first_run_state(&[]).expect("state reads saved progress");
-            assert_eq!(state.current_step_id.as_deref(), Some("smartscreen"));
-            assert!(root
-                .join("config")
-                .join("first-run-progress.json")
-                .is_file());
-        });
-    }
-
-    #[test]
     fn first_run_location_action_creates_local_folders() {
         with_temp_state_dir(|root| {
-            first_run_action("review", Some("unsigned-beta"), None).expect("review can be saved");
-            first_run_action("review", Some("smartscreen"), None)
-                .expect("smartscreen review can be saved");
             let result = first_run_action("choose-location", Some("locations"), None)
                 .expect("locations can be created");
             assert!(result.accepted);
@@ -1193,7 +1146,6 @@ mod tests {
     #[test]
     fn first_run_location_action_persists_custom_runtime_folders() {
         with_temp_state_dir(|root| {
-            mark_setup_ready_for_location_step();
             let install = root.join("Program Files").join("CivicSuite");
             let data = root.join("City Data");
             let backups = root.join("City Backups");
@@ -1378,7 +1330,7 @@ mod tests {
             let state = first_run_state(&[]).expect("first-run progress did not advance");
             assert_eq!(
                 state.current_step_id.as_deref(),
-                Some("unsigned-beta"),
+                Some("locations"),
                 "recovery actions must not complete setup steps"
             );
         });
@@ -1408,7 +1360,7 @@ mod tests {
                 .filter_map(Result::ok)
                 .any(|entry| entry.file_name().to_string_lossy().contains("manual")));
             let state = first_run_state(&[]).expect("first-run progress did not advance");
-            assert_eq!(state.current_step_id.as_deref(), Some("unsigned-beta"));
+            assert_eq!(state.current_step_id.as_deref(), Some("locations"));
         });
     }
 

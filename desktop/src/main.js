@@ -221,48 +221,22 @@ const fallbackState = {
     local_only: true,
     finished: false,
     status: "Needs setup",
-    current_step_id: "unsigned-beta",
+    current_step_id: "locations",
     locations: {
       install_root: "%LOCALAPPDATA%\\CivicSuite",
       data_root: "%LOCALAPPDATA%\\CivicSuite\\Data",
       backup_root: "%USERPROFILE%\\Documents\\CivicSuite Backups"
     },
-    available_actions: ["review", "choose-location", "select-modules", "create-city-profile", "create-admin", "choose-backup", "download-model", "verify-health", "open-app", "repair", "backup", "uninstall"],
+    available_actions: ["choose-location", "select-modules", "create-city-profile", "create-admin", "choose-backup", "download-model", "verify-health", "open-app", "repair", "backup", "uninstall"],
     steps: [
-      {
-        id: "unsigned-beta",
-        label: "Welcome and unsigned beta notice",
-        surface: "Installer",
-        required: true,
-        completed: false,
-        current: true,
-        status: "Current",
-        summary: "CivicSuite is beta software from an unsigned open-source build.",
-        detail: "Install only from the official CivicSuite release source after checksum verification.",
-        next_action: "Review the unsigned beta notice before continuing.",
-        action: "review"
-      },
-      {
-        id: "smartscreen",
-        label: "Windows SmartScreen explanation",
-        surface: "Installer",
-        required: true,
-        completed: false,
-        current: false,
-        status: "Needs setup",
-        summary: "Windows may show an Unknown Publisher warning for this beta.",
-        detail: "The installer explains More info and Run anyway for this verified unsigned beta.",
-        next_action: "Confirm the warning text matches the CivicSuite guidance.",
-        action: "review"
-      },
       {
         id: "locations",
         label: "Install and local data locations",
         surface: "Installer",
         required: true,
         completed: false,
-        current: false,
-        status: "Needs setup",
+        current: true,
+        status: "Current",
         summary: "Choose where the app and city data live on this machine.",
         detail: "Defaults stay under the current Windows user profile.",
         next_action: "Choose install, data, and backup folders.",
@@ -1182,7 +1156,6 @@ function firstRunStatusClass(step) {
 
 function setupActionLabel(step) {
   const labels = {
-    "review": "Review and continue",
     "choose-location": "Create local folders",
     "select-modules": state.moduleDraft.profileId === "custom" ? "Save Module Selection" : "Use City Core Modules",
     "download-model": "Download / Resume Model",

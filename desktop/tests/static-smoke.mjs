@@ -7,7 +7,6 @@ const main = readFileSync(join(root, "src", "main.js"), "utf8");
 const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
 const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows", "desktop-windows-msi.yml"), "utf8");
-const installerNotice = readFileSync(join(root, "installer", "windows", "unsigned-beta-install-notice.txt"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const authRust = readFileSync(join(root, "src-tauri", "src", "auth.rs"), "utf8");
 const moduleRegistryRust = readFileSync(join(root, "src-tauri", "src", "module_registry.rs"), "utf8");
@@ -33,7 +32,6 @@ const requiredUiPhrases = [
   "System Health",
   "Audit Trail",
   "module manager",
-  "Windows SmartScreen explanation",
   "First admin user",
   "Local Users",
   "Create Staff User",
@@ -271,10 +269,6 @@ if (!tauriConfig.includes('"targets": ["msi"]')) {
   throw new Error("Tauri bundle must default to the MSI target for the full Windows runtime payload");
 }
 
-if (!tauriConfig.includes('"licenseFile": "../installer/windows/unsigned-beta-install-notice.txt"')) {
-  throw new Error("Tauri bundle must include the unsigned beta install notice");
-}
-
 if (tauriConfig.includes('"installerHooks"') || tauriConfig.includes('"nsis"')) {
   throw new Error("Tauri MSI packaging must not rely on NSIS installer hooks");
 }
@@ -317,32 +311,11 @@ for (const phrase of [
   "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930",
   "SameVersionMajorUpgrade=true",
   "InstallerBundle=msi",
-  "UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt",
-  "UnsignedBetaNoticeSurface=msi-license-file",
-  "SmartScreenGuidance=More info -> Run anyway",
   "NoDockerPrerequisite=true",
   "NoWslPrerequisite=true"
 ]) {
   if (!desktopMsiWorkflow.includes(phrase)) {
     throw new Error(`desktop MSI workflow missing phrase: ${phrase}`);
-  }
-}
-
-for (const phrase of [
-  "Windows Beta MSI Install Notice",
-  "MSI installer",
-  "not code-signed",
-  "Microsoft Defender SmartScreen",
-  "More info",
-  "Run anyway",
-  "No Docker requirement",
-  "No WSL requirement",
-  "No terminal requirement",
-  "Windows uninstall entry",
-  "repair, backup, restore, and uninstall"
-]) {
-  if (!installerNotice.includes(phrase)) {
-    throw new Error(`installer notice missing phrase: ${phrase}`);
   }
 }
 
@@ -713,7 +686,7 @@ for (const requiredPayload of [
   }
 }
 
-for (const stepId of ["unsigned-beta", "smartscreen", "locations", "modules", "model", "city-profile", "first-admin", "backup", "health", "finish"]) {
+for (const stepId of ["locations", "modules", "model", "city-profile", "first-admin", "backup", "health", "finish"]) {
   if (!firstRunManifest.steps.some((step) => step.id === stepId)) {
     throw new Error(`Windows first-run manifest missing step: ${stepId}`);
   }
@@ -727,7 +700,7 @@ if (firstRunStepIds.indexOf("first-admin") > firstRunStepIds.indexOf("model")) {
   throw new Error("Windows first-run setup must create the first local admin before model setup");
 }
 
-for (const action of ["review", "choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"]) {
+for (const action of ["choose-location", "select-modules", "download-model", "create-city-profile", "create-admin", "choose-backup", "verify-health", "open-app", "repair", "backup", "uninstall"]) {
   if (!firstRunManifest.actions.includes(action)) {
     throw new Error(`Windows first-run manifest missing action: ${action}`);
   }

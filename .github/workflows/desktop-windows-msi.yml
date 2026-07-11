@@ -8,6 +8,9 @@ on:
 
 permissions:
   contents: read
+  # No id-token/OIDC: this org's signing service principal has no subscription to
+  # federate against, so signing authenticates with a client secret passed straight
+  # to azure/artifact-signing-action (proven pattern; see the Sign step below).
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -130,6 +133,48 @@ jobs:
           ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
           path: civicaccess
 
+      # Fail FAST on broken signing credentials before the ~1h build, not after it.
+      # No azure/login / OIDC: the signing service principal has no subscription to
+      # attach to, so we prove the client secret can mint a Trusted Signing data-plane
+      # token directly -- the exact auth azure/artifact-signing-action uses post-build.
+      # A wrong/expired secret dies here in ~2s instead of after the full build.
+      - name: Azure signing-credential preflight (fail fast)
+        shell: pwsh
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          $body = @{
+            client_id     = $env:AZURE_CLIENT_ID
+            client_secret = $env:AZURE_CLIENT_SECRET
+            grant_type    = "client_credentials"
+            scope         = "https://codesigning.azure.net/.default"
+          }
+          $uri = "https://login.microsoftonline.com/$($env:AZURE_TENANT_ID)/oauth2/v2.0/token"
+          # Match the proven sibling-repo preflight: hard-fail ONLY on error codes
+          # that mean the secret itself is bad/expired. Anything else (transient,
+          # scope/role not-yet-propagated, network) is inconclusive -- don't kill the
+          # ~1h build on it; let the real sign step surface a genuine auth problem.
+          try {
+            $resp = Invoke-RestMethod -Method Post -Uri $uri -Body $body -ContentType "application/x-www-form-urlencoded" -ErrorAction Stop
+            if ($resp.access_token) {
+              Write-Host "Preflight OK: signing service principal acquired a code-signing token (expires_in=$($resp.expires_in)s)."
+              exit 0
+            }
+            Write-Error "Preflight: token endpoint returned no access_token."
+            exit 1
+          } catch {
+            $code = ""
+            try { $code = ($_.ErrorDetails.Message | ConvertFrom-Json).error } catch {}
+            if ($code -in @("invalid_client","unauthorized_client","invalid_grant")) {
+              Write-Error "Preflight FAILED - bad or expired AZURE_CLIENT_SECRET ($code). Fix the secret before rebuilding."
+              exit 1
+            }
+            Write-Warning "Preflight inconclusive ($code): $($_.Exception.Message). Not blocking; the sign step will surface any real auth issue."
+            exit 0
+          }
+
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
@@ -177,6 +222,48 @@ jobs:
         working-directory: civicsuite/desktop
         run: npm run tauri -- build
 
+      # --- Authenticode code-signing via Azure Trusted Signing (service principal) ---
+      # Azure holds the certificate in its HSM and performs the signing; nothing is
+      # signed locally and no .pfx ever touches the runner. Must run on windows-latest,
+      # AFTER the MSI is built and BEFORE evidence/checksums (signing changes the hash).
+      # Auth = service-principal client secret passed DIRECTLY to the action (no
+      # azure/login: the SP has no subscription to federate against). This is the
+      # pattern proven end-to-end on the sibling repos' signing runs.
+      # FAIL-CLOSED: the config guard + `signtool verify` below error the build if the
+      # MSI is not actually signed (a wrong account/profile name makes Azure silently
+      # no-op), so an unsigned MSI can never be hashed, uploaded, or released.
+      - name: Locate built MSI
+        id: locate_msi
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
+          if (-not $msi) { throw "CivicSuite Windows Local MSI was not produced; nothing to sign." }
+          "path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Sign MSI (Azure Trusted Signing)
+        uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: "https://wcus.codesigning.azure.net"
+          signing-account-name: "scottconverse-signing"
+          certificate-profile-name: "ScottConversePublic"
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          files: ${{ steps.locate_msi.outputs.path }}
+          file-digest: "SHA256"
+          timestamp-rfc3161: "http://timestamp.acs.microsoft.com"
+          timestamp-digest: "SHA256"
+
+      - name: Verify signature (fail-closed - never ship unsigned)
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found on runner; cannot verify signature." }
+          Write-Host "Using $($signtool.FullName)"
+          & $signtool.FullName verify /pa /v "${{ steps.locate_msi.outputs.path }}"
+          if ($LASTEXITCODE -ne 0) { throw "Signature verification FAILED - the MSI is not validly signed. Refusing to publish." }
+
       - name: Write MSI evidence
         shell: pwsh
         run: |
@@ -194,9 +281,6 @@ jobs:
             "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930"
             "SameVersionMajorUpgrade=true"
             "InstallerBundle=msi"
-            "UnsignedBetaNotice=desktop/installer/windows/unsigned-beta-install-notice.txt"
-            "UnsignedBetaNoticeSurface=msi-license-file"
-            "SmartScreenGuidance=More info -> Run anyway"
             "NoDockerPrerequisite=true"
             "NoWslPrerequisite=true"
             "RuntimePayload=desktop/runtime/payload"

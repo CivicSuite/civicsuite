@@ -20,7 +20,7 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 ### Current honest state
 
-The Windows Local city-core package (`civicsuite-windows-local-v1.0.2`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress). For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the release-verification gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
+The Windows Local city-core package (`civicsuite-windows-local-v1.0.2`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine. Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI and ships with the next release. For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the release-verification gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 - `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records module release at v1.7.3.
@@ -72,9 +72,9 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 
 1. Download `CivicSuite_1.0.2_x64_en-US.msi` from the current GitHub release: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
 2. Verify the SHA-256 checksum matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
-3. Open the installer. Windows SmartScreen can warn "Unknown publisher" for this unsigned beta. Use **More info** and **Run anyway** only when the checksum matches the trusted artifact source.
-4. Follow the installer screens and open CivicSuite after install.
-5. Complete first-run setup: unsigned beta notice, SmartScreen review, local folders, City Core module selection, city profile, first local administrator sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
+3. Open the installer and follow the installer screens.
+4. Open CivicSuite after install.
+5. Complete first-run setup: local folders, City Core module selection, city profile, first local administrator sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
 6. Add clerk, records, code, or city-staff users from Settings when staff need separate local sign-ins.
 7. Use Meetings & Notices, Records Requests, Code & Ordinances, Search City Knowledge, System Health, and Settings from the desktop app.
 

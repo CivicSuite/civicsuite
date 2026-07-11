@@ -810,9 +810,6 @@ mod tests {
     }
 
     fn create_admin() {
-        first_run::first_run_action("review", Some("unsigned-beta"), None).expect("notice saved");
-        first_run::first_run_action("review", Some("smartscreen"), None)
-            .expect("smartscreen saved");
         first_run::first_run_action("choose-location", Some("locations"), None)
             .expect("locations saved");
         let module_payload = serde_json::json!({ "profileId": "city-core" });
