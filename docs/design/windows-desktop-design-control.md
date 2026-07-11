@@ -94,20 +94,18 @@ must use the same voice and design discipline as the app.
 
 Required installer steps:
 
-1. Welcome and unsigned beta notice.
-2. SmartScreen explanation in plain English, including why the warning appears
-   and what "More info" and "Run anyway" mean for this unsigned beta.
-3. Local install location and data location.
-4. Module selection: City Core by default, Custom available, CivicCore locked.
-5. City profile: city name, state, time zone, records contact, clerk contact.
-6. First admin user. The first admin signs in before model, backup, health,
+1. Welcome screen.
+2. Local install location and data location.
+3. Module selection: City Core by default, Custom available, CivicCore locked.
+4. City profile: city name, state, time zone, records contact, clerk contact.
+5. First admin user. The first admin signs in before model, backup, health,
    module-manager, repair, restore, or runtime changes continue.
-7. Backup default.
-8. Model download: Gemma 4 12B quantization-aware weights, pinned metadata,
+6. Backup default.
+7. Model download: Gemma 4 12B quantization-aware weights, pinned metadata,
    resumable download, checksum verification, and local-only default.
-9. Health verification.
-10. Finish screen with open app, repair, backup, support bundle, and uninstall
-    entry points.
+8. Health verification.
+9. Finish screen with open app, repair, backup, support bundle, and uninstall
+   entry points.
 
 The installer must not ask clerks to open a terminal, edit environment files, or
 start Docker/WSL. If a technical failure happens, the installer gives a plain
@@ -235,7 +233,6 @@ inventory:
 The Windows desktop UX is acceptable only when a non-technical clerk can:
 
 - Install from a clean Windows machine
-- Understand the unsigned beta and SmartScreen warning
 - Create a city profile and first admin user
 - Download and verify the model
 - Create a meeting, notice, minutes draft, vote/action record, and archive item

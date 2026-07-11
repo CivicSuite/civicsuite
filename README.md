@@ -10,7 +10,7 @@ This `civicsuite` repository is the umbrella for the CivicSuite product family. 
 
 CivicSuite's active product is the Windows Local city-core desktop app, a **GA candidate open for public beta**. The current release is `civicsuite-windows-local-v1.0.2` (Latest) — a single Tauri/WebView2 MSI (~1.65 GB) that installs the whole six-module city-core suite: CivicCore v1.2.0 plus CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0, with bundled portable PostgreSQL 17 + pgvector, bundled local services, the pinned Gemma 4 12B QAT model, and local backup/restore — **no Docker, WSL, terminal, or developer tooling**. It supersedes `civicsuite-windows-local-v1.0.1`. See [ANNOUNCEMENT.md](ANNOUNCEMENT.md) to start.
 
-**What "GA candidate, public beta" means:** the build is feature-complete for city-core and passed the Phase D clean-machine acceptance gate — two full clean Windows Sandbox runs of the real installer (install → the full first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → the three CivicAccess AI features producing clean, correctly-labeled output through the real app bridge). The one remaining gate to General Availability is an Authenticode code-signing certificate, in progress via the SignPath Foundation (a few weeks). Until then the MSI is an **unsigned beta**: SmartScreen shows "Unknown Publisher" → **More info → Run anyway**. Use it for real hands-on evaluation and early adoption — it does **not** claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
+**What "GA candidate, public beta" means:** the build is feature-complete for city-core and passed the Phase D clean-machine acceptance gate — two full clean Windows Sandbox runs of the real installer (install → the full first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → the three CivicAccess AI features producing clean, correctly-labeled output through the real app bridge). Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI and ships with the next release. Use it for real hands-on evaluation and early adoption — it does **not** claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
 
 Scope: city-core is six modules, and the current v1.0.2 build ships all six — including **CivicAccess v0.4.0** (accessibility + records-ready export), whose on-screen **Accessibility** workflow tab is this release's headline. A clerk sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Background: [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on corrected version labels (version lowered to match actual maturity). The MSI bundles module source pinned by commit (for two modules ahead of the latest published tag); the trust path is the `source_commit` pin plus the MSI checksum — see [PROVENANCE.md](PROVENANCE.md). For the history of the 2026-05 release-label freeze and which labels are real, see [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
@@ -55,9 +55,10 @@ For honest module-by-module status see [STATUS.md](STATUS.md).
 
 The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). As of 2026-07-02 the suite runs under the [full-suite finishing program](docs/roadmap/full-suite-program.md): all 27 modules finished one at a time behind a clean-VM definition of done, on the portable-native Windows runtime per [ADR-0008](docs/architecture/ADR-0008-portable-native-windows-runtime.md)/[ADR-0009](docs/architecture/ADR-0009-postgres-backed-queue-windows-profile.md) — the runtime v1.0.2 already ships. The immediate sequence within that program:
 
-1. Authenticode code signing via the SignPath Foundation — the last gate to General Availability.
-2. Public-beta feedback intake and fixes for the shipped v1.0.2 city-core build.
-3. Module-by-module finishing in the program's approved order, one module in flight at a time.
+1. Public-beta feedback intake and fixes for the shipped v1.0.2 city-core build.
+2. Module-by-module finishing in the program's approved order, one module in flight at a time.
+
+Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI; it ships with the next Windows Local release.
 
 ## Quick Start
 
@@ -66,7 +67,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). A
 - City Core installs CivicCore plus CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess. CivicCore is always installed and cannot be deselected.
 - 32 GB RAM is recommended (16 GB is a workable minimum) — headroom for the local model resident alongside PostgreSQL and the services.
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
-- First-run setup covers the unsigned beta notice, SmartScreen explanation, local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
+- First-run setup covers local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
 - Trust path: download `CivicSuite_1.0.2_x64_en-US.msi` from the [civicsuite-windows-local-v1.0.2 release](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2), verify its SHA-256 `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`, and confirm the module pins in [installer/modules.json](installer/modules.json).
 - macOS and Linux package paths remain separate future or historical profiles until each has refreshed install-lifecycle testing on the same operating system it ships for.
 

@@ -109,7 +109,6 @@ fn navigation() -> Vec<NavigationItem> {
 
 fn installer_steps() -> Vec<&'static str> {
     vec![
-        "Explain unsigned beta status and Windows SmartScreen.",
         "Choose install and local data locations.",
         "Install CivicCore and selected city-core modules.",
         "Create city profile and first admin user.",
@@ -362,8 +361,7 @@ fn filter_search_results_for_access(result: &mut CityWorkActionResult, access: &
 fn first_run_action_requires_admin_after_setup(action: &str) -> bool {
     matches!(
         action,
-        "review"
-            | "choose-location"
+        "choose-location"
             | "select-modules"
             | "download-model"
             | "create-city-profile"
@@ -878,9 +876,6 @@ mod tests {
     }
 
     fn create_first_admin() {
-        first_run::first_run_action("review", Some("unsigned-beta"), None).expect("notice saved");
-        first_run::first_run_action("review", Some("smartscreen"), None)
-            .expect("smartscreen saved");
         first_run::first_run_action("choose-location", Some("locations"), None)
             .expect("locations saved");
         let module_payload = serde_json::json!({ "profileId": "city-core" });
@@ -1490,18 +1485,6 @@ mod tests {
     fn first_run_setup_actions_can_bootstrap_before_admin_exists() {
         with_clean_first_run_state(|_| {
             first_run_action_authorized(
-                "review".to_string(),
-                Some("unsigned-beta".to_string()),
-                None,
-            )
-            .expect("notice can bootstrap before admin exists");
-            first_run_action_authorized(
-                "review".to_string(),
-                Some("smartscreen".to_string()),
-                None,
-            )
-            .expect("smartscreen can bootstrap before admin exists");
-            first_run_action_authorized(
                 "choose-location".to_string(),
                 Some("locations".to_string()),
                 None,
@@ -1552,7 +1535,7 @@ mod tests {
             assert_eq!(state.first_run.status, "Needs setup");
             assert_eq!(
                 state.first_run.current_step_id.as_deref(),
-                Some("unsigned-beta")
+                Some("locations")
             );
             assert!(state.first_run.local_only);
         });

@@ -51,7 +51,6 @@
     "targets": ["msi"],
     "publisher": "CivicSuite",
     "icon": ["icons/icon.ico"],
-    "licenseFile": "../installer/windows/unsigned-beta-install-notice.txt",
     "resources": ["../runtime/payload/"],
     "windows": {
       "allowDowngrades": false,

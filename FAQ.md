@@ -15,15 +15,15 @@ The supported operator path is the **CivicSuite Windows Local "city-core" deskto
 What an operator does:
 
 1. Run the MSI on a 64-bit Windows 10/11 machine that has WebView2.
-2. Because the beta MSI is unsigned, SmartScreen shows "Unknown Publisher", then choose **More info**, then **Run anyway** (only if the file came from the expected CivicSuite release/test source).
-3. Follow the installer screens, then open CivicSuite and complete first-run setup (city profile, first local administrator, backup folder).
+2. Follow the installer screens.
+3. Open CivicSuite and complete first-run setup (city profile, first local administrator, backup folder).
 4. At first run the app downloads the pinned Gemma 4 12B QAT model (about 6.97 GB) from Hugging Face and verifies its checksum before AI workflows turn on. After that the model is local; no cloud account is needed.
 
 Recommended machine: **32 GB RAM** (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and services, and 32 GB leaves headroom for the local database and the generation context) and **at least 15 GB free disk** (1.65 GB MSI + about 7 GB model + data/backup headroom; the installer enforces a 15 GB floor for the model download).
 
 The current release is **[civicsuite-windows-local-v1.0.2](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2)** (Latest; it supersedes v1.0.1, which superseded v1.0.0; the earlier first-run-fix prerelease is retired). For the full step-by-step, see [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
-This is a **GA candidate, open for public beta**: feature-complete for city-core and validated end-to-end on a clean machine, with Authenticode code-signing the one remaining gate to GA (in progress, a few weeks). You can download and use it now for real hands-on evaluation and early adoption. It is still a **beta** — **not yet production-, city-, or procurement-ready** — so do not run your city's system of record on it yet.
+This is a **GA candidate, open for public beta**: feature-complete for city-core and validated end-to-end on a clean machine. Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI and ships with the next release. You can download and use it now for real hands-on evaluation and early adoption. It is still a **beta** — **not yet production-, city-, or procurement-ready** — so do not run your city's system of record on it yet.
 
 ## Can my city rely on CivicSuite for live operations today?
 
@@ -56,8 +56,6 @@ The operator path is the Windows Local "city-core" desktop MSI. You need:
 - Access to city documents for representative, non-production evaluation.
 
 You do **not** need Docker, WSL, a terminal, a developer account, cloud accounts, SaaS subscriptions, vendor relationships, or per-seat licensing. PostgreSQL 17 with pgvector and the Ollama model runtime are bundled portably inside the app. If the installed app ever asks for Docker, WSL, terminal commands, or manual config-file edits, that is a Windows Local release-blocking bug, not an operator step.
-
-The beta MSI is unsigned, so SmartScreen will show "Unknown Publisher": choose **More info**, then **Run anyway**, and continue only if the file came from the expected CivicSuite release/test source.
 
 **Legacy developer/CI path (not the operator path):** the project also keeps a Linux/Docker lifecycle as a developer and CI proof path only. That path uses Docker Engine on Linux (with Docker Desktop and WSL 2 on Windows/macOS) and larger build-host resources, and it is the source of the older "8+ cores, 32 GB RAM, 60 GB disk, Docker/WSL" guidance. It exists to prove builds in CI; it is never how a clerk or city IT operator installs city-core. If you are a city operator, ignore the Docker/WSL path and use the Windows Local MSI above.
 

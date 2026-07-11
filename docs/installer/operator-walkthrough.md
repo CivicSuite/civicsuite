@@ -36,18 +36,11 @@ Do not install Docker Desktop or WSL for this product path. If the app asks for 
 
 1. Open the CivicSuite Windows installer file.
 
-2. If Windows Defender SmartScreen appears, use the installer notice:
-   - The installer is unsigned beta software.
-   - Choose **More info**.
-   - Choose **Run anyway**.
-   - Continue only if the file came from the expected CivicSuite release/test source.
+2. Follow the installer screens. The installer places the app and portable runtime on the local machine and adds normal Windows uninstall support.
 
-3. Follow the installer screens. The installer places the app and portable runtime on the local machine and adds normal Windows uninstall support.
+3. Open CivicSuite after install.
 
-4. Open CivicSuite after install.
-
-5. Complete first-run setup:
-   - Review unsigned beta and SmartScreen status.
+4. Complete first-run setup:
    - Confirm local install/data/backup folders.
    - Keep the City Core module profile selected.
    - Create the city profile.
@@ -185,8 +178,6 @@ Use **Prepare Uninstall** in System Health before removing CivicSuite:
 Reinstall should be able to restore from the final backup when the backup folder is available.
 
 ## Troubleshooting
-
-If SmartScreen appears, follow the unsigned beta installer notice and confirm the file source.
 
 If model download is interrupted, use **Download / Resume** in first-run setup.
 

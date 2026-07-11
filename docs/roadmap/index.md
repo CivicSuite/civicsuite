@@ -227,7 +227,7 @@ Goal: make the suite something a municipal IT department can own over time.
 
 Operational maturity work:
 
-- unsigned-installer warning docs during the developer cycle, plus a documented signing program for the future certificate-backed release path
+- Authenticode code-signing implementation and documented maintenance procedures
 - monitoring and alerting
 - patch and upgrade workflows
 - backup and restore drills

@@ -47,15 +47,14 @@ Everything — your data, your documents, your audit trail, the AI model — sta
 Same posture as v1.0.1; the bundled scope grew:
 
 - **GA candidate** describes maturity. The v1.0.2 MSI passed CI lifecycle validation (install → first-run → backup-restore → uninstall on a fresh `windows-latest` runner, run `28626482190`), and **Phase D clean-machine acceptance passed** — two full Windows Sandbox runs of the shipped installer covering install, the complete first-run wizard, admin sign-in, the model download/verify/load chain, and the three Accessibility AI features live against the real model, including the run that caught (and this release's fix that closed) the clean-machine database bug. See "What changed" above and the [v1.0.2 release notes](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2) for the full story.
-- **Public beta** describes the stage. **Authenticode code-signing remains the single remaining gate to General Availability** — in progress via the SignPath Foundation. Until it lands, SmartScreen shows "Unknown Publisher" — see the install section for the honest walkthrough.
+- **Public beta** describes the stage. Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI and ships with the next release.
 
-## Install (60-second version, unsigned-beta warning included)
+## Install (60-second version)
 
 1. Download `CivicSuite_1.0.2_x64_en-US.msi` **and** `CivicSuite-msi-evidence.txt` from the [latest release](https://github.com/CivicSuite/civicsuite/releases/latest).
-2. **You will see a Windows warning, and that's expected.** The beta MSI is not yet code-signed (the signing certificate is in progress through the SignPath Foundation's free open-source program), so SmartScreen says **"Windows protected your PC — Unknown publisher."** That means "Windows doesn't recognize the publisher," not "this file is dangerous."
-3. **Verify before you proceed** — this is what makes "run anyway" safe: in PowerShell, run `Get-FileHash CivicSuite_1.0.2_x64_en-US.msi -Algorithm SHA256` and check it matches the `SHA256=` line in the evidence file (and the value below). Matching hash = the file you have is byte-for-byte the file the public CI run built. If it doesn't match, delete and re-download from the official release page only.
-4. On the SmartScreen dialog choose **More info → Run anyway**, follow the installer, open CivicSuite, and complete first-run setup (which repeats the unsigned-beta notice in-product: city profile, first admin, backup folder).
-5. On first run the app downloads and verifies the ~6.97 GB model. After that it's fully local — including all the AI features.
+2. Verify the SHA-256 checksum in PowerShell: run `Get-FileHash CivicSuite_1.0.2_x64_en-US.msi -Algorithm SHA256` and check it matches the `SHA256=` line in the evidence file (and the value below). Matching hash = the file you have is byte-for-byte the file the public CI run built. If it doesn't match, delete and re-download from the official release page only.
+3. Follow the installer, open CivicSuite, and complete first-run setup (city profile, first admin, backup folder).
+4. On first run the app downloads and verifies the ~6.97 GB model. After that it's fully local — including all the AI features.
 
 **Recommended machine:** 64-bit Windows 10/11 with WebView2, **32 GB RAM** recommended (16 GB is a workable minimum; the model needs ~6.7 GB resident, plus headroom for the local database, services, and generation context), **~15 GB free disk**. No Docker, no WSL, no terminal.
 
@@ -70,7 +69,6 @@ In-place upgrade supported via same product code. No uninstall needed. Your save
 Being honest about the edges matters more than the launch:
 
 - Not production-ready, not city-ready, not procurement-ready. It's a beta.
-- Not code-signed yet (certificate in progress — see above and `CODE_SIGNING_POLICY.md`).
 - Not a compliance tool. AI drafts are labeled drafts; humans decide; nothing in the Accessibility tab is a certified audit, legal determination, or certified translation.
 - Not the full suite. City-core is six modules; **CivicZone / CivicPlan / CivicPermit / CivicInspect** remain queued Tier 2.
 - macOS lifecycle is not certified; Windows Local is the supported operator path.

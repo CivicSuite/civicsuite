@@ -14,7 +14,6 @@
     "backup_root": "{documents}/CivicSuite Backups"
   },
   "actions": [
-    "review",
     "choose-location",
     "select-modules",
     "create-city-profile",
@@ -28,26 +27,6 @@
     "uninstall"
   ],
   "steps": [
-    {
-      "id": "unsigned-beta",
-      "label": "Welcome and unsigned beta notice",
-      "surface": "Installer",
-      "required": true,
-      "summary": "CivicSuite is beta software from an unsigned open-source build.",
-      "detail": "The installer explains that this build is not code-signed yet and should be installed only from the official CivicSuite release source after checksum verification.",
-      "next_action": "Review the unsigned beta notice before continuing.",
-      "action": "review"
-    },
-    {
-      "id": "smartscreen",
-      "label": "Windows SmartScreen explanation",
-      "surface": "Installer",
-      "required": true,
-      "summary": "Windows may show an Unknown Publisher warning for this beta.",
-      "detail": "The installer explains why the warning appears and how More info and Run anyway apply to this verified unsigned beta.",
-      "next_action": "Confirm the warning text matches the CivicSuite guidance.",
-      "action": "review"
-    },
     {
       "id": "locations",
       "label": "Install and local data locations",
