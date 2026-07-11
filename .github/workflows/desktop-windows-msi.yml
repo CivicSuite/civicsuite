@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write   # required for Azure Trusted Signing OIDC (org-scoped federated credential)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -176,6 +177,57 @@ jobs:
       - name: Build Windows Local MSI
         working-directory: civicsuite/desktop
         run: npm run tauri -- build
+
+      # --- Authenticode code-signing via Azure Trusted Signing (org-scoped OIDC) ---
+      # Azure holds the certificate in its HSM and performs the signing; nothing is
+      # signed locally and no .pfx ever touches the runner. Must run on windows-latest,
+      # AFTER the MSI is built and BEFORE evidence/checksums (signing changes the hash).
+      # FAIL-CLOSED: the config guard + `signtool verify` below error the build if the
+      # MSI is not actually signed (a wrong account/profile name makes Azure silently
+      # no-op), so an unsigned MSI can never be hashed, uploaded, or released.
+      - name: Locate built MSI
+        id: locate_msi
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
+          if (-not $msi) { throw "CivicSuite Windows Local MSI was not produced; nothing to sign." }
+          "path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Guard - signing config present
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace("${{ vars.AZURE_SIGNING_ACCOUNT }}")) {
+            throw "Actions variable AZURE_SIGNING_ACCOUNT (Azure Trusted Signing account name) is not set. Refusing to build an unsigned installer."
+          }
+          if ([string]::IsNullOrWhiteSpace("${{ vars.AZURE_CERT_PROFILE }}")) {
+            throw "Actions variable AZURE_CERT_PROFILE (Azure certificate profile name) is not set. Refusing to build an unsigned installer."
+          }
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign MSI (Azure Trusted Signing)
+        uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.AZURE_CERT_PROFILE }}
+          files: ${{ steps.locate_msi.outputs.path }}
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+
+      - name: Verify signature (fail-closed - never ship unsigned)
+        shell: pwsh
+        run: |
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found on runner; cannot verify signature." }
+          Write-Host "Using $($signtool.FullName)"
+          & $signtool.FullName verify /pa /v "${{ steps.locate_msi.outputs.path }}"
+          if ($LASTEXITCODE -ne 0) { throw "Signature verification FAILED - the MSI is not validly signed. Refusing to publish." }
 
       - name: Write MSI evidence
         shell: pwsh
