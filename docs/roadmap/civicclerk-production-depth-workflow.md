@@ -1,4 +1,4 @@
-# CivicClerk Production-Depth Workflow Sprint
+# CivicMeetings Production-Depth Workflow Sprint
 
 Status: planned next production-depth lane
 
@@ -11,7 +11,7 @@ Supporting repos: `CivicSuite/civiccore`, `CivicSuite/civicrecords-ai`,
 
 ## Purpose
 
-This sprint turns CivicClerk from a strong v0.1.0 foundation into the first
+This sprint turns CivicMeetings from a strong v0.1.0 foundation into the first
 operator-usable production-depth CivicSuite workflow.
 
 The workflow is deliberately narrow:
@@ -28,7 +28,7 @@ publishes.
 
 ## Current Starting Point
 
-CivicClerk v0.1.0 already ships:
+CivicMeetings v0.1.0 already ships:
 
 - Schema and Alembic foundation.
 - Agenda item lifecycle enforcement.
@@ -75,7 +75,7 @@ Acceptance:
 - Manifest tests prove checksums and file counts are validated.
 - Docs clearly say what v0.3.0 ships and what remains planned.
 
-### Phase 2 - CivicClerk Data And Service Depth
+### Phase 2 - CivicMeetings Data And Service Depth
 
 Repo: `CivicSuite/civicclerk`
 
@@ -128,10 +128,10 @@ Repos: `CivicSuite/civicrecords-ai`, `CivicSuite/civiccode`,
 Deliver:
 
 - Read-only source reference adapters or export fixtures for:
-  - records request/source files from CivicRecords AI,
+  - records request/source files from CivicSunshine,
   - code sections and ordinance references from CivicCode,
   - parcel/zoning context from CivicZone.
-- CivicClerk consumes these as source/provenance references, not system-of-record
+- CivicMeetings consumes these as source/provenance references, not system-of-record
   writes.
 
 Acceptance:
@@ -186,7 +186,7 @@ The staff workflow must follow `docs/ux/shared-shell-inventory.md`:
 This production-depth lane is complete when:
 
 - CivicCore v0.3.0 is released if its primitives are used.
-- CivicClerk ships a new release with database-backed packet/notice workflow
+- CivicMeetings ships a new release with database-backed packet/notice workflow
   depth.
 - Supporting module references are read-only and degraded-state safe.
 - The local demo profile can exercise the workflow without outbound calls.

@@ -7,7 +7,7 @@ umbrella repo has deployment documentation and a bounded demo compose profile.
 The installer work began as a design contract, not implementation; the current
 beta now adds a real `clerk-core` package lifecycle for the first distributable
 profile. The current city-core work extends that surface to CivicCore,
-CivicRecords AI, CivicClerk, and CivicCode without changing published module
+CivicSunshine, CivicMeetings, and CivicCode without changing published module
 release artifacts.
 
 ## Why This Exists
@@ -105,7 +105,7 @@ The generated package lifecycle now includes a real `clerk-core` installer
 runner:
 `python scripts/run-clerk-core-installer.py install|verify|repair|uninstall`.
 The platform package launchers call that runner for lifecycle modes. Install
-builds and starts CivicRecords AI plus CivicClerk from bundled source trees,
+builds and starts CivicSunshine plus CivicMeetings from bundled source trees,
 verify checks four live endpoints, repair preserves generated `.env` secrets
 and rebuilds/restarts services, and uninstall tears down the profile containers
 and volumes. The runner derives Docker Compose project names and host ports from
@@ -137,7 +137,7 @@ fastest repeatable clean baseline for the CivicCore-only package layer.
 
 The first service cleanroom proof uses
 `python scripts/run-civicrecords-cleanroom.py --run-id manual-civicrecords-service-cleanroom-4`
-to copy CivicRecords AI into an evidence workspace, start an isolated Docker
+to copy CivicSunshine into an evidence workspace, start an isolated Docker
 Compose project on high ports, verify API and frontend health, run live
 Playwright desktop/mobile smoke checks, save screenshots, and tear the stack
 down with volumes removed.
@@ -186,8 +186,8 @@ because hosted CI does not provide the same Docker Desktop baseline.
 The initial profile set is defined in `installer/modules.json`:
 
 - Minimal: CivicCore only.
-- Clerk Core: CivicCore, CivicRecords AI, CivicClerk.
-- City Core: CivicCore, CivicRecords AI, CivicClerk, CivicCode.
+- Clerk Core: CivicCore, CivicSunshine, CivicMeetings.
+- City Core: CivicCore, CivicSunshine, CivicMeetings, CivicCode.
 - Land Use: queued and disabled until CivicZone, CivicPlan, CivicPermit, and CivicInspect complete their own release turns.
 - Full Suite: all 26 tracked CivicSuite repos, ordered by dependencies.
 - Custom: operator-selected modules with dependency validation.
@@ -195,7 +195,7 @@ The initial profile set is defined in `installer/modules.json`:
 Demoted recovery-label selector integrations:
 
 - CivicInspect: queued Tier 2 module; custom selection remains disabled until its release turn.
-- CivicGrants: custom selection resolves CivicCore, CivicRecords AI, and
+- CivicGrants: custom selection resolves CivicCore, CivicSunshine, and
   CivicGrants with CivicCore 1.1.0 and recovery proof requirements.
 - CivicProcure: custom selection resolves CivicCore and CivicProcure with
   CivicCore 1.1.0 and recovery proof requirements. CivicContracts remains a

@@ -51,8 +51,8 @@ Initial publication gate contracts:
 
 | Module | Gate Event | Gate Actor | Records Published |
 |---|---|---|---|
-| CivicClerk | Minutes adopted + archive published | City Clerk | Meetings, agendas, adopted minutes, votes, action items |
-| CivicRecords | Response marked fulfilled + released | Records Officer | Released public records metadata |
+| CivicMeetings | Minutes adopted + archive published | City Clerk | Meetings, agendas, adopted minutes, votes, action items |
+| CivicSunshine | Response marked fulfilled + released | Records Officer | Released public records metadata |
 | CivicPermit | Permit intake accepted as public record | Permit Clerk | Permit intake records without personal applicant data |
 | Civic311 | Service request closed + marked publishable | Department lead | Closed service requests with address anonymized |
 | CivicBudget | Hearing packet approved for public release | Finance Director | Budget line summaries and approved narratives |
@@ -249,7 +249,7 @@ Planned v0.1.x foundation:
 
 Planned v0.2.x:
 
-- CivicClerk, CivicCode, and CivicNotice publication contracts.
+- CivicMeetings, CivicCode, and CivicNotice publication contracts.
 - API key issuance admin UI.
 - Live rate limiting against real keys.
 - Public developer documentation.

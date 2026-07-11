@@ -159,7 +159,7 @@ This stack is local-first by design. No outbound calls in the default deployment
 
 ## Per-module architecture pattern
 
-Every runtime module follows the CivicRecords AI template:
+Every runtime module follows the CivicSunshine template:
 
 ```
 modulename/
@@ -203,7 +203,7 @@ The repo skeleton is enforced by `scripts/verify-docs.sh` in the umbrella; modul
 - Modules **may not** read each other's database directly. Cross-module reads go through internal HTTP APIs.
 - The "internal API" between modules is governed by the unified spec §13–14 and the per-module specs.
 - Examples:
-  - `civicclerk` writes adopted ordinances → `civiccode` ingests via the CivicClerk handoff API.
+  - `civicclerk` writes adopted ordinances → `civiccode` ingests via the CivicMeetings handoff API.
   - `civiczone` reads code text from `civiccode` via the section resolution API.
   - `civicgrants` searches `civicrecords-ai` for grant context via records-ai's query API.
 
@@ -290,7 +290,7 @@ Separate from the Docker-based installer above, the shipped Windows artifact is 
 - **Embedded CPython** running the module services.
 - **Bundled Ollama** on `127.0.0.1:15434` serving the pinned `gemma-4-12b-it-qat-q4_0` model; the suite's shared local-generation helper calls it via `/api/chat`. The model itself (~7 GB) is downloaded and SHA-256-verified on first run, with a pre-staged path for air-gapped installs.
 
-One MSI installs the six-module city-core profile: CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess. Module source is pinned by `source_commit` in [installer/modules.json](installer/modules.json); see [PROVENANCE.md](PROVENANCE.md) for how the bundled commits relate to each module's published releases.
+One MSI installs the six-module city-core profile: CivicCore, CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess. Module source is pinned by `source_commit` in [installer/modules.json](installer/modules.json); see [PROVENANCE.md](PROVENANCE.md) for how the bundled commits relate to each module's published releases.
 
 ---
 

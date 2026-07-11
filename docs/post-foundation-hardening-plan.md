@@ -60,7 +60,7 @@ Deliverables:
 
 1. A documented local deployment profile covering:
    - CivicCore.
-   - CivicRecords AI.
+   - CivicSunshine.
    - One or more runtime modules.
    - PostgreSQL 17 with pgvector where needed.
    - Redis and Celery where needed.
@@ -74,7 +74,7 @@ Deliverables:
 
 Recommended first deployment target:
 
-CivicRecords AI + CivicClerk + CivicCode + CivicZone.
+CivicSunshine + CivicMeetings + CivicCode + CivicZone.
 
 Why:
 
@@ -82,7 +82,7 @@ Those modules form the most obvious clerk/planning records workflow: records int
 
 Initial status:
 
-`deploy/post-foundation-demo.compose.yml`, `docs/deployment/local-demo-profile.md`, and `scripts/verify-deployment-profile.py` define the first bounded local demo profile for CivicRecords AI, CivicClerk, CivicCode, and CivicZone. The verifier checks compose shape, local-first LLM defaults, version-pinned module wheels, deployment docs, and no-network in-process health smoke checks for CivicClerk, CivicCode, and CivicZone.
+`deploy/post-foundation-demo.compose.yml`, `docs/deployment/local-demo-profile.md`, and `scripts/verify-deployment-profile.py` define the first bounded local demo profile for CivicSunshine, CivicMeetings, CivicCode, and CivicZone. The verifier checks compose shape, local-first LLM defaults, version-pinned module wheels, deployment docs, and no-network in-process health smoke checks for CivicMeetings, CivicCode, and CivicZone.
 
 ## Lane 3 - Shared Staff And Resident Shell Boundaries
 
@@ -125,8 +125,8 @@ Deliverables:
 
 1. A connector-template ADR defining read/import/export phases.
 2. File drop and CSV import patterns for:
-   - CivicRecords AI records exports.
-   - CivicClerk agenda/meeting packet source imports.
+   - CivicSunshine records exports.
+   - CivicMeetings agenda/meeting packet source imports.
    - CivicCode code-section import.
    - CivicZone zoning/parcel sample import.
 3. Export-bundle conventions with manifest files and checksums.
@@ -181,7 +181,7 @@ boundary.
 
 Recommended first workflow:
 
-CivicClerk agenda packet and notice workflow, integrated with CivicRecords AI source records, CivicCode citations, and CivicZone references.
+CivicMeetings agenda packet and notice workflow, integrated with CivicSunshine source records, CivicCode citations, and CivicZone references.
 
 Why:
 
@@ -199,19 +199,19 @@ Initial status:
 
 `docs/architecture/ADR-0007-first-production-depth-workflow.md` and
 `docs/roadmap/civicclerk-production-depth-workflow.md` define the first
-production-depth sprint: CivicClerk agenda packet and notice workflow,
-integrated through read-only source/provenance paths with CivicRecords AI,
+production-depth sprint: CivicMeetings agenda packet and notice workflow,
+integrated through read-only source/provenance paths with CivicSunshine,
 CivicCode, and CivicZone, and dependent on CivicCore v0.3.0 primitives if those
 primitives are used.
 
 ## Execution Order
 
 1. Suite integrity script and report.
-2. Deployment profile for CivicRecords AI + CivicClerk + CivicCode + CivicZone.
+2. Deployment profile for CivicSunshine + CivicMeetings + CivicCode + CivicZone.
 3. Shared shell boundary ADR and UX inventory.
 4. Connector/import/export template ADR plus file-drop/CSV patterns.
 5. CivicCore v0.3.0 extraction proposal.
-6. CivicClerk-centered production-depth workflow sprint.
+6. CivicMeetings-centered production-depth workflow sprint.
 
 ## Done Definition For This Plan
 

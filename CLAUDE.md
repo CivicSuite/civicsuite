@@ -1,6 +1,6 @@
 # CivicSuite — project instructions for Claude Code
 
-CivicSuite is an open-source, local-first municipal operations suite. The umbrella repo at `CivicSuite/civicsuite` holds suite-level documentation, governance, compatibility tracking, the release ladder, and the verification scripts that keep 27 module repos in lockstep. Module products (CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicCode, CivicAccess, and 21+ more) live in sibling repos under the same GitHub org.
+CivicSuite is an open-source, local-first municipal operations suite. The umbrella repo at `CivicSuite/civicsuite` holds suite-level documentation, governance, compatibility tracking, the release ladder, and the verification scripts that keep 27 module repos in lockstep. Module products (CivicCore, CivicSunshine, CivicMeetings, CivicZone, CivicCode, CivicAccess, and 21+ more) live in sibling repos under the same GitHub org.
 
 Read this file before doing anything. The "Pipeline drafter notes" section is the load-bearing part for `agent-pipeline-claude:run` — it tells the manifest-drafter where everything lives.
 
@@ -11,13 +11,13 @@ When `agent-pipeline-claude:run` produces a manifest for CivicSuite work, the dr
 1. **`docs/CivicSuiteUnifiedSpec.md`** — canonical product spec. Always cite the relevant section number when the manifest invokes a closed architectural decision, a module's canonical scope, or a non-negotiable.
    - §4 — suite-wide non-negotiables (product / AI / sovereignty / docs+QA principles)
    - §5 — standard module architecture (§5.1 backend, §5.2 frontend, §5.3 AI, §5.4 data+search, §5.5 connectors)
-   - §8 CivicRecords, §9 CivicClerk, §10 CivicZone, §11 CivicCode, §12 CivicAccess — canonical scopes
+   - §8 CivicRecords, §9 CivicMeetings, §10 CivicZone, §11 CivicCode, §12 CivicAccess — canonical scopes
    - §15.4 — accessibility (WCAG 2.2 AA load-bearing)
    - §17 — documentation standard
    - §22 — open and closed decisions
 
 2. **`docs/design/ui-ux-prototype/`** — **canonical UI/UX specification** (interactive React+Babel prototype built by Claude Design). Any manifest touching user-visible code, copy, or layout must:
-   - Pull in the relevant `*.jsx` file(s) (e.g., `clerk.jsx` for CivicClerk UI work, `records.jsx` for CivicRecords work, `shell.jsx` for app-shell or topbar changes).
+   - Pull in the relevant `*.jsx` file(s) (e.g., `clerk.jsx` for CivicMeetings UI work, `records.jsx` for CivicRecords work, `shell.jsx` for app-shell or topbar changes).
    - Cite `styles.css` design tokens (typography: Inter / Source Serif 4 / JetBrains Mono; color tokens like `--paper-2`, `--rule`; spacing scale) when verifying a visual change.
    - Respect the three architectural commitments captured in `docs/design/ui-ux-prototype/README.md`: three surfaces (Staff/Resident/IT-Admin), audit drawer always one click away, ⌘K palette as primary navigation.
    - **If a PR's UI work conflicts with the prototype, the prototype is authoritative.** A design-change PR must update the prototype in the same change set.
@@ -26,13 +26,13 @@ When `agent-pipeline-claude:run` produces a manifest for CivicSuite work, the dr
 
 4. **`.agent-workflows/ACTIVE_WORK_QUEUE.md`** — current target tracking. The active target plus queued targets live here. A manifest claiming to advance the queue must name the queue entry it advances.
 
-5. **`.agent-workflows/HANDOFF_*.md`** — historical handoffs. Read the latest dated handoff at session start. The most recent B2 completion handoff is `HANDOFF_2026-05-12_B2_COMPLETE.md` (B2 closed, CivicRecords AI v1.6.0, suite-truth reconciled); current release truth has since advanced to CivicRecords AI v1.6.1.
+5. **`.agent-workflows/HANDOFF_*.md`** — historical handoffs. Read the latest dated handoff at session start. The most recent B2 completion handoff is `HANDOFF_2026-05-12_B2_COMPLETE.md` (B2 closed, CivicRecords AI v1.6.0, suite-truth reconciled); current release truth has since advanced to CivicSunshine v1.6.1.
 
 6. **`docs/adr/`** — architectural decision records. `0001-canonical-decisions-live-in-unified-spec.md` is the bridge document that activates the ADR policy gate while per-decision ADRs are extracted over time.
 
 7. **`scripts/verify-suite-state.py`** — the suite-truth verifier. Any manifest that changes module versions or compatibility claims must run this script as part of its acceptance and paste the output.
 
-8. **Module-specific specs.** For work that lives primarily inside a single sibling repo (CivicRecords AI, CivicClerk, etc.), the module's own `README.md`, `CHANGELOG.md`, and the relevant unified-spec section are sources of truth. Manifests targeting module work must reference both.
+8. **Module-specific specs.** For work that lives primarily inside a single sibling repo (CivicSunshine, CivicMeetings, etc.), the module's own `README.md`, `CHANGELOG.md`, and the relevant unified-spec section are sources of truth. Manifests targeting module work must reference both.
 
 ## Order of operations
 

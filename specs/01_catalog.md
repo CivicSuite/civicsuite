@@ -9,18 +9,18 @@ Version 1.0 --- April 23, 2026
 Open source · Apache License 2.0 · 100% local inference · Gemma 4 first,
 model-pluggable
 
-Architecture pattern: CivicRecords AI
+Architecture pattern: CivicSunshine
 
 Document Metadata
 
   ---------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   **Status**                   Strategic product catalog --- v1.0 initial draft
-  **Supersedes**               Open\_Source\_AI\_for\_Municipalities.docx (internal strategy draft), CivicRecords-AI\_Suite.docx (market framing draft)
+  **Supersedes**               Open\_Source\_AI\_for\_Municipalities.docx (internal strategy draft), CivicSunshine-AI\_Suite.docx (market framing draft)
   **Grounded in**              CivicRecordsAI-UnifiedSpec-v3.0 (April 13, 2026) --- the canonical Module 1 specification
-  **Purpose**                  Define the full suite of modules that a small or mid-sized city can install, one at a time, all inheriting the CivicRecords AI architecture
+  **Purpose**                  Define the full suite of modules that a small or mid-sized city can install, one at a time, all inheriting the CivicSunshine architecture
   **License**                  Apache License 2.0 for code. Suite documentation under CC BY 4.0 (recommended; configurable).
   **License note**             Code license is Apache License 2.0 (SPDX: Apache-2.0). Documentation is CC BY 4.0. Earlier drafts referenced MIT; the project standardized on Apache 2.0 on 2026-04-23 to align with civicrecords-ai.
-  **Architecture authority**   CivicRecords AI is the architectural template. Every module inherits CivicCore (auth, RBAC, audit, LLM abstraction, connectors, search, notifications).
+  **Architecture authority**   CivicSunshine is the architectural template. Every module inherits CivicCore (auth, RBAC, audit, LLM abstraction, connectors, search, notifications).
   **Default model**            Gemma 4 via Ollama (local). Model registry + context\_window\_size enables drop-in replacement.
   **Deployment profiles**      single-workstation · small on-prem server · segmented/air-gapped for sensitive modules
   ---------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ clerk-first: it starts where the records live, where the meetings
 happen, and where the code gets adopted --- then expands outward to
 every function a city actually runs day-to-day.
 
-Module 1 --- CivicRecords AI --- is already shipping and serves as the
+Module 1 --- CivicSunshine --- is already shipping and serves as the
 architectural template for every subsequent module. Every module
 inherits the same foundation: FastAPI, PostgreSQL with pgvector, Redis,
 Celery, Ollama with Gemma 4, hash-chained audit logging, connector
@@ -102,7 +102,7 @@ indexed rather than first-class product surfaces:
     city needs. The 12 functional domains in §13.3 of the v3.0 spec
     correspond roughly to the module tiers in this catalog.
 
--   The \'public portal\' is scoped as a future add-on to CivicRecords.
+-   The \'public portal\' is scoped as a future add-on to CivicSunshine.
     But the public-facing use cases are so varied (request a record,
     look up code, check zoning, find a meeting, submit a 311 request,
     read the comp plan) that each module needs its own public surface,
@@ -195,7 +195,7 @@ negotiable at the module level; they are enforced at CivicCore.
     modules.
 
 -   Common schema patterns --- modules that extend one another
-    (CivicCode → CivicLegal → CivicClerk) share conventions.
+    (CivicCode → CivicLegal → CivicMeetings) share conventions.
 
 -   API-first. Every module exposes a stable, documented API.
 
@@ -223,8 +223,8 @@ negotiable at the module level; they are enforced at CivicCore.
 
 Part II. Architecture Pattern
 
-Every module inherits the CivicRecords AI architectural template. This
-section describes the pattern so that a team building CivicClerk,
+Every module inherits the CivicSunshine architectural template. This
+section describes the pattern so that a team building CivicMeetings,
 CivicCode, or any other module has a clear reference.
 
 4\. Shared Stack
@@ -264,8 +264,8 @@ without relearning the architecture.
 -   Frontend pages mounted under /{module} in the shared React shell,
     using the shared design tokens.
 
--   Module-specific tests alongside shared test utilities. CivicRecords
-    AI\'s repo-aligned test discipline (36 test modules) is the
+-   Module-specific tests alongside shared test utilities. CivicSunshine\'s
+    repo-aligned test discipline (36 test modules) is the
     template.
 
 -   CHANGELOG and versioning per module. Modules can ship independently.
@@ -278,9 +278,9 @@ first module and never think about it again unless they are adding
 another module.
 
 This is the only change to the v3.0 spec that affects the existing
-CivicRecords AI codebase: gradually factor shared infrastructure out of
-CivicRecords AI into a CivicCore package so subsequent modules inherit
-it cleanly. This can be done without breaking the CivicRecords AI
+CivicSunshine codebase: gradually factor shared infrastructure out of
+CivicSunshine into a CivicCore package so subsequent modules inherit
+it cleanly. This can be done without breaking the CivicSunshine
 product.
 
 6.1 CivicCore responsibilities
@@ -288,7 +288,7 @@ product.
 -   Authentication, user management, RBAC --- the fastapi-users + JWT +
     service-account pattern from the v3.0 spec.
 
--   Hash-chained audit log --- the existing CivicRecords implementation,
+-   Hash-chained audit log --- the existing CivicSunshine implementation,
     promoted to core.
 
 -   LLM abstraction layer --- the existing Ollama wrapper, promoted to
@@ -322,11 +322,11 @@ product.
 
   ---------------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------------------
   **Lives in module**                                                                **Lives in CivicCore**
-  Module-specific data model (e.g., records\_requests for CivicRecords)              Shared tables: users, departments, documents, document\_chunks, audit\_log, service\_accounts, model\_registry
+  Module-specific data model (e.g., records\_requests for CivicSunshine)              Shared tables: users, departments, documents, document\_chunks, audit\_log, service\_accounts, model\_registry
   Module-specific prompts and policies                                               LLM abstraction, Ollama gateway, context budgeting
   Module-specific UI pages and components                                            Shared design tokens, layout shell, navigation, status badges
   Module-specific compliance rules (e.g., records retention for request documents)   General exemption engine, general audit chain, general RBAC
-  Module-specific connectors (e.g., Laserfiche for CivicRecords)                     Connector framework and the four-method protocol
+  Module-specific connectors (e.g., Laserfiche for CivicSunshine)                     Connector framework and the four-method protocol
   Module-specific notification templates                                             Notification service, SMTP infrastructure, delivery log
   ---------------------------------------------------------------------------------- ----------------------------------------------------------------------------------------------------------------
 
@@ -359,10 +359,10 @@ CivicCore --- Shared Platform
 **Key capabilities**
 
 -   fastapi-users auth with JWT, RBAC, and service-account federation
-    groundwork (inherited from CivicRecords AI)
+    groundwork (inherited from CivicSunshine)
 
 -   Hash-chained append-only audit log with CSV/JSON export (same
-    pattern as CivicRecords AI)
+    pattern as CivicSunshine)
 
 -   Universal connector framework with four standard operations:
     authenticate(), discover(), fetch(), health\_check()
@@ -398,7 +398,7 @@ CivicCore --- Shared Platform
 
 **AI workflows (all human-approved)**
 
--   Onboarding interview (inherited from CivicRecords AI): city profile,
+-   Onboarding interview (inherited from CivicSunshine): city profile,
     system identification, gap map
 
 -   Context assembly with token budgeting --- auto-adjusts when admin
@@ -432,10 +432,10 @@ CivicCore --- Shared Platform
 
 8\. Tier 1 --- Clerk Core
 
-CivicRecords AI --- Public Records Requests
+CivicSunshine --- Public Records Requests
 
   ------------------------ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **Module**               CivicRecords
+  **Module**               CivicSunshine
   **Primary owner**        City Clerk / Records Officer / Legal reviewer
   **Purpose**              Open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit, and (planned) public request portal. Module 1. Already shipping.
   **Tier**                 Tier 1 --- Clerk Core
@@ -520,14 +520,14 @@ CivicRecords AI --- Public Records Requests
 -   Not cloud --- every deployment is a sovereign instance owned by the
     city
 
-CivicClerk --- Meetings, Agendas, Minutes
+CivicMeetings --- Meetings, Agendas, Minutes
 
   ------------------------ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **Module**               CivicClerk
+  **Module**               CivicMeetings
   **Primary owner**        City Clerk / Council Support / City Manager\'s Office
   **Purpose**              Agenda intake, packet assembly, staff report normalization, ordinance/resolution extraction, motion and vote capture, minute drafting, searchable meeting archive, and a public meeting portal --- all with citations back to source material.
   **Tier**                 Tier 1 --- Clerk Core
-  **Depends on**           CivicCore, CivicRecords (shared document/search infrastructure)
+  **Depends on**           CivicCore, CivicSunshine (shared document/search infrastructure)
   **Why local LLM fits**   Packets contain pre-decisional deliberations, legal memos, personnel discussions, and real-estate negotiation material. Staff draft minutes from packets plus notes and transcripts. This is exactly the drafting-with-citations workflow local LLMs do well --- and cities are already replacing legacy meeting platforms (PrimeGov → Granicus OneMeeting, Boulder replaced NovusAGENDA in 2026). The replacement cycle is real.
   ------------------------ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -622,7 +622,7 @@ CivicCode --- Municipal Code & Ordinance Access
   **Primary owner**        City Clerk / Legal / Codification Department
   **Purpose**              The municipal code as a first-class product. Residents and staff ask \'what does the code say about X?\' --- this module answers, with citations to the exact ordinance section, and offers plain-English explanations alongside the authoritative legal text.
   **Tier**                 Tier 1 --- Clerk Core (CRITICAL GAP IN CURRENT SPEC)
-  **Depends on**           CivicCore, CivicClerk (ordinance adoption feeds the code)
+  **Depends on**           CivicCore, CivicMeetings (ordinance adoption feeds the code)
   **Why local LLM fits**   Municipal code Q&A is the single highest-volume civic question after \'when is trash pickup.\' Every clerk and front-desk staffer answers the same 50 questions over and over: chickens, short-term rentals, noise, parking, signs, fences, setbacks, business licenses, food trucks, garage sales, snow removal. Local LLM + RAG over the code handles this without the liability of a cloud service offering legal-sounding advice.
   ------------------------ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -656,7 +656,7 @@ CivicCode --- Municipal Code & Ordinance Access
 -   Search over administrative regulations, resolutions, and policies
     alongside the code itself
 
--   Integration with CivicClerk: when an ordinance is adopted, code is
+-   Integration with CivicMeetings: when an ordinance is adopted, code is
     marked stale until the codifier update is ingested
 
 **Source materials ingested**
@@ -687,7 +687,7 @@ CivicCode --- Municipal Code & Ordinance Access
     this also asked about\')
 
 -   Detect probable code conflicts when new ordinances are proposed
-    (CivicClerk integration)
+    (CivicMeetings integration)
 
 **Compliance & legal considerations**
 
@@ -749,7 +749,7 @@ CivicAccess --- Accessible Forms, Publishing, ADA Review
 
 **Source materials ingested**
 
--   Content authored in other modules (CivicClerk packets, CivicCode
+-   Content authored in other modules (CivicMeetings packets, CivicCode
     summaries, CivicComms releases, Civic311 notices)
 
 -   City translation memory / previously-translated content
@@ -887,7 +887,7 @@ CivicPlan --- Comprehensive Plan & Long-Range Planning Access
   **Primary owner**        Planning & Development / City Manager\'s Office
   **Purpose**              Comprehensive plans are 150-300 page documents nobody reads. Small-area plans, transportation master plans, parks plans, and sustainability plans sit on shelves. CivicPlan makes them queryable, cross-references them to zoning (CivicZone), and surfaces policy guidance for staff reports and Council decisions.
   **Tier**                 Tier 2 --- Land Use & Development (GAP IN CURRENT SPEC)
-  **Depends on**           CivicCore, CivicZone, CivicClerk
+  **Depends on**           CivicCore, CivicZone, CivicMeetings
   **Why local LLM fits**   Comp plans are exactly what RAG is for: large, structured documents with rich policy language. Cities spend tens of thousands updating them and then can\'t find the policy that applies to a specific Council decision. A local LLM that answers \'what does the comp plan say about infill in established neighborhoods?\' with citations is genuinely useful.
   ------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -904,7 +904,7 @@ CivicPlan --- Comprehensive Plan & Long-Range Planning Access
 -   Cross-references: when a zoning decision is under review, surface
     relevant comp plan policies
 
--   Staff report integration (CivicClerk): when drafting a staff report,
+-   Staff report integration (CivicMeetings): when drafting a staff report,
     surface comp plan policies that apply
 
 -   Progress tracking: policies with measurable targets can be tagged
@@ -1095,7 +1095,7 @@ CivicInspect --- Inspections Field Copilot
 
 -   Photo metadata chain of custody preserved
 
--   Evidence packets are records-ready (integrates with CivicRecords)
+-   Evidence packets are records-ready (integrates with CivicSunshine)
 
 **Scope boundaries (what this is NOT)**
 
@@ -1114,7 +1114,7 @@ CivicGrants --- Grants Intelligence & Compliance
   **Primary owner**        City Manager / Finance / Administration / Economic Development
   **Purpose**              Opportunity triage, eligibility matching, application drafting, compliance calendars, and audit-ready grant files. Small teams (often 1-3 people) carry a massive paperwork burden; local-LLM drafting with citations to grant guidance is exactly the right tool.
   **Tier**                 Tier 3 --- Administrative Expansion
-  **Depends on**           CivicCore, CivicRecords (for audit/records integration)
+  **Depends on**           CivicCore, CivicSunshine (for audit/records integration)
   **Why local LLM fits**   Federal grant award pass-throughs to SLTT were \$1.2T in FY2024. Small grants offices (often 1-3 people) struggle most with compliance tracking and opportunity research. Nothing in that workflow needs the cloud, and the data (budgets, subrecipients, personnel costs) is sensitive.
   ------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1193,7 +1193,7 @@ CivicProcure Assist --- Procurement Copilot
   **Primary owner**        Finance / Purchasing / Clerk / Legal
   **Purpose**              Draft RFPs, compare proposals, extract exceptions, generate scoring summaries, build board memos, assemble award packets. Not a full sourcing platform --- a copilot around the documents and decisions.
   **Tier**                 Tier 3 --- Administrative Expansion
-  **Depends on**           CivicCore, CivicClerk (for Council award memos), CivicContracts (post-award)
+  **Depends on**           CivicCore, CivicMeetings (for Council award memos), CivicContracts (post-award)
   **Why local LLM fits**   Procurement workloads are up; staffing is not. Proposals contain sensitive pricing and proprietary information --- exactly where cloud AI is a problem. Local-LLM comparison and scoring support is the right wedge.
   ------------------------ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1263,7 +1263,7 @@ CivicContracts --- Contract Repository & Q&A
   **Primary owner**        Clerk / Legal / Finance / Department contract managers
   **Purpose**              Central repository for every active contract with AI-assisted lookup: \'what does our janitorial contract say about holidays?\' \'When does the IT services contract expire?\' \'What are our indemnification obligations to Vendor X?\'
   **Tier**                 Tier 3 --- Administrative Expansion (GAP IN CURRENT SPEC)
-  **Depends on**           CivicCore, CivicProcure Assist (for new contracts), CivicRecords (for public access)
+  **Depends on**           CivicCore, CivicProcure Assist (for new contracts), CivicSunshine (for public access)
   **Why local LLM fits**   Contracts are typically filed as PDFs in a shared drive, if anyone can find them at all. Staff spend hours hunting for specific clauses. Local-LLM Q&A over the contract library is exactly the right use case, and contracts contain commercially sensitive pricing that can\'t go to cloud AI.
   ------------------------ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1288,7 +1288,7 @@ CivicContracts --- Contract Repository & Q&A
     contract?\'
 
 -   Integration with CivicProcure Assist (new contracts flow in on
-    award) and CivicRecords (public access requests)
+    award) and CivicSunshine (public access requests)
 
 **Source materials ingested**
 
@@ -1297,7 +1297,7 @@ CivicContracts --- Contract Repository & Q&A
 
 -   Amendments, change orders, extensions
 
--   Award memos and Council resolutions (from CivicClerk)
+-   Award memos and Council resolutions (from CivicMeetings)
 
 -   Insurance certificates and bonds
 
@@ -1316,7 +1316,7 @@ CivicContracts --- Contract Repository & Q&A
 -   Records retention schedules for contracts (often 7+ years
     post-termination)
 
--   Public records accessibility (integrates with CivicRecords)
+-   Public records accessibility (integrates with CivicSunshine)
 
 -   Insurance certificate expiration tracking
 
@@ -1336,8 +1336,8 @@ CivicBoards --- Boards & Commissions Management
   **Primary owner**        City Clerk / Board liaisons
   **Purpose**              Non-Council boards and commissions --- Planning Commission, Board of Adjustment, Historic Preservation, Parks Board, Library Board, Housing Authority, etc. Each has meetings, agendas, minutes, members, terms, and decisions that cities currently manage in spreadsheets and email.
   **Tier**                 Tier 3 --- Administrative Expansion (GAP IN CURRENT SPEC)
-  **Depends on**           CivicCore, CivicClerk
-  **Why local LLM fits**   Every city has 5-20 boards, each with its own meetings, packets, and minutes. The current spec assumes \'Council meetings\' but most cities have Planning Commission doing \~24 meetings a year plus 3-10 other bodies. CivicClerk gives them the meeting infrastructure; CivicBoards gives them member management, terms, attendance, vacancies, and applications.
+  **Depends on**           CivicCore, CivicMeetings
+  **Why local LLM fits**   Every city has 5-20 boards, each with its own meetings, packets, and minutes. The current spec assumes \'Council meetings\' but most cities have Planning Commission doing \~24 meetings a year plus 3-10 other bodies. CivicMeetings gives them the meeting infrastructure; CivicBoards gives them member management, terms, attendance, vacancies, and applications.
   ------------------------ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 **Key capabilities**
@@ -1353,7 +1353,7 @@ CivicBoards --- Boards & Commissions Management
 -   Application portal for open seats (integrates with CivicAccess for
     accessible forms)
 
--   Attendance tracking per meeting (integrates with CivicClerk)
+-   Attendance tracking per meeting (integrates with CivicMeetings)
 
 -   Annual reporting and evaluation workflows
 
@@ -1361,7 +1361,7 @@ CivicBoards --- Boards & Commissions Management
 
 -   Ethics and disclosure tracking (if required by the city)
 
--   Meeting workflows inherited from CivicClerk per-board
+-   Meeting workflows inherited from CivicMeetings per-board
 
 **Source materials ingested**
 
@@ -1369,7 +1369,7 @@ CivicBoards --- Boards & Commissions Management
 
 -   Appointment records
 
--   Meeting records (from CivicClerk)
+-   Meeting records (from CivicMeetings)
 
 -   Applications for board seats
 
@@ -1407,7 +1407,7 @@ CivicNotice --- Public & Statutory Notice Publication
   **Primary owner**        City Clerk / Communications
   **Purpose**              Public hearings, legal notices, bid notices, vacancy notices, and statutory publications all have deadlines, format requirements, and publication channels. CivicNotice is the compliance-aware workflow that ensures every notice is posted correctly, on time, through the right channels.
   **Tier**                 Tier 3 --- Administrative Expansion (GAP IN CURRENT SPEC)
-  **Depends on**           CivicCore, CivicAccess (for accessible posting), CivicClerk (hearing notices), CivicProcure (bid notices), CivicBoards (vacancy notices)
+  **Depends on**           CivicCore, CivicAccess (for accessible posting), CivicMeetings (hearing notices), CivicProcure (bid notices), CivicBoards (vacancy notices)
   **Why local LLM fits**   Missing a statutory notice deadline can void an ordinance, delay a project for months, or trigger litigation. Most cities track this in a clerk\'s notebook. A compliance-aware workflow with AI-drafted notices and verified publication timing prevents expensive mistakes.
   ------------------------ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1532,7 +1532,7 @@ Civic311 --- Resident Service Requests
 -   Complaint anonymity where policy requires
 
 -   Public records obligations (requests become records; integrate with
-    CivicRecords)
+    CivicSunshine)
 
 **Scope boundaries (what this is NOT)**
 
@@ -1550,14 +1550,14 @@ CivicComms --- Public Explainers & Communications Copilot
   **Primary owner**        Clerk / Communications / Administration / Mayor & Manager\'s Office
   **Purpose**              Source-backed public explainers. Meeting summary drafts. Ordinance plain-English summaries. Newsletter drafting. FAQ generation from source documents. Multilingual public notice variants.
   **Tier**                 Tier 4 --- Operations
-  **Depends on**           CivicCore, CivicClerk, CivicCode, CivicAccess
+  **Depends on**           CivicCore, CivicMeetings, CivicCode, CivicAccess
   **Why local LLM fits**   Every city struggles to translate government into human language. CivicComms drafts from the city\'s own source material with citations --- never invents facts, always human-approved before publish.
   ------------------------ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 **Key capabilities**
 
 -   Meeting summary drafts for public distribution (pulls from
-    CivicClerk minutes and packets)
+    CivicMeetings minutes and packets)
 
 -   Ordinance and resolution plain-English summaries (pulls from
     CivicCode)
@@ -1578,7 +1578,7 @@ CivicComms --- Public Explainers & Communications Copilot
 
 **Source materials ingested**
 
--   Meeting minutes and packets (CivicClerk)
+-   Meeting minutes and packets (CivicMeetings)
 
 -   Ordinances and resolutions (CivicCode)
 
@@ -1639,7 +1639,7 @@ CivicData Bridge --- Open Data & Transparency Publishing
 -   Transparency dashboard templates (budget transparency, procurement
     transparency, etc.)
 
--   PII redaction pass before publication (integrates with CivicRecords
+-   PII redaction pass before publication (integrates with CivicSunshine
     exemption engine)
 
 **Source materials ingested**
@@ -1677,7 +1677,7 @@ CivicRegWatch --- Federal Regulatory Intelligence
   **Primary owner**       City Manager / Legal / Clerk
   **Purpose**             Monitor public federal regulatory activity and surface human-reviewable alerts for rules, proposed rules, guidance, deadlines, and funding changes that may affect city operations.
   **Tier**                Tier 4 --- Operations
-  **Depends on**          CivicCore; optional CivicLegal and CivicClerk escalation contracts
+  **Depends on**          CivicCore; optional CivicLegal and CivicMeetings escalation contracts
   **Status**              Planned. Detailed implementation contract: `specs/05_civicregwatch.md`.
   **Boundary**            Intelligence layer only. It does not make compliance determinations, replace legal review, scrape websites, or auto-act on behalf of the city.
   ----------------------- --------------------------------------------------------------------------------------------------------------------------------
@@ -1774,7 +1774,7 @@ CivicBudget Assist --- Budget Narratives & Transparency
   **Primary owner**        Finance / City Manager / Department budget leads
   **Purpose**              Budget memo drafting, departmental budget narrative generation, line-item analysis, hearing packet prep. Not a budgeting tool --- a drafting copilot alongside the city\'s ERP.
   **Tier**                 Tier 5 --- Internal Business
-  **Depends on**           CivicCore, CivicClerk (for Council packets), CivicData (for transparency publishing)
+  **Depends on**           CivicCore, CivicMeetings (for Council packets), CivicData (for transparency publishing)
   **Why local LLM fits**   Budget documents are long, structured, and repetitive year-over-year. A local-LLM that drafts narratives from prior-year documents and current-year line items is a huge time-saver and keeps sensitive comp and position data local.
   ------------------------ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1788,7 +1788,7 @@ CivicBudget Assist --- Budget Narratives & Transparency
 
 -   Capital Improvement Plan (CIP) integration with CivicPlan
 
--   Budget hearing packet prep (via CivicClerk)
+-   Budget hearing packet prep (via CivicMeetings)
 
 -   Budget transparency publishing (via CivicData)
 
@@ -1842,7 +1842,7 @@ CivicLegal Research --- Internal Legal Q&A Over City Documents
   **Primary owner**        City Attorney / Paralegal / Clerk
   **Purpose**              Q&A over the city\'s own legal corpus: ordinances, resolutions, contracts, past legal opinions, litigation history, statutory references, prior Council actions. Not a replacement for Westlaw/Lexis --- a copilot for the city\'s own record.
   **Tier**                 Tier 5 --- Internal Business (GAP IN CURRENT SPEC)
-  **Depends on**           CivicCore, CivicCode, CivicClerk, CivicContracts
+  **Depends on**           CivicCore, CivicCode, CivicMeetings, CivicContracts
   **Why local LLM fits**   City attorneys ask \'when did we last consider this?\' or \'what did the prior Council decide?\' or \'do we have a policy on this?\' --- and currently it\'s an email to the clerk. Local-LLM over the city\'s own record with citations is exactly the right shape. Cloud AI sees confidential legal strategy, which is a non-starter.
   ------------------------ -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1872,7 +1872,7 @@ CivicLegal Research --- Internal Legal Q&A Over City Documents
 
 -   Municipal code, ordinances, resolutions (from CivicCode)
 
--   Council minutes and packets (from CivicClerk)
+-   Council minutes and packets (from CivicMeetings)
 
 -   Contracts (from CivicContracts)
 
@@ -2115,7 +2115,7 @@ CivicSafety Assist --- Non-CJIS Admin Functions
   **Purpose**              Policy and procedure Q&A, non-CJIS administrative workflows, public information officer support. Explicitly excludes any CJIS-bound data.
   **Tier**                 Tier 6 --- Specialized (deploy last, isolated)
   **Depends on**           CivicCore in an isolated deployment profile with CJIS gate enforced
-  **Why local LLM fits**   Public safety data is CJIS-regulated. The CivicRecords architecture already has a CJIS gate. CivicSafety Assist stays strictly on the non-CJIS side: SOPs, policies, public communications, training records that don\'t touch CJI.
+  **Why local LLM fits**   Public safety data is CJIS-regulated. The CivicSunshine architecture already has a CJIS gate. CivicSafety Assist stays strictly on the non-CJIS side: SOPs, policies, public communications, training records that don\'t touch CJI.
   ------------------------ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 **Key capabilities**
@@ -2126,7 +2126,7 @@ CivicSafety Assist --- Non-CJIS Admin Functions
 
 -   Public information officer drafting support
 
--   Non-CJI records-request assistance (via CivicRecords)
+-   Non-CJI records-request assistance (via CivicSunshine)
 
 -   Body-worn camera retention metadata (no video AI)
 
@@ -2290,18 +2290,18 @@ them to replace systems of record.
 
 Phase 1 --- Establish the sovereign municipal platform (Clerk Core)
 
-1.  CivicCore --- factor out from CivicRecords AI codebase; no
+1.  CivicCore --- factor out from CivicSunshine codebase; no
     user-visible product.
 
-2.  CivicRecords AI --- continue current trajectory per v3.0 spec;
+2.  CivicSunshine --- continue current trajectory per v3.0 spec;
     finish notifications SMTP, reconcile version drift, finish public
     portal.
 
-3.  CivicClerk --- agendas, packets, minutes, meeting archive. Strongest
-    adjacency to CivicRecords.
+3.  CivicMeetings --- agendas, packets, minutes, meeting archive. Strongest
+    adjacency to CivicSunshine.
 
 4.  CivicCode --- municipal code Q&A. Fills the biggest gap in the
-    current spec. Shares ordinance data with CivicClerk.
+    current spec. Shares ordinance data with CivicMeetings.
 
 5.  CivicAccess --- accessibility review, plain language, multilingual.
     Feeds every subsequent module.
@@ -2385,7 +2385,7 @@ Phase 4 --- Internal business and specialized
 
   ---------------------- ---------------------------------------------------------------------------------------------------------------- -----------------------------------------------------------
   **Tier**               **Modules**                                                                                                      **Target city**
-  Clerk Core             CivicCore + CivicRecords + CivicClerk + CivicCode + CivicAccess                                                  Any city. The strongest initial \'city operating stack.\'
+  Clerk Core             CivicCore + CivicSunshine + CivicMeetings + CivicCode + CivicAccess                                                  Any city. The strongest initial \'city operating stack.\'
   Land Use Add-on        \+ CivicZone + CivicPlan + CivicPermit Assist + CivicInspect                                                     Cities with meaningful development activity.
   Administrative Suite   \+ CivicGrants + CivicProcure + CivicContracts + CivicBoards + CivicNotice + Civic311 + CivicComms + CivicData + CivicRegWatch + CivicAPI   Cities growing beyond the clerk core.
   Internal Business      \+ CivicHR + CivicBudget + CivicLegal + CivicElections                                                           Cities with internal staff capacity for these tools.
@@ -2487,7 +2487,7 @@ integrations are expected over time, in priority order:
   **Category**          **Incumbent systems**                                     **Integration mode**
   Document management   Laserfiche, OnBase, SharePoint, Google Drive              Read (via REST or SMB); primary ingest source
   Email                 Microsoft 365, Google Workspace                           IMAP journal read; primary source for records requests
-  Meeting platforms     Granicus, Legistar, PrimeGov (legacy)                     Import for historical packets; CivicClerk replaces ongoing
+  Meeting platforms     Granicus, Legistar, PrimeGov (legacy)                     Import for historical packets; CivicMeetings replaces ongoing
   Codifier              Municode, American Legal, Code Publishing, General Code   Read (XML or web); CivicCode stays alongside
   GIS                   Esri ArcGIS, open-source GIS                              Read (REST or GeoJSON); critical for CivicZone and Civic311
   Permitting            Tyler EnerGov, Accela, CityWorks                          Read (mirror status); CivicPermit Assist sits on top
@@ -2508,11 +2508,11 @@ metaphor, and \'AI\' distinguishes the product from generic municipal
 SaaS in every search result and procurement document.
 
 Module naming convention: \'Civic\' + capability. Keep one word where
-possible (CivicClerk, CivicCode, CivicZone, CivicGrants). Two-word names
+possible (CivicMeetings, CivicCode, CivicZone, CivicGrants). Two-word names
 only where disambiguation requires (Civic311, CivicCourt Assist,
 CivicData Bridge). Never more than two words.
 
-CivicRecords AI retains its current name (no hyphen removal, \'AI\'
+CivicSunshine AI retains its current name (no hyphen removal, \'AI\'
 suffix kept) to preserve continuity with the v3.0 spec and the existing
 repository. Subsequent modules drop the \'AI\' suffix because it is
 redundant once the suite identity is established --- \'CivicSuite AI\'
@@ -2520,7 +2520,7 @@ carries it.
 
 Appendix B. Mapping Current Spec Features → Modules
 
-Where does each feature in the current CivicRecords AI repo belong in
+Where does each feature in the current CivicSunshine repo belong in
 the suite model? This mapping is not a rewrite plan --- it is a guide
 for factoring shared infrastructure into CivicCore incrementally over
 time.
@@ -2535,13 +2535,13 @@ time.
   Notification service and templates                                        CivicCore
   Connector framework (authenticate/discover/fetch/health\_check)           CivicCore
   Onboarding wizard, city profile, municipal systems catalog                CivicCore
-  50-state exemption rules engine                                           CivicCore (so CivicLegal, CivicContracts, CivicRecords all inherit)
-  Request lifecycle, queue, detail, workflow transitions                    CivicRecords AI (module-specific)
-  Response letter generation with templates                                 CivicRecords AI (module-specific)
-  Fee tracking, fee schedules, fee line items, waivers                      CivicRecords AI (module-specific)
-  Exemption dashboard (accuracy, export)                                    CivicRecords AI (module-specific, using CivicCore engine)
-  Tiered redaction engine (when built)                                      CivicCore (shared across CivicRecords, CivicLegal, CivicData Bridge)
-  Public request portal (when built)                                        CivicRecords AI (module-specific) + shared resident portal shell in CivicCore
+  50-state exemption rules engine                                           CivicCore (so CivicLegal, CivicContracts, CivicSunshine all inherit)
+  Request lifecycle, queue, detail, workflow transitions                    CivicSunshine (module-specific)
+  Response letter generation with templates                                 CivicSunshine (module-specific)
+  Fee tracking, fee schedules, fee line items, waivers                      CivicSunshine (module-specific)
+  Exemption dashboard (accuracy, export)                                    CivicSunshine (module-specific, using CivicCore engine)
+  Tiered redaction engine (when built)                                      CivicCore (shared across CivicSunshine, CivicLegal, CivicData Bridge)
+  Public request portal (when built)                                        CivicSunshine (module-specific) + shared resident portal shell in CivicCore
   ------------------------------------------------------------------------- -------------------------------------------------------------------------------
 
 Appendix C. Prompt Library Governance
@@ -2584,8 +2584,8 @@ module, not per suite.
 Appendix E. Bottom-Line Recommendation
 
 Build CivicSuite AI as an open-source, Apache-2.0-licensed, airgappable,
-local-LLM municipal suite with CivicRecords AI as Module 1 and the
-following four modules as the Clerk Core: CivicClerk, CivicCode,
+local-LLM municipal suite with CivicSunshine as Module 1 and the
+following four modules as the Clerk Core: CivicMeetings, CivicCode,
 CivicAccess, and CivicCore as the shared platform underneath. Then
 expand into CivicZone, CivicPlan, CivicGrants, and CivicProcure. That
 gives you a coherent \'day-to-day city operations\' platform without the
@@ -2596,11 +2596,11 @@ The v3.0 spec is a strong Module 1 specification. It is not a suite
 specification. Promoting its shared infrastructure into CivicCore,
 filling the CivicCode and CivicZone gaps with purpose-built modules, and
 adopting the consistent module anatomy described here converts
-\'CivicRecords AI\' into \'CivicSuite AI, with CivicRecords AI as Module
+\'CivicSunshine AI\' into \'CivicSuite AI, with CivicSunshine AI as Module
 1\' --- with almost no changes to the existing code, just a packaging
 and architecture refactor that can happen incrementally.
 
 The strongest near-term move: author a short CivicCore v0.1 spec that
-identifies which files move out of the CivicRecords AI repo and into a
-shared package, ship it as a non-breaking refactor, and begin CivicClerk
+identifies which files move out of the CivicSunshine repo and into a
+shared package, ship it as a non-breaking refactor, and begin CivicMeetings
 and CivicCode on top of it in parallel.

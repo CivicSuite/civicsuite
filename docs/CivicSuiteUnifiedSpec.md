@@ -1,6 +1,6 @@
 # CivicSuite Unified Specification
 
-**Canonical suite specification for CivicSuite, CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicRegWatch, CivicAPI, and future modules**
+**Canonical suite specification for CivicSuite, CivicCore, CivicSunshine, CivicMeetings, CivicZone, CivicRegWatch, CivicAPI, and future modules**
 
 Spec revision: 1.1  
 Status: Canonical planning specification (architectural intent only; STATUS.md is current-shipped truth)  
@@ -11,7 +11,7 @@ Preserves: Feature, workflow, schema, prompt, testing, and product requirements 
 
 ---
 
-> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
+> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicSunshine v1.7.3, CivicMeetings v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
 
 ---
 
@@ -164,7 +164,7 @@ Every module inherits these rules.
 
 ## 5. Standard Module Architecture
 
-Every runtime module follows the CivicRecords AI pattern unless an ADR explicitly overrides it.
+Every runtime module follows the CivicSunshine pattern unless an ADR explicitly overrides it.
 
 ### 5.1 Backend
 
@@ -246,8 +246,8 @@ Current shipped CivicCore v1.1.0 includes:
 - Notice deadline and compliance helpers
 - Cron schedule validation and next-run helpers
 - Connector host validation, startup config validation, encrypted JSON envelope helpers, and release-provenance verification
-- Live-sync retry/circuit primitives shared by CivicRecords AI and CivicClerk
-- Reusable vendor-delta planning and mock-city vendor, municipal IdP, and backup-retention contracts shared by CivicRecords AI, CivicClerk, and future modules
+- Live-sync retry/circuit primitives shared by CivicSunshine and CivicMeetings
+- Reusable vendor-delta planning and mock-city vendor, municipal IdP, and backup-retention contracts shared by CivicSunshine, CivicMeetings, and future modules
 
 ### 6.2 Planned Extractions
 
@@ -280,28 +280,28 @@ Purpose: shared infrastructure layer for every module. CivicCore owns the common
 
 ### Tier 1 - Clerk Core
 
-#### CivicRecords
+#### CivicSunshine
 
 Owner: City Clerk / Records Officer / Legal reviewer  
 Depends on: CivicCore  
 Status: v1.7.3 developer-preview release car shipped on CivicCore v1.2.0 with shared-ingestion consumption and release-asset convention bring-up. B2 Docker secret extraction shipped in v1.6.0 and the ingestion worker event-loop patch shipped in v1.6.1.
 Purpose: open-records intake, workflow, search, exemption review, response drafting, fee tracking, audit trail, and planned public request portal.
 
-#### CivicClerk
+#### CivicMeetings
 
 Owner: City Clerk / Council Support / City Manager's Office  
-Depends on: CivicCore. Optional integration with CivicRecords for records-search visibility.  
+Depends on: CivicCore. Optional integration with CivicSunshine for records-search visibility.  
 Status: v1.0.4 city-core release car shipped on CivicCore v1.2.0; anonymous staff writes are denied by default.
 Purpose: agenda intake, packet assembly, staff report normalization, notice compliance, motion/vote capture, minute drafting, ordinance/resolution extraction, searchable meeting archive, and public meeting portal.
 
-Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicRecords integration remains optional.
+Dependency note: older catalog text listed CivicRecords because shared document/search infrastructure was still inside CivicRecords. The corrected dependency is CivicCore once that infrastructure is extracted; CivicSunshine integration remains optional.
 
 #### CivicCode
 
 Owner: City Clerk / Legal / Codification Department  
-Depends on: CivicCore, CivicClerk  
+Depends on: CivicCore, CivicMeetings  
 Status: v1.0.8 city-core release car on CivicCore v1.2.0; supersedes the earlier v1.0.0 posture.
-Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicClerk feeds adopted ordinance/resolution events into CivicCode.
+Purpose: municipal code as a first-class product. Residents and staff ask what the code says about a topic and receive cited answers tied to authoritative code sections. CivicMeetings feeds adopted ordinance/resolution events into CivicCode.
 
 #### CivicAccess
 
@@ -322,7 +322,7 @@ Purpose: parcel-aware zoning and land-use Q&A. Residents ask what zone a propert
 #### CivicPlan
 
 Owner: Planning & Development / City Manager's Office  
-Depends on: CivicCore, CivicZone, CivicClerk  
+Depends on: CivicCore, CivicZone, CivicMeetings  
 Status: v0.2.2 no-functional-upgrade demotion label; queued for Tier 2 real work.
 Purpose: comprehensive plans, small-area plans, transportation plans, parks plans, and sustainability plans become searchable, cited, and usable in staff analysis.
 
@@ -345,35 +345,35 @@ Purpose: inspection assistant for photo/voice-to-report drafting, repeat-case lo
 #### CivicGrants
 
 Owner: City Manager / Finance / Administration / Economic Development  
-Depends on: CivicCore, CivicRecords  
+Depends on: CivicCore, CivicSunshine  
 Status: demoted recovery label v0.2.0; false v1.0.0 tag created against the recovery halt.
 Purpose: opportunity triage, eligibility matching, application drafting, compliance calendars, and audit-ready grant files.
 
 #### CivicProcure
 
 Owner: Finance / Purchasing / Clerk / Legal  
-Depends on: CivicCore, CivicClerk, CivicContracts  
+Depends on: CivicCore, CivicMeetings, CivicContracts  
 Status: demoted recovery label v0.2.0; false v1.0.0 tag created against the recovery halt.
 Purpose: RFP drafting, proposal comparison, exception extraction, scoring summaries, board memos, and award packets.
 
 #### CivicContracts
 
 Owner: Clerk / Legal / Finance / Department contract managers  
-Depends on: CivicCore, CivicProcure, CivicRecords  
+Depends on: CivicCore, CivicProcure, CivicSunshine  
 Status: foundation surface; not v1.0 product-ready.  
 Purpose: central contract repository with clause Q&A, expiration tracking, renewal visibility, and public-records-aware exports.
 
 #### CivicBoards
 
 Owner: City Clerk / Board liaisons  
-Depends on: CivicCore, CivicClerk  
+Depends on: CivicCore, CivicMeetings  
 Status: foundation surface; not v1.0 product-ready.  
 Purpose: non-Council boards and commissions: members, terms, vacancies, attendance, agendas, packets, minutes, and public notices.
 
 #### CivicNotice
 
 Owner: City Clerk / Communications  
-Depends on: CivicCore, CivicAccess, CivicClerk, CivicProcure, CivicBoards  
+Depends on: CivicCore, CivicAccess, CivicMeetings, CivicProcure, CivicBoards  
 Status: foundation surface; not v1.0 product-ready.  
 Purpose: compliance workflow for public hearings, legal notices, bid notices, vacancies, and statutory publication deadlines.
 
@@ -389,7 +389,7 @@ Purpose: resident service request intake with AI triage, deduplication, routing,
 #### CivicComms
 
 Owner: Clerk / Communications / Administration / Mayor & Manager's Office  
-Depends on: CivicCore, CivicClerk, CivicCode, CivicAccess  
+Depends on: CivicCore, CivicMeetings, CivicCode, CivicAccess  
 Status: foundation surface; not v1.0 product-ready.  
 Purpose: source-backed public explainers, meeting summaries, ordinance summaries, newsletters, FAQ generation, and multilingual public notices.
 
@@ -403,7 +403,7 @@ Purpose: municipal system normalization, open-data-ready packages, searchable ar
 #### CivicRegWatch
 
 Owner: City Manager / City Attorney / Department heads
-Depends on: CivicCore. Optional escalation targets: CivicLegal and CivicClerk.
+Depends on: CivicCore. Optional escalation targets: CivicLegal and CivicMeetings.
 Status: planned foundation module; detailed implementation spec in `specs/05_civicregwatch.md`
 Purpose: federal regulatory intelligence for municipal operators. CivicRegWatch monitors documented public federal APIs, narrows new regulatory activity to city-relevant domains, and creates human-reviewable alerts with deadlines, domains, source hashes, and escalation paths. It is not a compliance system and never emits legal opinions or automatic actions.
 
@@ -426,14 +426,14 @@ Purpose: personnel policy Q&A, job description drafting, onboarding packet gener
 #### CivicBudget
 
 Owner: Finance / City Manager / Department budget leads  
-Depends on: CivicCore, CivicClerk, CivicData  
+Depends on: CivicCore, CivicMeetings, CivicData  
 Status: foundation surface; not v1.0 product-ready.  
 Purpose: budget memo drafting, departmental budget narratives, line-item analysis, and hearing packet prep. Not a budgeting system.
 
 #### CivicLegal
 
 Owner: City Attorney / Paralegal / Clerk  
-Depends on: CivicCore, CivicCode, CivicClerk, CivicContracts  
+Depends on: CivicCore, CivicCode, CivicMeetings, CivicContracts  
 Status: foundation surface; not v1.0 product-ready.  
 Purpose: Q&A over the city's own legal corpus, including ordinances, resolutions, contracts, legal opinions, litigation history, statutes, and prior Council actions.
 
@@ -481,9 +481,9 @@ Depends on: CivicCore, Civic311
 Status: foundation surface; not v1.0 product-ready.
 Purpose: parks/facility/program Q&A, registration-link assistance, policy lookup, maintenance request triage, and resident-facing parks information. Explicitly excludes payment processing, registration writes, participant records, reservation writes, crew dispatch, live LLM calls, and connector runtime.
 
-## 8. CivicRecords Canonical Scope
+## 8. CivicSunshine Canonical Scope
 
-CivicRecords is Module 1 and the architectural template.
+CivicSunshine is Module 1 and the architectural template.
 
 ### 8.1 Product Promise
 
@@ -533,17 +533,17 @@ Canonical lifecycle:
 - Federation workflows where appropriate
 - Accessibility fixes from the v3.0 audit: touch targets, focus visibility, skip navigation, non-color-only badges, keyboard completion, form-error focus, screen-reader validation
 
-## 9. CivicClerk Canonical Scope
+## 9. CivicMeetings Canonical Scope
 
-CivicClerk is Module 2. Current release truth is CivicClerk v1.0.4 with the protected-default staff-auth recovery line retained; current shipped CivicCore compatibility remains recorded in the compatibility matrix and installer metadata. The canonical scope below describes the product target that must be proven before any city-deployable clerk-core claim.
+CivicMeetings is Module 2. Current release truth is CivicMeetings v1.0.4 with the protected-default staff-auth recovery line retained; current shipped CivicCore compatibility remains recorded in the compatibility matrix and installer metadata. The canonical scope below describes the product target that must be proven before any city-deployable clerk-core claim.
 
 ### 9.1 Product Promise
 
-CivicClerk replaces brittle meeting-management workflows with a clerk-first, locally deployed system for agendas, packets, minutes, voting, notices, and public meeting records. It is citation-grounded and sunshine-law aware.
+CivicMeetings replaces brittle meeting-management workflows with a clerk-first, locally deployed system for agendas, packets, minutes, voting, notices, and public meeting records. It is citation-grounded and sunshine-law aware.
 
-### 9.2 The Nine CivicClerk Functions
+### 9.2 The Nine CivicMeetings Functions
 
-CivicClerk covers:
+CivicMeetings covers:
 
 1. Agenda item intake
 2. Packet assembly
@@ -555,7 +555,7 @@ CivicClerk covers:
 8. Meeting archive search across packets/minutes/transcripts
 9. Public meeting portal with accessible posting
 
-### 9.3 CivicClerk Does Not
+### 9.3 CivicMeetings Does Not
 
 - Replace the clerk.
 - Make legal compliance determinations without human review.
@@ -622,9 +622,9 @@ Additional paths:
 - Searchable meeting archive.
 - Accessible posting and plain-language summaries where approved.
 
-### 9.10 CivicClerk Data Model
+### 9.10 CivicMeetings Data Model
 
-CivicClerk introduces module-specific tables in the `civicclerk` schema. The runtime implementation should use this list as the starting point and must document any ADR-approved deviation.
+CivicMeetings introduces module-specific tables in the `civicclerk` schema. The runtime implementation should use this list as the starting point and must document any ADR-approved deviation.
 
 Canonical tables:
 
@@ -651,9 +651,9 @@ Required cross-cutting properties:
 - Document references into CivicCore document tables once those tables are fully extracted.
 - Permission-aware archive search.
 
-### 9.11 CivicClerk Prompt Library
+### 9.11 CivicMeetings Prompt Library
 
-CivicClerk prompts ship as versioned YAML. Minimum prompt set:
+CivicMeetings prompts ship as versioned YAML. Minimum prompt set:
 
 - Agenda item summary
 - Staff report normalizer
@@ -667,9 +667,9 @@ CivicClerk prompts ship as versioned YAML. Minimum prompt set:
 
 Public-facing output prompts require clerk and attorney approval before deployment.
 
-### 9.12 CivicClerk REST/API Scope
+### 9.12 CivicMeetings REST/API Scope
 
-The CivicClerk module spec designs approximately 25 endpoints. Implementation should cover:
+The CivicMeetings module spec designs approximately 25 endpoints. Implementation should cover:
 
 - Meeting bodies
 - Meetings
@@ -687,9 +687,9 @@ The CivicClerk module spec designs approximately 25 endpoints. Implementation sh
 - Archive search
 - Admin prompt/config surfaces
 
-### 9.13 CivicClerk Frontend Scope
+### 9.13 CivicMeetings Frontend Scope
 
-The CivicClerk module spec designs approximately 20 pages. Runtime planning should include:
+The CivicMeetings module spec designs approximately 20 pages. Runtime planning should include:
 
 - Staff dashboard
 - Meeting calendar
@@ -712,7 +712,7 @@ The CivicClerk module spec designs approximately 20 pages. Runtime planning shou
 - Prompt library admin
 - Connector/import admin
 
-### 9.14 CivicClerk Integrations
+### 9.14 CivicMeetings Integrations
 
 Priority integrations:
 
@@ -721,10 +721,10 @@ Priority integrations:
 - Caption/transcript ingest
 - City website CMS posting
 - CivicCode handoff API for adopted ordinances/resolutions
-- CivicRecords search integration
+- CivicSunshine search integration
 - Codification-system export where CivicCode is absent
 
-### 9.15 CivicClerk Test Matrix
+### 9.15 CivicMeetings Test Matrix
 
 Required test areas:
 
@@ -799,7 +799,7 @@ Priority integrations:
 - Esri ArcGIS REST Feature Service
 - GeoJSON fallback for offline/non-Esri cities
 - CivicCode internal API for authoritative code text
-- CivicClerk internal API for variance/CUP hearing minutes as staff-only precedent context
+- CivicMeetings internal API for variance/CUP hearing minutes as staff-only precedent context
 - CivicPlan internal API for comprehensive-plan policy context
 - CivicAccess internal API for plain-language rewrites
 - County assessor data import
@@ -832,7 +832,7 @@ Purpose:
 - Authoritative municipal code store.
 - Cited code Q&A for staff and residents.
 - Plain-language explanations alongside authoritative text.
-- Ordinance adoption feed from CivicClerk.
+- Ordinance adoption feed from CivicMeetings.
 - Amendment/version history.
 - Section resolution service for CivicZone, CivicLegal, CivicAccess, and CivicComms.
 
@@ -866,8 +866,8 @@ The old CivicRecords-only "public portal" concept is too narrow.
 
 Each module needs its own public surface, unified by a shared resident portal shell:
 
-- Request a record: CivicRecords
-- Find a meeting: CivicClerk
+- Request a record: CivicSunshine
+- Find a meeting: CivicMeetings
 - Read code: CivicCode
 - Ask zoning questions: CivicZone
 - Submit service request: Civic311
@@ -878,7 +878,7 @@ The resident portal should not become a forced monolith. It is a shell and routi
 
 ## 14. Universal Discovery And Municipal Systems Catalog
 
-The CivicRecords discovery architecture is a suite-level asset, not merely a records feature.
+The CivicSunshine discovery architecture is a suite-level asset, not merely a records feature.
 
 The Municipal Systems Catalog should become:
 
@@ -1002,9 +1002,9 @@ As of 2026-05-10, current shipped/recovery truth lives in these single sources:
 
 This section previously enumerated per-module shipping prose. That prose drifted faster than the spec could be edited and conflicted with recovery framing. It is replaced by this compact recovery table. Any per-module shipping claim in section 6.1, section 7, or sections 11-12 must be cross-checked against STATUS.md before it is repeated externally.
 
-As of 2026-05-21, the clerk-core installer evidence includes installed-stack workflow proof for CivicRecords AI request/search-surface/review/response handling and CivicClerk agenda/packet/minutes/vote/notice/archive handling. That proof is starter-profile lifecycle evidence only; it does not supersede queued per-module release gates and does not prove live cross-module records exchange. `installer-clerk-core-v0.1.0` is the current public-use starter release after release-lockstep, suite verification, installer verification, docs verification, release-gate audit, and main CI passed. The release is bounded to CivicCore, CivicRecords AI, CivicClerk, and the `clerk-core` installer profile; it does not create a full-suite, procurement, production hosting, airgap, city-ready full-suite, or macOS lifecycle certification claim.
+As of 2026-05-21, the clerk-core installer evidence includes installed-stack workflow proof for CivicSunshine AI request/search-surface/review/response handling and CivicClerk agenda/packet/minutes/vote/notice/archive handling. That proof is starter-profile lifecycle evidence only; it does not supersede queued per-module release gates and does not prove live cross-module records exchange. `installer-clerk-core-v0.1.0` is the current public-use starter release after release-lockstep, suite verification, installer verification, docs verification, release-gate audit, and main CI passed. The release is bounded to CivicCore, CivicSunshine AI, CivicClerk, and the `clerk-core` installer profile; it does not create a full-suite, procurement, production hosting, airgap, city-ready full-suite, or macOS lifecycle certification claim.
 
-As of 2026-06-13, the city-core profile has implementation evidence for non-technical Windows and Linux installability with CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8. The vendored-source installer artifacts remain installer version `0.1.2`; the evidence covers one-click wrapper smoke, the local suite launcher, Guided/Manual Docker prerequisite setup paths, Linux Docker signed-repository bootstrap where supported, first-run wizard smoke, first-run browser QA, 60 GB cleanroom hygiene, local Windows/Linux matching-host lifecycle runs, green PR CI, and audit-full with zero unresolved Blocker or Critical findings under `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks; exact volatile run IDs are recorded in the PR body and run evidence. CivicClerk v1.0.4 supersedes v1.0.3 as the clerk package/source truth, but the honest suite state remains beta-ready truth-reconciled. This does not create public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or a full-suite release claim.
+As of 2026-06-13, the city-core profile has implementation evidence for non-technical Windows and Linux installability with CivicCore v1.2.0, CivicSunshine AI v1.7.3, CivicClerk v1.0.4, and CivicCode v1.0.8. The vendored-source installer artifacts remain installer version `0.1.2`; the evidence covers one-click wrapper smoke, the local suite launcher, Guided/Manual Docker prerequisite setup paths, Linux Docker signed-repository bootstrap where supported, first-run wizard smoke, first-run browser QA, 60 GB cleanroom hygiene, local Windows/Linux matching-host lifecycle runs, green PR CI, and audit-full with zero unresolved Blocker or Critical findings under `C:\dev\Claude\CivicSuite-city-core-caboose-item1\.agent-runs\2026-05-26-city-core-non-technical-installable\`. PR #183 has green verify, release-lockstep-gate, and installer-cleanroom checks; exact volatile run IDs are recorded in the PR body and run evidence. CivicClerk v1.0.4 supersedes v1.0.3 as the clerk package/source truth, but the honest suite state remains beta-ready truth-reconciled. This does not create public-use readiness, city-ready status, procurement readiness, production readiness, macOS lifecycle certification, or a full-suite release claim.
 
 As of 2026-05-27, `installer/modules.json` is also the source-of-truth for city-core vendored-source commit pins. The installer generator must verify each local sibling checkout against that module's `source_commit` before packaging, and the lifecycle runner must verify bundled source through `SOURCE_COMMIT.txt` or a git HEAD match before use. This makes the vendored-source model reproducible without switching to published wheels. The operator trust path is live regenerated artifact evidence: generated `SHA256SUMS` or release-manifest hashes for the installer package, `source_commit` verification for vendored source, and published module hashes/attestations where applicable. Old committed `installer/dist` artifacts are not canonical unless Scott explicitly confirms restoration.
 
@@ -1041,8 +1041,8 @@ Parallel CivicCore work should extract only the shared capabilities needed by th
 
 These are not blockers to this spec, but they require explicit ADRs before implementation choices harden:
 
-- Exact CivicClerk MVP table list if reduced from the canonical table set.
-- Whether CivicClerk v0.1 includes public comments.
+- Exact CivicMeetings MVP table list if reduced from the canonical table set.
+- Whether CivicMeetings v0.1 includes public comments.
 - Whether transcription is v0.1 or v0.2.
 - Post-foundation module depth and integration sequencing after the v0.1.1 civiccore alignment lane.
 - Shared resident portal shell boundaries.
@@ -1051,7 +1051,7 @@ These are not blockers to this spec, but they require explicit ADRs before imple
 - Prompt-library repository strategy.
 - Data-release strategy for state statutory rules.
 - CivicRegWatch polling-source terms, rate-limit floors, and source disablement policy.
-- CivicRegWatch escalation contract into CivicLegal and CivicClerk.
+- CivicRegWatch escalation contract into CivicLegal and CivicMeetings.
 - CivicAPI inter-module read contract protocol: shared database, internal HTTP API, or event queue.
 - CivicAPI public payload storage strategy: originating module snapshot vs live fetch.
 - CivicAPI request-log visibility and default rate-limit tier policy.
@@ -1080,7 +1080,7 @@ City staff should be able to open CivicRegWatch and quickly understand whether f
 
 Planned v0.1.x scope is schema, migrations, deterministic domain classification, Federal Register polling, alert list/detail/review APIs, poll-run logging, circuit breaker behavior, accessible module overview, documentation gates, and CivicCore alignment.
 
-Not shipped in v0.1.x: LLM-assisted classification, LLM summaries, Regulations.gov/Congress.gov/USASPENDING polling, comment reminders, CivicLegal/CivicClerk escalation writes, notification delivery, webhooks, and state regulatory monitoring.
+Not shipped in v0.1.x: LLM-assisted classification, LLM summaries, Regulations.gov/Congress.gov/USASPENDING polling, comment reminders, CivicLegal/CivicMeetings escalation writes, notification delivery, webhooks, and state regulatory monitoring.
 
 ## 22. CivicAPI Canonical Scope
 

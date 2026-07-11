@@ -1,11 +1,11 @@
-**CivicClerk**
+**CivicMeetings**
 
 **Module Spec v0.1**
 
 *Meetings, agendas, packets, minutes, voting, and public-notice
 workflows --- clerk-first, sunshine-law compliant, citation-grounded*
 
-Modeled on the v3.0 CivicRecords AI unified spec • Built on CivicCore
+Modeled on the v3.0 CivicSunshine AI unified spec • Built on CivicCore
 
 Version 0.1 --- Draft for review --- April 23, 2026
 
@@ -15,15 +15,15 @@ transcription · airgappable
 **Document Metadata**
 
   -------------------------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  **Module**                 CivicClerk --- Tier 1 Clerk Core
+  **Module**                 CivicMeetings --- Tier 1 Clerk Core
   **Document status**        v0.1 spec draft. Module itself is PLANNED (no code written). This doc is the buildable spec.
   **Purpose**                Agenda intake, packet assembly, staff report normalization, ordinance and resolution extraction, motion and vote capture, minute drafting, searchable meeting archive, statutory notice compliance, and public meeting portal --- all with citations back to source material.
   **Primary owner**          City Clerk / Council Support / City Manager's Office
-  **Depends on**             CivicCore (auth, RBAC, audit, LLM, ingest, search, notifications). Optional: CivicCode (ordinance handoff on adoption), CivicAccess (public-facing accessibility review), CivicRecords (search integration for prior-meeting FOIA responses).
-  **Note on dependencies**   The original CivicSuiteAI catalog listed "depends on CivicCore, CivicRecords." That dependency was an artifact of shared document/search infrastructure living inside the CivicRecords AI repo. Once CivicCore v0.1 ships, that shared infra moves to CivicCore and CivicClerk depends only on CivicCore.
+  **Depends on**             CivicCore (auth, RBAC, audit, LLM, ingest, search, notifications). Optional: CivicCode (ordinance handoff on adoption), CivicAccess (public-facing accessibility review), CivicSunshine (search integration for prior-meeting FOIA responses).
+  **Note on dependencies**   The original CivicSuiteAI catalog listed "depends on CivicCore, CivicSunshine." That dependency was an artifact of shared document/search infrastructure living inside the CivicSunshine AI repo. Once CivicCore v0.1 ships, that shared infra moves to CivicCore and CivicMeetings depends only on CivicCore.
   **Default model**          Gemma 4 via Ollama for drafting and extraction. Whisper (local) for meeting transcription. Embeddings via nomic-embed-text.
   **License**                Apache License 2.0 (code). CC BY 4.0 (docs). CC BY-SA 4.0 (prompt library, optional separate repo).
-  **Supersedes**             Nothing. First CivicClerk spec. Implements the Tier 1 Clerk Core module defined in CivicSuiteAI\_Module\_Catalog\_v1.
+  **Supersedes**             Nothing. First CivicMeetings spec. Implements the Tier 1 Clerk Core module defined in CivicSuiteAI\_Module\_Catalog\_v1.
   **Grounded in**            CivicRecordsAI-UnifiedSpec-v3.0 (stylistic and structural template). CivicSuiteAI\_Module\_Catalog\_v1 (module card and tier placement). CivicCore v0.1 Extraction Spec (platform dependency).
   **Completion bar**         Every statutory notice requirement surfaced with deadline enforcement. Every AI-drafted minute sentence cites source. Every closed-session boundary enforced at the API layer. Every public-portal surface meets WCAG 2.2 AA.
   -------------------------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ transcription · airgappable
 
 **Part I. Purpose & Strategic Context**
 
-**1. Why CivicClerk**
+**1. Why CivicMeetings**
 
 Meetings are how a city makes decisions. Every ordinance, every budget,
 every land-use approval, every appointment, every policy change starts
@@ -52,7 +52,7 @@ NovusAGENDA in a notable public RFP. The replacement cycle is real, and
 the incumbent products are vulnerable on sovereignty, cost, and
 usability at the same time.
 
-CivicClerk is the module that replaces them. It is clerk-first, locally
+CivicMeetings is the module that replaces them. It is clerk-first, locally
 deployed, grounded in citations to source material, and built around the
 reality that the clerk's workflow --- not the vendor's feature list ---
 is what matters. It inherits the suite's sovereignty stance: no outbound
@@ -61,7 +61,7 @@ local.
 
 **2. The scope decision**
 
-CivicClerk does nine things and explicitly refuses to do several others.
+CivicMeetings does nine things and explicitly refuses to do several others.
 It covers:
 
 -   Agenda item intake from every department, with item-type templates.
@@ -98,32 +98,32 @@ before it lands).
     notifications, admin shell.
 
 -   Optional handoff to CivicCode: when an ordinance or resolution is
-    adopted, CivicClerk emits a structured event that CivicCode consumes
-    to update the authoritative code. Without CivicCode, CivicClerk
+    adopted, CivicMeetings emits a structured event that CivicCode consumes
+    to update the authoritative code. Without CivicCode, CivicMeetings
     records the adoption and exports it for any downstream codifier.
 
 -   Optional integration with CivicAccess: public-facing materials
     (agendas, minutes, plain-English summaries) are reviewed for
     accessibility before publishing.
 
--   Optional integration with CivicRecords AI: meeting materials are
+-   Optional integration with CivicSunshine: meeting materials are
     discoverable through the records search index. A records request for
     "all communications about the 12th Street project" will surface
     relevant meeting packets alongside emails and files.
 
 -   Optional integration with CivicBoards (future): when CivicBoards
-    lands, CivicClerk's meeting infrastructure is reused for Planning
+    lands, CivicMeetings's meeting infrastructure is reused for Planning
     Commission, Board of Adjustment, Historic Preservation, etc.
     CivicBoards adds roster, term, and vacancy management on top.
 
 **4. Tiering and compliance posture**
 
-CivicClerk sits in Tier 1 --- Clerk Core, alongside CivicRecords AI,
+CivicMeetings sits in Tier 1 --- Clerk Core, alongside CivicSunshine,
 CivicCode, and CivicAccess. It is one of the first two or three modules
 a city should install. Its compliance posture is the heaviest of any
 Clerk Core module: Open Meetings Act / sunshine law violations are the
 most common reason a municipal decision is legally challenged, and the
-statutes vary significantly by state. CivicClerk treats the
+statutes vary significantly by state. CivicMeetings treats the
 notice-and-posting workflow as a first-class compliance surface, not a
 bolt-on.
 
@@ -147,7 +147,7 @@ bolt-on.
 
 **6. The agenda-item lifecycle**
 
-Every agenda item moves through a state machine. CivicClerk enforces the
+Every agenda item moves through a state machine. CivicMeetings enforces the
 transitions at the API layer. Nothing short-circuits the workflow.
 
 DRAFTED → SUBMITTED → DEPT\_APPROVED → LEGAL\_REVIEWED → CLERK\_ACCEPTED
@@ -215,7 +215,7 @@ MINUTES\_ADOPTED → MINUTES\_SIGNED → ARCHIVED
 -   Each item shows its attachments, staff report, recommendation, and
     fiscal impact at a glance.
 
--   The clerk clicks "assemble packet" and CivicClerk generates a single
+-   The clerk clicks "assemble packet" and CivicMeetings generates a single
     PDF (with tagged headings for accessibility), a public HTML version,
     and a per-item JSON feed.
 
@@ -244,7 +244,7 @@ MINUTES\_ADOPTED → MINUTES\_SIGNED → ARCHIVED
 -   Post-meeting, the clerk opens the minute drafter for the completed
     meeting.
 
--   CivicClerk composes a first draft from: the packet (authoritative
+-   CivicMeetings composes a first draft from: the packet (authoritative
     agenda), the transcript (from Whisper or uploaded), the clerk's
     notes, and the motion/vote capture.
 
@@ -264,7 +264,7 @@ MINUTES\_ADOPTED → MINUTES\_SIGNED → ARCHIVED
 -   At the adoption meeting, the minutes are an agenda item. The body
     adopts them (with or without amendments).
 
--   CivicClerk records the adoption reference (meeting date, motion id)
+-   CivicMeetings records the adoption reference (meeting date, motion id)
     and moves the minutes to MINUTES\_ADOPTED.
 
 -   The clerk adds their signature (image or digital) and the minutes
@@ -283,7 +283,7 @@ MINUTES\_ADOPTED → MINUTES\_SIGNED → ARCHIVED
 -   The form presents the template for that type: required fields, staff
     report sections, attachment categories, legal-review flag.
 
--   CivicClerk's staff-report normalizer reviews the draft and suggests
+-   CivicMeetings's staff-report normalizer reviews the draft and suggests
     missing sections, fiscal-impact omissions, or
     recommendation-phrasing issues. Nothing is auto-changed; the staff
     accepts or rejects each suggestion.
@@ -349,7 +349,7 @@ MINUTES\_ADOPTED → MINUTES\_SIGNED → ARCHIVED
 
 **11.3 Plain-English agenda summaries**
 
--   For each public meeting, CivicClerk generates a plain-English
+-   For each public meeting, CivicMeetings generates a plain-English
     summary of the agenda (draft; clerk approves before publishing).
 
 -   Each summary item links to the full packet item and to the relevant
@@ -372,28 +372,28 @@ MINUTES\_ADOPTED → MINUTES\_SIGNED → ARCHIVED
 
 **12. Entity overview**
 
-CivicClerk introduces fifteen module-specific tables in the civicclerk
+CivicMeetings introduces fifteen module-specific tables in the civicclerk
 schema. Every table sits alongside CivicCore's shared tables. Shared
 references (users, departments, documents, audit\_log) point to
 civiccore.\*.
 
   ---------------------- --------------------------------------------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------- ---------------
   **Entity**             **Purpose**                                                     **Key fields**                                                                                                                                       **Ownership**
-  meeting\_bodies        Bodies that hold meetings: Council, Planning Commission, etc.   code, name, type (legislative/advisory), statutory\_basis, meeting\_cadence, default\_notice\_days, quorum\_rule                                     CivicClerk
-  members                Current and historical members of bodies                        id, name, body\_code, role, term\_start, term\_end, email, photo                                                                                     CivicClerk
-  meetings               Individual meeting instances                                    id, body\_code, meeting\_type (regular/special/emergency/work\_session), scheduled\_at, location, status, livestream\_url, recording\_url            CivicClerk
-  agenda\_items          Individual items on a meeting agenda                            id, meeting\_id, section, order, item\_type, title, submitter\_id, department\_id, status, disposition, attachments\[\], staff\_report\_id           CivicClerk
-  staff\_reports         Structured staff analysis                                       id, item\_id, recommendation, background, analysis, fiscal\_impact, alternatives, prior\_actions                                                     CivicClerk
-  motions                Motions made during a meeting                                   id, meeting\_id, item\_id, text, moved\_by, seconded\_by, result (passed/failed/withdrawn/tabled), timestamp                                         CivicClerk
-  votes                  Individual member votes on a motion                             id, motion\_id, member\_id, vote (aye/nay/abstain/absent/recused)                                                                                    CivicClerk
-  public\_comments       Public comment on agenda items                                  id, item\_id, meeting\_id, commenter\_name, mode (in\_person/written/remote), text, position (for/against/neutral), redactions\[\]                   CivicClerk
-  notices                Statutory notices for meetings                                  id, meeting\_id, notice\_type, published\_at, method, location, confirmation\_ref, statutory\_basis, compliance\_status                              CivicClerk
-  minutes                Minutes for a meeting                                           id, meeting\_id, status (drafting/review/adopted/signed), content\_html, sentence\_citations\[\], adopted\_at\_meeting\_id, signed\_by, signed\_at   CivicClerk
-  transcripts            Meeting transcripts                                             id, meeting\_id, source (whisper/manual/uploaded), segments\[\], language, confidence, duration\_seconds                                             CivicClerk
-  action\_items          Follow-up assignments from a meeting                            id, meeting\_id, item\_id, description, owner, due\_date, status, closed\_at                                                                         CivicClerk
-  ordinances\_adopted    Adopted ordinances awaiting handoff to CivicCode                id, item\_id, motion\_id, title, text, effective\_date, codification\_section\_hint, handoff\_status                                                 CivicClerk
-  resolutions\_adopted   Adopted resolutions                                             id, item\_id, motion\_id, title, text, effective\_date, handoff\_status                                                                              CivicClerk
-  closed\_sessions       Executive / closed session blocks with statutory basis          id, meeting\_id, statutory\_basis, topics\[\], attendees\[\], notes\_ref (staff-only), entered\_at, exited\_at, reconvene\_statement                 CivicClerk
+  meeting\_bodies        Bodies that hold meetings: Council, Planning Commission, etc.   code, name, type (legislative/advisory), statutory\_basis, meeting\_cadence, default\_notice\_days, quorum\_rule                                     CivicMeetings
+  members                Current and historical members of bodies                        id, name, body\_code, role, term\_start, term\_end, email, photo                                                                                     CivicMeetings
+  meetings               Individual meeting instances                                    id, body\_code, meeting\_type (regular/special/emergency/work\_session), scheduled\_at, location, status, livestream\_url, recording\_url            CivicMeetings
+  agenda\_items          Individual items on a meeting agenda                            id, meeting\_id, section, order, item\_type, title, submitter\_id, department\_id, status, disposition, attachments\[\], staff\_report\_id           CivicMeetings
+  staff\_reports         Structured staff analysis                                       id, item\_id, recommendation, background, analysis, fiscal\_impact, alternatives, prior\_actions                                                     CivicMeetings
+  motions                Motions made during a meeting                                   id, meeting\_id, item\_id, text, moved\_by, seconded\_by, result (passed/failed/withdrawn/tabled), timestamp                                         CivicMeetings
+  votes                  Individual member votes on a motion                             id, motion\_id, member\_id, vote (aye/nay/abstain/absent/recused)                                                                                    CivicMeetings
+  public\_comments       Public comment on agenda items                                  id, item\_id, meeting\_id, commenter\_name, mode (in\_person/written/remote), text, position (for/against/neutral), redactions\[\]                   CivicMeetings
+  notices                Statutory notices for meetings                                  id, meeting\_id, notice\_type, published\_at, method, location, confirmation\_ref, statutory\_basis, compliance\_status                              CivicMeetings
+  minutes                Minutes for a meeting                                           id, meeting\_id, status (drafting/review/adopted/signed), content\_html, sentence\_citations\[\], adopted\_at\_meeting\_id, signed\_by, signed\_at   CivicMeetings
+  transcripts            Meeting transcripts                                             id, meeting\_id, source (whisper/manual/uploaded), segments\[\], language, confidence, duration\_seconds                                             CivicMeetings
+  action\_items          Follow-up assignments from a meeting                            id, meeting\_id, item\_id, description, owner, due\_date, status, closed\_at                                                                         CivicMeetings
+  ordinances\_adopted    Adopted ordinances awaiting handoff to CivicCode                id, item\_id, motion\_id, title, text, effective\_date, codification\_section\_hint, handoff\_status                                                 CivicMeetings
+  resolutions\_adopted   Adopted resolutions                                             id, item\_id, motion\_id, title, text, effective\_date, handoff\_status                                                                              CivicMeetings
+  closed\_sessions       Executive / closed session blocks with statutory basis          id, meeting\_id, statutory\_basis, topics\[\], attendees\[\], notes\_ref (staff-only), entered\_at, exited\_at, reconvene\_statement                 CivicMeetings
   ---------------------- --------------------------------------------------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------- ---------------
 
 **13. Versioning**
@@ -602,11 +602,11 @@ closed-session topics, public comment procedures, and recordkeeping. The
 rules are not uniform, and they evolve (e.g., post-COVID remote-meeting
 amendments in most states).
 
-CivicClerk treats these rules as data, not as code. The
+CivicMeetings treats these rules as data, not as code. The
 civiccore.city\_profile captures the jurisdiction's rule set during
 onboarding; the rule set drives notice workflows, closed-session
 classification, public comment handling, and retention. A state-rules
-update ships as a data release, not a CivicClerk code release.
+update ships as a data release, not a CivicMeetings code release.
 
 **22. Notice workflow**
 
@@ -640,7 +640,7 @@ update ships as a data release, not a CivicClerk code release.
 -   Closed-session notes are staff-only. The ACL on civiccore.documents
     enforces this at the database level.
 
--   CivicClerk's executive\_session\_classifier prompt evaluates each
+-   CivicMeetings's executive\_session\_classifier prompt evaluates each
     proposed closure against the jurisdiction's statutory bases and
     flags requests that appear out of scope for attorney review.
 
@@ -688,7 +688,7 @@ update ships as a data release, not a CivicClerk code release.
 
 **26. Role model**
 
-CivicClerk defines nine roles on top of CivicCore's RBAC primitives.
+CivicMeetings defines nine roles on top of CivicCore's RBAC primitives.
 Every role is a collection of scope strings; scope strings are
 module-prefixed so they compose with records, code, zone, and future
 modules.
@@ -708,7 +708,7 @@ modules.
 
 **27. Packet visibility enforcement**
 
-Packet visibility is more nuanced than simple public/staff. CivicClerk
+Packet visibility is more nuanced than simple public/staff. CivicMeetings
 enforces five levels:
 
 -   Public-published: visible to anyone, on the public portal, after
@@ -866,14 +866,14 @@ Member surfaces use a tablet-optimized layout for meeting-day use.
   Captioning / caption file ingest                                                       Read              Import pre-existing caption files alongside transcripts                            P1 --- recommended
   City website CMS                                                                       Write             Post meeting notices and packets to the city's primary site                        P1 --- per-city
   CivicCode handoff API                                                                  Write             Emit adopted ordinance/resolution events for CivicCode to consume                  P1 --- once CivicCode ships
-  CivicRecords AI search integration                                                     Read              Include meeting archive in records-request search index                            P2 --- optional
+  CivicSunshine search integration                                                     Read              Include meeting archive in records-request search index                            P2 --- optional
   Codification system direct (Municode, American Legal, Code Publishing, General Code)   Write             Direct codification feed if city does not use CivicCode                            P2 --- optional
   CKAN (via CivicData Bridge)                                                            Write             Publish anonymized meeting metadata for transparency                               P3 --- future
   -------------------------------------------------------------------------------------- ----------------- ---------------------------------------------------------------------------------- ------------------------------------------------
 
 **34. Migration from incumbent platforms**
 
-Cities migrating to CivicClerk typically arrive with years of historical
+Cities migrating to CivicMeetings typically arrive with years of historical
 meeting data in Granicus, Legistar, PrimeGov, or NovusAGENDA. The
 migration connector handles:
 
@@ -896,21 +896,21 @@ which records came from where.
 
 **35. Connector contract**
 
-Every CivicClerk connector implements CivicCore's four-method connector
+Every CivicMeetings connector implements CivicCore's four-method connector
 protocol: authenticate(), discover(), fetch(), health\_check().
-CivicClerk does not define its own connector abstraction.
+CivicMeetings does not define its own connector abstraction.
 
 **Part IX. Deployment**
 
 **36. Profiles**
 
 -   Single-workstation: small city, one clerk, one to three bodies.
-    CivicClerk + CivicCore on a Docker Compose stack. Whisper on CPU is
+    CivicMeetings + CivicCore on a Docker Compose stack. Whisper on CPU is
     slower but usable (overnight transcription for a 3-hour meeting is
     realistic).
 
--   Small on-prem server: expected default. CivicClerk + CivicCore +
-    CivicCode + CivicRecords AI on a dedicated box with consumer GPU.
+-   Small on-prem server: expected default. CivicMeetings + CivicCore +
+    CivicCode + CivicSunshine on a dedicated box with consumer GPU.
     Whisper transcription completes in roughly real-time.
 
 -   Segmented / air-gapped: supported. All features work; migration
@@ -948,8 +948,8 @@ CivicClerk does not define its own connector abstraction.
 
 **39. Coverage expectations**
 
-CivicClerk targets the same 36-module baseline discipline CivicRecords
-AI established. Every area below has at least one dedicated test module.
+CivicMeetings targets the same 36-module baseline discipline CivicSunshine
+established. Every area below has at least one dedicated test module.
 
   ------------------------------- ------------------------------------------------------------------------------------------ ---------------------------------
   **Test area**                   **What gets tested**                                                                       **Type**
@@ -967,7 +967,7 @@ AI established. Every area below has at least one dedicated test module.
   Archive search                  Hybrid search across packets, minutes, transcripts, ordinances; permission-aware results   Integration
   Accessibility                   WCAG 2.2 AA on every public and staff page; tagged-heading PDF output; transcript player   Axe + manual
   Air-gap behavior                No outbound calls with air-gap enabled; migration connector runs on staging only           End-to-end with egress monitor
-  Regression vs. CivicCore        CivicCore version bump does not break CivicClerk                                           CI matrix build
+  Regression vs. CivicCore        CivicCore version bump does not break CivicMeetings                                           CI matrix build
   ------------------------------- ------------------------------------------------------------------------------------------ ---------------------------------
 
 **40. Statutory-rule test suite**
@@ -999,14 +999,14 @@ blocked.
 
 -   Does not test against every state's open-meetings statute --- the
     evaluation harness uses a representative sample; a city opting into
-    CivicClerk provides their rule set during onboarding.
+    CivicMeetings provides their rule set during onboarding.
 
 -   Manual clerk review of AI-drafted minutes is the real quality
     signal; automated tests approximate it.
 
 **Part XI. Scope Boundaries**
 
-**43. What CivicClerk is NOT**
+**43. What CivicMeetings is NOT**
 
 -   Not voting software. It records votes; it does not conduct them.
     In-chamber hardware voting integrates as a data source, not as a
@@ -1023,12 +1023,12 @@ blocked.
     supports redaction with statutory basis; it does not decide what is
     allowed speech.
 
--   Not a codifier. CivicCode owns the authoritative code. CivicClerk
+-   Not a codifier. CivicCode owns the authoritative code. CivicMeetings
     emits adoption events; CivicCode picks them up.
 
 -   Not a board-management system. CivicBoards (future) handles roster,
     term, vacancy, and attendance tracking for bodies beyond Council.
-    CivicClerk handles the meetings themselves.
+    CivicMeetings handles the meetings themselves.
 
 -   Not a campaign-finance or ethics-filing system. Those belong
     elsewhere.
@@ -1069,11 +1069,11 @@ blocked.
 -   PLANNED --- intent committed, no implementation, no dependencies
     resolved.
 
--   INHERITED --- provided by CivicCore; not implemented in CivicClerk.
+-   INHERITED --- provided by CivicCore; not implemented in CivicMeetings.
 
 **46. Honest assessment**
 
-CivicClerk is entirely PLANNED at the code level. This spec is v0.1 of
+CivicMeetings is entirely PLANNED at the code level. This spec is v0.1 of
 the design document. Nothing ships until CivicCore v0.1 Phase 1 is
 complete (shared models + audit chain live in CivicCore). CivicCode
 handoff ships in a later minor release once CivicCode v0.1 exposes its
@@ -1103,7 +1103,7 @@ reflect this explicitly.
 **A. Example end-to-end: an ordinance from intake to adoption**
 
 Illustrative walkthrough of a department-proposed ordinance moving
-through CivicClerk.
+through CivicMeetings.
 
 -   1\. Week T-4: Planning staff drafts a zoning text amendment in Word,
     uploads to /staff/items/new with item\_type=ordinance. Staff-report
@@ -1212,7 +1212,7 @@ refusal\_conditions:
     permanently. CivicCore retention engine executes per the
     jurisdiction's schedule.
 
--   CJIS: no CJIS data passes through CivicClerk.
+-   CJIS: no CJIS data passes through CivicMeetings.
     Law-enforcement-related agenda items are handled under general
     rules; closed-session handling covers personnel-specific exceptions.
 
@@ -1222,11 +1222,11 @@ refusal\_conditions:
 
 **D. Verification log (to be completed when v0.1 ships)**
 
-\#\# Verification Log --- CivicClerk v0.1
+\#\# Verification Log --- CivicMeetings v0.1
 
 \#\#\# What Was Changed
 
-First release of CivicClerk. PLANNED → SHIPPED.
+First release of CivicMeetings. PLANNED → SHIPPED.
 
 \#\#\# Data Provenance Check
 
@@ -1296,7 +1296,7 @@ deliberative material
 
 \[ \] CivicCore compatibility matrix updated
 
-\[ \] CivicRecords AI search integration unchanged
+\[ \] CivicSunshine search integration unchanged
 
 \[ \] CivicCode handoff contract honored (if CivicCode present)
 

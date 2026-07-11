@@ -1,12 +1,12 @@
-# CivicClerk Next Module Plan
+# CivicMeetings Next Module Plan
 
 Status: Active planning baseline  
 Date: 2026-04-26  
 Applies to: `CivicSuite/civicclerk` initial scaffold and MVP sprint
 
-## Why CivicClerk next
+## Why CivicMeetings next
 
-CivicClerk is the right next product after CivicRecords AI because it
+CivicMeetings is the right next product after CivicSunshine because it
 stays inside the clerk-first operating surface while expanding from
 records requests into public meeting administration. It reuses the same
 sovereign local-LLM posture, the same civiccore dependency, the same
@@ -18,7 +18,7 @@ accessibility workflows for CivicAccess.
 
 ## Product promise
 
-CivicClerk helps a city clerk run the legal record of public meetings:
+CivicMeetings helps a city clerk run the legal record of public meetings:
 agenda intake, packet assembly, notice compliance, minutes, votes,
 ordinances/resolutions, and searchable public meeting archives. AI may
 draft or extract, but humans approve every consequential action.
@@ -68,7 +68,7 @@ enough to feel like a real clerk workflow:
 Initial scaffold should be a standalone module repo under
 `CivicSuite/civicclerk`, with the same professional documentation
 baseline as the existing repos. Runtime implementation should follow
-the CivicRecords AI pattern unless a written ADR says otherwise:
+the CivicSunshine pattern unless a written ADR says otherwise:
 
 - FastAPI backend
 - React frontend
@@ -104,7 +104,7 @@ upgrade/fresh-install gate before release.
 1. Scaffold `CivicSuite/civicclerk` with professional docs, CI, license,
    issue templates, PR template, docs landing page, user manual, and seed
    discussion posts.
-2. Add a scope document and ADR-0001 for the CivicClerk MVP boundary.
+2. Add a scope document and ADR-0001 for the CivicMeetings MVP boundary.
 3. Build the first vertical slice: meeting bodies + meeting calendar +
    empty/success/error UX states.
 4. Add agenda item intake and clerk review queue.
@@ -122,9 +122,9 @@ mobile, loading, success, empty, error, and partial states.
 
 ## Open questions for future ADRs
 
-- Whether CivicClerk should reuse CivicRecords AI's full stack initially
+- Whether CivicMeetings should reuse CivicSunshine's full stack initially
   or start from a thinner dedicated scaffold.
 - Whether statutory notice rules live in civiccore long-term or start
-  local to CivicClerk.
+  local to CivicMeetings.
 - How public comment intake should authenticate residents.
 - How transcript ingestion should handle Whisper-local model packaging.

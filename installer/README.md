@@ -91,8 +91,8 @@ selected menu style without changing host state.
 
 The first city-core static launcher lives at
 `installer/runtime/suite-launcher`. It is a static, self-contained runtime with
-Staff, Resident, and IT-Admin surfaces, local tiles for CivicRecords AI,
-CivicClerk, and CivicCode, a one-click audit drawer, and a Ctrl-K/Cmd-K command
+Staff, Resident, and IT-Admin surfaces, local tiles for CivicSunshine,
+CivicMeetings, and CivicCode, a one-click audit drawer, and a Ctrl-K/Cmd-K command
 palette. It uses the prototype paper/navy/gold tokens and local font fallback
 stack only; it does not fetch network fonts or mutate host state.
 
@@ -114,7 +114,7 @@ Initial menu styles:
 Initial profiles:
 
 - `minimal`: CivicCore only.
-- `clerk-core`: CivicCore, CivicRecords AI, CivicClerk.
+- `clerk-core`: CivicCore, CivicSunshine, CivicMeetings.
 - `land-use`: CivicCore, CivicCode, CivicZone, CivicPlan, CivicPermit.
 - `full-suite`: every tracked CivicSuite repo after CivicCore dependency ordering.
 - `custom`: operator-selected modules with dependency validation.
@@ -253,12 +253,12 @@ The generated `clerk-core` package entrypoints support:
 - `plan`: print the selected profile and module order without mutating host
   state.
 - `install`: build and start the selected bundled module sources. The default
-  `clerk-core` selection starts CivicRecords AI and CivicClerk.
-- `verify`: check CivicRecords API, CivicRecords web, CivicClerk API, and
-  CivicClerk web endpoints.
+  `clerk-core` selection starts CivicSunshine and CivicMeetings.
+- `verify`: check CivicSunshine API, CivicSunshine web, CivicMeetings API, and
+  CivicMeetings web endpoints.
 - `verify --workflow-proof`: run mutating starter-set workflow proof checks
   against the selected live modules. Use with `--staff-mode bearer` during
-  install or repair so CivicClerk staff writes stay protected.
+  install or repair so CivicMeetings staff writes stay protected.
 - `repair`: preserve generated `.env` secrets, rebuild/restart the services,
   and verify health again.
 - `backup`: write per-module PostgreSQL custom dumps and a backup manifest
@@ -275,7 +275,7 @@ package run id by default. Operators can override that isolation with
 `--compose-project-suffix` when invoking `scripts/run-clerk-core-installer.py`
 directly. Reports record the resolved ports and Compose project names used for
 health checks.
-For CivicRecords AI, the installer writes the resolved API and web ports into
+For CivicSunshine, the installer writes the resolved API and web ports into
 the copied `.env` as `CIVICRECORDS_API_PORT` and `CIVICRECORDS_WEB_PORT` before
 Docker Compose starts, so the base Compose file and suite override both bind to
 the isolated runtime ports instead of the module defaults.
@@ -304,7 +304,7 @@ package runs from Linux or Windows hosts are archive/readiness evidence only.
 
 `--workflow-proof` is intentionally mutating. Use it with
 `--staff-mode bearer` when the extracted package should create real
-CivicRecords AI request/search/review/response proof records and CivicClerk
+CivicSunshine request/search/review/response proof records and CivicMeetings
 agenda/packet/minutes/vote/notice/archive proof records during install,
 repair, and verify. The proof keeps AI-generated or AI-assisted output in
 draft/human-review states and does not claim autonomous release, denial,
@@ -447,9 +447,9 @@ This cleanroom proof mutates the disposable container and the evidence directory
 only. It does not install host dependencies, start host services, or change
 module source code.
 
-## CivicRecords Service Cleanroom Proof
+## CivicSunshine Service Cleanroom Proof
 
-The first service-profile cleanroom runner exercises CivicRecords AI from a
+The first service-profile cleanroom runner exercises CivicSunshine from a
 copied source tree:
 
 ```powershell

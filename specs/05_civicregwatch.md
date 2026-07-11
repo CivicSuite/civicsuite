@@ -137,7 +137,7 @@ breaker pauses a source after five consecutive failures and notifies admins.
 - Alert review: acknowledge, escalate, dismiss with note, reopen, or archive.
 - Comment deadline tracking: show deadlines and allow local notes/reminders.
 - Escalation to CivicLegal: create a linked attorney-review record.
-- Escalation to CivicClerk: create an agenda item draft stub requiring review.
+- Escalation to CivicMeetings: create an agenda item draft stub requiring review.
 - Search and history: filter alerts by keyword, domain, agency, date, and status.
 
 ## Notifications
@@ -197,7 +197,7 @@ avoid asserting that the city must act, and record prompt/model provenance.
 
 - CivicCore: migrations, audit, LLM abstraction, notifications, provenance.
 - CivicLegal: optional escalation target.
-- CivicClerk: optional ordinance-amendment agenda-item stub target.
+- CivicMeetings: optional ordinance-amendment agenda-item stub target.
 
 ## Test Matrix
 
@@ -234,7 +234,7 @@ Not shipped in v0.1.x:
 - LLM-generated summaries.
 - Regulations.gov, Congress.gov, and USASPENDING polling.
 - Comment reminders.
-- Escalation to CivicLegal or CivicClerk.
+- Escalation to CivicLegal or CivicMeetings.
 - Notification delivery.
 - Webhooks.
 - State regulatory monitoring.

@@ -392,7 +392,7 @@ test("risky city workflow actions require guided review before mutation", async 
       },
       {
         id: "civicrecords-ai",
-        display_name: "CivicRecords AI",
+        display_name: "CivicSunshine",
         role: "records workflow",
         required: false,
         selectable: true,
@@ -402,7 +402,7 @@ test("risky city workflow actions require guided review before mutation", async 
       },
       {
         id: "civicclerk",
-        display_name: "CivicClerk",
+        display_name: "CivicMeetings",
         role: "clerk workflow",
         required: false,
         selectable: true,
@@ -739,15 +739,15 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
   await expect(page.getByText("Selected profile: City Core. Installed modules: 5. Enabled modules: 5.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicSunshine" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CivicMeetings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
   // CivicAccess's contract line carries the model_required badge (its AI
-  // features run on the pinned local model); CivicClerk's must NOT -- its
+  // features run on the pinned local model); CivicMeetings's must NOT -- its
   // registry entry is required:false and this mirror previously drifted.
   const civicaccessRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicAccess" }) });
   await expect(civicaccessRow.getByText("local AI required")).toBeVisible();
-  const civicclerkRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicClerk" }) });
+  const civicclerkRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicMeetings" }) });
   await expect(civicclerkRow.getByText("local AI required")).toHaveCount(0);
   await expect(page.getByText("Backup includes: code workflow history, code exports, code files")).toBeVisible();
   await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();

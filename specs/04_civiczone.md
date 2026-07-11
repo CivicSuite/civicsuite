@@ -18,7 +18,7 @@ Open source · Apache License 2.0 · Gemma 4 default · airgappable
   **Document status**   v0.1 spec draft. Module itself is PLANNED (no code written). This doc is the buildable spec.
   **Purpose**           Zoning and land-use code as a first-class product with parcel-level awareness. Answers "what zone is my property, what can I build there, what are the setbacks" --- with citations, parcel-scoped answers, and optional GIS integration.
   **Primary owner**     Planning & Development / Community Development
-  **Depends on**        CivicCore (auth, RBAC, audit, LLM, ingest, search, notifications), CivicCode (shares ordinance infrastructure and version tracking). Optional: CivicPlan (comp plan cross-references), CivicClerk (variance hearing minutes).
+  **Depends on**        CivicCore (auth, RBAC, audit, LLM, ingest, search, notifications), CivicCode (shares ordinance infrastructure and version tracking). Optional: CivicPlan (comp plan cross-references), CivicMeetings (variance hearing minutes).
   **Default model**     Gemma 4 via Ollama. Local inference only. Embeddings via nomic-embed-text.
   **License**           Apache License 2.0 (code). CC BY 4.0 (docs). CC BY-SA 4.0 (prompt library, optional separate repo).
   **Supersedes**        Nothing. First CivicZone spec. Fills the Land Use gap identified in the CivicSuiteAI Module Catalog.
@@ -79,7 +79,7 @@ the line visible to users at every turn.
     context next to zoning answers. "The code allows this; the comp plan
     says it's a compatible infill use."
 
--   Optional integration with CivicClerk: ingests variance and
+-   Optional integration with CivicMeetings: ingests variance and
     conditional-use hearing minutes as precedent context for staff Q&A
     (never resident-facing).
 
@@ -90,8 +90,8 @@ the line visible to users at every turn.
 **4. Tiering and compliance posture**
 
 CivicZone sits in Tier 2 --- Land Use & Development. It is safe for any
-city to install once the Clerk Core (CivicCore + CivicRecords +
-CivicClerk + CivicCode + CivicAccess) is running. It inherits
+city to install once the Clerk Core (CivicCore + CivicSunshine +
+CivicMeetings + CivicCode + CivicAccess) is running. It inherits
 CivicCore's sovereignty stance: no outbound network calls at runtime, no
 telemetry, all LLM inference local. The planning department owns the
 configuration.
@@ -252,7 +252,7 @@ civiczone schema to keep the boundary visible in the database.
   dimensional\_rules      Setback, height, coverage, density, parking                              zone\_code, overlay\_code (nullable), rule\_type, value, unit, conditions\_text, citation\_ref                                                                      CivicZone
   code\_sections          Zoning code section text, ingested                                       ord\_section\_ref, title, text, effective\_date, superseded\_by, chunk\_ids\[\]                                                                                     CivicCode (CivicZone reads)
   citations               Atomic citation targets used by every AI answer                          id, code\_section\_ref, anchor\_text, url, excerpt, effective\_date                                                                                                 CivicZone
-  precedents              Variance / CUP decisions with context                                    id, parcel\_id, decision\_type, decision\_date, body, outcome, summary, minutes\_ref, staff\_only (bool)                                                            CivicZone (optional, reads CivicClerk)
+  precedents              Variance / CUP decisions with context                                    id, parcel\_id, decision\_type, decision\_date, body, outcome, summary, minutes\_ref, staff\_only (bool)                                                            CivicZone (optional, reads CivicMeetings)
   interpretation\_notes   Staff-curated notes: "when residents ask X, we usually respond Y"        topic, note\_text, staff\_author, last\_reviewed\_at, resident\_visible (bool)                                                                                      CivicZone
   zone\_questions         Question log for analytics, dashboard, accuracy review                   id, parcel\_id (nullable), question\_text, answer\_text, citation\_refs\[\], confidence, channel (public/staff), flagged\_for\_review (bool), reviewer\_notes       CivicZone
   ----------------------- ------------------------------------------------------------------------ ------------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------------------
@@ -694,7 +694,7 @@ tokens are shared. No CivicZone page ships a bespoke color palette.
   Esri ArcGIS REST Feature Service          Read            Parcel layer + overlay layers                                          P0 --- required for parcel features
   GeoJSON file drop                         Read            Fallback parcel + overlay source for offline or non-Esri cities        P0 --- required
   CivicCode internal API                    Read            Authoritative ordinance text, amendment history, section resolution    P0 --- required
-  CivicClerk internal API                   Read            Variance and CUP hearing minutes for precedent context (staff-only)    P1 --- recommended
+  CivicMeetings internal API                Read            Variance and CUP hearing minutes for precedent context (staff-only)    P1 --- recommended
   CivicPlan internal API                    Read            Comprehensive plan policy cross-references for staff report outlines   P2 --- optional
   CivicAccess internal API                  Read            Plain-language rewrites of code sections                               P2 --- optional
   County assessor data (CSV / ODBC)         Read            Non-geometry parcel metadata when GIS lacks it (lot size, frontage)    P2 --- optional
@@ -716,7 +716,7 @@ CivicZone does not define its own connector abstraction.
     civiczone.parcels. Spatial-intersect job joins against overlay
     layers.
 
--   Precedents: optional. Reads CivicClerk minutes, extracts
+-   Precedents: optional. Reads CivicMeetings minutes, extracts
     variance/CUP decisions, requires planner confirmation before
     storing.
 
@@ -728,11 +728,11 @@ CivicZone does not define its own connector abstraction.
 **35. Profiles**
 
 -   Single-workstation: small city. CivicZone runs alongside
-    CivicRecords on a Docker Compose stack. GeoJSON parcel file drop
+    CivicSunshine on a Docker Compose stack. GeoJSON parcel file drop
     works fine. Gemma 4 on CPU is slower but usable.
 
 -   Small on-prem server: expected default. CivicZone + CivicCore +
-    CivicCode + CivicClerk on a dedicated box. Consumer GPU recommended.
+    CivicCode + CivicMeetings on a dedicated box. Consumer GPU recommended.
     ArcGIS REST sync scheduled nightly.
 
 -   Segmented / air-gapped: no change required for CivicZone
@@ -849,7 +849,7 @@ the automated suite does not cover:
 -   Real-time plan-check API for engineering firms --- explicitly a
     developer product; revisit after v1.
 
--   Automatic ordinance-drafting suggestions --- belongs in CivicClerk /
+-   Automatic ordinance-drafting suggestions --- belongs in CivicMeetings /
     CivicCode, not here.
 
 -   Cross-jurisdiction parcel lookups --- one city's deployment scopes
@@ -1066,7 +1066,7 @@ confidence-too-low, determination-requested
 
 \[ \] CivicCode API compatibility verified
 
-\[ \] CivicRecords AI unaffected
+\[ \] CivicSunshine unaffected
 
 \#\#\# Test Suite Blind Spots
 

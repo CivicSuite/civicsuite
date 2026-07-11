@@ -9,15 +9,15 @@ The clerk path does not require Docker, WSL, a terminal, or a developer account.
 The Windows Local city-core package installs:
 
 - CivicCore `1.2.0`
-- CivicRecords AI `1.7.3`
-- CivicClerk `1.0.4`
+- CivicSunshine `1.7.3`
+- CivicMeetings `1.0.4`
 - CivicCode `1.0.8`
 - CivicNotice `0.2.0`
 - CivicAccess `0.4.0`
 - CivicSuite desktop shell using Tauri/WebView2
 - Portable local runtime payload for storage, services, file exports, backup/restore, and the local AI model runtime
 
-CivicCore is always installed. CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess are selected as the City Core profile. Future modules remain visible only through the module manager contract until their package and proof gates pass.
+CivicCore is always installed. CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess are selected as the City Core profile. Future modules remain visible only through the module manager contract until their package and proof gates pass.
 
 ## Before You Start
 
@@ -118,7 +118,7 @@ After first-run setup, open System Health. Verify:
 Use the module manager in Settings to confirm:
 
 - City Core profile is selected.
-- CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess are installed.
+- CivicCore, CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess are installed.
 - Each installed module shows install, update, disable, remove, backup coverage, and export access state.
 - Future modules are not presented as installed.
 

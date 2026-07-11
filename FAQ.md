@@ -27,7 +27,7 @@ This is a **GA candidate, open for public beta**: feature-complete for city-core
 
 ## Can my city rely on CivicSuite for live operations today?
 
-**No.** The honest current package is the city-core beta installer profile (version labels reconciled with what actually works): CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, CivicAccess v0.4.0, and the suite installer. That profile has current install-lifecycle testing on Windows — the same operating system it ships for (older Linux lifecycle evidence is historical) — plus first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
+**No.** The honest current package is the city-core beta installer profile (version labels reconciled with what actually works): CivicCore v1.2.0, CivicSunshine v1.7.3, CivicMeetings v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, CivicAccess v0.4.0, and the suite installer. That profile has current install-lifecycle testing on Windows — the same operating system it ships for (older Linux lifecycle evidence is historical) — plus first-run browser QA, green PR CI, and audit-full evidence with zero unresolved Blocker or Critical findings in the active run record.
 
 That is still a bounded beta package. It is **not city-ready, not procurement-ready, not production-ready, not macOS lifecycle certified, and not a full-suite release**. CivicAccess v0.4.0 joined city-core as the sixth module on 2026-06-29 (a follow-up in-depth review qualified it for city-core, reversing the 2026-05-23 "needs work" demotion — a failed depth review); the current v1.0.2 MSI installs all six city-core modules — **the CivicAccess module code, database schema, and write-token secret are bundled, and its on-screen Accessibility workflow tab, with three local-AI tools, ships in the desktop UI as of v1.0.2** (see [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md)). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on corrected version labels (versions lowered to match actual maturity).
 
@@ -39,11 +39,11 @@ A release tag means a repository has a version label on a commit. A reliable ope
 
 CivicSuite has many tags. Only the scoped package evidence in [STATUS.md](STATUS.md), [docs/release-recovery-status.md](docs/release-recovery-status.md), and the active run record should be treated as current truth.
 
-## Can I install only one module, say just CivicClerk, without the rest?
+## Can I install only one module, say just CivicMeetings, without the rest?
 
 In principle, yes. The dependency rule is: every module depends on `civiccore`; modules do not depend on each other except where noted (for example, `civiccode` depends on `civicclerk` for adopted-ordinance handoff intake). A single-module install is a supported design goal.
 
-In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicRecords AI, and CivicClerk. City-core is the active beta profile (version labels reconciled with what actually works) that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
+In practice, use the installer profile that has evidence for your evaluation. Clerk-Core has a bounded starter installer lineage for CivicCore, CivicSunshine, and CivicMeetings. City-core is the active beta profile (version labels reconciled with what actually works) that adds CivicCode, CivicNotice, and CivicAccess. The Tier 2 land-use modules are not part of city-core today.
 
 ## What does a civic operator need to run the city-core beta?
 
@@ -74,7 +74,7 @@ Use the live trust path, not stale committed artifacts:
 1. Check the active run evidence path named in [README.md](README.md) and [STATUS.md](STATUS.md).
 2. Verify the generated `SHA256SUMS` or release-manifest hash for the artifact you are about to run.
 3. Confirm the package came from the official CivicSuite repo or the recorded local run evidence.
-4. Confirm source pins in `installer/modules.json` match the vendored source commits for CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess.
+4. Confirm source pins in `installer/modules.json` match the vendored source commits for CivicCore, CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess.
 5. For module release assets, verify the published SHA256 and attestation assets recorded in each module's release evidence.
 
 Do not restore old `installer/dist` artifacts unless the maintainers explicitly decide that the prior committed artifacts should be revived. The default is live regenerated artifacts with evidence paths.
@@ -91,7 +91,7 @@ Architecturally yes; verified under the full standard no. Every module is design
 
 ## Can I migrate from Granicus / Legistar / PrimeGov / NovusAGENDA?
 
-CivicClerk's spec lists imports from these platforms as priority integrations, and `civicclerk` ships local-payload importers for them today. **Local-payload** means: you provide an export file from your incumbent system, and the CivicClerk import path normalizes it through CivicCore's connector contract. This is **not** a live API connection to those vendors. There is no "click here to migrate from Legistar" flow yet. A real migration today is a hands-on exercise with a clerk, an integrator, and exported data files.
+CivicMeetings's spec lists imports from these platforms as priority integrations, and `civicclerk` ships local-payload importers for them today. **Local-payload** means: you provide an export file from your incumbent system, and the CivicMeetings import path normalizes it through CivicCore's connector contract. This is **not** a live API connection to those vendors. There is no "click here to migrate from Legistar" flow yet. A real migration today is a hands-on exercise with a clerk, an integrator, and exported data files.
 
 ## Does CivicAccess satisfy our ADA Title II compliance obligation?
 

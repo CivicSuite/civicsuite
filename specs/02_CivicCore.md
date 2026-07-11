@@ -21,7 +21,7 @@ Open source · Apache License 2.0 · Gemma 4 default · model-pluggable
   **Out of scope**       New CivicCore features. Product decisions about future modules. Changes to CivicRecords AI product behavior.
   **License**            Code: Apache License 2.0. Docs: CC BY 4.0.
   **Default model**      Gemma 4 via Ollama. Model registry + context\_window\_size driving per-module token budgets.
-  **Primary audience**   CivicRecords AI maintainers; future CivicClerk, CivicCode, CivicZone contributors; city IT evaluators.
+  **Primary audience**   CivicRecords AI maintainers; future CivicMeetings, CivicCode, CivicZone contributors; city IT evaluators.
   **Completion bar**     No regressions in CivicRecords AI. Import paths migrated with shim fallback. Every extracted subsystem has its own unit-test suite living in CivicCore.
   ---------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ The repo that shipped CivicRecords AI already contains most of the
 infrastructure a second module would need: auth, RBAC, audit, LLM
 abstraction, document ingestion, connector framework, notification
 service, onboarding wizard, the 50-state exemption engine, and the
-sovereignty verification scripts. Building CivicClerk or CivicCode means
+sovereignty verification scripts. Building CivicMeetings or CivicCode means
 either forking that code (fatal long-term) or extracting it into a
 package (the right move).
 
@@ -93,7 +93,7 @@ including a new CivicSuite umbrella repo for suite-wide coordination.
 
 **4. Strategic rationale**
 
-The risk of not doing this is concrete and predictable. If CivicClerk
+The risk of not doing this is concrete and predictable. If CivicMeetings
 starts as a fork of CivicRecords AI, every subsequent module forks the
 fork. Audit-log fixes happen in three places. Exemption-engine rules
 drift between modules. A security patch touches ten repos. We have seen
@@ -118,7 +118,7 @@ changelog, and the governance that every contributing module agrees to.
 
 The name drops the AI suffix on purpose. CivicRecords AI keeps its
 suffix for continuity with the existing repo and v3.0 spec. Future
-modules drop it (CivicClerk, CivicCode, CivicZone) because suite
+modules drop it (CivicMeetings, CivicCode, CivicZone) because suite
 identity carries it. And the umbrella --- CivicSuite --- drops it
 hardest, because the suite's value is not "it uses AI." The suite's
 value is "it runs locally, on your hardware, across every civic
@@ -148,7 +148,7 @@ surface." The name should reflect that.
 -   docs/compatibility/ --- the CivicCore compatibility matrix: which
     CivicCore version each module supports.
 
--   CHANGELOG.md --- suite-wide milestones ("CivicClerk v0.1 released",
+-   CHANGELOG.md --- suite-wide milestones ("CivicMeetings v0.1 released",
     "CivicCore v0.2 compatible with all modules"). Not a substitute for
     per-module changelogs.
 
@@ -176,7 +176,7 @@ single place to talk about the whole suite --- without any of its costs.
   CivicSuite (new)                Umbrella docs: catalog, roadmap, strategy, design principles, cross-module ADRs, suite-wide changelog, governance.                                 CC BY 4.0 (docs) + Apache 2.0 (example configs)   GitHub org landing repo; not installable
   CivicCore (new)                 Shared platform: auth, RBAC, audit chain, LLM abstraction, connector framework, ingestion, search, notifications, admin shell, exemption engine.   Apache 2.0                                        pip wheel: civiccore ; container base image: civiccore-base
   CivicRecords AI (existing)      Records-module code only: request lifecycle, letter generation, fee schedules, public portal (planned), exemption dashboard.                       Apache 2.0                                        pip wheel: civicrecords ; docker-compose: existing stack, now pulling civiccore-base
-  CivicClerk (future)             Meeting, agenda, minutes, voting module. Depends on civiccore.                                                                                     Apache 2.0                                        pip wheel: civicclerk
+  CivicMeetings (future)           Meeting, agenda, minutes, voting module. Depends on civiccore.                                                                                     Apache 2.0                                        pip wheel: civicclerk
   CivicCode (future)              Municipal code / ordinance Q&A. Depends on civiccore, civicclerk.                                                                                  Apache 2.0                                        pip wheel: civiccode
   CivicZone (future)              Zoning Q&A, parcel-aware lookups, overlay districts. Depends on civiccore, civiccode.                                                              Apache 2.0                                        pip wheel: civiczone
   CivicSuite-prompts (optional)   Prompt libraries for every module. Versioned YAML. Separate repo so cities can fork prompts without forking code.                                  CC BY-SA 4.0                               pip wheel: civicsuite-prompts (reference copy)
@@ -185,7 +185,7 @@ single place to talk about the whole suite --- without any of its costs.
 Every module has its own repository, its own changelog, its own release
 cadence, and its own version. Every module depends on a CivicCore
 version. Every module is installable on its own --- a city running only
-CivicRecords AI does not accidentally install CivicClerk.
+CivicRecords AI does not accidentally install CivicMeetings.
 
 **7. CivicSuite GitHub organization layout**
 
@@ -257,7 +257,7 @@ proven to be shared --- not what might be shared one day.
   Public request portal (planned)                                                    Records-specific UX. Shared resident portal shell lives in CivicCore; the portal content is module-specific.
   frontend/src/pages/Requests/\*, Exemptions/\*, Sources/\*, etc.                    Records-specific UI. Shares the AdminShell from core-ui but the pages themselves are module code.
   alembic/versions/\*\_records\_\*.py                                                Records-schema migrations stay module-side; only shared-table migrations move to core.
-  Module-specific prompts (data/prompts/\*.yaml)                                     Records-specific prompt library. CivicCode, CivicZone, CivicClerk each ship their own.
+  Module-specific prompts (data/prompts/\*.yaml)                                     Records-specific prompt library. CivicCode, CivicZone, CivicMeetings each ship their own.
   Records-specific connectors (Laserfiche records adapter, etc.)                     Any connector that only makes sense for records stays module-side. General connectors (SMB, IMAP, ODBC) move to core.
   36 test modules covering records behavior                                          Module behavior tests stay. Core tests get duplicated into CivicCore and trimmed from the records repo.
   ---------------------------------------------------------------------------------- -----------------------------------------------------------------------------------------------------------------------
@@ -303,10 +303,10 @@ single source-of-truth migrations directory.
 **10.2 Module-owned tables**
 
 -   records\_requests, records\_request\_events, response\_letters,
-    fee\_schedules, fee\_line\_items, waivers --- CivicRecords only.
+    fee\_schedules, fee\_line\_items, waivers --- CivicSunshine only.
 
 -   Future module tables live in their own module's migrations.
-    CivicClerk owns meetings, agendas, votes, etc. Modules never touch
+    CivicMeetings owns meetings, agendas, votes, etc. Modules never touch
     each other's tables directly; they use each other's APIs.
 
 Migration ordering: CivicCore's migrations run first, then each module's
@@ -325,7 +325,7 @@ production.
 **12. The six phases**
 
   --------------------------------------------------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------------------- ------------------------------------------------------------------------
-  **Phase**                                           **Scope**                                                                                                                                                                                               **Non-breaking?**                         **Shippable as a CivicRecords release?**
+  **Phase**                                           **Scope**                                                                                                                                                                                               **Non-breaking?**                         **Shippable as a CivicSunshine release?**
   0\. Preparation                                     Create civiccore repo skeleton. Create civicsuite umbrella repo. Copy LICENSE, README, CI scaffolding. Agree on public API surface.                                                                     Yes --- no code changes                   No --- setup only
   1\. Shared models + audit chain                     Move user, role, department, audit\_log models and their migrations into CivicCore. Records imports via shim: from civiccore.models import User as \_U ; User = \_U.                                    Yes --- identical behavior                Yes --- patch release
   2\. LLM + ingestion + search                        Move LLM abstraction, document ingestion, search, and their tests. Records imports via shim. Verify end-to-end records workflow unchanged.                                                              Yes --- identical behavior                Yes --- minor release
@@ -427,7 +427,7 @@ verifiably true:
     least one test.
 
 -   The sovereignty verification script, run against a
-    CivicCore+CivicRecords install, reports zero outbound connections
+    CivicCore+CivicSunshine install, reports zero outbound connections
     and zero telemetry calls.
 
 -   A scaffold command --- civiccore scaffold-module civicclerk ---

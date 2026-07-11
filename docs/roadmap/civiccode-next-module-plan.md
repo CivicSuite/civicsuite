@@ -27,7 +27,7 @@ but they are never authoritative legal advice.
 - `CivicSuite/civiccode` ships v0.1.7 as an active municipal-code productization release.
 - CivicCode v0.1.7 includes source registry persistence, section/version lifecycle,
   search/permalinks, deterministic citations, citation-grounded Q&A, staff
-  notes, plain-language summaries, CivicClerk handoff intake, resident public
+  notes, plain-language summaries, CivicMeetings handoff intake, resident public
   lookup pages, local import connectors, records-ready exports, reusable
   mock-city codifier contracts, and staff-controlled codifier live-sync readiness.
 - CivicCode still does not ship legal advice, live LLM calls, bundled vendor
@@ -35,7 +35,7 @@ but they are never authoritative legal advice.
 - The authoritative requirements live in `docs/CivicSuiteUnifiedSpec.md`
   section 11 and `specs/01_catalog.md` under "CivicCode - Municipal Code &
   Ordinance Access."
-- CivicClerk v0.1.0 already defines ordinance/resolution handoff concepts, and
+- CivicMeetings v0.1.0 already defines ordinance/resolution handoff concepts, and
   CivicCode v0.1.7 has a receiving intake foundation for those events.
 
 ## MVP Scope
@@ -49,7 +49,7 @@ The CivicCode v0.1.0 MVP is narrow, useful, and legally cautious:
 5. Citation-grounded Q&A over the code.
 6. Plain-language section summaries with explicit non-authoritative labels.
 7. Staff-only interpretation notes.
-8. Ordinance/adoption-event intake contract from CivicClerk.
+8. Ordinance/adoption-event intake contract from CivicMeetings.
 9. Public code lookup page with source citations and staff-contact routing.
 10. Audit-log seams and visible audit events where the v0.1.0 in-memory
     foundation already exposes them.
@@ -79,7 +79,7 @@ The CivicCode v0.1.0 MVP is narrow, useful, and legally cautious:
 
 ## Technical Starting Architecture
 
-CivicCode should follow the same separate-module pattern as CivicClerk:
+CivicCode should follow the same separate-module pattern as CivicMeetings:
 
 - Standalone repo under `CivicSuite/civiccode`.
 - FastAPI backend.
@@ -115,11 +115,11 @@ metadata and migration chain.
    license, issue templates, PR template, support/security/contributing docs,
    landing page, user manual, and seed discussion posts.
 3. Add `AGENTS.md` operating contract for CivicCode with the same test-first,
-   docs-first, browser-QA gate used by CivicClerk.
+   docs-first, browser-QA gate used by CivicMeetings.
 4. Preserve Milestone 0 reconciliation against `docs/CivicSuiteUnifiedSpec.md`,
    suite ADRs, and the catalog CivicCode spec.
 5. Queue ADRs for official-source precedence, codifier integration strategy,
-   public disclaimer wording, and CivicClerk handoff contract.
+   public disclaimer wording, and CivicMeetings handoff contract.
 6. Build runtime foundation only after Milestone 0 is reviewed. (Complete as of
    v0.1.0.)
 
@@ -128,7 +128,7 @@ metadata and migration chain.
 - Official source precedence and what happens when sources disagree.
 - Codifier import strategy: file upload, URL scrape, API, or all three.
 - Section versioning model and historical effective-date semantics.
-- CivicClerk ordinance/adoption-event handoff contract.
+- CivicMeetings ordinance/adoption-event handoff contract.
 - Legal-disclaimer wording and resident-facing refusal policy.
 - Staff-only interpretation-note visibility and retention policy.
 

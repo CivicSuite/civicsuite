@@ -46,7 +46,7 @@ const fallbackState = {
     },
     {
       id: "civicrecords-ai",
-      display_name: "CivicRecords AI",
+      display_name: "CivicSunshine",
       role: "records workflow",
       version: "1.7.3",
       civiccore_requirement: "1.2.0",
@@ -69,7 +69,7 @@ const fallbackState = {
     },
     {
       id: "civicclerk",
-      display_name: "CivicClerk",
+      display_name: "CivicMeetings",
       role: "meetings workflow",
       version: "1.0.4",
       civiccore_requirement: "1.2.0",
@@ -191,7 +191,7 @@ const fallbackState = {
     {
       id: "city-core",
       label: "City Core",
-      description: "CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess",
+      description: "CivicCore, CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess",
       selected: true,
       disabled: false,
       module_count: 6
@@ -1240,7 +1240,7 @@ function renderModuleSelectionControls() {
     {
       id: "city-core",
       label: "City Core",
-      description: "Installs CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess with CivicCore."
+      description: "Installs CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess with CivicCore."
     },
     {
       id: "custom",
@@ -1302,7 +1302,7 @@ function renderModuleSelectionControls() {
       <p class="empty-note">
         ${customMode
           ? `Custom selection will install CivicCore plus ${readySelectedCount} selected product module${readySelectedCount === 1 ? "" : "s"}.`
-          : "City Core installs the complete current 1.0 package: CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess."}
+          : "City Core installs the complete current 1.0 package: CivicSunshine, CivicMeetings, CivicCode, CivicNotice, and CivicAccess."}
       </p>
     </div>
   `;
@@ -1906,7 +1906,7 @@ function guidedReviewForAction(action) {
     "create-meeting-body": {
       title: "Review Before Saving Meeting Body",
       confirmLabel: "Save Meeting Body",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: detailOrFallback(state.workDraft.meetingBodyName, "New meeting body"),
       status: "Local setup record",
       changes: "Stores the council, board, commission, or authority that holds meetings, including legal basis, cadence, default notice days, and quorum rule.",
@@ -1918,13 +1918,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.meetingBodyDefaultNoticeDays, "Default notice days will default to 3 if left blank."),
         detailOrFallback(state.workDraft.meetingBodyQuorumRule, "Quorum rule will default to majority of seated members if left blank.")
       ],
-      audit: "Creates a CivicClerk audit entry for the meeting body setup record.",
+      audit: "Creates a CivicMeetings audit entry for the meeting body setup record.",
       retry: "If the name, statutory basis, notice days, or duplicate check fails, the desktop app leaves local records unchanged."
     },
     "add-meeting-member": {
       title: "Review Before Saving Member",
       confirmLabel: "Save Member",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: detailOrFallback(state.workDraft.memberName, "New meeting body member"),
       status: "Roster record",
       changes: "Adds this elected or appointed member to the selected meeting body roster for quorum and roll-call vote work.",
@@ -1936,13 +1936,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.memberTermStart, "Term start is optional."),
         detailOrFallback(state.workDraft.memberTermEnd, "Term end is optional.")
       ],
-      audit: "Creates a CivicClerk audit entry for the roster change.",
+      audit: "Creates a CivicMeetings audit entry for the roster change.",
       retry: "If the body is missing, dates are invalid, required fields are blank, or the active member already exists, the roster stays unchanged."
     },
     "review-agenda-intake": {
       title: "Review Before Updating Agenda Intake",
       confirmLabel: "Review Agenda Intake",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: agendaIntakeSubject,
       status: agendaIntake ? agendaIntake.status : "No agenda intake item selected yet.",
       changes: "Records the clerk readiness decision for a submitted agenda item before it can be promoted to a meeting agenda.",
@@ -1953,13 +1953,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.agendaIntakeDecision, "A readiness decision is required."),
         detailOrFallback(state.workDraft.agendaIntakeReviewNote, "A clerk review note is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the agenda intake readiness decision.",
+      audit: "Creates a CivicMeetings audit entry for the agenda intake readiness decision.",
       retry: "If no intake item is selected, the decision is invalid, or the review note is missing, the desktop app leaves the queue unchanged."
     },
     "promote-agenda-intake": {
       title: "Review Before Promoting To Agenda",
       confirmLabel: "Promote To Agenda",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: agendaIntakeSubject,
       status: agendaIntake ? agendaIntake.status : "No agenda intake item selected yet.",
       changes: "Adds the reviewed-ready intake item to the selected meeting agenda with department and source metadata.",
@@ -1969,13 +1969,13 @@ function guidedReviewForAction(action) {
         agendaIntake ? detailOrFallback(agendaIntake.source_reference, "No source or citation is recorded.") : "The desktop app will require an intake item before saving.",
         agendaIntake?.status === "ready for agenda" ? "Agenda intake is marked ready." : "Agenda intake must be reviewed as ready before promotion."
       ],
-      audit: "Creates a CivicClerk audit entry linking the intake item to the selected meeting agenda.",
+      audit: "Creates a CivicMeetings audit entry linking the intake item to the selected meeting agenda.",
       retry: "If the intake item is not ready, no meeting exists, or the meeting is archived, the desktop app leaves both records unchanged."
     },
     "record-staff-report": {
       title: "Review Before Saving Staff Report",
       confirmLabel: "Save Staff Report",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: staffReportSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Stores a structured staff report for the selected agenda item with recommendation, background, analysis, fiscal impact, alternatives, prior actions, preparer, and revision note.",
@@ -1989,13 +1989,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.staffReportFiscalImpact, "Fiscal impact is required."),
         detailOrFallback(state.workDraft.staffReportPreparedBy, "Prepared-by name is required.")
       ],
-      audit: "Creates a CivicClerk audit entry linking the staff report to the agenda item.",
+      audit: "Creates a CivicMeetings audit entry linking the staff report to the agenda item.",
       retry: "If required sections are missing, no agenda item exists, or the meeting is archived, the desktop app leaves the meeting unchanged."
     },
     "add-code-handoff-agenda": {
       title: "Review Before Adding Code Handoff",
       confirmLabel: "Add Code Handoff",
-      module: "CivicClerk + CivicCode",
+      module: "CivicMeetings + CivicCode",
       subject: handoffSubject,
       status: handoff ? handoff.status : "No pending code handoff selected yet.",
       changes: "Adds the pending CivicCode ordinance or resolution handoff to the current meeting agenda.",
@@ -2004,13 +2004,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(handoff?.summary, "No handoff summary is available yet."),
         meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates a CivicClerk audit entry for adding the code handoff to the agenda.",
+      audit: "Creates a CivicMeetings audit entry for adding the code handoff to the agenda.",
       retry: "If no handoff or meeting exists, the desktop app stops before changing local records."
     },
     "add-meeting-attachment": {
       title: "Review Before Attaching Packet File",
       confirmLabel: "Attach Packet File",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Copies the selected local file into the city profile, records its SHA-256 hash, and adds it to the meeting packet evidence list.",
@@ -2024,13 +2024,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.meetingAttachmentCitation, "No citation has been recorded yet."),
         detailOrFallback(state.workDraft.meetingAttachmentSection, "Packet section is required.")
       ],
-      audit: "Creates a CivicClerk audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
+      audit: "Creates a CivicMeetings audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
       retry: "If the file is missing, unreadable, or the meeting is archived, the desktop app leaves the meeting record unchanged."
     },
     "finalize-meeting-packet": {
       title: "Review Before Finalizing Packet",
       confirmLabel: "Finalize Packet",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: detailOrFallback(state.workDraft.packetTitle, meeting ? `${meeting.title} agenda packet` : "Current meeting packet"),
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Stores a durable packet-finalization record with the clerk review note, agenda item count, public attachment count, and closed-session addendum count.",
@@ -2043,13 +2043,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.packetPreparedBy, "Prepared-by or reviewer name is required."),
         detailOrFallback(state.workDraft.packetReviewNote, "Packet review note is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the packet finalization milestone and counts.",
+      audit: "Creates a CivicMeetings audit entry for the packet finalization milestone and counts.",
       retry: "If no meeting exists, no agenda item exists, review fields are blank, or the meeting is archived, the desktop app leaves the packet unchanged."
     },
     "record-closed-session": {
       title: "Review Before Recording Closed Session",
       confirmLabel: "Record Closed Session",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Stores the statutory basis, general topics, timing, reconvene statement, and optional staff-only notes reference for a closed-session block.",
@@ -2061,13 +2061,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.closedSessionExitedAt, "Exited time is required."),
         detailOrFallback(state.workDraft.closedSessionReconvene, "Reconvene statement is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the closed-session boundary and staff-only notes reference.",
+      audit: "Creates a CivicMeetings audit entry for the closed-session boundary and staff-only notes reference.",
       retry: "If required basis, topic, timing, or reconvene evidence is missing, the desktop app leaves the meeting unchanged."
     },
     "calculate-notice-deadline": {
       title: "Review Before Calculating Notice Deadline",
       confirmLabel: "Calculate Notice Deadline",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Calculates and stores the notice posting deadline from the selected meeting date, lead-day rule, day type, statutory basis, time zone, and clerk approval.",
@@ -2082,13 +2082,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
         state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
       ],
-      audit: "Creates a CivicClerk audit entry for the calculated notice deadline without claiming legal sufficiency.",
+      audit: "Creates a CivicMeetings audit entry for the calculated notice deadline without claiming legal sufficiency.",
       retry: "If required notice details are missing, the day count or time zone is invalid, approval is unchecked, or the meeting is archived, the desktop app leaves the notice unchanged."
     },
     "complete-notice-checklist": {
       title: "Review Before Approving Notice Checklist",
       confirmLabel: "Approve Notice Checklist",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Records the meeting type, statutory notice basis, deadline, time zone, and clerk approval needed before posting proof can mark the notice ready.",
@@ -2101,13 +2101,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
         state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
       ],
-      audit: "Creates a CivicClerk audit entry for checklist approval without claiming legal sufficiency.",
+      audit: "Creates a CivicMeetings audit entry for checklist approval without claiming legal sufficiency.",
       retry: "If required checklist details are missing, the time zone is invalid, or approval is not checked, the desktop app leaves the notice unchanged."
     },
     "post-notice": {
       title: "Review Before Posting Notice",
       confirmLabel: "Mark Notice Ready",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Records final posting proof and marks the current meeting notice as ready for public posting after the approved checklist passes.",
@@ -2120,13 +2120,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeLocation, "Posting location is required."),
         detailOrFallback(state.workDraft.noticeConfirmation, "Posting confirmation evidence is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for posting the notice with location, method, and confirmation evidence.",
+      audit: "Creates a CivicMeetings audit entry for posting the notice with location, method, and confirmation evidence.",
       retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
     },
     "export-meeting-packet": {
       title: "Review Before Exporting Records Bundle",
       confirmLabel: "Export Records Bundle",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Writes a local records-ready packet and notice bundle with a checksum manifest, source references, public/staff classification, and export counts.",
@@ -2135,7 +2135,7 @@ function guidedReviewForAction(action) {
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
-      audit: "Creates a CivicClerk audit entry for the packet export and durable records-ready bundle manifest.",
+      audit: "Creates a CivicMeetings audit entry for the packet export and durable records-ready bundle manifest.",
       retry: "If the packet, checksum sidecar, or bundle manifest cannot be written, the desktop app reports the failure and preserves the meeting record."
     },
     "civicnotice-calculate-deadline": {
@@ -2217,7 +2217,7 @@ function guidedReviewForAction(action) {
     "suggest-minutes-draft": {
       title: "Review Before Generating Minutes Draft",
       confirmLabel: "Generate Minutes Draft",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, packet attachments, motions, roll-call votes, outcomes, action items, and comments. It does not adopt or archive the minutes.",
@@ -2226,13 +2226,13 @@ function guidedReviewForAction(action) {
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} outcome(s); ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action item(s)` : "The desktop app will require a meeting before generating.",
         detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
       ],
-      audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
+      audit: "Creates a CivicMeetings audit entry naming the local model used for the minutes draft.",
       retry: "If the local AI model is not ready, the minutes are already adopted, or no meeting evidence exists, the desktop app stops before changing the draft."
     },
     "add-minute-citation": {
       title: "Review Before Adding Minute Citation",
       confirmLabel: "Add Minute Citation",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Adds source evidence for a specific sentence or excerpt in the current minutes draft.",
@@ -2245,13 +2245,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.minutesCitationSourceRef, "Source reference is required."),
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
-      audit: "Creates a CivicClerk audit entry for the minute citation source reference.",
+      audit: "Creates a CivicMeetings audit entry for the minute citation source reference.",
       retry: "If the sentence is not in the current draft, the source reference is missing, or the meeting is archived, the desktop app leaves the minutes unchanged."
     },
     "adopt-minutes": {
       title: "Review Before Adopting Minutes",
       confirmLabel: "Adopt Minutes",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Marks the current minutes as adopted and unlocks the public archive step.",
@@ -2261,13 +2261,13 @@ function guidedReviewForAction(action) {
         meeting && (meeting.minute_citations || []).length > 0 ? `${(meeting.minute_citations || []).length} minute citation(s) recorded.` : "At least one minute citation is required.",
         meeting ? `${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} vote/outcome record(s)` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates a CivicClerk audit entry for adopting minutes.",
+      audit: "Creates a CivicMeetings audit entry for adopting minutes.",
       retry: "If no minutes draft or citation evidence exists, the desktop app blocks adoption and asks staff to save minutes and add citations first."
     },
     "sign-minutes": {
       title: "Review Before Signing Minutes",
       confirmLabel: "Sign Minutes",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Records the clerk or authorized signer attestation for the adopted minutes before they can become an archived public record.",
@@ -2277,13 +2277,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.minutesSignedBy, "Signer name is required."),
         detailOrFallback(state.workDraft.minutesSignatureAttestation, "Signature attestation is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for signing the adopted minutes.",
+      audit: "Creates a CivicMeetings audit entry for signing the adopted minutes.",
       retry: "If minutes are not adopted, already signed, or signer evidence is missing, the desktop app blocks signing and leaves the meeting unchanged."
     },
     "record-member-vote": {
       title: "Review Before Recording Roll Call Vote",
       confirmLabel: "Record Roll Call Vote",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: selectedMemberVoteMotion ? selectedMemberVoteMotion.text : "Current motion",
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Records one member's individual roll-call vote against the selected motion.",
@@ -2294,13 +2294,13 @@ function guidedReviewForAction(action) {
         selectedMemberVoteMember ? `Member: ${selectedMemberVoteMember.name}` : "A member roster entry is required.",
         detailOrFallback(state.workDraft.memberVoteValue, "Vote value is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the individual roll-call vote.",
+      audit: "Creates a CivicMeetings audit entry for the individual roll-call vote.",
       retry: "If no motion, member, valid vote value, or editable meeting exists, the desktop app leaves the meeting unchanged."
     },
     "record-meeting-attendance": {
       title: "Review Before Recording Attendance",
       confirmLabel: "Record Attendance",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: selectedAttendanceMember ? selectedAttendanceMember.name : "Current roster member",
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Records one active roster member's attendance status for the selected meeting before quorum review.",
@@ -2312,13 +2312,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.attendanceRecordedBy, "Recorded-by name is required."),
         detailOrFallback(state.workDraft.attendanceNote, "Attendance note is optional.")
       ],
-      audit: "Creates a CivicClerk audit entry for the individual attendance record.",
+      audit: "Creates a CivicMeetings audit entry for the individual attendance record.",
       retry: "If no member, valid status, recorded-by evidence, or editable meeting exists, the desktop app leaves the meeting unchanged."
     },
     "record-quorum-check": {
       title: "Review Before Saving Quorum Check",
       confirmLabel: "Save Quorum Check",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Calculates and saves a quorum finding from the active roster and recorded attendance evidence.",
@@ -2330,13 +2330,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.quorumRequiredCount, "Required count will default to majority of the active roster if left blank."),
         detailOrFallback(state.workDraft.quorumReviewNote, "Quorum review note is required.")
       ],
-      audit: "Creates a CivicClerk audit entry with roster count, present/remote count, required count, and quorum result.",
+      audit: "Creates a CivicMeetings audit entry with roster count, present/remote count, required count, and quorum result.",
       retry: "If attendance is missing, the required count is invalid, the review note is blank, or the meeting is archived, the desktop app leaves quorum records unchanged."
     },
     "record-adopted-legislation": {
       title: "Review Before Recording Adopted Legislation",
       confirmLabel: "Record Adoption",
-      module: "CivicClerk + CivicCode",
+      module: "CivicMeetings + CivicCode",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Creates a durable adopted ordinance or resolution record, links it to the meeting's passed motion, and queues a CivicCode draft source for codifier sync.",
@@ -2347,13 +2347,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.adoptedLegislationTitle, "Adopted title is required."),
         detailOrFallback(state.workDraft.adoptedLegislationText, "Adopted text is required.")
       ],
-      audit: "Creates CivicClerk and CivicCode audit entries linking the adoption event to the local code source queue.",
+      audit: "Creates CivicMeetings and CivicCode audit entries linking the adoption event to the local code source queue.",
       retry: "If minutes are not signed, no passed motion exists, or required adoption text is missing, the desktop app leaves Clerk and Code records unchanged."
     },
     "archive-meeting": {
       title: "Review Before Archiving Public Record",
       confirmLabel: "Archive Public Record",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Writes the public archive export, locks later meeting edits, and records a publication event hash.",
@@ -2363,13 +2363,13 @@ function guidedReviewForAction(action) {
         meeting?.minutes_signed_at_unix_seconds ? `Signed by ${meeting.minutes_signed_by || "authorized signer"}.` : "Minutes are not signed yet.",
         meeting ? `${(meeting.exports || []).length} existing export(s)` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates CivicClerk audit and CivicCore publication-gate entries.",
+      audit: "Creates CivicMeetings audit and CivicCore publication-gate entries.",
       retry: "If minutes are not adopted or signed, the desktop app blocks archive and leaves the meeting editable."
     },
     "review-public-comment": {
       title: "Review Before Marking Public Comment Reviewed",
       confirmLabel: "Mark Reviewed",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: publicCommentSubject,
       status: publicComment ? publicComment.status : "No public comment selected yet.",
       changes: "Marks the selected submitted public comment as reviewed for the public record.",
@@ -2378,13 +2378,13 @@ function guidedReviewForAction(action) {
         publicComment ? detailOrFallback(publicComment.body, "No comment body is recorded.") : "The desktop app will require a submitted comment before saving.",
         meeting ? `Meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates a CivicClerk audit entry for public comment review.",
+      audit: "Creates a CivicMeetings audit entry for public comment review.",
       retry: "If the selected meeting is archived or the comment is missing, the desktop app blocks the review."
     },
     "redact-public-comment": {
       title: "Review Before Redacting Public Comment",
       confirmLabel: "Redact Comment",
-      module: "CivicClerk",
+      module: "CivicMeetings",
       subject: publicCommentSubject,
       status: publicComment ? publicComment.status : "No public comment selected yet.",
       changes: "Stores redacted public text while preserving the original comment internally.",
@@ -2393,13 +2393,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.publicCommentRedactedBody, "No redacted public text has been typed yet."),
         detailOrFallback(state.workDraft.publicCommentRedactionBasis, "No statutory redaction basis has been typed yet.")
       ],
-      audit: "Creates a CivicClerk audit entry with the redaction basis.",
+      audit: "Creates a CivicMeetings audit entry with the redaction basis.",
       retry: "If redacted text or statutory basis is missing, the desktop app blocks the redaction."
     },
     "set-records-deadline": {
       title: "Review Before Setting Records Deadline",
       confirmLabel: "Set Deadline",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Stores the reviewed response deadline and statutory or policy basis for the selected records request.",
@@ -2409,13 +2409,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.deadline, "Response deadline is required."),
         detailOrFallback(state.workDraft.recordsDeadlineBasis, "Deadline basis is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry for deadline review.",
+      audit: "Creates a CivicSunshine audit entry for deadline review.",
       retry: "If the deadline date or basis is missing or invalid, the desktop app leaves the request unchanged."
     },
     "calculate-records-deadline": {
       title: "Review Before Calculating Records Deadline",
       confirmLabel: "Calculate Deadline",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Calculates and stores the response deadline for the selected records request from the received date, rule, day count, and day type.",
@@ -2428,13 +2428,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.deadlineDayType, "Deadline day type is required."),
         detailOrFallback(state.workDraft.recordsDeadlineBasis, "Deadline basis is required.")
       ],
-      audit: "Creates CivicRecords AI audit, timeline, notification, and public status evidence for the calculated deadline.",
+      audit: "Creates CivicSunshine audit, timeline, notification, and public status evidence for the calculated deadline.",
       retry: "If the received date, day count, day type, basis, or active request is invalid, the desktop app leaves the request unchanged."
     },
     "add-records-message": {
       title: "Review Before Adding Request Message",
       confirmLabel: "Add Request Message",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Adds a requester-visible message to the selected request thread and queues a local notification log entry.",
@@ -2443,13 +2443,13 @@ function guidedReviewForAction(action) {
         request ? detailOrFallback(request.public_tracking_number, "No public tracking number is recorded.") : "The desktop app will require a request before saving.",
         detailOrFallback(state.workDraft.requestMessageBody, "Request message is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry and timeline entry for the request message.",
+      audit: "Creates a CivicSunshine audit entry and timeline entry for the request message.",
       retry: "If no message or active request exists, the desktop app leaves the request thread unchanged."
     },
     "add-records-exemption-decision": {
       title: "Review Before Saving Exemption Decision",
       confirmLabel: "Save Exemption Decision",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Saves a structured release, redact, or exempt decision for one source segment.",
@@ -2459,13 +2459,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.exemptionDecision, "Decision must be release, redact, or exempt."),
         detailOrFallback(state.workDraft.exemptionBasis, "Statute, ordinance, or city policy basis is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry and request timeline entry for the decision.",
+      audit: "Creates a CivicSunshine audit entry and request timeline entry for the decision.",
       retry: "If the source, finding, decision, or basis is missing, the desktop app leaves exemption evidence unchanged."
     },
     "add-records-release-copy": {
       title: "Review Before Attaching Release Copy",
       confirmLabel: "Attach Release Copy",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: recordsDocument ? recordsDocument.title : "Current request document",
       status: recordsDocument ? recordsDocument.status : "No request document selected yet.",
       changes: "Preserves release-ready or redacted evidence in the CivicSuite local profile. Readable files are copied and hashed; unreadable typed references are saved as local marker files with their own SHA-256 hash.",
@@ -2476,13 +2476,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.releaseCopyStatus, "Release copy status is required."),
         detailOrFallback(state.workDraft.releaseCopyNote, "Release note is optional but recommended.")
       ],
-      audit: "Creates a CivicRecords AI audit and request timeline entries for the release/redaction artifact.",
+      audit: "Creates a CivicSunshine audit and request timeline entries for the release/redaction artifact.",
       retry: "If no document is selected or the release status is invalid, the desktop app stops before changing the request. A typed but unreadable release file reference is preserved as a hashed local marker."
     },
     "record-records-search-session": {
       title: "Review Before Saving Search Session",
       confirmLabel: "Save Search Session",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Saves a durable query, searched locations, and source-result evidence for the selected records request.",
@@ -2492,13 +2492,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.searchLocations, "Searched systems, folders, or source locations are required."),
         detailOrFallback(state.workDraft.searchResultCitation, "Result citation or source reference is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry and request timeline entry for the search session.",
+      audit: "Creates a CivicSunshine audit entry and request timeline entry for the search session.",
       retry: "If query, locations, result title, citation, or summary are missing, the desktop app leaves search evidence unchanged."
     },
     "add-records-fee-line": {
       title: "Review Before Adding Records Fee Line",
       confirmLabel: "Add Fee Line",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Adds a structured fee line item and updates the request fee estimate.",
@@ -2508,13 +2508,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.feeScheduleBasis, "Fee schedule or policy basis is required."),
         detailOrFallback(state.workDraft.feeLineAmount, "Fee line amount is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry for the fee line.",
+      audit: "Creates a CivicSunshine audit entry for the fee line.",
       retry: "If the amount is missing, zero, negative, or not dollars/cents, the desktop app leaves the request unchanged."
     },
     "waive-records-fee": {
       title: "Review Before Waiving Records Fee",
       confirmLabel: "Waive Fee",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Records a fee waiver reason and updates the request fee estimate to waived.",
@@ -2523,13 +2523,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.feeWaiverReason, "Fee waiver reason is required."),
         request ? `${(request.fee_line_items || []).length} fee line item(s) currently recorded.` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for the fee waiver.",
+      audit: "Creates a CivicSunshine audit entry for the fee waiver.",
       retry: "If no waiver reason is entered, the desktop app leaves the request fee state unchanged."
     },
     "approve-records-response": {
       title: "Review Before Approving Records Response",
       confirmLabel: "Approve Response",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Records human approval for the drafted records response.",
@@ -2538,13 +2538,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(request?.response_draft, "No response draft has been saved yet."),
         request ? `${(request.exemption_reviews || []).length} exemption review note(s); ${(request.exemption_decisions || []).length} exemption decision(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for human approval.",
+      audit: "Creates a CivicSunshine audit entry for human approval.",
       retry: "If the response draft is missing, the desktop app blocks approval before release steps."
     },
     "suggest-records-response": {
       title: "Review Before Generating Records Draft",
       confirmLabel: "Generate Draft",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Uses the verified local AI model to draft an internal response for staff review. It does not approve, export, or fulfill the request.",
@@ -2553,13 +2553,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(request?.summary, "No request summary has been saved yet."),
         request ? `${(request.search_notes || []).length} search note(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before generating."
       ],
-      audit: "Creates a CivicRecords AI audit entry naming the local model used for the draft.",
+      audit: "Creates a CivicSunshine audit entry naming the local model used for the draft.",
       retry: "If the local AI model is not ready or no search/citation evidence exists, the desktop app stops before changing the draft."
     },
     "export-records-response": {
       title: "Review Before Exporting Records Response",
       confirmLabel: "Export Response",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Writes the approved records response package to the local export folder.",
@@ -2568,13 +2568,13 @@ function guidedReviewForAction(action) {
         request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
         request ? `${(request.search_notes || []).length} search note(s); ${(request.approval_notes || []).length} approval note(s)` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for exporting the response package.",
+      audit: "Creates a CivicSunshine audit entry for exporting the response package.",
       retry: "If approval is missing, the desktop app blocks export and keeps the draft internal."
     },
     "build-records-release-package": {
       title: "Review Before Building Release Package",
       confirmLabel: "Build Release Package",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Writes a checksummed release package manifest with search, document, and exemption decision evidence.",
@@ -2583,13 +2583,13 @@ function guidedReviewForAction(action) {
         request ? `${(request.search_sessions || []).length} search session(s); ${(request.documents || []).length} attached document(s)` : "The desktop app will require a request before building.",
         request ? `${(request.exemption_decisions || []).length} exemption decision(s)` : "The desktop app will require release/redact/exempt decisions."
       ],
-      audit: "Creates a CivicRecords AI audit entry and request timeline entry with the package hash.",
+      audit: "Creates a CivicSunshine audit entry and request timeline entry with the package hash.",
       retry: "If source evidence or exemption decisions are missing, the desktop app leaves release package state unchanged."
     },
     "fulfill-records-request": {
       title: "Review Before Marking Records Fulfilled",
       confirmLabel: "Mark Fulfilled",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Marks the request fulfilled and records a publication event hash for the released response.",
@@ -2598,13 +2598,13 @@ function guidedReviewForAction(action) {
         request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
         request ? `${(request.exports || []).length} export package(s); ${(request.release_packages || []).length} release package manifest(s)` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates CivicRecords AI audit and CivicCore publication-gate entries.",
+      audit: "Creates CivicSunshine audit and CivicCore publication-gate entries.",
       retry: "If approval, export, or release package evidence is missing, the desktop app blocks fulfillment."
     },
     "close-records-request": {
       title: "Review Before Closing Records Request",
       confirmLabel: "Close Request",
-      module: "CivicRecords AI",
+      module: "CivicSunshine",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Closes the request after fulfillment and preserves the request history.",
@@ -2613,13 +2613,13 @@ function guidedReviewForAction(action) {
         request?.fulfilled_at_unix_seconds ? "Request has been fulfilled." : "Request is not fulfilled yet.",
         request ? `Due date: ${request.deadline}` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for closing the request.",
+      audit: "Creates a CivicSunshine audit entry for closing the request.",
       retry: "If the request has not been fulfilled, the desktop app blocks closure."
     },
     "mark-notification-sent": {
       title: "Review Before Logging Notification Sent",
       confirmLabel: "Log Notification Sent",
-      module: "CivicCore + CivicRecords AI",
+      module: "CivicCore + CivicSunshine",
       subject: notificationSubject,
       status: notification ? notification.status : "No local notification selected yet.",
       changes: "Marks the selected local notification outbox item as sent or otherwise handled by staff.",
@@ -4301,7 +4301,7 @@ function renderCodeWorkflow() {
           <span class="status-warn">${escapeHtml(item.handoff_status)}</span>
           <h3>${escapeHtml(item.title)}</h3>
           <p>${escapeHtml(item.legislation_type)} adopted from ${escapeHtml(item.meeting_title)}.</p>
-          <small>${escapeHtml(item.effective_date || "No effective date")} - ${escapeHtml(item.codification_section_hint || "No codification hint")} - CivicClerk adoption event</small>
+          <small>${escapeHtml(item.effective_date || "No effective date")} - ${escapeHtml(item.codification_section_hint || "No codification hint")} - CivicMeetings adoption event</small>
         </article>
       `).join("")}
     </section>

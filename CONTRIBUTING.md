@@ -16,7 +16,7 @@ the most common contributor friction.
 - **Records-module bug** (request lifecycle, response letters, fee schedules,
   exemption dashboard, public request portal) -> file at
   `CivicSuite/civicrecords-ai` (the records repo now lives in the CivicSuite org; the canonical home is `CivicSuite/civicrecords-ai`).
-- **CivicClerk / CivicCode / CivicZone bug** -> file at the matching module
+- **CivicMeetings / CivicCode / CivicZone bug** -> file at the matching module
   repo. If the module repo doesn't exist yet, file in this umbrella with the
   `module:<name>` label.
 - **Cross-module strategy or roadmap question, docs typo, ADR proposal, suite

@@ -14,16 +14,16 @@ Last verified: June 27, 2026.
 | Shared platform modules | **1** (`CivicCore`) | `specs/01_catalog.md` Tier 0 and `specs/02_CivicCore.md` | verified |
 | Total tiers in catalog | **7** (Tier 0 through Tier 6) | `specs/01_catalog.md` section headers 7–13 | ✅ |
 | CivicCore extraction phases | **6** (Phase 0 through Phase 5) | `specs/02_CivicCore.md` §12 ("The six phases") | ✅ |
-| CivicRecords AI test modules (regression baseline) | **36** | `specs/02_CivicCore.md` §15 and §17 | ✅ |
+| CivicSunshine test modules (regression baseline) | **36** | `specs/02_CivicCore.md` §15 and §17 | ✅ |
 | Phase 1 scope (subsystems extracted) | **4** (User, Role, Department, audit_log) | `specs/02_CivicCore.md` §12 phase 1 row | ✅ |
 | CivicCore directory layout subdirs | **14** (auth, audit, llm, ingest, search, connectors, notifications, onboarding, catalog, exemptions, verification, models, migrations, scaffold) | `specs/02_CivicCore.md` Appendix B | ✅ |
-| CivicClerk entity tables | **15** | `specs/03_civicclerk.md` §12 | ✅ |
-| CivicClerk REST endpoints | **25** | `specs/03_civicclerk.md` §29 | ✅ |
-| CivicClerk frontend pages | **20** | `specs/03_civicclerk.md` §30 | ✅ |
-| CivicClerk prompts | **9** | `specs/03_civicclerk.md` §17 | ✅ |
-| CivicClerk RBAC roles | **9** | `specs/03_civicclerk.md` §26 | ✅ |
-| CivicClerk connectors | **11** | `specs/03_civicclerk.md` §33 | ✅ |
-| CivicClerk test areas | **15** | `specs/03_civicclerk.md` §39 | ✅ |
+| CivicMeetings entity tables | **15** | `specs/03_civicclerk.md` §12 | ✅ |
+| CivicMeetings REST endpoints | **25** | `specs/03_civicclerk.md` §29 | ✅ |
+| CivicMeetings frontend pages | **20** | `specs/03_civicclerk.md` §30 | ✅ |
+| CivicMeetings prompts | **9** | `specs/03_civicclerk.md` §17 | ✅ |
+| CivicMeetings RBAC roles | **9** | `specs/03_civicclerk.md` §26 | ✅ |
+| CivicMeetings connectors | **11** | `specs/03_civicclerk.md` §33 | ✅ |
+| CivicMeetings test areas | **15** | `specs/03_civicclerk.md` §39 | ✅ |
 | CivicZone entity tables | **11** | `specs/04_civiczone.md` §8 | ✅ |
 | CivicZone REST endpoints | **17** | `specs/04_civiczone.md` §28 | ✅ |
 | CivicZone frontend pages | **14** | `specs/04_civiczone.md` §29 | ✅ |
@@ -41,7 +41,7 @@ The product-module total is 27. `CivicCore` is the shared platform prerequisite 
 | Tier | Name | Count | Modules |
 |---|---|---|---|
 | 0 | Foundation platform | 1 platform | CivicCore |
-| 1 | Clerk Core | 4 | CivicRecords AI, CivicClerk, CivicCode, CivicAccess |
+| 1 | Clerk Core | 4 | CivicSunshine, CivicMeetings, CivicCode, CivicAccess |
 | 2 | Land Use & Development | 4 | CivicZone, CivicPlan, CivicPermit Assist, CivicInspect |
 | 3 | Administrative Expansion | 5 | CivicGrants, CivicProcure Assist, CivicContracts, CivicBoards, CivicNotice |
 | 4 | Operations & Resident Services | 5 | Civic311, CivicComms, CivicData Bridge, CivicRegWatch, CivicAPI |
@@ -74,7 +74,7 @@ Every CHARTER reference to a spec section, verified against the actual spec sect
 | CHARTER reference | Target | Verified? |
 |---|---|---|
 | "CivicCore Extraction Spec §8 (extraction inventory)" | `02_CivicCore.md` §8 = "The extraction inventory" | ✅ |
-| "CivicCore Extraction Spec §9 (what stays in CivicRecords AI)" | `02_CivicCore.md` §9 = "What stays in CivicRecords AI" | ✅ |
+| "CivicCore Extraction Spec §9 (what stays in CivicSunshine AI)" | `02_CivicCore.md` §9 = "What stays in CivicSunshine AI" | ✅ |
 | "CivicCore Extraction Spec §18 (Risks table, mitigation row 7)" | `02_CivicCore.md` §18 = "Risks and mitigations"; row 7 is "Contributor confusion about where to file a bug" → "Each repo's CONTRIBUTING.md has a 'where does this bug go' decision tree" | ✅ |
 | "CivicCore Extraction Spec Appendix B" | `02_CivicCore.md` Appendix B = "Directory layout (civiccore repo)" | ✅ |
 | "CivicClerk spec §12 (Entity overview)" | `03_civicclerk.md` §12 = "Entity overview" (15 tables) | ✅ |
@@ -113,7 +113,7 @@ Project standardized on Apache License 2.0 for code on 2026-04-23 (Scott confirm
 |---|---|---|
 | Default LLM | Gemma 4 (via Ollama, local) | `01_catalog.md` §3, `02_CivicCore.md` §6.1, all module specs |
 | Embeddings | nomic-embed-text (via Ollama, local) | All module specs |
-| Transcription (CivicClerk) | Whisper large-v3 default, configurable | `03_civicclerk.md` §19 |
+| Transcription (CivicMeetings) | Whisper large-v3 default, configurable | `03_civicclerk.md` §19 |
 | Database | Bundled portable PostgreSQL 17 + pgvector | `installer/modules.json` (civiccore `portable-postgres` service), `docs/installer/operator-walkthrough.md` |
 | Local model runtime | Bundled Ollama serving the pinned Gemma 4 12B QAT model | `desktop/runtime/gemma4-model.json`, `docs/installer/operator-walkthrough.md` |
 | Desktop shell / frontend | Tauri + WebView2 (the `desktop-shell` service) | `installer/modules.json` (civiccore `tauri-webview` service), `docs/installer/operator-walkthrough.md` |
