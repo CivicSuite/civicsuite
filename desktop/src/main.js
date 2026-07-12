@@ -5878,13 +5878,26 @@ async function handleChooseFilePath(field) {
   render();
 }
 
+// The current first-run wizard step id, or undefined outside an active wizard.
+// The folder pickers live ON the current step (locations/backup), so tagging a
+// folder-pick result with this id lets renderFirstRunStep show a same-step
+// failure inline while a foreign result (no/other forStepId) stays out.
+function currentFirstRunStepId() {
+  const firstRun = state.app && state.app.first_run;
+  if (!firstRun || firstRun.finished) return undefined;
+  const current = (firstRun.steps || []).find((step) => step.current);
+  return current ? current.id : firstRun.current_step_id;
+}
+
 async function handleChooseFolderPath(field) {
   if (!Object.prototype.hasOwnProperty.call(state.setupDraft, field)) {
     return;
   }
+  const forStepId = currentFirstRunStepId();
   if (!hasTauriBridge()) {
     state.actionResult = {
       accepted: false,
+      forStepId,
       status: "Desktop app required",
       message: "Native folder selection is available in the Windows desktop app, not the browser preview.",
       next_action: desktopAppRequiredNextAction("choose the city data or backup folder from the folder picker")
@@ -5898,6 +5911,7 @@ async function handleChooseFolderPath(field) {
       state.setupDraft[field] = pickedPath;
       state.actionResult = {
         accepted: true,
+        forStepId,
         status: "Folder selected",
         message: "The selected local folder path was added to the setup field.",
         next_action: "Review the folder path, then save local folders or continue setup."
@@ -5905,6 +5919,7 @@ async function handleChooseFolderPath(field) {
     } else {
       state.actionResult = {
         accepted: false,
+        forStepId,
         status: "No folder selected",
         message: "No local folder was selected.",
         next_action: "Choose Folder again or type the path if IT has already supplied one."
@@ -5915,6 +5930,7 @@ async function handleChooseFolderPath(field) {
     const isAdminGate = /sign in as the civicsuite admin/i.test(raw);
     state.actionResult = {
       accepted: false,
+      forStepId,
       status: isAdminGate ? "Sign in required" : "Needs attention",
       message: raw,
       next_action: isAdminGate

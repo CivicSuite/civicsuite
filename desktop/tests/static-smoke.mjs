@@ -218,6 +218,8 @@ for (const phrase of [
   "renderSetupFields(step, actionLocked)",
   'data-folder-path-field="${escapeHtml(field)}" ${locked ? "disabled" : ""}',
   "forStepId: stepId,",
+  "function currentFirstRunStepId",
+  "const forStepId = currentFirstRunStepId();",
   "state.actionResult.forStepId === step.id) ? state.actionResult.next_action : step.next_action",
   "Try Choose Folder again, or type the folder path directly."
 ]) {
