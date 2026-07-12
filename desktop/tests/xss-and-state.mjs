@@ -382,4 +382,79 @@ function finishedBase() {
   }
 }
 
-console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12) checks passed");
+// ===========================================================================
+// T13 — first-run "Action needed" box scopes its failure text to the step that
+//   produced it (state.actionResult.forStepId === step.id). Behavioral guard for
+//   the 2026-07-12 Wave-1 C3 fix and its two follow-on regressions:
+//     - a foreign result (a Settings module action, no forStepId) must NOT bleed
+//       onto the wizard step it doesn't belong to (cross-context isolation), and
+//     - a same-step failure (e.g. a Choose Folder error tagged with the current
+//       step) MUST still show inline in that step's box.
+//   Drives the REAL renderFirstRunWizard() with the backup step current.
+// ===========================================================================
+{
+  const backupSteps = t.fallbackState.first_run.steps.map((step) => ({
+    ...step,
+    current: step.id === "backup",
+    status: step.id === "backup" ? "Current" : "Needs setup",
+    next_action: step.id === "backup" ? "ROUTINE_BACKUP_NEXT" : step.next_action
+  }));
+  const app = {
+    ...t.fallbackState,
+    first_run: {
+      ...t.fallbackState.first_run,
+      finished: false,
+      current_step_id: "backup",
+      steps: backupSteps
+    }
+  };
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? app : {});
+  await t.loadAppState();
+  if (t.appStateLoaded !== true) fail("T13: appStateLoaded must be true for the backup-step first-run state");
+
+  // Text inside the current step's "Action needed" <span> (not the bottom banner).
+  function actionNeededText(html) {
+    const box = html.indexOf("first-run-action-needed");
+    if (box === -1) return null;
+    const open = html.indexOf("<span>", box);
+    const close = html.indexOf("</span>", open);
+    return html.slice(open + "<span>".length, close);
+  }
+
+  // (a) no failure -> box shows the step's own routine next_action.
+  t.state.actionResult = null;
+  let box = actionNeededText(t.renderFirstRunWizard());
+  if (box === null) fail("T13a: the current backup step must render an 'Action needed' box");
+  if (!box.includes("ROUTINE_BACKUP_NEXT")) {
+    fail("T13a: with no failure the box must show the step's own next_action");
+  }
+
+  // (b) same-step failure (forStepId === "backup") -> box shows the failure remedy.
+  t.state.actionResult = { accepted: false, forStepId: "backup", status: "x", message: "m", next_action: "SAMESTEP_REMEDY" };
+  box = actionNeededText(t.renderFirstRunWizard());
+  if (!box.includes("SAMESTEP_REMEDY")) {
+    fail("T13b: a same-step failure must show its remedy inline in the step box");
+  }
+
+  // (c) foreign failure (no forStepId, e.g. a module action) -> must NOT bleed onto
+  //     the step; the box falls back to the step's own next_action.
+  t.state.actionResult = { accepted: false, status: "x", message: "m", next_action: "FOREIGN_REMEDY" };
+  box = actionNeededText(t.renderFirstRunWizard());
+  if (box.includes("FOREIGN_REMEDY")) {
+    fail("T13c: a foreign failure (no forStepId) must NOT show in the wizard step box");
+  }
+  if (!box.includes("ROUTINE_BACKUP_NEXT")) {
+    fail("T13c: with a foreign failure the box must fall back to the step's own next_action");
+  }
+
+  // (d) failure tagged for another step (forStepId === "locations") -> must not bleed
+  //     onto the backup step either.
+  t.state.actionResult = { accepted: false, forStepId: "locations", status: "x", message: "m", next_action: "OTHERSTEP_REMEDY" };
+  box = actionNeededText(t.renderFirstRunWizard());
+  if (box.includes("OTHERSTEP_REMEDY")) {
+    fail("T13d: a failure tagged for another step must NOT show on the backup step box");
+  }
+  t.state.actionResult = null;
+}
+
+console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12 + T13) checks passed");
