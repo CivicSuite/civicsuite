@@ -52,18 +52,22 @@ that bundles a fixed set of city-core module versions on one CivicCore platform
 version, not a module that consumes CivicCore. It is recorded here as its own
 section rather than as a module row.
 
-`civicsuite-windows-local-v1.0.2` is the Latest Windows-Local release
-(2026-07-02). It supersedes v1.0.1, which superseded v1.0.0; the
-`windows-local-msi-firstrun-fix-rc1` prerelease is retired. The MSI is an
-UNSIGNED beta: SmartScreen shows "Unknown Publisher" -
-choose "More info" then "Run anyway". Authenticode code-signing is a documented
-GA-gate item, not a beta blocker. This product is BETA. It does not claim
-public-use readiness, city-ready status, procurement/production readiness,
-macOS lifecycle certification, or full-suite release.
+`civicsuite-windows-local-v1.0.3` is the Latest Windows-Local release
+(2026-07-11). It supersedes v1.0.2, which superseded v1.0.1 and v1.0.0; the
+`windows-local-msi-firstrun-fix-rc1` prerelease is retired. v1.0.3 is the first
+**Authenticode code-signed** MSI (Azure Trusted Signing). Because the
+certificate is new, SmartScreen may still show "Windows protected your PC" on
+first run - choose "More info", confirm it shows a verified publisher (not
+"Unknown Publisher"), then "Run anyway"; this fades as the certificate builds
+reputation. (v1.0.1 and v1.0.2 were unsigned betas.) This product is
+BETA. It does not claim public-use readiness, city-ready status,
+procurement/production readiness, macOS lifecycle certification, or full-suite
+release.
 
 | Product                            | Released   | CivicCore platform | Status        | Notes |
 |------------------------------------|------------|--------------------|---------------|-------|
-| civicsuite-windows-local-v1.0.2    | 2026-07-02 | 1.2.0              | unsigned beta | Latest Windows-Local release; Tauri/WebView2 desktop MSI bundling the six-module city-core profile (adds CivicAccess 0.4.0 with real local-AI accessibility features) on CivicCore 1.2.0. Supersedes v1.0.1. |
+| civicsuite-windows-local-v1.0.3    | 2026-07-11 | 1.2.0              | signed beta   | Latest Windows-Local release; first Authenticode code-signed MSI (Azure Trusted Signing). Same six-module city-core profile as v1.0.2 with the unsigned/SmartScreen warning surfaces removed. Supersedes v1.0.2. |
+| civicsuite-windows-local-v1.0.2    | 2026-07-02 | 1.2.0              | unsigned beta | Superseded by v1.0.3. Tauri/WebView2 desktop MSI bundling the six-module city-core profile (adds CivicAccess 0.4.0 with real local-AI accessibility features) on CivicCore 1.2.0. Supersedes v1.0.1. |
 | civicsuite-windows-local-v1.0.1    | 2026-06-19 | 1.2.0              | unsigned beta | Superseded by v1.0.2. Tauri/WebView2 desktop MSI bundling the five city-core modules on CivicCore 1.2.0. Supersedes v1.0.0; firstrun-fix-rc1 prerelease retired. |
 
 Bundled city-core modules in the latest release (release-line versions; four of the six modules — civiccore, civicrecords-ai, civicclerk, and civiccode — bundle `source_commit` pins ahead of their published tags — see [PROVENANCE.md](../../PROVENANCE.md)):

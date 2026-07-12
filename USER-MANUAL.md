@@ -20,7 +20,7 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 ### Current honest state
 
-The Windows Local city-core package (`civicsuite-windows-local-v1.0.2`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine. Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI and ships with the next release. For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the release-verification gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
+The Windows Local city-core package (`civicsuite-windows-local-v1.0.2`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine. The MSI is Authenticode code-signed via Azure Trusted Signing; a new certificate has no reputation yet, so Windows SmartScreen may still prompt on first run — click *More info*, confirm it shows a verified publisher (not "Unknown Publisher"), then *Run anyway* (see [docs/troubleshooting.md](docs/troubleshooting.md)). For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the release-verification gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 - `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records module release at v1.7.3.

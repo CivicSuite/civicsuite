@@ -23,7 +23,7 @@ Recommended machine: **32 GB RAM** (16 GB is a workable minimum; the local model
 
 The current release is **[civicsuite-windows-local-v1.0.2](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2)** (Latest; it supersedes v1.0.1, which superseded v1.0.0; the earlier first-run-fix prerelease is retired). For the full step-by-step, see [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
-This is a **GA candidate, open for public beta**: feature-complete for city-core and validated end-to-end on a clean machine. Authenticode code signing (via Azure Trusted Signing) is wired and proven in CI and ships with the next release. You can download and use it now for real hands-on evaluation and early adoption. It is still a **beta** — **not yet production-, city-, or procurement-ready** — so do not run your city's system of record on it yet.
+This is a **GA candidate, open for public beta**: feature-complete for city-core and validated end-to-end on a clean machine. The MSI is Authenticode code-signed via Azure Trusted Signing. Because the certificate is new, Windows SmartScreen may still show *"Windows protected your PC"* on first run — click **More info**, confirm it shows a **verified publisher** (not "Unknown Publisher"), then **Run anyway** (see [docs/troubleshooting.md](docs/troubleshooting.md#windows-smartscreen-when-you-run-the-installer)). You can download and use it now for real hands-on evaluation and early adoption. It is still a **beta** — **not yet production-, city-, or procurement-ready** — so do not run your city's system of record on it yet.
 
 ## Can my city rely on CivicSuite for live operations today?
 
