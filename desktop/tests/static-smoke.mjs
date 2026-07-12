@@ -133,7 +133,7 @@ const requiredUiPhrases = [
   "City workflow services",
   "Background work queue",
   "Local document storage",
-  "Create the first local administrator and sign in before changing local model setup.",
+  "Create the first CivicSuite admin and sign in before changing local model setup.",
   "The Windows installer owns the app folder.",
   "Enabled modules:",
   "Data remains installed. Re-enable this module to show its work area.",
@@ -142,12 +142,12 @@ const requiredUiPhrases = [
   "Selected code source for actions:",
   "Module actions are handled by the Windows desktop app",
   "Source history:",
-  "Sign in as local administrator to change local model setup.",
-  "Sign in as local administrator to use local lifecycle actions.",
-  "Sign in with the local administrator passcode before continuing setup.",
-  "Use a local administrator account before changing setup, model, backup, restore, repair, module, user, or runtime settings.",
-  "Use a local staff or administrator passcode for city work.",
-  "Use a local administrator account for setup, users, modules, backups, restore, repair, model setup, or runtime services.",
+  "Sign in as CivicSuite admin to change local model setup.",
+  "Sign in as CivicSuite admin to use local lifecycle actions.",
+  "Sign in with the CivicSuite admin passcode before continuing setup.",
+  "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or runtime settings.",
+  "Use a staff or CivicSuite admin passcode for city work.",
+  "Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or runtime services.",
   "Check the email and local passcode, then try again."
 ];
 
@@ -197,7 +197,7 @@ for (const phrase of [
   "function showStandaloneModelReadiness",
   "showStandaloneModelReadiness() ? renderModelReadiness({ compact: true })",
   "status: \"Sign in required\"",
-  "const lockMessage = adminOnlyLockMessage(\"Sign in as local administrator to use local lifecycle actions.\");",
+  "const lockMessage = adminOnlyLockMessage(\"Sign in as CivicSuite admin to use local lifecycle actions.\");",
   "const lockMessage = modelSetupLockMessage();",
   "data-supervisor-action=\"backup\" ${adminDisabled}",
   "data-supervisor-action=\"install\" data-service-id=\"${escapeHtml(item.id)}\" ${adminDisabled}",
@@ -205,6 +205,23 @@ for (const phrase of [
 ]) {
   if (!main.includes(phrase)) {
     throw new Error(`desktop admin-only UI guard missing phrase: ${phrase}`);
+  }
+}
+
+// Wave 1 first-run UX guards (audit 2026-07-12): folder picker locks with the
+// primary action, the step's Action-needed box survives a failure, save errors
+// name the real field, and folder errors only blame sign-in when it's the gate.
+for (const phrase of [
+  "function friendlyFirstRunError",
+  "Missing required setup field:",
+  "Enter a value for ${label}, then save.",
+  "renderSetupFields(step, actionLocked)",
+  'data-folder-path-field="${escapeHtml(field)}" ${locked ? "disabled" : ""}',
+  "(state.actionResult && state.actionResult.accepted === false) ? state.actionResult.next_action : step.next_action",
+  "Try Choose Folder again, or type the folder path directly."
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop first-run UX guard missing phrase: ${phrase}`);
   }
 }
 
@@ -351,7 +368,7 @@ if (!main.includes('status: "Working"') || !main.includes("Keep CivicSuite open 
   throw new Error("desktop supervisor confirms must leave guided review state before long-running native actions");
 }
 
-if (!rustMain.includes("before changing CivicSuite setup, profile, model, backup, or runtime settings")) {
+if (!rustMain.includes("before changing setup, profile, model, backup, or runtime settings")) {
   throw new Error("desktop shell must require local admin access before first-run setup/profile/model/runtime mutations");
 }
 
@@ -632,7 +649,7 @@ for (const phrase of [
   "reset-user-passcode",
   "records-staff",
   "code-staff",
-  "Sign in with a local staff or administrator account before changing city work.",
+  "Sign in with a staff or CivicSuite admin account before changing city work.",
 ]) {
   if (!rustMain.includes(phrase) && !authRust.includes(phrase) && !supervisorRust.includes(phrase) && !firstRunRust.includes(phrase)) {
     throw new Error(`Desktop access/RBAC static guard missing phrase: ${phrase}`);

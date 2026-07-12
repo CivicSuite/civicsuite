@@ -11,7 +11,7 @@ test("home surface keeps local model setup behind first-admin sign-in", async ({
   await expect(page.getByRole("heading", { name: "City Core setup checklist" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Gemma 4 12B QAT Q4_0" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download / Resume" })).toHaveCount(0);
-  await expect(page.getByText("Create the first local administrator and sign in before changing local model setup.")).toHaveCount(0);
+  await expect(page.getByText("Create the first CivicSuite admin and sign in before changing local model setup.")).toHaveCount(0);
   await expect(page.getByText("5 local components are part of this Windows profile.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
 
@@ -30,7 +30,7 @@ test("system health shows model readiness with pre-admin actions locked", async 
   await expect(page.getByText("Download progress")).toBeVisible();
   await expect(page.getByText("No verified or partial Gemma model download is saved on this machine.")).toBeVisible();
   await expect(page.getByText("Needs verification")).toBeVisible();
-  await expect(page.getByText("Create the first local administrator and sign in before changing local model setup.")).toBeVisible();
+  await expect(page.getByText("Create the first CivicSuite admin and sign in before changing local model setup.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Model Folder" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Download / Resume" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Verify Checksum" })).toBeDisabled();

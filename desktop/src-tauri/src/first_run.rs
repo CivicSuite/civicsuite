@@ -466,7 +466,7 @@ fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), Strin
     write_json_file(config_dir().join("city-profile.json"), &profile)
 }
 
-/// Minimum length for the first local administrator passcode.
+/// Minimum length for the first CivicSuite admin passcode.
 /// Mirrored client-side in desktop/src/main.js and matched by the staff
 /// passcode rule in auth.rs.
 pub(crate) const MINIMUM_ADMIN_PASSCODE_LENGTH: usize = 10;
@@ -475,7 +475,7 @@ fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String
     let passcode = payload_string(payload, "adminPasscode")?;
     if passcode.chars().count() < MINIMUM_ADMIN_PASSCODE_LENGTH {
         return Err(format!(
-            "The local administrator passcode must be at least {MINIMUM_ADMIN_PASSCODE_LENGTH} characters."
+            "The CivicSuite admin passcode must be at least {MINIMUM_ADMIN_PASSCODE_LENGTH} characters."
         ));
     }
     let (passcode_salt, passcode_hash) = hash_argon2id_local_passcode(&passcode)?;
@@ -561,9 +561,9 @@ pub(crate) fn verify_admin_passcode(
     passcode: &str,
 ) -> Result<SavedFirstAdmin, String> {
     let record = saved_admin_record()?
-        .ok_or_else(|| "Create the first local administrator before signing in.".to_string())?;
+        .ok_or_else(|| "Create the first CivicSuite admin before signing in.".to_string())?;
     if !record.email.eq_ignore_ascii_case(email.trim()) {
-        return Err("The local administrator email does not match.".to_string());
+        return Err("The CivicSuite admin email does not match.".to_string());
     }
     let verified = match record.passcode_algorithm.as_str() {
         PASSCODE_ALGORITHM_ARGON2ID => {
@@ -579,12 +579,12 @@ pub(crate) fn verify_admin_passcode(
         }
         _ => {
             return Err(
-                "The local administrator passcode hash uses an unsupported format.".to_string(),
+                "The CivicSuite admin passcode hash uses an unsupported format.".to_string(),
             )
         }
     };
     if !verified {
-        return Err("The local administrator passcode did not match.".to_string());
+        return Err("The CivicSuite admin passcode did not match.".to_string());
     }
     Ok(SavedFirstAdmin {
         display_name: record.display_name,
@@ -749,8 +749,8 @@ pub fn first_run_action(
     if action == "create-admin" {
         action_completion = Some((
             "Saved",
-            "The first local administrator was saved for this Windows profile.".to_string(),
-            "Sign in with that local administrator account, then continue backup and local model setup."
+            "The first CivicSuite admin was saved for this Windows profile.".to_string(),
+            "Sign in with that CivicSuite admin account, then continue backup and local model setup."
                 .to_string(),
         ));
     }
