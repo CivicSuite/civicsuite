@@ -47,14 +47,14 @@ Do not reuse old installer artifacts; always download the current release from t
 The Windows MSI is Authenticode code-signed via Azure Trusted Signing. To verify a download came from an authorized source:
 
 1. Compare the MSI's SHA-256 checksum with the hash published on the official CivicSuite releases page.
-2. Right-click the MSI file, select **Properties**, open the **Digital Signatures** tab, and confirm the signer is **Scott Converse**.
+2. Right-click the MSI file, select **Properties**, open the **Digital Signatures** tab, and confirm it lists a **verified publisher** (not "Unknown Publisher").
 
 ## Windows SmartScreen When You Run The Installer
 
 Because the signing certificate is new, Windows SmartScreen may still show **"Windows protected your PC"** the first time you run the installer. This does **not** mean the file is unsafe:
 
 1. Click **More info**.
-2. Confirm the **Publisher** reads **Scott Converse** (a verified publisher — not "Unknown Publisher").
+2. Confirm the **Publisher** shows a **verified publisher** — not "Unknown Publisher".
 3. Click **Run anyway**.
 
 This prompt is normal for a newly code-signed application and stops appearing on its own as the certificate builds download reputation over time.

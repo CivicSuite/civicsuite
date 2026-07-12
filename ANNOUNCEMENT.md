@@ -47,7 +47,7 @@ Everything — your data, your documents, your audit trail, the AI model — sta
 Same posture as v1.0.1; the bundled scope grew:
 
 - **GA candidate** describes maturity. The v1.0.2 MSI passed CI lifecycle validation (install → first-run → backup-restore → uninstall on a fresh `windows-latest` runner, run `28626482190`), and **Phase D clean-machine acceptance passed** — two full Windows Sandbox runs of the shipped installer covering install, the complete first-run wizard, admin sign-in, the model download/verify/load chain, and the three Accessibility AI features live against the real model, including the run that caught (and this release's fix that closed) the clean-machine database bug. See "What changed" above and the [v1.0.2 release notes](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2) for the full story.
-- **Public beta** describes the stage. The MSI is Authenticode code-signed via Azure Trusted Signing (verified publisher: Scott Converse). A new certificate has no reputation yet, so Windows SmartScreen may still prompt on first run — click *More info → Run anyway* after confirming the publisher.
+- **Public beta** describes the stage. The MSI is Authenticode code-signed via Azure Trusted Signing. A new certificate has no reputation yet, so Windows SmartScreen may still prompt on first run — click *More info*, confirm it shows a verified publisher (not "Unknown Publisher"), then *Run anyway*.
 
 ## Install (60-second version)
 
