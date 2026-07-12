@@ -67,7 +67,7 @@ The Windows MSI is Authenticode code-signed via Azure Trusted Signing. Because t
 - City Core installs CivicCore plus CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess. CivicCore is always installed and cannot be deselected.
 - 32 GB RAM is recommended (16 GB is a workable minimum) — headroom for the local model resident alongside PostgreSQL and the services.
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
-- First-run setup covers local folders, module selection, city profile, first local administrator sign-in, backup folder, model download/verification, health verification, and finish.
+- First-run setup covers local folders, module selection, city profile, first CivicSuite admin sign-in, backup folder, model download/verification, health verification, and finish.
 - Trust path: download `CivicSuite_1.0.2_x64_en-US.msi` from the [civicsuite-windows-local-v1.0.2 release](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2), verify its SHA-256 `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`, and confirm the module pins in [installer/modules.json](installer/modules.json).
 - macOS and Linux package paths remain separate future or historical profiles until each has refreshed install-lifecycle testing on the same operating system it ships for.
 

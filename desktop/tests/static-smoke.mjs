@@ -217,7 +217,8 @@ for (const phrase of [
   "Enter a value for ${label}, then save.",
   "renderSetupFields(step, actionLocked)",
   'data-folder-path-field="${escapeHtml(field)}" ${locked ? "disabled" : ""}',
-  "(state.actionResult && state.actionResult.accepted === false) ? state.actionResult.next_action : step.next_action",
+  "forStepId: stepId,",
+  "state.actionResult.forStepId === step.id) ? state.actionResult.next_action : step.next_action",
   "Try Choose Folder again, or type the folder path directly."
 ]) {
   if (!main.includes(phrase)) {

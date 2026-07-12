@@ -1362,7 +1362,7 @@ function renderFirstRunStep(step, index) {
         ${step.current && !isPublicSurface() ? `
           <div class="first-run-action-needed action-result blocked">
             <strong>Action needed</strong>
-            <span>${escapeHtml((state.actionResult && state.actionResult.accepted === false) ? state.actionResult.next_action : step.next_action)}</span>
+            <span>${escapeHtml((state.actionResult && state.actionResult.accepted === false && state.actionResult.forStepId === step.id) ? state.actionResult.next_action : step.next_action)}</span>
           </div>
         ` : ""}
         ${renderSetupFields(step, actionLocked)}
@@ -5664,6 +5664,7 @@ async function handleFirstRunAction(action, stepId) {
   if (stepId === "first-admin" && state.setupDraft.adminPasscode.length < 10) {
     state.actionResult = {
       accepted: false,
+      forStepId: stepId,
       status: "Needs attention",
       message: "The CivicSuite admin passcode must be at least 10 characters.",
       next_action: "Enter a 10-character or longer CivicSuite admin passcode, then continue setup."
@@ -5682,6 +5683,7 @@ async function handleFirstRunAction(action, stepId) {
     const friendly = friendlyFirstRunError(error);
     state.actionResult = {
       accepted: false,
+      forStepId: stepId,
       status: "Needs attention",
       message: friendly.message,
       next_action: friendly.next_action
