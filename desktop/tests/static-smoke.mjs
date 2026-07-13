@@ -228,6 +228,27 @@ for (const phrase of [
   }
 }
 
+// Wave 2 first-run Criticals (audit 2026-07-12): model download shows a working
+// state + locks its buttons (C1), the sign-in lockout stops contradicting itself
+// (C5), and a blocked module shows a plain reason not the raw contract string (C6).
+for (const phrase of [
+  "state.modelActionInFlight = action;",
+  "Downloading…",
+  "CivicSuite may look frozen while it downloads",
+  "too many failed sign-in attempts",
+  "not available in this release yet",
+  'result.working ? "working"',
+  "this local staff user is disabled"
+]) {
+  if (!main.includes(phrase)) {
+    throw new Error(`desktop first-run Wave-2 guard missing phrase: ${phrase}`);
+  }
+}
+// C7: the Health block names the exact control to click, not a vague "finish setup".
+if (!firstRunRust.includes("Open the Local AI model step, click Verify Checksum")) {
+  throw new Error("desktop shell: verify-health block must name the Verify Checksum control (C7)");
+}
+
 for (const phrase of ["Docker", "WSL"]) {
   if (main.includes(`Start ${phrase}`) || main.includes(`Install ${phrase}`)) {
     throw new Error(`desktop shell should not direct clerks to start/install ${phrase}`);

@@ -457,4 +457,81 @@ function finishedBase() {
   t.state.actionResult = null;
 }
 
-console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12 + T13) checks passed");
+// ===========================================================================
+// T14 — model actions show a working "Downloading…" label while a download is in
+//   flight (Wave-2 C1). Drives the REAL health surface (renderModelActions).
+// ===========================================================================
+{
+  const app = finishedBase();
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? app : {});
+  await t.loadAppState();
+  t.state.activeArea = "health";
+
+  // idle: primary button shows the normal label, not the working one.
+  t.state.modelActionInFlight = null;
+  t.render();
+  if (appEl.innerHTML.includes("Downloading…")) {
+    fail("T14a: idle model actions must NOT show the Downloading… working label");
+  }
+
+  // in flight (download): label flips to the working state.
+  t.state.modelActionInFlight = "resume-download";
+  t.render();
+  if (!appEl.innerHTML.includes("Downloading…")) {
+    fail("T14b: an in-flight download must show the Downloading… working label");
+  }
+
+  // C1 review fix: the in-flight result box uses the neutral "working" class, NOT
+  // the green "saved" success class (which would read as "done" mid-download).
+  t.state.modelActionResult = {
+    working: true,
+    status: "Working",
+    message: "Downloading…",
+    next_action: "do not close the app"
+  };
+  t.render();
+  if (!appEl.innerHTML.includes("action-result working")) {
+    fail("T14c: an in-flight model result must use the neutral 'working' class, not the 'saved' success class");
+  }
+  t.state.modelActionInFlight = null;
+  t.state.modelActionResult = null;
+}
+
+// ===========================================================================
+// T15 — a blocked (not-ready) module shows a plain-English reason, and the raw
+//   contract string is kept only as a hover tooltip, not visible text (C6).
+//   Renders the first-run 'modules' step in custom mode where civiczone is blocked.
+// ===========================================================================
+{
+  const modulesSteps = t.fallbackState.first_run.steps.map((step) => ({
+    ...step,
+    current: step.id === "modules"
+  }));
+  const app = {
+    ...t.fallbackState,
+    first_run: {
+      ...t.fallbackState.first_run,
+      finished: false,
+      current_step_id: "modules",
+      steps: modulesSteps
+    }
+  };
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? app : {});
+  await t.loadAppState();
+  t.state.moduleDraft.profileId = "custom"; // show the full selectable list incl. blocked civiczone
+  const wiz = t.renderFirstRunWizard();
+
+  if (!wiz.includes("not available in this release yet")) {
+    fail("T15a: a blocked module must show the plain-English 'not available in this release yet' reason");
+  }
+  // The raw contract string may appear ONLY inside a title="" tooltip, never as
+  // the visible <small> body text.
+  if (!wiz.includes('title="Module civiczone must target CivicCore 1.2.0 for Windows Local 1.0"')) {
+    fail("T15b: the raw contract reason must be preserved as a hover tooltip for support");
+  }
+  if (wiz.includes("- Not ready for Windows Local 1.0: Module civiczone")) {
+    fail("T15c: the raw contract string must NOT be shown as visible module body text");
+  }
+}
+
+console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12 + T13 + T14 + T15) checks passed");
