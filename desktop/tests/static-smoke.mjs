@@ -119,7 +119,7 @@ const requiredUiPhrases = [
   "Exemption Decisions",
   "Build Release Package",
   "Release Packages",
-  "Set Up Services and Model",
+  "Run Health Check",
   "Package Profiles",
   "Module Catalog",
   "Choose Product Modules",
@@ -145,9 +145,9 @@ const requiredUiPhrases = [
   "Sign in as CivicSuite admin to change local model setup.",
   "Sign in as CivicSuite admin to use local lifecycle actions.",
   "Sign in with the CivicSuite admin passcode before continuing setup.",
-  "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or runtime settings.",
+  "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or background services.",
   "Use a staff or CivicSuite admin passcode for city work.",
-  "Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or runtime services.",
+  "Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or background services.",
   "Check the email and local passcode, then try again."
 ];
 
@@ -220,7 +220,8 @@ for (const phrase of [
   "forStepId: stepId,",
   "function currentFirstRunStepId",
   "const forStepId = currentFirstRunStepId();",
-  "state.actionResult.forStepId === step.id) ? state.actionResult.next_action : step.next_action",
+  "state.actionResult && state.actionResult.accepted === false && state.actionResult.forStepId === step.id",
+  "escapeHtml(isFailure ? state.actionResult.next_action : step.next_action)",
   "Try Choose Folder again, or type the folder path directly."
 ]) {
   if (!main.includes(phrase)) {

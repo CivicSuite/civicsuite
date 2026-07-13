@@ -714,6 +714,18 @@ main {
   color: #6d4d10;
 }
 
+/* Genuine failure — distinct red, so it never reads as the same routine
+   amber "next step" hint (.action-result.blocked reused for both). */
+.action-result.failed {
+  background: #fbe6e6;
+  border: 1px solid #e4a8a8;
+  color: #7a1f1f;
+}
+
+.first-run-action-needed.failed {
+  border-left-color: #b93a3a;
+}
+
 /* In-progress state — neutral blue, distinct from green "saved" (done) and
    amber "blocked" (failed), so a long-running action never reads as complete. */
 .action-result.working {
@@ -766,6 +778,31 @@ main {
   text-align: left;
 }
 
+/* Inline variant: a text-link button sitting mid-sentence rather than on its own line. */
+.text-link-line .text-link {
+  display: inline;
+  font-weight: 700;
+  margin-top: 0;
+}
+
+.field-hint {
+  color: #536575;
+  display: block;
+  margin-top: 4px;
+}
+
+.field-hint-error {
+  color: #a02a2a;
+  font-weight: 700;
+}
+
+.model-actions-order {
+  color: #536575;
+  display: block;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
 .module-columns {
   display: grid;
   gap: 16px;
@@ -815,7 +852,10 @@ main {
 }
 
 .module-choice.disabled {
+  background: #eef1f4;
+  border-color: #ccd6dd;
   color: #6a7884;
+  opacity: 0.7;
 }
 
 .profile-choice input,

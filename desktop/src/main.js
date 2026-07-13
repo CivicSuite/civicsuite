@@ -238,7 +238,7 @@ const fallbackState = {
         current: true,
         status: "Current",
         summary: "Choose where the app and city data live on this machine.",
-        detail: "Defaults stay under the current Windows user profile.",
+        detail: "Defaults stay under your current Windows user account.",
         next_action: "Choose install, data, and backup folders.",
         action: "choose-location"
       },
@@ -251,7 +251,7 @@ const fallbackState = {
         current: false,
         status: "Needs setup",
         summary: "City Core is selected by default and CivicCore is locked on.",
-        detail: "Future modules appear only after their package and proof gates pass.",
+        detail: "Other modules become available only after they finish testing for this version.",
         next_action: "Review the City Core module set.",
         action: "select-modules"
       },
@@ -302,7 +302,7 @@ const fallbackState = {
         completed: false,
         current: false,
         status: "Needs setup",
-        summary: "Download Gemma 4 12B quantization-aware weights for local AI.",
+        summary: "Download the local AI model files this app needs.",
         detail: "A signed-in CivicSuite admin verifies pinned metadata and checksums.",
         next_action: "Sign in as the CivicSuite admin, then download and verify the pinned local model weights.",
         action: "download-model"
@@ -1162,7 +1162,7 @@ function setupActionLabel(step) {
     "create-city-profile": "Save city profile",
     "create-admin": "Save first admin",
     "choose-backup": "Create backup folder",
-    "verify-health": "Set Up Services and Model",
+    "verify-health": "Run Health Check",
     "open-app": "Finish setup"
   };
   return labels[step.action] || "Continue setup";
@@ -1182,7 +1182,7 @@ function adminOnlyLockMessage(fallback) {
   const access = accessState();
   if (!adminOnlyControlLocked()) return "";
   if (!access.signed_in) return fallback;
-  return "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or runtime settings.";
+  return "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or background services.";
 }
 
 function modelSetupLockMessage() {
@@ -1311,11 +1311,17 @@ function renderSetupFields(step, actionLocked = false) {
     `;
   }
   if (step.id === "first-admin") {
+    const passcodeFailed =
+      state.actionResult &&
+      state.actionResult.accepted === false &&
+      state.actionResult.forStepId === "first-admin" &&
+      /passcode/i.test(state.actionResult.message || "");
     return `
       <div class="setup-form two-column" aria-label="First admin">
         <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
-        <label>CivicSuite passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
+        <label>CivicSuite passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" placeholder="10 characters or more" autocomplete="new-password" /></label>
+        <small class="${passcodeFailed ? "field-hint field-hint-error" : "field-hint"}">10 characters or more.</small>
       </div>
     `;
   }
@@ -1362,12 +1368,16 @@ function renderFirstRunStep(step, index) {
         </div>
         <p>${escapeHtml(step.summary)}</p>
         <small>${escapeHtml(step.detail)}</small>
-        ${step.current && !isPublicSurface() ? `
-          <div class="first-run-action-needed action-result blocked">
+        ${step.current && !isPublicSurface() ? (() => {
+          const isFailure = Boolean(
+            state.actionResult && state.actionResult.accepted === false && state.actionResult.forStepId === step.id
+          );
+          return `
+          <div class="first-run-action-needed action-result blocked${isFailure ? " failed" : ""}">
             <strong>Action needed</strong>
-            <span>${escapeHtml((state.actionResult && state.actionResult.accepted === false && state.actionResult.forStepId === step.id) ? state.actionResult.next_action : step.next_action)}</span>
-          </div>
-        ` : ""}
+            <span>${escapeHtml(isFailure ? state.actionResult.next_action : step.next_action)}</span>
+          </div>`;
+        })() : ""}
         ${renderSetupFields(step, actionLocked)}
         ${step.current ? `
           <div class="setup-actions">
@@ -1479,8 +1489,8 @@ function renderAccessPanel() {
         <div class="section-title">
           <p class="eyebrow">Local access</p>
           <h3>Signed in as ${escapeHtml(access.operator_name || "CivicSuite admin")}</h3>
-          <p>${escapeHtml(access.role || "local-admin")}</p>
-          ${access.role !== "local-admin" ? `<p>Sign out and use a CivicSuite admin account before changing setup, users, modules, backups, restore, repair, or runtime services.</p>` : ""}
+          <p>${escapeHtml(localRoleLabel(access.role))}</p>
+          ${access.role !== "local-admin" ? `<p>Sign out and use a CivicSuite admin account before changing setup, users, modules, backups, restore, repair, or background services.</p>` : ""}
         </div>
         <div class="health-actions">
           <button type="button" class="secondary-action" data-auth-action="sign-out">Sign Out</button>
@@ -1493,7 +1503,7 @@ function renderAccessPanel() {
       <div class="section-title">
         <p class="eyebrow">Local access</p>
         <h3>Sign In</h3>
-        <p>Use a staff or CivicSuite admin passcode for city work. Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or runtime services.</p>
+        <p>Use a staff or CivicSuite admin passcode for city work. Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or background services.</p>
       </div>
       <div class="workflow-form compact-form">
         <label>Email <input type="email" data-access-field="email" value="${escapeHtml(state.accessDraft.email)}" autocomplete="email" /></label>
@@ -1516,6 +1526,7 @@ function renderFirstRunWizard({ compact = false } = {}) {
         <p class="eyebrow">First-run setup</p>
         <h3>${escapeHtml(firstRun.profile_label)} setup checklist</h3>
         <p>Install stays local to this Windows machine. No Docker, WSL, terminal, or developer tooling is part of the clerk path.</p>
+        <p class="text-link-line">Made a mistake on an earlier step? <button type="button" class="text-link" data-area="settings">Fix it anytime from Settings.</button></p>
       </div>
       <div class="location-grid" aria-label="Default local locations">
         <div>
@@ -1558,6 +1569,7 @@ function renderModelActions(model) {
       : "Download Model";
   return `
     <div class="model-actions" aria-label="Local model setup actions">
+      <small class="model-actions-order">Do these in order: Step 1 Download, Step 2 Verify, Step 3 Start.</small>
       <button type="button" class="secondary-action" data-model-action="open-model-folder" ${disabled}>
         Open Model Folder
       </button>
@@ -1568,7 +1580,7 @@ function renderModelActions(model) {
         Verify Checksum
       </button>
       <button type="button" class="secondary-action" data-model-action="load-runtime-model" ${disabled}>
-        Load in Ollama
+        Start Local AI Engine
       </button>
       <button type="button" class="secondary-action" data-model-action="retry" ${disabled}>
         Retry Setup
@@ -5958,7 +5970,7 @@ async function handleChooseFolderPath(field) {
         forStepId,
         status: "No folder selected",
         message: "No local folder was selected.",
-        next_action: "Choose Folder again or type the path if IT has already supplied one."
+        next_action: "Choose Folder again, or type the folder path directly if you already know it."
       };
     }
   } catch (error) {
@@ -6061,6 +6073,14 @@ async function handleAuthAction(action, payloadOverride = null) {
     };
   }
   render();
+  // Sign-in from the buried access panel unblocks the wizard above it —
+  // bring the current step back into view instead of leaving the clerk
+  // looking at the sign-in box that just succeeded.
+  if (action === "sign-in" && state.authActionResult && state.authActionResult.accepted) {
+    window.requestAnimationFrame(() => {
+      document.querySelector('[data-setup-context="first-run"] .first-run-step.current')?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }
 }
 
 function workPayloadForAction(action) {
