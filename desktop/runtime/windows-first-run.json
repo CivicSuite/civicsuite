@@ -33,7 +33,7 @@
       "surface": "Installer",
       "required": true,
       "summary": "Choose where the app and city data live on this machine.",
-      "detail": "The default locations stay under the current Windows user profile and can be changed before local services are installed.",
+      "detail": "The default locations stay under your current Windows user account and can be changed before local services are installed.",
       "next_action": "Choose install, data, and backup folders.",
       "action": "choose-location"
     },
@@ -43,7 +43,7 @@
       "surface": "Installer",
       "required": true,
       "summary": "City Core is selected by default and CivicCore is locked on.",
-      "detail": "Custom selection is part of the architecture, but only modules with passing package and proof contracts can be installed from the clerk path.",
+      "detail": "You can choose your own set of modules, but only modules that have finished testing for this version of CivicSuite can be added.",
       "next_action": "Review the City Core module set.",
       "action": "select-modules"
     },
@@ -82,8 +82,8 @@
       "label": "Local AI model download",
       "surface": "First run",
       "required": true,
-      "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
-      "detail": "A signed-in CivicSuite admin downloads the pinned model with resumable download, checksum verification, and local-only default behavior.",
+      "summary": "Download the local AI model files this app needs.",
+      "detail": "A signed-in CivicSuite admin downloads the pinned Gemma 4 12B model, with a resumable download, checksum verification, and local-only default behavior.",
       "next_action": "Sign in as the CivicSuite admin, then download and verify the pinned local model weights.",
       "action": "download-model"
     },
