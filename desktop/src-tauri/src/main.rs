@@ -137,7 +137,7 @@ fn require_role_for_city_work(
 ) -> Result<(), String> {
     let Some(role) = access.role.as_deref() else {
         return Err(
-            "Sign in with a local staff or administrator account before changing city work."
+            "Sign in with a staff or CivicSuite admin account before changing city work."
                 .to_string(),
         );
     };
@@ -148,13 +148,13 @@ fn require_role_for_city_work(
         return Ok(());
     }
     Err(format!(
-        "Your local role ({role}) is not allowed to use this module workflow. Ask a local administrator to adjust your account."
+        "Your local role ({role}) is not allowed to use this module workflow. Ask a CivicSuite admin to adjust your account."
     ))
 }
 
 fn public_model_state(mut model: ModelState) -> ModelState {
     model.artifact.local_path =
-        "Sign in as local administrator to view the model file path.".to_string();
+        "Sign in as CivicSuite admin to view the model file path.".to_string();
     model
 }
 
@@ -446,12 +446,12 @@ fn model_action_authorized(action: String) -> Result<ModelActionResult, String> 
     if !access_is_local_admin(&access) {
         if !access.configured {
             return Err(
-                "Create the first local administrator and sign in before changing local model setup."
+                "Create the first CivicSuite admin and sign in before changing local model setup."
                     .to_string(),
             );
         }
         return Err(
-            "Sign in as the local administrator before changing local model setup.".to_string(),
+            "Sign in as the CivicSuite admin before changing local model setup.".to_string(),
         );
     }
     model::model_action(&action)
@@ -483,7 +483,7 @@ fn first_run_action_authorized(
         && first_run_action_requires_admin_after_setup(&action)
     {
         return Err(
-            "Sign in as the local administrator before changing CivicSuite setup, profile, model, backup, or runtime settings."
+            "Sign in as the CivicSuite admin before changing setup, profile, model, backup, or runtime settings."
                 .to_string(),
         );
     }
@@ -600,9 +600,7 @@ fn choose_file_path() -> Result<Option<String>, String> {
 fn choose_folder_path() -> Result<Option<String>, String> {
     let access = auth::access_state()?;
     if access.configured && !access_is_local_admin(&access) {
-        return Err(
-            "Sign in as the local administrator before choosing CivicSuite folders.".to_string(),
-        );
+        return Err("Sign in as the CivicSuite admin before choosing folders.".to_string());
     }
     picked_folder_path_for_desktop()
 }
@@ -612,7 +610,7 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
     let access = auth::access_state()?;
     if access.configured && !access_is_local_admin(&access) {
         return Err(
-            "Sign in as the local administrator before changing installed modules.".to_string(),
+            "Sign in as the CivicSuite admin before changing installed modules.".to_string(),
         );
     }
     let previous_selection = module_registry::module_selection_state()?;
@@ -1034,7 +1032,7 @@ mod tests {
             let public_model = get_model_state().expect("model state");
             assert_eq!(
                 public_model.artifact.local_path,
-                "Sign in as local administrator to view the model file path."
+                "Sign in as CivicSuite admin to view the model file path."
             );
 
             sign_in_as_first_admin();
@@ -1054,7 +1052,7 @@ mod tests {
             assert!(pre_admin_result
                 .err()
                 .expect("pre-admin model action auth error")
-                .contains("Create the first local administrator and sign in"));
+                .contains("Create the first CivicSuite admin and sign in"));
 
             create_first_admin();
 
@@ -1064,7 +1062,7 @@ mod tests {
             assert!(signed_out_result
                 .err()
                 .expect("model action auth error")
-                .contains("Sign in as the local administrator"));
+                .contains("Sign in as the CivicSuite admin"));
 
             sign_in_as_first_admin();
             let signed_in_result = model_action_authorized("open-model-folder".to_string())
@@ -1108,7 +1106,7 @@ mod tests {
             assert!(signed_out_result
                 .err()
                 .expect("module action auth error")
-                .contains("Sign in as the local administrator"));
+                .contains("Sign in as the CivicSuite admin"));
 
             sign_in_as_first_admin();
             let disabled = module_action("disable-module".to_string(), "civiccode".to_string())
@@ -1452,7 +1450,7 @@ mod tests {
             assert!(signed_out_profile_result
                 .err()
                 .expect("first-run profile auth error")
-                .contains("Sign in as the local administrator"));
+                .contains("Sign in as the CivicSuite admin"));
 
             let signed_out_model_result = first_run_action_authorized(
                 "download-model".to_string(),
@@ -1463,7 +1461,7 @@ mod tests {
             assert!(signed_out_model_result
                 .err()
                 .expect("first-run model auth error")
-                .contains("Sign in as the local administrator"));
+                .contains("Sign in as the CivicSuite admin"));
 
             let signed_out_result = first_run_action_authorized("backup".to_string(), None, None);
 
@@ -1471,7 +1469,7 @@ mod tests {
             assert!(signed_out_result
                 .err()
                 .expect("first-run lifecycle auth error")
-                .contains("Sign in as the local administrator"));
+                .contains("Sign in as the CivicSuite admin"));
 
             sign_in_as_first_admin();
             let signed_in_result = first_run_action_authorized("backup".to_string(), None, None)
@@ -1701,7 +1699,7 @@ mod tests {
             assert!(public_app_state.users.is_empty());
             assert_eq!(
                 public_app_state.model.artifact.local_path,
-                "Sign in as local administrator to view the model file path."
+                "Sign in as CivicSuite admin to view the model file path."
             );
             assert!(public_app_state
                 .health
@@ -1826,7 +1824,7 @@ mod tests {
             assert!(staff_result
                 .err()
                 .expect("staff error")
-                .contains("Sign in with a local staff or administrator account"));
+                .contains("Sign in with a staff or CivicSuite admin account"));
         });
     }
 }

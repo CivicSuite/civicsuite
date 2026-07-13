@@ -276,7 +276,7 @@ const fallbackState = {
         completed: false,
         current: false,
         status: "Needs setup",
-        summary: "Create the first local administrator before staff work begins.",
+        summary: "Create the first CivicSuite admin before staff work begins.",
         detail: "The first admin owns setup, model download, users, roles, backups, and recovery contact information.",
         next_action: "Create the first admin user, then sign in with that local passcode before continuing setup.",
         action: "create-admin"
@@ -303,8 +303,8 @@ const fallbackState = {
         current: false,
         status: "Needs setup",
         summary: "Download Gemma 4 12B quantization-aware weights for local AI.",
-        detail: "A signed-in CivicSuite local administrator verifies pinned metadata and checksums.",
-        next_action: "Sign in as the local administrator, then download and verify the pinned local model weights.",
+        detail: "A signed-in CivicSuite admin verifies pinned metadata and checksums.",
+        next_action: "Sign in as the CivicSuite admin, then download and verify the pinned local model weights.",
         action: "download-model"
       },
       {
@@ -545,7 +545,7 @@ const fallbackState = {
     operator_email: null,
     role: null,
     status: "Setup needed",
-    next_action: "Create the first local administrator."
+    next_action: "Create the first CivicSuite admin."
   }
 };
 
@@ -1182,19 +1182,19 @@ function adminOnlyLockMessage(fallback) {
   const access = accessState();
   if (!adminOnlyControlLocked()) return "";
   if (!access.signed_in) return fallback;
-  return "Use a local administrator account before changing setup, model, backup, restore, repair, module, user, or runtime settings.";
+  return "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or runtime settings.";
 }
 
 function modelSetupLockMessage() {
   const access = accessState();
   if (!modelSetupControlLocked()) return "";
   if (!access.configured) {
-    return "Create the first local administrator and sign in before changing local model setup.";
+    return "Create the first CivicSuite admin and sign in before changing local model setup.";
   }
   if (!access.signed_in) {
-    return "Sign in as local administrator to change local model setup.";
+    return "Sign in as CivicSuite admin to change local model setup.";
   }
-  return "Use a local administrator account before changing local model setup.";
+  return "Use a CivicSuite admin account before changing local model setup.";
 }
 
 function showStandaloneModelReadiness() {
@@ -1281,7 +1281,7 @@ function renderModuleSelectionControls() {
   `;
 }
 
-function renderSetupFields(step) {
+function renderSetupFields(step, actionLocked = false) {
   if (!step.current) return "";
   if (step.id === "modules") {
     return renderModuleSelectionControls();
@@ -1290,8 +1290,8 @@ function renderSetupFields(step) {
     return `
       <div class="setup-form" aria-label="Local folders">
         <label>App install folder <input type="text" data-setup-field="installRoot" value="${escapeHtml(state.setupDraft.installRoot)}" autocomplete="off" readonly /></label>
-        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data")}
-        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
+        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data", actionLocked)}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups", actionLocked)}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
       </div>
     `;
@@ -1312,14 +1312,14 @@ function renderSetupFields(step) {
       <div class="setup-form two-column" aria-label="First admin">
         <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
-        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
+        <label>CivicSuite passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
       </div>
     `;
   }
   if (step.id === "backup") {
     return `
       <div class="setup-form" aria-label="Backup folder">
-        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups", actionLocked)}
       </div>
     `;
   }
@@ -1342,7 +1342,7 @@ function setupActionLockedByAdmin() {
 
 function renderFirstRunStep(step, index) {
   const adminLocked = step.current && setupActionLockedByAdmin();
-  const adminLockMessage = adminOnlyLockMessage("Sign in with the local administrator passcode before continuing setup.");
+  const adminLockMessage = adminOnlyLockMessage("Sign in with the CivicSuite admin passcode before continuing setup.");
   const moduleSelectionLocked =
     step.current &&
     step.id === "modules" &&
@@ -1359,13 +1359,13 @@ function renderFirstRunStep(step, index) {
         </div>
         <p>${escapeHtml(step.summary)}</p>
         <small>${escapeHtml(step.detail)}</small>
-        ${step.current && !isPublicSurface() && !(state.actionResult && state.actionResult.accepted === false) ? `
+        ${step.current && !isPublicSurface() ? `
           <div class="first-run-action-needed action-result blocked">
             <strong>Action needed</strong>
-            <span>${escapeHtml(step.next_action)}</span>
+            <span>${escapeHtml((state.actionResult && state.actionResult.accepted === false && state.actionResult.forStepId === step.id) ? state.actionResult.next_action : step.next_action)}</span>
           </div>
         ` : ""}
-        ${renderSetupFields(step)}
+        ${renderSetupFields(step, actionLocked)}
         ${step.current ? `
           <div class="setup-actions">
             <button type="button" class="primary-action" data-first-run-action="${step.action}" data-step-id="${step.id}" ${actionLocked ? "disabled" : ""}>
@@ -1432,13 +1432,13 @@ function renderFilePathField(label, field, value, placeholder) {
   `;
 }
 
-function renderFolderPathField(label, field, value, placeholder) {
+function renderFolderPathField(label, field, value, placeholder, locked = false) {
   return `
     <div class="file-path-control">
       <label>${escapeHtml(label)}
-        <input type="text" data-setup-field="${escapeHtml(field)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" autocomplete="off" />
+        <input type="text" data-setup-field="${escapeHtml(field)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" autocomplete="off" ${locked ? "disabled" : ""} />
       </label>
-      <button type="button" class="secondary-action" data-folder-path-field="${escapeHtml(field)}">Choose Folder</button>
+      <button type="button" class="secondary-action" data-folder-path-field="${escapeHtml(field)}" ${locked ? "disabled" : ""}>Choose Folder</button>
     </div>
   `;
 }
@@ -1475,9 +1475,9 @@ function renderAccessPanel() {
       <section class="section-band access-panel" aria-label="Local access">
         <div class="section-title">
           <p class="eyebrow">Local access</p>
-          <h3>Signed in as ${escapeHtml(access.operator_name || "local administrator")}</h3>
+          <h3>Signed in as ${escapeHtml(access.operator_name || "CivicSuite admin")}</h3>
           <p>${escapeHtml(access.role || "local-admin")}</p>
-          ${access.role !== "local-admin" ? `<p>Sign out and use a local administrator account before changing setup, users, modules, backups, restore, repair, or runtime services.</p>` : ""}
+          ${access.role !== "local-admin" ? `<p>Sign out and use a CivicSuite admin account before changing setup, users, modules, backups, restore, repair, or runtime services.</p>` : ""}
         </div>
         <div class="health-actions">
           <button type="button" class="secondary-action" data-auth-action="sign-out">Sign Out</button>
@@ -1490,11 +1490,11 @@ function renderAccessPanel() {
       <div class="section-title">
         <p class="eyebrow">Local access</p>
         <h3>Sign In</h3>
-        <p>Use a local staff or administrator passcode for city work. Use a local administrator account for setup, users, modules, backups, restore, repair, model setup, or runtime services.</p>
+        <p>Use a staff or CivicSuite admin passcode for city work. Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or runtime services.</p>
       </div>
       <div class="workflow-form compact-form">
         <label>Email <input type="email" data-access-field="email" value="${escapeHtml(state.accessDraft.email)}" autocomplete="email" /></label>
-        <label>Passcode <input type="password" data-access-field="passcode" value="${escapeHtml(state.accessDraft.passcode)}" autocomplete="current-password" /></label>
+        <label>CivicSuite passcode <input type="password" data-access-field="passcode" value="${escapeHtml(state.accessDraft.passcode)}" autocomplete="current-password" /></label>
         <button type="button" class="primary-action" data-auth-action="sign-in">Sign In</button>
       </div>
       ${renderAuthActionResult()}
@@ -4735,7 +4735,7 @@ function renderModuleRow(module, { actions = false } = {}) {
 
 function localRoleLabel(role) {
   const labels = {
-    "local-admin": "Local administrator",
+    "local-admin": "CivicSuite admin",
     "city-staff": "City staff",
     "clerk": "Clerk staff",
     "records-staff": "Records staff",
@@ -4798,7 +4798,7 @@ function renderLocalUsersCard() {
         </select>
       </label>
       <label>Temporary local passcode <input type="password" data-user-field="userPasscode" value="${escapeHtml(state.accessDraft.userPasscode)}" autocomplete="new-password" /></label>
-      <small>Staff users can sign in on this Windows profile. Enter a temporary passcode, then use Reset Passcode on a staff row if someone is locked out. Local administrators keep setup, runtime, backup, module, and user-management control.</small>
+      <small>Staff users can sign in on this Windows profile. Enter a temporary passcode, then use Reset Passcode on a staff row if someone is locked out. CivicSuite admins keep setup, runtime, backup, module, and user-management control.</small>
       <button type="button" class="secondary-action" data-auth-action="create-user">Create Staff User</button>
       ${renderAuthActionResult()}
     </div>
@@ -4837,7 +4837,7 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Install Module",
       status: "Profile install requested",
       changes: "Adds this ready module to the active local profile and enables its work area when dependencies are enabled.",
-      visibility: "Local administrator only. Staff will see the module work area after the profile is saved.",
+      visibility: "CivicSuite admin only. Staff will see the module work area after the profile is saved.",
       audit: "Updates the local module-selection record and keeps the action in the profile history.",
       retry: "If dependencies or proof gates are missing, the module is not installed and the current profile remains unchanged."
     },
@@ -4846,7 +4846,7 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Enable Module",
       status: "Module enable requested",
       changes: "Shows this installed module's work area again and allows its city-work actions.",
-      visibility: "Local administrator only. Staff with access will see the module after it is enabled.",
+      visibility: "CivicSuite admin only. Staff with access will see the module after it is enabled.",
       audit: "Updates the local enabled-module list without changing existing module data.",
       retry: "If a dependency is disabled, CivicSuite reports the dependency and leaves the module disabled."
     },
@@ -4855,7 +4855,7 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Disable Module",
       status: "Module disable requested",
       changes: "Hides this module's work area and blocks its city-work actions. Existing module data remains installed.",
-      visibility: "Local administrator only. Staff will no longer see this module while it is disabled.",
+      visibility: "CivicSuite admin only. Staff will no longer see this module while it is disabled.",
       audit: "Updates the local enabled-module list without deleting records, exports, or settings.",
       retry: "If another enabled module depends on it, CivicSuite reports that dependency before changing the profile."
     },
@@ -4864,7 +4864,7 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Check Update",
       status: "Manifest update check requested",
       changes: "Checks this module against the pinned versioned manifest. This does not download unverified code.",
-      visibility: "Local administrator only. Staff workflows remain available while the check runs.",
+      visibility: "CivicSuite admin only. Staff workflows remain available while the check runs.",
       audit: "Returns the current module version state from the local module manifest.",
       retry: "If the module is not installed, CivicSuite asks you to install it before update checks."
     },
@@ -4873,7 +4873,7 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Remove From Profile",
       status: "Profile removal requested",
       changes: "Creates a verified local profile backup, removes this module from the active profile, and hides its work area. Existing module data is not deleted.",
-      visibility: "Local administrator only. Staff will not see this module until it is installed again.",
+      visibility: "CivicSuite admin only. Staff will not see this module until it is installed again.",
       audit: "Writes a backup manifest before updating the local module-selection record; preserved module data remains covered by profile backup and restore.",
       retry: "If backup creation fails or another installed module depends on it, CivicSuite reports the issue before changing the profile."
     }
@@ -4952,7 +4952,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       subject: "CivicSuite city profile",
       status: "Manual backup requested",
       changes: "Copies local city data and configuration to the configured backup folder with a backup manifest.",
-      visibility: "Local administrator only. This does not publish or change public civic records.",
+      visibility: "CivicSuite admin only. This does not publish or change public civic records.",
       sources: [
         "Source: local CivicSuite Data and config folders.",
         "Destination: configured CivicSuite backup folder."
@@ -4967,7 +4967,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       subject: "Latest local CivicSuite backup",
       status: "Restore requested",
       changes: "Creates a pre-restore safety backup, stops local services, and replaces local data/config from the latest backup manifest.",
-      visibility: "Local administrator only. Restored records affect what staff see after restart.",
+      visibility: "CivicSuite admin only. Restored records affect what staff see after restart.",
       sources: [
         "Source: latest backup-manifest.json in the CivicSuite backup folder.",
         "Safety: a pre-restore backup is created before replacement."
@@ -4982,7 +4982,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       subject: "Local CivicSuite city profile",
       status: "Profile removal requested",
       changes: "Stops local services, creates a final uninstall backup, and removes local data and setup/config state.",
-      visibility: "Local administrator only. Program files remain for the Windows uninstall entry to remove.",
+      visibility: "CivicSuite admin only. Program files remain for the Windows uninstall entry to remove.",
       sources: [
         "Source: local CivicSuite Data and config folders.",
         "Safety: final-uninstall backup is written before profile removal."
@@ -4997,7 +4997,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       subject: service ? serviceLabel : "Selected local runtime services",
       status: serviceStatus,
       changes: "Creates a local support bundle with health, runtime-state, and selected service logs.",
-      visibility: "Local administrator only. The bundle does not copy city records, uploaded documents, backups, or local secrets.",
+      visibility: "CivicSuite admin only. The bundle does not copy city records, uploaded documents, backups, or local secrets.",
       sources: [
         service ? `Service id: ${service.id}` : "All local runtime services.",
         "Source: System Health checks, runtime service state, and local service log files."
@@ -5012,7 +5012,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       subject: serviceLabel,
       status: serviceStatus,
       changes: "Rechecks portable runtime files and repairs the selected local service setup where possible.",
-      visibility: "Local administrator only. This may change local service files but does not publish civic records.",
+      visibility: "CivicSuite admin only. This may change local service files but does not publish civic records.",
       sources: [
         service ? `Service id: ${service.id}` : "No service selected yet.",
         service?.next_action || "System Health will report the next repair step."
@@ -5027,7 +5027,7 @@ function guidedSupervisorReviewForAction(action, serviceId) {
       subject: serviceLabel,
       status: serviceStatus,
       changes: "Stops the selected local service state so it can be restarted or repaired.",
-      visibility: "Local administrator only. Staff workflows may be unavailable until services restart.",
+      visibility: "CivicSuite admin only. Staff workflows may be unavailable until services restart.",
       sources: [
         service ? `Service id: ${service.id}` : "No service selected yet.",
         "System Health remains available after the stop action."
@@ -5052,7 +5052,7 @@ function renderGuidedSupervisorReview() {
   const serviceAttr = state.pendingSupervisorReviewServiceId ? ` data-service-id="${escapeHtml(state.pendingSupervisorReviewServiceId)}"` : "";
   const adminLocked = adminOnlyControlLocked();
   const adminDisabled = adminLocked ? "disabled" : "";
-  const lockMessage = adminOnlyLockMessage("Sign in as local administrator to use local lifecycle actions.");
+  const lockMessage = adminOnlyLockMessage("Sign in as CivicSuite admin to use local lifecycle actions.");
   return `
     <section class="guided-review" data-guided-review="supervisor" aria-labelledby="supervisor-review-title">
       <div>
@@ -5139,7 +5139,7 @@ function renderModules() {
         <h3>First Admin</h3>
         <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
-        <label>Local passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
+        <label>CivicSuite passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
         <div class="module-meta">
           <span class="${admin ? "status-ok" : "status-warn"}">${admin ? escapeHtml(admin.role) : "Needed"}</span>
         </div>
@@ -5207,7 +5207,7 @@ function renderModules() {
 function renderHealth() {
   const adminLocked = adminOnlyControlLocked();
   const adminDisabled = adminLocked ? "disabled" : "";
-  const lockMessage = adminOnlyLockMessage("Sign in as local administrator to use local lifecycle actions.");
+  const lockMessage = adminOnlyLockMessage("Sign in as CivicSuite admin to use local lifecycle actions.");
   return `
     <section class="page-heading">
       <p class="eyebrow">IT/Admin</p>
@@ -5621,6 +5621,35 @@ function setupPayloadForStep(stepId) {
   return {};
 }
 
+// Maps first-run field keys (as they appear in server error strings) to the
+// label the clerk actually sees on screen, so a save failure names the real field.
+const FIRST_RUN_FIELD_LABELS = {
+  cityName: "City name",
+  state: "State",
+  timeZone: "Time zone",
+  recordsContact: "Records contact",
+  clerkContact: "Clerk contact",
+  adminName: "Admin name",
+  adminEmail: "Admin email",
+  adminPasscode: "CivicSuite passcode",
+  installRoot: "App install folder",
+  dataRoot: "City data folder",
+  backupRoot: "Backup folder"
+};
+
+function friendlyFirstRunError(error) {
+  const raw = String(error);
+  const missing = raw.match(/Missing required setup field:\s*(\w+)/i);
+  if (missing) {
+    const label = FIRST_RUN_FIELD_LABELS[missing[1]] || missing[1];
+    return {
+      message: `${label} is required.`,
+      next_action: `Enter a value for ${label}, then save.`
+    };
+  }
+  return { message: raw, next_action: "Correct the setup information and try again." };
+}
+
 async function handleFirstRunAction(action, stepId) {
   if (!hasTauriBridge()) {
     state.actionResult = {
@@ -5635,9 +5664,10 @@ async function handleFirstRunAction(action, stepId) {
   if (stepId === "first-admin" && state.setupDraft.adminPasscode.length < 10) {
     state.actionResult = {
       accepted: false,
+      forStepId: stepId,
       status: "Needs attention",
-      message: "The local administrator passcode must be at least 10 characters.",
-      next_action: "Enter a 10-character or longer local administrator passcode, then continue setup."
+      message: "The CivicSuite admin passcode must be at least 10 characters.",
+      next_action: "Enter a 10-character or longer CivicSuite admin passcode, then continue setup."
     };
     render();
     return;
@@ -5650,11 +5680,13 @@ async function handleFirstRunAction(action, stepId) {
     });
     await loadAppState();
   } catch (error) {
+    const friendly = friendlyFirstRunError(error);
     state.actionResult = {
       accepted: false,
+      forStepId: stepId,
       status: "Needs attention",
-      message: String(error),
-      next_action: "Correct the setup information and try again."
+      message: friendly.message,
+      next_action: friendly.next_action
     };
   }
   render();
@@ -5697,7 +5729,7 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
       accepted: false,
       status: "Needs attention",
       message: String(error),
-      next_action: "Sign in as the local administrator and try the module action again."
+      next_action: "Sign in as the CivicSuite admin and try the module action again."
     };
   }
   render();
@@ -5710,7 +5742,7 @@ async function handleModelAction(action) {
       action,
       status: "Sign in required",
       message: modelSetupLockMessage(),
-      next_action: "Sign in as the local administrator before changing local model setup."
+      next_action: "Sign in as the CivicSuite admin before changing local model setup."
     };
     render();
     return;
@@ -5846,13 +5878,26 @@ async function handleChooseFilePath(field) {
   render();
 }
 
+// The current first-run wizard step id, or undefined outside an active wizard.
+// The folder pickers live ON the current step (locations/backup), so tagging a
+// folder-pick result with this id lets renderFirstRunStep show a same-step
+// failure inline while a foreign result (no/other forStepId) stays out.
+function currentFirstRunStepId() {
+  const firstRun = state.app && state.app.first_run;
+  if (!firstRun || firstRun.finished) return undefined;
+  const current = (firstRun.steps || []).find((step) => step.current);
+  return current ? current.id : firstRun.current_step_id;
+}
+
 async function handleChooseFolderPath(field) {
   if (!Object.prototype.hasOwnProperty.call(state.setupDraft, field)) {
     return;
   }
+  const forStepId = currentFirstRunStepId();
   if (!hasTauriBridge()) {
     state.actionResult = {
       accepted: false,
+      forStepId,
       status: "Desktop app required",
       message: "Native folder selection is available in the Windows desktop app, not the browser preview.",
       next_action: desktopAppRequiredNextAction("choose the city data or backup folder from the folder picker")
@@ -5866,6 +5911,7 @@ async function handleChooseFolderPath(field) {
       state.setupDraft[field] = pickedPath;
       state.actionResult = {
         accepted: true,
+        forStepId,
         status: "Folder selected",
         message: "The selected local folder path was added to the setup field.",
         next_action: "Review the folder path, then save local folders or continue setup."
@@ -5873,17 +5919,23 @@ async function handleChooseFolderPath(field) {
     } else {
       state.actionResult = {
         accepted: false,
+        forStepId,
         status: "No folder selected",
         message: "No local folder was selected.",
         next_action: "Choose Folder again or type the path if IT has already supplied one."
       };
     }
   } catch (error) {
+    const raw = String(error);
+    const isAdminGate = /sign in as the civicsuite admin/i.test(raw);
     state.actionResult = {
       accepted: false,
-      status: "Needs attention",
-      message: String(error),
-      next_action: "Sign in as the local administrator and choose the folder again."
+      forStepId,
+      status: isAdminGate ? "Sign in required" : "Needs attention",
+      message: raw,
+      next_action: isAdminGate
+        ? "Sign in as the CivicSuite admin, then choose the folder again."
+        : "Try Choose Folder again, or type the folder path directly."
     };
   }
   render();

@@ -322,7 +322,7 @@ fn verified_from_admin(
 ) -> Result<VerifiedLocalUser, String> {
     let user = first_run::verify_admin_passcode(&record.email, passcode)?;
     let refreshed = first_run::saved_admin_record()?
-        .ok_or_else(|| "Create the first local administrator before signing in.".to_string())?;
+        .ok_or_else(|| "Create the first CivicSuite admin before signing in.".to_string())?;
     Ok(VerifiedLocalUser {
         display_name: user.display_name,
         email: user.email,
@@ -355,7 +355,7 @@ fn verified_from_staff(
 fn verify_local_user(email: &str, passcode: &str) -> Result<VerifiedLocalUser, String> {
     let normalized = normalize_email(email);
     let Some(admin) = first_run::saved_admin_record()? else {
-        return Err("Create the first local administrator before signing in.".to_string());
+        return Err("Create the first CivicSuite admin before signing in.".to_string());
     };
     if normalize_email(&admin.email) == normalized {
         return verified_from_admin(admin, passcode);
@@ -486,7 +486,7 @@ pub fn access_state() -> Result<AccessState, String> {
             operator_email: None,
             role: None,
             status: "Setup needed",
-            next_action: "Create the first local administrator.".to_string(),
+            next_action: "Create the first CivicSuite admin.".to_string(),
         });
     };
     if let Some(session) = valid_session()? {
@@ -516,10 +516,7 @@ pub fn require_admin_session() -> Result<(), String> {
     if access.signed_in && access.role.as_deref() == Some("local-admin") {
         return Ok(());
     }
-    Err(
-        "Sign in as the local administrator before changing CivicSuite data or runtime settings."
-            .to_string(),
-    )
+    Err("Sign in as the CivicSuite admin before changing data or runtime settings.".to_string())
 }
 
 pub fn require_signed_in_session() -> Result<AccessState, String> {
@@ -527,10 +524,7 @@ pub fn require_signed_in_session() -> Result<AccessState, String> {
     if access.signed_in {
         return Ok(access);
     }
-    Err(
-        "Sign in with a local staff or administrator account before changing city work."
-            .to_string(),
-    )
+    Err("Sign in with a staff or CivicSuite admin account before changing city work.".to_string())
 }
 
 fn role_module_ids(role: &str) -> Option<&'static [&'static str]> {
@@ -579,7 +573,7 @@ fn create_staff_user(payload: Option<&serde_json::Value>) -> Result<String, Stri
         .map(|admin| normalize_email(&admin.email) == normalized_email)
         .unwrap_or(false)
     {
-        return Err("That email already belongs to the first local administrator.".to_string());
+        return Err("That email already belongs to the first CivicSuite admin.".to_string());
     }
     let mut users = read_staff_users()?;
     if users
@@ -613,7 +607,7 @@ fn deactivate_staff_user(payload: Option<&serde_json::Value>) -> Result<String, 
         .map(|admin| normalize_email(&admin.email) == normalized_email)
         .unwrap_or(false)
     {
-        return Err("The first local administrator cannot be disabled here.".to_string());
+        return Err("The first CivicSuite admin cannot be disabled here.".to_string());
     }
     let mut users = read_staff_users()?;
     let Some(user) = users
@@ -636,7 +630,7 @@ fn reactivate_staff_user(payload: Option<&serde_json::Value>) -> Result<String, 
         .map(|admin| normalize_email(&admin.email) == normalized_email)
         .unwrap_or(false)
     {
-        return Err("The first local administrator is already active.".to_string());
+        return Err("The first CivicSuite admin is already active.".to_string());
     }
     let mut users = read_staff_users()?;
     let Some(user) = users
@@ -661,7 +655,7 @@ fn reset_staff_passcode(payload: Option<&serde_json::Value>) -> Result<String, S
         .map(|admin| normalize_email(&admin.email) == normalized_email)
         .unwrap_or(false)
     {
-        return Err("Reset the first local administrator through first-run recovery.".to_string());
+        return Err("Reset the first CivicSuite admin through first-run recovery.".to_string());
     }
     let passcode = payload_string(payload, "userPasscode")?;
     if passcode.len() < 10 {

@@ -711,7 +711,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByText("Native folder selection is available in the Windows desktop app")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save City Profile" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save First Admin" })).toBeVisible();
-  await expect(page.getByLabel("Local passcode", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("CivicSuite passcode", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Staff name")).toBeVisible();
   await expect(page.getByLabel("Staff email")).toBeVisible();
   await expect(page.getByLabel("Role")).toBeVisible();

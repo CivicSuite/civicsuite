@@ -16,7 +16,7 @@ What an operator does:
 
 1. Run the MSI on a 64-bit Windows 10/11 machine that has WebView2.
 2. Follow the installer screens.
-3. Open CivicSuite and complete first-run setup (city profile, first local administrator, backup folder).
+3. Open CivicSuite and complete first-run setup (city profile, first CivicSuite admin, backup folder).
 4. At first run the app downloads the pinned Gemma 4 12B QAT model (about 6.97 GB) from Hugging Face and verifies its checksum before AI workflows turn on. After that the model is local; no cloud account is needed.
 
 Recommended machine: **32 GB RAM** (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, PostgreSQL, and services, and 32 GB leaves headroom for the local database and the generation context) and **at least 15 GB free disk** (1.65 GB MSI + about 7 GB model + data/backup headroom; the installer enforces a 15 GB floor for the model download).

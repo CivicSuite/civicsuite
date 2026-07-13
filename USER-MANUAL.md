@@ -59,7 +59,7 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 - A Windows workstation with enough CPU, memory, and disk for local services, city data, backups, and the Gemma 4 12B QAT model file.
 - Permission to install normal Windows desktop software.
 - A stable internet connection for first install and model download unless IT has already staged the model file.
-- A city name, records contact, clerk contact, first local administrator name/email, and backup folder location.
+- A city name, records contact, clerk contact, first CivicSuite admin name/email, and backup folder location.
 
 ### System requirements
 
@@ -74,7 +74,7 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 2. Verify the SHA-256 checksum matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
 3. Open the installer and follow the installer screens.
 4. Open CivicSuite after install.
-5. Complete first-run setup: local folders, City Core module selection, city profile, first local administrator sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
+5. Complete first-run setup: local folders, City Core module selection, city profile, first CivicSuite admin sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
 6. Add clerk, records, code, or city-staff users from Settings when staff need separate local sign-ins.
 7. Use Meetings & Notices, Records Requests, Code & Ordinances, Search City Knowledge, System Health, and Settings from the desktop app.
 
@@ -97,7 +97,7 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 
 1. Open CivicSuite from Windows.
 2. Complete the City Core setup checklist.
-3. Create the first local administrator and store the passcode in the city's password vault.
+3. Create the first CivicSuite admin and store the passcode in the city's password vault.
 4. Add staff users from Settings.
 5. Open System Health and verify local services, local model, storage, backup, and task queue status.
 6. Start with one real workflow: create a meeting in Meetings & Notices, create a records request in Records Requests, or import a code source in Code & Ordinances.

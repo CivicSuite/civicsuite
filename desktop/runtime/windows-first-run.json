@@ -62,7 +62,7 @@
       "label": "First admin user",
       "surface": "First run",
       "required": true,
-      "summary": "Create the first local administrator before staff work begins.",
+      "summary": "Create the first CivicSuite admin before staff work begins.",
       "detail": "The first admin owns setup, model download, users, roles, backup settings, and recovery contact information.",
       "next_action": "Create the first admin user, then sign in with that local passcode before continuing setup.",
       "action": "create-admin"
@@ -83,8 +83,8 @@
       "surface": "First run",
       "required": true,
       "summary": "Download Gemma 4 12B quantization-aware weights for local AI.",
-      "detail": "A signed-in CivicSuite local administrator downloads the pinned model with resumable download, checksum verification, and local-only default behavior.",
-      "next_action": "Sign in as the local administrator, then download and verify the pinned local model weights.",
+      "detail": "A signed-in CivicSuite admin downloads the pinned model with resumable download, checksum verification, and local-only default behavior.",
+      "next_action": "Sign in as the CivicSuite admin, then download and verify the pinned local model weights.",
       "action": "download-model"
     },
     {
