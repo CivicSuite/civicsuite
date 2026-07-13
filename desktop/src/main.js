@@ -1255,7 +1255,10 @@ function renderModuleSelectionControls() {
           const checked = customMode ? selectedIds.has(module.id) : CITY_CORE_PRODUCT_MODULE_IDS.includes(module.id);
           const disabled = !customMode || !ready;
           const status = ready ? "Ready for Windows Local 1.0" : "Not ready for Windows Local 1.0";
-          const blockedReason = !ready && module.blocked_reason ? `: ${module.blocked_reason}` : "";
+          // Clerk-facing plain reason; the raw technical contract string (e.g.
+          // "must target CivicCore 1.2.0") is kept only as a hover tooltip for support.
+          const plainReason = !ready ? " - not available in this release yet; check back after your next CivicSuite update" : "";
+          const rawTitle = !ready && module.blocked_reason ? ` title="${escapeHtml(module.blocked_reason)}"` : "";
           return `
             <label class="module-choice ${checked ? "selected" : ""} ${disabled ? "disabled" : ""}">
               <input
@@ -1266,7 +1269,7 @@ function renderModuleSelectionControls() {
               />
               <span>
                 <strong>${escapeHtml(module.display_name)}</strong>
-                <small>${escapeHtml(module.role)} - ${status}${escapeHtml(blockedReason)}</small>
+                <small${rawTitle}>${escapeHtml(module.role)} - ${status}${escapeHtml(plainReason)}</small>
               </span>
             </label>
           `;
@@ -1541,23 +1544,33 @@ function renderFirstRunWizard({ compact = false } = {}) {
 
 function renderModelActions(model) {
   const adminLocked = modelSetupControlLocked();
-  const adminDisabled = adminLocked ? "disabled" : "";
+  const inFlight = Boolean(state.modelActionInFlight);
+  // Lock every model button while one action runs so the long synchronous
+  // download can't be re-triggered or interleaved with verify/load/retry.
+  const disabled = adminLocked || inFlight ? "disabled" : "";
   const lockMessage = modelSetupLockMessage();
+  const downloading =
+    state.modelActionInFlight === "download" || state.modelActionInFlight === "resume-download";
+  const primaryLabel = downloading
+    ? "Downloading…"
+    : model.download_resumable
+      ? "Download / Resume"
+      : "Download Model";
   return `
     <div class="model-actions" aria-label="Local model setup actions">
-      <button type="button" class="secondary-action" data-model-action="open-model-folder" ${adminDisabled}>
+      <button type="button" class="secondary-action" data-model-action="open-model-folder" ${disabled}>
         Open Model Folder
       </button>
-      <button type="button" class="primary-action" data-model-action="${model.download_resumable ? "resume-download" : "download"}" ${adminDisabled}>
-        ${model.download_resumable ? "Download / Resume" : "Download Model"}
+      <button type="button" class="primary-action" data-model-action="${model.download_resumable ? "resume-download" : "download"}" ${disabled}>
+        ${primaryLabel}
       </button>
-      <button type="button" class="secondary-action" data-model-action="verify-checksum" ${adminDisabled}>
+      <button type="button" class="secondary-action" data-model-action="verify-checksum" ${disabled}>
         Verify Checksum
       </button>
-      <button type="button" class="secondary-action" data-model-action="load-runtime-model" ${adminDisabled}>
+      <button type="button" class="secondary-action" data-model-action="load-runtime-model" ${disabled}>
         Load in Ollama
       </button>
-      <button type="button" class="secondary-action" data-model-action="retry" ${adminDisabled}>
+      <button type="button" class="secondary-action" data-model-action="retry" ${disabled}>
         Retry Setup
       </button>
       ${lockMessage ? `<small>${lockMessage}</small>` : ""}
@@ -5757,6 +5770,24 @@ async function handleModelAction(action) {
     render();
     return;
   }
+  // Show a working state and lock the buttons BEFORE awaiting, so a multi-GB
+  // download can't be re-clicked into a second concurrent download and doesn't
+  // read as "frozen/broken". The backend download is synchronous, so the app
+  // genuinely does freeze during it — the copy sets that expectation up front.
+  const isDownload = action === "download" || action === "resume-download";
+  state.modelActionInFlight = action;
+  state.modelActionResult = {
+    accepted: true,
+    action,
+    status: "Working",
+    message: isDownload
+      ? "Downloading the local AI model. This is a one-time download that can take up to an hour."
+      : "Running local model setup from the desktop app.",
+    next_action: isDownload
+      ? "CivicSuite may look frozen while it downloads — please do not close the app. It resumes where it left off if interrupted."
+      : "Keep CivicSuite open while this finishes."
+  };
+  render();
   try {
     state.modelActionResult = await invoke("model_action", { action });
     await loadAppState();
@@ -5767,6 +5798,8 @@ async function handleModelAction(action) {
       message: String(error),
       next_action: "Check the local model file, network connection, and available disk space, then retry."
     };
+  } finally {
+    state.modelActionInFlight = null;
   }
   render();
 }
@@ -6010,11 +6043,15 @@ async function handleAuthAction(action, payloadOverride = null) {
       state.accessDraft.email = createdStaffEmail;
     }
   } catch (error) {
+    const raw = String(error);
+    const lockedOut = /too many failed sign-in attempts/i.test(raw);
     state.authActionResult = {
       accepted: false,
-      status: "Needs attention",
-      message: String(error),
-      next_action: "Check the email and local passcode, then try again."
+      status: lockedOut ? "Please wait" : "Needs attention",
+      message: raw,
+      next_action: lockedOut
+        ? "Wait the number of seconds shown above, then try again — repeated attempts restart the wait."
+        : "Check the email and local passcode, then try again."
     };
   }
   render();

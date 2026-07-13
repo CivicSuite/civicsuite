@@ -764,7 +764,7 @@ pub fn first_run_action(
                 message: "The pinned Gemma model has not passed local checksum verification yet."
                     .to_string(),
                 next_action:
-                    "Finish Local AI model setup before running final health verification."
+                    "Open the Local AI model step, click Verify Checksum (or Download / Resume if it is not downloaded yet), then run health verification again."
                         .to_string(),
             });
         }
