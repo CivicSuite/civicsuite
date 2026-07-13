@@ -236,7 +236,9 @@ for (const phrase of [
   "Downloading…",
   "CivicSuite may look frozen while it downloads",
   "too many failed sign-in attempts",
-  "not available in this release yet"
+  "not available in this release yet",
+  'result.working ? "working"',
+  "this local staff user is disabled"
 ]) {
   if (!main.includes(phrase)) {
     throw new Error(`desktop first-run Wave-2 guard missing phrase: ${phrase}`);

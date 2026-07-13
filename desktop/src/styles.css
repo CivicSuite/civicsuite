@@ -714,6 +714,14 @@ main {
   color: #6d4d10;
 }
 
+/* In-progress state — neutral blue, distinct from green "saved" (done) and
+   amber "blocked" (failed), so a long-running action never reads as complete. */
+.action-result.working {
+  background: #eaf1fb;
+  border: 1px solid #b9cdeb;
+  color: #1c3f6e;
+}
+
 /* First-run "Action needed" affordance — reuses .action-result.blocked amber,
    adds the gold current-step accent so it reads as the action point. */
 .first-run-action-needed {

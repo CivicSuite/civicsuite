@@ -480,7 +480,21 @@ function finishedBase() {
   if (!appEl.innerHTML.includes("Downloading…")) {
     fail("T14b: an in-flight download must show the Downloading… working label");
   }
+
+  // C1 review fix: the in-flight result box uses the neutral "working" class, NOT
+  // the green "saved" success class (which would read as "done" mid-download).
+  t.state.modelActionResult = {
+    working: true,
+    status: "Working",
+    message: "Downloading…",
+    next_action: "do not close the app"
+  };
+  t.render();
+  if (!appEl.innerHTML.includes("action-result working")) {
+    fail("T14c: an in-flight model result must use the neutral 'working' class, not the 'saved' success class");
+  }
   t.state.modelActionInFlight = null;
+  t.state.modelActionResult = null;
 }
 
 // ===========================================================================

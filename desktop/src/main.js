@@ -1399,7 +1399,7 @@ function renderModelActionResult() {
   if (!state.modelActionResult) return "";
   const result = state.modelActionResult;
   return `
-    <div class="action-result ${result.accepted ? "saved" : "blocked"}" role="status">
+    <div class="action-result ${result.working ? "working" : result.accepted ? "saved" : "blocked"}" role="status">
       <strong>${escapeHtml(result.status)}</strong>
       <span>${escapeHtml(result.message)}</span>
       <small>${escapeHtml(result.next_action)}</small>
@@ -5776,19 +5776,22 @@ async function handleModelAction(action) {
   // genuinely does freeze during it — the copy sets that expectation up front.
   const isDownload = action === "download" || action === "resume-download";
   state.modelActionInFlight = action;
-  state.modelActionResult = {
-    accepted: true,
-    action,
-    status: "Working",
-    message: isDownload
-      ? "Downloading the local AI model. This is a one-time download that can take up to an hour."
-      : "Running local model setup from the desktop app.",
-    next_action: isDownload
-      ? "CivicSuite may look frozen while it downloads — please do not close the app. It resumes where it left off if interrupted."
-      : "Keep CivicSuite open while this finishes."
-  };
-  render();
   try {
+    // Inside the try so the finally below always clears the in-flight flag even
+    // if this working-state render throws — otherwise the buttons would stay
+    // disabled for the rest of the session with no recovery.
+    state.modelActionResult = {
+      working: true,
+      action,
+      status: "Working",
+      message: isDownload
+        ? "Downloading the local AI model. This is a one-time download that can take up to an hour."
+        : "Running local model setup from the desktop app.",
+      next_action: isDownload
+        ? "CivicSuite may look frozen while it downloads — please do not close the app. It resumes where it left off if interrupted."
+        : "Keep CivicSuite open while this finishes."
+    };
+    render();
     state.modelActionResult = await invoke("model_action", { action });
     await loadAppState();
   } catch (error) {
@@ -6045,13 +6048,16 @@ async function handleAuthAction(action, payloadOverride = null) {
   } catch (error) {
     const raw = String(error);
     const lockedOut = /too many failed sign-in attempts/i.test(raw);
+    const disabledUser = /this local staff user is disabled/i.test(raw);
     state.authActionResult = {
       accepted: false,
-      status: lockedOut ? "Please wait" : "Needs attention",
+      status: lockedOut ? "Please wait" : disabledUser ? "Account disabled" : "Needs attention",
       message: raw,
       next_action: lockedOut
         ? "Wait the number of seconds shown above, then try again — repeated attempts restart the wait."
-        : "Check the email and local passcode, then try again."
+        : disabledUser
+          ? "Ask a CivicSuite admin to re-enable this user — retrying the passcode will not help."
+          : "Check the email and local passcode, then try again."
     };
   }
   render();
