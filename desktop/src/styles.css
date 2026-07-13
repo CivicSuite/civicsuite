@@ -858,6 +858,16 @@ main {
   opacity: 0.7;
 }
 
+/* A selected-but-inert module (the default City Core bundle, where checkboxes
+   are locked because you're not in custom mode) is still ON — keep it teal/active
+   so the grey "disabled" look above only ever reads as genuinely not-ready. */
+.module-choice.selected.disabled {
+  background: #ffffff;
+  border-color: #1e5f74;
+  color: inherit;
+  opacity: 1;
+}
+
 .profile-choice input,
 .module-choice input {
   margin-top: 3px;
