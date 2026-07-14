@@ -18,7 +18,7 @@ The repeatable process for publishing a CivicSuite Windows-Local (`civicsuite-wi
    git push origin civicsuite-windows-local-vX.Y.Z
    ```
 5. The **`release-windows-msi` workflow** fires on that tag: it downloads the MSI from the latest successful `main` build and attaches it (plus evidence) to the release, creating the release as a prerelease if it does not exist yet.
-6. **Finalize**: edit the release notes (security fixes, validation evidence, SHA-256), then promote from prerelease to Latest.
+6. **Finalize**: edit the release notes (security fixes, validation evidence, SHA-256), reconcile Latest-facing docs and announcement copy to the promoted release facts, then promote from prerelease to Latest.
 7. **Retire** any superseded release candidate (mark `[RETIRED]`, prerelease, remove its unpatched assets).
 
 ## Notes
