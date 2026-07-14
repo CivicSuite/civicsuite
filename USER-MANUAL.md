@@ -1,6 +1,6 @@
 # CivicSuite — User Manual
 
-**Last verified:** 2026-07-02 (civicsuite-windows-local-v1.0.2)
+**Last verified release facts:** 2026-07-13T21:53:01Z (civicsuite-windows-local-v1.0.4)
 
 This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
 
@@ -20,7 +20,7 @@ CivicSuite is an **open-source municipal product family**. It is not one giant p
 
 ### Current honest state
 
-The Windows Local city-core package (`civicsuite-windows-local-v1.0.2`) is a **GA candidate now open for public beta**: validated end-to-end on a clean machine. The MSI is Authenticode code-signed via Azure Trusted Signing; a new certificate has no reputation yet, so Windows SmartScreen may still prompt on first run — click *More info*, confirm it shows a verified publisher (not "Unknown Publisher"), then *Run anyway* (see [docs/troubleshooting.md](docs/troubleshooting.md)). For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the release-verification gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
+The Windows Local city-core package (`civicsuite-windows-local-v1.0.4`) is the current **GA candidate now open for public beta**. It supersedes v1.0.3, points at main/tag commit `e596da3`, and keeps the same six-module city-core suite while adding first-run wizard UX Waves 1-3 for non-technical operators. The MSI is Authenticode code-signed via Azure Trusted Signing; a new certificate has no reputation yet, so Windows SmartScreen may still prompt on first run — click *More info*, confirm it shows a verified publisher (not "Unknown Publisher"), then *Run anyway* (see [docs/troubleshooting.md](docs/troubleshooting.md)). The v1.0.2 clean-machine and accessibility gate records remain inherited historical evidence; no fresh v1.0.4 clean-machine or accessibility execution receipt is claimed here. For the **other** modules, public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims remain frozen until each repo re-earns that status through the release-verification gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 - `civiccore` is the shared platform; v1.2.0 is the current city-core platform release.
 - `civicrecords-ai` (FOIA / records) is the current developer-preview records module release at v1.7.3.
@@ -36,7 +36,7 @@ A municipality should evaluate the Windows Local city-core package as a beta pac
 
 ### Callout — how the CivicAccess module arrived (v1.0.1 → v1.0.2)
 
-> **In plain English.** CivicSuite v1.0.1 bundled the **CivicAccess** module under the hood — its code was installed on disk, its database tables were created on first run, a secret token was provisioned for it, and the system reported it as available — but there was no on-screen tab yet. **The current v1.0.2 release ships the on-screen "Accessibility" workflow tab and its buttons**, so a clerk now sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Three of the tab's tools draft with the suite's local AI engine — see Part 1.6 for what they do and the human-review rules that apply.
+> **In plain English.** CivicSuite v1.0.1 bundled the **CivicAccess** module under the hood — its code was installed on disk, its database tables were created on first run, a secret token was provisioned for it, and the system reported it as available — but there was no on-screen tab yet. **Since v1.0.2, the release line has shipped the on-screen "Accessibility" workflow tab and its buttons**, so a clerk sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Three of the tab's tools draft with the suite's local AI engine — see Part 1.6 for what they do and the human-review rules that apply.
 
 > **For IT.** Per the [2026-06-29 deep-read audit](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md), v1.0.1 bundled the module's runtime without UI (Phases B/C). v1.0.2 completed it: PR [#216](https://github.com/CivicSuite/civicsuite/pull/216) delivered the native Accessibility tab and PR [#220](https://github.com/CivicSuite/civicsuite/pull/220) put its three drafting tools on the shared local AI engine, with deterministic fallbacks retained.
 
@@ -70,8 +70,8 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 
 ### Install (Windows Local desktop)
 
-1. Download `CivicSuite_1.0.2_x64_en-US.msi` from the current GitHub release: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
-2. Verify the SHA-256 checksum matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
+1. Download `CivicSuite_1.0.4_x64_en-US.msi` from the current GitHub release: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.4>.
+2. Verify the SHA-256 checksum matches the published value: `4d86e7b217a145c72626c7dd38a87f73d41763f7b0458a4188e32a6ebf18ed42`.
 3. Open the installer and follow the installer screens.
 4. Open CivicSuite after install.
 5. Complete first-run setup: local folders, City Core module selection, city profile, first CivicSuite admin sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
@@ -86,8 +86,8 @@ Linux and macOS are not the current clerk install promise for Windows Local 1.0.
 
 City-core artifacts ship from the published GitHub release, not restored committed `installer/dist` files. Before testing a package:
 
-1. Download from the published release tag: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
-2. Verify the MSI SHA-256 matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
+1. Download from the published release tag: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.4>.
+2. Verify the MSI SHA-256 matches the published value: `4d86e7b217a145c72626c7dd38a87f73d41763f7b0458a4188e32a6ebf18ed42`.
 3. Confirm the source pins in `installer/modules.json` match the city-core module commits.
 4. For module release assets, confirm the published SHA256 and attestation assets recorded in the module release evidence where applicable.
 
@@ -104,7 +104,7 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 
 ### What you should expect
 
-- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff. The current v1.0.2 MSI artifact has passed its clean-machine gates: the clean-machine install test on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2.
+- **What works in the Windows Local city-core target.** Local setup, city profile, local users/RBAC, meetings/notices/minutes/votes/archive workflows, public-notice checklist/posting/archive workflows, records intake/search/review/response/export workflows, municipal code import/guidance/publish/handoff workflows, cross-module local search, health, backup/restore, support bundle, repair, and uninstall handoff. The current v1.0.4 release carries forward the v1.0.2 historical clean-machine evidence: the clean-machine install test on v1.0.1 and the Phase D clean-VM acceptance on v1.0.2. Treat those as inherited evidence only, not as a fresh v1.0.4 clean-machine pass.
 - **What still needs its own proof gate.** Each future module outside the city-core set.
 - **What's not in this package.** The remaining module catalog is installed later through the module-manager contract after each module passes package and proof gates.
 
@@ -132,7 +132,7 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 
 Every review you save shows up in a list below the forms (the most recent 20 by default; use the "Show all" button if you have more). Each row has a **Generate Records-Ready Export** button (packages an advisory checklist, not a certified document) and a **Delete Review** button if you saved one by mistake — clicking Delete Review opens a confirmation screen showing that review's title and status before anything is removed, the same review-before-you-commit pattern used throughout the app. **Persisted reviews are advisory clerk support, not a certified accessibility audit.** That line is on every page in this tab. Final compliance sign-off always comes from a qualified human reviewer, not this tool.
 
-One known gap as of v1.0.2: there is no standalone "build me an export checklist" tool that works without first saving a review — you save a review, then export it. A separate before-you-save preview tool is planned for a later release.
+One known gap carried forward into v1.0.4: there is no standalone "build me an export checklist" tool that works without first saving a review — you save a review, then export it. A separate before-you-save preview tool is planned for a later release.
 
 **For IT/technical readers.** The Accessibility tab is a native Rust port of the standalone CivicAccess module's helpers (`access_review.py`, `plain_language.py`, `multilingual.py`, `workflows.py`), run against a `state.access` field on the same `city-work.json` the other five city-core modules use — no separate database call for this tab. As of v1.0.2 the three AI-capable tools call the suite's local model layer (`model.rs::generate_local_text`, the bundled Ollama serving the pinned Gemma 4 12B QAT Q4_0 on `127.0.0.1:15434`) — the same path CivicClerk minutes drafts, CivicRecords response drafts, and CivicCode guidance use, with a per-call live readiness probe and a deterministic fallback branch when the six readiness checks don't all pass. AI analyses persist on the saved review as optional `ai_analysis`/`ai_analysis_model` fields (older saved states load unchanged). Every action writes to both a per-module `audit_events` mirror and the platform-wide hash-chained `audit_entries` (capped FIFO past 5,000 per-module events; the global chain is uncapped), and AI-path audit entries name the runtime model used. Saved reviews surface in cross-module Search City Knowledge alongside meetings, records, code, and notices. Input length caps mirror the upstream Pydantic models (title 500 chars, body/text 5000 chars, language tag 80 chars). The upstream Python module remains deterministic v0.4.0; the AI integration lives in the desktop Rust port, matching how the other AI-capable modules ship.
 
