@@ -15,7 +15,7 @@ Open source · Apache License 2.0 · Gemma 4 default · model-pluggable
 
   ---------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
   **Document status**    v0.1 --- draft for review. Ships as a non-breaking refactor; no user-visible change to CivicRecords AI.
-  **Supersedes**         Nothing. This is the first CivicCore spec. Complements TownlightAI\_Module\_Catalog\_v1 and CivicRecordsAI-UnifiedSpec-v3.0.
+  **Supersedes**         Nothing. This is the first CivicCore spec. Complements CivicSuiteAI\_Module\_Catalog\_v1 and CivicRecordsAI-UnifiedSpec-v3.0.
   **Grounded in**        CivicRecordsAI-UnifiedSpec-v3.0 (April 13, 2026) --- the canonical Module 1 spec, whose shared plumbing is the source of the extraction.
   **Scope**              Identify what moves from the CivicRecords AI repo into a shared CivicCore package; define the new Townlight umbrella repo; specify a phased, non-breaking rollout.
   **Out of scope**       New CivicCore features. Product decisions about future modules. Changes to CivicRecords AI product behavior.

@@ -6,7 +6,7 @@ Spec revision: 1.1
 Status: Canonical planning specification (architectural intent only; STATUS.md is current-shipped truth)  
 Last revised: 2026-06-13
 License: Apache License 2.0 for code; CC BY 4.0 for documentation unless a repository-specific LICENSE says otherwise.  
-Supersedes: `TownlightAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
+Supersedes: `CivicSuiteAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
 Preserves: Feature, workflow, schema, prompt, testing, and product requirements from the source documents unless explicitly marked superseded, deferred, or corrected here.
 
 ---
@@ -21,7 +21,7 @@ This document is the working source of truth for the Townlight product family.
 
 It consolidates the useful content from:
 
-- `TownlightAI_Module_Catalog_v1`
+- `CivicSuiteAI_Module_Catalog_v1`
 - `CivicRecordsAI-UnifiedSpec-v3.0`
 - `CivicCore_v0_1_Extraction_Spec`
 - `CivicClerk_Module_Spec_v0_1`
