@@ -104,7 +104,7 @@ A `<module> v<X.Y.Z>` tag may be moved at most ONCE per release sprint, and only
 
 A second tag move is a signal that Phase 2 local rehearsal didn't catch what it should have. After the second move, halt and reassess Phase 2 instrumentation rather than continuing to chase remote bugs with more tag pushes.
 
-CivicSuite v1.5.0 moved 4 times during recovery. The new pipeline targets ZERO moves per sprint; 1 move is acceptable for genuine environmental surprise.
+Townlight v1.5.0 moved 4 times during recovery. The new pipeline targets ZERO moves per sprint; 1 move is acceptable for genuine environmental surprise.
 
 ## What this preserves vs. what changes
 

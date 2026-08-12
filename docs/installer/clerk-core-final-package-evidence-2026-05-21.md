@@ -5,7 +5,7 @@ Status: package evidence for the Clerk-Core public-use starter release.
 Scope: regenerated unsigned public-use starter archives for the Clerk-Core starter profile
 after CivicClerk main `45eaccfcc69dd1ae7e2e45d7badd5d188b49397d` merged the
 staff-session-gated protected API loading fix. This evidence covers CivicCore,
-CivicRecords AI, CivicClerk, and the CivicSuite installer package path only.
+CivicRecords AI, CivicClerk, and the Townlight installer package path only.
 
 This document supports the Clerk-Core public-use starter release. It does not
 claim city-ready status for the full suite, production hosting certification,
@@ -35,7 +35,7 @@ c7023a4105f58ac8f066678bb8d2bbfcce29c19121e39a867b416e0525ac67c2  CivicSuite-cle
 ```
 
 Signing status: unsigned public-use starter. Operators must verify SHA256 checksums and
-the official CivicSuite release source before running package commands.
+the official Townlight release source before running package commands.
 
 Native installer status: wrapper manifests generated; signed native installers
 were not built.
@@ -124,7 +124,7 @@ final promotion SHA.
 
 ### CivicClerk
 
-Source PR: CivicSuite/civicclerk#161.
+Source PR: Townlight/civicclerk#161.
 
 Merged source SHA: `45eaccfcc69dd1ae7e2e45d7badd5d188b49397d`.
 

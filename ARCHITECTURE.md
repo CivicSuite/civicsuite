@@ -1,8 +1,8 @@
-# CivicSuite Architecture
+# Townlight Architecture
 
 **Last verified:** 2026-07-02
 
-This document is the suite-level architecture reference. For detailed per-module architecture, see each module's `docs/`. For the architectural intent and roadmap, see `docs/CivicSuiteUnifiedSpec.md`. For the current shipped reality, see [STATUS.md](STATUS.md).
+This document is the suite-level architecture reference. For detailed per-module architecture, see each module's `docs/`. For the architectural intent and roadmap, see `docs/TownlightUnifiedSpec.md`. For the current shipped reality, see [STATUS.md](STATUS.md).
 
 ---
 
@@ -10,7 +10,7 @@ This document is the suite-level architecture reference. For detailed per-module
 
 **Modules depend on `civiccore`. `civiccore` never depends on modules.**
 
-This rule is non-negotiable. Every other architectural decision in CivicSuite serves it. Without it, modules become coupled, the suite becomes a monorepo by accident, and cities cannot deploy modules independently.
+This rule is non-negotiable. Every other architectural decision in Townlight serves it. Without it, modules become coupled, the suite becomes a monorepo by accident, and cities cannot deploy modules independently.
 
 ---
 
@@ -19,7 +19,7 @@ This rule is non-negotiable. Every other architectural decision in CivicSuite se
 ```mermaid
 graph TD
     subgraph "Umbrella (no runtime)"
-      US[civicsuite umbrella<br/>roadmap, governance, ADRs<br/>compatibility, installer scaffolding]
+      US[townlight umbrella<br/>roadmap, governance, ADRs<br/>compatibility, installer scaffolding]
     end
 
     subgraph "Tier 0 — Foundation Platform"
@@ -236,7 +236,7 @@ Modules pin to CivicCore as a released dependency. The exact form (example shown
 ```toml
 [project]
 dependencies = [
-  "civiccore @ https://github.com/CivicSuite/civiccore/releases/download/v1.0.1/civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969",
+  "civiccore @ https://github.com/townlight/core/releases/download/v1.0.1/civiccore-1.0.1-py3-none-any.whl#sha256=561d7a8f73260d50de79351d330876d2cb3488c0e046a2888e82fe09d1e03969",
   ...
 ]
 ```
@@ -284,7 +284,7 @@ See [installer/README.md](installer/README.md) for the contract and [docs/instal
 
 ### Windows Local desktop distribution
 
-Separate from the Docker-based installer above, the shipped Windows artifact is a single MSI (CivicSuite Windows Local, currently v1.0.2) built around a Tauri/WebView2 desktop shell. It bundles its full runtime rather than assuming host dependencies:
+Separate from the Docker-based installer above, the shipped Windows artifact is a single MSI (Townlight Windows Local, currently v1.0.2) built around a Tauri/WebView2 desktop shell. It bundles its full runtime rather than assuming host dependencies:
 
 - **PostgreSQL 17 + `pgvector`** as portable binaries, with the Microsoft VC++ runtime DLLs (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) staged into `postgres\bin` so the database starts on a factory-fresh Windows machine with no system VC++ redistributable installed.
 - **Embedded CPython** running the module services.
@@ -298,14 +298,14 @@ One MSI installs the six-module city-core profile: CivicCore, CivicRecords AI, C
 
 These are explicitly out of scope for the suite:
 
-- **Monorepo.** CivicSuite is a multi-repo product family. Each module ships independently.
+- **Monorepo.** Townlight is a multi-repo product family. Each module ships independently.
 - **System-of-record replacements.** Not first-wave ERP, utility billing, permitting, CAD/RMS, or courts.
-- **Cloud-only.** Cloud is not a deployment mode CivicSuite optimizes for.
+- **Cloud-only.** Cloud is not a deployment mode Townlight optimizes for.
 - **Per-seat pricing.** The license forecloses this option.
 - **Vendor write-back without audit.** All write-back connectors must wait until read paths are stable and auditable.
 - **Auto-determination.** No auto-release, auto-denial, auto-redaction, auto-enforcement, or auto-codification. AI drafts; humans decide.
 
-These are documented at length in `specs/01_catalog.md` §16–20 and `docs/CivicSuiteUnifiedSpec.md` §3.
+These are documented at length in `specs/01_catalog.md` §16–20 and `docs/TownlightUnifiedSpec.md` §3.
 
 ---
 

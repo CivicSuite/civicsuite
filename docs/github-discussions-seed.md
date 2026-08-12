@@ -1,6 +1,6 @@
 # GitHub Discussions — Seed Posts
 
-This file contains the seed content for enabling GitHub Discussions on the `civicsuite` umbrella repo. Each section corresponds to one discussion category. Posts should be created (manually or via `gh api`) by a maintainer with their own voice; the text below is a starting point.
+This file contains the seed content for enabling GitHub Discussions on the `townlight` umbrella repo. Each section corresponds to one discussion category. Posts should be created (manually or via `gh api`) by a maintainer with their own voice; the text below is a starting point.
 
 > **Note:** GitHub Discussions must be enabled at the repo level (Settings → General → Features → Discussions) before any of these posts can be created. The umbrella does NOT use a `.github/DISCUSSIONS_SEEDED` marker file.
 
@@ -20,18 +20,18 @@ This file contains the seed content for enabling GitHub Discussions on the `civi
 
 ## Announcements — Welcome and current suite status (PIN this)
 
-**Title:** CivicSuite — current status (May 2026)
+**Title:** Townlight — current status (May 2026)
 
 **Body:**
 
-Welcome to the CivicSuite community space. This post is a snapshot of where the suite stands right now. We'll update it (or pin a new one) when major status changes.
+Welcome to the Townlight community space. This post is a snapshot of where the suite stands right now. We'll update it (or pin a new one) when major status changes.
 
 **Shipping today:**
 
-- `civiccore` v1.2.0 - the shared platform package for the active city-core profile. Repo: <https://github.com/CivicSuite/civiccore>.
-- `civicrecords-ai` v1.7.3 - open-source FOIA / public records management. Repo: <https://github.com/CivicSuite/civicrecords-ai>.
-- `civicclerk` v1.0.4 - meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/CivicSuite/civicclerk>.
-- `civiccode` v1.0.8 - municipal code search, cited Q&A, and Clerk ordinance handoff support. Repo: <https://github.com/CivicSuite/civiccode>.
+- `civiccore` v1.2.0 - the shared platform package for the active city-core profile. Repo: <https://github.com/townlight/core>.
+- `civicrecords-ai` v1.7.3 - open-source FOIA / public records management. Repo: <https://github.com/townlight/civicrecords-ai>.
+- `civicclerk` v1.0.4 - meetings, agendas, packets, minutes, notices, votes, and public meeting records. Repo: <https://github.com/townlight/civicclerk>.
+- `civiccode` v1.0.8 - municipal code search, cited Q&A, and Clerk ordinance handoff support. Repo: <https://github.com/townlight/code>.
 
 **Planned or queued:**
 
@@ -39,7 +39,7 @@ Welcome to the CivicSuite community space. This post is a snapshot of where the 
 
 **What's this umbrella for?**
 
-This `civicsuite` repo is documentation-only. It holds the charter, the spec library, ADRs, the roadmap, governance, and the [civiccore↔module compatibility matrix](../docs/compatibility/index.md). No runtime code. Every module lives in its own repo.
+This `townlight` repo is documentation-only. It holds the charter, the spec library, ADRs, the roadmap, governance, and the [civiccore↔module compatibility matrix](../docs/compatibility/index.md). No runtime code. Every module lives in its own repo.
 
 **Where to get help / ask questions:** see [SUPPORT.md](../SUPPORT.md).
 
@@ -72,7 +72,7 @@ We'll use this thread to gather signal before locking the next-module decision.
 
 ## Architecture — How is civiccore designed, and why is it not a monorepo?
 
-**Title:** Why CivicSuite is a multi-repo, not a monorepo
+**Title:** Why Townlight is a multi-repo, not a monorepo
 
 **Body:**
 
@@ -90,15 +90,15 @@ If you're considering contributing a new module or are evaluating the architectu
 
 ## Governance — Open-source posture and the records-ai org transfer
 
-**Title:** Plan to transfer civicrecords-ai to the CivicSuite GitHub org
+**Title:** Plan to transfer civicrecords-ai to the Townlight GitHub org
 
 **Body:**
 
 A status note on a piece of governance some readers may have noticed:
 
-`civicrecords-ai` currently lives at `github.com/CivicSuite/civicrecords-ai`. The intent is to transfer the repo to the `CivicSuite` org so all modules live under the same umbrella. This is intentionally not yet done — we want the suite-wide documentation, governance, and contribution standards to settle first so the transfer is a clean handoff rather than a scramble.
+`civicrecords-ai` currently lives at `github.com/townlight/civicrecords-ai`. The intent is to transfer the repo to the `Townlight` org so all modules live under the same umbrella. This is intentionally not yet done — we want the suite-wide documentation, governance, and contribution standards to settle first so the transfer is a clean handoff rather than a scramble.
 
-Until the transfer happens, every link to records-ai in our docs uses `CivicSuite/civicrecords-ai`. After the transfer, links will be updated and old links will redirect via GitHub's automatic forwarding.
+Until the transfer happens, every link to records-ai in our docs uses `Townlight/civicrecords-ai`. After the transfer, links will be updated and old links will redirect via GitHub's automatic forwarding.
 
 **No action needed from contributors.** Existing forks and PRs continue to work normally during and after the transfer. We'll announce the transfer with a heads-up post here when the date is set.
 

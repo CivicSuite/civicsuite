@@ -14,7 +14,7 @@ The Windows Local city-core package installs:
 - CivicCode `1.0.8`
 - CivicNotice `0.2.0`
 - CivicAccess `0.4.0`
-- CivicSuite desktop shell using Tauri/WebView2
+- Townlight desktop shell using Tauri/WebView2
 - Portable local runtime payload for storage, services, file exports, backup/restore, and the local AI model runtime
 
 CivicCore is always installed. CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess are selected as the City Core profile. Future modules remain visible only through the module manager contract until their package and proof gates pass.
@@ -30,15 +30,15 @@ Have these ready:
 - A stable internet connection for first install/model download unless the model file has already been staged by IT (see "Offline / Air-Gapped Model Pre-Staging").
 - A city name, records contact, clerk contact, first local administrator name/email, and a backup folder location.
 
-Do not install Docker Desktop or WSL for this product path. If the app asks for Docker, WSL, a terminal, or manual environment edits, this is a bug — please report it on the CivicSuite GitHub issue tracker (<https://github.com/CivicSuite/civicsuite/issues>).
+Do not install Docker Desktop or WSL for this product path. If the app asks for Docker, WSL, a terminal, or manual environment edits, this is a bug — please report it on the Townlight GitHub issue tracker (<https://github.com/townlight/townlight/issues>).
 
 ## Install
 
-1. Open the CivicSuite Windows installer file.
+1. Open the Townlight Windows installer file.
 
 2. Follow the installer screens. The installer places the app and portable runtime on the local machine and adds normal Windows uninstall support.
 
-3. Open CivicSuite after install.
+3. Open Townlight after install.
 
 4. Complete first-run setup:
    - Confirm local install/data/backup folders.
@@ -81,7 +81,7 @@ Procedure:
    the city data folder so the data root exists.
 3. At the model step, choose **Open Model Folder**. The app opens the `models`
    folder under the configured city data root (by default
-   `%LOCALAPPDATA%\CivicSuite\Data\models`). Use this folder rather than typing a
+   `%LOCALAPPDATA%\Townlight\Data\models`). Use this folder rather than typing a
    path; the app reads the model only from this exact location.
 4. Copy the staged `gemma-4-12b-it-qat-q4_0.gguf` into that `models` folder. Keep
    the file name exactly as listed; a renamed file will not be found.
@@ -158,7 +158,7 @@ Backups are local files. Keep backup folders somewhere the city can retain and p
 
 ## Support Bundle
 
-Use **Create Support Bundle** in System Health when city IT or CivicSuite
+Use **Create Support Bundle** in System Health when city IT or Townlight
 support asks for local runtime evidence. The app creates a timestamped folder
 under the configured backup location with a README, support-manifest.json,
 health-summary.json, runtime-state.json, and selected service logs. It does not
@@ -166,13 +166,13 @@ copy city records, uploaded documents, backup contents, or local secrets.
 
 ## Uninstall
 
-Use **Prepare Uninstall** in System Health before removing CivicSuite:
+Use **Prepare Uninstall** in System Health before removing Townlight:
 
 - The app creates a final uninstall backup.
 - The app stops local services.
 - The app removes local data and setup/config state.
 - After preparation succeeds, choose **Open Windows Uninstall** or use Windows
-  Settings > Installed apps, find CivicSuite, and choose Uninstall.
+  Settings > Installed apps, find Townlight, and choose Uninstall.
 - The Windows uninstall entry removes program files.
 
 Reinstall should be able to restore from the final backup when the backup folder is available.
@@ -189,4 +189,4 @@ If disk space is low, free space and run health verification again.
 
 If the app cannot write backups, choose a folder the local user can write and run backup again.
 
-If the app asks for Docker, WSL, terminal commands, or manual config-file edits, this is a bug — please report it on the CivicSuite GitHub issue tracker (<https://github.com/CivicSuite/civicsuite/issues>).
+If the app asks for Docker, WSL, terminal commands, or manual config-file edits, this is a bug — please report it on the Townlight GitHub issue tracker (<https://github.com/townlight/townlight/issues>).

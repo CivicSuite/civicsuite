@@ -55,7 +55,7 @@ Published beta.4 archive checksums:
 The beta.4 release-truth PR included the `release-tag` label and updated or preserved
 these lockstep truth artifacts together:
 
-- `docs/CivicSuiteUnifiedSpec.md`
+- `docs/TownlightUnifiedSpec.md`
 - `docs/release-recovery-status.md`
 - `scripts/verify-suite-state.py`
 - `installer/modules.json`

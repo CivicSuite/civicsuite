@@ -12,8 +12,8 @@ Target: `docs/index.html`
 ## Checks
 
 - CivicRecords AI module badge shows `Shipping v1.4.1`.
-- CivicSuite architecture image alt text references `civicrecords-ai v1.4.1` and `civiccore v0.3.0`.
-- Repo links still point to `https://github.com/CivicSuite/civicrecords-ai` and the other CivicSuite module repos.
+- Townlight architecture image alt text references `civicrecords-ai v1.4.1` and `civiccore v0.3.0`.
+- Repo links still point to `https://github.com/townlight/civicrecords-ai` and the other Townlight module repos.
 - Desktop and mobile screenshots render the current landing page without obvious clipping or missing primary content.
 
 ## Console

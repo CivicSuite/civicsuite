@@ -1,4 +1,4 @@
-# CivicSuite Installer Checkpoint - 2026-05-09
+# Townlight Installer Checkpoint - 2026-05-09
 
 Status: historical checkpoint. Current work is Linux/container-first with
 Windows and macOS wrappers around that core. The clerk-core archive generator
@@ -36,7 +36,7 @@ CivicProcure artifact proof resolves
 
 ## Scope Completed
 
-This checkpoint records the first safe installer slice for CivicSuite. The work
+This checkpoint records the first safe installer slice for Townlight. The work
 created an umbrella-level installer contract, dry-run planner, and a first real
 `clerk-core` beta lifecycle. It does not change module runtime code and does
 not claim signed native installer binaries.
@@ -48,7 +48,7 @@ Completed surfaces:
   proves extracted archive readiness/plan on Windows, macOS, and Linux runners,
   and proves the full Linux archive install, repair, verify, and uninstall
   lifecycle on Ubuntu with uploaded evidence.
-- `installer/modules.json` covers all 26 tracked CivicSuite repos.
+- `installer/modules.json` covers all 26 tracked Townlight repos.
 - `scripts/plan-installer.py` resolves profiles, dependencies, menu styles,
   readiness states, artifact/version inputs, service/profile config,
   health-check plans, executor preflight, and the execution gate.

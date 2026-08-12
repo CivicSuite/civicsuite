@@ -20,11 +20,11 @@ transcription · airgappable
   **Purpose**                Agenda intake, packet assembly, staff report normalization, ordinance and resolution extraction, motion and vote capture, minute drafting, searchable meeting archive, statutory notice compliance, and public meeting portal --- all with citations back to source material.
   **Primary owner**          City Clerk / Council Support / City Manager's Office
   **Depends on**             CivicCore (auth, RBAC, audit, LLM, ingest, search, notifications). Optional: CivicCode (ordinance handoff on adoption), CivicAccess (public-facing accessibility review), CivicRecords (search integration for prior-meeting FOIA responses).
-  **Note on dependencies**   The original CivicSuiteAI catalog listed "depends on CivicCore, CivicRecords." That dependency was an artifact of shared document/search infrastructure living inside the CivicRecords AI repo. Once CivicCore v0.1 ships, that shared infra moves to CivicCore and CivicClerk depends only on CivicCore.
+  **Note on dependencies**   The original TownlightAI catalog listed "depends on CivicCore, CivicRecords." That dependency was an artifact of shared document/search infrastructure living inside the CivicRecords AI repo. Once CivicCore v0.1 ships, that shared infra moves to CivicCore and CivicClerk depends only on CivicCore.
   **Default model**          Gemma 4 via Ollama for drafting and extraction. Whisper (local) for meeting transcription. Embeddings via nomic-embed-text.
   **License**                Apache License 2.0 (code). CC BY 4.0 (docs). CC BY-SA 4.0 (prompt library, optional separate repo).
-  **Supersedes**             Nothing. First CivicClerk spec. Implements the Tier 1 Clerk Core module defined in CivicSuiteAI\_Module\_Catalog\_v1.
-  **Grounded in**            CivicRecordsAI-UnifiedSpec-v3.0 (stylistic and structural template). CivicSuiteAI\_Module\_Catalog\_v1 (module card and tier placement). CivicCore v0.1 Extraction Spec (platform dependency).
+  **Supersedes**             Nothing. First CivicClerk spec. Implements the Tier 1 Clerk Core module defined in TownlightAI\_Module\_Catalog\_v1.
+  **Grounded in**            CivicRecordsAI-UnifiedSpec-v3.0 (stylistic and structural template). TownlightAI\_Module\_Catalog\_v1 (module card and tier placement). CivicCore v0.1 Extraction Spec (platform dependency).
   **Completion bar**         Every statutory notice requirement surfaced with deadline enforcement. Every AI-drafted minute sentence cites source. Every closed-session boundary enforced at the API layer. Every public-portal surface meets WCAG 2.2 AA.
   -------------------------- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1077,7 +1077,7 @@ CivicClerk is entirely PLANNED at the code level. This spec is v0.1 of
 the design document. Nothing ships until CivicCore v0.1 Phase 1 is
 complete (shared models + audit chain live in CivicCore). CivicCode
 handoff ships in a later minor release once CivicCode v0.1 exposes its
-acceptance API. The CivicSuite umbrella repo's compatibility matrix will
+acceptance API. The Townlight umbrella repo's compatibility matrix will
 reflect this explicitly.
 
   ---------------------------- ---------------------------------------- --------------------------------------------------------
@@ -1308,9 +1308,9 @@ deliberative material
 
 \[ \] CHANGELOG in civicclerk
 
-\[ \] Compatibility matrix updated in civicsuite
+\[ \] Compatibility matrix updated in townlight
 
-\[ \] Module catalog entry updated in civicsuite
+\[ \] Module catalog entry updated in townlight
 
 \[ \] Migration guide for incumbent platforms published
 

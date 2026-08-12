@@ -1,6 +1,6 @@
-# SUPERVISOR — CivicSuite Operating Card
+# SUPERVISOR — Townlight Operating Card
 
-For Scott. One page. CivicSuite is the umbrella repo (github.com/CivicSuite org) — suite-wide docs, ADRs, roadmap, governance, and the CivicCore ↔ module compatibility matrix. **It holds no code.** Code lives in `civiccore` and `civicrecords-ai` (and future module repos). Treat this repo as the coordination layer.
+For Scott. One page. Townlight is the umbrella repo (github.com/townlight org) — suite-wide docs, ADRs, roadmap, governance, and the CivicCore ↔ module compatibility matrix. **It holds no code.** Code lives in `civiccore` and `civicrecords-ai` (and future module repos). Treat this repo as the coordination layer.
 
 ---
 
@@ -53,7 +53,7 @@ See `coder-ui-qa-test` skill.
 
 ---
 
-## 5. Good session ending — CivicSuite checklist
+## 5. Good session ending — Townlight checklist
 
 Finished coordination work looks like this:
 

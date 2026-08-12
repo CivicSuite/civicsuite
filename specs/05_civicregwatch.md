@@ -5,10 +5,10 @@ Source: `C:/Users/scott/Downloads/CivicAPI and CivicRegWatch modules.docx`
 
 ## Purpose
 
-CivicRegWatch is the CivicSuite module that monitors federal regulatory
+CivicRegWatch is the Townlight module that monitors federal regulatory
 activity and surfaces the subset of rules, proposed rules, guidance documents,
 and congressional actions that may carry operational, legal, or financial
-consequences for the city running CivicSuite.
+consequences for the city running Townlight.
 
 It is an intelligence layer, not a compliance system. It tells staff something
 changed and someone should look at it. It does not make compliance
@@ -27,7 +27,7 @@ decisions.
 
 - No legal compliance determinations.
 - No city-specific legal interpretation.
-- No automatic action in other CivicSuite modules.
+- No automatic action in other Townlight modules.
 - No replacement for the city attorney, compliance officer, or municipal league legal advisory.
 - No completeness guarantee across all federal regulatory activity.
 - No live LLM calls in v0.1.x.
@@ -68,7 +68,7 @@ Every incoming document is classified against a fixed municipal domain taxonomy.
 Classification is deterministic in v0.1.x using keyword and CFR-title matching.
 LLM-assisted classification is planned for v0.2.x and remains staff-reviewable.
 
-| Domain ID | Label | Example CFR Titles | Primary CivicSuite Module |
+| Domain ID | Label | Example CFR Titles | Primary Townlight Module |
 |---|---|---|---|
 | ENV_WATER | Water and wastewater | 40 CFR 122-147 | CivicPermit, Civic311 |
 | ENV_AIR | Air quality | 40 CFR 50-99 | CivicPermit |

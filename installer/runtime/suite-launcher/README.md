@@ -1,4 +1,4 @@
-# CivicSuite Suite Launcher
+# Townlight Suite Launcher
 
 This directory contains the first suite-level static launcher for the
 city-core installer runtime. It is intentionally static and self-contained:
@@ -33,5 +33,5 @@ State fixtures are selected only when QA mode is explicit:
 - `?qa=1&state=partial`
 
 The module links default to the city-core local ports and are overwritten by
-the installer-generated `window.CIVICSUITE_LAUNCHER_CONFIG` before `src/app.js`
+the installer-generated `window.TOWNLIGHT_LAUNCHER_CONFIG` before `src/app.js`
 loads.

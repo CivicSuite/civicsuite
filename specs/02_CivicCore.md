@@ -5,7 +5,7 @@
 *A non-breaking refactor of the CivicRecords AI repo into a shared
 platform package*
 
-Companion artifact: CivicSuite meta-repo definition
+Companion artifact: Townlight meta-repo definition
 
 Version 0.1 --- Draft for review --- April 23, 2026
 
@@ -15,9 +15,9 @@ Open source · Apache License 2.0 · Gemma 4 default · model-pluggable
 
   ---------------------- ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
   **Document status**    v0.1 --- draft for review. Ships as a non-breaking refactor; no user-visible change to CivicRecords AI.
-  **Supersedes**         Nothing. This is the first CivicCore spec. Complements CivicSuiteAI\_Module\_Catalog\_v1 and CivicRecordsAI-UnifiedSpec-v3.0.
+  **Supersedes**         Nothing. This is the first CivicCore spec. Complements TownlightAI\_Module\_Catalog\_v1 and CivicRecordsAI-UnifiedSpec-v3.0.
   **Grounded in**        CivicRecordsAI-UnifiedSpec-v3.0 (April 13, 2026) --- the canonical Module 1 spec, whose shared plumbing is the source of the extraction.
-  **Scope**              Identify what moves from the CivicRecords AI repo into a shared CivicCore package; define the new CivicSuite umbrella repo; specify a phased, non-breaking rollout.
+  **Scope**              Identify what moves from the CivicRecords AI repo into a shared CivicCore package; define the new Townlight umbrella repo; specify a phased, non-breaking rollout.
   **Out of scope**       New CivicCore features. Product decisions about future modules. Changes to CivicRecords AI product behavior.
   **License**            Code: Apache License 2.0. Docs: CC BY 4.0.
   **Default model**      Gemma 4 via Ollama. Model registry + context\_window\_size driving per-module token budgets.
@@ -35,7 +35,7 @@ The CivicRecords AI v3.0 spec is an excellent Module 1 specification.
 Read as a suite spec, it is thin: it treats municipal code, zoning,
 comprehensive plans, boards, notices, contracts, legal research, HR, and
 elections as either connector domains or generic documents. The
-CivicSuite module catalog fills those gaps at the product layer. This
+Townlight module catalog fills those gaps at the product layer. This
 spec fills them at the architecture layer.
 
 The repo that shipped CivicRecords AI already contains most of the
@@ -49,7 +49,7 @@ package (the right move).
 CivicCore is that package. This spec defines what it is, what moves into
 it, what stays out, how the move is staged without breaking the existing
 product, and what the resulting repository topology looks like ---
-including a new CivicSuite umbrella repo for suite-wide coordination.
+including a new Townlight umbrella repo for suite-wide coordination.
 
 **2. Non-goals**
 
@@ -108,9 +108,9 @@ cheapest at v0.1.
 
 **Part II. Repository Topology**
 
-**5. The CivicSuite umbrella repo**
+**5. The Townlight umbrella repo**
 
-A deliberate choice: CivicSuite is not an AI product. It is the
+A deliberate choice: Townlight is not an AI product. It is the
 meta-repo that makes the suite coherent. It ships no code. It owns
 shared narrative: the module catalog, the roadmap, the suite-wide design
 principles, cross-module architecture decision records, the suite-wide
@@ -119,12 +119,12 @@ changelog, and the governance that every contributing module agrees to.
 The name drops the AI suffix on purpose. CivicRecords AI keeps its
 suffix for continuity with the existing repo and v3.0 spec. Future
 modules drop it (CivicClerk, CivicCode, CivicZone) because suite
-identity carries it. And the umbrella --- CivicSuite --- drops it
+identity carries it. And the umbrella --- Townlight --- drops it
 hardest, because the suite's value is not "it uses AI." The suite's
 value is "it runs locally, on your hardware, across every civic
 surface." The name should reflect that.
 
-**5.1 CivicSuite repo contents**
+**5.1 Townlight repo contents**
 
 -   README.md --- the one-page pitch, links to every module, the
     60-second answer to "what is this."
@@ -173,13 +173,13 @@ single place to talk about the whole suite --- without any of its costs.
 
   ------------------------------- -------------------------------------------------------------------------------------------------------------------------------------------------- ------------------------------------------ --------------------------------------------------------------------------------------
   **Repo**                        **Contains**                                                                                                                                       **License**                                **Published as**
-  CivicSuite (new)                Umbrella docs: catalog, roadmap, strategy, design principles, cross-module ADRs, suite-wide changelog, governance.                                 CC BY 4.0 (docs) + Apache 2.0 (example configs)   GitHub org landing repo; not installable
+  Townlight (new)                Umbrella docs: catalog, roadmap, strategy, design principles, cross-module ADRs, suite-wide changelog, governance.                                 CC BY 4.0 (docs) + Apache 2.0 (example configs)   GitHub org landing repo; not installable
   CivicCore (new)                 Shared platform: auth, RBAC, audit chain, LLM abstraction, connector framework, ingestion, search, notifications, admin shell, exemption engine.   Apache 2.0                                        pip wheel: civiccore ; container base image: civiccore-base
   CivicRecords AI (existing)      Records-module code only: request lifecycle, letter generation, fee schedules, public portal (planned), exemption dashboard.                       Apache 2.0                                        pip wheel: civicrecords ; docker-compose: existing stack, now pulling civiccore-base
   CivicClerk (future)             Meeting, agenda, minutes, voting module. Depends on civiccore.                                                                                     Apache 2.0                                        pip wheel: civicclerk
   CivicCode (future)              Municipal code / ordinance Q&A. Depends on civiccore, civicclerk.                                                                                  Apache 2.0                                        pip wheel: civiccode
   CivicZone (future)              Zoning Q&A, parcel-aware lookups, overlay districts. Depends on civiccore, civiccode.                                                              Apache 2.0                                        pip wheel: civiczone
-  CivicSuite-prompts (optional)   Prompt libraries for every module. Versioned YAML. Separate repo so cities can fork prompts without forking code.                                  CC BY-SA 4.0                               pip wheel: civicsuite-prompts (reference copy)
+  Townlight-prompts (optional)   Prompt libraries for every module. Versioned YAML. Separate repo so cities can fork prompts without forking code.                                  CC BY-SA 4.0                               pip wheel: townlight-prompts (reference copy)
   ------------------------------- -------------------------------------------------------------------------------------------------------------------------------------------------- ------------------------------------------ --------------------------------------------------------------------------------------
 
 Every module has its own repository, its own changelog, its own release
@@ -187,11 +187,11 @@ cadence, and its own version. Every module depends on a CivicCore
 version. Every module is installable on its own --- a city running only
 CivicRecords AI does not accidentally install CivicClerk.
 
-**7. CivicSuite GitHub organization layout**
+**7. Townlight GitHub organization layout**
 
-github.com/civicsuite/
+github.com/townlight/
 
-├── civicsuite (this umbrella repo)
+├── townlight (this umbrella repo)
 
 ├── civiccore (shared platform package)
 
@@ -203,7 +203,7 @@ github.com/civicsuite/
 
 ├── civiczone (future --- Land Use)
 
-├── civicsuite-prompts (optional --- prompt library)
+├── townlight-prompts (optional --- prompt library)
 
 └── civicsuite-deploy (optional --- reference Compose/K3s manifests)
 
@@ -235,7 +235,7 @@ import rewrite.
   Municipal systems catalog     backend/app/catalog/\*, data/seeds/systems\_catalog.yaml                                                      civiccore/catalog/\*                                                    civiccore.catalog.domains(), civiccore.catalog.connectors\_for(domain)
   Exemption engine (50-state)   backend/app/exemptions/\*, data/seeds/exemption\_rules/\*.yaml                                                civiccore/exemptions/\*                                                 civiccore.exemptions.evaluate(text, jurisdiction), civiccore.exemptions.suggest\_llm()
   Sovereignty verification      scripts/verify-sovereignty.sh, scripts/verify-sovereignty.ps1, backend/tests/sovereignty/\* (combined script, both shells)                         civiccore/verification/\*, scripts/verify/\*                            civiccore.verification.run\_all()
-  Admin shell (UI)              frontend/src/components/app-shell.tsx, frontend/src/components/StatusBadge.tsx (no separate frontend/src/design-tokens/ directory yet per F.4 --- tokens stay inline in shadcn primitives for civiccore-ui v0.1)   civiccore-ui/shell/\*, civiccore-ui/tokens/\*                           import { AdminShell, StatusBadge, tokens } from \'\@civicsuite/core-ui\'
+  Admin shell (UI)              frontend/src/components/app-shell.tsx, frontend/src/components/StatusBadge.tsx (no separate frontend/src/design-tokens/ directory yet per F.4 --- tokens stay inline in shadcn primitives for civiccore-ui v0.1)   civiccore-ui/shell/\*, civiccore-ui/tokens/\*                           import { AdminShell, StatusBadge, tokens } from \'\@townlight/core-ui\'
   Shared tables (users, docs)   alembic/versions/\*\_users.py, alembic/versions/\*\_docs.py, alembic/versions/\*\_audit.py                    civiccore/migrations/\*                                                 civiccore.migrations.run() called by each module's migration runner
   ----------------------------- ------------------------------------------------------------------------------------------------------------- ----------------------------------------------------------------------- ------------------------------------------------------------------------------------------
 
@@ -326,7 +326,7 @@ production.
 
   --------------------------------------------------- ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------------------- ------------------------------------------------------------------------
   **Phase**                                           **Scope**                                                                                                                                                                                               **Non-breaking?**                         **Shippable as a CivicRecords release?**
-  0\. Preparation                                     Create civiccore repo skeleton. Create civicsuite umbrella repo. Copy LICENSE, README, CI scaffolding. Agree on public API surface.                                                                     Yes --- no code changes                   No --- setup only
+  0\. Preparation                                     Create civiccore repo skeleton. Create townlight umbrella repo. Copy LICENSE, README, CI scaffolding. Agree on public API surface.                                                                     Yes --- no code changes                   No --- setup only
   1\. Shared models + audit chain                     Move user, role, department, audit\_log models and their migrations into CivicCore. Records imports via shim: from civiccore.models import User as \_U ; User = \_U.                                    Yes --- identical behavior                Yes --- patch release
   2\. LLM + ingestion + search                        Move LLM abstraction, document ingestion, search, and their tests. Records imports via shim. Verify end-to-end records workflow unchanged.                                                              Yes --- identical behavior                Yes --- minor release
   3\. Connectors + notifications + exemption engine   Move connector framework, notification service, exemption engine + seed data. Records-specific connectors stay module-side.                                                                             Yes --- identical behavior                Yes --- minor release
@@ -401,7 +401,7 @@ and patch are not. Every module's README carries a compatibility block:
 
 Compatibility: civiccore \>= 0.1, \< 0.2
 
-The CivicSuite umbrella repo maintains a compatibility matrix document
+The Townlight umbrella repo maintains a compatibility matrix document
 --- which module versions work with which CivicCore versions --- and
 runs a nightly CI job that builds every module against the current
 CivicCore main to catch compatibility drift early.
@@ -434,7 +434,7 @@ verifiably true:
     generates a working new-module skeleton that boots, authenticates,
     and appears in the admin shell.
 
--   The compatibility matrix in the CivicSuite umbrella repo is
+-   The compatibility matrix in the Townlight umbrella repo is
     populated for CivicCore 0.1 and CivicRecords AI's current version.
 
 -   The CHANGELOGs of both civiccore and civicrecords reflect the move.
@@ -451,7 +451,7 @@ verifiably true:
   Circular imports between modules and CivicCore                   Medium           Medium       CivicCore never imports from modules. One-way dependency. Enforced by a CI lint rule that greps for module names inside CivicCore.
   Shared table schema change breaks an already-deployed module     Low              High         Shared-table changes are major CivicCore releases. Minor/patch releases never alter shared schema.
   License confusion (MIT vs. CC BY vs. CC BY-SA)                   Low              Low          LICENSE file in every repo: Apache License 2.0 for code, CC BY 4.0 for docs (LICENSE-DOCS or LICENSE in docs-only repos).
-  Contributor confusion about where to file a bug                  Medium           Low          Each repo's CONTRIBUTING.md has a "where does this bug go" decision tree. CivicSuite umbrella repo redirects issues to the right module.
+  Contributor confusion about where to file a bug                  Medium           Low          Each repo's CONTRIBUTING.md has a "where does this bug go" decision tree. Townlight umbrella repo redirects issues to the right module.
   Shim layer leaks into long-term technical debt                   Medium           Low          Phase 5 is scheduled at the time phase 1 ships. Shims have a documented sunset date, not a vague "someday."
   ---------------------------------------------------------------- ---------------- ------------ ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -475,7 +475,7 @@ complete and the verification log is written.
 
 -   Pass 4 --- Documentation & Handoff: CHANGELOGs written in both
     repos; compatibility matrix updated; breaking changes flagged (there
-    are none at v0.1); CivicSuite README updated to reflect the new
+    are none at v0.1); Townlight README updated to reflect the new
     topology.
 
 **Appendices**
@@ -593,9 +593,9 @@ civiccore/
 
 └── README.md
 
-**C. Directory layout (civicsuite umbrella repo)**
+**C. Directory layout (townlight umbrella repo)**
 
-civicsuite/
+townlight/
 
 ├── README.md \# one-page pitch, module links
 
@@ -621,12 +621,12 @@ civicsuite/
 
 **D. Licensing clarifications**
 
--   Code (every civicsuite/\* repo): Apache License 2.0 (SPDX: Apache-2.0). Use the canonical text from https://www.apache.org/licenses/LICENSE-2.0.txt unmodified. Project standardized on Apache 2.0 on 2026-04-23 to align with civicrecords-ai.
+-   Code (every townlight/\* repo): Apache License 2.0 (SPDX: Apache-2.0). Use the canonical text from https://www.apache.org/licenses/LICENSE-2.0.txt unmodified. Project standardized on Apache 2.0 on 2026-04-23 to align with civicrecords-ai.
 
 -   Documentation: CC BY 4.0 --- cities and vendors can fork, adapt,
     rebrand. Attribution required.
 
--   Prompts (optional separate repo, civicsuite-prompts): CC BY-SA 4.0
+-   Prompts (optional separate repo, townlight-prompts): CC BY-SA 4.0
     so downstream forks stay open. Same pattern as PatentForge.
 
 -   Third-party dependencies: permissive or weak-copyleft only. AGPL and
@@ -647,7 +647,7 @@ until the log is complete.
 Extracted shared infrastructure from CivicRecords AI into a new
 civiccore package.
 
-Created civicsuite umbrella repo. No product behavior changes.
+Created townlight umbrella repo. No product behavior changes.
 
 \#\#\# Data Provenance Check
 
@@ -694,7 +694,7 @@ CivicCore. Records module reads unchanged. Audit chain verified.
 
 \[ \] CHANGELOG in civicrecords-ai
 
-\[ \] Compatibility matrix populated in civicsuite
+\[ \] Compatibility matrix populated in townlight
 
 \[ \] README updated in all three repos
 

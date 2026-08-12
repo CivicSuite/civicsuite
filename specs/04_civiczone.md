@@ -21,8 +21,8 @@ Open source · Apache License 2.0 · Gemma 4 default · airgappable
   **Depends on**        CivicCore (auth, RBAC, audit, LLM, ingest, search, notifications), CivicCode (shares ordinance infrastructure and version tracking). Optional: CivicPlan (comp plan cross-references), CivicClerk (variance hearing minutes).
   **Default model**     Gemma 4 via Ollama. Local inference only. Embeddings via nomic-embed-text.
   **License**           Apache License 2.0 (code). CC BY 4.0 (docs). CC BY-SA 4.0 (prompt library, optional separate repo).
-  **Supersedes**        Nothing. First CivicZone spec. Fills the Land Use gap identified in the CivicSuiteAI Module Catalog.
-  **Grounded in**       CivicRecordsAI-UnifiedSpec-v3.0 (stylistic and structural template). CivicSuiteAI\_Module\_Catalog\_v1 (module card and tier placement). CivicCore v0.1 Extraction Spec (platform dependency).
+  **Supersedes**        Nothing. First CivicZone spec. Fills the Land Use gap identified in the TownlightAI Module Catalog.
+  **Grounded in**       CivicRecordsAI-UnifiedSpec-v3.0 (stylistic and structural template). TownlightAI\_Module\_Catalog\_v1 (module card and tier placement). CivicCore v0.1 Extraction Spec (platform dependency).
   **Completion bar**    Every user-facing state designed and tested. Every AI output cites source. Every parcel lookup discloses data freshness. Every answer declines to opine on approval outcomes and routes to a planner for determinations.
   --------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -616,7 +616,7 @@ declares the policy in its config.
 
 All endpoints follow CivicCore's standard error envelope, authentication
 headers, and audit middleware. OpenAPI spec is emitted automatically
-from FastAPI route handlers; the CivicSuite docs site renders it
+from FastAPI route handlers; the Townlight docs site renders it
 alongside every other module's spec.
 
 **29. Frontend pages**
@@ -877,7 +877,7 @@ the automated suite does not cover:
 CivicZone is entirely PLANNED at the code level. This spec is v0.1 of
 the design document. Nothing ships until CivicCore v0.1 Phase 1 is
 complete (shared models + audit chain live in CivicCore) and CivicCode
-v0.1 exposes its section-resolution API. The CivicSuite umbrella repo's
+v0.1 exposes its section-resolution API. The Townlight umbrella repo's
 compatibility matrix will reflect this explicitly.
 
   ---------------------------- -------------------------------------------------------- ----------------------------------------------------------
@@ -1076,9 +1076,9 @@ confidence-too-low, determination-requested
 
 \[ \] CHANGELOG in civiczone
 
-\[ \] Compatibility matrix updated in civicsuite
+\[ \] Compatibility matrix updated in townlight
 
-\[ \] Module catalog entry updated in civicsuite
+\[ \] Module catalog entry updated in townlight
 
 \[ \] Breaking changes flagged (none at v0.1)
 

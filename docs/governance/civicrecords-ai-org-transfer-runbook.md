@@ -1,23 +1,23 @@
 # CivicRecords AI Org Transfer Runbook
 
 Status: ready for execution
-Owner: CivicSuite maintainer
+Owner: Townlight maintainer
 Source repo: `scottconverse/civicrecords-ai`
-Target repo: `CivicSuite/civicrecords-ai`
+Target repo: `Townlight/civicrecords-ai`
 Prepared: 2026-04-25
 
 ## Goal
 
-Move the shipping CivicRecords AI module into the CivicSuite GitHub org so every
-suite module lives under `CivicSuite/*`. Preserve history, issues, releases,
+Move the shipping CivicRecords AI module into the Townlight GitHub org so every
+suite module lives under `Townlight/*`. Preserve history, issues, releases,
 tags, discussions, stars, and GitHub redirects by using GitHub's native
 repository transfer flow.
 
 ## Current GitHub State
 
-- `CivicSuite/civicsuite`: exists, public, default branch `main`.
-- `CivicSuite/civiccore`: exists, public, default branch `main`.
-- `CivicSuite/civicrecords-ai`: does not exist yet.
+- `Townlight/townlight`: exists, public, default branch `main`.
+- `Townlight/civiccore`: exists, public, default branch `main`.
+- `Townlight/civicrecords-ai`: does not exist yet.
 - `scottconverse/civicrecords-ai`: exists, public, default branch `master`,
   issues enabled, discussions enabled, wiki disabled, not archived.
 
@@ -29,7 +29,7 @@ Use GitHub repository transfer:
 gh api \
   --method POST \
   repos/scottconverse/civicrecords-ai/transfer \
-  -f new_owner=CivicSuite
+  -f new_owner=Townlight
 ```
 
 Do not create a fresh repo and push a mirror unless native transfer fails.
@@ -42,14 +42,14 @@ Before transfer:
 
 1. Ensure no release workflow is running on `scottconverse/civicrecords-ai`.
 2. Ensure no PR merge is in progress.
-3. Confirm `CivicSuite/civicrecords-ai` still does not exist.
+3. Confirm `Townlight/civicrecords-ai` still does not exist.
 4. Confirm `scottconverse/civicrecords-ai` default branch is still `master`.
 5. Record current latest release and asset URLs.
 
 ## Current-Facing URL Rewrite Scope
 
 After transfer, update current-facing references from
-`scottconverse/civicrecords-ai` to `CivicSuite/civicrecords-ai`.
+`scottconverse/civicrecords-ai` to `Townlight/civicrecords-ai`.
 
 Records-ai current-facing files:
 
@@ -76,7 +76,7 @@ Records-ai current-facing files:
   - `docs/generate_docx.py`
   - `docs/generate_pdfs.py`
 
-CivicSuite umbrella current-facing files:
+Townlight umbrella current-facing files:
 
 - `README.md`
 - `README.txt`
@@ -119,7 +119,7 @@ leave it unless the paragraph claims to be current.
 Immediately after transfer:
 
 ```bash
-gh repo view CivicSuite/civicrecords-ai \
+gh repo view Townlight/civicrecords-ai \
   --json nameWithOwner,visibility,defaultBranchRef,hasIssuesEnabled,hasDiscussionsEnabled,hasWikiEnabled,isArchived,url
 
 gh repo view scottconverse/civicrecords-ai \
@@ -128,7 +128,7 @@ gh repo view scottconverse/civicrecords-ai \
 
 Expected:
 
-- `CivicSuite/civicrecords-ai` exists.
+- `Townlight/civicrecords-ai` exists.
 - Visibility remains public.
 - Default branch remains `master`.
 - Issues remain enabled.
@@ -142,7 +142,7 @@ After transfer:
 
 ```bash
 cd civicrecords-ai
-git remote set-url origin https://github.com/CivicSuite/civicrecords-ai.git
+git remote set-url origin https://github.com/townlight/civicrecords-ai.git
 git fetch origin
 git status --short --branch
 ```
@@ -163,7 +163,7 @@ bash scripts/verify-release.sh
 cd frontend && node node_modules/vitest/dist/cli.js run
 ```
 
-CivicSuite:
+Townlight:
 
 ```bash
 python -m ruff check .
@@ -179,28 +179,28 @@ bash scripts/verify-release.sh
 
 Browser QA:
 
-- records-ai landing page renders and links to `CivicSuite/civicrecords-ai`.
-- CivicSuite landing page links to `CivicSuite/civicrecords-ai`.
-- CivicCore docs route records-ai issues to `CivicSuite/civicrecords-ai`.
+- records-ai landing page renders and links to `Townlight/civicrecords-ai`.
+- Townlight landing page links to `Townlight/civicrecords-ai`.
+- CivicCore docs route records-ai issues to `Townlight/civicrecords-ai`.
 - Console has zero errors on landing pages.
 - Desktop and mobile widths both render correctly.
 
 Release URL checks:
 
-- `https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.4.0`
-- `https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe`
+- `https://github.com/townlight/civicrecords-ai/releases/tag/v1.4.0`
+- `https://github.com/townlight/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe`
 - old `scottconverse` release URLs redirect.
 
 ## Done Definition
 
 - Native GitHub transfer complete.
-- `CivicSuite/civicrecords-ai` is the canonical repo.
-- All current-facing docs in all three repos use `CivicSuite/civicrecords-ai`.
+- `Townlight/civicrecords-ai` is the canonical repo.
+- All current-facing docs in all three repos use `Townlight/civicrecords-ai`.
 - Historical references are intentionally preserved and documented.
 - Generated PDF/DOCX/TXT artifacts regenerated where source text changed.
 - GitHub Actions green in records-ai after transfer.
 - `verify-release.sh` passes in records-ai and civiccore.
-- `verify-docs.sh` passes in civicsuite.
+- `verify-docs.sh` passes in townlight.
 - Browser QA passes for all landing pages.
 - Compatibility matrix updated.
 - No Phase 3 or new-module code started in the same batch.

@@ -2,7 +2,7 @@
 
 Status: v0.1.7 shipped; historical planning baseline retained
 Date: 2026-05-03  
-Applies to: `CivicSuite/civiccode` v0.1.7 and follow-on planning
+Applies to: `Townlight/civiccode` v0.1.7 and follow-on planning
 
 ## Why CivicCode Next
 
@@ -24,7 +24,7 @@ but they are never authoritative legal advice.
 
 ## Current Truth
 
-- `CivicSuite/civiccode` ships v0.1.7 as an active municipal-code productization release.
+- `Townlight/civiccode` ships v0.1.7 as an active municipal-code productization release.
 - CivicCode v0.1.7 includes source registry persistence, section/version lifecycle,
   search/permalinks, deterministic citations, citation-grounded Q&A, staff
   notes, plain-language summaries, CivicClerk handoff intake, resident public
@@ -32,7 +32,7 @@ but they are never authoritative legal advice.
   mock-city codifier contracts, and staff-controlled codifier live-sync readiness.
 - CivicCode still does not ship legal advice, live LLM calls, bundled vendor
   credentials, CivicAccess runtime integration, or automatic ordinance codification.
-- The authoritative requirements live in `docs/CivicSuiteUnifiedSpec.md`
+- The authoritative requirements live in `docs/TownlightUnifiedSpec.md`
   section 11 and `specs/01_catalog.md` under "CivicCode - Municipal Code &
   Ordinance Access."
 - CivicClerk v0.1.0 already defines ordinance/resolution handoff concepts, and
@@ -81,7 +81,7 @@ The CivicCode v0.1.0 MVP is narrow, useful, and legally cautious:
 
 CivicCode should follow the same separate-module pattern as CivicClerk:
 
-- Standalone repo under `CivicSuite/civiccode`.
+- Standalone repo under `Townlight/civiccode`.
 - FastAPI backend.
 - React staff/public surfaces behind nginx when frontend work begins.
 - PostgreSQL 17 + pgvector.
@@ -110,13 +110,13 @@ metadata and migration chain.
 
 ## First Sprint Sequence
 
-1. Keep `CivicSuite/civiccode` shipped truth current after v0.1.0.
+1. Keep `Townlight/civiccode` shipped truth current after v0.1.0.
 2. Maintain professional repo docs, Apache 2.0 code license, CC BY 4.0 docs
    license, issue templates, PR template, support/security/contributing docs,
    landing page, user manual, and seed discussion posts.
 3. Add `AGENTS.md` operating contract for CivicCode with the same test-first,
    docs-first, browser-QA gate used by CivicClerk.
-4. Preserve Milestone 0 reconciliation against `docs/CivicSuiteUnifiedSpec.md`,
+4. Preserve Milestone 0 reconciliation against `docs/TownlightUnifiedSpec.md`,
    suite ADRs, and the catalog CivicCode spec.
 5. Queue ADRs for official-source precedence, codifier integration strategy,
    public disclaimer wording, and CivicClerk handoff contract.

@@ -1,33 +1,33 @@
-# CivicSuite Unified Specification
+# Townlight Unified Specification
 
-**Canonical suite specification for CivicSuite, CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicRegWatch, CivicAPI, and future modules**
+**Canonical suite specification for Townlight, CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicRegWatch, CivicAPI, and future modules**
 
 Spec revision: 1.1  
 Status: Canonical planning specification (architectural intent only; STATUS.md is current-shipped truth)  
 Last revised: 2026-06-13
 License: Apache License 2.0 for code; CC BY 4.0 for documentation unless a repository-specific LICENSE says otherwise.  
-Supersedes: `CivicSuiteAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
+Supersedes: `TownlightAI_Module_Catalog_v1`, `Open Source AI for Municipalities`, and module-specific draft specs where they conflict with this document.  
 Preserves: Feature, workflow, schema, prompt, testing, and product requirements from the source documents unless explicitly marked superseded, deferred, or corrected here.
 
 ---
 
-> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of CivicSuite: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
+> **Release recovery banner (updated 2026-06-13).** This spec describes the architectural intent of Townlight: the suite structure, dependency rules, principles, and module roadmap. It does not by itself describe what is shipped today. Current shipped/recovery truth lives in [STATUS.md](../STATUS.md), [docs/release-recovery-status.md](release-recovery-status.md), the compatibility matrix, and `scripts/verify-suite-state.py`. The city-core release-train cars are CivicCore v1.2.0, CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0. CivicZone, CivicPlan, CivicPermit, and CivicInspect are on v0.2.2 no-functional-upgrade demotion labels until their Tier 2 release turns.
 
 ---
 
 ## 1. Purpose
 
-This document is the working source of truth for the CivicSuite product family.
+This document is the working source of truth for the Townlight product family.
 
 It consolidates the useful content from:
 
-- `CivicSuiteAI_Module_Catalog_v1`
+- `TownlightAI_Module_Catalog_v1`
 - `CivicRecordsAI-UnifiedSpec-v3.0`
 - `CivicCore_v0_1_Extraction_Spec`
 - `CivicClerk_Module_Spec_v0_1`
 - `CivicZone_Module_Spec_v0_1`
 - `Open Source AI for Municipalities`
-- Current repository truth in `CivicSuite/civicsuite`, `CivicSuite/civiccore`, `CivicSuite/civicrecords-ai`, and `CivicSuite/civicclerk`
+- Current repository truth in `Townlight/townlight`, `Townlight/civiccore`, `Townlight/civicrecords-ai`, and `Townlight/civicclerk`
 - CivicRegWatch and CivicAPI product requirements from `C:/Users/scott/Downloads/CivicAPI and CivicRegWatch modules.docx`
 
 The goal is not to reduce the suite to a pitch. The goal is to preserve the full product surface while removing drift, stale licensing language, stale module counts, ambiguous dependency claims, and inconsistent shipped/planned labels.
@@ -38,7 +38,7 @@ These corrections override older source documents.
 
 ### 2.1 License
 
-All CivicSuite code repositories use **Apache License 2.0**.
+All Townlight code repositories use **Apache License 2.0**.
 
 Documentation uses **CC BY 4.0** unless a repository-specific LICENSE says otherwise. Code snippets inside documentation are governed by Apache License 2.0.
 
@@ -60,27 +60,27 @@ Older drafts said "26 modules across 6 tiers." That was an arithmetic/category d
 
 ### 2.3 Repository Placement
 
-All CivicSuite module repositories live under the `CivicSuite` GitHub organization. Personal-account repositories are transitional only and should not be used for canonical project links.
+All Townlight module repositories live under the `Townlight` GitHub organization. Personal-account repositories are transitional only and should not be used for canonical project links.
 
 Current canonical repositories:
 
-- `CivicSuite/civicsuite` - umbrella documentation, governance, compatibility, roadmap.
-- `CivicSuite/civiccore` - shared platform library.
-- `CivicSuite/civicrecords-ai` - public records / FOIA product.
-- `CivicSuite/civicclerk` - meeting/agendas/minutes product.
-- `CivicSuite/civiccode` - municipal code and ordinance access product.
-- `CivicSuite/civicaccess` - accessibility, plain-language, multilingual, and ADA support product.
-- `CivicSuite/civiczone` - parcel-aware zoning and land-use support product.
-- `CivicSuite/civicplan` - comprehensive-plan policy lookup and planning analysis support product.
-- `CivicSuite/civicpermit` - permit pre-application and intake-readiness support product.
-- `CivicSuite/civicinspect` - inspection support product.
-- `CivicSuite/civicgrants` - grant opportunity and compliance support product.
-- `CivicSuite/civicprocure` - procurement drafting and award-packet support product.
-- `CivicSuite/civiccontracts` - contract repository and renewal visibility support product.
-- `CivicSuite/civicboards` - board and commission administration support product.
-- `CivicSuite/civicnotice` - public notice compliance support product.
+- `Townlight/townlight` - umbrella documentation, governance, compatibility, roadmap.
+- `Townlight/civiccore` - shared platform library.
+- `Townlight/civicrecords-ai` - public records / FOIA product.
+- `Townlight/civicclerk` - meeting/agendas/minutes product.
+- `Townlight/civiccode` - municipal code and ordinance access product.
+- `Townlight/civicaccess` - accessibility, plain-language, multilingual, and ADA support product.
+- `Townlight/civiczone` - parcel-aware zoning and land-use support product.
+- `Townlight/civicplan` - comprehensive-plan policy lookup and planning analysis support product.
+- `Townlight/civicpermit` - permit pre-application and intake-readiness support product.
+- `Townlight/civicinspect` - inspection support product.
+- `Townlight/civicgrants` - grant opportunity and compliance support product.
+- `Townlight/civicprocure` - procurement drafting and award-packet support product.
+- `Townlight/civiccontracts` - contract repository and renewal visibility support product.
+- `Townlight/civicboards` - board and commission administration support product.
+- `Townlight/civicnotice` - public notice compliance support product.
 
-Future module repositories should be created under `CivicSuite/` from the start.
+Future module repositories should be created under `Townlight/` from the start.
 
 ### 2.4 CivicCore Capability Truth
 
@@ -112,7 +112,7 @@ Placeholder packages are not implementation. Any public-facing document must say
 
 ## 3. Strategic Thesis
 
-CivicSuite is an open-source, local-first municipal operations suite for small and mid-sized cities.
+Townlight is an open-source, local-first municipal operations suite for small and mid-sized cities.
 
 It is designed around four realities:
 
@@ -121,7 +121,7 @@ It is designed around four realities:
 3. Clerks, planners, attorneys, finance staff, and department leads need practical workflow tools, not novelty chatbots.
 4. AI output must be cited, reviewable, locally governed, and subordinate to human decision-making.
 
-CivicSuite is **not** an ERP replacement, utility billing system, CAD/RMS, court case-management system, or permitting system of record on day one. It is designed to add value in the layer around municipal knowledge work: records, meetings, ordinances, zoning, notices, contracts, grants, procurement writing, public communication, accessibility, and internal policy Q&A.
+Townlight is **not** an ERP replacement, utility billing system, CAD/RMS, court case-management system, or permitting system of record on day one. It is designed to add value in the layer around municipal knowledge work: records, meetings, ordinances, zoning, notices, contracts, grants, procurement writing, public communication, accessibility, and internal policy Q&A.
 
 ## 4. Suite-Wide Non-Negotiables
 
@@ -412,7 +412,7 @@ Purpose: federal regulatory intelligence for municipal operators. CivicRegWatch 
 Owner: IT / Clerk / Open data administrator
 Depends on: CivicCore and module-owned publication contracts; optional CivicData relationship for dataset packages.
 Status: planned foundation module; detailed implementation spec in `specs/06_civicapi.md`
-Purpose: the city's public read-only data gateway over structured, human-approved, published CivicSuite records. CivicAPI exposes versioned, rate-limited, provenance-stamped API responses for records explicitly published by originating modules. It is not a write API, scraper, vendor aggregator, or replacement for CivicData bulk publication.
+Purpose: the city's public read-only data gateway over structured, human-approved, published Townlight records. CivicAPI exposes versioned, rate-limited, provenance-stamped API responses for records explicitly published by originating modules. It is not a write API, scraper, vendor aggregator, or replacement for CivicData bulk publication.
 
 ### Tier 5 - Internal Business
 
@@ -1084,7 +1084,7 @@ Not shipped in v0.1.x: LLM-assisted classification, LLM summaries, Regulations.g
 
 ## 22. CivicAPI Canonical Scope
 
-CivicAPI is the planned public read-only data gateway over structured, human-approved, published CivicSuite records. It exposes city-controlled, versioned, rate-limited API responses with provenance and citation metadata.
+CivicAPI is the planned public read-only data gateway over structured, human-approved, published Townlight records. It exposes city-controlled, versioned, rate-limited API responses with provenance and citation metadata.
 
 Detailed implementation specification: `specs/06_civicapi.md`.
 
@@ -1120,5 +1120,5 @@ When documents conflict:
 
 ## 24. Working Rule
 
-No future CivicSuite implementation sprint should begin from memory or from an isolated module scaffold. It should begin by reading this document, the relevant module-specific spec, current repo state, and the current compatibility matrix.
+No future Townlight implementation sprint should begin from memory or from an isolated module scaffold. It should begin by reading this document, the relevant module-specific spec, current repo state, and the current compatibility matrix.
 

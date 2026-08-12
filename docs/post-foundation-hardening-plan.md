@@ -6,13 +6,13 @@ License: Apache-2.0
 
 ## Purpose
 
-The foundation and v0.1.1 alignment lanes proved that every CivicSuite catalog module can live in the CivicSuite organization, depend on released CivicCore, ship documentation and browser-visible UI, and pass an auditable release gate.
+The foundation and v0.1.1 alignment lanes proved that every Townlight catalog module can live in the Townlight organization, depend on released CivicCore, ship documentation and browser-visible UI, and pass an auditable release gate.
 
 The next phase is not "build another module." The next phase is making the suite easier to deploy, operate, integrate, and deepen into real municipal workflows without weakening the boundaries that made the foundation lane safe.
 
 ## Governing Rules
 
-This plan follows the canonical rules in `docs/CivicSuiteUnifiedSpec.md`:
+This plan follows the canonical rules in `docs/TownlightUnifiedSpec.md`:
 
 - Staff workflows come before flashy resident features.
 - AI drafts; humans decide.
@@ -92,7 +92,7 @@ Deliverables:
 
 1. A shell-boundary ADR describing what belongs in:
    - Each module.
-   - A shared CivicCore or CivicSuite shell package.
+   - A shared CivicCore or Townlight shell package.
    - The umbrella documentation site.
 2. A design-system inventory covering:
    - Navigation.

@@ -1,4 +1,4 @@
-# CivicSuite Windows Local Runtime
+# Townlight Windows Local Runtime
 
 This directory defines the desktop supervisor contract for the Windows Local
 1.0 profile.

@@ -1,14 +1,14 @@
-# CivicSuite
+# Townlight
 
 **An open-source municipal product family designed to run locally on a city's own hardware.**
 
-This `civicsuite` repository is the umbrella for the CivicSuite product family. It holds suite-wide documentation, governance, the roadmap, ADRs, the compatibility matrix, and the suite-installer scaffolding. Module runtime code lives in per-module repos under <https://github.com/CivicSuite>.
+This `townlight` repository is the umbrella for the Townlight product family. It holds suite-wide documentation, governance, the roadmap, ADRs, the compatibility matrix, and the suite-installer scaffolding. Module runtime code lives in per-module repos under <https://github.com/townlight>.
 
 ---
 
 ## Read Me First
 
-CivicSuite's active product is the Windows Local city-core desktop app, a **GA candidate open for public beta**. The current release is `civicsuite-windows-local-v1.0.2` (Latest) — a single Tauri/WebView2 MSI (~1.65 GB) that installs the whole six-module city-core suite: CivicCore v1.2.0 plus CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0, with bundled portable PostgreSQL 17 + pgvector, bundled local services, the pinned Gemma 4 12B QAT model, and local backup/restore — **no Docker, WSL, terminal, or developer tooling**. It supersedes `civicsuite-windows-local-v1.0.1`. See [ANNOUNCEMENT.md](ANNOUNCEMENT.md) to start.
+Townlight's active product is the Windows Local city-core desktop app, a **GA candidate open for public beta**. The current release is `civicsuite-windows-local-v1.0.2` (Latest) — a single Tauri/WebView2 MSI (~1.65 GB) that installs the whole six-module city-core suite: CivicCore v1.2.0 plus CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0, with bundled portable PostgreSQL 17 + pgvector, bundled local services, the pinned Gemma 4 12B QAT model, and local backup/restore — **no Docker, WSL, terminal, or developer tooling**. It supersedes `civicsuite-windows-local-v1.0.1`. See [ANNOUNCEMENT.md](ANNOUNCEMENT.md) to start.
 
 **What "GA candidate, public beta" means:** the build is feature-complete for city-core and passed the Phase D clean-machine acceptance gate — two full clean Windows Sandbox runs of the real installer (install → the full first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → the three CivicAccess AI features producing clean, correctly-labeled output through the real app bridge). The MSI is Authenticode code-signed via Azure Trusted Signing. Use it for real hands-on evaluation and early adoption — it does **not** claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
 
@@ -18,7 +18,7 @@ Scope: city-core is six modules, and the current v1.0.2 build ships all six — 
 
 **What v1.0.2 changed, for IT:** the suite's shared text-generation helper now calls the bundled Ollama's `/api/chat` endpoint instead of `/api/generate` with raw prompts, letting the model apply its own chat template and parser — this fixed output quality for **every** AI feature in the suite (CivicClerk minutes drafts, CivicRecords AI response drafts, CivicCode guidance, and the three new CivicAccess features). The model remains the pinned `gemma-4-12b-it-qat-q4_0` (~6.97 GB, downloaded and SHA-256-verified at first run) served locally by the bundled Ollama at `127.0.0.1:15434`; no cloud calls, no telemetry. The clean-machine fix stages the Microsoft VC++ runtime DLLs (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) into `postgres\bin`, so PostgreSQL starts on a machine with no system VC++ redistributable — a pre-existing v1.0.x defect caught by the Phase D clean-sandbox runs and proven fixed in a second clean run.
 
-If you are evaluating CivicSuite for a municipality, use the Windows Local city-core desktop path and the operator walkthrough in [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
+If you are evaluating Townlight for a municipality, use the Windows Local city-core desktop path and the operator walkthrough in [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
 ---
 
@@ -38,9 +38,9 @@ The most important distinction: **"all repos have releases" is not the same thin
 
 ## What Is Available Today
 
-- **`civicrecords-ai`** (FOIA / public records) - v1.7.3 — city-core records module, shipped in the v1.0.2 build, on CivicCore v1.2.0. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore`** (shared platform) - v1.2.0 is the current shared-platform release for city-core. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk`** (meetings/agendas/minutes) - v1.0.4 is the current meeting workflow module release with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civicrecords-ai`** (FOIA / public records) - v1.7.3 — city-core records module, shipped in the v1.0.2 build, on CivicCore v1.2.0. Repo: <https://github.com/townlight/civicrecords-ai>
+- **`civiccore`** (shared platform) - v1.2.0 is the current shared-platform release for city-core. Repo: <https://github.com/townlight/core>
+- **`civicclerk`** (meetings/agendas/minutes) - v1.0.4 is the current meeting workflow module release with protected staff auth defaults. Repo: <https://github.com/townlight/civicclerk>
 - **`civiccode`** - v1.0.8 is the current municipal-code city-core module release on CivicCore v1.2.0.
 - **`civicnotice`** - v0.2.0 is the current public-notice city-core module release on CivicCore v1.2.0.
 - **`civicaccess`** - v0.4.0 accessibility and records-ready export city-core module release on CivicCore v1.2.0 (sixth city-core module; its clerk-facing Accessibility workflow tab — with three local-AI features — is the headline of the current v1.0.2 build).
@@ -62,13 +62,13 @@ The Windows MSI is Authenticode code-signed via Azure Trusted Signing. Because t
 
 ## Quick Start
 
-**Windows Local city-core (current beta target):** the active installable product path is the CivicSuite desktop app under `desktop/`. It packages a Tauri/WebView2 Windows MSI, a portable PostgreSQL 17 + pgvector data store, bundled CPython city services, a PostgreSQL-backed task queue, local file storage, local backup/restore, local repair/support-bundle flows, Windows uninstall handoff, and Gemma 4 12B QAT Q4_0 model setup through explicit download/checksum/runtime registration.
+**Windows Local city-core (current beta target):** the active installable product path is the Townlight desktop app under `desktop/`. It packages a Tauri/WebView2 Windows MSI, a portable PostgreSQL 17 + pgvector data store, bundled CPython city services, a PostgreSQL-backed task queue, local file storage, local backup/restore, local repair/support-bundle flows, Windows uninstall handoff, and Gemma 4 12B QAT Q4_0 model setup through explicit download/checksum/runtime registration.
 
 - City Core installs CivicCore plus CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess. CivicCore is always installed and cannot be deselected.
 - 32 GB RAM is recommended (16 GB is a workable minimum) — headroom for the local model resident alongside PostgreSQL and the services.
 - The end-user Windows clerk path does not require Docker, WSL, a terminal, a browser URL, or developer tooling.
-- First-run setup covers local folders, module selection, city profile, first CivicSuite admin sign-in, backup folder, model download/verification, health verification, and finish.
-- Trust path: download `CivicSuite_1.0.2_x64_en-US.msi` from the [civicsuite-windows-local-v1.0.2 release](https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2), verify its SHA-256 `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`, and confirm the module pins in [installer/modules.json](installer/modules.json).
+- First-run setup covers local folders, module selection, city profile, first Townlight admin sign-in, backup folder, model download/verification, health verification, and finish.
+- Trust path: download `CivicSuite_1.0.2_x64_en-US.msi` from the [civicsuite-windows-local-v1.0.2 release](https://github.com/townlight/townlight/releases/tag/civicsuite-windows-local-v1.0.2), verify its SHA-256 `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`, and confirm the module pins in [installer/modules.json](installer/modules.json).
 - macOS and Linux package paths remain separate future or historical profiles until each has refreshed install-lifecycle testing on the same operating system it ships for.
 
 See [docs/troubleshooting.md](docs/troubleshooting.md) for operator recovery guidance, [installer/README.md](installer/README.md) for the generated-package contract, and [docs/installer/suite-installer-plan.md](docs/installer/suite-installer-plan.md) for the plan.
@@ -76,7 +76,7 @@ Operators evaluating the Windows Local city-core beta path should use [docs/inst
 
 **Per-module install path:**
 
-- FOIA / public records: <https://github.com/CivicSuite/civicrecords-ai> - module release consumed by the Windows Local city-core package.
+- FOIA / public records: <https://github.com/townlight/civicrecords-ai> - module release consumed by the Windows Local city-core package.
 - Other modules: see each module's README for install instructions. Most modules ship as Python packages depending on `civiccore`.
 
 If you are orienting yourself for the first time, read in this order:
@@ -86,14 +86,14 @@ If you are orienting yourself for the first time, read in this order:
 3. [USER-MANUAL.md](USER-MANUAL.md)
 4. [docs/release-recovery-status.md](docs/release-recovery-status.md) — what "provisional" actually means
 5. [CHARTER.md](CHARTER.md) — the engineering principles
-6. [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md) — architectural intent (note: per-module status lines in the spec are stale; use STATUS.md for current truth)
+6. [docs/TownlightUnifiedSpec.md](docs/TownlightUnifiedSpec.md) — architectural intent (note: per-module status lines in the spec are stale; use STATUS.md for current truth)
 7. [docs/compatibility/index.md](docs/compatibility/index.md) — module ↔ civiccore version pairings (this is the single source of truth for version pairings)
 
 ## Repo Map
 
 | Repo | Role |
 |---|---|
-| `civicsuite` | Umbrella: roadmap, governance, specs, ADRs, compatibility matrix, suite-installer scaffolding |
+| `townlight` | Umbrella: roadmap, governance, specs, ADRs, compatibility matrix, suite-installer scaffolding |
 | `civiccore` | Shared platform package consumed by every module |
 | `civicrecords-ai` | v1.7.3 — city-core records module (FOIA/public records), shipped in the v1.0.2 build |
 | `civicclerk` | v1.0.4 meeting workflow city-core module release |
@@ -110,7 +110,7 @@ If you are orienting yourself for the first time, read in this order:
 
 ## Architecture
 
-CivicSuite uses a deliberately boring stack. Every module inherits these defaults:
+Townlight uses a deliberately boring stack. Every module inherits these defaults:
 
 | Layer | Choice | Pin / Notes |
 |---|---|---|
@@ -136,7 +136,7 @@ Continuity is now an explicit gate, not a "later" governance item.
 - Governance index: [docs/governance/index.md](docs/governance/index.md)
 - Charter: [CHARTER.md](CHARTER.md)
 
-The `CivicSuite` GitHub org has two active owners (`scottconverse` and `APirateMonk`).
+The `Townlight` GitHub org has two active owners (`scottconverse` and `APirateMonk`).
 
 ## Documentation
 
@@ -149,7 +149,7 @@ The `CivicSuite` GitHub org has two active owners (`scottconverse` and `APirateM
 - Roadmap: [docs/roadmap/index.md](docs/roadmap/index.md)
 - Governance: [docs/governance/index.md](docs/governance/index.md)
 - Compatibility matrix: [docs/compatibility/index.md](docs/compatibility/index.md)
-- Unified spec (architectural intent only — see STATUS.md for current truth): [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
+- Unified spec (architectural intent only — see STATUS.md for current truth): [docs/TownlightUnifiedSpec.md](docs/TownlightUnifiedSpec.md)
 - User manual: [USER-MANUAL.md](USER-MANUAL.md)
 
 ## Licensing

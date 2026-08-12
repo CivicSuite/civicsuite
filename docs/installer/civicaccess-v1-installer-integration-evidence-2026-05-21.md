@@ -4,7 +4,7 @@ Date: 2026-05-21
 
 ## Source Release
 
-- Repo: `CivicSuite/civicaccess`
+- Repo: `Townlight/civicaccess`
 - PR: #6
 - Release: `v1.0.0`
 - Tag target: `e29e701d96817a1aaca053ae8979851d9fb9dc51`

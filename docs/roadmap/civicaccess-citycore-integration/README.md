@@ -36,10 +36,10 @@ An adversarial refinement pass (5-agent, 2026-06-28) found the drafted "add Civi
 
 | Phase | Repo | What | Lands on |
 |---|---|---|---|
-| **A** | `CivicSuite/civicaccess` | Postgres-default + authz + audit + backup hardening; close probe gaps #2/#3/#4; **cut v0.4.0** | civicaccess `main` (new release) |
-| **B** | `CivicSuite/civicsuite` | Desktop runtime wiring + author the runtime-valid module RECORD (NOT yet in the profile) | umbrella `main` (shipped 5-module profile unchanged) |
-| **C** | `CivicSuite/civicsuite` | **Flip** city-core to 6 in one lockstep changeset, after a fresh re-probe PASS | umbrella `main` |
-| **D** | clean VM + `CivicSuite/civicsuite` | Clean-VM **full accessibility DoD**; commit evidence kit; flip release truth | evidence kit + release tag |
+| **A** | `Townlight/civicaccess` | Postgres-default + authz + audit + backup hardening; close probe gaps #2/#3/#4; **cut v0.4.0** | civicaccess `main` (new release) |
+| **B** | `Townlight/townlight` | Desktop runtime wiring + author the runtime-valid module RECORD (NOT yet in the profile) | umbrella `main` (shipped 5-module profile unchanged) |
+| **C** | `Townlight/townlight` | **Flip** city-core to 6 in one lockstep changeset, after a fresh re-probe PASS | umbrella `main` |
+| **D** | clean VM + `Townlight/townlight` | Clean-VM **full accessibility DoD**; commit evidence kit; flip release truth | evidence kit + release tag |
 
 The profile only becomes 6 modules in Phase C, **after** the runtime exists (Phase B) and the module is hardened + re-probed (Phase A) — so the desktop never has a city-core profile that fails validation, and the "in-profile-but-not-usable" half-state is structurally impossible.
 

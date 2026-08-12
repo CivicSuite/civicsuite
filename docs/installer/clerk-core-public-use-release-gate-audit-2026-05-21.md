@@ -2,18 +2,18 @@
 
 Audit mode: release-gate.
 
-Scope: CivicSuite Clerk-Core starter release only: CivicCore, CivicRecords AI,
+Scope: Townlight Clerk-Core starter release only: CivicCore, CivicRecords AI,
 CivicClerk, and the `clerk-core` installer profile. Queued product modules are
 out of scope and remain unpromoted.
 
-Audited live baseline: CivicSuite main merge SHA
+Audited live baseline: Townlight main merge SHA
 `eaf71ea83e5022a06cf28cf18937e010ee6b88b6`.
 
 Verdict: PASS FOR CLERK-CORE PUBLIC-USE STARTER RELEASE.
 
 No unresolved Blocker or Critical findings remain for the starter release scope.
 This audit does not certify procurement use, production hosting, airgap use,
-the full CivicSuite module catalog, live cross-module records exchange, or
+the full Townlight module catalog, live cross-module records exchange, or
 macOS matching-host lifecycle behavior.
 
 ## 1. Executive Audit
@@ -56,7 +56,7 @@ Release posture: Clerk-Core starter is ready to publish as
 | Linux full lifecycle is proven | True | Installer-cleanroom run `26210542979`, job `linux archive full lifecycle`, passed on rerun. |
 | Windows full lifecycle is proven | True | `docs/installer/clerk-core-final-package-evidence-2026-05-21.md` records matching-host Windows lifecycle pass. |
 | macOS lifecycle is certified | False | macOS is explicitly bounded to beta-level archive/readiness only. |
-| Full CivicSuite municipal-completion claim | False | Only the Clerk-Core starter profile is promoted. |
+| Full Townlight municipal-completion claim | False | Only the Clerk-Core starter profile is promoted. |
 | Live cross-module records exchange is proven | False | Evidence covers installed starter workflows, not live cross-module records exchange. |
 
 ## 4. What The Dev Team Needs To Do Now
@@ -68,7 +68,7 @@ Clerk-Core starter profile.
 ## 5. Next-Sprint Watchlist
 
 After this release, generate the next-module order from
-`docs/CivicSuiteUnifiedSpec.md` and the current repository maturity map. Do not
+`docs/TownlightUnifiedSpec.md` and the current repository maturity map. Do not
 start queued module implementation until the Clerk-Core release tag and CI are
 green.
 

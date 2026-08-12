@@ -1,4 +1,4 @@
-# CivicSuite v0.19.0 Suite Sync Browser QA
+# Townlight v0.19.0 Suite Sync Browser QA
 
 - Page: docs/index.html
 - Viewports: desktop 1440x1000, mobile 390x1100

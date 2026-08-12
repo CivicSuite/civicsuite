@@ -2,7 +2,7 @@
 
 Status: Active planning baseline  
 Date: 2026-04-26  
-Applies to: `CivicSuite/civicclerk` initial scaffold and MVP sprint
+Applies to: `Townlight/civicclerk` initial scaffold and MVP sprint
 
 ## Why CivicClerk next
 
@@ -66,7 +66,7 @@ enough to feel like a real clerk workflow:
 ## Technical starting architecture
 
 Initial scaffold should be a standalone module repo under
-`CivicSuite/civicclerk`, with the same professional documentation
+`Townlight/civicclerk`, with the same professional documentation
 baseline as the existing repos. Runtime implementation should follow
 the CivicRecords AI pattern unless a written ADR says otherwise:
 
@@ -101,7 +101,7 @@ upgrade/fresh-install gate before release.
 
 ## First sprint sequence
 
-1. Scaffold `CivicSuite/civicclerk` with professional docs, CI, license,
+1. Scaffold `Townlight/civicclerk` with professional docs, CI, license,
    issue templates, PR template, docs landing page, user manual, and seed
    discussion posts.
 2. Add a scope document and ADR-0001 for the CivicClerk MVP boundary.

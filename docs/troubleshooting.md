@@ -1,4 +1,4 @@
-# CivicSuite Troubleshooting
+# Townlight Troubleshooting
 
 **Last verified:** 2026-07-02
 
@@ -9,11 +9,11 @@ The Windows Local clerk path is a Tauri/WebView2 desktop app installed from an M
 ## City-Core App Will Not Start
 
 1. Confirm the workstation is 64-bit Windows 10/11 with WebView2 installed and has the recommended 32 GB RAM (16 GB is a workable minimum; the local model needs about 6.7 GB resident at runtime on top of Windows, Postgres, and services).
-2. Download the MSI from the official CivicSuite release page and verify its SHA-256 checksum matches the published hash.
-3. After install, open CivicSuite from the Start menu or desktop shortcut.
+2. Download the MSI from the official Townlight release page and verify its SHA-256 checksum matches the published hash.
+3. After install, open Townlight from the Start menu or desktop shortcut.
 4. If the app opens but a local service is unhealthy, open System Health, run **Check**, then **Repair** after reviewing the repair panel.
 
-If the app asks for Docker, WSL, a terminal, or manual config-file edits, this is a bug — please report it on the CivicSuite GitHub issue tracker (<https://github.com/CivicSuite/civicsuite/issues>).
+If the app asks for Docker, WSL, a terminal, or manual config-file edits, this is a bug — please report it on the Townlight GitHub issue tracker (<https://github.com/townlight/townlight/issues>).
 
 ## Model Download, Resume, Or Checksum Fails
 
@@ -36,7 +36,7 @@ The Gemma 4 12B QAT model (about 6.97 GB) is downloaded at first run from Huggin
 Use the live trust path:
 
 1. Verify the generated `SHA256SUMS` or release manifest that belongs to the package you are running.
-2. Confirm the package came from the official CivicSuite source or the recorded active run evidence path.
+2. Confirm the package came from the official Townlight source or the recorded active run evidence path.
 3. Confirm `installer/modules.json` `source_commit` values match the vendored source commits for all six city-core modules (CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess).
 4. For CivicCode module release assets, compare the published SHA256 and attestation bundle recorded in module release evidence.
 
@@ -46,7 +46,7 @@ Do not reuse old installer artifacts; always download the current release from t
 
 The Windows MSI is Authenticode code-signed via Azure Trusted Signing. To verify a download came from an authorized source:
 
-1. Compare the MSI's SHA-256 checksum with the hash published on the official CivicSuite releases page.
+1. Compare the MSI's SHA-256 checksum with the hash published on the official Townlight releases page.
 2. Right-click the MSI file, select **Properties**, open the **Digital Signatures** tab, and confirm it lists a **verified publisher** (not "Unknown Publisher").
 
 ## Windows SmartScreen When You Run The Installer

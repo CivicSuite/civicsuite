@@ -1,4 +1,4 @@
-# Browser QA - CivicSuite CivicCode v0.1.13 State
+# Browser QA - Townlight CivicCode v0.1.13 State
 
 - desktop 1366x1000: civiccode013=True, sectionDurable=True, civiccore022=True, overflow=False, rowDisplay=table-row, console=0, pageErrors=0, focused="Skip to main content"
 - mobile 390x900: civiccode013=True, sectionDurable=True, civiccore022=True, overflow=False, rowDisplay=block, console=0, pageErrors=0, focused="Skip to main content"

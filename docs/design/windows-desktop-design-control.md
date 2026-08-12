@@ -1,10 +1,10 @@
-# CivicSuite Windows Desktop Design Control
+# Townlight Windows Desktop Design Control
 
 Status: active design control for Windows Local 1.0
-Applies to: CivicSuite desktop shell, installer, first-run, city-core modules, and future module manager
+Applies to: Townlight desktop shell, installer, first-run, city-core modules, and future module manager
 Source anchors:
 
-- `docs/CivicSuiteUnifiedSpec.md`
+- `docs/TownlightUnifiedSpec.md`
 - `docs/design/ui-ux-prototype/README.md`
 - `docs/design/ui-ux-prototype/*.jsx`
 - `docs/design/ui-ux-prototype/styles.css`
@@ -18,7 +18,7 @@ Source anchors:
 
 ## Product Promise
 
-CivicSuite Windows Local 1.0 is a real Windows desktop application for
+Townlight Windows Local 1.0 is a real Windows desktop application for
 non-technical municipal staff. A city clerk should be able to install it, create
 the first city profile, use the city-core workflows, verify system health, back
 up and restore local data, and uninstall without Docker, WSL, a terminal, or
@@ -55,7 +55,7 @@ The shell owns these top-level areas:
 
 | Area | User framing | Owner |
 |---|---|---|
-| Home | Work that needs attention | CivicSuite shell |
+| Home | Work that needs attention | Townlight shell |
 | Meetings & Notices | agendas, packets, notices, minutes, votes, archive | CivicClerk |
 | Records Requests | intake, search, review, response, exports | CivicRecords AI |
 | Code & Ordinances | code search, source imports, guidance, handoffs | CivicCode |

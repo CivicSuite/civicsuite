@@ -1,6 +1,6 @@
 # Module Catalog
 
-The canonical CivicSuite module catalog lives at
+The canonical Townlight module catalog lives at
 [`../../specs/01_catalog.md`](../../specs/01_catalog.md). It defines the
 suite-wide design principles, the architecture pattern that every module
 inherits, and the rollout sequence across 7 tiers (Tier 0 Foundation through

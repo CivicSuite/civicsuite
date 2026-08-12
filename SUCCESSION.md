@@ -1,6 +1,6 @@
-# CivicSuite Continuity And Succession
+# Townlight Continuity And Succession
 
-This document is the continuity gate for CivicSuite. It exists to make sure the suite can continue operating if the founding maintainer is unavailable.
+This document is the continuity gate for Townlight. It exists to make sure the suite can continue operating if the founding maintainer is unavailable.
 
 `Phase 1` platform expansion begins only after the `Phase 0` continuity requirements described here are satisfied.
 
@@ -32,7 +32,7 @@ This document does **not** replace repo-specific operational runbooks. It identi
 
 `Phase 0` required all of the following:
 
-1. A second GitHub org owner is active in `CivicSuite`.
+1. A second GitHub org owner is active in `Townlight`.
 2. Release-signing custody and package-publishing custody are documented.
 3. Credential custody and emergency access expectations are documented.
 4. Release-critical repos and their continuity roles are documented.
@@ -42,7 +42,7 @@ This document does **not** replace repo-specific operational runbooks. It identi
 
 These repos are continuity-critical:
 
-- `civicsuite`
+- `townlight`
 - `civiccore`
 - `civicrecords-ai`
 - any module repo currently in the shipping or productizing tiers
@@ -51,7 +51,7 @@ Current named continuity roles:
 
 | Repo group | Primary maintainer | Continuity backup | Notes |
 |---|---|---|---|
-| `civicsuite` | `scottconverse` | `APirateMonk` | Umbrella governance, roadmap, compatibility, continuity truth source |
+| `townlight` | `scottconverse` | `APirateMonk` | Umbrella governance, roadmap, compatibility, continuity truth source |
 | `civiccore` | `scottconverse` | `APirateMonk` | Shared platform release path is GitHub-tag driven |
 | `civicrecords-ai` | `scottconverse` | `APirateMonk` | Shipping flagship release path is GitHub-tag driven |
 | shipping/productizing module repos | `scottconverse` | `APirateMonk` | Current continuity backup until repo-specific maintainer lines expand |
@@ -70,7 +70,7 @@ The continuity model is shared custody, not single-person memory.
 
 ### GitHub Org Custody
 
-- `CivicSuite` must have at least two org owners
+- `Townlight` must have at least two org owners
 - admin access must not depend on a single personal account
 - branch-protection changes, repo transfers, and release-admin actions must be recoverable by a second owner
 
@@ -97,7 +97,7 @@ The second maintainer can currently recover the suite release path without any h
 1. Read the umbrella roadmap, compatibility matrix, and current continuity status.
 2. Work from the relevant repo on `main`.
 3. Run the repo’s verification gate before release:
-   - `civicsuite`: `bash scripts/verify-docs.sh`
+   - `townlight`: `bash scripts/verify-docs.sh`
    - `civiccore`: `bash scripts/verify-release.sh`
    - `civicrecords-ai`: `bash scripts/verify-release.sh`
 4. Create and push the release tag from a repo owner account.

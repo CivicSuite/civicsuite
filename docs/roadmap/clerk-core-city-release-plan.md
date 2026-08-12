@@ -1,6 +1,6 @@
-# CivicSuite Clerk-Core City Release Plan
+# Townlight Clerk-Core City Release Plan
 
-This is the canonical rung plan for the first installable CivicSuite starter product beta. `docs/CivicSuiteUnifiedSpec.md` is the product authority: the reconciled suite contains 27 product modules plus CivicCore, and the first release target is CivicCore plus the Tier 1 clerk-core products CivicRecords AI and CivicClerk.
+This is the canonical rung plan for the first installable Townlight starter product beta. `docs/TownlightUnifiedSpec.md` is the product authority: the reconciled suite contains 27 product modules plus CivicCore, and the first release target is CivicCore plus the Tier 1 clerk-core products CivicRecords AI and CivicClerk.
 
 ## Rung 1 - Clerk-Core City Release
 
@@ -10,10 +10,10 @@ Required modules: CivicCore, CivicRecords AI, CivicClerk.
 
 Scope bullets:
 
-- Reconcile suite truth to the CivicSuite Unified Specification before product edits.
+- Reconcile suite truth to the Townlight Unified Specification before product edits.
 - Repair active queue authority so CivicContracts and later modules remain paused.
 - Generate the canonical 27-product-module inventory and compare it with installer metadata, status files, recovery docs, repo state, and active queues.
-- Audit CivicCore, CivicRecords AI, CivicClerk, and the CivicSuite installer against the specification.
+- Audit CivicCore, CivicRecords AI, CivicClerk, and the Townlight installer against the specification.
 - Finish the clerk-core installer lifecycle for install, start, health, repair, backup, restore, and uninstall.
 - Prove CivicRecords AI request, search, review, and response workflows inside the installed stack.
 - Prove CivicClerk agenda, packet, minutes, vote, notice, and archive workflows inside the installed stack.
@@ -32,4 +32,4 @@ Exit criteria:
 
 ## Rung 2 - Remaining Spec-Ordered Modules
 
-This rung starts only after Rung 1 passes. It builds the remaining 25 product modules one at a time using the dependency graph and current implementation state from `docs/CivicSuiteUnifiedSpec.md`, with module-specific docs, tests, browser QA, installer integration, release audit, CI, and release-truth gates before each advancement.
+This rung starts only after Rung 1 passes. It builds the remaining 25 product modules one at a time using the dependency graph and current implementation state from `docs/TownlightUnifiedSpec.md`, with module-specific docs, tests, browser QA, installer integration, release audit, CI, and release-truth gates before each advancement.

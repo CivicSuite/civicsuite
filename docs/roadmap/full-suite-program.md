@@ -3,7 +3,7 @@
 Adopted: 2026-06-10. Owner: Scott Converse. This document supersedes the
 city-core-only execution focus and defines the program that runs until every
 catalog module is finished. The canonical spec
-([CivicSuiteUnifiedSpec.md](../CivicSuiteUnifiedSpec.md)) still defines what
+([TownlightUnifiedSpec.md](../TownlightUnifiedSpec.md)) still defines what
 each module is; this document defines the order, the gate, and the resource
 rules for finishing them.
 

@@ -1,6 +1,6 @@
-# Browser QA - CivicSuite CivicCode v0.1.17 suite state
+# Browser QA - Townlight CivicCode v0.1.17 suite state
 
-Target: `C:\dev\Claude\civicsuite\docs\index.html`
+Target: `C:\dev\Claude\townlight\docs\index.html`
 
 Console events: `0`
 Desktop overflow: `False` at 1440px
@@ -13,5 +13,5 @@ Visible delta-plan history copy: `True`
 Visible civiccore v0.22.0 copy: `True`
 Visible civicclerk v0.1.20 copy: `True`
 
-Desktop screenshot: `C:\dev\Claude\civicsuite\docs\browser-qa-civiccode-017-suite-state-desktop.png`
-Mobile screenshot: `C:\dev\Claude\civicsuite\docs\browser-qa-civiccode-017-suite-state-mobile.png`
+Desktop screenshot: `C:\dev\Claude\townlight\docs\browser-qa-civiccode-017-suite-state-desktop.png`
+Mobile screenshot: `C:\dev\Claude\townlight\docs\browser-qa-civiccode-017-suite-state-mobile.png`

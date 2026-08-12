@@ -1,8 +1,8 @@
-# CivicSuite Connector Import/Export Template
+# Townlight Connector Import/Export Template
 
 Status: active suite template
 
-Applies to: all CivicSuite module repos
+Applies to: all Townlight module repos
 
 Governing ADR: `docs/architecture/ADR-0005-connector-import-export-boundaries.md`
 

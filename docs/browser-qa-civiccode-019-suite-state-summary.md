@@ -1,6 +1,6 @@
-# Browser QA - CivicSuite CivicCode v0.1.9 State
+# Browser QA - Townlight CivicCode v0.1.9 State
 
-- Target: `file:///C:/dev/Claude/civicsuite/docs/index.html`.
+- Target: `file:///C:/dev/Claude/townlight/docs/index.html`.
 - States: desktop and mobile suite docs after CivicCode v0.1.9 compatibility sync.
 - Console/page log events: 0
 

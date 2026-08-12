@@ -1,7 +1,7 @@
 # Browser QA - Shared Shell UX Inventory Link
 
 Date: 2026-04-28T05:31:14.989Z
-Target: file:///C:/dev/Claude/CivicSuite/docs/index.html
+Target: file:///C:/dev/Claude/Townlight/docs/index.html
 
 ## Viewports
 - desktop: 1440x1100, screenshot docs/browser-qa-shared-shell-inventory-desktop.png, body text length 18602

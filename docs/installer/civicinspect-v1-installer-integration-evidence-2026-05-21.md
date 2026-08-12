@@ -2,13 +2,13 @@
 
 ## Scope
 
-This evidence reconciles the published CivicInspect v1.0.0 source release into the CivicSuite installer/module-selection truth surface.
+This evidence reconciles the published CivicInspect v1.0.0 source release into the Townlight installer/module-selection truth surface.
 
 It promotes only CivicInspect. It does not promote CivicGrants, CivicProcure, queued modules, the full suite, procurement readiness, production hosting certification, airgap readiness, live cross-module records exchange, or macOS lifecycle certification.
 
 ## Source Release Truth
 
-- Repo: `CivicSuite/civicinspect`
+- Repo: `Townlight/civicinspect`
 - Source PR: `#10`
 - Main merge SHA: `a018241d801feb89e9ff5bf29666edbeda6a2c9a`
 - Main verify run: `26236492518`
@@ -16,7 +16,7 @@ It promotes only CivicInspect. It does not promote CivicGrants, CivicProcure, qu
 - Tag verify run: `26236555694`
 - Tag: `v1.0.0`
 - Tag peels to: `a018241d801feb89e9ff5bf29666edbeda6a2c9a`
-- Release URL: `https://github.com/CivicSuite/civicinspect/releases/tag/v1.0.0`
+- Release URL: `https://github.com/townlight/inspect/releases/tag/v1.0.0`
 
 ## Release Assets
 
@@ -38,7 +38,7 @@ The `land-use` and `full-suite` profiles already include CivicInspect after Civi
 
 ## Local Suite Verification Required By This PR
 
-Run from the CivicSuite repo:
+Run from the Townlight repo:
 
 ```powershell
 python scripts\verify-suite-state.py --remote-only

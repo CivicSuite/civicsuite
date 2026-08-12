@@ -6,7 +6,7 @@ Last verified: 2026-05-21.
 
 This gate records the promotion of the Clerk-Core starter product beyond the
 outside-test beta line. It covers only the starter profile: CivicCore,
-CivicRecords AI, CivicClerk, and the CivicSuite installer.
+CivicRecords AI, CivicClerk, and the Townlight installer.
 
 This document does not promote the full suite, does not promote queued modules,
 does not certify procurement use, does not prove live CivicRecords/CivicClerk

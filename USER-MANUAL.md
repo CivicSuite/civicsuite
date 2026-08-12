@@ -1,8 +1,8 @@
-# CivicSuite — User Manual
+# Townlight — User Manual
 
 **Last verified:** 2026-07-02 (civicsuite-windows-local-v1.0.2)
 
-This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
+This is the orientation manual for the Townlight umbrella repo. It is written in three parts plus a glossary:
 
 1. **For municipal decision-makers** — non-technical overview.
 2. **For developers and IT staff** — how the umbrella repo works.
@@ -14,9 +14,9 @@ For an at-a-glance honest module status, read [STATUS.md](STATUS.md) first. For 
 
 ## Part 1 — For municipal decision-makers
 
-### What is CivicSuite?
+### What is Townlight?
 
-CivicSuite is an **open-source municipal product family**. It is not one giant program. It is a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities do not need to send operational data to a vendor cloud, do not pay per seat, and can inspect or modify the source code.
+Townlight is an **open-source municipal product family**. It is not one giant program. It is a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities do not need to send operational data to a vendor cloud, do not pay per seat, and can inspect or modify the source code.
 
 ### Current honest state
 
@@ -36,9 +36,9 @@ A municipality should evaluate the Windows Local city-core package as a beta pac
 
 ### Callout — how the CivicAccess module arrived (v1.0.1 → v1.0.2)
 
-> **In plain English.** CivicSuite v1.0.1 bundled the **CivicAccess** module under the hood — its code was installed on disk, its database tables were created on first run, a secret token was provisioned for it, and the system reported it as available — but there was no on-screen tab yet. **The current v1.0.2 release ships the on-screen "Accessibility" workflow tab and its buttons**, so a clerk now sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Three of the tab's tools draft with the suite's local AI engine — see Part 1.6 for what they do and the human-review rules that apply.
+> **In plain English.** Townlight v1.0.1 bundled the **CivicAccess** module under the hood — its code was installed on disk, its database tables were created on first run, a secret token was provisioned for it, and the system reported it as available — but there was no on-screen tab yet. **The current v1.0.2 release ships the on-screen "Accessibility" workflow tab and its buttons**, so a clerk now sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Three of the tab's tools draft with the suite's local AI engine — see Part 1.6 for what they do and the human-review rules that apply.
 
-> **For IT.** Per the [2026-06-29 deep-read audit](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md), v1.0.1 bundled the module's runtime without UI (Phases B/C). v1.0.2 completed it: PR [#216](https://github.com/CivicSuite/civicsuite/pull/216) delivered the native Accessibility tab and PR [#220](https://github.com/CivicSuite/civicsuite/pull/220) put its three drafting tools on the shared local AI engine, with deterministic fallbacks retained.
+> **For IT.** Per the [2026-06-29 deep-read audit](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md), v1.0.1 bundled the module's runtime without UI (Phases B/C). v1.0.2 completed it: PR [#216](https://github.com/townlight/townlight/pull/216) delivered the native Accessibility tab and PR [#220](https://github.com/townlight/townlight/pull/220) put its three drafting tools on the shared local AI engine, with deterministic fallbacks retained.
 
 ### What this means for your city
 
@@ -52,14 +52,14 @@ A municipality should evaluate the Windows Local city-core package as a beta pac
 
 ## Part 1.5 — Your first task with the city-core desktop app
 
-If you want to try CivicSuite today, start with the Windows Local city-core desktop installer and the operator walkthrough in [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
+If you want to try Townlight today, start with the Windows Local city-core desktop installer and the operator walkthrough in [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
 
 ### Prerequisites
 
 - A Windows workstation with enough CPU, memory, and disk for local services, city data, backups, and the Gemma 4 12B QAT model file.
 - Permission to install normal Windows desktop software.
 - A stable internet connection for first install and model download unless IT has already staged the model file.
-- A city name, records contact, clerk contact, first CivicSuite admin name/email, and backup folder location.
+- A city name, records contact, clerk contact, first Townlight admin name/email, and backup folder location.
 
 ### System requirements
 
@@ -70,11 +70,11 @@ If you want to try CivicSuite today, start with the Windows Local city-core desk
 
 ### Install (Windows Local desktop)
 
-1. Download `CivicSuite_1.0.2_x64_en-US.msi` from the current GitHub release: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
+1. Download `CivicSuite_1.0.2_x64_en-US.msi` from the current GitHub release: <https://github.com/townlight/townlight/releases/tag/civicsuite-windows-local-v1.0.2>.
 2. Verify the SHA-256 checksum matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
 3. Open the installer and follow the installer screens.
-4. Open CivicSuite after install.
-5. Complete first-run setup: local folders, City Core module selection, city profile, first CivicSuite admin sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
+4. Open Townlight after install.
+5. Complete first-run setup: local folders, City Core module selection, city profile, first Townlight admin sign-in, backup folder, Gemma 4 12B QAT download/resume, checksum verification, health verification, and finish.
 6. Add clerk, records, code, or city-staff users from Settings when staff need separate local sign-ins.
 7. Use Meetings & Notices, Records Requests, Code & Ordinances, Search City Knowledge, System Health, and Settings from the desktop app.
 
@@ -86,7 +86,7 @@ Linux and macOS are not the current clerk install promise for Windows Local 1.0.
 
 City-core artifacts ship from the published GitHub release, not restored committed `installer/dist` files. Before testing a package:
 
-1. Download from the published release tag: <https://github.com/CivicSuite/civicsuite/releases/tag/civicsuite-windows-local-v1.0.2>.
+1. Download from the published release tag: <https://github.com/townlight/townlight/releases/tag/civicsuite-windows-local-v1.0.2>.
 2. Verify the MSI SHA-256 matches the published value: `bbdeb1b69e846d3ccb8c961502f4b2f158e92623e7bf4dfa9d4c4bf2f9a0fd02`.
 3. Confirm the source pins in `installer/modules.json` match the city-core module commits.
 4. For module release assets, confirm the published SHA256 and attestation assets recorded in the module release evidence where applicable.
@@ -95,9 +95,9 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 
 ### First task: complete local setup
 
-1. Open CivicSuite from Windows.
+1. Open Townlight from Windows.
 2. Complete the City Core setup checklist.
-3. Create the first CivicSuite admin and store the passcode in the city's password vault.
+3. Create the first Townlight admin and store the passcode in the city's password vault.
 4. Add staff users from Settings.
 5. Open System Health and verify local services, local model, storage, backup, and task queue status.
 6. Start with one real workflow: create a meeting in Meetings & Notices, create a records request in Records Requests, or import a code source in Code & Ordinances.
@@ -128,7 +128,7 @@ Do not restore old generated installer artifacts unless the maintainers explicit
 - **ADA Title II Review-Support Plan** — a starting checklist for a service or program review; it does not replace your ADA coordinator's sign-off.
 - **Tagged-PDF Expectation Plan** — checks that the heading levels you plan to use in a PDF start at 1 and don't skip a level (e.g., jumping from H1 straight to H3), which is one of the most common ways PDFs fail accessibility checks.
 
-**The AI engine status, in plain terms.** The three AI-capable tools (review analysis, rewrite, variant) run on the same local AI model the rest of CivicSuite uses — the one downloaded during first-run setup. If that model is missing or broken (for example, the file was deleted), the tab shows a banner: *"AI engine not ready"* — with a button that takes you straight to the model setup screen in System Health. Until it's fixed, the three tools run in clearly-labeled sample mode, and the five WCAG checks plus all four checklist tools keep working exactly as before. Nothing dead-ends. Running any of the three AI-capable tools first shows a review-before-you-run confirmation (the same pattern as the app's other AI drafting buttons), because a real AI draft can take a couple of minutes on modest hardware.
+**The AI engine status, in plain terms.** The three AI-capable tools (review analysis, rewrite, variant) run on the same local AI model the rest of Townlight uses — the one downloaded during first-run setup. If that model is missing or broken (for example, the file was deleted), the tab shows a banner: *"AI engine not ready"* — with a button that takes you straight to the model setup screen in System Health. Until it's fixed, the three tools run in clearly-labeled sample mode, and the five WCAG checks plus all four checklist tools keep working exactly as before. Nothing dead-ends. Running any of the three AI-capable tools first shows a review-before-you-run confirmation (the same pattern as the app's other AI drafting buttons), because a real AI draft can take a couple of minutes on modest hardware.
 
 Every review you save shows up in a list below the forms (the most recent 20 by default; use the "Show all" button if you have more). Each row has a **Generate Records-Ready Export** button (packages an advisory checklist, not a certified document) and a **Delete Review** button if you saved one by mistake — clicking Delete Review opens a confirmation screen showing that review's title and status before anything is removed, the same review-before-you-commit pattern used throughout the app. **Persisted reviews are advisory clerk support, not a certified accessibility audit.** That line is on every page in this tab. Final compliance sign-off always comes from a qualified human reviewer, not this tool.
 
@@ -142,7 +142,7 @@ One known gap as of v1.0.2: there is no standalone "build me an export checklist
 
 ### What lives in the umbrella repo?
 
-The `civicsuite` repo is **documentation-, governance-, and coordination-first**. It contains:
+The `townlight` repo is **documentation-, governance-, and coordination-first**. It contains:
 
 - the [Charter](CHARTER.md), [Continuity plan](SUCCESSION.md), [Compatibility matrix](docs/compatibility/index.md), [Roadmap](docs/roadmap/index.md)
 - the [Shared extraction consumer rollout playbook](docs/roadmap/shared-extraction-consumer-rollout.md)
@@ -263,7 +263,7 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 - **FOIA** — Freedom of Information Act and related public-records laws.
 - **LLM** — large language model.
 - **Local-first** — software designed to run on infrastructure the city controls.
-- **Module** — a single CivicSuite product (e.g., civicclerk, civicrecords-ai).
+- **Module** — a single Townlight product (e.g., civicclerk, civicrecords-ai).
 - **Open source** — software available under a license allowing use, modification, and redistribution.
 - **Pinned version** — a specific exact dependency pairing rather than a range.
 - **Procurement-ready** — has passed the release-verification gates and can be evaluated against city procurement standards. Distinct from "has a release tag."

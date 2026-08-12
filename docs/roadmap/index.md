@@ -1,4 +1,4 @@
-﻿# CivicSuite Roadmap
+# Townlight Roadmap
 
 This roadmap starts from a hard truth: **"all repos have releases" is not the same thing as "a city can run on this suite."** The destination is a deployable, operable, supportable municipal product suite with shared security, identity, upgrade, governance, and integration patterns. The path has to be staged, with hard exit criteria and explicit ownership of the seams where suite projects usually fail.
 
@@ -14,7 +14,7 @@ Current phase: **`Phase 1: Platform And Security Extraction` is underway.** `Pha
 New module scope added on 2026-04-30:
 
 - `CivicRegWatch`: planned federal regulatory intelligence module. Detailed implementation contract: [`../../specs/05_civicregwatch.md`](../../specs/05_civicregwatch.md).
-- `CivicAPI`: planned public read-only data gateway over human-approved CivicSuite publication records. Detailed implementation contract: [`../../specs/06_civicapi.md`](../../specs/06_civicapi.md).
+- `CivicAPI`: planned public read-only data gateway over human-approved Townlight publication records. Detailed implementation contract: [`../../specs/06_civicapi.md`](../../specs/06_civicapi.md).
 
 ## Phase 0: Continuity
 

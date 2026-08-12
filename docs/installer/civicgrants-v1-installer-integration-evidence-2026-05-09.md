@@ -8,7 +8,7 @@ Date: 2026-05-09
 
 ## Scope
 
-Controlled shared-infrastructure exception for the active CivicGrants v1.0.0 release. This evidence covers only CivicSuite installer/module-selection metadata and verifier assertions. No queued module product code was changed.
+Controlled shared-infrastructure exception for the active CivicGrants v1.0.0 release. This evidence covers only Townlight installer/module-selection metadata and verifier assertions. No queued module product code was changed.
 
 ## Manifest Evidence
 

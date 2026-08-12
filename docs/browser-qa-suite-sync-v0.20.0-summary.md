@@ -1,4 +1,4 @@
-# CivicSuite v0.20.0 Suite Sync Browser QA
+# Townlight v0.20.0 Suite Sync Browser QA
 
 Date: 2026-05-02
 

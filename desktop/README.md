@@ -1,8 +1,8 @@
-# CivicSuite Desktop
+# Townlight Desktop
 
 Status: Windows Local 1.0 desktop app in active completion
 
-This directory contains the Tauri/WebView2 desktop application for CivicSuite.
+This directory contains the Tauri/WebView2 desktop application for Townlight.
 The Windows desktop app is the local operator surface for CivicCore and the
 City Core module package:
 
