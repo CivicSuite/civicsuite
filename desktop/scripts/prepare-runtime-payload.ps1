@@ -148,8 +148,15 @@ function Invoke-CivicDownload {
     if (Test-Path -LiteralPath $TempDestination) {
         Remove-Item -LiteralPath $TempDestination -Force
     }
+    # 6 attempts / up to 30s backoff (was 3 / up to 10s): GitHub's release-asset
+    # serving has been observed returning sustained 503s / mid-download connection
+    # resets for minutes-to-hours at a time (seen repeatedly in the hours after the
+    # 2026-08-12 CivicSuite->townlight org transfer, on this repo's own canonical
+    # release URL -- no redirect hop involved -- so it wasn't just a redirect-chain
+    # issue). 3 attempts capped at 10s of backoff wasn't enough to ride that out.
     $LastError = $null
-    for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
+    $MaxAttempts = 6
+    for ($Attempt = 1; $Attempt -le $MaxAttempts; $Attempt++) {
         try {
             Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -TimeoutSec 1800 -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
             Move-Item -LiteralPath $TempDestination -Destination $Destination -Force
@@ -165,8 +172,9 @@ function Invoke-CivicDownload {
                     Remove-Item -LiteralPath $Destination -Force -ErrorAction SilentlyContinue
                 }
             }
-            if ($Attempt -lt 3) {
-                Start-Sleep -Seconds ([Math]::Min(10, [Math]::Pow(2, $Attempt)))
+            if ($Attempt -lt $MaxAttempts) {
+                Write-Warning "Download attempt $Attempt/$MaxAttempts failed for ${Url}: $($_.Exception.Message)"
+                Start-Sleep -Seconds ([Math]::Min(30, [Math]::Pow(2, $Attempt)))
             }
         }
     }
