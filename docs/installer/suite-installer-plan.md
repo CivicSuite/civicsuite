@@ -1,4 +1,4 @@
-# Townlight Suite Installer Plan
+# CivicSuite Suite Installer Plan
 
 Status: design contract plus first working clerk-core lifecycle; city-core profile is beta-ready truth-reconciled with current Linux/Windows matching-host lifecycle evidence, first-run browser QA, green PR CI, and audit-full evidence in the active run record.
 
@@ -13,7 +13,7 @@ release artifacts.
 ## Why This Exists
 
 Module-specific installers and scripts are useful, but they do not answer the
-operator question: "How do I install Townlight from nothing, choose the modules
+operator question: "How do I install CivicSuite from nothing, choose the modules
 I want, and end with a working local deployment?"
 
 The suite installer is therefore its own delivery surface.
@@ -48,7 +48,7 @@ into an operator-facing menu. The dry-run selector model must expose the profile
 choices, selectable modules, and selected menu style before any install behavior
 exists.
 
-Module v1.0.0 release gates now depend on this selector. A Townlight module is
+Module v1.0.0 release gates now depend on this selector. A CivicSuite module is
 not a complete v1.0.0 product unless it is represented in the
 installer/module-selection path and the planner verifies that the selected
 module can be resolved with its dependencies, CivicCore requirement, and proof
@@ -119,11 +119,11 @@ wrapper manifests under `installer/generated/native`, `SHA256SUMS.txt`, and a
 release manifest.
 The generated native manifests cover Windows Inno Setup, macOS pkgbuild /
 productbuild, and Linux Debian metadata. Building native wrappers remains a
-release-infrastructure step, not a hidden host mutation; public Townlight
+release-infrastructure step, not a hidden host mutation; public CivicSuite
 installer artifacts remain intentionally unsigned.
 
 Installer artifacts are distributable as unsigned OSS beta builds. Every
-generated package and release manifest must state that Townlight is an
+generated package and release manifest must state that CivicSuite is an
 open-source public-use starter release with intentionally unsigned public
 installers, that Windows/macOS/Linux trust warnings are expected, and that
 SHA256 verification plus official-source verification is the current trust path
@@ -160,7 +160,7 @@ It extracts a release archive for the duration of the run, removes the extracted
 bundle before evidence upload, runs readiness, plan, install, repair, verify,
 and uninstall from the extracted bundle, and records pass/fail evidence. The
 runner supports Windows, macOS, and Linux archives through the platform
-launchers. Townlight's core runtime path is Linux/container-first; Windows and
+launchers. CivicSuite's core runtime path is Linux/container-first; Windows and
 macOS are wrapper platforms around that core. Each package report classifies the
 evidence as archive/readiness, matching-host lifecycle, host-platform mismatch,
 or unsupported lifecycle. Linux and Windows matching-host lifecycle proof are
@@ -189,7 +189,7 @@ The initial profile set is defined in `installer/modules.json`:
 - Clerk Core: CivicCore, CivicRecords AI, CivicClerk.
 - City Core: CivicCore, CivicRecords AI, CivicClerk, CivicCode.
 - Land Use: queued and disabled until CivicZone, CivicPlan, CivicPermit, and CivicInspect complete their own release turns.
-- Full Suite: all 26 tracked Townlight repos, ordered by dependencies.
+- Full Suite: all 26 tracked CivicSuite repos, ordered by dependencies.
 - Custom: operator-selected modules with dependency validation.
 
 Demoted recovery-label selector integrations:

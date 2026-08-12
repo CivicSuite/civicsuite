@@ -12,7 +12,7 @@ module release.
 ## Scope
 
 Controlled shared-infrastructure exception for the active CivicProcure v1.0.0
-release. This evidence covers only Townlight installer/module-selection
+release. This evidence covers only CivicSuite installer/module-selection
 metadata and verifier assertions. No queued module product code was changed.
 
 ## Installer Contract

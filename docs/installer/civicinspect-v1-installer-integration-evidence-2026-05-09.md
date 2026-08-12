@@ -9,8 +9,8 @@ Date: 2026-05-09
 ## Purpose
 
 Record the retroactive installer/module-selection evidence required by the new
-Townlight rule: a module is not fully `v1.0.0` unless it is integrated into the
-Townlight installer path.
+CivicSuite rule: a module is not fully `v1.0.0` unless it is integrated into the
+CivicSuite installer path.
 
 ## Manifest Result
 

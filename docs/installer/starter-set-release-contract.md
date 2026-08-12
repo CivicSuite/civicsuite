@@ -7,7 +7,7 @@ Last verified: 2026-05-21.
 
 ## Scope
 
-The starter set is the first operator-facing Townlight install target:
+The starter set is the first operator-facing CivicSuite install target:
 
 - CivicCore installs first and remains non-selectable because every module
   depends on it.

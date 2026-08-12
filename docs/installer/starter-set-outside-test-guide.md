@@ -7,7 +7,7 @@ Last verified: 2026-05-19.
 
 This guide is for outside testers who want to install, verify, repair, and
 remove the current starter set on Linux or Windows. It is not a procurement or
-production-readiness claim. Townlight is still in recovery/productization, but
+production-readiness claim. CivicSuite is still in recovery/productization, but
 this path is the maintained installable package for real-world testing.
 
 ## Supported Test Targets
@@ -28,20 +28,20 @@ Install or enable these first:
 - Optional Ollama/model setup if the tester wants local LLM behavior beyond
   basic service health.
 
-Download the release archive from the official Townlight release source,
+Download the release archive from the official CivicSuite release source,
 `installer-clerk-core-v0.1.0` on this repo's Releases page, then verify
 the SHA256 checksum from the published `SHA256SUMS.txt` before running any
 launcher.
 
 ## Unsigned Windows Warning
 
-The public Townlight beta installer is intentionally unsigned because this is a
+The public CivicSuite beta installer is intentionally unsigned because this is a
 small free open-source project. On Windows, SmartScreen or Unknown Publisher warnings are normal even for a legitimate archive.
 
 Only bypass the warning after both checks pass:
 
 1. The SHA256 checksum matches the published checksum.
-2. The archive came from the official Townlight release source.
+2. The archive came from the official CivicSuite release source.
 
 After that, use **More info** and **Run anyway** when Windows prompts. This is
 the expected trust path for the public beta.

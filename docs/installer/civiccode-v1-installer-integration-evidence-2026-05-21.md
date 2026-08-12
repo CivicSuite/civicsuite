@@ -2,7 +2,7 @@
 
 Date: 2026-05-21
 
-Scope: CivicCode public-use module release truth in the Townlight umbrella
+Scope: CivicCode public-use module release truth in the CivicSuite umbrella
 installer/module-selection path. This evidence promotes CivicCode only. It does
 not promote queued modules, the full suite, procurement readiness, production
 hosting certification, airgap readiness, live cross-module records exchange, or
@@ -10,8 +10,8 @@ macOS lifecycle certification.
 
 ## Source Release Evidence
 
-- Repo: `Townlight/civiccode`
-- Release: `https://github.com/townlight/code/releases/tag/v1.0.0`
+- Repo: `CivicSuite/civiccode`
+- Release: `https://github.com/CivicSuite/civiccode/releases/tag/v1.0.0`
 - Release name: `civiccode v1.0.0`
 - Main source head after release-workflow fix: `cb5f23eb437863b602df2ba2825bb72fd26e1154`
 - Main verify run: `26219229208`
@@ -63,7 +63,7 @@ adopted-ordinance handoff intake from CivicClerk.
 
 ## Verification Commands
 
-Run from the `Townlight/townlight` umbrella checkout after this change.
+Run from the `CivicSuite/civicsuite` umbrella checkout after this change.
 
 ```powershell
 python scripts\verify-suite-state.py --remote-only
