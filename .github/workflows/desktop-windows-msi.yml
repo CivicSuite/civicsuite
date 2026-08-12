@@ -94,42 +94,42 @@ jobs:
       - name: Check out CivicCore runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civiccore
+          repository: townlight/core
           ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c
           path: civiccore
 
       - name: Check out CivicRecords AI runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicrecords-ai
+          repository: townlight/sunshine
           ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
           path: civicrecords-ai
 
       - name: Check out CivicClerk runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicclerk
+          repository: townlight/meetings
           ref: fa1874edfe977bfc36ddea2939df6464b5bc16be
           path: civicclerk
 
       - name: Check out CivicCode runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civiccode
+          repository: townlight/ordinances
           ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
           path: civiccode
 
       - name: Check out CivicNotice runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicnotice
+          repository: townlight/notice
           ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
           path: civicnotice
 
       - name: Check out CivicAccess runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicaccess
+          repository: townlight/access
           ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
           path: civicaccess
 
@@ -311,42 +311,42 @@ jobs:
       - name: Check out CivicCore runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civiccore
+          repository: townlight/core
           ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c
           path: civiccore
 
       - name: Check out CivicRecords AI runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicrecords-ai
+          repository: townlight/sunshine
           ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
           path: civicrecords-ai
 
       - name: Check out CivicClerk runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicclerk
+          repository: townlight/meetings
           ref: fa1874edfe977bfc36ddea2939df6464b5bc16be
           path: civicclerk
 
       - name: Check out CivicCode runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civiccode
+          repository: townlight/ordinances
           ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
           path: civiccode
 
       - name: Check out CivicNotice runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicnotice
+          repository: townlight/notice
           ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
           path: civicnotice
 
       - name: Check out CivicAccess runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicaccess
+          repository: townlight/access
           ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
           path: civicaccess
 
