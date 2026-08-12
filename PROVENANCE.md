@@ -1,7 +1,7 @@
-# CivicSuite Windows Local — Bundled Module Provenance
+# Townlight Windows Local — Bundled Module Provenance
 
 **Last updated:** 2026-07-02
-**Scope:** the CivicSuite Windows Local v1.0.2 city-core MSI artifact and the source it bundles.
+**Scope:** the Townlight Windows Local v1.0.2 city-core MSI artifact and the source it bundles.
 **Companion to:** [STATUS.md](STATUS.md), [`installer/modules.json`](installer/modules.json) (`source_commit` pins).
 
 ## Why this file exists
@@ -26,12 +26,12 @@ release tag for that repo.
 
 | Module | Repo | Bundled `source_commit` | Published release tag | Bundled vs published |
 |---|---|---|---|---|
-| CivicCore | CivicSuite/civiccore | `1a53f0680fffce34efeb939cbeb9915b6e208d6c` | **v1.2.0** | **AHEAD of v1.2.0 (undisclosed until this note)** |
-| CivicRecords AI | CivicSuite/civicrecords-ai | `e2208827b660faa7d3fc1eab2271a8eae18526ee` | **v1.7.3** | **AHEAD of v1.7.3 (undisclosed until this note)** |
-| CivicClerk | CivicSuite/civicclerk | `fa1874edfe977bfc36ddea2939df6464b5bc16be` | **v1.0.4** | **AHEAD of v1.0.4 (undisclosed until this note)** |
-| CivicCode | CivicSuite/civiccode | `a960bba0a2249d118b593dd61bee3a65a69a9d77` | **v1.0.8** | **AHEAD of v1.0.8 (undisclosed until this note)** |
-| CivicNotice | CivicSuite/civicnotice | `2bf0c9d7b764af84cd042657a972e84213a261d5` | [v0.2.0](https://github.com/CivicSuite/civicnotice/releases/tag/v0.2.0) (published 2026-07-03 from the 2026-06-19 tag) | **at v0.2.0** — the pin is exactly the commit the v0.2.0 tag points to |
-| CivicAccess | CivicSuite/civicaccess | `7b24516fd89584d84c12394b9385eddd1e8c6897` | v0.4.0 | **at v0.4.0** — the pin is exactly the commit the v0.4.0 tag points to |
+| CivicCore | Townlight/civiccore | `1a53f0680fffce34efeb939cbeb9915b6e208d6c` | **v1.2.0** | **AHEAD of v1.2.0 (undisclosed until this note)** |
+| CivicRecords AI | Townlight/civicrecords-ai | `e2208827b660faa7d3fc1eab2271a8eae18526ee` | **v1.7.3** | **AHEAD of v1.7.3 (undisclosed until this note)** |
+| CivicClerk | Townlight/civicclerk | `fa1874edfe977bfc36ddea2939df6464b5bc16be` | **v1.0.4** | **AHEAD of v1.0.4 (undisclosed until this note)** |
+| CivicCode | Townlight/civiccode | `a960bba0a2249d118b593dd61bee3a65a69a9d77` | **v1.0.8** | **AHEAD of v1.0.8 (undisclosed until this note)** |
+| CivicNotice | Townlight/civicnotice | `2bf0c9d7b764af84cd042657a972e84213a261d5` | [v0.2.0](https://github.com/townlight/notice/releases/tag/v0.2.0) (published 2026-07-03 from the 2026-06-19 tag) | **at v0.2.0** — the pin is exactly the commit the v0.2.0 tag points to |
+| CivicAccess | Townlight/civicaccess | `7b24516fd89584d84c12394b9385eddd1e8c6897` | v0.4.0 | **at v0.4.0** — the pin is exactly the commit the v0.4.0 tag points to |
 
 > Short commit forms used elsewhere: civicrecords-ai `e2208827`, civicclerk
 > `fa1874ed`, civiccore `1a53f06`, civiccode `a960bba0`, civicnotice `2bf0c9d`,
@@ -61,7 +61,7 @@ from the release evidence — **not** the `v1.7.3` / `v1.0.4` / `v1.0.8` /
 ## How to verify what the MSI actually ships
 
 1. Read `installer/modules.json` and record each module's `source_commit`.
-2. Confirm those commits exist in the corresponding `CivicSuite/<repo>` history.
+2. Confirm those commits exist in the corresponding `Townlight/<repo>` history.
 3. Verify the MSI checksum / release manifest from the active PR/release evidence
    (see STATUS.md, "Active City-Core Target (GA candidate / open public beta)").
 4. For CivicRecords AI, CivicClerk, CivicCode, and CivicCore, do **not** rely

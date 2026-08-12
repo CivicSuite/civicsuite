@@ -1,6 +1,6 @@
 # New Module Checklist
 
-Use this checklist before creating or promoting any new CivicSuite module repo. The goal is boring consistency: a new module should enter the org with the same release truth, docs, installer, and verification surfaces as the existing suite.
+Use this checklist before creating or promoting any new Townlight module repo. The goal is boring consistency: a new module should enter the org with the same release truth, docs, installer, and verification surfaces as the existing suite.
 
 ## 1. Authority Read
 
@@ -11,7 +11,7 @@ Use this checklist before creating or promoting any new CivicSuite module repo. 
 
 ## 2. Repository Skeleton
 
-Create the repo under the `CivicSuite` GitHub org with these baseline paths:
+Create the repo under the `Townlight` GitHub org with these baseline paths:
 
 - `pyproject.toml`
 - `README.md`
@@ -64,7 +64,7 @@ Update the umbrella repo in the same release train or a dedicated suite-truth PR
 - `ARCHITECTURE.md`
 - `docs/CivicSuiteUnifiedSpec.md` shipped-state notes, if any
 
-The module is not `v1.0.0` if it is not installable or selectable through the appropriate CivicSuite installer path.
+The module is not `v1.0.0` if it is not installable or selectable through the appropriate Townlight installer path.
 
 ## 6. Documentation
 

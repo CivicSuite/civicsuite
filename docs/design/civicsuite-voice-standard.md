@@ -1,4 +1,4 @@
-# CivicSuite voice standard
+# Townlight voice standard
 
 > **Targets** `docs/design/` in the umbrella repo, alongside
 > `windows-desktop-design-control.md` and `civicsuite-ui-patterns.md`. This is

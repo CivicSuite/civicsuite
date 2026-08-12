@@ -2,11 +2,11 @@
 
 Date: 2026-05-24
 
-Scope: CivicSuite city-core Item 4(d), installed-stack proof for the live CivicClerk adopted-ordinance handoff into CivicCode intake.
+Scope: Townlight city-core Item 4(d), installed-stack proof for the live CivicClerk adopted-ordinance handoff into CivicCode intake.
 
 ## Participating Artifacts
 
-- Umbrella PR: CivicSuite/civicsuite#175
+- Umbrella PR: Townlight/townlight#175
 - PR head SHA: `3c67f45ad601fde573a91822f933c93d894f5089`
 - Merged main SHA: `ecf6e8e7c69b312ef0363f6e720549e3136e39c6`
 - GitHub Actions run: `26353960300`

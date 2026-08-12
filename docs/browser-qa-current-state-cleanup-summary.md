@@ -1,6 +1,6 @@
 # Browser QA - current-state cleanup
 
-Target: file:///C:/dev/Claude/civicsuite/docs/index.html
+Target: file:///C:/dev/Claude/townlight/docs/index.html
 Date: 2026-04-28T17:32:21.455Z
 
 | Viewport | Screenshot | Console | Horizontal overflow | Required text |

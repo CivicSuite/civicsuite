@@ -1,4 +1,4 @@
-**CivicSuite AI**
+**Townlight AI**
 
 A Clerk-First, Airgappable, Local-LLM Municipal Operations Suite
 
@@ -31,7 +31,7 @@ Part I. Strategic Framing
 
 1\. Executive Summary
 
-CivicSuite AI is an open-source, Apache-2.0-licensed, airgappable, local-LLM
+Townlight AI is an open-source, Apache-2.0-licensed, airgappable, local-LLM
 municipal operations suite for small and mid-sized cities. It is
 clerk-first: it starts where the records live, where the meetings
 happen, and where the code gets adopted --- then expands outward to
@@ -48,7 +48,7 @@ demand.
 The suite is positioned against an incumbent landscape dominated by
 CivicPlus, OpenGov, Tyler, Granicus, and Accela --- proprietary SaaS
 suites that hold municipal data in the cloud and charge per-seat pricing
-that small cities cannot sustain. CivicSuite AI offers a sovereign
+that small cities cannot sustain. Townlight AI offers a sovereign
 alternative: local data, local inference, and modular adoption. It does
 not attempt to replace ERP, utility billing, permitting systems of
 record, CAD/RMS, or courts on day one. It wins where municipal AI is
@@ -136,7 +136,7 @@ indexed rather than first-class product surfaces:
 
 3\. Design Principles (Suite-Wide Non-Negotiables)
 
-Every module in CivicSuite AI inherits these rules. They are not
+Every module in Townlight AI inherits these rules. They are not
 negotiable at the module level; they are enforced at CivicCore.
 
 3.1 Product principles
@@ -1687,7 +1687,7 @@ CivicAPI --- Public Read-Only Data Gateway
   ----------------------- --------------------------------------------------------------------------------------------------------------------------------
   **Module**              CivicAPI
   **Primary owner**       IT / Clerk
-  **Purpose**             Provide a public read-only API over structured, human-approved, published CivicSuite records with citations, schema metadata, rate limits, and retraction support.
+  **Purpose**             Provide a public read-only API over structured, human-approved, published Townlight records with citations, schema metadata, rate limits, and retraction support.
   **Tier**                Tier 4 --- Operations
   **Depends on**          CivicCore and publication contracts from originating modules; optional CivicData relationship for bulk datasets.
   **Status**              Planned. Detailed implementation contract: `specs/06_civicapi.md`.
@@ -2353,7 +2353,7 @@ Phase 3 --- Administrative and resident services
     operations.
 
 19. CivicAPI --- public read-only API over human-approved published
-    CivicSuite records.
+    Townlight records.
 
 Outcome: a coherent \'administrative suite\' alongside the clerk core.
 Grants-funded small cities can justify the full stack on the strength of
@@ -2501,8 +2501,8 @@ integrations are expected over time, in priority order:
 
 Appendix A. Naming & Identity
 
-Umbrella: CivicSuite AI. Alternative umbrellas considered: CivicOS,
-CivicStack. CivicSuite AI is preferred because \'suite\' signals
+Umbrella: Townlight AI. Alternative umbrellas considered: CivicOS,
+CivicStack. Townlight AI is preferred because \'suite\' signals
 modularity without committing the reader to an operating-system
 metaphor, and \'AI\' distinguishes the product from generic municipal
 SaaS in every search result and procurement document.
@@ -2515,7 +2515,7 @@ CivicData Bridge). Never more than two words.
 CivicRecords AI retains its current name (no hyphen removal, \'AI\'
 suffix kept) to preserve continuity with the v3.0 spec and the existing
 repository. Subsequent modules drop the \'AI\' suffix because it is
-redundant once the suite identity is established --- \'CivicSuite AI\'
+redundant once the suite identity is established --- \'Townlight AI\'
 carries it.
 
 Appendix B. Mapping Current Spec Features → Modules
@@ -2583,7 +2583,7 @@ module, not per suite.
 
 Appendix E. Bottom-Line Recommendation
 
-Build CivicSuite AI as an open-source, Apache-2.0-licensed, airgappable,
+Build Townlight AI as an open-source, Apache-2.0-licensed, airgappable,
 local-LLM municipal suite with CivicRecords AI as Module 1 and the
 following four modules as the Clerk Core: CivicClerk, CivicCode,
 CivicAccess, and CivicCore as the shared platform underneath. Then
@@ -2596,7 +2596,7 @@ The v3.0 spec is a strong Module 1 specification. It is not a suite
 specification. Promoting its shared infrastructure into CivicCore,
 filling the CivicCode and CivicZone gaps with purpose-built modules, and
 adopting the consistent module anatomy described here converts
-\'CivicRecords AI\' into \'CivicSuite AI, with CivicRecords AI as Module
+\'CivicRecords AI\' into \'Townlight AI, with CivicRecords AI as Module
 1\' --- with almost no changes to the existing code, just a packaging
 and architecture refactor that can happen incrementally.
 

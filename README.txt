@@ -1,18 +1,18 @@
-﻿# CivicSuite
+# Townlight
 
 **An open-source municipal product family designed to run on a city's own hardware. Under release-recovery review as of 2026-05-09.**
 
-This `civicsuite` repository is the umbrella for the CivicSuite product family. It holds suite-wide documentation, governance, the roadmap, ADRs, the compatibility matrix, and the suite-installer scaffolding. Module runtime code lives in per-module repos under <https://github.com/CivicSuite>.
+This `townlight` repository is the umbrella for the Townlight product family. It holds suite-wide documentation, governance, the roadmap, ADRs, the compatibility matrix, and the suite-installer scaffolding. Module runtime code lives in per-module repos under <https://github.com/townlight>.
 
 ---
 
 ## Read Me First
 
-CivicSuite is **not procurement-ready** today. Public release tags exist on multiple module repos, but they are **frozen as provisional** until each repo passes the recovery gates documented in [`docs/release-recovery-status.md`](docs/release-recovery-status.md). CivicCode, CivicAccess, CivicZone, and CivicPlan have now passed their v1.0.0 public-use module release gates and suite installer/module-selection truth reconciliation. CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain on honest v0.2.0 recovery labels. CivicCore v1.1.0 is the current shared-platform release; CivicClerk v1.0.1 is the protected-default recovery patch; CivicRecords AI v1.6.1 is the current developer-preview records release with the ingestion worker recovery patch shipped.
+Townlight is **not procurement-ready** today. Public release tags exist on multiple module repos, but they are **frozen as provisional** until each repo passes the recovery gates documented in [`docs/release-recovery-status.md`](docs/release-recovery-status.md). CivicCode, CivicAccess, CivicZone, and CivicPlan have now passed their v1.0.0 public-use module release gates and suite installer/module-selection truth reconciliation. CivicPermit, CivicInspect, CivicGrants, and CivicProcure remain on honest v0.2.0 recovery labels. CivicCore v1.1.0 is the current shared-platform release; CivicClerk v1.0.1 is the protected-default recovery patch; CivicRecords AI v1.6.1 is the current developer-preview records release with the ingestion worker recovery patch shipped.
 
 Why the freeze: in a five-day window between 2026-05-01 and 2026-05-06, the org pushed multiple v1.0.0 / v0.22.x release labels across 7+ repos as part of a coordination sweep that the project owner subsequently halted. Two follow-on lateral sweeps (2026-05-07 and 2026-05-08) put v1.0.0 tags on `civicinspect`, `civicgrants`, and `civicprocure` against the explicit halt. None of those tags constitute promotion. The recovery-status doc is the operating truth source for which labels are real.
 
-If you are evaluating CivicSuite for a municipality, treat this state as *developer preview* for the most mature module (civicrecords-ai) and *foundation only* for everything else.
+If you are evaluating Townlight for a municipality, treat this state as *developer preview* for the most mature module (civicrecords-ai) and *foundation only* for everything else.
 
 ---
 
@@ -31,9 +31,9 @@ The most important distinction: **"all repos have releases" is not the same thin
 
 ## What Is Available Today
 
-- **`civicrecords-ai`** (FOIA / public records) â€” the most mature product-shaped repo. v1.6.1 is shipped as developer preview with the ingestion worker event-loop recovery patch. Repo: <https://github.com/CivicSuite/civicrecords-ai>
-- **`civiccore`** (shared platform) â€” substantial real subsystems exist (LLM provider abstraction, audit primitives, connector contracts, search helpers, schedule validation, shared staff-key gate). v1.1.0 is the current shared-platform release. Repo: <https://github.com/CivicSuite/civiccore>
-- **`civicclerk`** (meetings/agendas/minutes) â€” substantial workflow code, mock-city test fixtures, first React staff workspace. v1.0.1 is the current recovery patch with protected staff auth defaults. Repo: <https://github.com/CivicSuite/civicclerk>
+- **`civicrecords-ai`** (FOIA / public records) â€” the most mature product-shaped repo. v1.6.1 is shipped as developer preview with the ingestion worker event-loop recovery patch. Repo: <https://github.com/townlight/civicrecords-ai>
+- **`civiccore`** (shared platform) â€” substantial real subsystems exist (LLM provider abstraction, audit primitives, connector contracts, search helpers, schedule validation, shared staff-key gate). v1.1.0 is the current shared-platform release. Repo: <https://github.com/townlight/core>
+- **`civicclerk`** (meetings/agendas/minutes) â€” substantial workflow code, mock-city test fixtures, first React staff workspace. v1.0.1 is the current recovery patch with protected staff auth defaults. Repo: <https://github.com/townlight/civicclerk>
 - **`civiccode`** â€” municipal code module; v1.0.0 public-use module release passed source gates, release artifacts, attestation, public browser QA, and suite installer/module-selection truth reconciliation.
 - **`civicaccess`** - accessibility, plain-language, multilingual draft, ADA Title II review-support, tagged-PDF expectation, and records-ready export module; v1.0.0 public-use module release passed source gates, release artifacts, public browser QA, release-gate audit, and suite installer/module-selection truth reconciliation.
 - **`civiczone`** - parcel-aware zoning and land-use Q&A module; v1.0.0 public-use module release passed source gates, release artifacts, public/staff browser QA, release-gate audit, and suite installer/module-selection truth reconciliation.
@@ -57,7 +57,7 @@ The canonical roadmap lives at docs/roadmap/index.md. As of 2026-06-10 the suite
 
 ## Quick Start
 
-**Suite installer (current):** Clerk-Core public-use starter release. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0`. CivicSuite's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux and Windows have matching-host lifecycle evidence for the Clerk-Core package. macOS is supported at beta archive/readiness level until matching-host lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
+**Suite installer (current):** Clerk-Core public-use starter release. The clerk-core profile installer is published on this repo's Releases page as `installer-clerk-core-v0.1.0`. Townlight's core runtime path is Linux/container-first; Windows and macOS are wrapper platforms around that containerized core. Package evidence is classified as archive/readiness, matching-host lifecycle, host-platform mismatch, or unsupported lifecycle. Linux and Windows have matching-host lifecycle evidence for the Clerk-Core package. macOS is supported at beta archive/readiness level until matching-host lifecycle evidence is recorded on a Darwin/macOS Docker Desktop host.
 
 - Windows package: `CivicSuite-clerk-core-windows-0.1.0.zip`
 - Linux package: `CivicSuite-clerk-core-linux-0.1.0.tar.gz`
@@ -67,7 +67,7 @@ See [installer/README.md](installer/README.md) for the contract and [docs/instal
 
 **Per-module install path:**
 
-- FOIA / public records: <https://github.com/CivicSuite/civicrecords-ai> â€” Linux/container-first. Windows and macOS use wrapper/script paths around the same containerized services; platform claims remain bounded by the lifecycle evidence in the release notes.
+- FOIA / public records: <https://github.com/townlight/civicrecords-ai> â€” Linux/container-first. Windows and macOS use wrapper/script paths around the same containerized services; platform claims remain bounded by the lifecycle evidence in the release notes.
 - Other modules: see each module's README for install instructions. Most modules ship as Python packages depending on `civiccore`.
 
 If you are orienting yourself for the first time, read in this order:
@@ -84,7 +84,7 @@ If you are orienting yourself for the first time, read in this order:
 
 | Repo | Role |
 |---|---|
-| `civicsuite` | Umbrella: roadmap, governance, specs, ADRs, compatibility matrix, suite-installer scaffolding |
+| `townlight` | Umbrella: roadmap, governance, specs, ADRs, compatibility matrix, suite-installer scaffolding |
 | `civiccore` | Shared platform package consumed by every module |
 | `civicrecords-ai` | Most mature product-shaped repo; v1.6.1 developer-preview release with ingestion worker recovery patch |
 | `civicclerk` | Meeting workflow; v1.0.1 protected-default recovery patch |
@@ -98,7 +98,7 @@ If you are orienting yourself for the first time, read in this order:
 
 ## Architecture
 
-CivicSuite uses a deliberately boring stack. Every module inherits these defaults:
+Townlight uses a deliberately boring stack. Every module inherits these defaults:
 
 | Layer | Choice | Pin / Notes |
 |---|---|---|
@@ -124,7 +124,7 @@ Continuity is now an explicit gate, not a "later" governance item.
 - Governance index: [docs/governance/index.md](docs/governance/index.md)
 - Charter: [CHARTER.md](CHARTER.md)
 
-The `CivicSuite` GitHub org has two active owners (`scottconverse` and `APirateMonk`).
+The `Townlight` GitHub org has two active owners (`scottconverse` and `APirateMonk`).
 
 ## Documentation
 

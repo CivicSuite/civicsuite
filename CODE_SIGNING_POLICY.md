@@ -1,10 +1,10 @@
 # Code Signing Policy
 
-This policy describes how CivicSuite release artifacts are code-signed.
+This policy describes how Townlight release artifacts are code-signed.
 
 ## Windows — Azure Trusted Signing
 
-CivicSuite Windows release artifacts are signed using **Azure Trusted Signing** (Authenticode,
+Townlight Windows release artifacts are signed using **Azure Trusted Signing** (Authenticode,
 Microsoft-rooted certificate). The private key is held in Azure's Hardware Security Module (HSM)
 and never stored locally.
 
@@ -27,7 +27,7 @@ and never stored locally.
 
 ## Distribution
 
-Releases are published at: <https://github.com/CivicSuite/civicsuite/releases>
+Releases are published at: <https://github.com/townlight/townlight/releases>
 
 ## Privacy
 

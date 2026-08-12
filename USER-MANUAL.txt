@@ -1,8 +1,8 @@
-# CivicSuite — User Manual
+# Townlight — User Manual
 
 **Last verified:** 2026-05-15
 
-This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
+This is the orientation manual for the Townlight umbrella repo. It is written in three parts plus a glossary:
 
 1. **For municipal decision-makers** — non-technical overview.
 2. **For developers and IT staff** — how the umbrella repo works.
@@ -14,13 +14,13 @@ For an at-a-glance honest module status, read [STATUS.md](STATUS.md) first. For 
 
 ## Part 1 — For municipal decision-makers
 
-### What is CivicSuite?
+### What is Townlight?
 
-CivicSuite is an **open-source municipal product family**. It is not one giant program. It is a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities do not need to send operational data to a vendor cloud, do not pay per seat, and can inspect or modify the source code.
+Townlight is an **open-source municipal product family**. It is not one giant program. It is a planned collection of modules a city can install one at a time, on its own hardware, on its own schedule. Cities do not need to send operational data to a vendor cloud, do not pay per seat, and can inspect or modify the source code.
 
 ### Current honest state
 
-CivicSuite is under release-recovery review. Public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims are frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
+Townlight is under release-recovery review. Public "shipping," "product-ready," and "v1.0.0 proves release maturity" claims are frozen until each repo re-earns that status through the gates in [docs/release-recovery-status.md](docs/release-recovery-status.md).
 
 - `civicrecords-ai` (FOIA / records) is the most mature module today; v1.6.1 is a developer-preview release with the ingestion worker recovery patch shipped.
 - `civicclerk` (meetings) has substantial workflow code and a first React staff workspace; v1.0.1 shipped the protected-default recovery patch.
@@ -42,7 +42,7 @@ A municipality cannot today run end-to-end on this suite. Pilot evaluation is re
 
 ## Part 1.5 — Your first task with CivicRecords AI
 
-If you want to *try* CivicSuite today, this is the path. Treat this as a developer-preview walkthrough, not production setup.
+If you want to *try* Townlight today, this is the path. Treat this as a developer-preview walkthrough, not production setup.
 
 ### Prerequisites
 
@@ -52,7 +52,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 
 ### Install (Windows wrapper)
 
-1. Download `CivicRecordsAI-<version>-Setup.exe` from the latest release at <https://github.com/CivicSuite/civicrecords-ai/releases>.
+1. Download `CivicRecordsAI-<version>-Setup.exe` from the latest release at <https://github.com/townlight/civicrecords-ai/releases>.
 2. Verify the SHA-256 checksum published alongside the installer.
 3. Run the installer. **Windows SmartScreen will warn "Unknown publisher" — this is expected. Click "More info → Run anyway."** The installer is intentionally unsigned today.
 4. The installer fires a prereq check, then `install.ps1`. The model picker offers four Gemma 4 sizes; pick `gemma4:e4b` for the default.
@@ -65,7 +65,7 @@ If you want to *try* CivicSuite today, this is the path. Treat this as a develop
 Linux is the primary runtime target and has matching-host lifecycle evidence for the clerk-core beta. The script path below also runs on macOS today, but macOS is not lifecycle-certified yet.
 
 ```bash
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/civicrecords-ai.git
 cd civicrecords-ai
 bash install.sh
 ```
@@ -98,7 +98,7 @@ The script does not install Docker/WSL — those must already be present.
 
 ### What lives in the umbrella repo?
 
-The `civicsuite` repo is **documentation-, governance-, and coordination-first**. It contains:
+The `townlight` repo is **documentation-, governance-, and coordination-first**. It contains:
 
 - the [Charter](CHARTER.md), [Continuity plan](SUCCESSION.md), [Compatibility matrix](docs/compatibility/index.md), [Roadmap](docs/roadmap/index.md)
 - the [Shared extraction consumer rollout playbook](docs/roadmap/shared-extraction-consumer-rollout.md)
@@ -167,7 +167,7 @@ The full suite architecture, dependency graph, data-flow rules, and CivicCore ex
 
 ```
                 +----------------------------+
-                |   civicsuite (umbrella)    |
+                |   townlight (umbrella)    |
                 |  docs, governance, ADRs,   |
                 |  compatibility, installer  |
                 +-------------+--------------+
@@ -219,7 +219,7 @@ Continuity is now a gate, not a future aspiration. See [SUCCESSION.md](SUCCESSIO
 - **FOIA** — Freedom of Information Act and related public-records laws.
 - **LLM** — large language model.
 - **Local-first** — software designed to run on infrastructure the city controls.
-- **Module** — a single CivicSuite product (e.g., civicclerk, civicrecords-ai).
+- **Module** — a single Townlight product (e.g., civicclerk, civicrecords-ai).
 - **Open source** — software available under a license allowing use, modification, and redistribution.
 - **Pinned version** — a specific exact dependency pairing rather than a range.
 - **Procurement-ready** — has passed the recovery gates and can be evaluated against city procurement standards. Distinct from "has a release tag."

@@ -13,7 +13,7 @@ Branch:
 
 Base:
 
-- `CivicSuite/civicsuite` `main` at `8cd37559d769d58c11f21c1ca8e76872cd39950f`
+- `Townlight/townlight` `main` at `8cd37559d769d58c11f21c1ca8e76872cd39950f`
 
 Local worktree:
 

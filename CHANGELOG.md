@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## Project renamed: CivicSuite is now Townlight (2026-08-12)
+
+The suite, its GitHub organization, and all module repositories were renamed
+from CivicSuite to **Townlight** on 2026-08-12 following a name-clearance
+review (a third party holds a live USPTO application for "CIVIC SUITE" in the
+software class). Repositories moved from `github.com/CivicSuite/civic<name>`
+to `github.com/townlight/<name>`; old URLs and git remotes redirect. Entries
+below this notice predate the rename and intentionally retain CivicSuite-era
+naming, as do release tags, release asset filenames, dated audits, agent
+handoffs, evidence records, checksum files, and identifier-level names
+(packages, workflows, model tags) pending the coordinated code rename.
+
+
+
 ## Release recovery notice (2026-05-09)
 
 The block of entries below dated 2026-05-01 through 2026-05-08 referring to "compatibility publication," "shipping records product," "shipping flagship," "v1.0.0," and similar promotion-language are **doc-update entries against tags that are now frozen pending recovery gates** (see `docs/release-recovery-status.md`). They are preserved here as historical record but should not be read as ship signals.

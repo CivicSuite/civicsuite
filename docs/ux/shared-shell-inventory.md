@@ -1,12 +1,12 @@
 # Shared Shell UX Inventory
 
 Status: active convention inventory  
-Applies to: staff and resident/public pages across CivicSuite modules  
+Applies to: staff and resident/public pages across Townlight modules  
 Decision anchor: `docs/architecture/ADR-0004-shared-shell-boundaries.md`
 
 ## Purpose
 
-This inventory records the first shared shell conventions for CivicSuite without creating a shared frontend package yet. It is intentionally practical: it describes what users should see and what QA should verify.
+This inventory records the first shared shell conventions for Townlight without creating a shared frontend package yet. It is intentionally practical: it describes what users should see and what QA should verify.
 
 ## Boundary
 

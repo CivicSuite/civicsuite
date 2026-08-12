@@ -14,9 +14,9 @@ The active workspace path is:
 
 - `C:\dev\Claude`
 
-The CivicSuite gate was restored at:
+The Townlight gate was restored at:
 
-- `C:\dev\Claude\CIVICSUITE_AUDIT_GATE.md`
+- `C:\dev\Claude\TOWNLIGHT_AUDIT_GATE.md`
 
 The reboot memory was restored at:
 
@@ -38,11 +38,11 @@ The following repositories were recloned or recreated after recovery:
 
 Observed recovery heads:
 
-- CivicSuite/civicsuite: `b07a03214e3e1c4e8f69fd74db45c9213cc9c18f`
-- CivicSuite/civiccore: `9f7e3a5a0156fca779b48076d49c13181d15151c`
-- CivicSuite/civicrecords-ai: `ae34a499c1e0794d3322146369f798f19bd0a146`
-- CivicSuite/civicclerk: `f39d0eeccc6804b86c542b4cdffe4fab0665d503`
-- CivicSuite/civiccode: `a960bba0a2249d118b593dd61bee3a65a69a9d77`
+- Townlight/townlight: `b07a03214e3e1c4e8f69fd74db45c9213cc9c18f`
+- Townlight/civiccore: `9f7e3a5a0156fca779b48076d49c13181d15151c`
+- Townlight/civicrecords-ai: `ae34a499c1e0794d3322146369f798f19bd0a146`
+- Townlight/civicclerk: `f39d0eeccc6804b86c542b4cdffe4fab0665d503`
+- Townlight/civiccode: `a960bba0a2249d118b593dd61bee3a65a69a9d77`
 
 ## Lost State
 
@@ -85,7 +85,7 @@ The next technical task after recovery is to reconstruct the live-install patch 
 
 ## Restored Lockstep Pin
 
-Stage 0 also restored the CivicCode city-core source pin that was lost with the deleted dirty worktree. `python scripts\verify-suite-state.py --remote-only` initially failed because `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json` still pinned CivicCode to post-PR-#75 head `9284fd1a0704541b3422e5dd0ba47bea3713825a` while `C:\dev\Claude\civiccode` and `CivicSuite/civiccode` were at post-PR-#76 head `a960bba0a2249d118b593dd61bee3a65a69a9d77`.
+Stage 0 also restored the CivicCode city-core source pin that was lost with the deleted dirty worktree. `python scripts\verify-suite-state.py --remote-only` initially failed because `C:\dev\Claude\CivicSuite-live-install-fix-2026-05-29\installer\modules.json` still pinned CivicCode to post-PR-#75 head `9284fd1a0704541b3422e5dd0ba47bea3713825a` while `C:\dev\Claude\civiccode` and `Townlight/civiccode` were at post-PR-#76 head `a960bba0a2249d118b593dd61bee3a65a69a9d77`.
 
 The Stage 0 recovery branch restores the post-PR-#76 pin across the lockstep truth files without mutating already-published module release objects.
 

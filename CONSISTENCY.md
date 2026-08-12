@@ -1,4 +1,4 @@
-# CivicSuite — Consistency Reference
+# Townlight — Consistency Reference
 
 Every count, cross-reference, version, and named fact used in CHARTER.md and README.md is verified here against the source-of-truth spec. Update this file whenever any of those facts change. Do not let the charter or README drift from this table.
 
@@ -10,7 +10,7 @@ Last verified: June 27, 2026.
 
 | Claim | Value | Source | Verified |
 |---|---|---|---|
-| Total product modules in catalog | **27** | `docs/CivicSuiteUnifiedSpec.md` module headings, `installer/modules.json`, and live `CivicSuite` GitHub org repo list | verified |
+| Total product modules in catalog | **27** | `docs/CivicSuiteUnifiedSpec.md` module headings, `installer/modules.json`, and live `Townlight` GitHub org repo list | verified |
 | Shared platform modules | **1** (`CivicCore`) | `specs/01_catalog.md` Tier 0 and `specs/02_CivicCore.md` | verified |
 | Total tiers in catalog | **7** (Tier 0 through Tier 6) | `specs/01_catalog.md` section headers 7–13 | ✅ |
 | CivicCore extraction phases | **6** (Phase 0 through Phase 5) | `specs/02_CivicCore.md` §12 ("The six phases") | ✅ |
@@ -50,7 +50,7 @@ The product-module total is 27. `CivicCore` is the shared platform prerequisite 
 | **Product total** | | **27** | |
 | **Platform + product total** | | **28** | Includes CivicCore plus all product modules |
 
-Source: `docs/CivicSuiteUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `CivicSuite` GitHub org repo list checked on 2026-05-23.
+Source: `docs/CivicSuiteUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `Townlight` GitHub org repo list checked on 2026-05-23.
 
 ---
 
@@ -85,7 +85,7 @@ Every CHARTER reference to a spec section, verified against the actual spec sect
 
 ## 5. Phase 0 vs extraction inventory (avoid the trap)
 
-The CivicCore Extraction Spec §12 defines Phase 0 as exactly: *"Create civiccore repo skeleton. Create civicsuite umbrella repo. Copy LICENSE, README, CI scaffolding. Agree on public API surface."*
+The CivicCore Extraction Spec §12 defines Phase 0 as exactly: *"Create civiccore repo skeleton. Create townlight umbrella repo. Copy LICENSE, README, CI scaffolding. Agree on public API surface."*
 
 The extraction inventory is **not** part of Phase 0. It is preparation work that produces the Phase 1 checklist. CHARTER.md is careful to use the phrase "extraction inventory (preparation for Phase 1)" rather than "Phase 0 inventory" when describing this work, so the labeling matches the spec.
 
@@ -103,7 +103,7 @@ If a future doc says "Phase 0 inventory" or names the branch `civiccore-phase-0-
 | Third-party deps | Permissive or weak-copyleft only; AGPL and GPL-3.0 blocked | `02_CivicCore.md` Appendix D |
 | Redis | Pin `<8.0` (BSD); never SSPL releases | `02_CivicCore.md` Appendix D |
 
-Project standardized on Apache License 2.0 for code on 2026-04-23 (Scott confirmed in CivicSuite kickoff). Earlier drafts referenced MIT; those have been updated. The "MIT 2.0 does not exist" caveat is no longer load-bearing and was removed.
+Project standardized on Apache License 2.0 for code on 2026-04-23 (Scott confirmed in Townlight kickoff). Earlier drafts referenced MIT; those have been updated. The "MIT 2.0 does not exist" caveat is no longer load-bearing and was removed.
 
 ---
 
@@ -141,7 +141,7 @@ stack.
 
 ## 9. Repo names (lowercase, hyphenated where needed)
 
-- `civicsuite` (umbrella)
+- `townlight` (umbrella)
 - `civiccore` (shared platform package)
 - `civicrecords-ai` (existing records module — keeps the `-ai` suffix per Appendix A naming convention)
 - `civicclerk` (future)
@@ -149,7 +149,7 @@ stack.
 - `civiczone` (future)
 - `civicregwatch` (future)
 - `civicapi` (future)
-- `civicsuite-prompts` (optional separate prompt library)
+- `townlight-prompts` (optional separate prompt library)
 - `civicsuite-deploy` (optional separate deployment manifests)
 
 Only `civicrecords-ai` keeps the `-ai` suffix; subsequent module repos drop it because suite identity carries it.

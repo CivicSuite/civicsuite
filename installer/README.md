@@ -1,4 +1,4 @@
-# CivicSuite Installer Contract
+# Townlight Installer Contract
 
 Status: Legacy Docker/browser planner and beta package history. The Windows
 Local 1.0 clerk path now lives in `desktop/` as the Tauri/WebView2 app and
@@ -98,7 +98,7 @@ stack only; it does not fetch network fonts or mutate host state.
 
 The launcher includes QA fixtures for loading, success, empty, error, and
 partial states through `?state=loading|success|empty|error|partial`. Runtime
-module URLs can be overridden by defining `window.CIVICSUITE_LAUNCHER_CONFIG`
+module URLs can be overridden by defining `window.TOWNLIGHT_LAUNCHER_CONFIG`
 before `src/app.js` loads.
 
 ## Menu Styles
@@ -116,7 +116,7 @@ Initial profiles:
 - `minimal`: CivicCore only.
 - `clerk-core`: CivicCore, CivicRecords AI, CivicClerk.
 - `land-use`: CivicCore, CivicCode, CivicZone, CivicPlan, CivicPermit.
-- `full-suite`: every tracked CivicSuite repo after CivicCore dependency ordering.
+- `full-suite`: every tracked Townlight repo after CivicCore dependency ordering.
 - `custom`: operator-selected modules with dependency validation.
 
 ## Dry-Run Launchers
@@ -350,8 +350,8 @@ packaging tools in release infrastructure.
 
 ## unsigned OSS beta Distribution
 
-Current CivicSuite installer artifacts are distributable but unsigned.
-CivicSuite is an open-source beta project, and signing certificates are not
+Current Townlight installer artifacts are distributable but unsigned.
+Townlight is an open-source beta project, and signing certificates are not
 available yet. This means operating systems may show trust warnings even when
 the artifact is legitimate.
 
@@ -370,7 +370,7 @@ Current trust path:
 
 Windows users should choose **More info** and then **Run anyway** only after the
 checksum matches the published SHA256 value and the artifact came from the
-official CivicSuite release source. This warning is expected for the public
+official Townlight release source. This warning is expected for the public
 free/open-source beta. There is no committed signed-installer path for the
 public beta; SHA256 plus official-source verification is the trust path.
 

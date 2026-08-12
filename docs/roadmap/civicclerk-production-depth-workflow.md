@@ -4,15 +4,15 @@ Status: planned next production-depth lane
 
 Governing ADR: `docs/architecture/ADR-0007-first-production-depth-workflow.md`
 
-Primary repo: `CivicSuite/civicclerk`
+Primary repo: `Townlight/civicclerk`
 
-Supporting repos: `CivicSuite/civiccore`, `CivicSuite/civicrecords-ai`,
-`CivicSuite/civiccode`, `CivicSuite/civiczone`, `CivicSuite/civicsuite`
+Supporting repos: `Townlight/civiccore`, `Townlight/civicrecords-ai`,
+`Townlight/civiccode`, `Townlight/civiczone`, `Townlight/townlight`
 
 ## Purpose
 
 This sprint turns CivicClerk from a strong v0.1.0 foundation into the first
-operator-usable production-depth CivicSuite workflow.
+operator-usable production-depth Townlight workflow.
 
 The workflow is deliberately narrow:
 
@@ -56,7 +56,7 @@ Still planned:
 
 ### Phase 1 - CivicCore v0.3.0 Primitives
 
-Repo: `CivicSuite/civiccore`
+Repo: `Townlight/civiccore`
 
 Deliver:
 
@@ -77,7 +77,7 @@ Acceptance:
 
 ### Phase 2 - CivicClerk Data And Service Depth
 
-Repo: `CivicSuite/civicclerk`
+Repo: `Townlight/civicclerk`
 
 Deliver:
 
@@ -100,7 +100,7 @@ Acceptance:
 
 ### Phase 3 - Staff Workflow UI
 
-Repo: `CivicSuite/civicclerk`
+Repo: `Townlight/civicclerk`
 
 Deliver:
 
@@ -122,8 +122,8 @@ Acceptance:
 
 ### Phase 4 - Cross-Module Source Context
 
-Repos: `CivicSuite/civicrecords-ai`, `CivicSuite/civiccode`,
-`CivicSuite/civiczone`, `CivicSuite/civicclerk`
+Repos: `Townlight/civicrecords-ai`, `Townlight/civiccode`,
+`Townlight/civiczone`, `Townlight/civicclerk`
 
 Deliver:
 
@@ -143,7 +143,7 @@ Acceptance:
 
 ### Phase 5 - Demo Profile And Operator Docs
 
-Repos: `CivicSuite/civicsuite`, `CivicSuite/civicclerk`, supporting modules
+Repos: `Townlight/townlight`, `Townlight/civicclerk`, supporting modules
 
 Deliver:
 

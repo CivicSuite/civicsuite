@@ -19,7 +19,7 @@ Scope: `docs/index.html` rendered after CO-7 CivicCore freeze/spec-lockstep docu
 
 ## Results
 
-- Page title: `CivicSuite | municipal product suite roadmap`
+- Page title: `Townlight | municipal product suite roadmap`
 - Page title matches expected: true
 - Main heading: `An open-source municipal product suite that runs on the city's own hardware.`
 - Status snapshot visible: true
@@ -44,5 +44,5 @@ PASS
 The check used Python Playwright from this workspace and opened:
 
 ```text
-file:///C:/dev/Claude/CivicSuite/docs/index.html
+file:///C:/dev/Claude/Townlight/docs/index.html
 ```

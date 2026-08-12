@@ -1,6 +1,6 @@
 # Releasing the Windows-Local MSI
 
-The repeatable process for publishing a CivicSuite Windows-Local (`civicsuite-windows-local-vX.Y.Z`) beta release. Closes the "no release automation / hand-published MSI" and "lightweight vs annotated tag" gaps.
+The repeatable process for publishing a Townlight Windows-Local (`civicsuite-windows-local-vX.Y.Z`) beta release. Closes the "no release automation / hand-published MSI" and "lightweight vs annotated tag" gaps.
 
 ## Versioning
 
@@ -14,7 +14,7 @@ The repeatable process for publishing a CivicSuite Windows-Local (`civicsuite-wi
 3. **Verify the artifact hash** matches the build evidence (`CivicSuite-msi-evidence.txt` `SHA256=`).
 4. **Push an ANNOTATED tag** (not lightweight) so the release tag carries authorship/date metadata:
    ```
-   git tag -a civicsuite-windows-local-vX.Y.Z -m "CivicSuite Windows Local X.Y.Z"
+   git tag -a civicsuite-windows-local-vX.Y.Z -m "Townlight Windows Local X.Y.Z"
    git push origin civicsuite-windows-local-vX.Y.Z
    ```
 5. The **`release-windows-msi` workflow** fires on that tag: it downloads the MSI from the latest successful `main` build and attaches it (plus evidence) to the release, creating the release as a prerelease if it does not exist yet.

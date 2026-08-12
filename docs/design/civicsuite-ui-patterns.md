@@ -1,4 +1,4 @@
-# CivicSuite UI patterns — the guarded set
+# Townlight UI patterns — the guarded set
 
 This documents the cross-module interaction patterns the Tauri/WebView2 desktop
 app (`desktop/src/` + `desktop/src-tauri/src/`) has already converged on, and,

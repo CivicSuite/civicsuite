@@ -1,7 +1,7 @@
 # Browser QA - CivicParks Compatibility Update
 
 Date: 2026-04-28T04:45:01.478Z
-Target: file:///C:/dev/Claude/CivicSuite/docs/index.html
+Target: file:///C:/dev/Claude/Townlight/docs/index.html
 
 ## Viewports
 - desktop: 1440x1100, screenshot docs/browser-qa-civicparks-compat-desktop.png, body text length 18101

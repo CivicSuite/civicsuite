@@ -1,14 +1,14 @@
-# Browser QA - CivicSuite v0.21.0 Suite Sync
+# Browser QA - Townlight v0.21.0 Suite Sync
 
 Date: 2026-05-03
-Target: file:///C:/dev/Claude/civicsuite/docs/index.html
+Target: file:///C:/dev/Claude/townlight/docs/index.html
 
 ## Evidence
 
 - Desktop screenshot: docs/browser-qa-suite-sync-v0.21.0-desktop.png
 - Mobile screenshot: docs/browser-qa-suite-sync-v0.21.0-mobile.png
-- Desktop title: CivicSuite | municipal product suite roadmap
-- Mobile title: CivicSuite | municipal product suite roadmap
+- Desktop title: Townlight | municipal product suite roadmap
+- Mobile title: Townlight | municipal product suite roadmap
 - Desktop focus after first Tab: A skip-link Skip to main content
 - Mobile focus after first Tab: A skip-link Skip to main content
 - Console/page errors: 0

@@ -1,12 +1,12 @@
-# CivicSuite — project instructions for Claude Code
+# Townlight — project instructions for Claude Code
 
-CivicSuite is an open-source, local-first municipal operations suite. The umbrella repo at `CivicSuite/civicsuite` holds suite-level documentation, governance, compatibility tracking, the release ladder, and the verification scripts that keep 27 module repos in lockstep. Module products (CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicCode, CivicAccess, and 21+ more) live in sibling repos under the same GitHub org.
+Townlight is an open-source, local-first municipal operations suite. The umbrella repo at `Townlight/townlight` holds suite-level documentation, governance, compatibility tracking, the release ladder, and the verification scripts that keep 27 module repos in lockstep. Module products (CivicCore, CivicRecords AI, CivicClerk, CivicZone, CivicCode, CivicAccess, and 21+ more) live in sibling repos under the same GitHub org.
 
 Read this file before doing anything. The "Pipeline drafter notes" section is the load-bearing part for `agent-pipeline-claude:run` — it tells the manifest-drafter where everything lives.
 
 ## Pipeline drafter notes
 
-When `agent-pipeline-claude:run` produces a manifest for CivicSuite work, the drafter must pull from these sources (in this order):
+When `agent-pipeline-claude:run` produces a manifest for Townlight work, the drafter must pull from these sources (in this order):
 
 1. **`docs/CivicSuiteUnifiedSpec.md`** — canonical product spec. Always cite the relevant section number when the manifest invokes a closed architectural decision, a module's canonical scope, or a non-negotiable.
    - §4 — suite-wide non-negotiables (product / AI / sovereignty / docs+QA principles)
@@ -36,7 +36,7 @@ When `agent-pipeline-claude:run` produces a manifest for CivicSuite work, the dr
 
 ## Order of operations
 
-CivicSuite work flows: **branch from main → produce a manifest that names the target from `ACTIVE_WORK_QUEUE.md` (or a queued target with explicit promotion) → APPROVE in chat → pipeline runs research / plan / execute / verify / drift / critic → manager decision → admin-merge → update `ACTIVE_WORK_QUEUE.md` → close the handoff in `.agent-workflows/`.** No silent scope expansion. Findings dispatch by severity per the §22.5 overflow rule (Blocker stops work; Critical only if it fits; Major queues for next; Minor/Nit collects in `next-cleanup.md`).
+Townlight work flows: **branch from main → produce a manifest that names the target from `ACTIVE_WORK_QUEUE.md` (or a queued target with explicit promotion) → APPROVE in chat → pipeline runs research / plan / execute / verify / drift / critic → manager decision → admin-merge → update `ACTIVE_WORK_QUEUE.md` → close the handoff in `.agent-workflows/`.** No silent scope expansion. Findings dispatch by severity per the §22.5 overflow rule (Blocker stops work; Critical only if it fits; Major queues for next; Minor/Nit collects in `next-cleanup.md`).
 
 ## Tooling
 
@@ -48,20 +48,20 @@ CivicSuite work flows: **branch from main → produce a manifest that names the 
 - **AI runtime:** Ollama for LLMs, faster-whisper (CTranslate2) for ASR.
 - **Frontend:** React 18 + Vite + TypeScript + Tailwind + shadcn/ui (per unified spec §5.2).
 - **Documentation rendering:** MkDocs Material (docs site); Pandoc (USER-MANUAL.pdf / .docx).
-- **Commit convention:** Conventional Commits + DCO sign-off (every commit ends with `Signed-off-by: Name <email>`). For CivicSuite commits, Scott Converse is the primary author. The `Signed-off-by:` trailer credits whoever did the work, for example `Signed-off-by: Codex <codex@openai.com>` when Codex implemented. Do not use a `Co-Authored-By:` trailer; it is not the CivicSuite convention.
+- **Commit convention:** Conventional Commits + DCO sign-off (every commit ends with `Signed-off-by: Name <email>`). For Townlight commits, Scott Converse is the primary author. The `Signed-off-by:` trailer credits whoever did the work, for example `Signed-off-by: Codex <codex@openai.com>` when Codex implemented. Do not use a `Co-Authored-By:` trailer; it is not the Townlight convention.
 - **Pre-commit hooks:** ruff, mypy, trailing-whitespace, end-of-file-fixer, conventional-commit-message check.
-- **License header:** `# SPDX-License-Identifier: Apache-2.0` on every source file; `# Copyright (c) The CivicSuite Authors`.
+- **License header:** `# SPDX-License-Identifier: Apache-2.0` on every source file; `# Copyright (c) The Townlight Authors`.
 
 ## Local workspace root
 
-Active CivicSuite work must use a local, non-cloud-synced workspace root. The current Windows root is:
+Active Townlight work must use a local, non-cloud-synced workspace root. The current Windows root is:
 
 `C:\dev\Codex`
 
 (The former `C:\dev\Claude` root is historical — `STATUS.md` already records those references as
 historical, and the current machine's new-machine handoff provisions repos under `C:\dev\Codex`.)
 
-Do not create, clone, write, branch, commit, push, or run CivicSuite product workflows from cloud-synced user-profile folders. If evidence or handoff text points at an older cloud-synced workspace path, repair the reference before relying on it for current work.
+Do not create, clone, write, branch, commit, push, or run Townlight product workflows from cloud-synced user-profile folders. If evidence or handoff text points at an older cloud-synced workspace path, repair the reference before relying on it for current work.
 
 ## Non-negotiables
 
@@ -80,4 +80,4 @@ The maintainer-level enforcement of §4 is real, not aspirational.
 
 Per `docs/process/` standards (PR #125 added this rule), every push that touches code, docs, or status artifacts runs a hostile 5-lens self-audit on the actual diff: Engineering (grep every claim/path/SHA), UX (read every user-visible string cold; respect the UI/UX prototype), Tests (real assertions not just exercise), Docs (CHANGELOG/HANDOFF/spec moved where they should), QA (cross-file consistency, no forbidden status words). Report format goes in the push body.
 
-This rule is the implementation-side counterpart to the cross-agent verification protocol at `C:\dev\Claude\CIVICSUITE_AUDIT_PROTOCOL.md`.
+This rule is the implementation-side counterpart to the cross-agent verification protocol at `C:\dev\Claude\TOWNLIGHT_AUDIT_PROTOCOL.md`.

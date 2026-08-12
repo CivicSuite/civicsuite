@@ -1,6 +1,6 @@
 # {{MODULE_DISPLAY_NAME}}
 
-{{MODULE_DISPLAY_NAME}} is a CivicSuite module scaffold. Replace this text with the real municipal workflow, current release status, and installation path before the first PR.
+{{MODULE_DISPLAY_NAME}} is a Townlight module scaffold. Replace this text with the real municipal workflow, current release status, and installation path before the first PR.
 
 ## Status
 
@@ -18,5 +18,5 @@ python -m venv .venv
 
 ## Release Rules
 
-Do not tag `v1.0.0` until the module is installable through CivicSuite, browser-tested, documented, and independently audited.
+Do not tag `v1.0.0` until the module is installable through Townlight, browser-tested, documented, and independently audited.
 
