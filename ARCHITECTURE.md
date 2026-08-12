@@ -2,7 +2,7 @@
 
 **Last verified:** 2026-07-02
 
-This document is the suite-level architecture reference. For detailed per-module architecture, see each module's `docs/`. For the architectural intent and roadmap, see `docs/TownlightUnifiedSpec.md`. For the current shipped reality, see [STATUS.md](STATUS.md).
+This document is the suite-level architecture reference. For detailed per-module architecture, see each module's `docs/`. For the architectural intent and roadmap, see `docs/CivicSuiteUnifiedSpec.md`. For the current shipped reality, see [STATUS.md](STATUS.md).
 
 ---
 
@@ -305,7 +305,7 @@ These are explicitly out of scope for the suite:
 - **Vendor write-back without audit.** All write-back connectors must wait until read paths are stable and auditable.
 - **Auto-determination.** No auto-release, auto-denial, auto-redaction, auto-enforcement, or auto-codification. AI drafts; humans decide.
 
-These are documented at length in `specs/01_catalog.md` §16–20 and `docs/TownlightUnifiedSpec.md` §3.
+These are documented at length in `specs/01_catalog.md` §16–20 and `docs/CivicSuiteUnifiedSpec.md` §3.
 
 ---
 

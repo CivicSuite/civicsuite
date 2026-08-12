@@ -4,7 +4,7 @@ Use this checklist before creating or promoting any new Townlight module repo. T
 
 ## 1. Authority Read
 
-- Read `docs/TownlightUnifiedSpec.md` and the module's spec section.
+- Read `docs/CivicSuiteUnifiedSpec.md` and the module's spec section.
 - Confirm the module tier in `ARCHITECTURE.md` and `CONSISTENCY.md`.
 - Confirm whether the work is a new module, a planned spec-only module becoming real, or a replacement for an existing repo.
 - Do not use old chat, old release labels, or stale queue files as authority when they conflict with the spec or release-recovery docs.
@@ -62,7 +62,7 @@ Update the umbrella repo in the same release train or a dedicated suite-truth PR
 - `CHANGELOG.md`
 - `CONSISTENCY.md`
 - `ARCHITECTURE.md`
-- `docs/TownlightUnifiedSpec.md` shipped-state notes, if any
+- `docs/CivicSuiteUnifiedSpec.md` shipped-state notes, if any
 
 The module is not `v1.0.0` if it is not installable or selectable through the appropriate Townlight installer path.
 

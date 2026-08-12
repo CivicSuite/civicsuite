@@ -4,7 +4,7 @@ Status: active design control for Windows Local 1.0
 Applies to: Townlight desktop shell, installer, first-run, city-core modules, and future module manager
 Source anchors:
 
-- `docs/TownlightUnifiedSpec.md`
+- `docs/CivicSuiteUnifiedSpec.md`
 - `docs/design/ui-ux-prototype/README.md`
 - `docs/design/ui-ux-prototype/*.jsx`
 - `docs/design/ui-ux-prototype/styles.css`

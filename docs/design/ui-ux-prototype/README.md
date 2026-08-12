@@ -6,7 +6,7 @@ It is a runnable React + Babel single-page prototype — no build step required.
 
 ## Why it lives here
 
-The unified product spec at `docs/TownlightUnifiedSpec.md` describes architectural intent — module catalog, tier structure, data models, principles. It does not describe the **visual** product: what each screen looks like, how density and color work, what the staff/resident/admin surface split feels like, what the audit drawer reveals, how the ⌘K palette behaves.
+The unified product spec at `docs/CivicSuiteUnifiedSpec.md` describes architectural intent — module catalog, tier structure, data models, principles. It does not describe the **visual** product: what each screen looks like, how density and color work, what the staff/resident/admin surface split feels like, what the audit drawer reveals, how the ⌘K palette behaves.
 
 This prototype is that visual spec. Any pull request that touches user-visible code or copy must respect what's here unless the PR explicitly proposes a design change with rationale.
 

@@ -86,7 +86,7 @@ If you are orienting yourself for the first time, read in this order:
 3. [USER-MANUAL.md](USER-MANUAL.md)
 4. [docs/release-recovery-status.md](docs/release-recovery-status.md) — what "provisional" actually means
 5. [CHARTER.md](CHARTER.md) — the engineering principles
-6. [docs/TownlightUnifiedSpec.md](docs/TownlightUnifiedSpec.md) — architectural intent (note: per-module status lines in the spec are stale; use STATUS.md for current truth)
+6. [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md) — architectural intent (note: per-module status lines in the spec are stale; use STATUS.md for current truth)
 7. [docs/compatibility/index.md](docs/compatibility/index.md) — module ↔ civiccore version pairings (this is the single source of truth for version pairings)
 
 ## Repo Map
@@ -149,7 +149,7 @@ The `Townlight` GitHub org has two active owners (`scottconverse` and `APirateMo
 - Roadmap: [docs/roadmap/index.md](docs/roadmap/index.md)
 - Governance: [docs/governance/index.md](docs/governance/index.md)
 - Compatibility matrix: [docs/compatibility/index.md](docs/compatibility/index.md)
-- Unified spec (architectural intent only — see STATUS.md for current truth): [docs/TownlightUnifiedSpec.md](docs/TownlightUnifiedSpec.md)
+- Unified spec (architectural intent only — see STATUS.md for current truth): [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 - User manual: [USER-MANUAL.md](USER-MANUAL.md)
 
 ## Licensing

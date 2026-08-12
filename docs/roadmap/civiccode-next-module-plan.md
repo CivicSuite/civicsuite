@@ -32,7 +32,7 @@ but they are never authoritative legal advice.
   mock-city codifier contracts, and staff-controlled codifier live-sync readiness.
 - CivicCode still does not ship legal advice, live LLM calls, bundled vendor
   credentials, CivicAccess runtime integration, or automatic ordinance codification.
-- The authoritative requirements live in `docs/TownlightUnifiedSpec.md`
+- The authoritative requirements live in `docs/CivicSuiteUnifiedSpec.md`
   section 11 and `specs/01_catalog.md` under "CivicCode - Municipal Code &
   Ordinance Access."
 - CivicClerk v0.1.0 already defines ordinance/resolution handoff concepts, and
@@ -116,7 +116,7 @@ metadata and migration chain.
    landing page, user manual, and seed discussion posts.
 3. Add `AGENTS.md` operating contract for CivicCode with the same test-first,
    docs-first, browser-QA gate used by CivicClerk.
-4. Preserve Milestone 0 reconciliation against `docs/TownlightUnifiedSpec.md`,
+4. Preserve Milestone 0 reconciliation against `docs/CivicSuiteUnifiedSpec.md`,
    suite ADRs, and the catalog CivicCode spec.
 5. Queue ADRs for official-source precedence, codifier integration strategy,
    public disclaimer wording, and CivicClerk handoff contract.

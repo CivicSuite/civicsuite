@@ -8,7 +8,7 @@ Read this file before doing anything. The "Pipeline drafter notes" section is th
 
 When `agent-pipeline-claude:run` produces a manifest for Townlight work, the drafter must pull from these sources (in this order):
 
-1. **`docs/TownlightUnifiedSpec.md`** — canonical product spec. Always cite the relevant section number when the manifest invokes a closed architectural decision, a module's canonical scope, or a non-negotiable.
+1. **`docs/CivicSuiteUnifiedSpec.md`** — canonical product spec. Always cite the relevant section number when the manifest invokes a closed architectural decision, a module's canonical scope, or a non-negotiable.
    - §4 — suite-wide non-negotiables (product / AI / sovereignty / docs+QA principles)
    - §5 — standard module architecture (§5.1 backend, §5.2 frontend, §5.3 AI, §5.4 data+search, §5.5 connectors)
    - §8 CivicRecords, §9 CivicClerk, §10 CivicZone, §11 CivicCode, §12 CivicAccess — canonical scopes
@@ -65,7 +65,7 @@ Do not create, clone, write, branch, commit, push, or run Townlight product work
 
 ## Non-negotiables
 
-Read `docs/TownlightUnifiedSpec.md` §4 before any work that touches:
+Read `docs/CivicSuiteUnifiedSpec.md` §4 before any work that touches:
 
 - User-facing surfaces (§4.1) — design every state (loading, success-with-data, empty, error, partial); UI/UX prototype is authoritative.
 - AI artifacts (§4.2) — operator-approval-before-publish, refusal-on-uncertainty.

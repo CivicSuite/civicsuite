@@ -10,7 +10,7 @@ Last verified: June 27, 2026.
 
 | Claim | Value | Source | Verified |
 |---|---|---|---|
-| Total product modules in catalog | **27** | `docs/TownlightUnifiedSpec.md` module headings, `installer/modules.json`, and live `Townlight` GitHub org repo list | verified |
+| Total product modules in catalog | **27** | `docs/CivicSuiteUnifiedSpec.md` module headings, `installer/modules.json`, and live `Townlight` GitHub org repo list | verified |
 | Shared platform modules | **1** (`CivicCore`) | `specs/01_catalog.md` Tier 0 and `specs/02_CivicCore.md` | verified |
 | Total tiers in catalog | **7** (Tier 0 through Tier 6) | `specs/01_catalog.md` section headers 7–13 | ✅ |
 | CivicCore extraction phases | **6** (Phase 0 through Phase 5) | `specs/02_CivicCore.md` §12 ("The six phases") | ✅ |
@@ -50,7 +50,7 @@ The product-module total is 27. `CivicCore` is the shared platform prerequisite 
 | **Product total** | | **27** | |
 | **Platform + product total** | | **28** | Includes CivicCore plus all product modules |
 
-Source: `docs/TownlightUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `Townlight` GitHub org repo list checked on 2026-05-23.
+Source: `docs/CivicSuiteUnifiedSpec.md` Tier 0 through Tier 6 module headings, `installer/modules.json`, and the live `Townlight` GitHub org repo list checked on 2026-05-23.
 
 ---
 

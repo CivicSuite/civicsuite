@@ -12,7 +12,7 @@ The next phase is not "build another module." The next phase is making the suite
 
 ## Governing Rules
 
-This plan follows the canonical rules in `docs/TownlightUnifiedSpec.md`:
+This plan follows the canonical rules in `docs/CivicSuiteUnifiedSpec.md`:
 
 - Staff workflows come before flashy resident features.
 - AI drafts; humans decide.

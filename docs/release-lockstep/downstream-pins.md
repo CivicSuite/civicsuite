@@ -230,7 +230,7 @@ artifact, not a procurement-ready or city-ready release.
 
 The matching umbrella truth files are:
 
-- `docs/TownlightUnifiedSpec.md`
+- `docs/CivicSuiteUnifiedSpec.md`
 - `docs/release-recovery-status.md`
 - `docs/compatibility/index.md`
 - `scripts/verify-suite-state.py`

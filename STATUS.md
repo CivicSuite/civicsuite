@@ -2,7 +2,7 @@
 
 **Last verified:** 2026-07-02 (civicsuite-windows-local-v1.0.2)
 **Program:** As of 2026-06-10 all module work runs under the [full-suite finishing program](docs/roadmap/full-suite-program.md). Modules reach done only through the clean-VM evidence gate defined there. The active city-core path is the portable-native Windows Local runtime of [ADR-0008](docs/architecture/ADR-0008-portable-native-windows-runtime.md) and [ADR-0009](docs/architecture/ADR-0009-postgres-backed-queue-windows-profile.md). Module labels below are unchanged by program adoption; promotions happen only with evidence kits.
-**Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/TownlightUnifiedSpec.md](docs/TownlightUnifiedSpec.md)
+**Companion to:** [docs/release-recovery-status.md](docs/release-recovery-status.md), [docs/compatibility/index.md](docs/compatibility/index.md), and [docs/CivicSuiteUnifiedSpec.md](docs/CivicSuiteUnifiedSpec.md)
 
 This is the plain-English operating truth for Townlight. The unified spec describes architectural intent. This file describes release reality.
 
