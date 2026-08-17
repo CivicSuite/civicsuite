@@ -189,6 +189,10 @@ jobs:
         working-directory: civicsuite/desktop
         run: npm ci
 
+      - name: Audit desktop dependencies
+        working-directory: civicsuite/desktop
+        run: npm audit --audit-level=moderate
+
       - name: Run desktop static contract checks
         working-directory: civicsuite/desktop
         run: npm test

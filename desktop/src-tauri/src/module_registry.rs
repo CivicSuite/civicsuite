@@ -1016,6 +1016,26 @@ mod tests {
     }
 
     #[test]
+    fn records_beta_profile_selects_the_dependency_closed_records_system() {
+        with_temp_state_dir(|root| {
+            let selection = persist_profile_selection("records-beta")
+                .expect("records-beta profile selection persists");
+            assert_eq!(selection.profile_label, "Townlight Records");
+            assert_eq!(
+                selection.installed_module_ids,
+                vec![
+                    "civiccore".to_string(),
+                    "civicrecords-ai".to_string(),
+                    "civicnotice".to_string(),
+                    "civicaccess".to_string(),
+                ]
+            );
+            assert_eq!(selection.enabled_module_ids, selection.installed_module_ids);
+            assert!(root.join("config").join("module-selection.json").is_file());
+        });
+    }
+
+    #[test]
     fn custom_selection_locks_civiccore_and_resolves_ready_modules() {
         with_temp_state_dir(|root| {
             let selection =
@@ -1154,7 +1174,7 @@ mod tests {
     }
 
     #[test]
-    fn civicnotice_installs_with_clerk_dependency_from_custom_profile() {
+    fn civicnotice_installs_with_core_dependency_from_custom_profile() {
         with_temp_state_dir(|_| {
             persist_profile_selection("minimal").expect("minimal profile persists");
             let installed =
@@ -1164,7 +1184,6 @@ mod tests {
                 installed.installed_module_ids,
                 vec![
                     "civiccore".to_string(),
-                    "civicclerk".to_string(),
                     "civicnotice".to_string()
                 ]
             );

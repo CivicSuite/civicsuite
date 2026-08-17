@@ -7,7 +7,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "verify-module-manifest-contract.py"
 REGISTRY = ROOT / "installer" / "modules.json"
@@ -15,7 +14,9 @@ CONTRACT = ROOT / "installer" / "module-manifest-contract.json"
 
 
 def _load_verifier():
-    spec = importlib.util.spec_from_file_location("verify_module_manifest_contract", SCRIPT)
+    spec = importlib.util.spec_from_file_location(
+        "verify_module_manifest_contract", SCRIPT
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -51,12 +52,24 @@ def test_city_core_profile_keeps_windows_local_1_modules_in_order() -> None:
     assert profiles["custom"]["modules"] == []
 
 
+def test_records_beta_profile_is_dependency_closed_without_clerk() -> None:
+    data = _registry()
+    profiles = {profile["id"]: profile for profile in data["profiles"]}
+    modules = {module["id"]: module for module in data["modules"]}
+
+    assert profiles["records-beta"]["modules"] == [
+        "civiccore",
+        "civicrecords-ai",
+        "civicnotice",
+        "civicaccess",
+    ]
+    assert modules["civicnotice"]["dependencies"] == ["civiccore"]
+
+
 def test_planned_modules_without_runtime_repos_are_not_selectable() -> None:
     data = _registry()
     planned = {
-        module["id"]: module
-        for module in data["modules"]
-        if module.get("repo") is None
+        module["id"]: module for module in data["modules"] if module.get("repo") is None
     }
     assert planned.keys() == {"civicregwatch", "civicapi"}
     for module in planned.values():
@@ -76,7 +89,9 @@ def test_promoted_ready_module_requires_version_and_source_commit() -> None:
 
     errors = verifier.validate_manifest_data(data, contract)
 
-    assert any("civiccode missing required field source_commit" in error for error in errors)
+    assert any(
+        "civiccode missing required field source_commit" in error for error in errors
+    )
 
 
 def test_installed_module_release_requires_source_commit() -> None:
@@ -91,4 +106,6 @@ def test_installed_module_release_requires_source_commit() -> None:
 
     errors = verifier.validate_manifest_data(data, contract)
 
-    assert any("civicnotice missing required field source_commit" in error for error in errors)
+    assert any(
+        "civicnotice missing required field source_commit" in error for error in errors
+    )
