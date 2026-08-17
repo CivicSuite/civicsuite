@@ -224,7 +224,7 @@ Generated from `installer/modules.json`.
 | CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `e2208827b660` | `v1_7_3_city_core_release_car` |
 | CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `fa1874edfe97` | `v1_0_4_city_core_release_car` |
 | CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
-| CivicNotice | 0.2.0 | public notice workflow | `civiccore`, `civicclerk` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
+| CivicNotice | 0.2.0 | public notice workflow | `civiccore` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
 | CivicAccess | 0.4.0 | accessibility + records-ready export | `civiccore` | `7b24516fd895` | `v0_4_0_city_core_release_car` |
 
 Disabled profiles:
