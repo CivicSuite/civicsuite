@@ -145,6 +145,13 @@ jobs:
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: |
+          foreach ($requiredName in @("AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET", "AZURE_TENANT_ID")) {
+            $requiredValue = [Environment]::GetEnvironmentVariable($requiredName)
+            if ([string]::IsNullOrWhiteSpace($requiredValue)) {
+              throw "Required GitHub Actions secret $requiredName is missing or empty; refusing to start the signed MSI build."
+            }
+          }
+
           $body = @{
             client_id     = $env:AZURE_CLIENT_ID
             client_secret = $env:AZURE_CLIENT_SECRET
