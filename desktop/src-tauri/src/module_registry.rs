@@ -1182,10 +1182,7 @@ mod tests {
             assert_eq!(installed.profile_id, "custom");
             assert_eq!(
                 installed.installed_module_ids,
-                vec![
-                    "civiccore".to_string(),
-                    "civicnotice".to_string()
-                ]
+                vec!["civiccore".to_string(), "civicnotice".to_string()]
             );
             assert_eq!(installed.enabled_module_ids, installed.installed_module_ids);
 
