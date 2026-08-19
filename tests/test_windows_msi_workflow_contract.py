@@ -52,6 +52,7 @@ def test_lifecycle_consumes_and_verifies_the_same_classified_artifact() -> None:
     assert "Unsigned CI MSI filename is not visibly marked UNSIGNED" in workflow
     assert "Evidence does not classify the MSI as UNSIGNED" in workflow
     assert "Signed lifecycle lane received an unexpected signer" in workflow
+    assert workflow.count('-replace "`r`n?", "`n"') >= 1
 
 
 def test_release_accepts_only_a_signed_artifact_for_the_tag_commit() -> None:
@@ -67,4 +68,13 @@ def test_release_accepts_only_a_signed_artifact_for_the_tag_commit() -> None:
     assert "signtool.FullName verify /pa /v" in workflow
     assert "SignatureState=Valid" in workflow
     assert "PublicationAllowed=true" in workflow
+    assert '-replace "`r`n?", "`n"' in workflow
     assert "civicsuite-windows-local-msi -D" not in workflow
+
+
+def test_signing_comments_do_not_repeat_the_false_subscription_claim() -> None:
+    workflow = _read(BUILD_WORKFLOW)
+
+    assert "has no subscription" not in workflow
+    assert "no subscription to federate" not in workflow
+    assert "future OIDC migration" in workflow

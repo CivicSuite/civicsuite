@@ -70,7 +70,7 @@ jobs:
 
           $evidenceFiles = @(Get-ChildItem -LiteralPath ./msi-artifact -Filter *evidence*.txt -File)
           if ($evidenceFiles.Count -ne 1) { throw "Expected exactly one signed MSI evidence file; found $($evidenceFiles.Count)." }
-          $evidence = Get-Content -Raw -LiteralPath $evidenceFiles[0].FullName
+          $evidence = (Get-Content -Raw -LiteralPath $evidenceFiles[0].FullName) -replace "`r`n?", "`n"
           $signedSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $msi.FullName).Hash.ToLowerInvariant()
           if ($evidence -notmatch "(?m)^SHA256=$signedSha$") { throw "Signed MSI hash does not match its evidence file." }
           if ($evidence -notmatch '(?m)^SignatureState=Valid$') { throw "Evidence does not classify the MSI signature as Valid." }

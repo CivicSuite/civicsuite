@@ -14,9 +14,9 @@ on:
 
 permissions:
   contents: read
-  # No id-token/OIDC: this org's signing service principal has no subscription to
-  # federate against, so signing authenticates with a client secret passed straight
-  # to azure/artifact-signing-action (proven pattern; see the Sign step below).
+  # The proven signing path currently uses a client secret passed directly to
+  # azure/artifact-signing-action. A future OIDC migration must first verify that
+  # the action supports an ambient workload-identity credential.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -156,9 +156,9 @@ jobs:
       #
       # When publication signing is explicitly requested, fail FAST on broken
       # credentials before the ~1h build, not after it.
-      # No azure/login / OIDC: the signing service principal has no subscription to
-      # attach to, so we prove the client secret can mint a Trusted Signing data-plane
-      # token directly -- the exact auth azure/artifact-signing-action uses post-build.
+      # The current client-secret flow does not use azure/login/OIDC. Prove the
+      # credential can mint a Trusted Signing data-plane token directly -- the
+      # exact auth azure/artifact-signing-action uses post-build.
       # A wrong/expired secret dies here in ~2s instead of after the full build.
       - name: Azure signing-credential preflight (fail fast)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
@@ -260,9 +260,8 @@ jobs:
       # Azure holds the certificate in its HSM and performs the signing; nothing is
       # signed locally and no .pfx ever touches the runner. Must run on windows-latest,
       # AFTER the MSI is built and BEFORE evidence/checksums (signing changes the hash).
-      # Auth = service-principal client secret passed DIRECTLY to the action (no
-      # azure/login: the SP has no subscription to federate against). This is the
-      # pattern proven end-to-end on the sibling repos' signing runs.
+      # Auth = service-principal client secret passed DIRECTLY to the action. This
+      # is the currently proven pattern; OIDC remains a separately verified migration.
       # FAIL-CLOSED: the config guard + two independent verification paths below
       # error the publication-signing run if the MSI is not validly signed by
       # CN=Scott Converse. Routine CI takes the separate, explicitly UNSIGNED path.
@@ -516,7 +515,7 @@ jobs:
           $evidenceFiles = @(Get-ChildItem -LiteralPath "msi-artifact" -Filter "*evidence*.txt" -File -Recurse)
           if ($evidenceFiles.Count -ne 1) { throw "Expected exactly one MSI evidence file; found $($evidenceFiles.Count)." }
           $msi = $msis[0]
-          $evidence = Get-Content -Raw -LiteralPath $evidenceFiles[0].FullName
+          $evidence = (Get-Content -Raw -LiteralPath $evidenceFiles[0].FullName) -replace "`r`n?", "`n"
           $signature = Get-AuthenticodeSignature -LiteralPath $msi.FullName
 
           if ($env:EXPECTED_SIGNATURE_STATE -eq "UNSIGNED") {
