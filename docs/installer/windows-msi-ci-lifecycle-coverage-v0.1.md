@@ -8,6 +8,26 @@ runner. This closes the verifiable subset of audit finding **T-C2** ("Windows CI
 never installs the MSI; full lifecycle is Linux-only against the legacy 0.1.x
 archive").
 
+## Artifact and publication boundary
+
+Routine pull-request and `main` CI deliberately builds and tests an **unsigned**
+installer. The Actions artifact is named
+`civicsuite-windows-local-msi-UNSIGNED`, the MSI filename ends in
+`-UNSIGNED.msi`, and the accompanying evidence records
+`SignatureState=UNSIGNED` and `PublicationAllowed=false`. This keeps normal
+engineering validation independent of Azure credentials while making the
+artifact's non-release status visible at every handoff.
+
+Publication signing is a separate, explicit manual gate. A `main` dispatch with
+`sign_for_publication=true` signs through Azure Trusted Signing, requires a
+valid Authenticode signature from `CN=Scott Converse` with a timestamp, and
+runs this same lifecycle job against the signed bytes. Only that path emits
+`civicsuite-windows-local-msi-SIGNED` with `PublicationAllowed=true` evidence.
+The release workflow accepts only that exact artifact from a successful manual
+`main` run whose head SHA equals the release tag, then recomputes its hash and
+re-verifies Authenticode before upload. An unsigned artifact cannot satisfy the
+release contract.
+
 ## What the Windows MSI lifecycle job verifies (runs in CI)
 
 | Lifecycle stage | How it is exercised | Pass signal |

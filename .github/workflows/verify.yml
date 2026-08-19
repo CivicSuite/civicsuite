@@ -83,7 +83,7 @@ jobs:
       - name: Verify canonical Townlight suite state
         run: |
           python scripts/check-suite-state.py
-          python -m pytest tests/test_suite_state.py tests/test_module_manifest_contract.py -q
+          python -m pytest tests/test_suite_state.py tests/test_module_manifest_contract.py tests/test_windows_msi_workflow_contract.py -q
 
       - name: Install desktop dependencies for security audit
         working-directory: desktop

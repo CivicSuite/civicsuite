@@ -2,6 +2,12 @@ name: desktop-windows-msi
 
 on:
   workflow_dispatch:
+    inputs:
+      sign_for_publication:
+        description: "Sign and verify the MSI for publication (manual main-branch release gate only)"
+        required: true
+        type: boolean
+        default: false
   push:
     branches: [main]
   pull_request:
@@ -85,6 +91,9 @@ jobs:
     if: needs.detect-desktop-changes.outputs.relevant == 'true'
     runs-on: windows-latest
     timeout-minutes: 180
+    outputs:
+      artifact_name: ${{ steps.artifact_mode.outputs.artifact_name }}
+      signature_state: ${{ steps.artifact_mode.outputs.signature_state }}
     steps:
       - name: Check out CivicSuite
         uses: actions/checkout@v5
@@ -133,12 +142,26 @@ jobs:
           ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
           path: civicaccess
 
-      # Fail FAST on broken signing credentials before the ~1h build, not after it.
+      - name: Validate publication-signing context
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
+        shell: pwsh
+        run: |
+          if ("${{ github.ref }}" -ne "refs/heads/main") {
+            throw "Publication signing is permitted only for a manual dispatch of the main branch."
+          }
+
+      # Publication signing is an explicit manual gate. Pull requests, ordinary
+      # main pushes, and manual runs with the input left false build and test a
+      # clearly marked UNSIGNED MSI without requiring Azure credentials.
+      #
+      # When publication signing is explicitly requested, fail FAST on broken
+      # credentials before the ~1h build, not after it.
       # No azure/login / OIDC: the signing service principal has no subscription to
       # attach to, so we prove the client secret can mint a Trusted Signing data-plane
       # token directly -- the exact auth azure/artifact-signing-action uses post-build.
       # A wrong/expired secret dies here in ~2s instead of after the full build.
       - name: Azure signing-credential preflight (fail fast)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
         shell: pwsh
         env:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -148,7 +171,7 @@ jobs:
           foreach ($requiredName in @("AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET", "AZURE_TENANT_ID")) {
             $requiredValue = [Environment]::GetEnvironmentVariable($requiredName)
             if ([string]::IsNullOrWhiteSpace($requiredValue)) {
-              throw "Required GitHub Actions secret $requiredName is missing or empty; refusing to start the signed MSI build."
+              throw "Required GitHub Actions secret $requiredName is missing or empty; refusing publication signing."
             }
           }
 
@@ -233,25 +256,26 @@ jobs:
         working-directory: civicsuite/desktop
         run: npm run tauri -- build
 
-      # --- Authenticode code-signing via Azure Trusted Signing (service principal) ---
+      # --- Explicit publication-signing gate ---------------------------------------
       # Azure holds the certificate in its HSM and performs the signing; nothing is
       # signed locally and no .pfx ever touches the runner. Must run on windows-latest,
       # AFTER the MSI is built and BEFORE evidence/checksums (signing changes the hash).
       # Auth = service-principal client secret passed DIRECTLY to the action (no
       # azure/login: the SP has no subscription to federate against). This is the
       # pattern proven end-to-end on the sibling repos' signing runs.
-      # FAIL-CLOSED: the config guard + `signtool verify` below error the build if the
-      # MSI is not actually signed (a wrong account/profile name makes Azure silently
-      # no-op), so an unsigned MSI can never be hashed, uploaded, or released.
+      # FAIL-CLOSED: the config guard + two independent verification paths below
+      # error the publication-signing run if the MSI is not validly signed by
+      # CN=Scott Converse. Routine CI takes the separate, explicitly UNSIGNED path.
       - name: Locate built MSI
         id: locate_msi
         shell: pwsh
         run: |
           $msi = Get-ChildItem -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
-          if (-not $msi) { throw "CivicSuite Windows Local MSI was not produced; nothing to sign." }
+          if (-not $msi) { throw "CivicSuite Windows Local MSI was not produced." }
           "path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Sign MSI (Azure Trusted Signing)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
         uses: azure/artifact-signing-action@v2
         with:
           endpoint: "https://wcus.codesigning.azure.net"
@@ -266,6 +290,7 @@ jobs:
           timestamp-digest: "SHA256"
 
       - name: Verify signature (fail-closed - never ship unsigned)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
         shell: pwsh
         run: |
           $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
@@ -275,20 +300,62 @@ jobs:
           & $signtool.FullName verify /pa /v "${{ steps.locate_msi.outputs.path }}"
           if ($LASTEXITCODE -ne 0) { throw "Signature verification FAILED - the MSI is not validly signed. Refusing to publish." }
 
+          $signature = Get-AuthenticodeSignature -LiteralPath "${{ steps.locate_msi.outputs.path }}"
+          if ($signature.Status -ne "Valid") { throw "Get-AuthenticodeSignature did not return Valid." }
+          if ($signature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=Scott Converse(,|$)') {
+            throw "Unexpected Authenticode signer; refusing to publish."
+          }
+          if (-not $signature.TimeStamperCertificate) { throw "Signed MSI has no timestamp certificate." }
+
+      - name: Classify and label MSI artifact
+        id: artifact_mode
+        shell: pwsh
+        env:
+          PUBLICATION_SIGNING: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
+          MSI_PATH: ${{ steps.locate_msi.outputs.path }}
+        run: |
+          $msi = Get-Item -LiteralPath $env:MSI_PATH
+          $signature = Get-AuthenticodeSignature -LiteralPath $msi.FullName
+          if ($env:PUBLICATION_SIGNING -eq "true") {
+            if ($signature.Status -ne "Valid") { throw "Publication MSI is not validly signed." }
+            if ($signature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=Scott Converse(,|$)') {
+              throw "Publication MSI signer is not CN=Scott Converse."
+            }
+            "artifact_name=civicsuite-windows-local-msi-SIGNED" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            "signature_state=Valid" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            "path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            exit 0
+          }
+
+          if ($signature.Status -ne "NotSigned") {
+            throw "Routine CI MSI signature state is $($signature.Status), not NotSigned; refusing to label it UNSIGNED."
+          }
+          $unsignedName = "$($msi.BaseName)-UNSIGNED$($msi.Extension)"
+          $unsignedPath = Join-Path $msi.DirectoryName $unsignedName
+          Move-Item -LiteralPath $msi.FullName -Destination $unsignedPath
+          "artifact_name=civicsuite-windows-local-msi-UNSIGNED" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "signature_state=UNSIGNED" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "path=$unsignedPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Write MSI evidence
         shell: pwsh
+        env:
+          MSI_PATH: ${{ steps.artifact_mode.outputs.path }}
+          SIGNATURE_STATE: ${{ steps.artifact_mode.outputs.signature_state }}
         run: |
-          $msi = Get-ChildItem -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
-          if (-not $msi) {
-            throw "CivicSuite Windows Local MSI was not produced."
-          }
+          $msi = Get-Item -LiteralPath $env:MSI_PATH
           $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $msi.FullName
+          $publicationAllowed = if ($env:SIGNATURE_STATE -eq "Valid") { "true" } else { "false" }
           $evidence = @(
             "CivicSuite Windows Local MSI build evidence"
             "GeneratedAtUtc=$((Get-Date).ToUniversalTime().ToString('o'))"
             "File=$($msi.Name)"
             "Bytes=$($msi.Length)"
             "SHA256=$($hash.Hash.ToLowerInvariant())"
+            "SignatureState=$env:SIGNATURE_STATE"
+            "PublicationAllowed=$publicationAllowed"
+            "WorkflowEvent=${{ github.event_name }}"
+            "WorkflowRun=${{ github.run_id }}"
             "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930"
             "SameVersionMajorUpgrade=true"
             "InstallerBundle=msi"
@@ -298,10 +365,21 @@ jobs:
           )
           $evidence | Set-Content -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi/CivicSuite-msi-evidence.txt" -Encoding UTF8
 
-      - name: Upload Windows Local MSI
+      - name: Upload UNSIGNED Windows Local MSI for private CI testing
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.sign_for_publication) }}
         uses: actions/upload-artifact@v4
         with:
-          name: civicsuite-windows-local-msi
+          name: civicsuite-windows-local-msi-UNSIGNED
+          path: |
+            civicsuite/desktop/src-tauri/target/release/bundle/msi/*.msi
+            civicsuite/desktop/src-tauri/target/release/bundle/msi/*evidence*.txt
+          retention-days: 7
+
+      - name: Upload SIGNED Windows Local MSI for publication gate
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.sign_for_publication }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: civicsuite-windows-local-msi-SIGNED
           path: |
             civicsuite/desktop/src-tauri/target/release/bundle/msi/*.msi
             civicsuite/desktop/src-tauri/target/release/bundle/msi/*evidence*.txt
@@ -425,8 +503,37 @@ jobs:
       - name: Download built Windows Local MSI
         uses: actions/download-artifact@v4
         with:
-          name: civicsuite-windows-local-msi
+          name: ${{ needs.windows-local-msi.outputs.artifact_name }}
           path: msi-artifact
+
+      - name: Verify MSI artifact classification before install
+        shell: pwsh
+        env:
+          EXPECTED_SIGNATURE_STATE: ${{ needs.windows-local-msi.outputs.signature_state }}
+        run: |
+          $msis = @(Get-ChildItem -LiteralPath "msi-artifact" -Filter "*.msi" -File -Recurse)
+          if ($msis.Count -ne 1) { throw "Expected exactly one MSI; found $($msis.Count)." }
+          $evidenceFiles = @(Get-ChildItem -LiteralPath "msi-artifact" -Filter "*evidence*.txt" -File -Recurse)
+          if ($evidenceFiles.Count -ne 1) { throw "Expected exactly one MSI evidence file; found $($evidenceFiles.Count)." }
+          $msi = $msis[0]
+          $evidence = Get-Content -Raw -LiteralPath $evidenceFiles[0].FullName
+          $signature = Get-AuthenticodeSignature -LiteralPath $msi.FullName
+
+          if ($env:EXPECTED_SIGNATURE_STATE -eq "UNSIGNED") {
+            if ($msi.Name -notmatch '-UNSIGNED\.msi$') { throw "Unsigned CI MSI filename is not visibly marked UNSIGNED." }
+            if ($signature.Status -ne "NotSigned") { throw "Unsigned CI lane requires Authenticode state NotSigned; received $($signature.Status)." }
+            if ($evidence -notmatch '(?m)^SignatureState=UNSIGNED$') { throw "Evidence does not classify the MSI as UNSIGNED." }
+            if ($evidence -notmatch '(?m)^PublicationAllowed=false$') { throw "Unsigned evidence does not forbid publication." }
+            exit 0
+          }
+
+          if ($env:EXPECTED_SIGNATURE_STATE -ne "Valid") { throw "Unknown expected signature state." }
+          if ($signature.Status -ne "Valid") { throw "Signed lifecycle lane received an invalid signature." }
+          if ($signature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=Scott Converse(,|$)') {
+            throw "Signed lifecycle lane received an unexpected signer."
+          }
+          if ($evidence -notmatch '(?m)^SignatureState=Valid$') { throw "Evidence does not classify the MSI as Valid." }
+          if ($evidence -notmatch '(?m)^PublicationAllowed=true$') { throw "Signed evidence does not permit publication." }
 
       # ---- INSTALL ------------------------------------------------------------
       # Per-machine MSI; GitHub-hosted windows-latest runs elevated, so a silent
