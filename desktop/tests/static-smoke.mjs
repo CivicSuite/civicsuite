@@ -473,6 +473,21 @@ if (runtimePayloadScript.includes("Get-FileHash")) {
   throw new Error("Windows runtime payload hashing must not depend on Get-FileHash availability");
 }
 
+const pythonInstallSection = runtimePayloadScript.slice(
+  runtimePayloadScript.indexOf("function Install-PythonServicePackages")
+);
+const buildBackendBootstrapIndex = pythonInstallSection.indexOf(
+  "Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServiceInstallArguments"
+);
+const civicCoreInstallIndex = pythonInstallSection.indexOf("        $CivicCore,");
+if (
+  buildBackendBootstrapIndex < 0 ||
+  civicCoreInstallIndex < 0 ||
+  buildBackendBootstrapIndex > civicCoreInstallIndex
+) {
+  throw new Error("embedded Python build backends must be installed before local service packages");
+}
+
 for (const phrase of [
   "runtime-payload-lock.json",
   "Runtime payload file failed integrity check",

@@ -731,6 +731,7 @@ function Install-PythonServicePackages {
         "wheel",
         "hatchling>=1.27.0"
     )
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServiceInstallArguments
     Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
         "-m", "pip", "install",
         "--disable-pip-version-check",
@@ -748,7 +749,6 @@ function Install-PythonServicePackages {
         "--no-deps",
         "--force-reinstall"
     ) + $ServicePackages
-    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServiceInstallArguments
     Copy-CivicRecordsMigrations -PythonRoot $PythonRoot -RepoRoot $RepoRoot
     Test-PythonServiceImports -PythonRoot $PythonRoot -ProductProfile $ProductProfile
     $InstalledPackages = @("civiccore", "civicrecords-ai", "civicnotice", "civicaccess", "civicsuite-runtime")
