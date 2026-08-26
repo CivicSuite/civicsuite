@@ -489,12 +489,17 @@ if (
 }
 
 if (
+  !pythonInstallSection.includes("$ServicePackageInstallArguments = @(") ||
+  !pythonInstallSection.includes(") + $ServicePackages") ||
   !pythonInstallSection.includes(
-    "Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments (@("
-  ) ||
-  !pythonInstallSection.includes(") + $ServicePackages)")
+    "Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServicePackageInstallArguments"
+  )
 ) {
-  throw new Error("local service package arguments must be grouped before PowerShell parameter binding");
+  throw new Error("local service package arguments must be composed before PowerShell parameter binding");
+}
+
+if (pythonInstallSection.includes("-Arguments (@(")) {
+  throw new Error("embedded Python command arrays must use Windows PowerShell 5.1-compatible syntax");
 }
 
 for (const phrase of [

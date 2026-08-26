@@ -732,7 +732,7 @@ function Install-PythonServicePackages {
         "hatchling>=1.27.0"
     )
     Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServiceInstallArguments
-    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments (@(
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
         "-m", "pip", "install",
         "--disable-pip-version-check",
         "--no-warn-script-location",
@@ -741,14 +741,15 @@ function Install-PythonServicePackages {
         "psycopg2-binary>=2.9.0,<3.0.0",
         "PyMuPDF>=1.26.0,<2.0.0"
     )
-    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+    $ServicePackageInstallArguments = @(
         "-m", "pip", "install",
         "--disable-pip-version-check",
         "--no-warn-script-location",
         "--no-build-isolation",
         "--no-deps",
         "--force-reinstall"
-    ) + $ServicePackages)
+    ) + $ServicePackages
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServicePackageInstallArguments
     Copy-CivicRecordsMigrations -PythonRoot $PythonRoot -RepoRoot $RepoRoot
     Test-PythonServiceImports -PythonRoot $PythonRoot -ProductProfile $ProductProfile
     $InstalledPackages = @("civiccore", "civicrecords-ai", "civicnotice", "civicaccess", "civicsuite-runtime")
