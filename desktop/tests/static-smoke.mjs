@@ -488,6 +488,15 @@ if (
   throw new Error("embedded Python build backends must be installed before local service packages");
 }
 
+if (
+  !pythonInstallSection.includes(
+    "Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments (@("
+  ) ||
+  !pythonInstallSection.includes(") + $ServicePackages)")
+) {
+  throw new Error("local service package arguments must be grouped before PowerShell parameter binding");
+}
+
 for (const phrase of [
   "runtime-payload-lock.json",
   "Runtime payload file failed integrity check",
