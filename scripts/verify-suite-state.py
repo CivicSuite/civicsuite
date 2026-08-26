@@ -49,13 +49,15 @@ RESTORE_PRECONDITION = (
     / "2026-05-20-clerk-core-restore-precondition.md"
 )
 CURRENT_PLATFORM_CIVICCORE = "1.2.0"
+RECORDS_BETA_CIVICCORE = "1.2.1"
 DEMOTION_CIVICCORE = "1.1.0"
 RECOVERY_CIVICCORE = "1.0.1"
 LEGACY_FOUNDATION_CIVICCORE = "0.3.0"
 PLANNED_SPEC_MODULES = ("civicregwatch", "civicapi")
 CURRENT_CLERK_CORE_INSTALLER_TAG = "installer-clerk-core-v0.1.0"
-CURRENT_CITY_CORE_INSTALLER_STATUS = "city_core_beta_ready_truth_reconciled"
+CURRENT_INSTALLER_STATUS = "townlight_records_beta_candidate"
 EXPECTED_CITY_CORE_PROFILE_STATUS = "beta_ready_truth_reconciled"
+EXPECTED_RECORDS_BETA_PROFILE_STATUS = "stabilizing"
 CITY_CORE_SOURCE_PIN_RECOVERY = (
     "2026-06-13 source-pin refresh includes CivicCore Windows-local platform "
     "contracts, CivicRecords AI post-PR-#102, CivicClerk v1.0.4 "
@@ -128,19 +130,19 @@ class RepoSpec:
 REPOS: tuple[RepoSpec, ...] = (
     RepoSpec(
         "civiccore",
-        "CivicSuite/civiccore",
+        "townlight/core",
         "civiccore",
-        "1.2.0",
+        "1.2.1",
         civiccore_required=None,
-        release_tag="v1.2.0",
+        release_tag="v1.2.1",
     ),
     RepoSpec(
         "civicrecords-ai",
-        "CivicSuite/civicrecords-ai",
+        "townlight/sunshine",
         "civicrecords-ai",
         "1.7.3",
         "backend/pyproject.toml",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        civiccore_required=RECORDS_BETA_CIVICCORE,
         default_branch="master",
     ),
     RepoSpec(
@@ -166,10 +168,10 @@ REPOS: tuple[RepoSpec, ...] = (
     ),
     RepoSpec(
         "civicaccess",
-        "CivicSuite/civicaccess",
+        "townlight/access",
         "civicaccess",
         "0.4.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        civiccore_required=RECORDS_BETA_CIVICCORE,
         release_required=True,
     ),
     RepoSpec(
@@ -223,10 +225,10 @@ REPOS: tuple[RepoSpec, ...] = (
     ),
     RepoSpec(
         "civicnotice",
-        "CivicSuite/civicnotice",
+        "townlight/notice",
         "civicnotice",
         "0.2.0",
-        civiccore_required=CURRENT_PLATFORM_CIVICCORE,
+        civiccore_required=RECORDS_BETA_CIVICCORE,
         release_required=False,
     ),
     RepoSpec(
@@ -415,16 +417,33 @@ def check_city_core_profile_truth() -> list[str]:
                 "city-core profile must be civiccore,civicrecords-ai,civicclerk,civiccode,civicnotice,civicaccess"
             )
         )
-    if installer_data.get("installer_status") != CURRENT_CITY_CORE_INSTALLER_STATUS:
+    if installer_data.get("installer_status") != CURRENT_INSTALLER_STATUS:
         errors.append(
             fail(
-                "installer/modules.json root installer_status must record city-core beta-ready truth reconciliation"
+                "installer/modules.json root installer_status must record the Townlight Records beta candidate"
             )
         )
     if city_core.get("status") != EXPECTED_CITY_CORE_PROFILE_STATUS:
         errors.append(
             fail("city-core profile status must be beta_ready_truth_reconciled")
         )
+    records_beta = profiles.get("records-beta")
+    if not isinstance(records_beta, dict):
+        errors.append(fail("installer/modules.json missing records-beta profile"))
+    else:
+        if records_beta.get("modules") != [
+            "civiccore",
+            "civicrecords-ai",
+            "civicnotice",
+            "civicaccess",
+        ]:
+            errors.append(
+                fail(
+                    "records-beta profile must be civiccore,civicrecords-ai,civicnotice,civicaccess"
+                )
+            )
+        if records_beta.get("status") != EXPECTED_RECORDS_BETA_PROFILE_STATUS:
+            errors.append(fail("records-beta profile status must be stabilizing"))
     land_use = profiles.get("land-use")
     if not isinstance(land_use, dict) or land_use.get("disabled") is not True:
         errors.append(fail("land-use profile must remain disabled until Tier 2 work"))
@@ -441,7 +460,7 @@ def check_clerk_core_workflow_proof_truth() -> list[str]:
     required_phrases = (
         "request/search-surface/review/response",
         "agenda/packet/minutes/vote/notice/archive",
-        "does not claim live cross-module record exchange",
+        "does not prove live cross-module records exchange",
         CURRENT_CLERK_CORE_INSTALLER_TAG,
     )
     for phrase in required_phrases:
@@ -653,35 +672,38 @@ def check_clerk_core_public_use_gate_truth() -> list[str]:
     if not isinstance(status, dict):
         errors.append(fail("installer/modules.json missing public_use_gate_status"))
     else:
-        if status.get("profile") != "clerk-core":
-            errors.append(fail("public_use_gate_status profile must be clerk-core"))
-        if status.get("status") != "green":
+        if status.get("profile") != "records-beta":
+            errors.append(fail("public_use_gate_status profile must be records-beta"))
+        if status.get("status") != "candidate":
             errors.append(
                 fail(
-                    "public_use_gate_status must be green for the promoted public-use starter release"
+                    "public_use_gate_status must remain candidate until the signed publication gate passes"
                 )
             )
-        if (
-            status.get("path")
-            != "docs/installer/starter-set-public-use-readiness-gate.md"
-        ):
+        if status.get("path") != "RELEASING.md":
             errors.append(fail("public_use_gate_status path mismatch"))
         if (
             status.get("route_state_matrix")
-            != "docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md"
+            != "desktop/tests/browser/records-public-beta.spec.mjs"
         ):
             errors.append(
                 fail("public_use_gate_status route_state_matrix path mismatch")
             )
         if (
             status.get("restore_precondition_evidence")
-            != "docs/installer/browser-qa/2026-05-20-clerk-core-restore-precondition.md"
+            != ".github/workflows/desktop-windows-msi.yml"
         ):
             errors.append(
                 fail(
                     "public_use_gate_status restore_precondition_evidence path mismatch"
                 )
             )
+        for key in ("path", "route_state_matrix", "restore_precondition_evidence"):
+            evidence_path = status.get(key)
+            if isinstance(evidence_path, str) and not (ROOT / evidence_path).is_file():
+                errors.append(
+                    fail(f"public_use_gate_status {key} does not resolve to a file")
+                )
     if not PUBLIC_USE_MATRIX.is_file():
         errors.append(
             fail(
