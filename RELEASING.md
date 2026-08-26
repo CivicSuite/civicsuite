@@ -1,32 +1,70 @@
-# Releasing the Windows-Local MSI
+# Releasing the Townlight Records Windows MSI
 
-The repeatable process for publishing a CivicSuite Windows-Local (`civicsuite-windows-local-vX.Y.Z`) beta release. Closes the "no release automation / hand-published MSI" and "lightweight vs annotated tag" gaps.
+This is the fail-closed release path for a tag such as
+`townlight-records-v1.1.0-beta.1`.
 
-## Versioning
+## Version contract
 
-- The desktop build version (`desktop/src-tauri/tauri.conf.json`, `desktop/package.json`, `desktop/src-tauri/Cargo.toml`) MUST match the release `vX.Y.Z`. ARP / Add-Remove Programs shows this version. Bump all three (and regenerate `package-lock.json` + the `civicsuite-desktop` entry in `Cargo.lock`) in the release PR.
-- Patch (security/bugfix) = `Z`; new feature within the beta line = `Y`.
+The semantic version must match in:
 
-## Steps
+- `desktop/package.json` and `desktop/package-lock.json`
+- `desktop/src-tauri/Cargo.toml` and the desktop entry in `Cargo.lock`
+- `desktop/src-tauri/tauri.conf.json`
+- the annotated release tag
 
-1. **Land the code** on `main` (PR, green CI). Pull requests and ordinary `main` pushes run the full build, integration, install, backup/restore, and uninstall checks without Azure credentials. They upload a private Actions artifact named `civicsuite-windows-local-msi-UNSIGNED`; the MSI filename itself ends in `-UNSIGNED.msi`, and its evidence says `PublicationAllowed=false`. Never distribute or attach this CI artifact to a release.
-2. **Exercise the unsigned candidate as needed.** The unsigned artifact is suitable for internal clean-machine QA while development continues. Verify its hash against `CivicSuite-msi-evidence.txt`. It is not a release asset and Windows may identify its publisher as unknown.
-3. **Run the publication-signing gate on the final `main` commit.** Dispatch `desktop-windows-msi.yml` on `main` with `sign_for_publication=true`:
-   ```
+Public display strings use Townlight. Internal artifact names and stable
+application identifiers may retain `civicsuite` as documented compatibility
+identities.
+
+## Candidate and publication gates
+
+1. Land the exact Core and Sunshine changes that the candidate consumes.
+2. Pin their accepted commits in the Townlight installer registry and workflow.
+3. Open or update the Townlight release PR. PR CI must build the MSI, run the
+   real embedded-runtime integration, install it, launch the installed
+   executable, exercise first run, repair, backup/restore, and uninstall, and
+   prove that the artifact is unsigned and non-publishable.
+4. Review and merge only after all required PR checks are green. Development
+   work may continue while human review happens, but the signed candidate must
+   come from the final merged `main` SHA.
+5. Dispatch the publication-signing lane on that exact `main` commit:
+
+   ```powershell
    gh workflow run desktop-windows-msi.yml --repo townlight/townlight --ref main -f sign_for_publication=true
    ```
-   This is the only lane that reads the Azure signing secrets. It must sign through Azure Trusted Signing, independently pass both `signtool verify /pa /v` and `Get-AuthenticodeSignature`, require signer `CN=Scott Converse` plus a timestamp, and then complete the same MSI lifecycle job. Its private Actions artifact is named `civicsuite-windows-local-msi-SIGNED`.
-4. **Clean-machine validation (QA-B1).** Download that exact signed artifact and validate it on a pristine Windows VM/Sandbox: signature -> install -> launch (window renders) -> first-run wizard -> model download + checksum + Ollama load + one real completion -> backup/restore -> uninstall. (Beelink Sandbox harness under `test-comms/vmhost-beelink/`.) Confirm the signed MSI hash matches its evidence.
-5. **Push an ANNOTATED tag at the exact commit used by the successful signing run** (not a lightweight tag) so the release tag carries authorship/date metadata:
-   ```
-   git tag -a civicsuite-windows-local-vX.Y.Z -m "CivicSuite Windows Local X.Y.Z"
-   git push origin civicsuite-windows-local-vX.Y.Z
-   ```
-6. The **`release-windows-msi` workflow** fires on that tag. It accepts only a successful manual `main` signing run whose head SHA equals the tag target and whose artifact is named `civicsuite-windows-local-msi-SIGNED`; it recomputes the hash and re-verifies the signer, timestamp, evidence, and `signtool` result before attaching anything. If any gate is absent or mismatched, publication stops.
-7. **Finalize**: edit the release notes (security fixes, validation evidence, SHA-256), then promote from prerelease to Latest.
-8. **Retire** any superseded release candidate (mark `[RETIRED]`, prerelease, remove its unpatched assets).
 
-## Notes
+   This is the only lane that reads the Townlight organization Azure secrets.
+   It signs through Azure Artifact Signing with the fixed account/profile and
+   must independently pass `signtool verify /pa /v` and
+   `Get-AuthenticodeSignature`, require `CN=Scott Converse`, and require an
+   RFC3161 timestamp.
+6. Download that exact signed artifact and verify it independently. Record the
+   unsigned and signed SHA-256 values, signer subject, certificate thumbprint,
+   timestamp status, workflow run URL, and evidence-file cross-check.
+7. Run the signed clean-machine beta journey: signature, install, launch,
+   first-run setup, explicit demo-town load, complete request-to-release
+   workflow, offline restart/use, repair, backup/restore, upgrade preservation
+   where applicable, and uninstall with no unintended user-data leakage.
+8. Create an annotated tag at the signed run's exact SHA:
 
-- Every published MSI is Authenticode code-signed via Azure Trusted Signing (in CI, HSM-held certificate; see CODE_SIGNING_POLICY.md). Routine CI artifacts are deliberately unsigned and non-publishable.
-- Always release the EXACT signed artifact from the SHA-matched publication-signing run that CI and clean-machine QA validated -- never an unsigned artifact or a separate ad-hoc rebuild.
+   ```powershell
+   git tag -a townlight-records-v1.1.0-beta.1 -m "Townlight Records 1.1.0-beta.1"
+   git push origin townlight-records-v1.1.0-beta.1
+   ```
+
+9. `release-windows-msi.yml` accepts only a successful manual signing run on
+   `main` whose head SHA matches the tag, then rechecks the signature, signer,
+   timestamp, MSI hash, and `PublicationAllowed=true` evidence before attaching
+   the MSI to a prerelease.
+10. Scott reviews the evidence and release notes and decides whether to publish
+    or promote the prerelease. Never publish an unsigned artifact.
+
+## Signing identity
+
+- Endpoint: `https://wcus.codesigning.azure.net`
+- Account: `scottconverse-signing`
+- Certificate profile: `ScottConversePublic`
+- Required signer subject: `CN=Scott Converse`
+
+The Azure credentials already exist as Townlight organization secrets. Do not
+print, copy, rotate, or reprovision them as part of a routine release.

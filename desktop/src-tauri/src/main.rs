@@ -1,10 +1,13 @@
 mod atomic_io;
 mod auth;
+mod demo_fixture;
 mod first_run;
 mod local_paths;
 mod local_shell;
 mod model;
 mod module_registry;
+#[cfg(test)]
+mod records_golden_contract;
 mod supervisor;
 mod workflows;
 
@@ -110,7 +113,7 @@ fn navigation() -> Vec<NavigationItem> {
 fn installer_steps() -> Vec<&'static str> {
     vec![
         "Choose install and local data locations.",
-        "Install CivicCore and selected city-core modules.",
+        "Install Townlight Core and the selected Townlight product profile.",
         "Create city profile and first admin user.",
         "Download and verify Gemma 4 12B quantization-aware weights.",
         "Verify local health, backup, repair, and uninstall entry points.",
@@ -137,7 +140,7 @@ fn require_role_for_city_work(
 ) -> Result<(), String> {
     let Some(role) = access.role.as_deref() else {
         return Err(
-            "Sign in with a staff or CivicSuite admin account before changing city work."
+            "Sign in with a staff or Townlight admin account before changing city work."
                 .to_string(),
         );
     };
@@ -148,13 +151,13 @@ fn require_role_for_city_work(
         return Ok(());
     }
     Err(format!(
-        "Your local role ({role}) is not allowed to use this module workflow. Ask a CivicSuite admin to adjust your account."
+        "Your local role ({role}) is not allowed to use this module workflow. Ask a Townlight admin to adjust your account."
     ))
 }
 
 fn public_model_state(mut model: ModelState) -> ModelState {
     model.artifact.local_path =
-        "Sign in as CivicSuite admin to view the model file path.".to_string();
+        "Sign in as Townlight admin to view the model file path.".to_string();
     model
 }
 
@@ -208,6 +211,7 @@ fn city_work_action_module_requirement(
         | "civicnotice-export-archive-packet" => Some((vec!["civicclerk", "civicnotice"], false)),
         "record-adopted-legislation" => Some((vec!["civicclerk", "civiccode"], false)),
         "create-records-request"
+        | "load-demo-town"
         | "submit-public-records-request"
         | "lookup-public-records-request"
         | "add-public-records-message"
@@ -400,7 +404,7 @@ fn app_state() -> Result<AppState, String> {
         public_runtime_health(supervisor::runtime_health()?)
     };
     Ok(AppState {
-        product_name: "CivicSuite",
+        product_name: "Townlight",
         status_label: "Windows Local 1.0 desktop",
         local_only: true,
         navigation: navigation(),
@@ -422,7 +426,7 @@ fn app_state() -> Result<AppState, String> {
 async fn get_app_state() -> Result<AppState, String> {
     tauri::async_runtime::spawn_blocking(move || {
         catch_unwind(AssertUnwindSafe(app_state)).map_err(|_| {
-            "App state stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+            "App state stopped unexpectedly. Restart Townlight and retry; if this repeats, use Repair from System Health."
                 .to_string()
         })?
     })
@@ -446,12 +450,12 @@ fn model_action_authorized(action: String) -> Result<ModelActionResult, String> 
     if !access_is_local_admin(&access) {
         if !access.configured {
             return Err(
-                "Create the first CivicSuite admin and sign in before changing local model setup."
+                "Create the first Townlight admin and sign in before changing local model setup."
                     .to_string(),
             );
         }
         return Err(
-            "Sign in as the CivicSuite admin before changing local model setup.".to_string(),
+            "Sign in as the Townlight admin before changing local model setup.".to_string(),
         );
     }
     model::model_action(&action)
@@ -461,7 +465,7 @@ fn model_action_authorized(action: String) -> Result<ModelActionResult, String> 
 async fn model_action(action: String) -> Result<ModelActionResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
         catch_unwind(AssertUnwindSafe(|| model_action_authorized(action)))
-            .map_err(|_| "Model setup action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health.".to_string())?
+            .map_err(|_| "Model setup action stopped unexpectedly. Restart Townlight and retry; if this repeats, use Repair from System Health.".to_string())?
     })
     .await
     .map_err(|error| format!("Model setup action could not complete: {error}"))?
@@ -483,7 +487,7 @@ fn first_run_action_authorized(
         && first_run_action_requires_admin_after_setup(&action)
     {
         return Err(
-            "Sign in as the CivicSuite admin before changing setup, profile, model, backup, or runtime settings."
+            "Sign in as the Townlight admin before changing setup, profile, model, backup, or runtime settings."
                 .to_string(),
         );
     }
@@ -501,7 +505,7 @@ async fn first_run_action(
             first_run_action_authorized(action, step_id, payload)
         }))
         .map_err(|_| {
-            "First-run action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+            "First-run action stopped unexpectedly. Restart Townlight and retry; if this repeats, use Repair from System Health."
                 .to_string()
         })?
     })
@@ -534,7 +538,7 @@ async fn supervisor_action(
             supervisor_action_authorized(action, service_id)
         }))
         .map_err(|_| {
-            "System Health action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+            "System Health action stopped unexpectedly. Restart Townlight and retry; if this repeats, use Repair from System Health."
                 .to_string()
         })?
     })
@@ -555,7 +559,7 @@ fn picked_file_path_for_desktop() -> Result<Option<String>, String> {
     #[cfg(target_os = "windows")]
     {
         Ok(rfd::FileDialog::new()
-            .set_title("Choose CivicSuite evidence file")
+            .set_title("Choose Townlight evidence file")
             .pick_file()
             .map(|path| path.display().to_string()))
     }
@@ -579,7 +583,7 @@ fn picked_folder_path_for_desktop() -> Result<Option<String>, String> {
     #[cfg(target_os = "windows")]
     {
         Ok(rfd::FileDialog::new()
-            .set_title("Choose CivicSuite folder")
+            .set_title("Choose Townlight folder")
             .pick_folder()
             .map(|path| path.display().to_string()))
     }
@@ -600,7 +604,7 @@ fn choose_file_path() -> Result<Option<String>, String> {
 fn choose_folder_path() -> Result<Option<String>, String> {
     let access = auth::access_state()?;
     if access.configured && !access_is_local_admin(&access) {
-        return Err("Sign in as the CivicSuite admin before choosing folders.".to_string());
+        return Err("Sign in as the Townlight admin before choosing folders.".to_string());
     }
     picked_folder_path_for_desktop()
 }
@@ -610,7 +614,7 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
     let access = auth::access_state()?;
     if access.configured && !access_is_local_admin(&access) {
         return Err(
-            "Sign in as the CivicSuite admin before changing installed modules.".to_string(),
+            "Sign in as the Townlight admin before changing installed modules.".to_string(),
         );
     }
     let previous_selection = module_registry::module_selection_state()?;
@@ -663,12 +667,12 @@ fn module_action(action: String, module_id: String) -> Result<ModuleActionResult
     let (status, message, next_action) = match action.as_str() {
         "enable-module" => (
             "Module enabled",
-            format!("{display_name} is enabled in the local CivicSuite shell."),
+            format!("{display_name} is enabled in the local Townlight shell."),
             "Review the module list or continue city work.",
         ),
         "disable-module" => (
             "Module disabled",
-            format!("{display_name} is disabled in the local CivicSuite shell. Its data remains installed and can be re-enabled."),
+            format!("{display_name} is disabled in the local Townlight shell. Its data remains installed and can be re-enabled."),
             "Review the module list or continue city work.",
         ),
         "install-module" if was_installed => (
@@ -753,6 +757,11 @@ fn city_work_action_authorized(
     let access = auth::access_state()?;
     let signed_in = access_is_signed_in(&access);
     let public_action = workflows::city_work_action_allows_public(&action);
+    if action == "load-demo-town" && !access_is_local_admin(&access) {
+        return Err(
+            "Sign in with a Townlight admin account before loading demonstration data.".to_string(),
+        );
+    }
     if !signed_in {
         if !access.configured {
             return Err(
@@ -803,7 +812,7 @@ async fn city_work_action(
             city_work_action_authorized(action, payload)
         }))
         .map_err(|_| {
-            "City workflow action stopped unexpectedly. Restart CivicSuite and retry; if this repeats, use Repair from System Health."
+            "City workflow action stopped unexpectedly. Restart Townlight and retry; if this repeats, use Repair from System Health."
                 .to_string()
         })?
     })
@@ -845,7 +854,7 @@ pub fn run() {
             city_work_action
         ])
         .run(tauri::generate_context!())
-        .expect("failed to run CivicSuite desktop");
+        .expect("failed to run Townlight desktop");
 }
 
 fn main() {
@@ -930,24 +939,27 @@ mod tests {
     }
 
     #[test]
-    fn city_core_modules_are_reported_installed() {
+    fn records_beta_modules_are_reported_installed() {
         module_registry::validate_default_registry().expect("module registry contract validates");
         let modules = module_summaries().expect("module registry parses");
-        for module_id in [
-            "civiccore",
-            "civicrecords-ai",
-            "civicclerk",
-            "civiccode",
-            "civicnotice",
-            "civicaccess",
-        ] {
+        for module_id in ["civiccore", "civicrecords-ai", "civicnotice", "civicaccess"] {
             let module = modules
                 .iter()
                 .find(|candidate| candidate.id == module_id)
-                .expect("city-core module exists");
+                .expect("records-beta module exists");
             assert!(
                 module.installed,
-                "{module_id} should be installed in city-core"
+                "{module_id} should be installed in records-beta"
+            );
+        }
+        for module_id in ["civicclerk", "civiccode"] {
+            let module = modules
+                .iter()
+                .find(|candidate| candidate.id == module_id)
+                .expect("queued module exists");
+            assert!(
+                !module.installed,
+                "{module_id} should not be installed in records-beta"
             );
         }
     }
@@ -1032,7 +1044,7 @@ mod tests {
             let public_model = get_model_state().expect("model state");
             assert_eq!(
                 public_model.artifact.local_path,
-                "Sign in as CivicSuite admin to view the model file path."
+                "Sign in as Townlight admin to view the model file path."
             );
 
             sign_in_as_first_admin();
@@ -1052,7 +1064,7 @@ mod tests {
             assert!(pre_admin_result
                 .err()
                 .expect("pre-admin model action auth error")
-                .contains("Create the first CivicSuite admin and sign in"));
+                .contains("Create the first Townlight admin and sign in"));
 
             create_first_admin();
 
@@ -1062,7 +1074,7 @@ mod tests {
             assert!(signed_out_result
                 .err()
                 .expect("model action auth error")
-                .contains("Sign in as the CivicSuite admin"));
+                .contains("Sign in as the Townlight admin"));
 
             sign_in_as_first_admin();
             let signed_in_result = model_action_authorized("open-model-folder".to_string())
@@ -1106,7 +1118,7 @@ mod tests {
             assert!(signed_out_result
                 .err()
                 .expect("module action auth error")
-                .contains("Sign in as the CivicSuite admin"));
+                .contains("Sign in as the Townlight admin"));
 
             sign_in_as_first_admin();
             let disabled = module_action("disable-module".to_string(), "civiccode".to_string())
@@ -1217,16 +1229,16 @@ mod tests {
         with_clean_first_run_state(|_| {
             env::set_var(
                 "CIVICSUITE_TEST_FOLDER_PICKER_PATH",
-                r"C:\City\CivicSuiteData",
+                r"C:\City\TownlightData",
             );
             let first_run_folder = choose_folder_path().expect("pre-admin folder picker");
             env::remove_var("CIVICSUITE_TEST_FOLDER_PICKER_PATH");
-            assert_eq!(first_run_folder.as_deref(), Some(r"C:\City\CivicSuiteData"));
+            assert_eq!(first_run_folder.as_deref(), Some(r"C:\City\TownlightData"));
 
             create_first_admin();
             env::set_var(
                 "CIVICSUITE_TEST_FOLDER_PICKER_PATH",
-                r"C:\City\CivicSuiteBackups",
+                r"C:\City\TownlightBackups",
             );
             let signed_out = choose_folder_path();
             env::remove_var("CIVICSUITE_TEST_FOLDER_PICKER_PATH");
@@ -1235,12 +1247,12 @@ mod tests {
             sign_in_as_first_admin();
             env::set_var(
                 "CIVICSUITE_TEST_FOLDER_PICKER_PATH",
-                r"C:\City\CivicSuiteBackups",
+                r"C:\City\TownlightBackups",
             );
             let picked = choose_folder_path().expect("admin folder picker");
             env::remove_var("CIVICSUITE_TEST_FOLDER_PICKER_PATH");
 
-            assert_eq!(picked.as_deref(), Some(r"C:\City\CivicSuiteBackups"));
+            assert_eq!(picked.as_deref(), Some(r"C:\City\TownlightBackups"));
         });
     }
 
@@ -1336,6 +1348,31 @@ mod tests {
     }
 
     #[test]
+    fn only_local_admin_can_load_demo_town() {
+        with_clean_first_run_state(|_| {
+            create_first_admin();
+            sign_in_as_first_admin();
+            create_staff_user(
+                "Riley Records",
+                "riley@example.gov",
+                "records-staff",
+                "records passcode 123",
+            );
+            auth::auth_action("sign-out", None).expect("admin signed out");
+            sign_in_as_user("riley@example.gov", "records passcode 123");
+
+            let error = city_work_action_authorized("load-demo-town".to_string(), None)
+                .err()
+                .expect("records staff must not load a demo town");
+            assert!(error.contains("Townlight admin"));
+            assert!(workflows::city_work_state()
+                .expect("city state remains readable")
+                .demo_fixture
+                .is_none());
+        });
+    }
+
+    #[test]
     fn disabled_modules_block_owned_city_work_actions() {
         with_clean_first_run_state(|_| {
             create_first_admin();
@@ -1355,7 +1392,7 @@ mod tests {
             assert!(result
                 .err()
                 .expect("disabled module error")
-                .contains("CivicCode is not enabled"));
+                .contains("Townlight Code is not enabled"));
         });
     }
 
@@ -1450,7 +1487,7 @@ mod tests {
             assert!(signed_out_profile_result
                 .err()
                 .expect("first-run profile auth error")
-                .contains("Sign in as the CivicSuite admin"));
+                .contains("Sign in as the Townlight admin"));
 
             let signed_out_model_result = first_run_action_authorized(
                 "download-model".to_string(),
@@ -1461,7 +1498,7 @@ mod tests {
             assert!(signed_out_model_result
                 .err()
                 .expect("first-run model auth error")
-                .contains("Sign in as the CivicSuite admin"));
+                .contains("Sign in as the Townlight admin"));
 
             let signed_out_result = first_run_action_authorized("backup".to_string(), None, None);
 
@@ -1469,7 +1506,7 @@ mod tests {
             assert!(signed_out_result
                 .err()
                 .expect("first-run lifecycle auth error")
-                .contains("Sign in as the CivicSuite admin"));
+                .contains("Sign in as the Townlight admin"));
 
             sign_in_as_first_admin();
             let signed_in_result = first_run_action_authorized("backup".to_string(), None, None)
@@ -1699,7 +1736,7 @@ mod tests {
             assert!(public_app_state.users.is_empty());
             assert_eq!(
                 public_app_state.model.artifact.local_path,
-                "Sign in as CivicSuite admin to view the model file path."
+                "Sign in as Townlight admin to view the model file path."
             );
             assert!(public_app_state
                 .health
@@ -1824,7 +1861,7 @@ mod tests {
             assert!(staff_result
                 .err()
                 .expect("staff error")
-                .contains("Sign in with a staff or CivicSuite admin account"));
+                .contains("Sign in with a staff or Townlight admin account"));
         });
     }
 }

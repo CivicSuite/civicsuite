@@ -6,6 +6,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const main = readFileSync(join(root, "src", "main.js"), "utf8");
 const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
+const tauriConfigJson = JSON.parse(tauriConfig);
 const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows", "desktop-windows-msi.yml"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const authRust = readFileSync(join(root, "src-tauri", "src", "auth.rs"), "utf8");
@@ -123,7 +124,7 @@ const requiredUiPhrases = [
   "Package Profiles",
   "Module Catalog",
   "Choose Product Modules",
-  "Custom selection will install CivicCore plus",
+  "Custom selection will install Townlight Core plus",
   "Not ready for Windows Local 1.0",
   "Apply Module Selection",
   "Save Local Folders",
@@ -133,7 +134,7 @@ const requiredUiPhrases = [
   "City workflow services",
   "Background work queue",
   "Local document storage",
-  "Create the first CivicSuite admin and sign in before changing local model setup.",
+  "Create the first Townlight admin and sign in before changing local model setup.",
   "The Windows installer owns the app folder.",
   "Enabled modules:",
   "Data remains installed. Re-enable this module to show its work area.",
@@ -142,12 +143,12 @@ const requiredUiPhrases = [
   "Selected code source for actions:",
   "Module actions are handled by the Windows desktop app",
   "Source history:",
-  "Sign in as CivicSuite admin to change local model setup.",
-  "Sign in as CivicSuite admin to use local lifecycle actions.",
-  "Sign in with the CivicSuite admin passcode before continuing setup.",
-  "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or background services.",
-  "Use a staff or CivicSuite admin passcode for city work.",
-  "Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or background services.",
+  "Sign in as Townlight admin to change local model setup.",
+  "Sign in as Townlight admin to use local lifecycle actions.",
+  "Sign in with the Townlight admin passcode before continuing setup.",
+  "Use a Townlight admin account before changing setup, model, backup, restore, repair, module, user, or background services.",
+  "Use a staff or Townlight admin passcode for city work.",
+  "Use a Townlight admin account for setup, users, modules, backups, restore, repair, model setup, or background services.",
   "Check the email and local passcode, then try again."
 ];
 
@@ -197,7 +198,7 @@ for (const phrase of [
   "function showStandaloneModelReadiness",
   "showStandaloneModelReadiness() ? renderModelReadiness({ compact: true })",
   "status: \"Sign in required\"",
-  "const lockMessage = adminOnlyLockMessage(\"Sign in as CivicSuite admin to use local lifecycle actions.\");",
+  "const lockMessage = adminOnlyLockMessage(\"Sign in as Townlight admin to use local lifecycle actions.\");",
   "const lockMessage = modelSetupLockMessage();",
   "data-supervisor-action=\"backup\" ${adminDisabled}",
   "data-supervisor-action=\"install\" data-service-id=\"${escapeHtml(item.id)}\" ${adminDisabled}",
@@ -235,7 +236,7 @@ for (const phrase of [
 for (const phrase of [
   "state.modelActionInFlight = action;",
   "Downloading…",
-  "CivicSuite may look frozen while it downloads",
+  "Townlight may look frozen while it downloads",
   "too many failed sign-in attempts",
   "not available in this release yet",
   'result.working ? "working"',
@@ -270,7 +271,7 @@ for (const [docName, doc] of currentFacingDocs) {
     "Docker Desktop/WSL2",
     "Open <http://localhost:8080>",
     "Windows is supported through a wrapper around the same containerized services",
-    "CivicSuite's core runtime path is Linux/container-first"
+    "Townlight's core runtime path is Linux/container-first"
   ]) {
     if (doc.includes(stalePhrase)) {
       throw new Error(`${docName} still describes the old container-wrapper clerk path: ${stalePhrase}`);
@@ -336,17 +337,13 @@ for (const phrase of [
   "runs-on: windows-latest",
   "path: civicsuite",
   "path: civiccore",
-  "ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c",
+  "ref: b4d0156bdc6883c1c3ef167abe0379f9ca32b258",
   "path: civicrecords-ai",
-  "ref: e2208827b660faa7d3fc1eab2271a8eae18526ee",
-  "path: civicclerk",
-  "ref: fa1874edfe977bfc36ddea2939df6464b5bc16be",
-  "path: civiccode",
-  "ref: a960bba0a2249d118b593dd61bee3a65a69a9d77",
+  "ref: edf1c8d8078c85baff691030a599b8eef670bca6",
   "path: civicnotice",
-  "ref: 2bf0c9d7b764af84cd042657a972e84213a261d5",
+  "ref: 79b8d07199ee77cd425b31c0e0a44f3a0832b810",
   "path: civicaccess",
-  "ref: 7b24516fd89584d84c12394b9385eddd1e8c6897",
+  "ref: b9100edc80ca496d6061f1cdb3eb39a60ff5f31a",
   "npm run prepare-runtime-payload",
   "npm run tauri -- build",
   "desktop/src-tauri/target/release/bundle/msi/*.msi",
@@ -389,7 +386,7 @@ if (!main.includes("serviceId: normalizedServiceId")) {
   throw new Error("desktop supervisor actions must pass an explicit nullable serviceId to Tauri");
 }
 
-if (!main.includes('status: "Working"') || !main.includes("Keep CivicSuite open while the local action completes.")) {
+if (!main.includes('status: "Working"') || !main.includes("Keep Townlight open while the local action completes.")) {
   throw new Error("desktop supervisor confirms must leave guided review state before long-running native actions");
 }
 
@@ -459,6 +456,9 @@ for (const phrase of [
   "MSVC cl.exe and nmake.exe are required",
   "System.Security.Cryptography.SHA256",
   "PayloadManifestPath",
+  '[string]$ProductProfile = "records-beta"',
+  'if ($ProductProfile -eq "city-core")',
+  "TOWNLIGHT_PRODUCT_PROFILE",
   "New-RuntimePayloadLock",
   "required_files",
   "size_bytes",
@@ -501,10 +501,10 @@ for (const phrase of [
 }
 
 for (const phrase of [
-  "CivicSuite cannot continue this setup step until these required steps are complete",
-  "CivicSuite setup is complete on this Windows profile.",
+  "Townlight cannot continue this setup step until these required steps are complete",
+  "Townlight setup is complete on this Windows profile.",
   "System Health keeps backup, repair, logs, restore, and uninstall available.",
-  "Start city work from Meetings & Notices, Records Requests, Code & Ordinances, or Search City Knowledge."
+  "Start city work from Records Requests, Public Notices, Accessibility, or Search City Knowledge."
 ]) {
   if (!firstRunRust.includes(phrase)) {
     throw new Error(`Windows first-run finish contract missing phrase: ${phrase}`);
@@ -583,7 +583,7 @@ for (const phrase of [
   }
 }
 
-// CivicAccess dual-path UI state: the not-ready banner and the guided-review
+// Townlight Access dual-path UI state: the not-ready banner and the guided-review
 // copy for the three AI-touched actions must stay in main.js so the Playwright
 // asserts and the Rust result strings cannot silently drift apart.
 for (const phrase of [
@@ -654,7 +654,7 @@ for (const phrase of [
 
 for (const phrase of [
   "is available and writable on this Windows profile.",
-  "CivicSuite cannot save files there.",
+  "Townlight cannot save files there.",
   "Choose another city data folder in Settings or ask IT to grant write access.",
   "Choose another backup folder in Settings or ask IT to grant write access.",
   "writable {}; write_check {}",
@@ -674,7 +674,7 @@ for (const phrase of [
   "reset-user-passcode",
   "records-staff",
   "code-staff",
-  "Sign in with a staff or CivicSuite admin account before changing city work.",
+  "Sign in with a staff or Townlight admin account before changing city work.",
 ]) {
   if (!rustMain.includes(phrase) && !authRust.includes(phrase) && !supervisorRust.includes(phrase) && !firstRunRust.includes(phrase)) {
     throw new Error(`Desktop access/RBAC static guard missing phrase: ${phrase}`);
@@ -682,11 +682,11 @@ for (const phrase of [
 }
 
 for (const phrase of [
-  "CivicSuite Local Logs",
-  "Use these files when IT or CivicSuite support asks for local runtime evidence.",
-  "Prepared and opened the CivicSuite logs folder under the selected city data folder",
-  "Share README.txt and the relevant service log with IT or CivicSuite support.",
-  "CivicSuite Support Bundle",
+  "Townlight Local Logs",
+  "Use these files when IT or Townlight support asks for local runtime evidence.",
+  "Prepared and opened the Townlight logs folder under the selected city data folder",
+  "Share README.txt and the relevant service log with IT or Townlight support.",
+  "Townlight Support Bundle",
   "health, runtime-state, and selected service logs",
   "support-manifest.json",
   "does not copy city records, uploaded documents, backup contents, or local secrets"
@@ -705,8 +705,6 @@ for (const requiredPayload of [
     "Lib/site-packages/civiccore/migrations/alembic.ini",
     "Lib/site-packages/civiccore/migrations/versions/civiccore_0003_local_task_queue.py",
     "Lib/site-packages/app/main.py",
-    "Lib/site-packages/civicclerk/main.py",
-    "Lib/site-packages/civiccode/main.py",
     "Lib/site-packages/civicnotice/main.py",
     "Lib/site-packages/civicaccess/main.py",
     "Lib/site-packages/civicsuite_runtime/__init__.py",
@@ -911,6 +909,67 @@ if (css.includes("blur(") || css.includes("radial-gradient")) {
       driftErrors.join("\n  ")
     );
   }
+}
+
+for (const demoTownContract of [
+  'data-work-action="load-demo-town"',
+  "fixture.watermark",
+  "Loading is never automatic",
+  "requires an empty local profile",
+  "creates a verified backup",
+  "renderDemoTownBanner(work)"
+]) {
+  if (!main.includes(demoTownContract)) {
+    throw new Error(`Desktop demo-town UI contract missing phrase: ${demoTownContract}`);
+  }
+}
+
+const pythonPayload = runtimePayloadManifest.payloads.find((payload) => payload.id === "cpython-services");
+for (const excludedFromRecordsBeta of [
+  "Lib/site-packages/civicclerk/main.py",
+  "Lib/site-packages/civiccode/main.py"
+]) {
+  if (pythonPayload.required_files.includes(excludedFromRecordsBeta)) {
+    throw new Error(`Records beta payload must not require ${excludedFromRecordsBeta}`);
+  }
+  if (!pythonPayload.profile_required_files?.["city-core"]?.includes(excludedFromRecordsBeta)) {
+    throw new Error(`Legacy city-core payload must retain ${excludedFromRecordsBeta}`);
+  }
+}
+if (desktopMsiWorkflow.includes("repository: townlight/meetings") || desktopMsiWorkflow.includes("repository: townlight/ordinances")) {
+  throw new Error("Townlight Records MSI workflow must not check out Meetings or Code runtime sources");
+}
+
+if (tauriConfigJson.productName !== "Townlight" || tauriConfigJson.bundle.publisher !== "Townlight") {
+  throw new Error("Desktop and MSI public display identity must be Townlight");
+}
+if (tauriConfigJson.app.windows[0]?.title !== "Townlight") {
+  throw new Error("Desktop window title must use the Townlight public identity");
+}
+if (tauriConfigJson.identifier !== "org.civicsuite.desktop") {
+  throw new Error("The stable Tauri application identifier must not change during the display-only rename");
+}
+if (tauriConfigJson.bundle.windows?.wix?.upgradeCode !== "a63fc1d3-5437-5f55-89a2-fef93fb1f930") {
+  throw new Error("The stable MSI upgrade code must not change during the display-only rename");
+}
+if (!moduleRegistryRust.includes('const DEFAULT_PROFILE_ID: &str = "records-beta";')) {
+  throw new Error("Fresh desktop installs must select the dependency-closed Records beta profile");
+}
+for (const recordsBetaUiContract of [
+  'const RECORDS_BETA_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicnotice", "civicaccess"]',
+  '"records-beta": RECORDS_BETA_PRODUCT_MODULE_IDS',
+  'selection.profile_id === "custom" || !knownProfile',
+  'return { profileId: state.moduleDraft.profileId }'
+]) {
+  if (!main.includes(recordsBetaUiContract)) {
+    throw new Error(`Records beta UI profile contract missing phrase: ${recordsBetaUiContract}`);
+  }
+}
+if (firstRunManifest.profile_label !== "Townlight Records") {
+  throw new Error("Fresh-install first-run manifest must identify the Townlight Records product profile");
+}
+if (!firstRunRust.includes('join("CivicSuite")') || !modelRust.includes('join("CivicSuite")')) {
+  throw new Error("Legacy app-data discovery paths must remain available during the display-only rename");
 }
 
 console.log("PASS: desktop static smoke checks passed");

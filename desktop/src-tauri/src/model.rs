@@ -909,7 +909,7 @@ fn ensure_model_runtime_reachable(manifest: &ModelManifest) -> Result<ModelRunti
     }
 
     let start_message = start_model_runtime_service().map_err(|error| {
-        format!("CivicSuite could not start the bundled Ollama runtime. {error}")
+        format!("Townlight could not start the bundled Ollama runtime. {error}")
     })?;
     let runtime = wait_for_model_runtime(manifest);
     if runtime.reachable {
@@ -917,7 +917,7 @@ fn ensure_model_runtime_reachable(manifest: &ModelManifest) -> Result<ModelRunti
     }
 
     Err(format!(
-        "The local Ollama runtime did not become ready after CivicSuite started it. Last health check: {} Start result: {}",
+        "The local Ollama runtime did not become ready after Townlight started it. Last health check: {} Start result: {}",
         runtime.message, start_message
     ))
 }
@@ -1461,7 +1461,7 @@ fn download_model_artifact_inner(
         manifest,
         local_path,
         "Downloading",
-        "CivicSuite is downloading the pinned Gemma model file. Closing the app keeps the partial file for resume."
+        "Townlight is downloading the pinned Gemma model file. Closing the app keeps the partial file for resume."
             .to_string(),
         None,
     )?;
@@ -1478,7 +1478,7 @@ fn download_model_artifact_inner(
             manifest,
             local_path,
             "Downloading",
-            "CivicSuite is retrying the pinned Gemma model download from the beginning after discarding an invalid full-size file."
+            "Townlight is retrying the pinned Gemma model download from the beginning after discarding an invalid full-size file."
                 .to_string(),
             None,
         )?;
@@ -1502,7 +1502,7 @@ fn download_model_artifact_inner(
             manifest,
             local_path,
             "Downloading",
-            "CivicSuite is retrying the pinned Gemma model download from the beginning after discarding an invalid partial file."
+            "Townlight is retrying the pinned Gemma model download from the beginning after discarding an invalid partial file."
                 .to_string(),
             None,
         )?;
@@ -1561,7 +1561,7 @@ fn readiness_items(
                         (
                             true,
                             "Found",
-                            "The pinned GGUF file exists with the expected size in the local CivicSuite data folder."
+                            "The pinned GGUF file exists with the expected size in the local Townlight data folder."
                                 .to_string(),
                         )
                     } else {
@@ -2418,7 +2418,7 @@ mod tests {
                 schema_version: 1,
                 model_id: manifest.model.id.clone(),
                 status: "Downloading".to_string(),
-                message: "CivicSuite is downloading the pinned Gemma model file.".to_string(),
+                message: "Townlight is downloading the pinned Gemma model file.".to_string(),
                 local_path: local_path.to_string_lossy().to_string(),
                 partial_path: partial_download_path(&local_path)
                     .to_string_lossy()

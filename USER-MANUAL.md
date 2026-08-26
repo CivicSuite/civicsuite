@@ -1,16 +1,128 @@
-# CivicSuite — User Manual
+# Townlight Records — User Manual
 
-**Last verified:** 2026-07-02 (civicsuite-windows-local-v1.0.2)
+**Candidate version:** 1.1.0-beta.1
 
-This is the orientation manual for the CivicSuite umbrella repo. It is written in three parts plus a glossary:
+**Last updated:** 2026-08-20
 
-1. **For municipal decision-makers** — non-technical overview.
-2. **For developers and IT staff** — how the umbrella repo works.
-3. **Architecture reference** — pointer to [ARCHITECTURE.md](ARCHITECTURE.md).
+**Publication status:** release candidate; not yet a published beta
 
-For an at-a-glance honest module status, read [STATUS.md](STATUS.md) first. For common operator questions, read [FAQ.md](FAQ.md).
+Townlight Records is a local-first Windows system for receiving, searching,
+reviewing, approving, releasing, and tracking municipal public-records
+requests. The first product profile installs Townlight Core, Townlight Records,
+Townlight Notice, and Townlight Access.
+
+## Before installing
+
+Do not use an unsigned GitHub Actions artifact as a public release. The beta is
+ready for external use only when a prerelease named
+`townlight-records-v1.1.0-beta.1` appears under the
+[Townlight releases page](https://github.com/townlight/townlight/releases) with
+the signed MSI and its evidence file.
+
+Before running the MSI:
+
+1. Confirm its Authenticode status is `Valid`.
+2. Confirm the signer subject matches the identity published with the release evidence.
+3. Compare the MSI's SHA-256 with the release evidence.
+4. Install only the exact signed asset attached to the release.
+
+Townlight runs locally. The normal operator path does not require Docker, WSL,
+a terminal, or a hosted vendor account. A local AI model is optional for the
+deterministic Records demo journey; human review remains mandatory before
+release.
+
+## First run
+
+1. Choose the local data and backup folders. The application location is owned
+   by Windows Installer.
+2. Keep the default **Townlight Records** profile unless you are intentionally
+   testing another profile. Townlight Core cannot be removed.
+3. Enter the municipality name, state, time zone, and records contact.
+4. Create the first Townlight admin and store its passcode in an approved
+   password vault.
+5. Sign in as that admin and confirm the backup folder.
+6. Complete System Health. If you will use local-AI features, download, verify,
+   and start the pinned model through the guided controls.
+7. Finish setup and open Records Requests.
+
+## Load the fictional demonstration town
+
+The beta includes **Town of Redstone Valley (Fictional)**. Loading is explicit
+and restricted to a signed-in Townlight admin.
+
+1. Start with an empty local city-work profile.
+2. Open **Records Requests** on the Staff surface.
+3. Select **Load demo town** and confirm the guided review.
+4. Verify the persistent synthetic-data banner and watermark.
+
+Townlight creates and verifies a backup before loading, validates the fixture
+and artifact hashes, writes atomically, reads the saved state back, and restores
+the prior state if verification fails. It refuses to overwrite an existing
+non-empty profile and never loads demo content automatically.
+
+All visible people, places, cases, contacts, and records in this fixture are
+fictional. No Longmont or Longmont Public Media text, files, videos, or
+transcripts are redistributed.
+
+## Complete the Records beta journey
+
+Use the fictional request to verify the product end to end:
+
+1. Calculate the response deadline and record its human-readable basis.
+2. Assign the request to a records officer.
+3. Record a search session with searched locations, results, and exact
+   citations.
+4. Review possible exemptions and save the human decision and basis. Townlight
+   does not auto-deny or auto-redact.
+5. Open **Accessibility** and run the deterministic review on the proposed
+   public response.
+6. Return to Records, save the response draft, and record explicit human
+   approval.
+7. Build the release package and export the response.
+8. Mark the request fulfilled, then close it.
+9. Switch to **Resident/Public** and verify that public status is visible while
+   staff-only reviewer/contact information is absent.
+10. Open **System Health**, create a backup, restore it, restart Townlight
+    offline, and confirm the request and audit history remain available.
+
+## Backup, repair, and uninstall
+
+- **Backup Now** creates a manifest-backed local profile backup.
+- **Restore Latest Backup** verifies the backup before replacing current state
+  and preserves the per-install secret.
+- **Repair** uses Windows Installer to repair product files without replacing
+  municipal data.
+- **Prepare Uninstall** creates a final backup before local profile removal.
+- Windows **Installed apps** removes the Townlight application. Verify the
+  agreed retention choice for municipal data and backups separately.
+
+## Beta limits and architecture
+
+The Records beta's user-facing domain workflow currently executes in the Rust
+desktop application. The installed Python/FastAPI Records, Notice, and Access
+packages are reference/contract implementations for this release, not the
+desktop execution path. A blocking convergence program moves domain work to a
+single Python/PostgreSQL path before Townlight Meetings ships.
+
+Public names use Townlight. Existing `civic*` package/import IDs, database and
+schema names, environment variables, MSI identity, and legacy local-data paths
+remain compatibility identifiers until an explicit migration exists.
+
+## Support and evidence
+
+- Current release process: [RELEASING.md](RELEASING.md)
+- Troubleshooting: [docs/troubleshooting.md](docs/troubleshooting.md)
+- Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
+- Honest current status: [STATUS.md](STATUS.md)
+- Source and artifact provenance: [PROVENANCE.md](PROVENANCE.md)
 
 ---
+
+## Historical predecessor manual (not current)
+
+The remainder of this file is retained as a historical CivicSuite city-core
+manual. Its old product names, versions, download links, and module bundle are
+not instructions for the Townlight Records beta.
 
 ## Part 1 — For municipal decision-makers
 
@@ -213,19 +325,18 @@ The full suite architecture, dependency graph, data-flow rules, and CivicCore ex
 <!-- Maintainers: re-run `python scripts/docs/render_topology.py --check` before publishing docs. -->
 Generated from `installer/modules.json`.
 
-- Root installer truth label: `city_core_beta_ready_truth_reconciled`.
-- City-core profile status: `beta_ready_truth_reconciled`.
-- City-core modules are the only modules represented in the current beta-ready profile.
+- Root installer truth label: `townlight_records_beta_candidate`.
+- Primary product profile: `records-beta` (Townlight Records).
+- Townlight Records profile status: `stabilizing`.
+- Only the Townlight Records modules are represented in this candidate table.
 - Disabled profiles and excluded modules remain documented as out of scope until their own gates clear.
 
 | Module | Version | Role | Dependencies | Source commit | Installer status |
 |---|---:|---|---|---|---|
-| CivicCore | 1.2.0 | shared platform | none | `1a53f0680fff` | `v1_2_0_windows_local_platform_contracts` |
-| CivicRecords AI | 1.7.3 | records workflow | `civiccore` | `e2208827b660` | `v1_7_3_city_core_release_car` |
-| CivicClerk | 1.0.4 | meetings workflow | `civiccore` | `fa1874edfe97` | `v1_0_4_city_core_release_car` |
-| CivicCode | 1.0.8 | municipal code | `civiccore`, `civicclerk` | `a960bba0a224` | `v1_0_8_city_core_release_car` |
-| CivicNotice | 0.2.0 | public notice workflow | `civiccore` | `2bf0c9d7b764` | `v0_2_0_installed_module_release` |
-| CivicAccess | 0.4.0 | accessibility + records-ready export | `civiccore` | `7b24516fd895` | `v0_4_0_city_core_release_car` |
+| Townlight Core | 1.2.1 | shared platform | none | `b4d0156bdc68` | `v1_2_1_records_beta_platform` |
+| Townlight Records | 1.7.3 | records workflow | `civiccore` | `edf1c8d8078c` | `v1_7_3_records_beta_candidate` |
+| Townlight Notice | 0.2.0 | public notice workflow | `civiccore` | `79b8d07199ee` | `v0_2_0_records_beta_candidate` |
+| Townlight Access | 0.4.0 | accessibility + records-ready export | `civiccore` | `b9100edc80ca` | `v0_4_0_records_beta_candidate` |
 
 Disabled profiles:
 - `land-use` (Land Use): queued - depends on Tier 2 module work after city-core ships

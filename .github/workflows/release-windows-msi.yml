@@ -9,11 +9,12 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to attach the MSI to (e.g. civicsuite-windows-local-v1.0.1)"
+        description: "Release tag to attach the MSI to (e.g. townlight-records-v1.1.0-beta.1)"
         required: true
   push:
     tags:
       - "civicsuite-windows-local-v*"
+      - "townlight-records-v*"
 
 permissions:
   contents: write
@@ -87,7 +88,7 @@ jobs:
           # for a human to finalize notes + promote.
           gh release view $tag *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --title "CivicSuite Windows Local $tag" --prerelease --notes "Automated signed MSI attach from main build run $($run.databaseId). Finalize notes and promote from prerelease after clean-machine validation."
+            gh release create $tag --title "Townlight Records $tag" --prerelease --notes "Automated signed Townlight Records MSI attach from main build run $($run.databaseId). Finalize notes and promote from prerelease after clean-machine validation."
             if ($LASTEXITCODE -ne 0) { throw "Failed to create the prerelease." }
           }
           gh release upload $tag $msi.FullName $evidenceFiles[0].FullName --clobber

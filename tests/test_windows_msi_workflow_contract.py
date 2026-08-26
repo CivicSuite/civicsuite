@@ -52,6 +52,12 @@ def test_lifecycle_consumes_and_verifies_the_same_classified_artifact() -> None:
     assert "Unsigned CI MSI filename is not visibly marked UNSIGNED" in workflow
     assert "Evidence does not classify the MSI as UNSIGNED" in workflow
     assert "Signed lifecycle lane received an unexpected signer" in workflow
+    assert 'Where-Object { $_.DisplayName -like "*Townlight*" }' in workflow
+    assert "Launch the installed Townlight application" in workflow
+    assert "Installed Townlight application launched and remained running" in workflow
+    assert "Repair the installed Townlight MSI" in workflow
+    assert 'Start-Process msiexec.exe -ArgumentList @("/fa"' in workflow
+    assert 'Join-Path $env:LOCALAPPDATA "CivicSuite\\workflows\\city-work.json"' in workflow
     assert workflow.count('-replace "`r`n?", "`n"') >= 1
 
 
@@ -78,3 +84,15 @@ def test_signing_comments_do_not_repeat_the_false_subscription_claim() -> None:
     assert "has no subscription" not in workflow
     assert "no subscription to federate" not in workflow
     assert "future OIDC migration" in workflow
+
+
+def test_public_product_name_changes_without_replacing_installer_identity() -> None:
+    workflow = _read(BUILD_WORKFLOW)
+    tauri_config = _read(ROOT / "desktop" / "src-tauri" / "tauri.conf.json")
+
+    assert '"productName": "Townlight"' in tauri_config
+    assert '"publisher": "Townlight"' in tauri_config
+    assert '"identifier": "org.civicsuite.desktop"' in tauri_config
+    assert '"upgradeCode": "a63fc1d3-5437-5f55-89a2-fef93fb1f930"' in tauri_config
+    assert "Townlight Windows Local MSI build evidence" in workflow
+    assert "UpgradeCode=a63fc1d3-5437-5f55-89a2-fef93fb1f930" in workflow

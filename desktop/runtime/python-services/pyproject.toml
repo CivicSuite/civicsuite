@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "civicsuite-runtime"
 version = "0.1.0"
-description = "Local Windows runtime bridge for CivicSuite desktop services."
+description = "Local Windows runtime bridge for Townlight Records desktop services."
 requires-python = ">=3.11"
 license = "Apache-2.0"
 dependencies = ["sqlalchemy>=2.0"]

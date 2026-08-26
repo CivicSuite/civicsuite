@@ -15,14 +15,14 @@ covers the May 2026 label correction.
 
 | Module          | Repo                           | Current version | Released   | Compatible CivicCore range | Last verified | Notes |
 |-----------------|--------------------------------|-----------------|------------|----------------------------|---------------|-------|
-| civiccore       | CivicSuite/civiccore           | 1.2.0           | 2026-05-23 | n/a                        | 2026-06-13    | Shared document-ingestion pipeline release; now includes Windows-local platform contracts and PostgreSQL-backed local task queue/worker. |
-| civicrecords-ai | CivicSuite/civicrecords-ai     | 1.7.3           | 2026-05-23 | `==1.2.0`                  | 2026-05-25    | City-core records module release consuming CivicCore shared ingestion; v1.7.3 adds release-asset convention bring-up without installer behavior changes. |
+| civiccore       | townlight/core                 | 1.2.1           | 2026-07-04 | n/a                        | 2026-08-20    | Townlight Core release used by the Records beta candidate, including Windows-local platform contracts and the PostgreSQL-backed local task queue/worker. |
+| civicrecords-ai | townlight/sunshine             | 1.7.3           | 2026-05-23 | `==1.2.1`                  | 2026-08-20    | Townlight Records beta candidate source pin with safe deterministic fixtures and connector provenance; the package release remains 1.7.3. |
 | civicclerk      | CivicSuite/civicclerk          | 1.0.4           | 2026-06-13 | `==1.2.0`                  | 2026-06-13    | City-core clerk module release with persistence refresh and protected staff auth defaults retained. |
 | civicregwatch   | CivicSuite/civicregwatch       | planned         | not released | TBD                      | 2026-04-30    | New planned federal regulatory intelligence module. Implementation spec exists in `specs/05_civicregwatch.md`; repo and civiccore pin are not scaffolded yet. |
 | civicapi        | CivicSuite/civicapi            | planned         | not released | TBD                      | 2026-04-30    | New planned public read-only data gateway module. Implementation spec exists in `specs/06_civicapi.md`; repo and civiccore pin are not scaffolded yet. |
 | civiccode       | CivicSuite/civiccode           | 1.0.8           | 2026-05-23 | `==1.2.0`                  | 2026-05-23    | City-core municipal-code module release; v1.0.8 supersedes v1.0.0 and consumes CivicCore shared ingestion. |
 | civiczone       | CivicSuite/civiczone           | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | Early scaffold; version label corrected to match actual maturity; full build queued for Tier 2. |
-| civicaccess     | CivicSuite/civicaccess         | 0.4.0           | 2026-06-28 | `==1.2.0`                  | 2026-07-02    | Sixth city-core module: accessibility + records-ready export release on CivicCore v1.2.0, bundled in the Windows-Local city-core MSI as of v1.0.2 with real local-AI accessibility features (plain-language rewrite, translation, advisory review analysis). A follow-up in-depth review (2026-06-29) qualified it for city-core, reversing the 2026-05-23 "needs work" demotion (a failed depth review). |
+| civicaccess     | townlight/access               | 0.4.0           | 2026-06-28 | `==1.2.1`                  | 2026-08-20    | Townlight Access provides the accessibility and records-release review capability bundled in the Records beta candidate. |
 | civicplan       | CivicSuite/civicplan           | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | Early scaffold; version label corrected to match actual maturity; full build queued for Tier 2. |
 | civicpermit     | CivicSuite/civicpermit         | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | Early scaffold; version label corrected to match actual maturity; full build queued for Tier 2. |
 | civicinspect    | CivicSuite/civicinspect        | 0.2.2           | 2026-05-23 | `==1.1.0`                  | 2026-05-23    | Early scaffold; version label corrected to match actual maturity; full build queued for Tier 2. |
@@ -30,7 +30,7 @@ covers the May 2026 label correction.
 | civicprocure    | CivicSuite/civicprocure        | 0.2.0           | 2026-05-10 | `==1.1.0`                  | 2026-05-11    | D2/B3 rollout consumes CivicCore v1.1.0 shared `staff_key_gate`; module remains scaffold-depth, not v1.0 product-ready. |
 | civiccontracts  | CivicSuite/civiccontracts      | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: contract repository foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicboards     | CivicSuite/civicboards         | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: board administration foundation preserved while moving to civiccore 0.3.0 shared primitives. |
-| civicnotice     | CivicSuite/civicnotice         | 0.2.0           | 2026-06-19 (tag); release published 2026-07-03 | `==1.2.0`     | 2026-07-03    | City-core public-notice module release with checklist, posting proof, archive export, backup/restore, and Windows Local installer integration. The [v0.2.0 release](https://github.com/CivicSuite/civicnotice/releases/tag/v0.2.0) is published from the 2026-06-19 tag. |
+| civicnotice     | townlight/notice               | 0.2.0           | 2026-06-19 (tag); release published 2026-07-03 | `==1.2.1`     | 2026-08-20    | Townlight Notice supplies deterministic deadline, proof, and archive support for the Records beta candidate. The [v0.2.0 release](https://github.com/townlight/notice/releases/tag/v0.2.0) remains the published package. |
 | civic311        | CivicSuite/civic311            | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: resident service request foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civiccomms      | CivicSuite/civiccomms          | 0.1.1           | 2026-04-28 | `==0.3.0`                  | 2026-04-28    | Dependency-alignment release: public communications foundation preserved while moving to civiccore 0.3.0 shared primitives. |
 | civicdata       | CivicSuite/civicdata           | 0.1.2           | 2026-04-29 | `==0.4.0`                  | 2026-04-29    | Auth-protected persisted retrieval rollout consumes the published `civiccore v0.4.0` release. |
@@ -70,16 +70,14 @@ release.
 | civicsuite-windows-local-v1.0.2    | 2026-07-02 | 1.2.0              | unsigned beta | Superseded by v1.0.3. Tauri/WebView2 desktop MSI bundling the six-module city-core profile (adds CivicAccess 0.4.0 with real local-AI accessibility features) on CivicCore 1.2.0. Supersedes v1.0.1. |
 | civicsuite-windows-local-v1.0.1    | 2026-06-19 | 1.2.0              | unsigned beta | Superseded by v1.0.2. Tauri/WebView2 desktop MSI bundling the five city-core modules on CivicCore 1.2.0. Supersedes v1.0.0; firstrun-fix-rc1 prerelease retired. |
 
-Bundled city-core modules in the latest release (release-line versions; four of the six modules — civiccore, civicrecords-ai, civicclerk, and civiccode — bundle `source_commit` pins ahead of their published tags — see [PROVENANCE.md](../../PROVENANCE.md)):
+Modules pinned into the Townlight Records beta candidate. Technical IDs remain stable for compatibility; the installer uses exact source commits recorded in `installer/modules.json`:
 
 | Module          | Version | CivicCore platform |
 |-----------------|---------|--------------------|
-| civiccore       | 1.2.0   | n/a (platform)     |
-| civicrecords-ai | 1.7.3   | 1.2.0              |
-| civicclerk      | 1.0.4   | 1.2.0              |
-| civiccode       | 1.0.8   | 1.2.0              |
-| civicnotice     | 0.2.0   | 1.2.0              |
-| civicaccess     | 0.4.0   | 1.2.0              |
+| civiccore       | 1.2.1   | n/a (platform)     |
+| civicrecords-ai | 1.7.3   | 1.2.1              |
+| civicnotice     | 0.2.0   | 1.2.1              |
+| civicaccess     | 0.4.0   | 1.2.1              |
 
 ## CO-7 placeholder audit
 

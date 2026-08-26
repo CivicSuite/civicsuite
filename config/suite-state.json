@@ -47,12 +47,12 @@
       "public_name": "Townlight Core", "public_slug": "core",
       "legacy": {"technical_id": "civiccore", "product_names": ["CivicCore"], "package_names": ["civiccore"]},
       "repository": {"name": "townlight/core", "aliases": ["CivicSuite/civiccore"], "default_branch": "main", "manifest_path": "pyproject.toml"},
-      "versions": {"development": "1.2.1", "released": "1.2.1", "installer": "1.2.0", "public_status": "1.2.0"},
+      "versions": {"development": "1.2.1", "released": "1.2.1", "installer": "1.2.1", "public_status": "1.2.1"},
       "release": {"tag": "v1.2.1", "published_at": "2026-07-04", "asset_policy": "python-attested"},
       "compatibility": {"development_core": null, "installer_core": null, "public_status_core": null},
       "dependencies": [],
-      "maturity": {"state": "platform", "availability": "runtime", "arch_tier": 0, "legacy_grade": "platform", "public_status_released_at": "2026-05-23"},
-      "installer": {"tier": 0, "role": "shared platform", "status": "v1_2_0_windows_local_platform_contracts", "source_commit": "1a53f0680fffce34efeb939cbeb9915b6e208d6c"}
+      "maturity": {"state": "platform", "availability": "runtime", "arch_tier": 0, "legacy_grade": "platform", "public_status_released_at": "2026-07-04"},
+      "installer": {"tier": 0, "role": "shared platform", "status": "v1_2_1_records_beta_platform", "source_commit": "b4d0156bdc6883c1c3ef167abe0379f9ca32b258"}
     },
     "records": {
       "public_name": "Townlight Records", "public_slug": "records",
@@ -60,10 +60,10 @@
       "repository": {"name": "townlight/sunshine", "aliases": ["CivicSuite/civicrecords-ai", "CivicSuite/civicsunshine"], "default_branch": "master", "manifest_path": "backend/pyproject.toml"},
       "versions": {"development": "1.7.3", "released": "1.7.3", "installer": "1.7.3", "public_status": "1.7.3"},
       "release": {"tag": "v1.7.3", "published_at": "2026-05-24", "asset_policy": "python-attested"},
-      "compatibility": {"development_core": "1.2.0", "installer_core": "1.2.0", "public_status_core": "1.2.0"},
+      "compatibility": {"development_core": "1.2.0", "installer_core": "1.2.1", "public_status_core": "1.2.1"},
       "dependencies": ["core"],
       "maturity": {"state": "public-beta", "availability": "runtime", "arch_tier": 1, "legacy_grade": "released", "public_status_released_at": "2026-05-24"},
-      "installer": {"tier": 1, "role": "records workflow", "status": "v1_7_3_city_core_release_car", "source_commit": "e2208827b660faa7d3fc1eab2271a8eae18526ee"}
+      "installer": {"tier": 1, "role": "records workflow", "status": "v1_7_3_records_beta_candidate", "source_commit": "edf1c8d8078c85baff691030a599b8eef670bca6"}
     },
     "meetings": {
       "public_name": "Townlight Meetings", "public_slug": "meetings",
@@ -93,10 +93,10 @@
       "repository": {"name": "townlight/access", "aliases": ["CivicSuite/civicaccess"], "default_branch": "main", "manifest_path": "pyproject.toml"},
       "versions": {"development": "0.4.0", "released": "0.4.0", "installer": "0.4.0", "public_status": "0.4.0"},
       "release": {"tag": "v0.4.0", "published_at": "2026-06-28", "asset_policy": "python-package"},
-      "compatibility": {"development_core": "1.2.0", "installer_core": "1.2.0", "public_status_core": "1.2.0"},
+      "compatibility": {"development_core": "1.2.0", "installer_core": "1.2.1", "public_status_core": "1.2.1"},
       "dependencies": ["core"],
       "maturity": {"state": "public-beta", "availability": "runtime", "arch_tier": 1, "legacy_grade": "released", "public_status_released_at": "2026-06-28"},
-      "installer": {"tier": 3, "role": "accessibility + records-ready export", "status": "v0_4_0_city_core_release_car", "source_commit": "7b24516fd89584d84c12394b9385eddd1e8c6897"}
+      "installer": {"tier": 3, "role": "accessibility + records-ready export", "status": "v0_4_0_records_beta_candidate", "source_commit": "b9100edc80ca496d6061f1cdb3eb39a60ff5f31a"}
     },
     "zoning": {
       "public_name": "Townlight Zoning", "public_slug": "zoning",
@@ -192,10 +192,10 @@
       "repository": {"name": "townlight/notice", "aliases": ["CivicSuite/civicnotice"], "default_branch": "main", "manifest_path": "pyproject.toml"},
       "versions": {"development": "0.2.0", "released": "0.2.0", "installer": "0.2.0", "public_status": "0.2.0"},
       "release": {"tag": "v0.2.0", "published_at": "2026-07-03", "asset_policy": "python-package"},
-      "compatibility": {"development_core": "1.2.0", "installer_core": "1.2.0", "public_status_core": "1.2.0"},
+      "compatibility": {"development_core": "1.2.0", "installer_core": "1.2.1", "public_status_core": "1.2.1"},
       "dependencies": ["core"],
       "maturity": {"state": "public-beta", "availability": "runtime", "arch_tier": 3, "legacy_grade": "released", "public_status_released_at": "2026-07-03"},
-      "installer": {"tier": 3, "role": "public notice workflow", "status": "v0_2_0_installed_module_release", "source_commit": "2bf0c9d7b764af84cd042657a972e84213a261d5"}
+      "installer": {"tier": 3, "role": "public notice workflow", "status": "v0_2_0_records_beta_candidate", "source_commit": "79b8d07199ee77cd425b31c0e0a44f3a0832b810"}
     },
     "311": {
       "public_name": "Townlight 311", "public_slug": "311",

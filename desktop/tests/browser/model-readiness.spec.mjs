@@ -11,9 +11,9 @@ test("home surface keeps local model setup behind first-admin sign-in", async ({
   await expect(page.getByRole("heading", { name: "City Core setup checklist" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Gemma 4 12B QAT Q4_0" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download / Resume" })).toHaveCount(0);
-  await expect(page.getByText("Create the first CivicSuite admin and sign in before changing local model setup.")).toHaveCount(0);
-  await expect(page.getByText("5 local components are part of this Windows profile.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
+  await expect(page.getByText("Create the first Townlight admin and sign in before changing local model setup.")).toHaveCount(0);
+  await expect(page.getByText("6 local components are part of this Windows profile.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Core" })).toBeVisible();
 
   await expect(page.getByText("Start Docker")).toHaveCount(0);
   await expect(page.getByText("Install WSL")).toHaveCount(0);
@@ -30,7 +30,7 @@ test("system health shows model readiness with pre-admin actions locked", async 
   await expect(page.getByText("Download progress")).toBeVisible();
   await expect(page.getByText("No verified or partial Gemma model download is saved on this machine.")).toBeVisible();
   await expect(page.getByText("Needs verification")).toBeVisible();
-  await expect(page.getByText("Create the first CivicSuite admin and sign in before changing local model setup.")).toBeVisible();
+  await expect(page.getByText("Create the first Townlight admin and sign in before changing local model setup.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Model Folder" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Download / Resume" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Verify Checksum" })).toBeDisabled();
@@ -109,7 +109,7 @@ test("desktop restore result leaves Working state with bounded service-start fol
             service_id: null,
             status: "Restore needs service start",
             message:
-              "Restored CivicSuite local data and setup. Data old folder cleanup is pending at C:\\CivicSuite\\Data.restore-old. Config old folder cleanup is pending at C:\\CivicSuite\\config.restore-old.",
+              "Restored Townlight local data and setup. Data old folder cleanup is pending at C:\\Townlight\\Data.restore-old. Config old folder cleanup is pending at C:\\Townlight\\config.restore-old.",
             next_action:
               "Use Start, then Check or Repair from System Health so the restored profile verifies database, task queue, and service health."
           };
@@ -168,7 +168,7 @@ test("desktop backup and support results render before slow health refresh", asy
               service_id: null,
               status: "Backup created",
               message:
-                "Created a verified CivicSuite backup at C:\\CivicSuite Backups\\civicsuite-manual-backup-123.",
+                "Created a verified Townlight backup at C:\\Townlight Backups\\civicsuite-manual-backup-123.",
               next_action:
                 "Keep this backup folder available for restore or reinstall recovery."
             };
@@ -180,9 +180,9 @@ test("desktop backup and support results render before slow health refresh", asy
               service_id: null,
               status: "Support bundle created",
               message:
-                "Created a CivicSuite support bundle at C:\\CivicSuite Backups\\support-bundles\\bundle-123.",
+                "Created a Townlight support bundle at C:\\Townlight Backups\\support-bundles\\bundle-123.",
               next_action:
-                "Share this support bundle folder only with trusted CivicSuite support or city IT."
+                "Share this support bundle folder only with trusted Townlight support or city IT."
             };
           }
           throw new Error(`Unexpected supervisor action: ${args.action}`);
@@ -200,7 +200,7 @@ test("desktop backup and support results render before slow health refresh", asy
   await expect(page.locator(".action-result").getByText("Working", { exact: true })).toBeVisible();
   await expect(page.getByText("Running Backup Now from the desktop app.")).toBeVisible();
   await expect(page.locator(".action-result").getByText("Backup created", { exact: true })).toBeVisible();
-  await expect(page.getByText("Created a verified CivicSuite backup")).toBeVisible();
+  await expect(page.getByText("Created a verified Townlight backup")).toBeVisible();
   await expect(page.locator(".action-result").getByText("Working", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Create Support Bundle" }).click();
@@ -210,7 +210,7 @@ test("desktop backup and support results render before slow health refresh", asy
   await expect(page.locator(".action-result").getByText("Working", { exact: true })).toBeVisible();
   await expect(page.getByText("Running Create Support Bundle from the desktop app.")).toBeVisible();
   await expect(page.locator(".action-result").getByText("Support bundle created", { exact: true })).toBeVisible();
-  await expect(page.getByText("Created a CivicSuite support bundle")).toBeVisible();
+  await expect(page.getByText("Created a Townlight support bundle")).toBeVisible();
   await expect(page.locator(".action-result").getByText("Working", { exact: true })).toHaveCount(0);
 
   const supervisorInvocations = await page.evaluate(() => window.__supervisorInvocations);

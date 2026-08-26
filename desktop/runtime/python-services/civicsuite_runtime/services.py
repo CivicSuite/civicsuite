@@ -1,4 +1,4 @@
-"""Local service host for CivicSuite Windows desktop module checks."""
+"""Local service host for Townlight Windows desktop module checks."""
 
 from __future__ import annotations
 
@@ -16,19 +16,31 @@ from civicsuite_runtime import __version__
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 15480
-MODULE_IMPORTS = [
+PRODUCT_PROFILE_ENV = "TOWNLIGHT_PRODUCT_PROFILE"
+RECORDS_BETA_MODULE_IMPORTS = [
     ("civiccore", "civiccore"),
     ("civicrecords-ai", "app.main"),
-    ("civicclerk", "civicclerk.main"),
-    ("civiccode", "civiccode.main"),
     ("civicnotice", "civicnotice.main"),
-]
-
-# Wired but not yet offered (selectable:false until Phase C). Reported by /health for
-# observability, but a failure here must NOT degrade overall health for the shipped modules.
-OPTIONAL_MODULE_IMPORTS = [
     ("civicaccess", "civicaccess.main"),
 ]
+CITY_CORE_EXTRA_MODULE_IMPORTS = [
+    ("civicclerk", "civicclerk.main"),
+    ("civiccode", "civiccode.main"),
+]
+
+
+def _product_profile() -> str:
+    profile = os.environ.get(PRODUCT_PROFILE_ENV, "records-beta")
+    if profile not in {"records-beta", "city-core"}:
+        raise RuntimeError(f"Unsupported Townlight product profile: {profile}")
+    return profile
+
+
+def _required_module_imports(profile: str) -> list[tuple[str, str]]:
+    imports = list(RECORDS_BETA_MODULE_IMPORTS)
+    if profile == "city-core":
+        imports.extend(CITY_CORE_EXTRA_MODULE_IMPORTS)
+    return imports
 
 
 def _profile_root() -> Path:
@@ -69,6 +81,7 @@ def _set_local_secrets() -> None:
 
 
 def _set_local_defaults() -> None:
+    os.environ.setdefault(PRODUCT_PROFILE_ENV, "records-beta")
     os.environ.setdefault("PORTAL_MODE", "private")
     os.environ.setdefault("OLLAMA_BASE_URL", "http://127.0.0.1:15434")
     os.environ.setdefault("CIVICCLERK_OLLAMA_BASE_URL", "http://127.0.0.1:15434")
@@ -84,7 +97,7 @@ def _set_local_defaults() -> None:
 def _module_status(module_id: str, import_name: str) -> dict[str, Any]:
     try:
         module = importlib.import_module(import_name)
-    except Exception as exc:  # pragma: no cover - surfaced through /health
+    except Exception as exc:  # noqa: BLE001  # pragma: no cover - surfaced through /health
         return {
             "id": module_id,
             "ok": False,
@@ -126,7 +139,7 @@ def _database_status() -> dict[str, Any]:
             task_table = connection.execute(
                 text("SELECT to_regclass('public.civiccore_local_tasks')")
             ).scalar()
-    except Exception as exc:  # pragma: no cover - surfaced through /health
+    except Exception as exc:  # noqa: BLE001  # pragma: no cover - surfaced through /health
         return {
             "ok": False,
             "status": "unavailable",
@@ -147,25 +160,25 @@ def _database_status() -> dict[str, Any]:
 
 def health_payload() -> dict[str, Any]:
     _set_local_defaults()
-    modules = [_module_status(module_id, import_name) for module_id, import_name in MODULE_IMPORTS]
-    # Optional modules are reported for observability but do NOT gate overall status.
-    optional_modules = [
-        {**_module_status(module_id, import_name), "optional": True}
-        for module_id, import_name in OPTIONAL_MODULE_IMPORTS
+    profile = _product_profile()
+    modules = [
+        _module_status(module_id, import_name)
+        for module_id, import_name in _required_module_imports(profile)
     ]
     database = _database_status()
     return {
         "status": "ok" if all(item["ok"] for item in modules) and database["ok"] else "degraded",
-        "service": "civicsuite-runtime",
+        "service": "townlight-runtime",
         "version": __version__,
-        "modules": modules + optional_modules,
+        "product_profile": profile,
+        "modules": modules,
         "database": database,
         "local_only": True,
     }
 
 
 class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
+    def do_GET(self) -> None:
         if self.path not in {"/health", "/modules"}:
             self.send_error(404, "Not Found")
             return
@@ -177,7 +190,7 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 - stdlib signature
+    def log_message(self, format: str, *args: Any) -> None:
         return
 
 
@@ -185,7 +198,7 @@ def main() -> int:
     host = os.environ.get("CIVICSUITE_RUNTIME_HOST", DEFAULT_HOST)
     port = int(os.environ.get("CIVICSUITE_RUNTIME_PORT", str(DEFAULT_PORT)))
     server = ThreadingHTTPServer((host, port), HealthHandler)
-    print(f"CivicSuite runtime services listening on http://{host}:{port}", flush=True)
+    print(f"Townlight runtime services listening on http://{host}:{port}", flush=True)
     server.serve_forever()
     return 0
 

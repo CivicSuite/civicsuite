@@ -751,8 +751,18 @@ pub struct SearchResult {
     pub status: String,
 }
 
-#[derive(Deserialize, Serialize, Clone, Default)]
+const CITY_WORK_SCHEMA_VERSION: u32 = 1;
+
+fn current_city_work_schema_version() -> u32 {
+    CITY_WORK_SCHEMA_VERSION
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct CityWorkState {
+    #[serde(default = "current_city_work_schema_version")]
+    pub schema_version: u32,
+    #[serde(default)]
+    pub demo_fixture: Option<crate::demo_fixture::DemoFixtureMarker>,
     #[serde(default)]
     pub meeting_bodies: Vec<MeetingBody>,
     #[serde(default)]
@@ -772,6 +782,27 @@ pub struct CityWorkState {
     pub notification_events: Vec<NotificationEvent>,
     #[serde(default)]
     pub access: CivicAccessState,
+}
+
+impl Default for CityWorkState {
+    fn default() -> Self {
+        Self {
+            schema_version: CITY_WORK_SCHEMA_VERSION,
+            demo_fixture: None,
+            meeting_bodies: Vec::new(),
+            meeting_members: Vec::new(),
+            agenda_intakes: Vec::new(),
+            meetings: Vec::new(),
+            records_requests: Vec::new(),
+            code_sources: Vec::new(),
+            code_handoffs: Vec::new(),
+            adopted_legislation: Vec::new(),
+            audit_entries: Vec::new(),
+            publication_events: Vec::new(),
+            notification_events: Vec::new(),
+            access: CivicAccessState::default(),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Default)]
@@ -882,9 +913,44 @@ fn read_state() -> Result<CityWorkState, String> {
     }
     let contents = fs::read_to_string(&path)
         .map_err(|error| format!("Could not read local workflow state: {error}"))?;
-    let mut state: CityWorkState = serde_json::from_str(&contents)
+    let serialized_state: Value = serde_json::from_str(&contents)
         .map_err(|error| format!("Could not parse local workflow state: {error}"))?;
-    if normalize_adopted_legislation_index(&mut state) {
+    let stored_schema_version = match serialized_state.get("schema_version") {
+        None => None,
+        Some(version) => {
+            let version = version.as_u64().ok_or_else(|| {
+                "Could not parse local workflow state: schema_version must be a positive integer"
+                    .to_string()
+            })?;
+            Some(u32::try_from(version).map_err(|_| {
+                "Could not parse local workflow state: schema_version is out of range".to_string()
+            })?)
+        }
+    };
+    if let Some(version) = stored_schema_version {
+        if version != CITY_WORK_SCHEMA_VERSION {
+            return Err(format!(
+                "Unsupported city-work schema version {version}; this build supports version {CITY_WORK_SCHEMA_VERSION}. No data was changed."
+            ));
+        }
+    }
+    let mut state: CityWorkState = serde_json::from_value(serialized_state)
+        .map_err(|error| format!("Could not parse local workflow state: {error}"))?;
+    let normalized_adopted_legislation = normalize_adopted_legislation_index(&mut state);
+    if stored_schema_version.is_none() {
+        let backup = crate::supervisor::supervisor_action("backup", None).map_err(|error| {
+            format!(
+                "The legacy city-work state was not upgraded because its verified backup failed: {error}"
+            )
+        })?;
+        if !backup.accepted {
+            return Err(format!(
+                "The legacy city-work state was not upgraded because its backup was not accepted: {}",
+                backup.message
+            ));
+        }
+        write_state(&state)?;
+    } else if normalized_adopted_legislation {
         write_state(&state)?;
     }
     Ok(state)
@@ -930,6 +996,258 @@ fn write_state(state: &CityWorkState) -> Result<(), String> {
             .map_err(|error| format!("Could not create {}: {error}", parent.display()))?;
     }
     crate::atomic_io::atomic_write_json(&path, state)
+}
+
+fn city_work_state_is_empty(state: &CityWorkState) -> bool {
+    state.demo_fixture.is_none()
+        && state.meeting_bodies.is_empty()
+        && state.meeting_members.is_empty()
+        && state.agenda_intakes.is_empty()
+        && state.meetings.is_empty()
+        && state.records_requests.is_empty()
+        && state.code_sources.is_empty()
+        && state.code_handoffs.is_empty()
+        && state.adopted_legislation.is_empty()
+        && state.audit_entries.is_empty()
+        && state.publication_events.is_empty()
+        && state.notification_events.is_empty()
+        && state.access.reviews.is_empty()
+        && state.access.audit_events.is_empty()
+}
+
+fn current_demo_fixture_is_loaded(state: &CityWorkState) -> bool {
+    state.demo_fixture.as_ref().is_some_and(|marker| {
+        marker.fixture_id == crate::demo_fixture::FIXTURE_ID
+            && marker.fixture_version == crate::demo_fixture::FIXTURE_VERSION
+            && marker.fixture_sha256 == crate::demo_fixture::FIXTURE_SHA256
+            && marker.municipality_name == crate::demo_fixture::FIXTURE_NAME
+            && marker.watermark == crate::demo_fixture::WATERMARK
+            && state
+                .records_requests
+                .iter()
+                .any(|request| request.id == crate::demo_fixture::FIXTURE_REQUEST_ID)
+    })
+}
+
+fn demo_fixture_export_banner(state: &CityWorkState) -> String {
+    state
+        .demo_fixture
+        .as_ref()
+        .map(|marker| {
+            format!(
+                "## Demo Fixture Identity\nMunicipality: {}\nFixture: {} v{}\nFixture SHA-256: {}\nWatermark: {}\n\n",
+                marker.municipality_name,
+                marker.fixture_id,
+                marker.fixture_version,
+                marker.fixture_sha256,
+                marker.watermark
+            )
+        })
+        .unwrap_or_default()
+}
+
+fn load_demo_town(state: &mut CityWorkState) -> Result<String, String> {
+    let fixture = crate::demo_fixture::embedded_fixture()?;
+    if current_demo_fixture_is_loaded(state) {
+        return Ok(format!(
+            "{} v{} is already loaded. No data was duplicated or changed. {}",
+            crate::demo_fixture::FIXTURE_NAME,
+            crate::demo_fixture::FIXTURE_VERSION,
+            crate::demo_fixture::WATERMARK
+        ));
+    }
+    if !city_work_state_is_empty(state) {
+        return Err(
+            "Demo data can only be loaded into an empty local profile. Existing city work was not changed. Create or restore an empty profile, then try again."
+                .to_string(),
+        );
+    }
+    let backup = crate::supervisor::supervisor_action("backup", None).map_err(|error| {
+        format!("The verified pre-load backup failed, so no demo data was loaded: {error}")
+    })?;
+    if !backup.accepted {
+        return Err(format!(
+            "The pre-load backup was not accepted, so no demo data was loaded: {}",
+            backup.message
+        ));
+    }
+
+    let loaded_at = now_unix_seconds();
+    let request = fixture
+        .requests
+        .first()
+        .ok_or_else(|| "The canonical demo fixture has no Records request.".to_string())?;
+    let search_sessions = fixture
+        .expected
+        .search
+        .iter()
+        .enumerate()
+        .map(|(index, expected_search)| {
+            let results = expected_search
+                .record_ids
+                .iter()
+                .map(|record_id| {
+                    let record = fixture
+                        .records
+                        .iter()
+                        .find(|record| &record.record_id == record_id)
+                        .ok_or_else(|| {
+                            format!("The demo search references unknown record {record_id}.")
+                        })?;
+                    Ok(RecordsSearchResult {
+                        id: record.record_id.clone(),
+                        title: format!("{} — {}", record.title, crate::demo_fixture::WATERMARK),
+                        citation: format!(
+                            "fixture://{}/{}",
+                            crate::demo_fixture::FIXTURE_ID,
+                            record.record_id
+                        ),
+                        summary: format!(
+                            "{}\n\n{}",
+                            record.content,
+                            crate::demo_fixture::WATERMARK
+                        ),
+                        status: "synthetic responsive record".to_string(),
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            Ok(RecordsSearchSession {
+                id: format!("rv-search-session-{:04}", index + 1),
+                query: expected_search.query.clone(),
+                locations: format!(
+                    "Embedded Core fixture {} v{}",
+                    crate::demo_fixture::FIXTURE_ID,
+                    crate::demo_fixture::FIXTURE_VERSION
+                ),
+                reviewer: "Synthetic fixture ground truth".to_string(),
+                results,
+                created_at_unix_seconds: loaded_at,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let target_titles = fixture
+        .records
+        .iter()
+        .filter(|record| request.target_record_ids.contains(&record.record_id))
+        .map(|record| record.title.clone())
+        .collect::<Vec<_>>();
+    let demo_request = RecordsRequest {
+        id: request.request_id.clone(),
+        public_tracking_number: "DEMO-REQ-0001".to_string(),
+        requester: "Synthetic public requester".to_string(),
+        requester_contact: String::new(),
+        submitted_via: format!(
+            "Townlight canonical demo fixture {} v{}",
+            crate::demo_fixture::FIXTURE_ID,
+            crate::demo_fixture::FIXTURE_VERSION
+        ),
+        summary: format!("{} {}", request.description, crate::demo_fixture::WATERMARK),
+        deadline: "Pending staff deadline review".to_string(),
+        deadline_basis: format!(
+            "{} — fictional demonstration policy; not legal guidance",
+            request.policy_basis
+        ),
+        status: "received".to_string(),
+        assigned_to: String::new(),
+        clarification_notes: Vec::new(),
+        search_notes: vec![format!(
+            "Canonical fixture targets: {}. {}",
+            target_titles.join("; "),
+            crate::demo_fixture::WATERMARK
+        )],
+        search_sessions,
+        exemption_reviews: Vec::new(),
+        exemption_decisions: Vec::new(),
+        fee_estimate: "$0.00 synthetic demonstration".to_string(),
+        fee_line_items: Vec::new(),
+        fee_waiver_reason: String::new(),
+        citations: vec![format!(
+            "Core fixture SHA-256 {}",
+            crate::demo_fixture::FIXTURE_SHA256
+        )],
+        response_draft: String::new(),
+        approval_notes: Vec::new(),
+        exports: Vec::new(),
+        release_packages: Vec::new(),
+        timeline: vec![RecordsTimelineEntry {
+            id: "rv-timeline-received-0001".to_string(),
+            action: "received".to_string(),
+            actor: "Townlight demo loader".to_string(),
+            note: format!(
+                "Loaded canonical synthetic request received at {}. {}",
+                request.received_at,
+                crate::demo_fixture::WATERMARK
+            ),
+            created_at_unix_seconds: loaded_at,
+        }],
+        public_status_events: vec![RecordsPublicStatusEvent {
+            id: "rv-public-status-received-0001".to_string(),
+            label: "Request received".to_string(),
+            summary: format!(
+                "Synthetic demonstration request only. {}",
+                crate::demo_fixture::WATERMARK
+            ),
+            status: "received".to_string(),
+            created_at_unix_seconds: loaded_at,
+        }],
+        messages: Vec::new(),
+        documents: Vec::new(),
+        deadline_reviewed_at_unix_seconds: None,
+        approved_at_unix_seconds: None,
+        fulfilled_at_unix_seconds: None,
+        closed_at_unix_seconds: None,
+        created_at_unix_seconds: loaded_at,
+    };
+
+    state.demo_fixture = Some(crate::demo_fixture::DemoFixtureMarker {
+        fixture_id: crate::demo_fixture::FIXTURE_ID.to_string(),
+        fixture_version: crate::demo_fixture::FIXTURE_VERSION.to_string(),
+        fixture_sha256: crate::demo_fixture::FIXTURE_SHA256.to_string(),
+        municipality_name: crate::demo_fixture::FIXTURE_NAME.to_string(),
+        watermark: crate::demo_fixture::WATERMARK.to_string(),
+        loaded_at_unix_seconds: loaded_at,
+    });
+    state.records_requests.push(demo_request);
+    push_audit(
+        state,
+        "civicrecords-ai",
+        "load-demo-town",
+        format!(
+            "Loaded {} v{} after verified backup. Fixture SHA-256 {}. {}",
+            crate::demo_fixture::FIXTURE_NAME,
+            crate::demo_fixture::FIXTURE_VERSION,
+            crate::demo_fixture::FIXTURE_SHA256,
+            crate::demo_fixture::WATERMARK
+        ),
+    );
+    Ok(format!(
+        "Loaded {} v{} from Core's pinned fixture after a verified backup. {}",
+        crate::demo_fixture::FIXTURE_NAME,
+        crate::demo_fixture::FIXTURE_VERSION,
+        crate::demo_fixture::WATERMARK
+    ))
+}
+
+fn verify_or_restore_demo_state(previous: &CityWorkState) -> Result<CityWorkState, String> {
+    let verification = read_state().and_then(|persisted| {
+        if !current_demo_fixture_is_loaded(&persisted) {
+            return Err("The persisted demo state failed read-back verification.".to_string());
+        }
+        Ok(persisted)
+    });
+    match verification {
+        Ok(persisted) => Ok(persisted),
+        Err(error) => {
+            write_state(previous).map_err(|rollback_error| {
+                format!(
+                    "Demo load verification failed ({error}) and restoring the prior state also failed ({rollback_error}). Use the verified pre-load backup before continuing."
+                )
+            })?;
+            Err(format!(
+                "Demo load verification failed and the prior state was restored: {error}"
+            ))
+        }
+    }
 }
 
 fn safe_file_stem(value: &str) -> String {
@@ -994,7 +1312,7 @@ fn write_export_integrity_manifest(
         size_bytes: contents.len() as u64,
         sha256: hash_public_payload(contents),
         created_at_unix_seconds,
-        generated_by: "CivicSuite Windows Local".to_string(),
+        generated_by: "Townlight Windows Local".to_string(),
     };
     let manifest_path = export_manifest_path(export_path);
     let manifest_contents = serde_json::to_string_pretty(&manifest)
@@ -1191,7 +1509,7 @@ fn write_meeting_export_bundle(
         counts: counts.clone(),
         source_references: meeting_export_source_references(meeting),
         limitations: meeting_export_limitations(public_record),
-        generated_by: "CivicSuite Windows Local".to_string(),
+        generated_by: "Townlight Windows Local".to_string(),
         generated_at_unix_seconds,
     };
     let manifest_path = export_bundle_manifest_path(export_path);
@@ -1661,7 +1979,7 @@ fn preserve_file_reference(
         );
         let stored_path = destination_dir.join(stored_file_name);
         let reference_contents = format!(
-            "CivicSuite local file reference\n\nKind: {reference_kind}\nTitle: {title}\nTyped path or reference: {source_path_text}\nCitation or note: {citation_or_note}\nRecorded at unix seconds: {}\n\nThe typed path was not readable when this workflow was saved, so CivicSuite preserved this local reference marker instead of discarding the workflow evidence.\n",
+            "Townlight local file reference\n\nKind: {reference_kind}\nTitle: {title}\nTyped path or reference: {source_path_text}\nCitation or note: {citation_or_note}\nRecorded at unix seconds: {}\n\nThe typed path was not readable when this workflow was saved, so Townlight preserved this local reference marker instead of discarding the workflow evidence.\n",
             now_unix_seconds()
         );
         fs::write(&stored_path, reference_contents).map_err(|error| {
@@ -5915,6 +6233,7 @@ fn build_records_release_package(
     state: &mut CityWorkState,
     payload: Option<&Value>,
 ) -> Result<String, String> {
+    let demo_banner = demo_fixture_export_banner(state);
     let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     if request.documents.is_empty() && request.search_sessions.is_empty() {
@@ -5976,7 +6295,8 @@ fn build_records_release_package(
         }
     }
     let contents = format!(
-        "# Records Release Package Manifest\n\nTracking number: {}\nRequester: {}\nRequest: {}\nStatus before package: {}\n\n## Package Counts\nDocuments: {}\nRelease artifacts: {}\nSearch sessions: {}\nRelease decisions: {}\nRedact decisions: {}\nExempt decisions: {}\n\n## Search Sessions\n{}\n\n## Request Documents\n{}\n\n## Exemption Decisions\n{}\n\n## Response Draft Snapshot\n{}\n",
+        "# Records Release Package Manifest\n\n{}Tracking number: {}\nRequester: {}\nRequest: {}\nStatus before package: {}\n\n## Package Counts\nDocuments: {}\nRelease artifacts: {}\nSearch sessions: {}\nRelease decisions: {}\nRedact decisions: {}\nExempt decisions: {}\n\n## Search Sessions\n{}\n\n## Request Documents\n{}\n\n## Exemption Decisions\n{}\n\n## Response Draft Snapshot\n{}\n",
+        demo_banner,
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -6051,6 +6371,7 @@ fn export_records_response(
     state: &mut CityWorkState,
     payload: Option<&Value>,
 ) -> Result<String, String> {
+    let demo_banner = demo_fixture_export_banner(state);
     let request = selected_record_mut(state, payload)?;
     ensure_records_request_active(request)?;
     if request.response_draft.trim().is_empty() {
@@ -6081,7 +6402,8 @@ fn export_records_response(
     let fee_lines = records_fee_lines_or_default(&request.fee_line_items);
     let fee_total = format_money_cents(records_fee_total_cents(&request.fee_line_items));
     let contents = format!(
-        "# Records Response\n\nTracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Release Packages\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Search Sessions\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        "# Records Response\n\n{}Tracking number: {}\nRequester: {}\nContact: {}\nSubmitted via: {}\nDeadline: {}\nDeadline basis: {}\nAssigned to: {}\nStatus: {}\nFee estimate: {}\n\n## Request\n{}\n\n## Request Timeline\n{}\n\n## Request Messages\n{}\n\n## Request Documents\n{}\n\n## Release Packages\n{}\n\n## Fee Review\nFee total: {}\nFee waiver: {}\n\n{}\n\n## Clarification Notes\n{}\n\n## Search Notes\n{}\n\n## Search Sessions\n{}\n\n## Exemption Review Notes\n{}\n\n## Exemption Decisions\n{}\n\n## Approved Response\n{}\n\n## Citations\n{}\n\n## Approval Notes\n{}\n",
+        demo_banner,
         if request.public_tracking_number.is_empty() {
             "Not assigned"
         } else {
@@ -6416,7 +6738,7 @@ fn import_code_source(
         &mut source,
         "local import",
         "Local import".to_string(),
-        "CivicSuite local source".to_string(),
+        "Townlight local source".to_string(),
         String::new(),
         if source_sha256.is_empty() {
             format!("Imported with citation {citation}.")
@@ -7800,6 +8122,8 @@ fn public_code_source_projection(source: &CodeSource) -> Option<CodeSource> {
 
 pub(crate) fn city_work_public_projection(state: &CityWorkState) -> CityWorkState {
     CityWorkState {
+        schema_version: state.schema_version,
+        demo_fixture: state.demo_fixture.clone(),
         meeting_bodies: state.meeting_bodies.clone(),
         meeting_members: state.meeting_members.clone(),
         agenda_intakes: Vec::new(),
@@ -8605,8 +8929,9 @@ pub fn city_work_action(
 ) -> Result<CityWorkActionResult, String> {
     let _rmw_guard = city_work_write_lock()
         .lock()
-        .map_err(|_| "City workflow lock was poisoned; restart CivicSuite.".to_string())?;
+        .map_err(|_| "City workflow lock was poisoned; restart Townlight.".to_string())?;
     let mut state = read_state()?;
+    let pre_demo_state = (action == "load-demo-town").then(|| state.clone());
     let mut search_results = Vec::new();
     let mut next_steps: Vec<String> = Vec::new();
     let mut disclaimer = String::new();
@@ -8702,6 +9027,7 @@ pub fn city_work_action(
         "record-closed-session" => record_closed_session(&mut state, payload)?,
         "export-meeting-packet" => export_meeting_packet(&mut state, payload)?,
         "archive-meeting" => archive_meeting(&mut state, payload)?,
+        "load-demo-town" => load_demo_town(&mut state)?,
         "create-records-request" => create_records_request(&mut state, payload)?,
         "submit-public-records-request" => submit_public_records_request(&mut state, payload)?,
         "lookup-public-records-request" => return public_records_status_lookup(&state, payload),
@@ -8774,6 +9100,13 @@ pub fn city_work_action(
         _ => return Err(format!("Unsupported city workflow action: {action}")),
     };
     write_state(&state)?;
+    if action == "load-demo-town" {
+        state = verify_or_restore_demo_state(
+            pre_demo_state
+                .as_ref()
+                .ok_or_else(|| "The pre-load demo state is unavailable.".to_string())?,
+        )?;
+    }
     Ok(CityWorkActionResult {
         accepted: true,
         action: action.to_string(),
@@ -8829,6 +9162,264 @@ mod tests {
                 message.contains("parse") || message.contains("Could not parse"),
                 "corrupt state error must be a parse error, got: {message}"
             );
+        });
+    }
+
+    #[test]
+    fn new_city_work_state_uses_current_schema_version() {
+        assert_eq!(
+            CityWorkState::default().schema_version,
+            CITY_WORK_SCHEMA_VERSION
+        );
+    }
+
+    #[test]
+    fn legacy_city_work_state_without_version_is_upgraded_on_read() {
+        with_temp_state_dir(|_root| {
+            std::fs::create_dir_all(workflows_path().parent().unwrap()).unwrap();
+            let mut legacy_state = serde_json::to_value(CityWorkState::default()).unwrap();
+            legacy_state
+                .as_object_mut()
+                .expect("workflow state serializes as an object")
+                .remove("schema_version");
+            std::fs::write(
+                workflows_path(),
+                serde_json::to_vec_pretty(&legacy_state).unwrap(),
+            )
+            .unwrap();
+
+            let upgraded = read_state().expect("legacy state upgrades");
+            assert_eq!(upgraded.schema_version, CITY_WORK_SCHEMA_VERSION);
+
+            let backups = std::fs::read_dir(crate::local_paths::backup_root())
+                .expect("schema upgrade backup root exists")
+                .collect::<Result<Vec<_>, _>>()
+                .expect("schema upgrade backups are readable");
+            assert_eq!(
+                backups.len(),
+                1,
+                "schema upgrade creates one verified backup"
+            );
+
+            let persisted: Value = serde_json::from_str(
+                &std::fs::read_to_string(workflows_path()).expect("upgraded state persists"),
+            )
+            .unwrap();
+            assert_eq!(
+                persisted["schema_version"].as_u64(),
+                Some(u64::from(CITY_WORK_SCHEMA_VERSION))
+            );
+        });
+    }
+
+    #[test]
+    fn unsupported_future_city_work_schema_fails_without_rewriting_state() {
+        with_temp_state_dir(|_root| {
+            std::fs::create_dir_all(workflows_path().parent().unwrap()).unwrap();
+            let mut future_state = serde_json::to_value(CityWorkState::default()).unwrap();
+            future_state["schema_version"] = Value::from(u64::from(CITY_WORK_SCHEMA_VERSION + 1));
+            let original = serde_json::to_vec_pretty(&future_state).unwrap();
+            std::fs::write(workflows_path(), &original).unwrap();
+
+            let error = read_state()
+                .err()
+                .expect("future schema version must fail closed");
+            assert!(error.contains("Unsupported city-work schema version"));
+            assert!(error.contains("No data was changed"));
+            assert_eq!(
+                std::fs::read(workflows_path()).expect("future state remains readable"),
+                original
+            );
+        });
+    }
+
+    #[test]
+    fn demo_town_is_never_loaded_automatically() {
+        with_temp_state_dir(|_root| {
+            let state = city_work_state().expect("empty state reads");
+            assert!(state.demo_fixture.is_none());
+            assert!(state.records_requests.is_empty());
+        });
+    }
+
+    #[test]
+    fn demo_town_loads_only_after_verified_backup_and_is_visibly_marked() {
+        with_temp_state_dir(|_root| {
+            let result = city_work_action("load-demo-town", None).expect("demo fixture loads");
+            let marker = result
+                .state
+                .demo_fixture
+                .as_ref()
+                .expect("demo marker persists");
+            assert_eq!(marker.fixture_id, crate::demo_fixture::FIXTURE_ID);
+            assert_eq!(marker.fixture_sha256, crate::demo_fixture::FIXTURE_SHA256);
+            assert_eq!(result.state.records_requests.len(), 1);
+            assert_eq!(result.state.records_requests[0].search_sessions.len(), 2);
+            assert_eq!(
+                result.state.records_requests[0].search_sessions[0].query,
+                "trail maintenance schedule"
+            );
+            assert_eq!(
+                result.state.records_requests[0].search_sessions[0]
+                    .results
+                    .iter()
+                    .map(|result| result.id.as_str())
+                    .collect::<Vec<_>>(),
+                ["rv-record-council-0001", "rv-record-trails-0001"]
+            );
+            assert_eq!(
+                result.state.records_requests[0].search_sessions[1].query,
+                "utility sampling"
+            );
+            assert!(result.state.records_requests[0]
+                .summary
+                .contains(crate::demo_fixture::WATERMARK));
+            assert!(result.state.audit_entries.iter().any(|entry| {
+                entry.action == "load-demo-town"
+                    && entry.summary.contains(crate::demo_fixture::FIXTURE_SHA256)
+            }));
+            let backups = fs::read_dir(crate::local_paths::backup_root())
+                .expect("backup root exists")
+                .filter_map(Result::ok)
+                .collect::<Vec<_>>();
+            assert!(!backups.is_empty(), "a verified pre-load backup must exist");
+        });
+    }
+
+    #[test]
+    fn demo_town_import_is_idempotent() {
+        with_temp_state_dir(|_root| {
+            let first = city_work_action("load-demo-town", None).expect("first load succeeds");
+            let first_marker = first
+                .state
+                .demo_fixture
+                .as_ref()
+                .expect("first marker persists")
+                .clone();
+            let first_audit_count = first.state.audit_entries.len();
+            let first_backup_count = fs::read_dir(crate::local_paths::backup_root())
+                .expect("backup root exists")
+                .filter_map(Result::ok)
+                .count();
+
+            let second = city_work_action("load-demo-town", None).expect("repeat load is safe");
+            assert!(second.message.contains("already loaded"));
+            assert_eq!(second.state.records_requests.len(), 1);
+            let second_marker = second
+                .state
+                .demo_fixture
+                .as_ref()
+                .expect("repeat marker persists");
+            assert_eq!(
+                second_marker.loaded_at_unix_seconds,
+                first_marker.loaded_at_unix_seconds
+            );
+            assert_eq!(second.state.audit_entries.len(), first_audit_count);
+            let second_backup_count = fs::read_dir(crate::local_paths::backup_root())
+                .expect("backup root still exists")
+                .filter_map(Result::ok)
+                .count();
+            assert_eq!(second_backup_count, first_backup_count);
+        });
+    }
+
+    #[test]
+    fn demo_town_verification_failure_restores_prior_state() {
+        with_temp_state_dir(|_root| {
+            let mut previous = CityWorkState::default();
+            submit_public_records_request(
+                &mut previous,
+                Some(&records_payload(
+                    "Existing requester",
+                    "Existing real city work",
+                )),
+            )
+            .expect("prior request is created");
+            let previous_request_id = previous.records_requests[0].id.clone();
+            write_state(&previous).expect("prior state writes");
+
+            let mut invalid_demo_state = CityWorkState::default();
+            invalid_demo_state.demo_fixture = Some(crate::demo_fixture::DemoFixtureMarker {
+                fixture_id: crate::demo_fixture::FIXTURE_ID.to_string(),
+                fixture_version: crate::demo_fixture::FIXTURE_VERSION.to_string(),
+                fixture_sha256: "invalid-hash".to_string(),
+                municipality_name: crate::demo_fixture::FIXTURE_NAME.to_string(),
+                watermark: crate::demo_fixture::WATERMARK.to_string(),
+                loaded_at_unix_seconds: now_unix_seconds(),
+            });
+            write_state(&invalid_demo_state).expect("invalid persisted state writes");
+
+            let error = match verify_or_restore_demo_state(&previous) {
+                Ok(_) => panic!("invalid demo state must fail verification"),
+                Err(error) => error,
+            };
+            assert!(error.contains("prior state was restored"));
+            let restored = read_state().expect("restored state reads");
+            assert!(restored.demo_fixture.is_none());
+            assert_eq!(restored.records_requests.len(), 1);
+            assert_eq!(restored.records_requests[0].id, previous_request_id);
+        });
+    }
+
+    #[test]
+    fn demo_town_records_exports_have_explicit_fixture_identity() {
+        with_temp_state_dir(|_root| {
+            let mut state = city_work_action("load-demo-town", None)
+                .expect("demo fixture loads")
+                .state;
+            let request = state
+                .records_requests
+                .first_mut()
+                .expect("demo request exists");
+            request.response_draft = "Synthetic response approved for demo export.".to_string();
+            request.approved_at_unix_seconds = Some(now_unix_seconds());
+            request.exemption_decisions.push(RecordsExemptionDecision {
+                id: "rv-exemption-decision-0001".to_string(),
+                source: "rv-record-council-0001".to_string(),
+                kind: "synthetic ground truth".to_string(),
+                finding: "Independently authored fictional record is releasable.".to_string(),
+                decision: "release".to_string(),
+                basis: "Fictional demonstration policy only".to_string(),
+                reviewer: "Synthetic human-review fixture".to_string(),
+                created_at_unix_seconds: now_unix_seconds(),
+            });
+
+            build_records_release_package(&mut state, None).expect("demo package builds");
+            export_records_response(&mut state, None).expect("demo response exports");
+
+            let request = state
+                .records_requests
+                .first()
+                .expect("demo request remains");
+            let package = fs::read_to_string(&request.release_packages[0].export_path)
+                .expect("demo package reads");
+            let response =
+                fs::read_to_string(&request.exports[0]).expect("demo response export reads");
+            for exported in [&package, &response] {
+                assert!(exported.contains("## Demo Fixture Identity"));
+                assert!(exported.contains(crate::demo_fixture::FIXTURE_NAME));
+                assert!(exported.contains(crate::demo_fixture::FIXTURE_SHA256));
+                assert!(exported.contains(crate::demo_fixture::WATERMARK));
+            }
+        });
+    }
+
+    #[test]
+    fn demo_town_refuses_to_overwrite_existing_city_work() {
+        with_temp_state_dir(|_root| {
+            city_work_action(
+                "submit-public-records-request",
+                Some(&records_payload("existing", "Existing real city work")),
+            )
+            .expect("existing request saves");
+            let error = city_work_action("load-demo-town", None)
+                .err()
+                .expect("non-empty state must be rejected");
+            assert!(error.contains("only be loaded into an empty local profile"));
+            let state = city_work_state().expect("existing state remains readable");
+            assert!(state.demo_fixture.is_none());
+            assert_eq!(state.records_requests.len(), 1);
+            assert_eq!(state.records_requests[0].requester, "existing");
         });
     }
 
@@ -9014,7 +9605,7 @@ mod tests {
         assert_eq!(manifest["sha256"].as_str(), Some(expected_hash.as_str()));
         assert_eq!(
             manifest["generated_by"].as_str(),
-            Some("CivicSuite Windows Local")
+            Some("Townlight Windows Local")
         );
     }
 

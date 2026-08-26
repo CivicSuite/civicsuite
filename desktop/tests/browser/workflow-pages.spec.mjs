@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// The three CivicAccess AI-capable actions (accessibility-review,
+// The three Townlight Access AI-capable actions (accessibility-review,
 // civicaccess-plain-language, civicaccess-language-variant) go through the
 // guided-review confirm panel before dispatching -- when the model is ready
 // they can hold the global city-work write lock for a full generation call,
@@ -143,7 +143,7 @@ test("city workflow pages expose real local task controls", async ({ page }) => 
   await expect(page.getByRole("button", { name: "Redact Comment" })).toBeDisabled();
   await expect(page.getByText("No local meetings have been created yet.")).toBeVisible();
   await expect(page.getByText("No agenda intake items are waiting for clerk review.")).toBeVisible();
-  await expect(page.getByText("No CivicCode handoffs are waiting for the clerk.")).toBeVisible();
+  await expect(page.getByText("No Townlight Code handoffs are waiting for the clerk.")).toBeVisible();
 
   await page.getByRole("button", { name: /Records Requests/ }).click();
   await expect(page.getByRole("heading", { name: "Request Intake" })).toBeVisible();
@@ -382,7 +382,7 @@ test("risky city workflow actions require guided review before mutation", async 
     const cityCoreModules = [
       {
         id: "civiccore",
-        display_name: "CivicCore",
+        display_name: "Townlight Core",
         role: "core platform",
         required: true,
         selectable: false,
@@ -392,7 +392,7 @@ test("risky city workflow actions require guided review before mutation", async 
       },
       {
         id: "civicrecords-ai",
-        display_name: "CivicRecords AI",
+        display_name: "Townlight Records",
         role: "records workflow",
         required: false,
         selectable: true,
@@ -402,7 +402,7 @@ test("risky city workflow actions require guided review before mutation", async 
       },
       {
         id: "civicclerk",
-        display_name: "CivicClerk",
+        display_name: "Townlight Meetings",
         role: "clerk workflow",
         required: false,
         selectable: true,
@@ -412,7 +412,7 @@ test("risky city workflow actions require guided review before mutation", async 
       },
       {
         id: "civiccode",
-        display_name: "CivicCode",
+        display_name: "Townlight Code",
         role: "municipal code",
         required: false,
         selectable: true,
@@ -423,7 +423,7 @@ test("risky city workflow actions require guided review before mutation", async 
     ];
     const civicnotice = {
       id: "civicnotice",
-      display_name: "CivicNotice",
+      display_name: "Townlight Notice",
       role: "public notice workflow",
       version: "0.2.0",
       civiccore_requirement: "1.2.0",
@@ -474,7 +474,7 @@ test("risky city workflow actions require guided review before mutation", async 
   await expect(page.getByLabel("Posting confirmation")).toHaveValue("</textarea><strong>DIR-NOTICE-XSS</strong>");
   await page.getByRole("button", { name: "Calculate Deadline" }).click();
   await expect(page.getByRole("heading", { name: "Review Before Calculating Notice Deadline" })).toBeVisible();
-  await expect(page.getByText("CivicNotice", { exact: true })).toBeVisible();
+  await expect(page.getByText("Townlight Notice", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm Calculate Deadline" })).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Save Checklist" }).click();
@@ -547,7 +547,7 @@ test("risky city workflow actions require guided review before mutation", async 
   await page.getByRole("button", { name: "Cancel Review" }).click();
   await page.getByRole("button", { name: "Publish Source", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Review Before Publishing Code Source" })).toBeVisible();
-  await expect(page.getByText("Creates CivicCode audit and CivicCore publication-gate entries.")).toBeVisible();
+  await expect(page.getByText("Creates Townlight Code audit and Townlight Core publication-gate entries.")).toBeVisible();
 });
 
 test("browser preview refuses persistent city workflow mutations", async ({ page }) => {
@@ -711,7 +711,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByText("Native folder selection is available in the Windows desktop app")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save City Profile" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save First Admin" })).toBeVisible();
-  await expect(page.getByLabel("CivicSuite passcode", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Townlight passcode", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Staff name")).toBeVisible();
   await expect(page.getByLabel("Staff email")).toBeVisible();
   await expect(page.getByLabel("Role")).toBeVisible();
@@ -720,7 +720,7 @@ test("module manager presents the installed city-core package", async ({ page })
   await page.getByRole("button", { name: "Create Staff User" }).click();
   await expect(page.getByText("Local access is managed by the Windows desktop app")).toBeVisible();
   await expect(page.getByText("sign in or manage local users")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "City Core Modules" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Modules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Choose Product Modules" })).toBeVisible();
   await expect(page.getByLabel(/City Core/)).toBeChecked();
   await expect(page.locator('[data-module-toggle="civicrecords-ai"]')).toBeChecked();
@@ -730,39 +730,39 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.locator('[data-module-toggle="civiczone"]')).toBeDisabled();
   await expect(page.getByText("Not ready for Windows Local 1.0")).toBeVisible();
   await page.getByLabel(/Custom/).check();
-  await expect(page.getByText("Custom selection will install CivicCore plus 4 selected product modules.")).toBeVisible();
+  await expect(page.getByText("Custom selection will install Townlight Core plus 5 selected product modules.")).toBeVisible();
   await page.locator('[data-module-toggle="civicrecords-ai"]').uncheck();
-  await expect(page.getByText("Custom selection will install CivicCore plus 3 selected product modules.")).toBeVisible();
+  await expect(page.getByText("Custom selection will install Townlight Core plus 4 selected product modules.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Apply Module Selection" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "City Core Package" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Installed Product Profile" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Package Profiles" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Module Catalog" })).toBeVisible();
-  await expect(page.getByText("Selected profile: City Core. Installed modules: 5. Enabled modules: 5.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicCore" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicRecords AI" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicClerk" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicCode" })).toBeVisible();
-  // CivicAccess's contract line carries the model_required badge (its AI
-  // features run on the pinned local model); CivicClerk's must NOT -- its
+  await expect(page.getByText("Selected profile: City Core. Installed modules: 6. Enabled modules: 6.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Core" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Records" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Meetings" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Code" })).toBeVisible();
+  // Townlight Access's contract line carries the model_required badge (its AI
+  // features run on the pinned local model); Townlight Meetings's must NOT -- its
   // registry entry is required:false and this mirror previously drifted.
-  const civicaccessRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicAccess" }) });
+  const civicaccessRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "Townlight Access" }) });
   await expect(civicaccessRow.getByText("local AI required")).toBeVisible();
-  const civicclerkRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "CivicClerk" }) });
+  const civicclerkRow = page.locator(".module-row").filter({ has: page.getByRole("heading", { name: "Townlight Meetings" }) });
   await expect(civicclerkRow.getByText("local AI required")).toHaveCount(0);
   await expect(page.getByText("Backup includes: code workflow history, code exports, code files")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Disable CivicCode" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Open Exports CivicCode" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Check Update CivicCode" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Remove From Profile CivicCode" })).toBeVisible();
-  await page.getByRole("button", { name: "Remove From Profile CivicCode" }).click();
-  const removeReview = page.locator(".guided-review").filter({ hasText: "Review Before Removing CivicCode From Profile" });
+  await expect(page.getByRole("button", { name: "Disable Townlight Code" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Exports Townlight Code" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check Update Townlight Code" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove From Profile Townlight Code" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove From Profile Townlight Code" }).click();
+  const removeReview = page.locator(".guided-review").filter({ hasText: "Review Before Removing Townlight Code From Profile" });
   await expect(removeReview.getByText("Creates a verified local profile backup")).toBeVisible();
   await expect(removeReview.getByText("Writes a backup manifest before updating the local module-selection record")).toBeVisible();
   await page.getByRole("button", { name: "Cancel Review" }).click();
-  await page.getByRole("button", { name: "Disable CivicCode" }).click();
+  await page.getByRole("button", { name: "Disable Townlight Code" }).click();
   await expect(page.locator('[data-guided-review="module"]')).toBeVisible();
-  const moduleReview = page.locator(".guided-review").filter({ hasText: "Review Before Disabling CivicCode" });
-  await expect(moduleReview.getByRole("heading", { name: "Review Before Disabling CivicCode" })).toBeVisible();
+  const moduleReview = page.locator(".guided-review").filter({ hasText: "Review Before Disabling Townlight Code" });
+  await expect(moduleReview.getByRole("heading", { name: "Review Before Disabling Townlight Code" })).toBeVisible();
   await expect(moduleReview.getByText("Existing module data remains installed.")).toBeVisible();
   await expect(moduleReview.getByText("Audit trail", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Confirm Disable Module" })).toBeVisible();
@@ -776,9 +776,9 @@ test("module manager presents the installed city-core package", async ({ page })
   await expect(page.getByText("Removed only after module data backup").first()).toBeVisible();
   await expect(page.getByText("backup-first-module-data-removal")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Full Suite" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "CivicNotice" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Townlight Notice" })).toBeVisible();
   await expect(page.getByText("Backup includes: notice workflow history, notice exports, notice proof files")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Install CivicNotice" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Disable Townlight Notice" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "CivicZone" })).toBeVisible();
   await expect(page.getByText("Package waiting")).toBeVisible();
   await expect(page.getByText("Scaffold")).toHaveCount(0);
@@ -821,7 +821,7 @@ test("civicaccess accessibility tab renders the seven workflow forms and refuses
   await expect(page.getByRole("heading", { name: "Review Before Running Accessibility Review" })).toBeVisible();
   await page.getByRole("button", { name: "Confirm Run Review & Save" }).click();
   await expect(page.getByText("Desktop app required")).toBeVisible();
-  await expect(page.getByText("To save local city work, switch to the CivicSuite desktop app")).toBeVisible();
+  await expect(page.getByText("To save local city work, switch to the Townlight desktop app")).toBeVisible();
 
   // Empty list message until reviews land.
   await expect(page.getByText("No accessibility reviews saved yet")).toBeVisible();
@@ -1523,7 +1523,7 @@ test("civicaccess shows AI-ready framing when the local model reports ready", as
             },
             // Navigation filters areas by module enablement and the Home
             // screen maps over modules, so the mocked state must carry both
-            // (same shape the CivicNotice test uses) or nothing renders.
+            // (same shape the Townlight Notice test uses) or nothing renders.
             modules: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"].map((id) => ({
               id,
               display_name: id,

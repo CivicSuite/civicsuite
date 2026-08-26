@@ -1,22 +1,24 @@
 {
     "schema_version":  1,
     "module_contract_version":  1,
-    "installer_status":  "city_core_beta_ready_truth_reconciled",
+    "installer_status":  "townlight_records_beta_candidate",
+    "primary_profile":  "records-beta",
     "workflow_proof_status":  {
-                                  "profile":  "clerk-core",
+                                  "profile":  "records-beta",
                                   "scope":  [
-                                                "civicrecords-ai request/search-surface/review/response",
-                                                "civicclerk agenda/packet/minutes/vote/notice/archive"
+                                                "civicrecords-ai request/search/review/response/release",
+                                                "civicnotice deadline/proof/archive",
+                                                "civicaccess accessibility/release review"
                                             ],
-                                  "boundary":  "Starter-profile installed-stack proof only; installer-clerk-core-v0.1.0 is the public-use starter release after release-tag lockstep, but does not claim live cross-module record exchange, city-ready status for the full suite, procurement readiness, or macOS lifecycle certification."
+                                  "boundary":  "Townlight Records beta executes the current Records, Notice, and Access workflows in the native desktop path; the packaged Python modules are installed contract/reference services pending the post-Records convergence gate."
                               },
     "public_use_gate_status":  {
-                                   "profile":  "clerk-core",
-                                   "status":  "green",
-                                   "path":  "docs/installer/starter-set-public-use-readiness-gate.md",
-                                   "route_state_matrix":  "docs/installer/browser-qa/2026-05-20-clerk-core-public-use-matrix.md",
-                                   "restore_precondition_evidence":  "docs/installer/browser-qa/2026-05-20-clerk-core-restore-precondition.md",
-                                   "boundary":  "Clerk-Core public-use starter release only. Scope is CivicCore, CivicRecords AI, CivicClerk, and the clerk-core installer profile; queued modules remain outside this release."
+                                   "profile":  "records-beta",
+                                   "status":  "candidate",
+                                   "path":  "RELEASING.md",
+                                   "route_state_matrix":  "desktop/tests/browser/records-public-beta.spec.mjs",
+                                   "restore_precondition_evidence":  ".github/workflows/desktop-windows-msi.yml",
+                                   "boundary":  "Publication remains blocked until the exact signed MSI passes the main-only Authenticode gate and clean-machine install, launch, workflow, backup/restore, repair, and uninstall evidence."
                                },
     "menu_styles":  [
                         {
@@ -144,8 +146,8 @@
     "modules":  [
                     {
                         "id":  "civiccore",
-                        "display_name":  "CivicCore",
-                        "repo":  "CivicSuite/civiccore",
+                        "display_name":  "Townlight Core",
+                        "repo":  "townlight/core",
                         "tier":  0,
                         "role":  "shared platform",
                         "selectable":  false,
@@ -154,7 +156,7 @@
                         "dependencies":  [
 
                                          ],
-                        "installer_status":  "v1_2_0_windows_local_platform_contracts",
+                        "installer_status":  "v1_2_1_records_beta_platform",
                         "proof_required":  [
                                                "install",
                                                "version_check",
@@ -162,8 +164,8 @@
                                                "windows_local_contracts",
                                                "task_queue_worker"
                                            ],
-                        "current_version":  "1.2.0",
-                        "source_commit":  "1a53f0680fffce34efeb939cbeb9915b6e208d6c",
+                        "current_version":  "1.2.1",
+                        "source_commit":  "b4d0156bdc6883c1c3ef167abe0379f9ca32b258",
                         "routes":  [
                                        {
                                            "id":  "system-health",
@@ -232,18 +234,18 @@
                     },
                     {
                         "id":  "civicrecords-ai",
-                        "display_name":  "CivicRecords AI",
-                        "repo":  "CivicSuite/civicrecords-ai",
+                        "display_name":  "Townlight Records",
+                        "repo":  "townlight/sunshine",
                         "tier":  1,
                         "role":  "records workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.2.0",
+                        "civiccore_requirement":  "1.2.1",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8000,
-                        "installer_status":  "v1_7_3_city_core_release_car",
+                        "installer_status":  "v1_7_3_records_beta_candidate",
                         "proof_required":  [
                                                "install",
                                                "health_check",
@@ -253,7 +255,7 @@
                                                "restore"
                                            ],
                         "current_version":  "1.7.3",
-                        "source_commit":  "e2208827b660faa7d3fc1eab2271a8eae18526ee",
+                        "source_commit":  "edf1c8d8078c85baff691030a599b8eef670bca6",
                         "routes":  [
                                        {
                                            "id":  "records-requests",
@@ -567,18 +569,18 @@
                     },
                     {
                         "id":  "civicaccess",
-                        "display_name":  "CivicAccess",
-                        "repo":  "CivicSuite/civicaccess",
+                        "display_name":  "Townlight Access",
+                        "repo":  "townlight/access",
                         "tier":  3,
                         "role":  "accessibility + records-ready export",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.2.0",
+                        "civiccore_requirement":  "1.2.1",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8060,
-                        "installer_status":  "v0_4_0_city_core_release_car",
+                        "installer_status":  "v0_4_0_records_beta_candidate",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -592,7 +594,7 @@
                                                "export_correctness"
                                            ],
                         "current_version":  "0.4.0",
-                        "source_commit":  "7b24516fd89584d84c12394b9385eddd1e8c6897",
+                        "source_commit":  "b9100edc80ca496d6061f1cdb3eb39a60ff5f31a",
                         "routes":  [
                                        {
                                            "id":  "accessibility-staff",
@@ -771,18 +773,18 @@
                     },
                     {
                         "id":  "civicnotice",
-                        "display_name":  "CivicNotice",
-                        "repo":  "CivicSuite/civicnotice",
+                        "display_name":  "Townlight Notice",
+                        "repo":  "townlight/notice",
                         "tier":  3,
                         "role":  "public notice workflow",
                         "selectable":  true,
                         "required":  false,
-                        "civiccore_requirement":  "1.2.0",
+                        "civiccore_requirement":  "1.2.1",
                         "dependencies":  [
                                              "civiccore"
                                          ],
                         "default_port":  8066,
-                        "installer_status":  "v0_2_0_installed_module_release",
+                        "installer_status":  "v0_2_0_records_beta_candidate",
                         "proof_required":  [
                                                "module_selection",
                                                "install_plan",
@@ -794,7 +796,7 @@
                                                "release_artifacts"
                                            ],
                         "current_version":  "0.2.0",
-                        "source_commit":  "2bf0c9d7b764af84cd042657a972e84213a261d5",
+                        "source_commit":  "79b8d07199ee77cd425b31c0e0a44f3a0832b810",
                         "routes":  [
                                        {
                                            "id":  "notice-workbench",

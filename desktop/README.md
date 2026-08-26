@@ -1,34 +1,75 @@
-# CivicSuite Desktop
+# Townlight desktop
 
-Status: Windows Local 1.0 desktop app in active completion
+Status: Townlight Records 1.1.0-beta.1 release candidate
 
-This directory contains the Tauri/WebView2 desktop application for CivicSuite.
-The Windows desktop app is the local operator surface for CivicCore and the
-City Core module package:
+This directory contains the Tauri/WebView2 desktop application used by the
+Townlight Windows installer. The first public product profile is **Townlight
+Records**, comprising:
 
-- task-first navigation for the city-core workflows
-- Staff, Resident/Public, and IT/Admin surfaces
-- module manager backed by `installer/modules.json` and local profile state
-- local health and installer-readiness surfaces
-- Windows local runtime supervisor manifest and health state
-- structured installer and first-run setup contract
-- Gemma 4 12B QAT Q4_0 model metadata and readiness state
-- backup, restore, repair, and uninstall entry points for the local profile
+- Townlight Core — local platform, audit, storage, runtime, and lifecycle
+- Townlight Records — intake, search, review, approval, export, fulfillment,
+  and public status
+- Townlight Notice — deterministic notice and deadline workpapers
+- Townlight Access — accessibility review and records-ready exports
 
-The app owns the clerk-facing Windows path. Portable runtime payloads, module
-contracts, local workflow persistence, and installer lifecycle actions plug
-into this surface as the completion work advances.
+Fresh installations select the dependency-closed `records-beta` profile.
+Existing saved module selections are preserved. Meetings and Code remain in
+the catalog but are not installed by the Records beta profile.
 
-The local AI model path is also contract-first. The shell reads
-`runtime/gemma4-model.json`, renders the pinned Google/Hugging Face source,
-expected GGUF file, expected SHA-256, local path, and readiness checks. The
-desktop model actions create the local model folder, run an explicit resumable
-download through the pinned source URL, enforce the declared free-disk floor,
-verify size and SHA-256, and register the verified model in the local model
-registry. Staff workflows must not treat AI as available until the local
-file, checksum, runtime, and local model registry checks are all ready.
+## Product behavior
 
-`npm test` runs fast static desktop contract checks. `npm run test:browser`
-starts the local Vite app and uses Playwright with the installed Microsoft
-Edge channel to verify first-run, model-readiness, module-manager, and workflow
-UI wiring.
+The operator path is local-first and requires no Docker, WSL, terminal, or
+developer tooling. It provides Staff, Resident/Public, and IT/Admin surfaces;
+human approval before a response can be released; local audit history; backup,
+restore, repair, and uninstall entry points; and an explicit fictional
+demo-town loader.
+
+The demo loader is local-admin-only, never automatic, accepts only an empty
+profile, creates and verifies a backup before mutation, and imports the pinned
+Redstone Valley fixture with its hashes and synthetic-data watermark.
+
+## Current architecture boundary
+
+The beta's user-facing Records, Notice, and Access workflows execute in the
+Rust desktop application. The installer also carries the existing Python
+packages and local PostgreSQL runtime. Those Python implementations are
+reference/contract packages for this release; the desktop is not yet routing
+these product actions through their FastAPI services.
+
+Convergence to one Python/PostgreSQL domain execution path is a blocking gate
+before Townlight Meetings. New domain behavior should not be added to the Rust
+shell as a permanent second implementation.
+
+## Local checks
+
+From this directory:
+
+```powershell
+npm ci
+npm test
+npm run build
+npm run test:browser
+npm audit --audit-level=moderate
+```
+
+From `desktop/src-tauri`:
+
+```powershell
+cargo fmt --check
+cargo test -- --test-threads=1
+```
+
+The MSI lifecycle is verified by
+`.github/workflows/desktop-windows-msi.yml`. Pull requests produce a visibly
+named unsigned internal-QA artifact. Only a manual run on `main` can use Azure
+Artifact Signing and produce a publication-eligible MSI signed as
+`CN=Scott Converse`.
+
+## Compatibility identities
+
+Public product and publisher strings use Townlight. Existing technical
+identities remain intentionally stable during this beta, including the Rust
+crate/npm package names, `civic*` module IDs/imports, `CIVIC*` environment
+variables, database/schema names, the Tauri identifier
+`org.civicsuite.desktop`, the MSI UpgradeCode, and legacy local-data discovery
+under `%LOCALAPPDATA%\CivicSuite`.

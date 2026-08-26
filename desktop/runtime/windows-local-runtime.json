@@ -40,8 +40,8 @@
     },
     {
       "id": "python-services",
-      "label": "City workflow services",
-      "admin_label": "Bundled CPython module services",
+      "label": "Townlight Records services",
+      "admin_label": "Bundled Townlight Records module services",
       "kind": "python-services",
       "required": true,
       "binary": "runtime/python/python.exe",
@@ -51,7 +51,7 @@
         "endpoint": "http://127.0.0.1:15480/health"
       },
       "log_path": "{data_dir}/logs/python-services.log",
-      "next_action": "Install CivicCore and the selected city-core module services."
+      "next_action": "Install Townlight Core, Records, Notice, and Access services."
     },
     {
       "id": "task-queue",

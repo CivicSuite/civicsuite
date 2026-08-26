@@ -95,51 +95,37 @@ jobs:
       artifact_name: ${{ steps.artifact_mode.outputs.artifact_name }}
       signature_state: ${{ steps.artifact_mode.outputs.signature_state }}
     steps:
-      - name: Check out CivicSuite
+      - name: Check out Townlight
         uses: actions/checkout@v5
         with:
           path: civicsuite
 
-      - name: Check out CivicCore runtime source
+      - name: Check out Townlight Core runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civiccore
-          ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c
+          repository: townlight/core
+          ref: b4d0156bdc6883c1c3ef167abe0379f9ca32b258
           path: civiccore
 
-      - name: Check out CivicRecords AI runtime source
+      - name: Check out Townlight Records runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicrecords-ai
-          ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
+          repository: townlight/sunshine
+          ref: edf1c8d8078c85baff691030a599b8eef670bca6
           path: civicrecords-ai
 
-      - name: Check out CivicClerk runtime source
+      - name: Check out Townlight Notice runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicclerk
-          ref: fa1874edfe977bfc36ddea2939df6464b5bc16be
-          path: civicclerk
-
-      - name: Check out CivicCode runtime source
-        uses: actions/checkout@v5
-        with:
-          repository: CivicSuite/civiccode
-          ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
-          path: civiccode
-
-      - name: Check out CivicNotice runtime source
-        uses: actions/checkout@v5
-        with:
-          repository: CivicSuite/civicnotice
-          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          repository: townlight/notice
+          ref: 79b8d07199ee77cd425b31c0e0a44f3a0832b810
           path: civicnotice
 
-      - name: Check out CivicAccess runtime source
+      - name: Check out Townlight Access runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicaccess
-          ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
+          repository: townlight/access
+          ref: b9100edc80ca496d6061f1cdb3eb39a60ff5f31a
           path: civicaccess
 
       - name: Validate publication-signing context
@@ -270,7 +256,7 @@ jobs:
         shell: pwsh
         run: |
           $msi = Get-ChildItem -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi" -Filter "*.msi" | Select-Object -First 1
-          if (-not $msi) { throw "CivicSuite Windows Local MSI was not produced." }
+          if (-not $msi) { throw "Townlight Windows Local MSI was not produced." }
           "path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Sign MSI (Azure Trusted Signing)
@@ -346,7 +332,7 @@ jobs:
           $hash = Get-FileHash -Algorithm SHA256 -LiteralPath $msi.FullName
           $publicationAllowed = if ($env:SIGNATURE_STATE -eq "Valid") { "true" } else { "false" }
           $evidence = @(
-            "CivicSuite Windows Local MSI build evidence"
+            "Townlight Windows Local MSI build evidence"
             "GeneratedAtUtc=$((Get-Date).ToUniversalTime().ToString('o'))"
             "File=$($msi.Name)"
             "Bytes=$($msi.Length)"
@@ -362,7 +348,7 @@ jobs:
             "NoWslPrerequisite=true"
             "RuntimePayload=desktop/runtime/payload"
           )
-          $evidence | Set-Content -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi/CivicSuite-msi-evidence.txt" -Encoding UTF8
+          $evidence | Set-Content -LiteralPath "civicsuite/desktop/src-tauri/target/release/bundle/msi/Townlight-msi-evidence.txt" -Encoding UTF8
 
       - name: Upload UNSIGNED Windows Local MSI for private CI testing
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.sign_for_publication) }}
@@ -391,51 +377,37 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
-      - name: Check out CivicSuite
+      - name: Check out Townlight
         uses: actions/checkout@v5
         with:
           path: civicsuite
 
-      - name: Check out CivicCore runtime source
+      - name: Check out Townlight Core runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civiccore
-          ref: 1a53f0680fffce34efeb939cbeb9915b6e208d6c
+          repository: townlight/core
+          ref: b4d0156bdc6883c1c3ef167abe0379f9ca32b258
           path: civiccore
 
-      - name: Check out CivicRecords AI runtime source
+      - name: Check out Townlight Records runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicrecords-ai
-          ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
+          repository: townlight/sunshine
+          ref: edf1c8d8078c85baff691030a599b8eef670bca6
           path: civicrecords-ai
 
-      - name: Check out CivicClerk runtime source
+      - name: Check out Townlight Notice runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicclerk
-          ref: fa1874edfe977bfc36ddea2939df6464b5bc16be
-          path: civicclerk
-
-      - name: Check out CivicCode runtime source
-        uses: actions/checkout@v5
-        with:
-          repository: CivicSuite/civiccode
-          ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
-          path: civiccode
-
-      - name: Check out CivicNotice runtime source
-        uses: actions/checkout@v5
-        with:
-          repository: CivicSuite/civicnotice
-          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          repository: townlight/notice
+          ref: 79b8d07199ee77cd425b31c0e0a44f3a0832b810
           path: civicnotice
 
-      - name: Check out CivicAccess runtime source
+      - name: Check out Townlight Access runtime source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicaccess
-          ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
+          repository: townlight/access
+          ref: b9100edc80ca496d6061f1cdb3eb39a60ff5f31a
           path: civicaccess
 
       - name: Set up Node
@@ -494,7 +466,7 @@ jobs:
     if: needs.detect-desktop-changes.outputs.relevant == 'true'
     timeout-minutes: 60
     steps:
-      - name: Check out CivicSuite
+      - name: Check out Townlight
         uses: actions/checkout@v5
         with:
           path: civicsuite
@@ -567,8 +539,8 @@ jobs:
             "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
           )
           $entry = Get-ItemProperty -Path $arpRoots -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -like "*CivicSuite*" } | Select-Object -First 1
-          if (-not $entry) { throw "No CivicSuite ARP/uninstall entry registered after install." }
+            Where-Object { $_.DisplayName -like "*Townlight*" } | Select-Object -First 1
+          if (-not $entry) { throw "No Townlight ARP/uninstall entry registered after install." }
           Write-Host "Installed ARP entry: $($entry.DisplayName) $($entry.DisplayVersion)"
           # Resolve install dir: prefer InstallLocation, then extract from DisplayIcon
           # (Tauri WiX sets DisplayIcon to "C:\...\binary.exe,0"), then fall back.
@@ -580,7 +552,7 @@ jobs:
             }
           }
           if (-not $installDir -or -not (Test-Path $installDir)) {
-            $installDir = Join-Path ${env:ProgramFiles} "CivicSuite"
+            $installDir = Join-Path ${env:ProgramFiles} "Townlight"
           }
           if (-not (Test-Path $installDir)) { throw "Install directory $installDir does not exist after install." }
           Write-Host "Install directory: $installDir"
@@ -591,6 +563,39 @@ jobs:
             Where-Object { $_.Name -notlike "unins*" } | Select-Object -First 1
           if (-not $exe) { throw "No application exe found under $installDir after install." }
           Write-Host "Main binary: $($exe.FullName) ($([math]::Round($exe.Length/1KB)) KB)"
+          "TOWNLIGHT_INSTALL_DIR=$installDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "TOWNLIGHT_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Launch the installed Townlight application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (-not (Test-Path -LiteralPath $env:TOWNLIGHT_EXE -PathType Leaf)) {
+            throw "Installed Townlight executable is missing before launch: $env:TOWNLIGHT_EXE"
+          }
+          $process = Start-Process -FilePath $env:TOWNLIGHT_EXE -PassThru
+          Start-Sleep -Seconds 15
+          if ($process.HasExited) {
+            throw "Installed Townlight application exited during launch smoke test with code $($process.ExitCode)."
+          }
+          Stop-Process -Id $process.Id -Force
+          $process.WaitForExit()
+          Write-Host "Installed Townlight application launched and remained running for the smoke interval."
+
+      - name: Repair the installed Townlight MSI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $msi = Get-ChildItem -LiteralPath "msi-artifact" -Filter "*.msi" -Recurse | Select-Object -First 1
+          if (-not $msi) { throw "No MSI found for repair." }
+          $log = Join-Path $env:RUNNER_TEMP "townlight-msi-repair.log"
+          $p = Start-Process msiexec.exe -ArgumentList @("/fa", "`"$($msi.FullName)`"", "/quiet", "/norestart", "/l*v", "`"$log`"") -Wait -PassThru
+          Write-Host "msiexec repair exit code: $($p.ExitCode)"
+          if (Test-Path $log) { Get-Content $log -Tail 40 }
+          if ($p.ExitCode -notin @(0, 3010)) { throw "MSI repair failed with exit code $($p.ExitCode)." }
+          if (-not (Test-Path -LiteralPath $env:TOWNLIGHT_EXE -PathType Leaf)) {
+            throw "Townlight executable is missing after MSI repair."
+          }
 
       # ---- FIRST-RUN + BACKUP/RESTORE (verifiable subset) ---------------------
       # The shipped UI is a Tauri/WebView2 GUI with no headless entry point, so the
@@ -655,9 +660,9 @@ jobs:
             "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
           )
           $entry = Get-ItemProperty -Path $arpRoots -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -like "*CivicSuite*" } | Select-Object -First 1
-          if ($entry) { throw "CivicSuite ARP entry still present after uninstall: $($entry.DisplayName) $($entry.DisplayVersion)." }
-          $installDir = Join-Path ${env:ProgramFiles} "CivicSuite"
+            Where-Object { $_.DisplayName -like "*Townlight*" } | Select-Object -First 1
+          if ($entry) { throw "Townlight ARP entry still present after uninstall: $($entry.DisplayName) $($entry.DisplayVersion)." }
+          $installDir = Join-Path ${env:ProgramFiles} "Townlight"
           $exe = Get-ChildItem -LiteralPath $installDir -Filter "*.exe" -ErrorAction SilentlyContinue |
             Where-Object { $_.Name -notlike "unins*" } | Select-Object -First 1
           if ($exe) { throw "Application exe still present under $installDir after uninstall: $($exe.FullName)." }
@@ -666,7 +671,8 @@ jobs:
           # used by the cargo lifecycle tests above). NOTE -- the interactive GUI
           # first-run wizard does not execute in this job (see QA-5 / the comment
           # above "Exercise first-run..."), so this job never writes real user data to
-          # %LOCALAPPDATA%\CivicSuite in the first place; this check therefore proves
+          # %LOCALAPPDATA%\CivicSuite in the first place; this legacy compatibility
+          # path is intentionally preserved across the public display rename. This proves
           # "the uninstaller and this job's own actions did not leak state into the
           # real per-user path," not "a real clerk's saved city-work.json is purged on
           # uninstall." That stronger claim needs a real GUI walkthrough (Phase D).

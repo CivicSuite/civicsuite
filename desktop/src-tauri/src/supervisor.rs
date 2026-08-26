@@ -455,14 +455,14 @@ fn ensure_profile_child_for_delete(path: &Path) -> Result<(), String> {
     }
     let root = civic_suite_root();
     fs::create_dir_all(&root)
-        .map_err(|error| format!("Could not create CivicSuite profile root: {error}"))?;
+        .map_err(|error| format!("Could not create Townlight profile root: {error}"))?;
     let canonical_root = fs::canonicalize(&root)
         .map_err(|error| format!("Could not resolve {}: {error}", root.display()))?;
     let canonical_path = fs::canonicalize(path)
         .map_err(|error| format!("Could not resolve {}: {error}", path.display()))?;
     if canonical_path == canonical_root || !canonical_path.starts_with(&canonical_root) {
         return Err(format!(
-            "Refusing to remove {} because it is outside the CivicSuite profile.",
+            "Refusing to remove {} because it is outside the Townlight profile.",
             path.display()
         ));
     }
@@ -686,7 +686,7 @@ fn copy_path_recursive_for_backup_with_options(
                 backup_path_prefix,
                 source_root,
                 current,
-                "local model cache skipped for restore safety backup; CivicSuite verifies or redownloads model files after restore",
+                "local model cache skipped for restore safety backup; Townlight verifies or redownloads model files after restore",
             );
             return;
         }
@@ -1360,7 +1360,7 @@ fn create_backup_with_options(kind: &str, options: BackupOptions) -> Result<Path
     fs::write(
         destination.join("README.txt"),
         format!(
-            "CivicSuite Backup\n\nThis folder is a local CivicSuite backup created before a lifecycle action or by Backup Now.\nRestore verification starts from backup-manifest.json in this folder.\n\nBackup folder:\n{}\nCreated at unix seconds: {created}\n",
+            "Townlight Backup\n\nThis folder is a local Townlight backup created before a lifecycle action or by Backup Now.\nRestore verification starts from backup-manifest.json in this folder.\n\nBackup folder:\n{}\nCreated at unix seconds: {created}\n",
             destination.display()
         ),
     )
@@ -1746,7 +1746,7 @@ fn ensure_postgres_initialized(
     fs::write(
         data_dir.join("postgresql.auto.conf"),
         format!(
-            "# CivicSuite Windows local runtime\nlisten_addresses = '127.0.0.1'\nport = {LOCAL_DB_PORT}\n"
+            "# Townlight Windows local runtime\nlisten_addresses = '127.0.0.1'\nport = {LOCAL_DB_PORT}\n"
         ),
     )
     .map_err(|error| format!("Could not write local data store configuration: {error}"))?;
@@ -2015,6 +2015,10 @@ fn service_environment(service: &ServiceDefinition) -> Result<Vec<(String, Strin
         ),
         ("DATABASE_URL".to_string(), db_url.to_string()),
         ("PORTAL_MODE".to_string(), "private".to_string()),
+        (
+            "TOWNLIGHT_PRODUCT_PROFILE".to_string(),
+            "records-beta".to_string(),
+        ),
         (
             "OLLAMA_BASE_URL".to_string(),
             "http://127.0.0.1:15434".to_string(),
@@ -2332,7 +2336,7 @@ fn local_folder_health(
     } else if exists {
         (
             "Needs access",
-            format!("{label} exists, but CivicSuite cannot save files there."),
+            format!("{label} exists, but Townlight cannot save files there."),
             permission_action.to_string(),
         )
     } else {
@@ -2371,7 +2375,7 @@ fn task_queue_schema_unreachable_health(endpoint: &str) -> RuntimeHealthItem {
         label: "Task queue schema".to_string(),
         ok: false,
         status: "Needs services",
-        message: "City workflow services are not running yet, so CivicSuite cannot verify the PostgreSQL task queue schema.".to_string(),
+        message: "City workflow services are not running yet, so Townlight cannot verify the PostgreSQL task queue schema.".to_string(),
         next_action: "Start or repair City workflow services after the local data store is installed.".to_string(),
         admin_detail: format!("kind postgres-task-queue-schema; endpoint {endpoint}; http_status none"),
         actionable: false,
@@ -2463,7 +2467,7 @@ fn folder_write_probe(path: &Path) -> Result<(), String> {
         .create_new(true)
         .open(&check_path)
         .map_err(|error| format!("could not create temporary write check: {error}"))?;
-    if let Err(error) = file.write_all(b"CivicSuite local folder health check\n") {
+    if let Err(error) = file.write_all(b"Townlight local folder health check\n") {
         let _ = fs::remove_file(&check_path);
         return Err(format!("could not write temporary check file: {error}"));
     }
@@ -2893,7 +2897,7 @@ fn prepare_log_artifacts(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
             fs::write(
                 &log_path,
                 format!(
-                    "{} log file prepared by CivicSuite System Health.\nService id: {}\n",
+                    "{} log file prepared by Townlight System Health.\nService id: {}\n",
                     service.label, service.id
                 ),
             )
@@ -2910,7 +2914,7 @@ fn prepare_log_artifacts(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
         ));
     }
     let readme = format!(
-        "CivicSuite Local Logs\n\nThis folder is stored inside the selected city data folder.\nUse these files when IT or CivicSuite support asks for local runtime evidence.\n\nSelected service logs:\n{}\n\nCity data folder:\n{}\n",
+        "Townlight Local Logs\n\nThis folder is stored inside the selected city data folder.\nUse these files when IT or Townlight support asks for local runtime evidence.\n\nSelected service logs:\n{}\n\nCity data folder:\n{}\n",
         service_lines.join("\n"),
         data_root().display()
     );
@@ -2928,10 +2932,10 @@ fn log_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionResult,
         service_id: services.first().map(|service| service.id.clone()),
         status: "Logs folder open",
         message: format!(
-            "Prepared and opened the CivicSuite logs folder under the selected city data folder: {}.",
+            "Prepared and opened the Townlight logs folder under the selected city data folder: {}.",
             logs_dir.display()
         ),
-        next_action: "Share README.txt and the relevant service log with IT or CivicSuite support."
+        next_action: "Share README.txt and the relevant service log with IT or Townlight support."
             .to_string(),
     })
 }
@@ -3027,7 +3031,7 @@ fn create_support_bundle(services: &[&ServiceDefinition]) -> Result<PathBuf, Str
         .map(|service| format!("{} ({})", service.label, service.id))
         .collect::<Vec<_>>();
     let readme = format!(
-        "CivicSuite Support Bundle\n\nThis local package contains health, runtime-state, and selected service logs for CivicSuite support or local IT.\nIt does not copy city records, uploaded documents, backup contents, or local secrets.\n\nSelected services:\n{}\n\nCity data folder:\n{}\nBackup folder:\n{}\n\nShare this support bundle folder only with trusted CivicSuite support or city IT.\n",
+        "Townlight Support Bundle\n\nThis local package contains health, runtime-state, and selected service logs for Townlight support or local IT.\nIt does not copy city records, uploaded documents, backup contents, or local secrets.\n\nSelected services:\n{}\n\nCity data folder:\n{}\nBackup folder:\n{}\n\nShare this support bundle folder only with trusted Townlight support or city IT.\n",
         selected_services.join("\n"),
         data_root().display(),
         backup_root().display()
@@ -3087,12 +3091,12 @@ fn support_bundle_action(
         },
         status: "Support bundle ready",
         message: format!(
-            "Created a CivicSuite support bundle with health, runtime-state, selected service logs, and support-manifest.json at {}.{}",
+            "Created a Townlight support bundle with health, runtime-state, selected service logs, and support-manifest.json at {}.{}",
             bundle.display(),
             open_note
         ),
         next_action: format!(
-            "Verify {} exists, then share README.txt and support-manifest.json only with trusted CivicSuite support or city IT.",
+            "Verify {} exists, then share README.txt and support-manifest.json only with trusted Townlight support or city IT.",
             bundle.join("support-manifest.json").display()
         )
             .to_string(),
@@ -3169,7 +3173,7 @@ pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, Str
             service_id: None,
             status: install.status,
             message: format!(
-                "CivicSuite could not prepare the required local runtime files. {}",
+                "Townlight could not prepare the required local runtime files. {}",
                 install.message
             ),
             next_action: install.next_action,
@@ -3184,7 +3188,7 @@ pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, Str
             service_id: start.service_id,
             status: start.status,
             message: format!(
-                "CivicSuite prepared the runtime files, but a required service did not start. {}",
+                "Townlight prepared the runtime files, but a required service did not start. {}",
                 start.message
             ),
             next_action: start.next_action,
@@ -3200,7 +3204,7 @@ pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, Str
             service_id: None,
             status: health.status,
             message: format!(
-                "CivicSuite started local services, but health verification is not complete. {}",
+                "Townlight started local services, but health verification is not complete. {}",
                 health.message
             ),
             next_action: health.next_action,
@@ -3212,7 +3216,7 @@ pub(crate) fn bootstrap_required_runtime() -> Result<SupervisorActionResult, Str
         action: "bootstrap".to_string(),
         service_id: None,
         status: "Ready",
-        message: "CivicSuite prepared, started, and verified the required local runtime services."
+        message: "Townlight prepared, started, and verified the required local runtime services."
             .to_string(),
         next_action: "Finish first-run setup and begin local city work.".to_string(),
     })
@@ -3226,7 +3230,7 @@ fn backup_action() -> Result<SupervisorActionResult, String> {
         service_id: None,
         status: "Backup complete",
         message: format!(
-            "CivicSuite local data and configuration were backed up to {}; manifest: {}.",
+            "Townlight local data and configuration were backed up to {}; manifest: {}.",
             destination.display(),
             destination.join("backup-manifest.json").display()
         ),
@@ -3246,7 +3250,7 @@ fn open_backup_folder_action() -> Result<SupervisorActionResult, String> {
         action: "open-backup-folder".to_string(),
         service_id: None,
         status: "Backup folder open",
-        message: format!("Opened the CivicSuite backup folder: {}.", path.display()),
+        message: format!("Opened the Townlight backup folder: {}.", path.display()),
         next_action: "Use Backup Now before restore, reinstall, or uninstall work.".to_string(),
     })
 }
@@ -3259,7 +3263,7 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             service_id: None,
             status: "No backup found",
             message: format!(
-                "No CivicSuite backup manifest was found under {}.",
+                "No Townlight backup manifest was found under {}.",
                 backup_root().display()
             ),
             next_action: "Create a backup before using restore on this Windows profile."
@@ -3275,7 +3279,7 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
                 service_id: None,
                 status: "Backup verification failed",
                 message: format!(
-                    "CivicSuite did not restore from {} because backup verification failed: {error}.",
+                    "Townlight did not restore from {} because backup verification failed: {error}.",
                     source.display()
                 ),
                 next_action: "Use another backup or create a fresh verified backup before retrying restore."
@@ -3290,7 +3294,7 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
             service_id: None,
             status: "Backup has no data",
             message: format!(
-                "CivicSuite did not restore from {} because that backup contains no local data or setup/config files.",
+                "Townlight did not restore from {} because that backup contains no local data or setup/config files.",
                 source.display()
             ),
             next_action:
@@ -3337,7 +3341,7 @@ fn restore_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionRes
         format!(" {}", cleanup_notes.join(" "))
     };
     let restored_message = format!(
-        "Restored CivicSuite local data from {}. A pre-restore safety backup was saved to {}.{}",
+        "Restored Townlight local data from {}. A pre-restore safety backup was saved to {}.{}",
         source.display(),
         safety_backup.display(),
         cleanup_message
@@ -3384,7 +3388,7 @@ fn uninstall_action(services: &[&ServiceDefinition]) -> Result<SupervisorActionR
             removed_data,
             removed_config
         ),
-        next_action: "Choose Open Windows Uninstall, find CivicSuite in Installed apps, and uninstall it. Reinstall can restore from the final backup.".to_string(),
+        next_action: "Choose Open Windows Uninstall, find Townlight in Installed apps, and uninstall it. Reinstall can restore from the final backup.".to_string(),
     })
 }
 
@@ -3395,8 +3399,8 @@ fn open_windows_uninstall_action() -> Result<SupervisorActionResult, String> {
         action: "open-windows-uninstall".to_string(),
         service_id: None,
         status: "Windows uninstall opened",
-        message: "Opened Windows Installed apps so CivicSuite program files can be removed through the normal Windows uninstall entry.".to_string(),
-        next_action: "Find CivicSuite in Installed apps and choose Uninstall. Keep the final-uninstall backup if staff may reinstall later.".to_string(),
+        message: "Opened Windows Installed apps so Townlight program files can be removed through the normal Windows uninstall entry.".to_string(),
+        next_action: "Find Townlight in Installed apps and choose Uninstall. Keep the final-uninstall backup if staff may reinstall later.".to_string(),
     })
 }
 
@@ -3864,6 +3868,9 @@ mod tests {
                 .find(|candidate| candidate.id == "python-services")
                 .expect("python services declared");
             let env = service_environment(service).expect("service environment builds");
+            assert!(env.iter().any(|(name, value)| {
+                name == "TOWNLIGHT_PRODUCT_PROFILE" && value == "records-beta"
+            }));
             assert!(env
                 .iter()
                 .any(|(name, value)| name == "CIVICCODE_AI_MODE" && value == "ollama"));
@@ -4462,7 +4469,7 @@ mod tests {
             assert!(logs.join("README.txt").is_file());
             assert!(logs.join("postgres.log").is_file());
             let readme = fs::read_to_string(logs.join("README.txt")).expect("readme");
-            assert!(readme.contains("CivicSuite Local Logs"));
+            assert!(readme.contains("Townlight Local Logs"));
             assert!(readme.contains("Local data store"));
             assert!(readme.contains("postgres.log"));
         });
@@ -4507,7 +4514,7 @@ mod tests {
             assert!(!bundle.join("config").exists());
 
             let readme = fs::read_to_string(bundle.join("README.txt")).expect("readme");
-            assert!(readme.contains("CivicSuite Support Bundle"));
+            assert!(readme.contains("Townlight Support Bundle"));
             assert!(readme.contains("does not copy city records"));
             assert!(readme.contains("Local data store (postgres)"));
 
@@ -5036,7 +5043,7 @@ mod tests {
             assert_eq!(result.action, "open-windows-uninstall");
             assert_eq!(result.status, "Windows uninstall opened");
             assert!(result.message.contains("Installed apps"));
-            assert!(result.next_action.contains("Find CivicSuite"));
+            assert!(result.next_action.contains("Find Townlight"));
         });
     }
 }

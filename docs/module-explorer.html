@@ -143,28 +143,28 @@
  "modules": [
   {
    "id": "civiccore",
-   "name": "CivicCore",
+   "name": "Townlight Core",
    "tier": 0,
-   "current_version": "1.2.0",
+   "current_version": "1.2.1",
    "civiccore_requirement": null,
    "public_status": {
     "grade": "platform",
-    "released_date": "2026-05-23",
+    "released_date": "2026-07-04",
     "release_url_state": "published",
-    "note": "Shared platform every module depends on — identity, audit, retention, local task queue, document ingestion. Always installed."
+    "note": "Shared platform for identity, audit, retention, local tasks, and document ingestion. Version 1.2.1 is always installed with Townlight Records."
    }
   },
   {
    "id": "civicrecords-ai",
-   "name": "CivicRecords AI",
+   "name": "Townlight Records",
    "tier": 1,
    "current_version": "1.7.3",
-   "civiccore_requirement": "1.2.0",
+   "civiccore_requirement": "1.2.1",
    "public_status": {
     "grade": "released",
     "released_date": "2026-05-24",
     "release_url_state": "published",
-    "note": "FOIA / public-records intake, search, and AI-assisted response drafting. Ships in v1.0.2; the deeper records workflows are still maturing."
+    "note": "Public-records intake, cited search, human exemption review, release packaging, fulfillment, and public status. The beta desktop currently executes its native Rust workflow."
    }
   },
   {
@@ -195,15 +195,15 @@
   },
   {
    "id": "civicaccess",
-   "name": "CivicAccess",
+   "name": "Townlight Access",
    "tier": 1,
    "current_version": "0.4.0",
-   "civiccore_requirement": "1.2.0",
+   "civiccore_requirement": "1.2.1",
    "public_status": {
     "grade": "released",
     "released_date": "2026-06-28",
     "release_url_state": "published",
-    "note": "Accessibility workflows and records-ready export — plain-language rewrites, translations, WCAG review. The v1.0.2 headline."
+    "note": "Accessibility and records-release review, including plain-language, translation, and WCAG-oriented checks. Bundled with Townlight Records beta."
    }
   },
   {
@@ -312,15 +312,15 @@
   },
   {
    "id": "civicnotice",
-   "name": "CivicNotice",
+   "name": "Townlight Notice",
    "tier": 3,
    "current_version": "0.2.0",
-   "civiccore_requirement": "1.2.0",
+   "civiccore_requirement": "1.2.1",
    "public_status": {
     "grade": "released",
     "released_date": "2026-07-03",
     "release_url_state": "published",
-    "note": "Public-notice creation and publishing workflow. Ships in v1.0.2 (city-core)."
+    "note": "Deterministic deadline, proof, and archive support bundled with Townlight Records beta."
    }
   },
   {

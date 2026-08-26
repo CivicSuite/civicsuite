@@ -1,28 +1,59 @@
-# CivicSuite
+# Townlight
 
-**An open-source municipal product family designed to run locally on a city's own hardware.**
+**Open-source, local-first municipal software, released one useful public
+product at a time.**
 
-This `civicsuite` repository is the umbrella for the CivicSuite product family. It holds suite-wide documentation, governance, the roadmap, ADRs, the compatibility matrix, and the suite-installer scaffolding. Module runtime code lives in per-module repos under <https://github.com/CivicSuite>.
+## Current product: Townlight Records
+
+Townlight Records 1.1.0-beta.1 is the active release candidate. It is a Windows
+desktop system for public-records intake, deadline calculation, assignment,
+search with citations, human exemption decisions, accessibility review,
+approval, release packaging, fulfillment, public status, audit history, and
+backup/restore.
+
+The candidate installs the dependency-closed Records product profile:
+
+- Townlight Core
+- Townlight Records (`townlight/sunshine`)
+- Townlight Notice
+- Townlight Access
+
+Meetings and Code remain visible in the catalog but are not installed on a new
+Records beta profile. The operator path requires no Docker, WSL, terminal, or
+developer tooling.
+
+The beta includes an explicit, local-admin-only fictional demo town. Redstone
+Valley records are independently authored, deterministic, hashed, visibly
+watermarked, and never loaded automatically. No Longmont or Longmont Public
+Media content is redistributed in this fixture.
+
+This is still a **release candidate**, not a published beta. Publication
+requires a green unsigned MSI lifecycle, merge to `main`, Authenticode signing
+with the validated individual publisher identity, independent signature/hash
+verification, and the full
+signed clean-machine Records journey. See [RELEASING.md](RELEASING.md) and
+[USER-MANUAL.md](USER-MANUAL.md).
+
+### Architecture truth
+
+For this beta, the user-facing Records, Notice, and Access workflows execute in
+the Rust desktop application. The Python/FastAPI packages and PostgreSQL
+runtime also ship, but are not yet the desktop's domain execution path.
+Convergence to one Python/PostgreSQL domain path is a blocking gate before
+Townlight Meetings; the Rust parity implementation is not the template for 25
+products.
+
+Public branding is Townlight. Existing `civic*` imports, database names,
+environment variables, MSI identity, and legacy data paths remain compatibility
+identifiers until explicit migrations exist.
 
 ---
 
-## Read Me First
+## Historical predecessor suite status (not current)
 
-CivicSuite's active product is the Windows Local city-core desktop app, a **GA candidate open for public beta**. The current release is `civicsuite-windows-local-v1.0.2` (Latest) — a single Tauri/WebView2 MSI (~1.65 GB) that installs the whole six-module city-core suite: CivicCore v1.2.0 plus CivicRecords AI v1.7.3, CivicClerk v1.0.4, CivicCode v1.0.8, CivicNotice v0.2.0, and CivicAccess v0.4.0, with bundled portable PostgreSQL 17 + pgvector, bundled local services, the pinned Gemma 4 12B QAT model, and local backup/restore — **no Docker, WSL, terminal, or developer tooling**. It supersedes `civicsuite-windows-local-v1.0.1`. See [ANNOUNCEMENT.md](ANNOUNCEMENT.md) to start.
-
-**What "GA candidate, public beta" means:** the build is feature-complete for city-core and passed the Phase D clean-machine acceptance gate — two full clean Windows Sandbox runs of the real installer (install → the full first-run wizard → admin sign-in → the ~6.97 GB model download with the app's own streamed SHA-256 verification and all six readiness checks green → the three CivicAccess AI features producing clean, correctly-labeled output through the real app bridge). The MSI is Authenticode code-signed via Azure Trusted Signing. Use it for real hands-on evaluation and early adoption — it does **not** claim public-use readiness, city-ready status, procurement/production readiness, macOS lifecycle certification, or full-suite release.
-
-Scope: city-core is six modules, and the current v1.0.2 build ships all six — including **CivicAccess v0.4.0** (accessibility + records-ready export), whose on-screen **Accessibility** workflow tab is this release's headline. A clerk sees six workflow areas (Meetings, Records, Code, Notice, Accessibility, Search). Background: [docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md](docs/audits/civicaccess-citycore-deep-read-2026-06-29/FINAL-REPORT.md). CivicZone, CivicPlan, CivicPermit, and CivicInspect remain queued Tier 2 modules on corrected version labels (version lowered to match actual maturity). The MSI bundles module source pinned by commit (for two modules ahead of the latest published tag); the trust path is the `source_commit` pin plus the MSI checksum — see [PROVENANCE.md](PROVENANCE.md). For the history of the 2026-05 release-label freeze and which labels are real, see [docs/release-recovery-status.md](docs/release-recovery-status.md).
-
-**What v1.0.2 changed, for a city (plain English):** the new Accessibility tab helps a clerk make public documents easier to use — it drafts plain-language rewrites of your text, drafts translations into any language you name, and adds a short "fix this first, and here's why" analysis to saved accessibility reviews. All of it runs on the office computer; nothing is sent to the cloud. Every AI output is a labeled draft a human must review, translations go to a qualified human translator before public use, and a review's status comes only from the deterministic rule checks — never from the AI. If the AI engine isn't ready, every tool says so plainly and keeps working in a labeled sample mode. v1.0.2 also fixes a first-run failure on factory-fresh PCs: the bundled database needed a Microsoft runtime component a clean Windows machine doesn't have, and the installer now bundles it.
-
-**What v1.0.2 changed, for IT:** the suite's shared text-generation helper now calls the bundled Ollama's `/api/chat` endpoint instead of `/api/generate` with raw prompts, letting the model apply its own chat template and parser — this fixed output quality for **every** AI feature in the suite (CivicClerk minutes drafts, CivicRecords AI response drafts, CivicCode guidance, and the three new CivicAccess features). The model remains the pinned `gemma-4-12b-it-qat-q4_0` (~6.97 GB, downloaded and SHA-256-verified at first run) served locally by the bundled Ollama at `127.0.0.1:15434`; no cloud calls, no telemetry. The clean-machine fix stages the Microsoft VC++ runtime DLLs (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) into `postgres\bin`, so PostgreSQL starts on a machine with no system VC++ redistributable — a pre-existing v1.0.x defect caught by the Phase D clean-sandbox runs and proven fixed in a second clean run.
-
-If you are evaluating CivicSuite for a municipality, use the Windows Local city-core desktop path and the operator walkthrough in [docs/installer/operator-walkthrough.md](docs/installer/operator-walkthrough.md).
-
----
-
-## Suite Status
+The material below is retained for audit/history. It describes the earlier
+CivicSuite city-core releases and must not be read as the current Townlight
+Records candidate or release instructions.
 
 Status snapshot: **2026-07-02** (current release: `civicsuite-windows-local-v1.0.2`, Latest — GA candidate, open for public beta)
 
@@ -36,7 +67,7 @@ Status snapshot: **2026-07-02** (current release: `civicsuite-windows-local-v1.0
 
 The most important distinction: **"all repos have releases" is not the same thing as "a city can run on this suite."** That gap is what the [release-verification gates](docs/release-recovery-status.md) exist to close.
 
-## What Is Available Today
+## Historical 2026-07-02 availability snapshot
 
 - **`civicrecords-ai`** (FOIA / public records) - v1.7.3 — city-core records module, shipped in the v1.0.2 build, on CivicCore v1.2.0. Repo: <https://github.com/CivicSuite/civicrecords-ai>
 - **`civiccore`** (shared platform) - v1.2.0 is the current shared-platform release for city-core. Repo: <https://github.com/CivicSuite/civiccore>
@@ -51,7 +82,7 @@ The most important distinction: **"all repos have releases" is not the same thin
 
 For honest module-by-module status see [STATUS.md](STATUS.md).
 
-## Current Priorities
+## Historical 2026-07-02 priorities
 
 The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). As of 2026-07-02 the suite runs under the [full-suite finishing program](docs/roadmap/full-suite-program.md): all 27 modules finished one at a time behind a clean-VM definition of done, on the portable-native Windows runtime per [ADR-0008](docs/architecture/ADR-0008-portable-native-windows-runtime.md)/[ADR-0009](docs/architecture/ADR-0009-postgres-backed-queue-windows-profile.md) — the runtime v1.0.2 already ships. The immediate sequence within that program:
 
@@ -60,7 +91,7 @@ The canonical roadmap lives at [docs/roadmap/index.md](docs/roadmap/index.md). A
 
 The Windows MSI is Authenticode code-signed via Azure Trusted Signing. Because the certificate is new, Windows SmartScreen may still show *"Windows protected your PC"* on first run — click **More info**, confirm it shows a **verified publisher** (not "Unknown Publisher"), then **Run anyway**. This is normal for a newly-signed app and stops as the certificate builds reputation. See [docs/troubleshooting.md](docs/troubleshooting.md#windows-smartscreen-when-you-run-the-installer).
 
-## Quick Start
+## Historical predecessor quick start
 
 **Windows Local city-core (current beta target):** the active installable product path is the CivicSuite desktop app under `desktop/`. It packages a Tauri/WebView2 Windows MSI, a portable PostgreSQL 17 + pgvector data store, bundled CPython city services, a PostgreSQL-backed task queue, local file storage, local backup/restore, local repair/support-bundle flows, Windows uninstall handoff, and Gemma 4 12B QAT Q4_0 model setup through explicit download/checksum/runtime registration.
 
