@@ -5,12 +5,22 @@ This is the fail-closed release path for a tag such as
 
 ## Version contract
 
-The semantic version must match in:
+The public release version is `1.1.0-beta.1`, and the annotated tag is
+`townlight-records-v1.1.0-beta.1`.
+
+Windows Installer cannot consume that textual prerelease directly. The
+synchronized build manifests therefore use the MSI-safe prerelease
+`1.1.0-1`, which Tauri maps to WiX ProductVersion `1.1.0.1`. The following
+files must agree on `1.1.0-1`:
 
 - `desktop/package.json` and `desktop/package-lock.json`
 - `desktop/src-tauri/Cargo.toml` and the desktop entry in `Cargo.lock`
 - `desktop/src-tauri/tauri.conf.json`
-- the annotated release tag
+
+This numeric compatibility mapping does not change the public beta label. The
+tag-to-artifact trust boundary is the exact commit SHA, signed run, artifact
+hash, and Authenticode evidence—not textual equality between the public tag
+and WiX ProductVersion.
 
 Public display strings use Townlight. Internal artifact names and stable
 application identifiers may retain `civicsuite` as documented compatibility

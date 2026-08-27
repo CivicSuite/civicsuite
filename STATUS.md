@@ -16,7 +16,7 @@
 | State safety | `city-work.json` schema version 1; missing-version upgrade requires verified backup; unsupported future versions fail closed |
 | Local product tests | Passed: 197 Rust tests, 30 browser tests, desktop static/state tests, production build, dependency audit, suite-state checks, Rust formatting, and Git whitespace checks |
 | Module integration | Accepted and pinned: Core `b4d0156`, Records `edf1c8d`, Notice `79b8d07`, Access `b9100ed` |
-| Unsigned MSI | PR #248 exact head `dc77736` passed build, real-runtime integration, install, launch, first run, backup/restore, repair, and uninstall; evidence records `SignatureState=UNSIGNED` and `PublicationAllowed=false` |
+| Unsigned MSI | PR #248 verified candidate code head `dc77736` passed build, real-runtime integration, install, launch, first run, backup/restore, repair, and uninstall; evidence records `SignatureState=UNSIGNED` and `PublicationAllowed=false` |
 | Signing | Townlight organization credentials exist; the exact merged `main` commit has not yet been signed |
 | Release | Blocked only until merge, validated publisher signature, signed clean-machine journey, exact-SHA tag, and human publication approval pass |
 
