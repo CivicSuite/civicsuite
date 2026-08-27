@@ -157,20 +157,56 @@ function Invoke-CivicDownload {
     $Parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $Parent | Out-Null
     $TempDestination = "$Destination.download"
-    if (Test-Path -LiteralPath $TempDestination) {
-        Remove-Item -LiteralPath $TempDestination -Force
-    }
+    $CurlCommand = Get-Command curl.exe -ErrorAction SilentlyContinue
     $LastError = $null
     for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
         try {
-            Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -TimeoutSec 1800 -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+            if ($CurlCommand) {
+                # Keep the partial file across attempts and process restarts. The
+                # portable Ollama payload is over 1 GB; restarting it from zero on
+                # a transient CDN disconnect wastes both hosted-runner time and
+                # bandwidth. curl's automatic offset resumes the exact same bytes.
+                $CurlArguments = @(
+                    "--fail",
+                    "--location",
+                    "--silent",
+                    "--show-error",
+                    "--retry", "3",
+                    "--retry-delay", "2",
+                    "--connect-timeout", "30",
+                    "--max-time", "1800",
+                    "--speed-limit", "1024",
+                    "--speed-time", "60",
+                    "--continue-at", "-",
+                    "--output", $TempDestination,
+                    "--user-agent", "CivicSuite-WindowsLocalRuntime/1.0",
+                    $Url
+                )
+                & $CurlCommand.Source @CurlArguments
+                $CurlExitCode = $LASTEXITCODE
+                if ($CurlExitCode -eq 33 -and (Test-Path -LiteralPath $TempDestination)) {
+                    # Exit 33 means the remote endpoint rejected the saved range.
+                    # Discard only that incompatible partial and retry once from
+                    # byte zero; all ordinary transient failures retain progress.
+                    Remove-Item -LiteralPath $TempDestination -Force
+                    & $CurlCommand.Source @CurlArguments
+                    $CurlExitCode = $LASTEXITCODE
+                }
+                if ($CurlExitCode -ne 0) {
+                    throw "curl.exe failed with exit code $CurlExitCode while downloading $Url"
+                }
+            } else {
+                # Compatibility fallback for older Windows build hosts. It cannot
+                # resume, so never feed Invoke-WebRequest a partial curl artifact.
+                if (Test-Path -LiteralPath $TempDestination) {
+                    Remove-Item -LiteralPath $TempDestination -Force
+                }
+                Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -TimeoutSec 1800 -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+            }
             Move-Item -LiteralPath $TempDestination -Destination $Destination -Force
             return Test-CivicDownloadHash -Path $Destination -ExpectedSha256 $ExpectedSha256 -Url $Url
         } catch {
             $LastError = $_
-            if (Test-Path -LiteralPath $TempDestination) {
-                Remove-Item -LiteralPath $TempDestination -Force -ErrorAction SilentlyContinue
-            }
             if ($ExpectedSha256 -and (Test-Path -LiteralPath $Destination)) {
                 $FailedSha256 = Get-Sha256 -Path $Destination
                 if ($FailedSha256 -ne $ExpectedSha256.ToLowerInvariant()) {
