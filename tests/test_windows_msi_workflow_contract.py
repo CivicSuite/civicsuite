@@ -78,6 +78,14 @@ def test_release_accepts_only_a_signed_artifact_for_the_tag_commit() -> None:
     assert "civicsuite-windows-local-msi -D" not in workflow
 
 
+def test_release_stages_a_draft_before_human_publication() -> None:
+    workflow = _read(RELEASE_WORKFLOW)
+
+    assert "gh release create $tag --draft --prerelease" in workflow
+    assert "publication remains blocked" in workflow
+    assert "gh release edit" not in workflow
+
+
 def test_signing_comments_do_not_repeat_the_false_subscription_claim() -> None:
     workflow = _read(BUILD_WORKFLOW)
 

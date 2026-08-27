@@ -65,9 +65,10 @@ identities.
 9. `release-windows-msi.yml` accepts only a successful manual signing run on
    `main` whose head SHA matches the tag, then rechecks the signature, signer,
    timestamp, MSI hash, and `PublicationAllowed=true` evidence before attaching
-   the MSI to a prerelease.
+   the MSI to a **draft prerelease**. The workflow must not make the draft
+   public.
 10. Scott reviews the evidence and release notes and decides whether to publish
-    or promote the prerelease. Never publish an unsigned artifact.
+    the draft as a prerelease. Never publish an unsigned artifact.
 
 ## Signing identity
 

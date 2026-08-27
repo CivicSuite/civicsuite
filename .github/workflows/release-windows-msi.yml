@@ -1,10 +1,12 @@
 name: release-windows-msi
 
-# Automates Windows-Local MSI release publishing (audit #20): on an annotated
+# Stages a Windows-Local MSI release draft (audit #20): on an annotated
 # release-tag push, attach the EXACT SIGNED MSI artifact built+tested by a
 # successful manual main `desktop-windows-msi` publication-signing run whose
 # head SHA equals the tag target. Routine PR/main artifacts are visibly marked
 # UNSIGNED and can never satisfy this workflow's artifact or signature gates.
+# This workflow never makes the draft public; publication remains a separate
+# human-approved action after signed clean-machine acceptance.
 on:
   workflow_dispatch:
     inputs:
@@ -84,13 +86,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "signtool rejected the release MSI." }
 
           # The annotated tag is expected to already exist (see RELEASING.md). If the
-          # release object does not exist yet, create it from the tag as a prerelease
-          # for a human to finalize notes + promote.
+          # release object does not exist yet, create it from the tag as a DRAFT
+          # prerelease for a human to finalize and explicitly publish only after
+          # signed clean-machine acceptance.
           gh release view $tag *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --title "Townlight Records $tag" --prerelease --notes "Automated signed Townlight Records MSI attach from main build run $($run.databaseId). Finalize notes and promote from prerelease after clean-machine validation."
-            if ($LASTEXITCODE -ne 0) { throw "Failed to create the prerelease." }
+            gh release create $tag --draft --prerelease --title "Townlight Records $tag" --notes "Automated signed Townlight Records MSI attach from main build run $($run.databaseId). Finalize notes and publish only after signed clean-machine validation."
+            if ($LASTEXITCODE -ne 0) { throw "Failed to create the draft prerelease." }
           }
           gh release upload $tag $msi.FullName $evidenceFiles[0].FullName --clobber
           if ($LASTEXITCODE -ne 0) { throw "Failed to upload the signed MSI release assets." }
-          Write-Host "Attached the independently verified signed MSI to release $tag."
+          Write-Host "Attached the independently verified signed MSI to draft release $tag; publication remains blocked."
