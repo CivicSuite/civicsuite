@@ -7,6 +7,10 @@ const main = readFileSync(join(root, "src", "main.js"), "utf8");
 const css = readFileSync(join(root, "src", "styles.css"), "utf8");
 const tauriConfig = readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8");
 const tauriConfigJson = JSON.parse(tauriConfig);
+const desktopPackageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const desktopPackageLockJson = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
+const cargoToml = readFileSync(join(root, "src-tauri", "Cargo.toml"), "utf8");
+const cargoLock = readFileSync(join(root, "src-tauri", "Cargo.lock"), "utf8");
 const desktopMsiWorkflow = readFileSync(join(root, "..", ".github", "workflows", "desktop-windows-msi.yml"), "utf8");
 const rustMain = readFileSync(join(root, "src-tauri", "src", "main.rs"), "utf8");
 const authRust = readFileSync(join(root, "src-tauri", "src", "auth.rs"), "utf8");
@@ -318,6 +322,42 @@ if (tauriConfig.includes('"installerHooks"') || tauriConfig.includes('"nsis"')) 
 
 if (!tauriConfig.includes('"resources": ["../runtime/payload/"]')) {
   throw new Error("Tauri bundle must include the Windows runtime payload resource folder");
+}
+
+// WiX accepts only numeric MSI versions. Tauri maps a numeric SemVer
+// prerelease such as 1.1.0-1 to ProductVersion 1.1.0.1. A label such as
+// 1.1.0-beta.1 compiles the application but fails only at the expensive final
+// bundling step, so reject it here before CI prepares the portable runtime.
+{
+  const version = tauriConfigJson.version;
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-(\d+))?$/.exec(version);
+  if (!match) {
+    throw new Error(`Tauri MSI version must be numeric with an optional numeric prerelease; received ${version}`);
+  }
+
+  const [, majorText, minorText, patchText, prereleaseText] = match;
+  const major = Number(majorText);
+  const minor = Number(minorText);
+  const patch = Number(patchText);
+  const prerelease = prereleaseText === undefined ? 0 : Number(prereleaseText);
+  if (major > 255 || minor > 255 || patch > 65535 || prerelease > 65535) {
+    throw new Error(`Tauri MSI version exceeds WiX numeric limits: ${version}`);
+  }
+
+  const cargoVersion = /^version\s*=\s*"([^"]+)"/m.exec(cargoToml)?.[1];
+  const cargoLockVersion = /\[\[package\]\]\r?\nname = "civicsuite-desktop"\r?\nversion = "([^"]+)"/m.exec(cargoLock)?.[1];
+  const manifestVersions = {
+    "package.json": desktopPackageJson.version,
+    "package-lock.json": desktopPackageLockJson.version,
+    "package-lock.json root package": desktopPackageLockJson.packages?.[""]?.version,
+    "Cargo.toml": cargoVersion,
+    "Cargo.lock": cargoLockVersion
+  };
+  for (const [source, manifestVersion] of Object.entries(manifestVersions)) {
+    if (manifestVersion !== version) {
+      throw new Error(`Desktop version drift: tauri.conf.json=${version}, ${source}=${manifestVersion}`);
+    }
+  }
 }
 
 for (const phrase of [

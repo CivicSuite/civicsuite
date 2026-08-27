@@ -2,6 +2,11 @@
 
 Status: Townlight Records 1.1.0-beta.1 release candidate
 
+The public candidate label is `1.1.0-beta.1`. Its synchronized desktop build
+manifests use the MSI-compatible SemVer prerelease `1.1.0-1`, which Tauri maps
+to WiX ProductVersion `1.1.0.1`. The numeric form is installer metadata; it does
+not rename or promote the public beta candidate.
+
 This directory contains the Tauri/WebView2 desktop application used by the
 Townlight Windows installer. The first public product profile is **Townlight
 Records**, comprising:
