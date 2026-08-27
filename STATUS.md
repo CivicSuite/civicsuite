@@ -1,6 +1,6 @@
 # Townlight status
 
-**Last verified:** 2026-08-20
+**Last verified:** 2026-08-27
 
 **Active product:** Townlight Records 1.1.0-beta.1 release candidate
 
@@ -14,11 +14,11 @@
 | Fresh-install default | `records-beta`; Meetings and Code are not installed |
 | Demo data | Deterministic fictional Redstone Valley fixture; explicit load only |
 | State safety | `city-work.json` schema version 1; missing-version upgrade requires verified backup; unsupported future versions fail closed |
-| Local product tests | Rust, desktop static/state, browser journey, build, audit, and suite-state gates are being rerun on the combined candidate |
-| Module integration | Sunshine synthetic/provenance changes still require an accepted commit and exact installer pin |
-| Unsigned MSI | An older PR #248 control-plane candidate passed lifecycle; the combined 1.1.0-beta.1 candidate has not yet been built in CI |
-| Signing | Townlight org credentials exist; combined candidate not yet signed |
-| Release | Blocked until combined unsigned lifecycle, merge, validated publisher signature, and signed clean-machine journey pass |
+| Local product tests | Passed: 197 Rust tests, 30 browser tests, desktop static/state tests, production build, dependency audit, suite-state checks, Rust formatting, and Git whitespace checks |
+| Module integration | Accepted and pinned: Core `b4d0156`, Records `edf1c8d`, Notice `79b8d07`, Access `b9100ed` |
+| Unsigned MSI | PR #248 exact head `dc77736` passed build, real-runtime integration, install, launch, first run, backup/restore, repair, and uninstall; evidence records `SignatureState=UNSIGNED` and `PublicationAllowed=false` |
+| Signing | Townlight organization credentials exist; the exact merged `main` commit has not yet been signed |
+| Release | Blocked only until merge, validated publisher signature, signed clean-machine journey, exact-SHA tag, and human publication approval pass |
 
 The beta's public Records/Notice/Access workflow currently executes in the Rust
 desktop application. Installed Python/FastAPI modules are reference/contract

@@ -27,11 +27,13 @@ Valley records are independently authored, deterministic, hashed, visibly
 watermarked, and never loaded automatically. No Longmont or Longmont Public
 Media content is redistributed in this fixture.
 
-This is still a **release candidate**, not a published beta. Publication
-requires a green unsigned MSI lifecycle, merge to `main`, Authenticode signing
-with the validated individual publisher identity, independent signature/hash
-verification, and the full
-signed clean-machine Records journey. See [RELEASING.md](RELEASING.md) and
+The release-candidate pipeline is complete through the unsigned MSI lifecycle.
+The candidate becomes the public beta only after merge to `main`, Authenticode
+signing with the validated individual publisher identity, independent
+signature/hash verification, the full signed clean-machine Records journey,
+and human publication approval. Install only the signed asset attached to the
+[`townlight-records-v1.1.0-beta.1` release](https://github.com/townlight/townlight/releases/tag/townlight-records-v1.1.0-beta.1)
+once that release exists. See [RELEASING.md](RELEASING.md) and
 [USER-MANUAL.md](USER-MANUAL.md).
 
 ### Architecture truth
