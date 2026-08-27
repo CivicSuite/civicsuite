@@ -9,7 +9,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 
-from civicsuite_runtime.services import _set_local_defaults
+from civicsuite_runtime.services import _product_profile, _set_local_defaults
 
 
 def _sync_database_url(url: str) -> str:
@@ -51,40 +51,37 @@ def _run_alembic(label: str, config_path: Path, script_location: Path, database_
 
 def upgrade_all() -> None:
     _set_local_defaults()
+    profile = _product_profile()
     database_url = os.environ["DATABASE_URL"]
     runtime_root = Path(__file__).resolve().parent
     core_root = _package_root("civiccore") / "migrations"
     records_root = runtime_root / "civicrecords_alembic"
-    clerk_root = _package_root("civicclerk") / "migrations"
-    code_root = _package_root("civiccode") / "migrations"
 
     sync_url = _sync_database_url(database_url)
-    _run_alembic("CivicCore", core_root / "alembic.ini", core_root, sync_url)
+    _run_alembic("Townlight Core", core_root / "alembic.ini", core_root, sync_url)
     _run_alembic(
-        "CivicRecords AI",
+        "Townlight Records",
         records_root / "alembic.ini",
         records_root / "alembic",
         database_url,
     )
-    _run_alembic("CivicClerk", clerk_root / "alembic.ini", clerk_root, sync_url)
-    _run_alembic("CivicCode", code_root / "alembic.ini", code_root, sync_url)
+    if profile == "city-core":
+        clerk_root = _package_root("civicclerk") / "migrations"
+        code_root = _package_root("civiccode") / "migrations"
+        _run_alembic("Townlight Meetings", clerk_root / "alembic.ini", clerk_root, sync_url)
+        _run_alembic("Townlight Code", code_root / "alembic.ini", code_root, sync_url)
 
-    # CivicAccess bootstraps its schema directly (non-Alembic): its constructor runs migrate()
-    # (CREATE SCHEMA IF NOT EXISTS + create_all, idempotent). It is wired but not yet offered
-    # (selectable:false), so this is best-effort — a failure must NOT fail migration for the
-    # shipped city-core modules.
-    try:
-        from civicaccess.access_review import AccessibilityReviewRepository
+    # Townlight Access is part of Records beta. Its constructor performs an idempotent
+    # CREATE SCHEMA/create_all bootstrap; failure must fail the release runtime migration.
+    from civicaccess.access_review import AccessibilityReviewRepository
 
-        AccessibilityReviewRepository(db_url=sync_url)
-        print("CivicAccess: schema ensured (civicaccess-windows-local-state-v1)")
-    except Exception as exc:  # noqa: BLE001 - non-fatal for a not-yet-offered module
-        print(f"CivicAccess: schema bootstrap skipped (non-fatal): {exc}")
+    AccessibilityReviewRepository(db_url=sync_url)
+    print("Townlight Access: schema ensured (civicaccess-windows-local-state-v1)")
 
 
 def main() -> int:
     upgrade_all()
-    print("CivicSuite city-core database migrations verified", flush=True)
+    print("Townlight product database migrations verified", flush=True)
     return 0
 
 

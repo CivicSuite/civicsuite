@@ -8,6 +8,8 @@ param(
     [string]$ManifestPath = "",
     [string]$PayloadManifestPath = "",
     [string]$PayloadRoot = "",
+    [ValidateSet("records-beta", "city-core")]
+    [string]$ProductProfile = "records-beta",
     [switch]$SkipDownloads,
     [switch]$SkipPgvectorBuild
 )
@@ -80,11 +82,19 @@ function Join-CivicPath {
 function Get-PayloadRequiredFileLock {
     param(
         [string]$PayloadRoot,
-        [object]$Payload
+        [object]$Payload,
+        [string]$ProductProfile
     )
     $SourceRoot = Join-CivicPath -Root $PayloadRoot -RelativePath $Payload.source_dir
     $Files = @()
-    foreach ($RequiredFile in $Payload.required_files) {
+    $RequiredFiles = @($Payload.required_files)
+    if ($Payload.profile_required_files) {
+        $ProfileFiles = $Payload.profile_required_files.PSObject.Properties[$ProductProfile]
+        if ($ProfileFiles) {
+            $RequiredFiles += @($ProfileFiles.Value)
+        }
+    }
+    foreach ($RequiredFile in ($RequiredFiles | Select-Object -Unique)) {
         $Path = Join-CivicPath -Root $SourceRoot -RelativePath $RequiredFile
         if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
             throw "Runtime payload $($Payload.id) is missing required file for lock: $RequiredFile"
@@ -108,15 +118,17 @@ function Get-PayloadRequiredFileLock {
 function New-RuntimePayloadLock {
     param(
         [object]$PayloadManifest,
-        [string]$PayloadRoot
+        [string]$PayloadRoot,
+        [string]$ProductProfile
     )
     $PayloadLocks = @()
     foreach ($Payload in $PayloadManifest.payloads) {
-        $PayloadLocks += Get-PayloadRequiredFileLock -PayloadRoot $PayloadRoot -Payload $Payload
+        $PayloadLocks += Get-PayloadRequiredFileLock -PayloadRoot $PayloadRoot -Payload $Payload -ProductProfile $ProductProfile
     }
     return [ordered]@{
         schema_version = 1
         profile = $PayloadManifest.profile
+        product_profile = $ProductProfile
         generated_at = (Get-Date).ToUniversalTime().ToString("o")
         payload_root = $PayloadRoot
         payloads = $PayloadLocks
@@ -145,20 +157,56 @@ function Invoke-CivicDownload {
     $Parent = Split-Path -Parent $Destination
     New-Item -ItemType Directory -Force -Path $Parent | Out-Null
     $TempDestination = "$Destination.download"
-    if (Test-Path -LiteralPath $TempDestination) {
-        Remove-Item -LiteralPath $TempDestination -Force
-    }
+    $CurlCommand = Get-Command curl.exe -ErrorAction SilentlyContinue
     $LastError = $null
     for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
         try {
-            Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -TimeoutSec 1800 -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+            if ($CurlCommand) {
+                # Keep the partial file across attempts and process restarts. The
+                # portable Ollama payload is over 1 GB; restarting it from zero on
+                # a transient CDN disconnect wastes both hosted-runner time and
+                # bandwidth. curl's automatic offset resumes the exact same bytes.
+                $CurlArguments = @(
+                    "--fail",
+                    "--location",
+                    "--silent",
+                    "--show-error",
+                    "--retry", "3",
+                    "--retry-delay", "2",
+                    "--connect-timeout", "30",
+                    "--max-time", "1800",
+                    "--speed-limit", "1024",
+                    "--speed-time", "60",
+                    "--continue-at", "-",
+                    "--output", $TempDestination,
+                    "--user-agent", "CivicSuite-WindowsLocalRuntime/1.0",
+                    $Url
+                )
+                & $CurlCommand.Source @CurlArguments
+                $CurlExitCode = $LASTEXITCODE
+                if ($CurlExitCode -eq 33 -and (Test-Path -LiteralPath $TempDestination)) {
+                    # Exit 33 means the remote endpoint rejected the saved range.
+                    # Discard only that incompatible partial and retry once from
+                    # byte zero; all ordinary transient failures retain progress.
+                    Remove-Item -LiteralPath $TempDestination -Force
+                    & $CurlCommand.Source @CurlArguments
+                    $CurlExitCode = $LASTEXITCODE
+                }
+                if ($CurlExitCode -ne 0) {
+                    throw "curl.exe failed with exit code $CurlExitCode while downloading $Url"
+                }
+            } else {
+                # Compatibility fallback for older Windows build hosts. It cannot
+                # resume, so never feed Invoke-WebRequest a partial curl artifact.
+                if (Test-Path -LiteralPath $TempDestination) {
+                    Remove-Item -LiteralPath $TempDestination -Force
+                }
+                Invoke-WebRequest -Uri $Url -OutFile $TempDestination -UseBasicParsing -TimeoutSec 1800 -Headers @{ "User-Agent" = "CivicSuite-WindowsLocalRuntime/1.0" }
+            }
             Move-Item -LiteralPath $TempDestination -Destination $Destination -Force
             return Test-CivicDownloadHash -Path $Destination -ExpectedSha256 $ExpectedSha256 -Url $Url
         } catch {
             $LastError = $_
-            if (Test-Path -LiteralPath $TempDestination) {
-                Remove-Item -LiteralPath $TempDestination -Force -ErrorAction SilentlyContinue
-            }
             if ($ExpectedSha256 -and (Test-Path -LiteralPath $Destination)) {
                 $FailedSha256 = Get-Sha256 -Path $Destination
                 if ($FailedSha256 -ne $ExpectedSha256.ToLowerInvariant()) {
@@ -505,7 +553,8 @@ function Install-PythonPayload {
         [object]$Source,
         [string]$CacheRoot,
         [string]$PayloadRoot,
-        [string]$RepoRoot
+        [string]$RepoRoot,
+        [string]$ProductProfile
     )
     $Destination = Join-Path $PayloadRoot "python"
     $Status = "present"
@@ -527,7 +576,7 @@ function Install-PythonPayload {
     }
     New-Item -ItemType Directory -Force -Path (Join-Path $Destination "Lib\site-packages") | Out-Null
     Write-PythonNoUserSiteGuard -PythonRoot $Destination
-    $Packages = Install-PythonServicePackages -Source $Source -CacheRoot $CacheRoot -PythonRoot $Destination -RepoRoot $RepoRoot
+    $Packages = Install-PythonServicePackages -Source $Source -CacheRoot $CacheRoot -PythonRoot $Destination -RepoRoot $RepoRoot -ProductProfile $ProductProfile
     $Result = @{
         status = $Status
         url = $Source.download_url
@@ -638,16 +687,32 @@ function Ensure-PythonPip {
 }
 
 function Test-PythonServiceImports {
-    param([string]$PythonRoot)
+    param(
+        [string]$PythonRoot,
+        [string]$ProductProfile
+    )
+    $ImportNames = @(
+        "civiccore",
+        "app.main",
+        "civicnotice.main",
+        "civicaccess.main",
+        "civicsuite_runtime.services",
+        "civicsuite_runtime.migrate"
+    )
+    if ($ProductProfile -eq "city-core") {
+        $ImportNames += @("civicclerk.main", "civiccode.main")
+    }
+    $ImportCsv = $ImportNames -join ","
     $ImportScript = @"
 import importlib
 import os
 os.environ.setdefault('TESTING', 'true')
 os.environ.setdefault('PORTAL_MODE', 'private')
+os.environ.setdefault('TOWNLIGHT_PRODUCT_PROFILE', '$ProductProfile')
 os.environ.setdefault('DATABASE_URL', 'postgresql+asyncpg://civicsuite:civicsuite@127.0.0.1:15432/civicsuite')
-for name in ['civiccore', 'app.main', 'civicclerk.main', 'civiccode.main', 'civicnotice.main', 'civicaccess.main', 'civicsuite_runtime.services', 'civicsuite_runtime.migrate']:
+for name in '$ImportCsv'.split(','):
     importlib.import_module(name)
-print('CivicSuite embedded Python service imports verified')
+print('Townlight embedded Python service imports verified for $ProductProfile')
 "@
     Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @("-c", $ImportScript)
 }
@@ -677,18 +742,24 @@ function Install-PythonServicePackages {
         [object]$Source,
         [string]$CacheRoot,
         [string]$PythonRoot,
-        [string]$RepoRoot
+        [string]$RepoRoot,
+        [string]$ProductProfile
     )
     $PipStatus = Ensure-PythonPip -Source $Source -CacheRoot $CacheRoot -PythonRoot $PythonRoot
     $CivicCore = (Resolve-Path (Join-Path $RepoRoot "..\civiccore")).Path
     $CivicRecords = (Resolve-Path (Join-Path $RepoRoot "..\civicrecords-ai\backend")).Path
-    $CivicClerk = (Resolve-Path (Join-Path $RepoRoot "..\civicclerk")).Path
-    $CivicCode = (Resolve-Path (Join-Path $RepoRoot "..\civiccode")).Path
     $CivicNotice = (Resolve-Path (Join-Path $RepoRoot "..\civicnotice")).Path
     $CivicAccess = (Resolve-Path (Join-Path $RepoRoot "..\civicaccess")).Path
     $RuntimeBridge = (Resolve-Path (Join-Path $RepoRoot "desktop\runtime\python-services")).Path
 
-    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+    $ServicePackages = @($CivicRecords, $CivicNotice, $CivicAccess, $RuntimeBridge)
+    if ($ProductProfile -eq "city-core") {
+        $ServicePackages += @(
+            (Resolve-Path (Join-Path $RepoRoot "..\civicclerk")).Path,
+            (Resolve-Path (Join-Path $RepoRoot "..\civiccode")).Path
+        )
+    }
+    $ServiceInstallArguments = @(
         "-m", "pip", "install",
         "--disable-pip-version-check",
         "--no-warn-script-location",
@@ -696,6 +767,7 @@ function Install-PythonServicePackages {
         "wheel",
         "hatchling>=1.27.0"
     )
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServiceInstallArguments
     Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
         "-m", "pip", "install",
         "--disable-pip-version-check",
@@ -705,25 +777,24 @@ function Install-PythonServicePackages {
         "psycopg2-binary>=2.9.0,<3.0.0",
         "PyMuPDF>=1.26.0,<2.0.0"
     )
-    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments @(
+    $ServicePackageInstallArguments = @(
         "-m", "pip", "install",
         "--disable-pip-version-check",
         "--no-warn-script-location",
         "--no-build-isolation",
         "--no-deps",
-        "--force-reinstall",
-        $CivicRecords,
-        $CivicClerk,
-        $CivicCode,
-        $CivicNotice,
-        $CivicAccess,
-        $RuntimeBridge
-    )
+        "--force-reinstall"
+    ) + $ServicePackages
+    Invoke-PythonPayloadCommand -PythonRoot $PythonRoot -Arguments $ServicePackageInstallArguments
     Copy-CivicRecordsMigrations -PythonRoot $PythonRoot -RepoRoot $RepoRoot
-    Test-PythonServiceImports -PythonRoot $PythonRoot
+    Test-PythonServiceImports -PythonRoot $PythonRoot -ProductProfile $ProductProfile
+    $InstalledPackages = @("civiccore", "civicrecords-ai", "civicnotice", "civicaccess", "civicsuite-runtime")
+    if ($ProductProfile -eq "city-core") {
+        $InstalledPackages += @("civicclerk", "civiccode")
+    }
     return @{
         pip = $PipStatus
-        installed = @("civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess", "civicsuite-runtime")
+        installed = $InstalledPackages
     }
 }
 
@@ -831,17 +902,18 @@ New-Item -ItemType Directory -Force -Path $PayloadRoot | Out-Null
 $Report = [ordered]@{
     schema_version = 1
     profile = $PayloadManifest.profile
+    product_profile = $ProductProfile
     generated_at = (Get-Date).ToUniversalTime().ToString("o")
     payload_root = $PayloadRoot
     postgres = Install-PostgresPayload -Source $Manifest.sources.postgres -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
-    python = Install-PythonPayload -Source $Manifest.sources.python -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot -RepoRoot $RepoRoot
+    python = Install-PythonPayload -Source $Manifest.sources.python -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot -RepoRoot $RepoRoot -ProductProfile $ProductProfile
     ollama = Install-OllamaPayload -Source $Manifest.sources.ollama -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
 }
 $Report.pgvector = Install-PgvectorPayload -Source $Manifest.sources.pgvector -CacheRoot $CacheRoot -PayloadRoot $PayloadRoot
 $Report.postgres_vcruntime = Copy-PostgresVcRuntime -PostgresRoot (Join-Path $PayloadRoot "postgres")
 $Report.python_vcruntime = Copy-PythonVcRuntime -PythonRoot (Join-Path $PayloadRoot "python")
-$PayloadLock = New-RuntimePayloadLock -PayloadManifest $PayloadManifest -PayloadRoot $PayloadRoot
+$PayloadLock = New-RuntimePayloadLock -PayloadManifest $PayloadManifest -PayloadRoot $PayloadRoot -ProductProfile $ProductProfile
 $Report.payloads = $PayloadLock.payloads
 
 Write-JsonFile -Path (Join-Path $PayloadRoot "runtime-payload-lock.json") -Value $Report
-Write-Output ("Prepared CivicSuite Windows runtime payload at {0}" -f $PayloadRoot)
+Write-Output ("Prepared Townlight Windows runtime payload for {0} at {1}" -f $ProductProfile, $PayloadRoot)

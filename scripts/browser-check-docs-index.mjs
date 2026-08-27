@@ -47,21 +47,33 @@ try {
     });
 
     const response = await page.goto(target, { waitUntil: "load" });
-    const recoveryTextVisible = await page
-      .getByText("Public shipping, product-ready, and v1.0 maturity claims are frozen")
+    const title = await page.title();
+    const recordsHeadingVisible = await page
+      .getByRole("heading", { name: "Public-records work that stays accountable and stays local." })
       .isVisible();
+    const candidateStatusVisible = await page
+      .getByText("1.1.0-beta.1 · release candidate", { exact: true })
+      .isVisible();
+    const productModulesVisible = await Promise.all(
+      ["Townlight Core", "Townlight Records", "Townlight Notice", "Townlight Access"].map((name) =>
+        page.locator(".m-name a", { hasText: name }).first().isVisible(),
+      ),
+    );
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
     await page.keyboard.press("Tab");
     const focusedText = await page.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
-    const screenshot = path.join(outputDir, `docs-index-recovery-${viewport.name}-2026-05-07.png`);
+    const screenshot = path.join(outputDir, `townlight-records-beta-${viewport.name}.png`);
     const screenshotResult = await captureScreenshot(page, screenshot);
 
     results.push({
       viewport: viewport.name,
       status: response?.status() ?? null,
-      recoveryTextVisible,
+      title,
+      recordsHeadingVisible,
+      candidateStatusVisible,
+      productModulesVisible,
       horizontalOverflow,
       focusedText,
       consoleMessages,
@@ -77,7 +89,10 @@ try {
 const failed = results.some(
   (result) =>
     result.status !== 200 ||
-    !result.recoveryTextVisible ||
+    result.title !== "Townlight Records | local-first municipal public records" ||
+    !result.recordsHeadingVisible ||
+    !result.candidateStatusVisible ||
+    result.productModulesVisible.some((visible) => !visible) ||
     result.horizontalOverflow ||
     result.focusedText !== "Skip to main content" ||
     result.consoleMessages.length > 0,

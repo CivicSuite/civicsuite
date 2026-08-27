@@ -1,0 +1,111 @@
+{
+  "accessibility": {
+    "final": {
+      "body": "Two synthetic records are ready for human review.",
+      "expected_finding_codes": [],
+      "has_alt_text": true,
+      "language": "en",
+      "title": "Redstone Valley fictional Records response"
+    },
+    "preflight": {
+      "body": "Two synthetic records are ready for human review.",
+      "expected_finding_codes": ["missing-alt-text"],
+      "has_alt_text": false,
+      "language": "en",
+      "title": "Redstone Valley fictional Records response"
+    }
+  },
+  "audit_stages": [
+    "request-received",
+    "request-assigned",
+    "search-started",
+    "search-recorded",
+    "review-started",
+    "release-decisions-recorded",
+    "accessibility-preflight",
+    "accessibility-remediated",
+    "response-approved",
+    "release-package-built",
+    "request-fulfilled",
+    "request-closed"
+  ],
+  "contract_sha256": "601ca9449f3e55f49b9b3443e6222514ce3bd5cf9923722a7e3da83d392fd995",
+  "deadline": {
+    "basis": "fictional-demo-policy-v1",
+    "business_days": 3,
+    "expected_due_date": "2026-08-20",
+    "holiday_dates": [],
+    "human_review_required": true
+  },
+  "lifecycle": {
+    "canonical_status_sequence": [
+      "received",
+      "assigned",
+      "searching",
+      "in_review",
+      "approved",
+      "fulfilled",
+      "closed"
+    ],
+    "human_approval_required": true
+  },
+  "metadata": {
+    "contract_id": "townlight-records-migration-proof",
+    "contract_version": "1.0.0",
+    "expires_when": "python-postgres-records-authoritative",
+    "fixture_id": "redstone-valley-records-demo",
+    "fixture_sha256": "a9c242a3f2618a69d7effb1d0d17d2df06f6744c8c351bba4065d315c94575b4",
+    "fixture_version": "1.0.0",
+    "purpose": "temporary-migration-proof",
+    "schema_version": "1.0.0",
+    "watermark": "SYNTHETIC DEMONSTRATION DATA - NOT A REAL MUNICIPAL RECORD"
+  },
+  "notice_events": [
+    {"event": "deadline-review", "publication_allowed": false},
+    {"event": "response-ready", "publication_allowed": false},
+    {"event": "request-closed", "publication_allowed": false}
+  ],
+  "pii": {
+    "automatic_redaction_allowed": false,
+    "expected_findings": [],
+    "record_ids": [
+      "rv-record-council-0001",
+      "rv-record-trails-0001",
+      "rv-record-water-0001"
+    ]
+  },
+  "release_decisions": [
+    {"decision": "release", "human_approved": true, "record_id": "rv-record-council-0001"},
+    {"decision": "release", "human_approved": true, "record_id": "rv-record-trails-0001"}
+  ],
+  "release_manifest": {
+    "approved_record_ids": ["rv-record-council-0001", "rv-record-trails-0001"],
+    "decision": "human-approved-release",
+    "fixture_id": "redstone-valley-records-demo",
+    "fixture_sha256": "a9c242a3f2618a69d7effb1d0d17d2df06f6744c8c351bba4065d315c94575b4",
+    "fixture_version": "1.0.0",
+    "request_id": "rv-request-2026-0001",
+    "watermark": "SYNTHETIC DEMONSTRATION DATA - NOT A REAL MUNICIPAL RECORD"
+  },
+  "release_manifest_sha256": "fd01b055f30e9ea966de5244335b80d64de449c21c38244eadfc638c65a68541",
+  "request": {
+    "received_at": "2026-08-17T16:00:00Z",
+    "request_id": "rv-request-2026-0001",
+    "target_record_ids": ["rv-record-council-0001", "rv-record-trails-0001"]
+  },
+  "searches": [
+    {
+      "citations": [
+        "fixture://redstone-valley-records-demo/rv-record-council-0001",
+        "fixture://redstone-valley-records-demo/rv-record-trails-0001"
+      ],
+      "query": "trail maintenance schedule",
+      "record_ids": ["rv-record-council-0001", "rv-record-trails-0001"]
+    },
+    {
+      "citations": ["fixture://redstone-valley-records-demo/rv-record-water-0001"],
+      "query": "utility sampling",
+      "record_ids": ["rv-record-water-0001"]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {
   "name": "@civicsuite/desktop",
-  "version": "1.0.4",
+  "version": "1.1.0-1",
   "private": true,
-  "description": "Tauri/WebView2 desktop shell for CivicSuite Windows Local 1.0.",
+  "description": "Tauri/WebView2 desktop shell for the Townlight Records Windows beta.",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5174",

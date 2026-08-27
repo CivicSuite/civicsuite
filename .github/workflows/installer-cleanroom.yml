@@ -71,11 +71,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Check out CivicRecords AI bundle source
+      - name: Check out Townlight Records bundle source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicrecords-ai
-          ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
+          repository: townlight/sunshine
+          ref: edf1c8d8078c85baff691030a599b8eef670bca6
           path: modules/civicrecords-ai
 
       - name: Check out CivicClerk bundle source
@@ -92,18 +92,18 @@ jobs:
           ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
           path: modules/civiccode
 
-      - name: Check out CivicNotice bundle source
+      - name: Check out Townlight Notice bundle source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicnotice
-          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          repository: townlight/notice
+          ref: 79b8d07199ee77cd425b31c0e0a44f3a0832b810
           path: modules/civicnotice
 
-      - name: Check out CivicAccess bundle source
+      - name: Check out Townlight Access bundle source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicaccess
-          ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
+          repository: townlight/access
+          ref: b9100edc80ca496d6061f1cdb3eb39a60ff5f31a
           path: modules/civicaccess
 
       - name: Set up Python
@@ -154,11 +154,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Check out CivicRecords AI bundle source
+      - name: Check out Townlight Records bundle source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicrecords-ai
-          ref: e2208827b660faa7d3fc1eab2271a8eae18526ee
+          repository: townlight/sunshine
+          ref: edf1c8d8078c85baff691030a599b8eef670bca6
           path: modules/civicrecords-ai
 
       - name: Check out CivicClerk bundle source
@@ -175,18 +175,18 @@ jobs:
           ref: a960bba0a2249d118b593dd61bee3a65a69a9d77
           path: modules/civiccode
 
-      - name: Check out CivicNotice bundle source
+      - name: Check out Townlight Notice bundle source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicnotice
-          ref: 2bf0c9d7b764af84cd042657a972e84213a261d5
+          repository: townlight/notice
+          ref: 79b8d07199ee77cd425b31c0e0a44f3a0832b810
           path: modules/civicnotice
 
-      - name: Check out CivicAccess bundle source
+      - name: Check out Townlight Access bundle source
         uses: actions/checkout@v5
         with:
-          repository: CivicSuite/civicaccess
-          ref: 7b24516fd89584d84c12394b9385eddd1e8c6897
+          repository: townlight/access
+          ref: b9100edc80ca496d6061f1cdb3eb39a60ff5f31a
           path: modules/civicaccess
 
       - name: Set up Python

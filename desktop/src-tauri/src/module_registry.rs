@@ -7,7 +7,28 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::local_paths;
 
 pub const MODULES_JSON: &str = include_str!("../../../installer/modules.json");
-const DEFAULT_PROFILE_ID: &str = "city-core";
+const SUITE_STATE_JSON: &str = include_str!("../../../config/suite-state.json");
+// New installations launch the first public product: Townlight Records with
+// its dependency-closed Core + Notice + Access capability set. Existing saved
+// selections are preserved verbatim by `module_selection_state`, so upgrades
+// from the broader historical city-core profile do not silently remove modules.
+const DEFAULT_PROFILE_ID: &str = "records-beta";
+
+#[derive(Deserialize)]
+struct CanonicalSuiteState {
+    modules: HashMap<String, CanonicalModuleIdentity>,
+}
+
+#[derive(Deserialize)]
+struct CanonicalModuleIdentity {
+    public_name: String,
+    legacy: CanonicalLegacyIdentity,
+}
+
+#[derive(Deserialize)]
+struct CanonicalLegacyIdentity {
+    technical_id: String,
+}
 
 #[derive(Deserialize)]
 struct ModuleRegistry {
@@ -255,7 +276,46 @@ fn validate_model_contract(module: &ModuleDefinition) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_installable_module_contract(module: &ModuleDefinition) -> Result<(), String> {
+fn registry_core_version(registry: &ModuleRegistry) -> Result<&str, String> {
+    registry
+        .modules
+        .iter()
+        .find(|module| module.id == "civiccore")
+        .and_then(|module| module.current_version.as_deref())
+        .ok_or_else(|| "Townlight Core must define current_version".to_string())
+}
+
+fn core_version_satisfies(installed: &str, required: &str) -> bool {
+    fn parse_triplet(value: &str) -> Option<(u64, u64, u64)> {
+        let mut parts = value.split('.').map(str::parse::<u64>);
+        let parsed = (
+            parts.next()?.ok()?,
+            parts.next()?.ok()?,
+            parts.next()?.ok()?,
+        );
+        if parts.next().is_some() {
+            return None;
+        }
+        Some(parsed)
+    }
+
+    match (parse_triplet(installed), parse_triplet(required)) {
+        (
+            Some((installed_major, installed_minor, installed_patch)),
+            Some((required_major, required_minor, required_patch)),
+        ) => {
+            installed_major == required_major
+                && installed_minor == required_minor
+                && installed_patch >= required_patch
+        }
+        _ => false,
+    }
+}
+
+fn validate_installable_module_contract(
+    module: &ModuleDefinition,
+    core_version: &str,
+) -> Result<(), String> {
     if module.display_name.trim().is_empty() || module.role.trim().is_empty() {
         return Err(format!(
             "Module {} must define display name and role",
@@ -265,10 +325,15 @@ fn validate_installable_module_contract(module: &ModuleDefinition) -> Result<(),
     if module.current_version.is_none() {
         return Err(format!("Module {} must define current_version", module.id));
     }
-    if module.id != "civiccore" && module.civiccore_requirement.as_deref() != Some("1.2.0") {
+    if module.id != "civiccore"
+        && !module
+            .civiccore_requirement
+            .as_deref()
+            .is_some_and(|required| core_version_satisfies(core_version, required))
+    {
         return Err(format!(
-            "Module {} must target CivicCore 1.2.0 for Windows Local 1.0",
-            module.id
+            "Module {} requires a Townlight Core version compatible with {core_version} for Windows Local 1.0",
+            module.id,
         ));
     }
     require_contract_list(&module.id, "routes", module.routes.as_ref().map(Vec::len))?;
@@ -334,7 +399,7 @@ fn validate_profile(registry: &ModuleRegistry, profile_id: &str) -> Result<(), S
         .any(|module_id| module_id == "civiccore")
     {
         return Err(format!(
-            "Module profile {profile_id} must include CivicCore"
+            "Module profile {profile_id} must include Townlight Core"
         ));
     }
     validate_module_selection(registry, profile_id, &profile.modules)
@@ -349,6 +414,7 @@ fn validate_module_selection(
     module_ids: &[String],
 ) -> Result<(), String> {
     let module_map = module_index(registry);
+    let core_version = registry_core_version(registry)?;
     let selected_ids: HashSet<&str> = module_ids.iter().map(String::as_str).collect();
     for module_id in module_ids {
         let module = module_map
@@ -361,7 +427,7 @@ fn validate_module_selection(
                 ));
             }
         }
-        validate_installable_module_contract(module)?;
+        validate_installable_module_contract(module, core_version)?;
     }
     for module in &registry.modules {
         if module.required && !selected_ids.contains(module.id.as_str()) {
@@ -379,6 +445,7 @@ fn resolve_custom_module_order(
     selected_modules: &[String],
 ) -> Result<Vec<String>, String> {
     let module_map = module_index(registry);
+    let core_version = registry_core_version(registry)?;
     let selected_product_modules: Vec<&str> = selected_modules
         .iter()
         .map(String::as_str)
@@ -395,6 +462,7 @@ fn resolve_custom_module_order(
     fn visit(
         module_id: &str,
         module_map: &HashMap<&str, &ModuleDefinition>,
+        core_version: &str,
         visiting: &mut HashSet<String>,
         visited: &mut HashSet<String>,
         ordered: &mut Vec<String>,
@@ -414,9 +482,16 @@ fn resolve_custom_module_order(
                 module.id
             ));
         }
-        validate_installable_module_contract(module)?;
+        validate_installable_module_contract(module, core_version)?;
         for dependency in &module.dependencies {
-            visit(dependency, module_map, visiting, visited, ordered)?;
+            visit(
+                dependency,
+                module_map,
+                core_version,
+                visiting,
+                visited,
+                ordered,
+            )?;
         }
         visiting.remove(module_id);
         visited.insert(module_id.to_string());
@@ -427,6 +502,7 @@ fn resolve_custom_module_order(
     visit(
         "civiccore",
         &module_map,
+        core_version,
         &mut visiting,
         &mut visited,
         &mut ordered,
@@ -435,6 +511,7 @@ fn resolve_custom_module_order(
         visit(
             module_id,
             &module_map,
+            core_version,
             &mut visiting,
             &mut visited,
             &mut ordered,
@@ -469,7 +546,7 @@ fn selection_from_installed_and_enabled(
         .iter()
         .any(|module_id| module_id == "civiccore")
     {
-        return Err("CivicCore must stay installed as the local foundation.".to_string());
+        return Err("Townlight Core must stay installed as the local foundation.".to_string());
     }
     for module_id in &installed_module_ids {
         module_map
@@ -584,7 +661,7 @@ fn validate_enabled_modules(
         .map(String::as_str)
         .collect();
     if !enabled.contains("civiccore") {
-        return Err("CivicCore must stay enabled as the local foundation.".to_string());
+        return Err("Townlight Core must stay enabled as the local foundation.".to_string());
     }
     for module_id in &selection.enabled_module_ids {
         if !installed.contains(module_id.as_str()) {
@@ -794,7 +871,7 @@ pub fn set_module_installed(
                 module.id
             ));
         }
-        validate_installable_module_contract(module)?;
+        validate_installable_module_contract(module, registry_core_version(&registry)?)?;
         let mut installed_module_ids = selection.installed_module_ids.clone();
         installed_module_ids.push(module_id.to_string());
         let mut enabled_module_ids = selection.enabled_module_ids.clone();
@@ -893,6 +970,28 @@ pub fn module_profiles() -> Result<Vec<ModuleProfileSummary>, String> {
 pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
     let registry = parse_registry(MODULES_JSON)?;
     validate_profile(&registry, DEFAULT_PROFILE_ID)?;
+    let core_version = registry_core_version(&registry)?;
+    let canonical_state: CanonicalSuiteState = serde_json::from_str(SUITE_STATE_JSON)
+        .map_err(|error| format!("Could not parse canonical Townlight suite state: {error}"))?;
+    let mut public_names = HashMap::new();
+    for identity in canonical_state.modules.values() {
+        if identity.public_name.trim().is_empty() || identity.legacy.technical_id.trim().is_empty()
+        {
+            return Err("Canonical Townlight module identities must not be blank.".to_string());
+        }
+        if public_names
+            .insert(
+                identity.legacy.technical_id.clone(),
+                identity.public_name.clone(),
+            )
+            .is_some()
+        {
+            return Err(format!(
+                "Canonical Townlight suite state repeats technical id {}.",
+                identity.legacy.technical_id
+            ));
+        }
+    }
     let selection = module_selection_state()?;
     let installed_ids: HashSet<&str> = selection
         .installed_module_ids
@@ -909,15 +1008,21 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
         .modules
         .iter()
         .map(|module| {
-            let contract_result = validate_installable_module_contract(module);
+            let contract_result = validate_installable_module_contract(module, core_version);
             let (contract_ready, blocked_reason) = match contract_result {
                 Ok(()) => (true, None),
                 Err(error) => (false, Some(error)),
             };
-            ModuleSummary {
+            let display_name = public_names.get(&module.id).cloned().ok_or_else(|| {
+                format!(
+                    "Module {} is missing from canonical Townlight suite state.",
+                    module.id
+                )
+            })?;
+            Ok(ModuleSummary {
                 installed: installed_ids.contains(module.id.as_str()),
                 id: module.id.clone(),
-                display_name: module.display_name.clone(),
+                display_name,
                 role: module.role.clone(),
                 version: module.current_version.clone(),
                 installer_status: module.installer_status.clone(),
@@ -955,9 +1060,9 @@ pub fn module_summaries() -> Result<Vec<ModuleSummary>, String> {
                     .map(|needs| needs.iter().any(|need| need.required))
                     .unwrap_or(false),
                 enabled: enabled_ids.contains(module.id.as_str()),
-            }
+            })
         })
-        .collect())
+        .collect::<Result<Vec<_>, String>>()?)
 }
 
 #[cfg(test)]
@@ -981,22 +1086,41 @@ mod tests {
     }
 
     #[test]
-    fn city_core_registry_contract_covers_installable_modules() {
-        validate_default_registry().expect("city-core registry validates");
+    fn records_beta_registry_contract_covers_default_installable_modules() {
+        validate_default_registry().expect("records-beta registry validates");
     }
 
     #[test]
-    fn module_selection_defaults_to_city_core_profile() {
+    fn module_summaries_project_canonical_townlight_public_names() {
+        with_temp_state_dir(|_| {
+            let modules = module_summaries().expect("canonical summaries build");
+            for (technical_id, expected_public_name) in [
+                ("civiccore", "Townlight Core"),
+                ("civicrecords-ai", "Townlight Records"),
+                ("civicclerk", "Townlight Meetings"),
+                ("civiccode", "Townlight Code"),
+                ("civicnotice", "Townlight Notice"),
+                ("civicaccess", "Townlight Access"),
+            ] {
+                let module = modules
+                    .iter()
+                    .find(|module| module.id == technical_id)
+                    .expect("legacy technical id remains present");
+                assert_eq!(module.display_name, expected_public_name);
+            }
+        });
+    }
+
+    #[test]
+    fn module_selection_defaults_to_records_beta_profile() {
         with_temp_state_dir(|_| {
             let selection = module_selection_state().expect("selection state builds");
-            assert_eq!(selection.profile_id, "city-core");
+            assert_eq!(selection.profile_id, "records-beta");
             assert_eq!(
                 selection.installed_module_ids,
                 vec![
                     "civiccore".to_string(),
                     "civicrecords-ai".to_string(),
-                    "civicclerk".to_string(),
-                    "civiccode".to_string(),
                     "civicnotice".to_string(),
                     "civicaccess".to_string()
                 ]
@@ -1011,6 +1135,26 @@ mod tests {
             let selection =
                 persist_profile_selection("city-core").expect("profile selection persists");
             assert_eq!(selection.profile_label, "City Core");
+            assert!(root.join("config").join("module-selection.json").is_file());
+        });
+    }
+
+    #[test]
+    fn records_beta_profile_selects_the_dependency_closed_records_system() {
+        with_temp_state_dir(|root| {
+            let selection = persist_profile_selection("records-beta")
+                .expect("records-beta profile selection persists");
+            assert_eq!(selection.profile_label, "Townlight Records");
+            assert_eq!(
+                selection.installed_module_ids,
+                vec![
+                    "civiccore".to_string(),
+                    "civicrecords-ai".to_string(),
+                    "civicnotice".to_string(),
+                    "civicaccess".to_string(),
+                ]
+            );
+            assert_eq!(selection.enabled_module_ids, selection.installed_module_ids);
             assert!(root.join("config").join("module-selection.json").is_file());
         });
     }
@@ -1154,7 +1298,7 @@ mod tests {
     }
 
     #[test]
-    fn civicnotice_installs_with_clerk_dependency_from_custom_profile() {
+    fn civicnotice_installs_with_core_dependency_from_custom_profile() {
         with_temp_state_dir(|_| {
             persist_profile_selection("minimal").expect("minimal profile persists");
             let installed =
@@ -1162,11 +1306,7 @@ mod tests {
             assert_eq!(installed.profile_id, "custom");
             assert_eq!(
                 installed.installed_module_ids,
-                vec![
-                    "civiccore".to_string(),
-                    "civicclerk".to_string(),
-                    "civicnotice".to_string()
-                ]
+                vec!["civiccore".to_string(), "civicnotice".to_string()]
             );
             assert_eq!(installed.enabled_module_ids, installed.installed_module_ids);
 
@@ -1179,7 +1319,7 @@ mod tests {
             assert!(civicnotice.enabled);
             assert!(civicnotice.contract_ready);
             assert_eq!(civicnotice.version.as_deref(), Some("0.2.0"));
-            assert_eq!(civicnotice.civiccore_requirement.as_deref(), Some("1.2.0"));
+            assert_eq!(civicnotice.civiccore_requirement.as_deref(), Some("1.2.1"));
             assert!(civicnotice
                 .backup_restore_hooks
                 .iter()
@@ -1205,7 +1345,7 @@ mod tests {
             let not_ready = persist_custom_selection(&["civiczone".to_string()]);
             assert!(not_ready
                 .expect_err("not-ready module selection fails")
-                .contains("CivicCore 1.2.0"));
+                .contains("compatible with 1.2.1"));
         });
     }
 
@@ -1232,6 +1372,7 @@ mod tests {
     #[test]
     fn module_summaries_expose_contract_status_for_future_manager() {
         with_temp_state_dir(|_| {
+            persist_profile_selection("city-core").expect("city-core profile persists");
             let modules = module_summaries().expect("module summaries build");
             let civiccode = modules
                 .iter()
@@ -1288,7 +1429,7 @@ mod tests {
                 .blocked_reason
                 .as_deref()
                 .unwrap_or_default()
-                .contains("CivicCore 1.2.0"));
+                .contains("compatible with 1.2.1"));
         });
     }
 }

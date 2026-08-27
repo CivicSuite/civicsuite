@@ -15,9 +15,11 @@ and never stored locally.
 ### Build and signing process
 
 - Artifacts are built in GitHub Actions (GitHub-hosted runners only)
-- Signing occurs only inside the GitHub Actions CI workflow
+- Routine pull-request and `main` CI builds an explicitly named, private `-UNSIGNED.msi` artifact for build, integration, install, backup/restore, and uninstall validation; its evidence forbids publication
+- Publication signing occurs only in an explicit manual GitHub Actions run on `main`
 - No local signing; no `.pfx` certificate files
-- Signature is verified in-workflow using `signtool /pa` before release publication
+- Signature, signer `CN=Scott Converse`, and timestamp are verified in-workflow using both `signtool /pa` and `Get-AuthenticodeSignature`
+- The release workflow accepts only the signed artifact from a successful manual signing run whose head SHA equals the release tag; it independently repeats signature and evidence checks before upload
 - All checksums are generated after signing
 
 ### Team roles

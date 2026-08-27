@@ -1008,15 +1008,18 @@ As of 2026-06-13, the city-core profile has implementation evidence for non-tech
 
 As of 2026-05-27, `installer/modules.json` is also the source-of-truth for city-core vendored-source commit pins. The installer generator must verify each local sibling checkout against that module's `source_commit` before packaging, and the lifecycle runner must verify bundled source through `SOURCE_COMMIT.txt` or a git HEAD match before use. This makes the vendored-source model reproducible without switching to published wheels. The operator trust path is live regenerated artifact evidence: generated `SHA256SUMS` or release-manifest hashes for the installer package, `source_commit` verification for vendored source, and published module hashes/attestations where applicable. Old committed `installer/dist` artifacts are not canonical unless Scott explicitly confirms restoration.
 
+As of 2026-08-20, the active release lane is the Townlight Records beta candidate: Townlight Core 1.2.1 plus Records 1.7.3, Notice 0.2.0, and Access 0.4.0. The exact candidate sources below are pinned in `installer/modules.json`. This is an unsigned, non-publishable candidate until the separate main-only signing and signed clean-machine publication gates pass.
+
 The suite launcher currently records local browser/runtime session state for installed services. That shared launcher session is an operator orientation and QA surface, not a completed municipal SSO, identity-federation, or managed cloud-session claim.
 
 | Repo | Current recovery label | CivicCore pin | Source commit pin | Status summary |
 |---|---:|---:|---:|---|
-| civiccore | 1.2.0 | n/a | 9f7e3a5a0156fca779b48076d49c13181d15151c | Real shared platform; v1.2.0 adds shared document ingestion, retains the v1.1.0 `staff_key_gate` and v1.0.1 auth hardening, and carries the post-PR-#64 shared suite-session token helpers. |
-| civicrecords-ai | 1.7.3 | 1.2.0 | 538766523ad90ee7553b0ffa75b626d3d4850b17 | Developer-preview records release car consuming CivicCore shared ingestion; the post-PR-#102 default branch keeps the published v1.7.3 release object while allowing services to boot without the Ollama health gate. |
-| civicclerk | 1.0.4 | 1.2.0 | dae807ec9d1370dd22cf6aba88e4c6fc6b4168d5 | Real meeting workflow release car with protected staff auth defaults retained, persistence refresh, and a workflow-only release-upload repair on the pinned default-branch source head. |
+| civiccore | 1.2.1 | n/a | b4d0156bdc6883c1c3ef167abe0379f9ca32b258 | Townlight Core platform pinned for the Records beta candidate, including the Windows-local contracts and PostgreSQL-backed local task queue/worker. |
+| civicrecords-ai | 1.7.3 | 1.2.1 | edf1c8d8078c85baff691030a599b8eef670bca6 | Townlight Records beta source with deterministic demonstration fixtures and connector provenance; the published package release remains 1.7.3. |
+| civicclerk | 1.0.4 | 1.2.0 | fa1874edfe977bfc36ddea2939df6464b5bc16be | Real meeting workflow release car with protected staff auth defaults retained, persistence refresh, and a workflow-only release-upload repair on the pinned default-branch source head. |
 | civiccode | 1.0.8 | 1.2.0 | a960bba0a2249d118b593dd61bee3a65a69a9d77 | City-core municipal-code release car; v1.0.8 supersedes v1.0.0, consumes CivicCore shared ingestion, and post-PR-#76 uses `gemma4:e4b` as the suite installer default local model. |
-| civicaccess | 0.4.0 | 1.2.0 | 7b24516fd89584d84c12394b9385eddd1e8c6897 | City-core accessibility + records-ready export release car; sixth city-core module on CivicCore v1.2.0. |
+| civicaccess | 0.4.0 | 1.2.1 | b9100edc80ca496d6061f1cdb3eb39a60ff5f31a | Townlight Access accessibility and records-release review capability pinned for the Records beta candidate. |
+| civicnotice | 0.2.0 | 1.2.1 | 79b8d07199ee77cd425b31c0e0a44f3a0832b810 | Townlight Notice deadline, publication-proof, and archive capability pinned for the Records beta candidate. |
 | civiczone | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicplan | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
 | civicpermit | 0.2.2 | 1.1.0 | n/a | No-functional-upgrade demotion label; queued for Tier 2 real work. |
@@ -1024,7 +1027,7 @@ The suite launcher currently records local browser/runtime session state for ins
 | civicgrants | 0.2.0 | 1.1.0 | n/a | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 | civicprocure | 0.2.0 | 1.1.0 | n/a | Demoted from false v1.0.0; consumes CivicCore v1.1.0 shared `staff_key_gate`. |
 
-A municipality cannot today run end-to-end on this suite. The immediate work is release-integrity recovery, security-default repair, install-path correction, and then module productization one module at a time.
+The Townlight Records candidate now exercises an end-to-end Records workflow, but it is not a published municipal release until its exact signed MSI passes the publication gates. Broader suite productization continues one module at a time.
 ## 19. Post-Foundation Build Sequence
 
 The v0.1.x foundation lane created real repository surfaces and release artifacts, but it did not create city-ready products. The next sequence is recovery first, then productization:

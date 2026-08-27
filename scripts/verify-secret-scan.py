@@ -7,9 +7,9 @@ repos. It is a zero-dependency CI ratchet for the umbrella docs/scripts repo.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -56,9 +56,41 @@ def should_scan(path: Path) -> bool:
     return not any(part in EXCLUDED_DIRS for part in path.relative_to(ROOT).parts)
 
 
+def candidate_paths() -> list[Path]:
+    """Return tracked and non-ignored untracked files, including pre-commit additions."""
+    result = subprocess.run(
+        [
+            "git",
+            "-c",
+            f"safe.directory={ROOT.as_posix()}",
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"git ls-files failed: {detail or 'unknown error'}")
+    return [
+        ROOT / raw_path.decode("utf-8", errors="surrogateescape")
+        for raw_path in result.stdout.split(b"\0")
+        if raw_path
+    ]
+
+
 def main() -> int:
     findings: list[str] = []
-    for path in ROOT.rglob("*"):
+    try:
+        paths = candidate_paths()
+    except RuntimeError as error:
+        print(f"VERIFY-SECRET-SCAN: FAILED\n  {error}")
+        return 1
+    for path in paths:
         if not path.is_file() or not should_scan(path):
             continue
         try:

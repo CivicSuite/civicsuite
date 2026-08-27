@@ -2,7 +2,12 @@
 import "./styles.css";
 
 const LOCKED_FOUNDATION_MODULE_ID = "civiccore";
-const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccode", "civicaccess"];
+const RECORDS_BETA_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicnotice", "civicaccess"];
+const CITY_CORE_PRODUCT_MODULE_IDS = ["civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"];
+const PRODUCT_MODULE_IDS_BY_PROFILE = {
+  "records-beta": RECORDS_BETA_PRODUCT_MODULE_IDS,
+  "city-core": CITY_CORE_PRODUCT_MODULE_IDS
+};
 const MODULE_AREA_BY_ID = {
   meetings: "civicclerk",
   records: "civicrecords-ai",
@@ -12,7 +17,7 @@ const MODULE_AREA_BY_ID = {
 };
 
 const fallbackState = {
-  product_name: "CivicSuite",
+  product_name: "Townlight",
   status_label: "Windows Local 1.0 desktop",
   local_only: true,
   navigation: [
@@ -29,9 +34,9 @@ const fallbackState = {
   modules: [
     {
       id: "civiccore",
-      display_name: "CivicCore",
+      display_name: "Townlight Core",
       role: "shared platform",
-      version: "1.2.0",
+      version: "1.2.1",
       required: true,
       selectable: false,
       installed: true,
@@ -46,10 +51,10 @@ const fallbackState = {
     },
     {
       id: "civicrecords-ai",
-      display_name: "CivicRecords AI",
+      display_name: "Townlight Records",
       role: "records workflow",
       version: "1.7.3",
-      civiccore_requirement: "1.2.0",
+      civiccore_requirement: "1.2.1",
       required: false,
       selectable: true,
       installed: true,
@@ -69,7 +74,7 @@ const fallbackState = {
     },
     {
       id: "civicclerk",
-      display_name: "CivicClerk",
+      display_name: "Townlight Meetings",
       role: "meetings workflow",
       version: "1.0.4",
       civiccore_requirement: "1.2.0",
@@ -95,7 +100,7 @@ const fallbackState = {
     },
     {
       id: "civiccode",
-      display_name: "CivicCode",
+      display_name: "Townlight Code",
       role: "municipal code",
       version: "1.0.8",
       civiccore_requirement: "1.2.0",
@@ -118,17 +123,17 @@ const fallbackState = {
     },
     {
       id: "civicnotice",
-      display_name: "CivicNotice",
+      display_name: "Townlight Notice",
       role: "public notice workflow",
       version: "0.2.0",
-      civiccore_requirement: "1.2.0",
+      civiccore_requirement: "1.2.1",
       required: false,
       selectable: true,
-      installed: false,
-      enabled: false,
+      installed: true,
+      enabled: true,
       contract_ready: true,
       blocked_reason: null,
-      dependencies: ["civiccore", "civicclerk"],
+      dependencies: ["civiccore"],
       route_count: 2,
       service_count: 2,
       task_count: 4,
@@ -141,10 +146,10 @@ const fallbackState = {
     },
     {
       id: "civicaccess",
-      display_name: "CivicAccess",
+      display_name: "Townlight Access",
       role: "accessibility + records-ready export",
       version: "0.4.0",
-      civiccore_requirement: "1.2.0",
+      civiccore_requirement: "1.2.1",
       required: false,
       selectable: true,
       installed: true,
@@ -172,7 +177,7 @@ const fallbackState = {
       installed: false,
       enabled: false,
       contract_ready: false,
-      blocked_reason: "Module civiczone must target CivicCore 1.2.0 for Windows Local 1.0",
+      blocked_reason: "Module civiczone must target Townlight Core 1.2.0 for Windows Local 1.0",
       route_count: 0,
       service_count: 0,
       task_count: 0,
@@ -183,15 +188,23 @@ const fallbackState = {
     {
       id: "minimal",
       label: "Minimal",
-      description: "CivicCore only",
+      description: "Townlight Core only",
       selected: false,
       disabled: false,
       module_count: 1
     },
     {
+      id: "records-beta",
+      label: "Townlight Records",
+      description: "Townlight Core, Townlight Records, Townlight Notice, and Townlight Access",
+      selected: false,
+      disabled: false,
+      module_count: 4
+    },
+    {
       id: "city-core",
       label: "City Core",
-      description: "CivicCore, CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess",
+      description: "Townlight Core, Townlight Records, Townlight Meetings, Townlight Code, Townlight Notice, and Townlight Access",
       selected: true,
       disabled: false,
       module_count: 6
@@ -199,7 +212,7 @@ const fallbackState = {
     {
       id: "full-suite",
       label: "Full Suite",
-      description: "All tracked CivicSuite modules after CivicCore",
+      description: "All tracked Townlight modules after Townlight Core",
       selected: false,
       disabled: true,
       disabled_reason: "Held until all module packages pass proof.",
@@ -209,8 +222,8 @@ const fallbackState = {
   module_selection: {
     profile_id: "city-core",
     profile_label: "City Core",
-    installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicaccess"],
-    enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicaccess"],
+    installed_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"],
+    enabled_module_ids: ["civiccore", "civicrecords-ai", "civicclerk", "civiccode", "civicnotice", "civicaccess"],
     disabled_module_ids: [],
     last_updated_unix_seconds: 0
   },
@@ -223,9 +236,9 @@ const fallbackState = {
     status: "Needs setup",
     current_step_id: "locations",
     locations: {
-      install_root: "%LOCALAPPDATA%\\CivicSuite",
-      data_root: "%LOCALAPPDATA%\\CivicSuite\\Data",
-      backup_root: "%USERPROFILE%\\Documents\\CivicSuite Backups"
+      install_root: "%LOCALAPPDATA%\\Townlight",
+      data_root: "%LOCALAPPDATA%\\Townlight\\Data",
+      backup_root: "%USERPROFILE%\\Documents\\Townlight Backups"
     },
     available_actions: ["choose-location", "select-modules", "create-city-profile", "create-admin", "choose-backup", "download-model", "verify-health", "open-app", "repair", "backup", "uninstall"],
     steps: [
@@ -250,7 +263,7 @@ const fallbackState = {
         completed: false,
         current: false,
         status: "Needs setup",
-        summary: "City Core is selected by default and CivicCore is locked on.",
+        summary: "City Core is selected in the browser preview and Townlight Core is locked on.",
         detail: "Other modules become available only after they finish testing for this version.",
         next_action: "Review the City Core module set.",
         action: "select-modules"
@@ -276,7 +289,7 @@ const fallbackState = {
         completed: false,
         current: false,
         status: "Needs setup",
-        summary: "Create the first CivicSuite admin before staff work begins.",
+        summary: "Create the first Townlight admin before staff work begins.",
         detail: "The first admin owns setup, model download, users, roles, backups, and recovery contact information.",
         next_action: "Create the first admin user, then sign in with that local passcode before continuing setup.",
         action: "create-admin"
@@ -303,8 +316,8 @@ const fallbackState = {
         current: false,
         status: "Needs setup",
         summary: "Download the local AI model files this app needs.",
-        detail: "A signed-in CivicSuite admin verifies pinned metadata and checksums.",
-        next_action: "Sign in as the CivicSuite admin, then download and verify the pinned local model weights.",
+        detail: "A signed-in Townlight admin verifies pinned metadata and checksums.",
+        next_action: "Sign in as the Townlight admin, then download and verify the pinned local model weights.",
         action: "download-model"
       },
       {
@@ -328,9 +341,9 @@ const fallbackState = {
         completed: false,
         current: false,
         status: "Needs setup",
-        summary: "Open CivicSuite and keep repair, backup, and uninstall reachable.",
+        summary: "Open Townlight and keep repair, backup, and uninstall reachable.",
         detail: "The same product surface owns lifecycle actions.",
-        next_action: "Open CivicSuite after all setup checks pass.",
+        next_action: "Open Townlight after all setup checks pass.",
         action: "open-app"
       }
     ]
@@ -366,8 +379,8 @@ const fallbackState = {
       model_id: "gemma-4-12b-it-qat-q4_0",
       status: "Not downloaded",
       message: "No verified or partial Gemma model download is saved on this machine.",
-      local_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
-      partial_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf.part",
+      local_path: "%LOCALAPPDATA%\\Townlight\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+      partial_path: "%LOCALAPPDATA%\\Townlight\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf.part",
       expected_size_bytes: 6975877728,
       local_bytes: 0,
       partial_bytes: 0,
@@ -377,7 +390,7 @@ const fallbackState = {
     },
     artifact: {
       file_name: "gemma-4-12b-it-qat-q4_0.gguf",
-      local_path: "%LOCALAPPDATA%\\CivicSuite\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
+      local_path: "%LOCALAPPDATA%\\Townlight\\Data\\models\\gemma-4-12b-it-qat-q4_0.gguf",
       expected_size_bytes: 6975877728,
       expected_sha256: "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
       checksum_required: true,
@@ -454,7 +467,7 @@ const fallbackState = {
       status: "Needs setup",
       message: "City data folder has not been created yet.",
       next_action: "Use First Run or Repair to create the city data folder.",
-      admin_detail: "%LOCALAPPDATA%\\CivicSuite\\Data",
+      admin_detail: "%LOCALAPPDATA%\\Townlight\\Data",
       actionable: false
     },
     {
@@ -464,7 +477,7 @@ const fallbackState = {
       status: "Needs setup",
       message: "Backup folder has not been created yet.",
       next_action: "Use First Run or Backup Now to create the backup folder.",
-      admin_detail: "%USERPROFILE%\\Documents\\CivicSuite Backups",
+      admin_detail: "%USERPROFILE%\\Documents\\Townlight Backups",
       actionable: false
     },
     {
@@ -472,9 +485,9 @@ const fallbackState = {
       label: "Task queue schema",
       ok: false,
       status: "Needs services",
-      message: "City workflow services are not running yet, so CivicSuite cannot verify the PostgreSQL task queue schema.",
+      message: "City workflow services are not running yet, so Townlight cannot verify the PostgreSQL task queue schema.",
       next_action: "Start or repair City workflow services after the local data store is installed.",
-      admin_detail: "PostgreSQL-backed CivicCore task queue schema",
+      admin_detail: "PostgreSQL-backed Townlight Core task queue schema",
       actionable: false
     },
     {
@@ -492,7 +505,7 @@ const fallbackState = {
       ok: false,
       status: "Needs setup",
       message: "City workflow services are defined for the Windows local runtime but have not been installed yet.",
-      next_action: "Install CivicCore and the selected city-core module services.",
+      next_action: "Install Townlight Core and the selected city-core module services.",
       admin_detail: "Bundled CPython module services"
     },
     {
@@ -502,7 +515,7 @@ const fallbackState = {
       status: "Needs setup",
       message: "Background work queue is defined for the Windows local runtime but has not been installed yet.",
       next_action: "Create the local task queue after the local data store is ready.",
-      admin_detail: "PostgreSQL-backed CivicCore task queue"
+      admin_detail: "PostgreSQL-backed Townlight Core task queue"
     },
     {
       id: "model-runtime",
@@ -520,7 +533,7 @@ const fallbackState = {
       status: "Needs setup",
       message: "Local document storage is defined for the Windows local runtime but has not been installed yet.",
       next_action: "Create the local document storage folders during first run.",
-      admin_detail: "CivicSuite local file storage"
+      admin_detail: "Townlight local file storage"
     }
   ],
   city_work: {
@@ -545,7 +558,7 @@ const fallbackState = {
     operator_email: null,
     role: null,
     status: "Setup needed",
-    next_action: "Create the first CivicSuite admin."
+    next_action: "Create the first Townlight admin."
   }
 };
 
@@ -916,7 +929,7 @@ async function loadAppState() {
     // loss. Surface an explicit, retryable error and refuse the first-run wizard.
     appStateLoaded = false;
     state.appLoadError = String(error && error.message ? error.message : error);
-    console.error("CivicSuite could not load saved state", error);
+    console.error("Townlight could not load saved state", error);
   }
 }
 
@@ -956,9 +969,14 @@ function productModuleIdsFromSelection(selection) {
 function hydrateModuleDraftFromApp() {
   const selection = state.app.module_selection || fallbackState.module_selection;
   const productModuleIds = productModuleIdsFromSelection(selection);
-  state.moduleDraft.profileId = selection.profile_id === "custom" ? "custom" : "city-core";
+  const knownProfile = Object.hasOwn(PRODUCT_MODULE_IDS_BY_PROFILE, selection.profile_id);
+  state.moduleDraft.profileId = selection.profile_id === "custom" || !knownProfile
+    ? "custom"
+    : selection.profile_id;
   state.moduleDraft.selectedModuleIds =
-    productModuleIds.length > 0 ? productModuleIds : [...CITY_CORE_PRODUCT_MODULE_IDS];
+    productModuleIds.length > 0
+      ? productModuleIds
+      : [...(PRODUCT_MODULE_IDS_BY_PROFILE[state.moduleDraft.profileId] || RECORDS_BETA_PRODUCT_MODULE_IDS)];
 }
 
 function isWindowsLocalReadyProductModule(module) {
@@ -986,7 +1004,7 @@ function moduleSelectionPayload() {
       selectedModuleIds: customSelectedModuleIds()
     };
   }
-  return { profileId: "city-core" };
+  return { profileId: state.moduleDraft.profileId };
 }
 
 function hasTauriBridge() {
@@ -994,7 +1012,7 @@ function hasTauriBridge() {
 }
 
 function desktopAppRequiredNextAction(purpose) {
-  return `To ${purpose}, switch to the CivicSuite desktop app if it's already running, or open it from the Start menu. (You are viewing the browser preview, which cannot save local data.)`;
+  return `To ${purpose}, switch to the Townlight desktop app if it's already running, or open it from the Start menu. (You are viewing the browser preview, which cannot save local data.)`;
 }
 
 function accessState() {
@@ -1070,7 +1088,7 @@ function renderTopbar() {
     <header class="topbar">
       <div>
         <p class="eyebrow">Windows Local 1.0</p>
-        <h1>CivicSuite</h1>
+        <h1>Townlight</h1>
       </div>
       <div class="topbar-actions" aria-label="Application actions">
         <div class="surface-switch" role="tablist" aria-label="Surface">
@@ -1157,7 +1175,7 @@ function firstRunStatusClass(step) {
 function setupActionLabel(step) {
   const labels = {
     "choose-location": "Create local folders",
-    "select-modules": state.moduleDraft.profileId === "custom" ? "Save Module Selection" : "Use City Core Modules",
+    "select-modules": state.moduleDraft.profileId === "custom" ? "Save Module Selection" : "Use Selected Profile",
     "download-model": "Download / Resume Model",
     "create-city-profile": "Save city profile",
     "create-admin": "Save first admin",
@@ -1182,19 +1200,19 @@ function adminOnlyLockMessage(fallback) {
   const access = accessState();
   if (!adminOnlyControlLocked()) return "";
   if (!access.signed_in) return fallback;
-  return "Use a CivicSuite admin account before changing setup, model, backup, restore, repair, module, user, or background services.";
+  return "Use a Townlight admin account before changing setup, model, backup, restore, repair, module, user, or background services.";
 }
 
 function modelSetupLockMessage() {
   const access = accessState();
   if (!modelSetupControlLocked()) return "";
   if (!access.configured) {
-    return "Create the first CivicSuite admin and sign in before changing local model setup.";
+    return "Create the first Townlight admin and sign in before changing local model setup.";
   }
   if (!access.signed_in) {
-    return "Sign in as CivicSuite admin to change local model setup.";
+    return "Sign in as Townlight admin to change local model setup.";
   }
-  return "Use a CivicSuite admin account before changing local model setup.";
+  return "Use a Townlight admin account before changing local model setup.";
 }
 
 function showStandaloneModelReadiness() {
@@ -1211,14 +1229,19 @@ function renderModuleSelectionControls() {
   const readySelectedCount = customSelectedModuleIds().length;
   const profileChoices = [
     {
+      id: "records-beta",
+      label: "Townlight Records",
+      description: "Installs Townlight Records, Townlight Notice, and Townlight Access with Townlight Core."
+    },
+    {
       id: "city-core",
       label: "City Core",
-      description: "Installs CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess with CivicCore."
+      description: "Installs Townlight Records, Townlight Meetings, Townlight Code, Townlight Notice, and Townlight Access with Townlight Core."
     },
     {
       id: "custom",
       label: "Custom",
-      description: "Choose ready product modules. CivicCore is always included."
+      description: "Choose ready product modules. Townlight Core is always included."
     }
   ];
   return `
@@ -1246,18 +1269,19 @@ function renderModuleSelectionControls() {
             <input type="checkbox" checked disabled />
             <span>
               <strong>${escapeHtml(foundation.display_name)}</strong>
-              <small>Required foundation. CivicCore cannot be removed.</small>
+              <small>Required foundation. Townlight Core cannot be removed.</small>
             </span>
           </label>
         ` : ""}
         ${productModules.map((module) => {
           const ready = isWindowsLocalReadyProductModule(module);
-          const checked = customMode ? selectedIds.has(module.id) : CITY_CORE_PRODUCT_MODULE_IDS.includes(module.id);
+          const profileModuleIds = PRODUCT_MODULE_IDS_BY_PROFILE[state.moduleDraft.profileId] || [];
+          const checked = customMode ? selectedIds.has(module.id) : profileModuleIds.includes(module.id);
           const disabled = !customMode || !ready;
           const status = ready ? "Ready for Windows Local 1.0" : "Not ready for Windows Local 1.0";
           // Clerk-facing plain reason; the raw technical contract string (e.g.
-          // "must target CivicCore 1.2.0") is kept only as a hover tooltip for support.
-          const plainReason = !ready ? " - not available in this release yet; check back after your next CivicSuite update" : "";
+          // "must target Townlight Core 1.2.0") is kept only as a hover tooltip for support.
+          const plainReason = !ready ? " - not available in this release yet; check back after your next Townlight update" : "";
           const rawTitle = !ready && module.blocked_reason ? ` title="${escapeHtml(module.blocked_reason)}"` : "";
           return `
             <label class="module-choice ${checked ? "selected" : ""} ${disabled ? "disabled" : ""}">
@@ -1277,8 +1301,8 @@ function renderModuleSelectionControls() {
       </div>
       <p class="empty-note">
         ${customMode
-          ? `Custom selection will install CivicCore plus ${readySelectedCount} selected product module${readySelectedCount === 1 ? "" : "s"}.`
-          : "City Core installs the complete current 1.0 package: CivicRecords AI, CivicClerk, CivicCode, CivicNotice, and CivicAccess."}
+          ? `Custom selection will install Townlight Core plus ${readySelectedCount} selected product module${readySelectedCount === 1 ? "" : "s"}.`
+          : "City Core installs the complete current 1.0 package: Townlight Records, Townlight Meetings, Townlight Code, Townlight Notice, and Townlight Access."}
       </p>
     </div>
   `;
@@ -1293,8 +1317,8 @@ function renderSetupFields(step, actionLocked = false) {
     return `
       <div class="setup-form" aria-label="Local folders">
         <label>App install folder <input type="text" data-setup-field="installRoot" value="${escapeHtml(state.setupDraft.installRoot)}" autocomplete="off" readonly /></label>
-        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data", actionLocked)}
-        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups", actionLocked)}
+        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/Townlight/Data", actionLocked)}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/Townlight/Backups", actionLocked)}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
       </div>
     `;
@@ -1320,7 +1344,7 @@ function renderSetupFields(step, actionLocked = false) {
       <div class="setup-form two-column" aria-label="First admin">
         <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
-        <label>CivicSuite passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" placeholder="10 characters or more" autocomplete="new-password" /></label>
+        <label>Townlight passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" placeholder="10 characters or more" autocomplete="new-password" /></label>
         <small class="${passcodeFailed ? "field-hint field-hint-error" : "field-hint"}">10 characters or more.</small>
       </div>
     `;
@@ -1328,7 +1352,7 @@ function renderSetupFields(step, actionLocked = false) {
   if (step.id === "backup") {
     return `
       <div class="setup-form" aria-label="Backup folder">
-        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups", actionLocked)}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/Townlight/Backups", actionLocked)}
       </div>
     `;
   }
@@ -1351,7 +1375,7 @@ function setupActionLockedByAdmin() {
 
 function renderFirstRunStep(step, index) {
   const adminLocked = step.current && setupActionLockedByAdmin();
-  const adminLockMessage = adminOnlyLockMessage("Sign in with the CivicSuite admin passcode before continuing setup.");
+  const adminLockMessage = adminOnlyLockMessage("Sign in with the Townlight admin passcode before continuing setup.");
   const moduleSelectionLocked =
     step.current &&
     step.id === "modules" &&
@@ -1488,9 +1512,9 @@ function renderAccessPanel() {
       <section class="section-band access-panel" aria-label="Local access">
         <div class="section-title">
           <p class="eyebrow">Local access</p>
-          <h3>Signed in as ${escapeHtml(access.operator_name || "CivicSuite admin")}</h3>
+          <h3>Signed in as ${escapeHtml(access.operator_name || "Townlight admin")}</h3>
           <p>${escapeHtml(localRoleLabel(access.role))}</p>
-          ${access.role !== "local-admin" ? `<p>Sign out and use a CivicSuite admin account before changing setup, users, modules, backups, restore, repair, or background services.</p>` : ""}
+          ${access.role !== "local-admin" ? `<p>Sign out and use a Townlight admin account before changing setup, users, modules, backups, restore, repair, or background services.</p>` : ""}
         </div>
         <div class="health-actions">
           <button type="button" class="secondary-action" data-auth-action="sign-out">Sign Out</button>
@@ -1503,11 +1527,11 @@ function renderAccessPanel() {
       <div class="section-title">
         <p class="eyebrow">Local access</p>
         <h3>Sign In</h3>
-        <p>Use a staff or CivicSuite admin passcode for city work. Use a CivicSuite admin account for setup, users, modules, backups, restore, repair, model setup, or background services.</p>
+        <p>Use a staff or Townlight admin passcode for city work. Use a Townlight admin account for setup, users, modules, backups, restore, repair, model setup, or background services.</p>
       </div>
       <div class="workflow-form compact-form">
         <label>Email <input type="email" data-access-field="email" value="${escapeHtml(state.accessDraft.email)}" autocomplete="email" /></label>
-        <label>CivicSuite passcode <input type="password" data-access-field="passcode" value="${escapeHtml(state.accessDraft.passcode)}" autocomplete="current-password" /></label>
+        <label>Townlight passcode <input type="password" data-access-field="passcode" value="${escapeHtml(state.accessDraft.passcode)}" autocomplete="current-password" /></label>
         <button type="button" class="primary-action" data-auth-action="sign-in">Sign In</button>
       </div>
       ${renderAuthActionResult()}
@@ -1904,7 +1928,7 @@ function guidedReviewForAction(action) {
     "create-meeting-body": {
       title: "Review Before Saving Meeting Body",
       confirmLabel: "Save Meeting Body",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: detailOrFallback(state.workDraft.meetingBodyName, "New meeting body"),
       status: "Local setup record",
       changes: "Stores the council, board, commission, or authority that holds meetings, including legal basis, cadence, default notice days, and quorum rule.",
@@ -1916,13 +1940,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.meetingBodyDefaultNoticeDays, "Default notice days will default to 3 if left blank."),
         detailOrFallback(state.workDraft.meetingBodyQuorumRule, "Quorum rule will default to majority of seated members if left blank.")
       ],
-      audit: "Creates a CivicClerk audit entry for the meeting body setup record.",
+      audit: "Creates a Townlight Meetings audit entry for the meeting body setup record.",
       retry: "If the name, statutory basis, notice days, or duplicate check fails, the desktop app leaves local records unchanged."
     },
     "add-meeting-member": {
       title: "Review Before Saving Member",
       confirmLabel: "Save Member",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: detailOrFallback(state.workDraft.memberName, "New meeting body member"),
       status: "Roster record",
       changes: "Adds this elected or appointed member to the selected meeting body roster for quorum and roll-call vote work.",
@@ -1934,13 +1958,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.memberTermStart, "Term start is optional."),
         detailOrFallback(state.workDraft.memberTermEnd, "Term end is optional.")
       ],
-      audit: "Creates a CivicClerk audit entry for the roster change.",
+      audit: "Creates a Townlight Meetings audit entry for the roster change.",
       retry: "If the body is missing, dates are invalid, required fields are blank, or the active member already exists, the roster stays unchanged."
     },
     "review-agenda-intake": {
       title: "Review Before Updating Agenda Intake",
       confirmLabel: "Review Agenda Intake",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: agendaIntakeSubject,
       status: agendaIntake ? agendaIntake.status : "No agenda intake item selected yet.",
       changes: "Records the clerk readiness decision for a submitted agenda item before it can be promoted to a meeting agenda.",
@@ -1951,13 +1975,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.agendaIntakeDecision, "A readiness decision is required."),
         detailOrFallback(state.workDraft.agendaIntakeReviewNote, "A clerk review note is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the agenda intake readiness decision.",
+      audit: "Creates a Townlight Meetings audit entry for the agenda intake readiness decision.",
       retry: "If no intake item is selected, the decision is invalid, or the review note is missing, the desktop app leaves the queue unchanged."
     },
     "promote-agenda-intake": {
       title: "Review Before Promoting To Agenda",
       confirmLabel: "Promote To Agenda",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: agendaIntakeSubject,
       status: agendaIntake ? agendaIntake.status : "No agenda intake item selected yet.",
       changes: "Adds the reviewed-ready intake item to the selected meeting agenda with department and source metadata.",
@@ -1967,13 +1991,13 @@ function guidedReviewForAction(action) {
         agendaIntake ? detailOrFallback(agendaIntake.source_reference, "No source or citation is recorded.") : "The desktop app will require an intake item before saving.",
         agendaIntake?.status === "ready for agenda" ? "Agenda intake is marked ready." : "Agenda intake must be reviewed as ready before promotion."
       ],
-      audit: "Creates a CivicClerk audit entry linking the intake item to the selected meeting agenda.",
+      audit: "Creates a Townlight Meetings audit entry linking the intake item to the selected meeting agenda.",
       retry: "If the intake item is not ready, no meeting exists, or the meeting is archived, the desktop app leaves both records unchanged."
     },
     "record-staff-report": {
       title: "Review Before Saving Staff Report",
       confirmLabel: "Save Staff Report",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: staffReportSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Stores a structured staff report for the selected agenda item with recommendation, background, analysis, fiscal impact, alternatives, prior actions, preparer, and revision note.",
@@ -1987,28 +2011,28 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.staffReportFiscalImpact, "Fiscal impact is required."),
         detailOrFallback(state.workDraft.staffReportPreparedBy, "Prepared-by name is required.")
       ],
-      audit: "Creates a CivicClerk audit entry linking the staff report to the agenda item.",
+      audit: "Creates a Townlight Meetings audit entry linking the staff report to the agenda item.",
       retry: "If required sections are missing, no agenda item exists, or the meeting is archived, the desktop app leaves the meeting unchanged."
     },
     "add-code-handoff-agenda": {
       title: "Review Before Adding Code Handoff",
       confirmLabel: "Add Code Handoff",
-      module: "CivicClerk + CivicCode",
+      module: "Townlight Meetings + Townlight Code",
       subject: handoffSubject,
       status: handoff ? handoff.status : "No pending code handoff selected yet.",
-      changes: "Adds the pending CivicCode ordinance or resolution handoff to the current meeting agenda.",
+      changes: "Adds the pending Townlight Code ordinance or resolution handoff to the current meeting agenda.",
       visibility: "Staff agenda draft only until notice, packet, or archive steps make meeting material public.",
       sources: [
         detailOrFallback(handoff?.summary, "No handoff summary is available yet."),
         meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates a CivicClerk audit entry for adding the code handoff to the agenda.",
+      audit: "Creates a Townlight Meetings audit entry for adding the code handoff to the agenda.",
       retry: "If no handoff or meeting exists, the desktop app stops before changing local records."
     },
     "add-meeting-attachment": {
       title: "Review Before Attaching Packet File",
       confirmLabel: "Attach Packet File",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Copies the selected local file into the city profile, records its SHA-256 hash, and adds it to the meeting packet evidence list.",
@@ -2022,13 +2046,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.meetingAttachmentCitation, "No citation has been recorded yet."),
         detailOrFallback(state.workDraft.meetingAttachmentSection, "Packet section is required.")
       ],
-      audit: "Creates a CivicClerk audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
+      audit: "Creates a Townlight Meetings audit entry with the attachment title, access level, byte count, and SHA-256 hash.",
       retry: "If the file is missing, unreadable, or the meeting is archived, the desktop app leaves the meeting record unchanged."
     },
     "finalize-meeting-packet": {
       title: "Review Before Finalizing Packet",
       confirmLabel: "Finalize Packet",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: detailOrFallback(state.workDraft.packetTitle, meeting ? `${meeting.title} agenda packet` : "Current meeting packet"),
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Stores a durable packet-finalization record with the clerk review note, agenda item count, public attachment count, and closed-session addendum count.",
@@ -2041,13 +2065,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.packetPreparedBy, "Prepared-by or reviewer name is required."),
         detailOrFallback(state.workDraft.packetReviewNote, "Packet review note is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the packet finalization milestone and counts.",
+      audit: "Creates a Townlight Meetings audit entry for the packet finalization milestone and counts.",
       retry: "If no meeting exists, no agenda item exists, review fields are blank, or the meeting is archived, the desktop app leaves the packet unchanged."
     },
     "record-closed-session": {
       title: "Review Before Recording Closed Session",
       confirmLabel: "Record Closed Session",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Stores the statutory basis, general topics, timing, reconvene statement, and optional staff-only notes reference for a closed-session block.",
@@ -2059,13 +2083,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.closedSessionExitedAt, "Exited time is required."),
         detailOrFallback(state.workDraft.closedSessionReconvene, "Reconvene statement is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the closed-session boundary and staff-only notes reference.",
+      audit: "Creates a Townlight Meetings audit entry for the closed-session boundary and staff-only notes reference.",
       retry: "If required basis, topic, timing, or reconvene evidence is missing, the desktop app leaves the meeting unchanged."
     },
     "calculate-notice-deadline": {
       title: "Review Before Calculating Notice Deadline",
       confirmLabel: "Calculate Notice Deadline",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Calculates and stores the notice posting deadline from the selected meeting date, lead-day rule, day type, statutory basis, time zone, and clerk approval.",
@@ -2080,13 +2104,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
         state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
       ],
-      audit: "Creates a CivicClerk audit entry for the calculated notice deadline without claiming legal sufficiency.",
+      audit: "Creates a Townlight Meetings audit entry for the calculated notice deadline without claiming legal sufficiency.",
       retry: "If required notice details are missing, the day count or time zone is invalid, approval is unchecked, or the meeting is archived, the desktop app leaves the notice unchanged."
     },
     "complete-notice-checklist": {
       title: "Review Before Approving Notice Checklist",
       confirmLabel: "Approve Notice Checklist",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Records the meeting type, statutory notice basis, deadline, time zone, and clerk approval needed before posting proof can mark the notice ready.",
@@ -2099,13 +2123,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
         state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
       ],
-      audit: "Creates a CivicClerk audit entry for checklist approval without claiming legal sufficiency.",
+      audit: "Creates a Townlight Meetings audit entry for checklist approval without claiming legal sufficiency.",
       retry: "If required checklist details are missing, the time zone is invalid, or approval is not checked, the desktop app leaves the notice unchanged."
     },
     "post-notice": {
       title: "Review Before Posting Notice",
       confirmLabel: "Mark Notice Ready",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Records final posting proof and marks the current meeting notice as ready for public posting after the approved checklist passes.",
@@ -2118,13 +2142,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeLocation, "Posting location is required."),
         detailOrFallback(state.workDraft.noticeConfirmation, "Posting confirmation evidence is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for posting the notice with location, method, and confirmation evidence.",
+      audit: "Creates a Townlight Meetings audit entry for posting the notice with location, method, and confirmation evidence.",
       retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
     },
     "export-meeting-packet": {
       title: "Review Before Exporting Records Bundle",
       confirmLabel: "Export Records Bundle",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Writes a local records-ready packet and notice bundle with a checksum manifest, source references, public/staff classification, and export counts.",
@@ -2133,17 +2157,17 @@ function guidedReviewForAction(action) {
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} recorded outcome(s)` : "The desktop app will require a meeting before saving.",
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
-      audit: "Creates a CivicClerk audit entry for the packet export and durable records-ready bundle manifest.",
+      audit: "Creates a Townlight Meetings audit entry for the packet export and durable records-ready bundle manifest.",
       retry: "If the packet, checksum sidecar, or bundle manifest cannot be written, the desktop app reports the failure and preserves the meeting record."
     },
     "civicnotice-calculate-deadline": {
       title: "Review Before Calculating Notice Deadline",
       confirmLabel: "Calculate Deadline",
-      module: "CivicNotice",
+      module: "Townlight Notice",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Calculates and stores the notice posting deadline from the selected meeting date, lead-day rule, day type, statutory basis, time zone, and clerk approval.",
-      visibility: "Internal CivicNotice workpaper until posting proof is recorded. The saved calculation keeps the city/state holiday caveat with the source evidence.",
+      visibility: "Internal Townlight Notice workpaper until posting proof is recorded. The saved calculation keeps the city/state holiday caveat with the source evidence.",
       sources: [
         meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "At least one agenda item is required.",
@@ -2154,17 +2178,17 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
         state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
       ],
-      audit: "Creates a CivicNotice audit entry for the calculated notice deadline without claiming legal sufficiency.",
+      audit: "Creates a Townlight Notice audit entry for the calculated notice deadline without claiming legal sufficiency.",
       retry: "If required notice details are missing, the day count or time zone is invalid, approval is unchecked, or the meeting is archived, the desktop app leaves the notice unchanged."
     },
     "civicnotice-complete-checklist": {
       title: "Review Before Saving Notice Checklist",
       confirmLabel: "Save Checklist",
-      module: "CivicNotice",
+      module: "Townlight Notice",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Records the meeting type, statutory notice basis, deadline, time zone, and clerk approval needed before posting proof can mark the notice ready.",
-      visibility: "Internal CivicNotice checklist until posting proof is recorded or the meeting is archived.",
+      visibility: "Internal Townlight Notice checklist until posting proof is recorded or the meeting is archived.",
       sources: [
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s)` : "The desktop app will require a meeting before saving.",
         detailOrFallback(state.workDraft.noticeMeetingType, "Meeting type is required."),
@@ -2173,13 +2197,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeTimeZone, "Notice time zone is required."),
         state.workDraft.noticeHumanApproval ? "Clerk approval checked." : "Clerk approval is required."
       ],
-      audit: "Creates a CivicNotice audit entry for checklist approval without claiming legal sufficiency.",
+      audit: "Creates a Townlight Notice audit entry for checklist approval without claiming legal sufficiency.",
       retry: "If required checklist details are missing, the time zone is invalid, or approval is not checked, the desktop app leaves the notice unchanged."
     },
     "civicnotice-post-notice": {
       title: "Review Before Recording Posting Proof",
       confirmLabel: "Record Posting Proof",
-      module: "CivicNotice",
+      module: "Townlight Notice",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
       changes: "Records final posting proof and marks the current meeting notice as ready for public posting after the approved checklist passes.",
@@ -2192,16 +2216,16 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.noticeLocation, "Posting location is required."),
         detailOrFallback(state.workDraft.noticeConfirmation, "Posting confirmation evidence is required.")
       ],
-      audit: "Creates a CivicNotice audit entry for posting proof with location, method, and confirmation evidence.",
+      audit: "Creates a Townlight Notice audit entry for posting proof with location, method, and confirmation evidence.",
       retry: "If required meeting details are missing, the desktop app shows the issue and leaves the notice unchanged."
     },
     "civicnotice-export-archive-packet": {
       title: "Review Before Building Notice Archive Packet",
       confirmLabel: "Build Archive Packet",
-      module: "CivicNotice",
+      module: "Townlight Notice",
       subject: meetingSubject,
       status: meeting ? `${meeting.status}; ${meeting.notice_status}` : "No meeting selected yet.",
-      changes: "Writes a public notice archive packet under the CivicNotice exports folder with checksum and records-ready bundle manifests.",
+      changes: "Writes a public notice archive packet under the Townlight Notice exports folder with checksum and records-ready bundle manifests.",
       visibility: "The notice archive packet uses the public notice projection and omits staff-only paths and closed-session material.",
       sources: [
         meeting ? `Target meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving.",
@@ -2209,13 +2233,13 @@ function guidedReviewForAction(action) {
         meeting && (meeting.notice_postings || []).length > 0 ? "Posting proof recorded." : "Posting proof is required.",
         meeting?.notice_status === "public notice ready" ? "Notice is public notice ready." : "Notice must be public notice ready."
       ],
-      audit: "Creates a CivicNotice audit entry for the notice archive packet and durable bundle manifest.",
+      audit: "Creates a Townlight Notice audit entry for the notice archive packet and durable bundle manifest.",
       retry: "If the notice packet, checksum sidecar, or bundle manifest cannot be written, the desktop app reports the failure and preserves the meeting record."
     },
     "suggest-minutes-draft": {
       title: "Review Before Generating Minutes Draft",
       confirmLabel: "Generate Minutes Draft",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Uses the verified local AI model to draft internal meeting minutes from the meeting summary, agenda, packet attachments, motions, roll-call votes, outcomes, action items, and comments. It does not adopt or archive the minutes.",
@@ -2224,13 +2248,13 @@ function guidedReviewForAction(action) {
         meeting ? `${(meeting.agenda_items || []).length} agenda item(s); ${(meeting.attachments || []).length} packet attachment(s); ${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} outcome(s); ${((meeting.action_records || []).length || (meeting.action_items || []).length)} action item(s)` : "The desktop app will require a meeting before generating.",
         detailOrFallback(meeting?.summary, "No meeting summary has been recorded yet.")
       ],
-      audit: "Creates a CivicClerk audit entry naming the local model used for the minutes draft.",
+      audit: "Creates a Townlight Meetings audit entry naming the local model used for the minutes draft.",
       retry: "If the local AI model is not ready, the minutes are already adopted, or no meeting evidence exists, the desktop app stops before changing the draft."
     },
     "add-minute-citation": {
       title: "Review Before Adding Minute Citation",
       confirmLabel: "Add Minute Citation",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Adds source evidence for a specific sentence or excerpt in the current minutes draft.",
@@ -2243,13 +2267,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.minutesCitationSourceRef, "Source reference is required."),
         detailOrFallback(meeting?.minutes, "No minutes draft has been saved yet.")
       ],
-      audit: "Creates a CivicClerk audit entry for the minute citation source reference.",
+      audit: "Creates a Townlight Meetings audit entry for the minute citation source reference.",
       retry: "If the sentence is not in the current draft, the source reference is missing, or the meeting is archived, the desktop app leaves the minutes unchanged."
     },
     "adopt-minutes": {
       title: "Review Before Adopting Minutes",
       confirmLabel: "Adopt Minutes",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Marks the current minutes as adopted and unlocks the public archive step.",
@@ -2259,13 +2283,13 @@ function guidedReviewForAction(action) {
         meeting && (meeting.minute_citations || []).length > 0 ? `${(meeting.minute_citations || []).length} minute citation(s) recorded.` : "At least one minute citation is required.",
         meeting ? `${(meeting.motions || []).length} motion(s); ${(meeting.member_votes || []).length} roll-call vote(s); ${(meeting.votes || []).length} vote/outcome record(s)` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates a CivicClerk audit entry for adopting minutes.",
+      audit: "Creates a Townlight Meetings audit entry for adopting minutes.",
       retry: "If no minutes draft or citation evidence exists, the desktop app blocks adoption and asks staff to save minutes and add citations first."
     },
     "sign-minutes": {
       title: "Review Before Signing Minutes",
       confirmLabel: "Sign Minutes",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Records the clerk or authorized signer attestation for the adopted minutes before they can become an archived public record.",
@@ -2275,13 +2299,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.minutesSignedBy, "Signer name is required."),
         detailOrFallback(state.workDraft.minutesSignatureAttestation, "Signature attestation is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for signing the adopted minutes.",
+      audit: "Creates a Townlight Meetings audit entry for signing the adopted minutes.",
       retry: "If minutes are not adopted, already signed, or signer evidence is missing, the desktop app blocks signing and leaves the meeting unchanged."
     },
     "record-member-vote": {
       title: "Review Before Recording Roll Call Vote",
       confirmLabel: "Record Roll Call Vote",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: selectedMemberVoteMotion ? selectedMemberVoteMotion.text : "Current motion",
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Records one member's individual roll-call vote against the selected motion.",
@@ -2292,13 +2316,13 @@ function guidedReviewForAction(action) {
         selectedMemberVoteMember ? `Member: ${selectedMemberVoteMember.name}` : "A member roster entry is required.",
         detailOrFallback(state.workDraft.memberVoteValue, "Vote value is required.")
       ],
-      audit: "Creates a CivicClerk audit entry for the individual roll-call vote.",
+      audit: "Creates a Townlight Meetings audit entry for the individual roll-call vote.",
       retry: "If no motion, member, valid vote value, or editable meeting exists, the desktop app leaves the meeting unchanged."
     },
     "record-meeting-attendance": {
       title: "Review Before Recording Attendance",
       confirmLabel: "Record Attendance",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: selectedAttendanceMember ? selectedAttendanceMember.name : "Current roster member",
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Records one active roster member's attendance status for the selected meeting before quorum review.",
@@ -2310,13 +2334,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.attendanceRecordedBy, "Recorded-by name is required."),
         detailOrFallback(state.workDraft.attendanceNote, "Attendance note is optional.")
       ],
-      audit: "Creates a CivicClerk audit entry for the individual attendance record.",
+      audit: "Creates a Townlight Meetings audit entry for the individual attendance record.",
       retry: "If no member, valid status, recorded-by evidence, or editable meeting exists, the desktop app leaves the meeting unchanged."
     },
     "record-quorum-check": {
       title: "Review Before Saving Quorum Check",
       confirmLabel: "Save Quorum Check",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Calculates and saves a quorum finding from the active roster and recorded attendance evidence.",
@@ -2328,30 +2352,30 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.quorumRequiredCount, "Required count will default to majority of the active roster if left blank."),
         detailOrFallback(state.workDraft.quorumReviewNote, "Quorum review note is required.")
       ],
-      audit: "Creates a CivicClerk audit entry with roster count, present/remote count, required count, and quorum result.",
+      audit: "Creates a Townlight Meetings audit entry with roster count, present/remote count, required count, and quorum result.",
       retry: "If attendance is missing, the required count is invalid, the review note is blank, or the meeting is archived, the desktop app leaves quorum records unchanged."
     },
     "record-adopted-legislation": {
       title: "Review Before Recording Adopted Legislation",
       confirmLabel: "Record Adoption",
-      module: "CivicClerk + CivicCode",
+      module: "Townlight Meetings + Townlight Code",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
-      changes: "Creates a durable adopted ordinance or resolution record, links it to the meeting's passed motion, and queues a CivicCode draft source for codifier sync.",
-      visibility: "Staff workflow until the meeting archive and code publication gates are completed. CivicCode source publication remains a separate staff action.",
+      changes: "Creates a durable adopted ordinance or resolution record, links it to the meeting's passed motion, and queues a Townlight Code draft source for codifier sync.",
+      visibility: "Staff workflow until the meeting archive and code publication gates are completed. Townlight Code source publication remains a separate staff action.",
       sources: [
         meeting?.minutes_signed_at_unix_seconds ? "Minutes have been signed." : "Minutes must be signed before recording adopted legislation.",
         meeting && (meeting.motions || []).some((motion) => motion.disposition === "passed") ? "Passed motion is available for traceability." : "A passed motion is required.",
         detailOrFallback(state.workDraft.adoptedLegislationTitle, "Adopted title is required."),
         detailOrFallback(state.workDraft.adoptedLegislationText, "Adopted text is required.")
       ],
-      audit: "Creates CivicClerk and CivicCode audit entries linking the adoption event to the local code source queue.",
+      audit: "Creates Townlight Meetings and Townlight Code audit entries linking the adoption event to the local code source queue.",
       retry: "If minutes are not signed, no passed motion exists, or required adoption text is missing, the desktop app leaves Clerk and Code records unchanged."
     },
     "archive-meeting": {
       title: "Review Before Archiving Public Record",
       confirmLabel: "Archive Public Record",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: meetingSubject,
       status: meeting ? meeting.status : "No meeting selected yet.",
       changes: "Writes the public archive export, locks later meeting edits, and records a publication event hash.",
@@ -2361,13 +2385,13 @@ function guidedReviewForAction(action) {
         meeting?.minutes_signed_at_unix_seconds ? `Signed by ${meeting.minutes_signed_by || "authorized signer"}.` : "Minutes are not signed yet.",
         meeting ? `${(meeting.exports || []).length} existing export(s)` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates CivicClerk audit and CivicCore publication-gate entries.",
+      audit: "Creates Townlight Meetings audit and Townlight Core publication-gate entries.",
       retry: "If minutes are not adopted or signed, the desktop app blocks archive and leaves the meeting editable."
     },
     "review-public-comment": {
       title: "Review Before Marking Public Comment Reviewed",
       confirmLabel: "Mark Reviewed",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: publicCommentSubject,
       status: publicComment ? publicComment.status : "No public comment selected yet.",
       changes: "Marks the selected submitted public comment as reviewed for the public record.",
@@ -2376,13 +2400,13 @@ function guidedReviewForAction(action) {
         publicComment ? detailOrFallback(publicComment.body, "No comment body is recorded.") : "The desktop app will require a submitted comment before saving.",
         meeting ? `Meeting: ${meetingSubject}` : "The desktop app will require a meeting before saving."
       ],
-      audit: "Creates a CivicClerk audit entry for public comment review.",
+      audit: "Creates a Townlight Meetings audit entry for public comment review.",
       retry: "If the selected meeting is archived or the comment is missing, the desktop app blocks the review."
     },
     "redact-public-comment": {
       title: "Review Before Redacting Public Comment",
       confirmLabel: "Redact Comment",
-      module: "CivicClerk",
+      module: "Townlight Meetings",
       subject: publicCommentSubject,
       status: publicComment ? publicComment.status : "No public comment selected yet.",
       changes: "Stores redacted public text while preserving the original comment internally.",
@@ -2391,13 +2415,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.publicCommentRedactedBody, "No redacted public text has been typed yet."),
         detailOrFallback(state.workDraft.publicCommentRedactionBasis, "No statutory redaction basis has been typed yet.")
       ],
-      audit: "Creates a CivicClerk audit entry with the redaction basis.",
+      audit: "Creates a Townlight Meetings audit entry with the redaction basis.",
       retry: "If redacted text or statutory basis is missing, the desktop app blocks the redaction."
     },
     "set-records-deadline": {
       title: "Review Before Setting Records Deadline",
       confirmLabel: "Set Deadline",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Stores the reviewed response deadline and statutory or policy basis for the selected records request.",
@@ -2407,13 +2431,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.deadline, "Response deadline is required."),
         detailOrFallback(state.workDraft.recordsDeadlineBasis, "Deadline basis is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry for deadline review.",
+      audit: "Creates a Townlight Records audit entry for deadline review.",
       retry: "If the deadline date or basis is missing or invalid, the desktop app leaves the request unchanged."
     },
     "calculate-records-deadline": {
       title: "Review Before Calculating Records Deadline",
       confirmLabel: "Calculate Deadline",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Calculates and stores the response deadline for the selected records request from the received date, rule, day count, and day type.",
@@ -2426,13 +2450,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.deadlineDayType, "Deadline day type is required."),
         detailOrFallback(state.workDraft.recordsDeadlineBasis, "Deadline basis is required.")
       ],
-      audit: "Creates CivicRecords AI audit, timeline, notification, and public status evidence for the calculated deadline.",
+      audit: "Creates Townlight Records audit, timeline, notification, and public status evidence for the calculated deadline.",
       retry: "If the received date, day count, day type, basis, or active request is invalid, the desktop app leaves the request unchanged."
     },
     "add-records-message": {
       title: "Review Before Adding Request Message",
       confirmLabel: "Add Request Message",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Adds a requester-visible message to the selected request thread and queues a local notification log entry.",
@@ -2441,13 +2465,13 @@ function guidedReviewForAction(action) {
         request ? detailOrFallback(request.public_tracking_number, "No public tracking number is recorded.") : "The desktop app will require a request before saving.",
         detailOrFallback(state.workDraft.requestMessageBody, "Request message is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry and timeline entry for the request message.",
+      audit: "Creates a Townlight Records audit entry and timeline entry for the request message.",
       retry: "If no message or active request exists, the desktop app leaves the request thread unchanged."
     },
     "add-records-exemption-decision": {
       title: "Review Before Saving Exemption Decision",
       confirmLabel: "Save Exemption Decision",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Saves a structured release, redact, or exempt decision for one source segment.",
@@ -2457,16 +2481,16 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.exemptionDecision, "Decision must be release, redact, or exempt."),
         detailOrFallback(state.workDraft.exemptionBasis, "Statute, ordinance, or city policy basis is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry and request timeline entry for the decision.",
+      audit: "Creates a Townlight Records audit entry and request timeline entry for the decision.",
       retry: "If the source, finding, decision, or basis is missing, the desktop app leaves exemption evidence unchanged."
     },
     "add-records-release-copy": {
       title: "Review Before Attaching Release Copy",
       confirmLabel: "Attach Release Copy",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: recordsDocument ? recordsDocument.title : "Current request document",
       status: recordsDocument ? recordsDocument.status : "No request document selected yet.",
-      changes: "Preserves release-ready or redacted evidence in the CivicSuite local profile. Readable files are copied and hashed; unreadable typed references are saved as local marker files with their own SHA-256 hash.",
+      changes: "Preserves release-ready or redacted evidence in the Townlight local profile. Readable files are copied and hashed; unreadable typed references are saved as local marker files with their own SHA-256 hash.",
       visibility: "Staff can see local release evidence. Requester/public status never exposes local workstation paths.",
       sources: [
         recordsDocument ? `Original document hash: ${recordsDocument.sha256 || "not recorded"}` : "The desktop app will require an attached request document before saving.",
@@ -2474,13 +2498,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.releaseCopyStatus, "Release copy status is required."),
         detailOrFallback(state.workDraft.releaseCopyNote, "Release note is optional but recommended.")
       ],
-      audit: "Creates a CivicRecords AI audit and request timeline entries for the release/redaction artifact.",
+      audit: "Creates a Townlight Records audit and request timeline entries for the release/redaction artifact.",
       retry: "If no document is selected or the release status is invalid, the desktop app stops before changing the request. A typed but unreadable release file reference is preserved as a hashed local marker."
     },
     "record-records-search-session": {
       title: "Review Before Saving Search Session",
       confirmLabel: "Save Search Session",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Saves a durable query, searched locations, and source-result evidence for the selected records request.",
@@ -2490,13 +2514,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.searchLocations, "Searched systems, folders, or source locations are required."),
         detailOrFallback(state.workDraft.searchResultCitation, "Result citation or source reference is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry and request timeline entry for the search session.",
+      audit: "Creates a Townlight Records audit entry and request timeline entry for the search session.",
       retry: "If query, locations, result title, citation, or summary are missing, the desktop app leaves search evidence unchanged."
     },
     "add-records-fee-line": {
       title: "Review Before Adding Records Fee Line",
       confirmLabel: "Add Fee Line",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Adds a structured fee line item and updates the request fee estimate.",
@@ -2506,13 +2530,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.feeScheduleBasis, "Fee schedule or policy basis is required."),
         detailOrFallback(state.workDraft.feeLineAmount, "Fee line amount is required.")
       ],
-      audit: "Creates a CivicRecords AI audit entry for the fee line.",
+      audit: "Creates a Townlight Records audit entry for the fee line.",
       retry: "If the amount is missing, zero, negative, or not dollars/cents, the desktop app leaves the request unchanged."
     },
     "waive-records-fee": {
       title: "Review Before Waiving Records Fee",
       confirmLabel: "Waive Fee",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Records a fee waiver reason and updates the request fee estimate to waived.",
@@ -2521,13 +2545,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(state.workDraft.feeWaiverReason, "Fee waiver reason is required."),
         request ? `${(request.fee_line_items || []).length} fee line item(s) currently recorded.` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for the fee waiver.",
+      audit: "Creates a Townlight Records audit entry for the fee waiver.",
       retry: "If no waiver reason is entered, the desktop app leaves the request fee state unchanged."
     },
     "approve-records-response": {
       title: "Review Before Approving Records Response",
       confirmLabel: "Approve Response",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Records human approval for the drafted records response.",
@@ -2536,13 +2560,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(request?.response_draft, "No response draft has been saved yet."),
         request ? `${(request.exemption_reviews || []).length} exemption review note(s); ${(request.exemption_decisions || []).length} exemption decision(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for human approval.",
+      audit: "Creates a Townlight Records audit entry for human approval.",
       retry: "If the response draft is missing, the desktop app blocks approval before release steps."
     },
     "suggest-records-response": {
       title: "Review Before Generating Records Draft",
       confirmLabel: "Generate Draft",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Uses the verified local AI model to draft an internal response for staff review. It does not approve, export, or fulfill the request.",
@@ -2551,13 +2575,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(request?.summary, "No request summary has been saved yet."),
         request ? `${(request.search_notes || []).length} search note(s); ${(request.citations || []).length} citation(s)` : "The desktop app will require a request before generating."
       ],
-      audit: "Creates a CivicRecords AI audit entry naming the local model used for the draft.",
+      audit: "Creates a Townlight Records audit entry naming the local model used for the draft.",
       retry: "If the local AI model is not ready or no search/citation evidence exists, the desktop app stops before changing the draft."
     },
     "export-records-response": {
       title: "Review Before Exporting Records Response",
       confirmLabel: "Export Response",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Writes the approved records response package to the local export folder.",
@@ -2566,13 +2590,13 @@ function guidedReviewForAction(action) {
         request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
         request ? `${(request.search_notes || []).length} search note(s); ${(request.approval_notes || []).length} approval note(s)` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for exporting the response package.",
+      audit: "Creates a Townlight Records audit entry for exporting the response package.",
       retry: "If approval is missing, the desktop app blocks export and keeps the draft internal."
     },
     "build-records-release-package": {
       title: "Review Before Building Release Package",
       confirmLabel: "Build Release Package",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Writes a checksummed release package manifest with search, document, and exemption decision evidence.",
@@ -2581,13 +2605,13 @@ function guidedReviewForAction(action) {
         request ? `${(request.search_sessions || []).length} search session(s); ${(request.documents || []).length} attached document(s)` : "The desktop app will require a request before building.",
         request ? `${(request.exemption_decisions || []).length} exemption decision(s)` : "The desktop app will require release/redact/exempt decisions."
       ],
-      audit: "Creates a CivicRecords AI audit entry and request timeline entry with the package hash.",
+      audit: "Creates a Townlight Records audit entry and request timeline entry with the package hash.",
       retry: "If source evidence or exemption decisions are missing, the desktop app leaves release package state unchanged."
     },
     "fulfill-records-request": {
       title: "Review Before Marking Records Fulfilled",
       confirmLabel: "Mark Fulfilled",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Marks the request fulfilled and records a publication event hash for the released response.",
@@ -2596,13 +2620,13 @@ function guidedReviewForAction(action) {
         request?.approved_at_unix_seconds ? "Response has human approval." : "Response is not approved yet.",
         request ? `${(request.exports || []).length} export package(s); ${(request.release_packages || []).length} release package manifest(s)` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates CivicRecords AI audit and CivicCore publication-gate entries.",
+      audit: "Creates Townlight Records audit and Townlight Core publication-gate entries.",
       retry: "If approval, export, or release package evidence is missing, the desktop app blocks fulfillment."
     },
     "close-records-request": {
       title: "Review Before Closing Records Request",
       confirmLabel: "Close Request",
-      module: "CivicRecords AI",
+      module: "Townlight Records",
       subject: requestSubject,
       status: request ? request.status : "No records request selected yet.",
       changes: "Closes the request after fulfillment and preserves the request history.",
@@ -2611,13 +2635,13 @@ function guidedReviewForAction(action) {
         request?.fulfilled_at_unix_seconds ? "Request has been fulfilled." : "Request is not fulfilled yet.",
         request ? `Due date: ${request.deadline}` : "The desktop app will require a request before saving."
       ],
-      audit: "Creates a CivicRecords AI audit entry for closing the request.",
+      audit: "Creates a Townlight Records audit entry for closing the request.",
       retry: "If the request has not been fulfilled, the desktop app blocks closure."
     },
     "mark-notification-sent": {
       title: "Review Before Logging Notification Sent",
       confirmLabel: "Log Notification Sent",
-      module: "CivicCore + CivicRecords AI",
+      module: "Townlight Core + Townlight Records",
       subject: notificationSubject,
       status: notification ? notification.status : "No local notification selected yet.",
       changes: "Marks the selected local notification outbox item as sent or otherwise handled by staff.",
@@ -2632,23 +2656,23 @@ function guidedReviewForAction(action) {
     "import-code-source": {
       title: "Review Before Importing Code Source",
       confirmLabel: "Import Source",
-      module: "CivicCode",
+      module: "Townlight Code",
       subject: detailOrFallback(state.workDraft.codeTitle, "New municipal code source"),
       status: "Not saved yet.",
-      changes: "Creates a durable local code source with citation text. If the typed source path is readable, CivicSuite copies and hashes it; if it is not readable, CivicSuite saves a local reference marker file with its own SHA-256 hash.",
+      changes: "Creates a durable local code source with citation text. If the typed source path is readable, Townlight copies and hashes it; if it is not readable, Townlight saves a local reference marker file with its own SHA-256 hash.",
       visibility: "Staff can see local source evidence. Resident/Public views only see published code sources and never see clerk workstation paths.",
       sources: [
         detailOrFallback(state.workDraft.codeCitation, "Citation is required."),
         detailOrFallback(state.workDraft.codeBody, "Source text is required for search, questions, and publication."),
         detailOrFallback(state.workDraft.codeSourcePath, "Optional source file path or typed reference has not been entered.")
       ],
-      audit: "Creates a CivicCode audit entry recording the local import and any preserved source-file evidence.",
+      audit: "Creates a Townlight Code audit entry recording the local import and any preserved source-file evidence.",
       retry: "If title, citation, or source text is missing, the desktop app stops before saving. A typed but unreadable file reference is preserved as a hashed local marker."
     },
     "approve-code-guidance": {
       title: "Review Before Approving Code Guidance",
       confirmLabel: "Approve Guidance",
-      module: "CivicCode",
+      module: "Townlight Code",
       subject: sourceSubject,
       status: source ? source.status : "No code source selected yet.",
       changes: "Approves staff guidance and any plain-English summary for public-facing code context.",
@@ -2657,13 +2681,13 @@ function guidedReviewForAction(action) {
         detailOrFallback(source?.staff_guidance, "No guidance draft has been saved yet."),
         detailOrFallback(source?.plain_language_summary, "No plain-English summary has been saved yet.")
       ],
-      audit: "Creates a CivicCode audit entry for approving guidance.",
+      audit: "Creates a Townlight Code audit entry for approving guidance.",
       retry: "If guidance is missing, the desktop app blocks approval and keeps the source internal."
     },
     "suggest-code-guidance": {
       title: "Review Before Generating Code Guidance",
       confirmLabel: "Generate Guidance",
-      module: "CivicCode",
+      module: "Townlight Code",
       subject: sourceSubject,
       status: source ? source.status : "No code source selected yet.",
       changes: "Uses the verified local AI model to draft internal staff guidance from the selected source text.",
@@ -2672,13 +2696,13 @@ function guidedReviewForAction(action) {
         source ? `Citation: ${source.citation}` : "The desktop app will require a code source before generating.",
         detailOrFallback(source?.body, "No source text has been imported yet.")
       ],
-      audit: "Creates a CivicCode audit entry naming the local model used for the draft.",
+      audit: "Creates a Townlight Code audit entry naming the local model used for the draft.",
       retry: "If the local AI model is not ready or no source exists, the desktop app stops before changing guidance."
     },
     "publish-code-source": {
       title: "Review Before Publishing Code Source",
       confirmLabel: "Publish Source",
-      module: "CivicCode",
+      module: "Townlight Code",
       subject: sourceSubject,
       status: source ? `${source.public_status || "internal draft"}; ${source.codifier_sync_status || "not synced"}` : "No code source selected yet.",
       changes: "Writes a public code export and records a publication event hash.",
@@ -2687,13 +2711,13 @@ function guidedReviewForAction(action) {
         source ? `Citation: ${source.citation}` : "The desktop app will require a code source before saving.",
         source?.guidance_approved_at_unix_seconds ? "Guidance has human approval." : "Guidance is not approved; only source text and required disclaimers will publish."
       ],
-      audit: "Creates CivicCode audit and CivicCore publication-gate entries.",
+      audit: "Creates Townlight Code audit and Townlight Core publication-gate entries.",
       retry: "If required source text is missing, the desktop app blocks publication."
     },
     "unpublish-code-source": {
       title: "Review Before Unpublishing Code Source",
       confirmLabel: "Unpublish Source",
-      module: "CivicCode",
+      module: "Townlight Code",
       subject: sourceSubject,
       status: source ? source.public_status || "internal draft" : "No code source selected yet.",
       changes: "Returns the source to internal draft status and retracts the latest live publication event.",
@@ -2702,13 +2726,13 @@ function guidedReviewForAction(action) {
         source ? `${(source.public_exports || []).length} public export(s) remain in local history.` : "The desktop app will require a code source before saving.",
         "Retraction keeps publication history instead of deleting the prior event."
       ],
-      audit: "Creates CivicCode audit and CivicCore retraction metadata.",
+      audit: "Creates Townlight Code audit and Townlight Core retraction metadata.",
       retry: "If no source exists, the desktop app stops before changing local records."
     },
     "create-code-handoff": {
       title: "Review Before Creating Clerk Handoff",
       confirmLabel: "Create Clerk Handoff",
-      module: "CivicCode",
+      module: "Townlight Code",
       subject: sourceSubject,
       status: source ? source.status : "No code source selected yet.",
       changes: "Creates an internal clerk handoff for ordinance or resolution agenda work.",
@@ -2717,13 +2741,13 @@ function guidedReviewForAction(action) {
         source ? `Citation: ${source.citation}` : "The desktop app will require a code source before saving.",
         detailOrFallback(state.workDraft.handoffSummary, "No handoff summary has been typed yet.")
       ],
-      audit: "Creates a CivicCode audit entry for the clerk handoff.",
+      audit: "Creates a Townlight Code audit entry for the clerk handoff.",
       retry: "If no source exists, the desktop app blocks handoff creation."
     },
     "civicaccess-delete-review": {
       title: "Review Before Deleting Accessibility Review",
       confirmLabel: "Delete Review",
-      module: "CivicAccess",
+      module: "Townlight Access",
       subject: targetDeleteReview ? (targetDeleteReview.title || "(no title)") : "Selected accessibility review",
       status: targetDeleteReview ? targetDeleteReview.status : "Review no longer found.",
       changes: "Removes this review from the saved-review list. The review's audit-trail entry remains in the hash-chained audit log.",
@@ -2732,13 +2756,13 @@ function guidedReviewForAction(action) {
         targetDeleteReview ? `Review ID: ${targetDeleteReview.review_id}` : "This review may have already been deleted.",
         "This cannot be undone from the saved-review list."
       ],
-      audit: "Creates a CivicAccess audit entry recording the deletion.",
+      audit: "Creates a Townlight Access audit entry recording the deletion.",
       retry: "If the review was already deleted, the desktop app reports it is no longer in the local store."
     },
     "accessibility-review": {
       title: "Review Before Running Accessibility Review",
       confirmLabel: "Run Review & Save",
-      module: "CivicAccess",
+      module: "Townlight Access",
       subject: detailOrFallback(state.workDraft.accessTitle, "(no title)"),
       status: aiEngineReady()
         ? "Local AI engine ready — deterministic checks plus an advisory AI analysis."
@@ -2751,13 +2775,13 @@ function guidedReviewForAction(action) {
           ? "AI analysis runs on the local model; nothing leaves this machine."
           : "The five WCAG checks run normally without the AI engine."
       ],
-      audit: "Creates a CivicAccess audit entry naming the engine used (local model or deterministic only).",
+      audit: "Creates a Townlight Access audit entry naming the engine used (local model or deterministic only).",
       retry: "If the AI engine is not ready, the review still saves with deterministic findings only and says so — nothing is generated by AI in that case."
     },
     "civicaccess-plain-language": {
       title: "Review Before Drafting Plain-Language Rewrite",
       confirmLabel: "Draft Rewrite",
-      module: "CivicAccess",
+      module: "Townlight Access",
       subject: "Plain-language rewrite",
       status: aiEngineReady()
         ? "Local AI engine ready — drafts a real plain-language rewrite."
@@ -2772,13 +2796,13 @@ function guidedReviewForAction(action) {
           ? "Runs on the local model; nothing leaves this machine."
           : "Falls back to the deterministic jargon-map sample pass."
       ],
-      audit: "Creates a CivicAccess audit entry naming the engine used for the rewrite.",
+      audit: "Creates a Townlight Access audit entry naming the engine used for the rewrite.",
       retry: "If the local AI engine is not ready, the tool falls back to the deterministic sample and says so — nothing is generated by AI in that case."
     },
     "civicaccess-language-variant": {
       title: "Review Before Drafting Translation Variant",
       confirmLabel: "Draft Variant",
-      module: "CivicAccess",
+      module: "Townlight Access",
       subject: `Variant language: ${detailOrFallback(state.workDraft.accessVariantLanguage, "(not set)")}`,
       status: aiEngineReady()
         ? "Local AI engine ready — drafts a real translation of your text."
@@ -2793,7 +2817,7 @@ function guidedReviewForAction(action) {
           ? "Runs on the local model; nothing leaves this machine."
           : "Falls back to the canned es/vi sample or a placeholder."
       ],
-      audit: "Creates a CivicAccess audit entry naming the engine used and the qualified-translator requirement.",
+      audit: "Creates a Townlight Access audit entry naming the engine used and the qualified-translator requirement.",
       retry: "If the local AI engine is not ready, the tool falls back to the deterministic sample and says so — nothing is generated by AI in that case."
     }
   };
@@ -3352,13 +3376,13 @@ function renderMeetingsWorkflow() {
         </article>
       `).join("")}
     </section>
-    <section class="workflow-list" aria-label="CivicCode handoffs">
-      ${pendingCodeHandoffs.length === 0 ? workflowEmpty("No CivicCode handoffs are waiting for the clerk.") : pendingCodeHandoffs.map((handoff) => `
+    <section class="workflow-list" aria-label="Townlight Code handoffs">
+      ${pendingCodeHandoffs.length === 0 ? workflowEmpty("No Townlight Code handoffs are waiting for the clerk.") : pendingCodeHandoffs.map((handoff) => `
         <article class="workflow-record handoff">
           <span class="status-warn">${escapeHtml(handoff.status)}</span>
           <h3>${escapeHtml(handoff.title)}</h3>
           <p>${escapeHtml(handoff.summary)}</p>
-          <small>CivicCode handoff for agenda review</small>
+          <small>Townlight Code handoff for agenda review</small>
         </article>
       `).join("")}
     </section>
@@ -3597,7 +3621,7 @@ function renderNoticeWorkflow() {
           <div class="record-actions">
             ${state.workSelection.meetingId === meeting.id ? `<span class="status-ok">Selected for notice work</span>` : `<button type="button" class="secondary-action" data-select-work-record="meeting" data-record-id="${escapeHtml(meeting.id)}">Work On This</button>`}
           </div>
-          <small>${escapeHtml(meeting.meeting_date || "No meeting date")} - CivicNotice preserves proof; staff still verify legal sufficiency.</small>
+          <small>${escapeHtml(meeting.meeting_date || "No meeting date")} - Townlight Notice preserves proof; staff still verify legal sufficiency.</small>
         </article>
       `).join("")}
     </section>
@@ -3771,14 +3795,29 @@ function renderAccessibilityWorkflow() {
   `;
 }
 
+function renderDemoTownBanner(work) {
+  const fixture = work?.demo_fixture;
+  if (!fixture) return "";
+  return `
+    <section class="workflow-record" aria-label="Synthetic demonstration data warning">
+      <span class="status-warn">Fictional demo town</span>
+      <h3>${escapeHtml(fixture.municipality_name)}</h3>
+      <p><strong>${escapeHtml(fixture.watermark)}</strong></p>
+      <small>Fixture ${escapeHtml(fixture.fixture_id)} v${escapeHtml(fixture.fixture_version)} &middot; SHA-256 ${escapeHtml(fixture.fixture_sha256)}</small>
+    </section>
+  `;
+}
+
 function renderPublicRecordsWorkflow() {
-  const requests = publicRecordsRequests(cityWork());
+  const work = cityWork();
+  const requests = publicRecordsRequests(work);
   return `
     <section class="page-heading">
       <p class="eyebrow">Resident/Public</p>
       <h2>Public Records Requests</h2>
       <p>Submit a records request or check local public status without staff review drafts or internal citations.</p>
     </section>
+    ${renderDemoTownBanner(work)}
     <section class="workflow-editor">
       <div class="workflow-form">
         <h3>Submit Public Records Request</h3>
@@ -3993,12 +4032,37 @@ function renderRecordsWorkflow() {
   const selectedReleaseDocumentId = selectedRequest?.documents?.some((document) => document.id === state.workDraft.releaseDocumentId)
     ? state.workDraft.releaseDocumentId
     : selectedRequest?.documents?.[0]?.id || "";
+  const demoLoadBlockedByData = [
+    "meeting_bodies",
+    "meeting_members",
+    "agenda_intakes",
+    "meetings",
+    "records_requests",
+    "code_sources",
+    "code_handoffs",
+    "adopted_legislation",
+    "audit_entries",
+    "publication_events",
+    "notification_events"
+  ].some((key) => (work[key] || []).length > 0)
+    || (work.access?.reviews || []).length > 0
+    || (work.access?.audit_events || []).length > 0;
+  const canLoadDemo = accessState().role === "local-admin" && !work.demo_fixture && !demoLoadBlockedByData;
   return `
     <section class="page-heading">
       <p class="eyebrow">${state.activeSurface}</p>
       <h2>Records Requests</h2>
       <p>Track intake, deadline, review draft, citations, exports, and audit evidence locally.</p>
     </section>
+    ${renderDemoTownBanner(work)}
+    ${accessState().role === "local-admin" && !work.demo_fixture ? `
+      <section class="workflow-form" aria-label="Load fictional demonstration town">
+        <h3>Fictional demo town</h3>
+        <p>Load Core's canonical Redstone Valley fixture to exercise the complete Records workflow. Loading is never automatic, requires an empty local profile, and creates a verified backup before replacing state.</p>
+        <button type="button" class="secondary-action" data-work-action="load-demo-town" ${canLoadDemo ? "" : "disabled"}>Load demo town</button>
+        ${demoLoadBlockedByData ? "<p class=\"form-help\">This profile already contains city work. Existing data will not be overwritten; use an empty profile to load the demo.</p>" : "<p class=\"form-help\">All demo records are fictional, independently authored, versioned, hashed, and visibly watermarked.</p>"}
+      </section>
+    ` : ""}
     ${renderGuidedWorkReview()}
     <section class="workflow-editor">
       <div class="workflow-form">
@@ -4299,7 +4363,7 @@ function renderCodeWorkflow() {
           <span class="status-warn">${escapeHtml(item.handoff_status)}</span>
           <h3>${escapeHtml(item.title)}</h3>
           <p>${escapeHtml(item.legislation_type)} adopted from ${escapeHtml(item.meeting_title)}.</p>
-          <small>${escapeHtml(item.effective_date || "No effective date")} - ${escapeHtml(item.codification_section_hint || "No codification hint")} - CivicClerk adoption event</small>
+          <small>${escapeHtml(item.effective_date || "No effective date")} - ${escapeHtml(item.codification_section_hint || "No codification hint")} - Townlight Meetings adoption event</small>
         </article>
       `).join("")}
     </section>
@@ -4656,7 +4720,7 @@ function renderSearchWorkflow() {
 
 function lifecycleStatusText(value) {
   const labels = {
-    "always-installed-with-profile": "Always installed with CivicCore",
+    "always-installed-with-profile": "Always installed with Townlight Core",
     "profile-selected": "Installed by selected package profile",
     "manifest-versioned": "Updated through the versioned module manifest",
     "not-allowed-required-foundation": "Cannot be disabled because it is the required foundation",
@@ -4760,7 +4824,7 @@ function renderModuleRow(module, { actions = false } = {}) {
 
 function localRoleLabel(role) {
   const labels = {
-    "local-admin": "CivicSuite admin",
+    "local-admin": "Townlight admin",
     "city-staff": "City staff",
     "clerk": "Clerk staff",
     "records-staff": "Records staff",
@@ -4823,7 +4887,7 @@ function renderLocalUsersCard() {
         </select>
       </label>
       <label>Temporary local passcode <input type="password" data-user-field="userPasscode" value="${escapeHtml(state.accessDraft.userPasscode)}" autocomplete="new-password" /></label>
-      <small>Staff users can sign in on this Windows profile. Enter a temporary passcode, then use Reset Passcode on a staff row if someone is locked out. CivicSuite admins keep setup, runtime, backup, module, and user-management control.</small>
+      <small>Staff users can sign in on this Windows profile. Enter a temporary passcode, then use Reset Passcode on a staff row if someone is locked out. Townlight admins keep setup, runtime, backup, module, and user-management control.</small>
       <button type="button" class="secondary-action" data-auth-action="create-user">Create Staff User</button>
       ${renderAuthActionResult()}
     </div>
@@ -4853,7 +4917,7 @@ function guidedModuleReviewForAction(action, moduleId) {
     sources: [
       `Module id: ${module.id}`,
       `Pinned version: ${version}`,
-      `CivicCore requirement: ${module.civiccore_requirement || "CivicCore foundation"}`
+      `Townlight Core requirement: ${module.civiccore_requirement || "Townlight Core foundation"}`
     ]
   };
   const reviews = {
@@ -4862,7 +4926,7 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Install Module",
       status: "Profile install requested",
       changes: "Adds this ready module to the active local profile and enables its work area when dependencies are enabled.",
-      visibility: "CivicSuite admin only. Staff will see the module work area after the profile is saved.",
+      visibility: "Townlight admin only. Staff will see the module work area after the profile is saved.",
       audit: "Updates the local module-selection record and keeps the action in the profile history.",
       retry: "If dependencies or proof gates are missing, the module is not installed and the current profile remains unchanged."
     },
@@ -4871,36 +4935,36 @@ function guidedModuleReviewForAction(action, moduleId) {
       confirmLabel: "Enable Module",
       status: "Module enable requested",
       changes: "Shows this installed module's work area again and allows its city-work actions.",
-      visibility: "CivicSuite admin only. Staff with access will see the module after it is enabled.",
+      visibility: "Townlight admin only. Staff with access will see the module after it is enabled.",
       audit: "Updates the local enabled-module list without changing existing module data.",
-      retry: "If a dependency is disabled, CivicSuite reports the dependency and leaves the module disabled."
+      retry: "If a dependency is disabled, Townlight reports the dependency and leaves the module disabled."
     },
     "disable-module": {
       title: `Review Before Disabling ${moduleName}`,
       confirmLabel: "Disable Module",
       status: "Module disable requested",
       changes: "Hides this module's work area and blocks its city-work actions. Existing module data remains installed.",
-      visibility: "CivicSuite admin only. Staff will no longer see this module while it is disabled.",
+      visibility: "Townlight admin only. Staff will no longer see this module while it is disabled.",
       audit: "Updates the local enabled-module list without deleting records, exports, or settings.",
-      retry: "If another enabled module depends on it, CivicSuite reports that dependency before changing the profile."
+      retry: "If another enabled module depends on it, Townlight reports that dependency before changing the profile."
     },
     "update-module": {
       title: `Review Before Checking ${moduleName} Updates`,
       confirmLabel: "Check Update",
       status: "Manifest update check requested",
       changes: "Checks this module against the pinned versioned manifest. This does not download unverified code.",
-      visibility: "CivicSuite admin only. Staff workflows remain available while the check runs.",
+      visibility: "Townlight admin only. Staff workflows remain available while the check runs.",
       audit: "Returns the current module version state from the local module manifest.",
-      retry: "If the module is not installed, CivicSuite asks you to install it before update checks."
+      retry: "If the module is not installed, Townlight asks you to install it before update checks."
     },
     "remove-module": {
       title: `Review Before Removing ${moduleName} From Profile`,
       confirmLabel: "Remove From Profile",
       status: "Profile removal requested",
       changes: "Creates a verified local profile backup, removes this module from the active profile, and hides its work area. Existing module data is not deleted.",
-      visibility: "CivicSuite admin only. Staff will not see this module until it is installed again.",
+      visibility: "Townlight admin only. Staff will not see this module until it is installed again.",
       audit: "Writes a backup manifest before updating the local module-selection record; preserved module data remains covered by profile backup and restore.",
-      retry: "If backup creation fails or another installed module depends on it, CivicSuite reports the issue before changing the profile."
+      retry: "If backup creation fails or another installed module depends on it, Townlight reports the issue before changing the profile."
     }
   };
   const review = reviews[action];
@@ -4973,14 +5037,14 @@ function guidedSupervisorReviewForAction(action, serviceId) {
     "backup": {
       title: "Review Before Backing Up Local Profile",
       confirmLabel: "Backup Now",
-      module: "CivicCore local runtime",
-      subject: "CivicSuite city profile",
+      module: "Townlight Core local runtime",
+      subject: "Townlight city profile",
       status: "Manual backup requested",
       changes: "Copies local city data and configuration to the configured backup folder with a backup manifest.",
-      visibility: "CivicSuite admin only. This does not publish or change public civic records.",
+      visibility: "Townlight admin only. This does not publish or change public civic records.",
       sources: [
-        "Source: local CivicSuite Data and config folders.",
-        "Destination: configured CivicSuite backup folder."
+        "Source: local Townlight Data and config folders.",
+        "Destination: configured Townlight backup folder."
       ],
       audit: "Creates a local backup manifest with file hashes for restore/reinstall recovery.",
       retry: "If the backup folder cannot be written, the desktop app reports the error and leaves city data unchanged."
@@ -4988,13 +5052,13 @@ function guidedSupervisorReviewForAction(action, serviceId) {
     "restore": {
       title: "Review Before Restoring Latest Backup",
       confirmLabel: "Restore Latest Backup",
-      module: "CivicCore local runtime",
-      subject: "Latest local CivicSuite backup",
+      module: "Townlight Core local runtime",
+      subject: "Latest local Townlight backup",
       status: "Restore requested",
       changes: "Creates a pre-restore safety backup, stops local services, and replaces local data/config from the latest backup manifest.",
-      visibility: "CivicSuite admin only. Restored records affect what staff see after restart.",
+      visibility: "Townlight admin only. Restored records affect what staff see after restart.",
       sources: [
-        "Source: latest backup-manifest.json in the CivicSuite backup folder.",
+        "Source: latest backup-manifest.json in the Townlight backup folder.",
         "Safety: a pre-restore backup is created before replacement."
       ],
       audit: "Creates a pre-restore backup manifest and returns a restore action result.",
@@ -5003,13 +5067,13 @@ function guidedSupervisorReviewForAction(action, serviceId) {
     "uninstall": {
       title: "Review Before Preparing Uninstall",
       confirmLabel: "Prepare Uninstall",
-      module: "CivicCore local runtime",
-      subject: "Local CivicSuite city profile",
+      module: "Townlight Core local runtime",
+      subject: "Local Townlight city profile",
       status: "Profile removal requested",
       changes: "Stops local services, creates a final uninstall backup, and removes local data and setup/config state.",
-      visibility: "CivicSuite admin only. Program files remain for the Windows uninstall entry to remove.",
+      visibility: "Townlight admin only. Program files remain for the Windows uninstall entry to remove.",
       sources: [
-        "Source: local CivicSuite Data and config folders.",
+        "Source: local Townlight Data and config folders.",
         "Safety: final-uninstall backup is written before profile removal."
       ],
       audit: "Creates a final uninstall backup manifest and returns an uninstall action result.",
@@ -5018,11 +5082,11 @@ function guidedSupervisorReviewForAction(action, serviceId) {
     "support-bundle": {
       title: "Review Before Creating Support Bundle",
       confirmLabel: "Create Support Bundle",
-      module: "CivicCore local runtime",
+      module: "Townlight Core local runtime",
       subject: service ? serviceLabel : "Selected local runtime services",
       status: serviceStatus,
       changes: "Creates a local support bundle with health, runtime-state, and selected service logs.",
-      visibility: "CivicSuite admin only. The bundle does not copy city records, uploaded documents, backups, or local secrets.",
+      visibility: "Townlight admin only. The bundle does not copy city records, uploaded documents, backups, or local secrets.",
       sources: [
         service ? `Service id: ${service.id}` : "All local runtime services.",
         "Source: System Health checks, runtime service state, and local service log files."
@@ -5033,11 +5097,11 @@ function guidedSupervisorReviewForAction(action, serviceId) {
     "repair": {
       title: `Review Before Repairing ${serviceLabel}`,
       confirmLabel: "Repair",
-      module: "CivicCore local runtime",
+      module: "Townlight Core local runtime",
       subject: serviceLabel,
       status: serviceStatus,
       changes: "Rechecks portable runtime files and repairs the selected local service setup where possible.",
-      visibility: "CivicSuite admin only. This may change local service files but does not publish civic records.",
+      visibility: "Townlight admin only. This may change local service files but does not publish civic records.",
       sources: [
         service ? `Service id: ${service.id}` : "No service selected yet.",
         service?.next_action || "System Health will report the next repair step."
@@ -5048,11 +5112,11 @@ function guidedSupervisorReviewForAction(action, serviceId) {
     "stop": {
       title: `Review Before Stopping ${serviceLabel}`,
       confirmLabel: "Stop",
-      module: "CivicCore local runtime",
+      module: "Townlight Core local runtime",
       subject: serviceLabel,
       status: serviceStatus,
       changes: "Stops the selected local service state so it can be restarted or repaired.",
-      visibility: "CivicSuite admin only. Staff workflows may be unavailable until services restart.",
+      visibility: "Townlight admin only. Staff workflows may be unavailable until services restart.",
       sources: [
         service ? `Service id: ${service.id}` : "No service selected yet.",
         "System Health remains available after the stop action."
@@ -5077,7 +5141,7 @@ function renderGuidedSupervisorReview() {
   const serviceAttr = state.pendingSupervisorReviewServiceId ? ` data-service-id="${escapeHtml(state.pendingSupervisorReviewServiceId)}"` : "";
   const adminLocked = adminOnlyControlLocked();
   const adminDisabled = adminLocked ? "disabled" : "";
-  const lockMessage = adminOnlyLockMessage("Sign in as CivicSuite admin to use local lifecycle actions.");
+  const lockMessage = adminOnlyLockMessage("Sign in as Townlight admin to use local lifecycle actions.");
   return `
     <section class="guided-review" data-guided-review="supervisor" aria-labelledby="supervisor-review-title">
       <div>
@@ -5148,7 +5212,7 @@ function renderModules() {
     <section class="page-heading">
       <p class="eyebrow">Settings</p>
       <h2>Settings</h2>
-      <p>The module manager shares this screen with the local city profile, first admin, and installed City Core package on this Windows machine.</p>
+      <p>The module manager shares this screen with the local city profile, first admin, and installed Townlight product profile on this Windows machine.</p>
     </section>
     <section class="workflow-editor" data-setup-context="settings">
       <div class="workflow-form">
@@ -5164,7 +5228,7 @@ function renderModules() {
         <h3>First Admin</h3>
         <label>Admin name <input type="text" data-setup-field="adminName" value="${escapeHtml(state.setupDraft.adminName)}" autocomplete="name" /></label>
         <label>Admin email <input type="email" data-setup-field="adminEmail" value="${escapeHtml(state.setupDraft.adminEmail)}" autocomplete="email" /></label>
-        <label>CivicSuite passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
+        <label>Townlight passcode <input type="password" data-setup-field="adminPasscode" value="${escapeHtml(state.setupDraft.adminPasscode)}" autocomplete="new-password" /></label>
         <div class="module-meta">
           <span class="${admin ? "status-ok" : "status-warn"}">${admin ? escapeHtml(admin.role) : "Needed"}</span>
         </div>
@@ -5174,8 +5238,8 @@ function renderModules() {
       <div class="workflow-form">
         <h3>Local Folders</h3>
         <label>App install folder <input type="text" data-setup-field="installRoot" value="${escapeHtml(state.setupDraft.installRoot)}" autocomplete="off" readonly /></label>
-        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/CivicSuite/Data")}
-        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/CivicSuite/Backups")}
+        ${renderFolderPathField("City data folder", "dataRoot", state.setupDraft.dataRoot, "C:/Townlight/Data")}
+        ${renderFolderPathField("Backup folder", "backupRoot", state.setupDraft.backupRoot, "D:/Townlight/Backups")}
         <small>The Windows installer owns the app folder. This screen controls local city data and backups.</small>
         <button type="button" class="secondary-action" data-first-run-action="choose-location" data-step-id="locations">Save Local Folders</button>
       </div>
@@ -5184,13 +5248,13 @@ function renderModules() {
     ${renderGuidedModuleReview()}
     <section class="page-heading compact-heading">
       <p class="eyebrow">Module Manager</p>
-      <h2>City Core Modules</h2>
-      <p>CivicCore stays installed. Product modules can be installed, updated, enabled, disabled, or removed from this profile without silently deleting their local data.</p>
+      <h2>Townlight Modules</h2>
+      <p>Townlight Core stays installed. Product modules can be installed, updated, enabled, disabled, or removed from this profile without silently deleting their local data.</p>
     </section>
     <section class="section-band">
       <div class="section-title">
         <h3>Choose Product Modules</h3>
-        <p>City Core is the complete 1.0 package. Custom selection is available for ready modules and always keeps CivicCore installed.</p>
+        <p>Townlight Records is the public-beta profile. City Core and custom selections remain available and always keep Townlight Core installed.</p>
       </div>
       ${renderModuleSelectionControls()}
       <div class="setup-actions">
@@ -5203,7 +5267,7 @@ function renderModules() {
     <section class="module-columns">
       <div>
         <div class="section-title">
-          <h3>City Core Package</h3>
+          <h3>Installed Product Profile</h3>
           <p>Installed for the ${escapeHtml(selection.profile_label)} local profile. Disabled modules stay installed and can be re-enabled here.</p>
         </div>
         <div class="empty-note">
@@ -5232,7 +5296,7 @@ function renderModules() {
 function renderHealth() {
   const adminLocked = adminOnlyControlLocked();
   const adminDisabled = adminLocked ? "disabled" : "";
-  const lockMessage = adminOnlyLockMessage("Sign in as CivicSuite admin to use local lifecycle actions.");
+  const lockMessage = adminOnlyLockMessage("Sign in as Townlight admin to use local lifecycle actions.");
   return `
     <section class="page-heading">
       <p class="eyebrow">IT/Admin</p>
@@ -5245,7 +5309,7 @@ function renderHealth() {
       <div class="section-title">
         <p class="eyebrow">Local profile lifecycle</p>
         <h3>Backup, Restore, Uninstall</h3>
-        <p>These actions work on the local CivicSuite city profile. Uninstall creates a final backup before removing local data and setup state.</p>
+        <p>These actions work on the local Townlight city profile. Uninstall creates a final backup before removing local data and setup state.</p>
       </div>
       <div class="health-actions lifecycle-actions">
         <button type="button" class="secondary-action" data-supervisor-action="backup" ${adminDisabled}>Backup Now</button>
@@ -5360,13 +5424,13 @@ function renderAuditDrawer() {
 function renderStateLoadError(message) {
   return `
     <section class="section-band error-band" role="alert" aria-live="assertive">
-      <h2>CivicSuite could not open your saved city data</h2>
+      <h2>Townlight could not open your saved city data</h2>
       <p>Your data may exist on this machine but could not be read. This can
-         happen after an interrupted save or if CivicSuite is already open in
+         happen after an interrupted save or if Townlight is already open in
          another window. Your records were <strong>not</strong> deleted.</p>
       <pre class="error-detail">${escapeHtml(message)}</pre>
       <button type="button" data-action="retry-load-state">Retry</button>
-      <p class="muted">If this repeats, close any other CivicSuite window, then
+      <p class="muted">If this repeats, close any other Townlight window, then
          use Repair / Restore from a backup in System Health. Do not complete
          first-run setup — that is only for a brand-new install.</p>
     </section>`;
@@ -5449,8 +5513,8 @@ function bindEvents() {
       state.moduleDraft.profileId = input.dataset.moduleProfileId;
       state.pendingModuleReviewAction = null;
       state.pendingModuleReviewId = null;
-      if (state.moduleDraft.profileId === "city-core") {
-        state.moduleDraft.selectedModuleIds = [...CITY_CORE_PRODUCT_MODULE_IDS];
+      if (Object.hasOwn(PRODUCT_MODULE_IDS_BY_PROFILE, state.moduleDraft.profileId)) {
+        state.moduleDraft.selectedModuleIds = [...PRODUCT_MODULE_IDS_BY_PROFILE[state.moduleDraft.profileId]];
       }
       render();
     });
@@ -5656,7 +5720,7 @@ const FIRST_RUN_FIELD_LABELS = {
   clerkContact: "Clerk contact",
   adminName: "Admin name",
   adminEmail: "Admin email",
-  adminPasscode: "CivicSuite passcode",
+  adminPasscode: "Townlight passcode",
   installRoot: "App install folder",
   dataRoot: "City data folder",
   backupRoot: "Backup folder"
@@ -5691,8 +5755,8 @@ async function handleFirstRunAction(action, stepId) {
       accepted: false,
       forStepId: stepId,
       status: "Needs attention",
-      message: "The CivicSuite admin passcode must be at least 10 characters.",
-      next_action: "Enter a 10-character or longer CivicSuite admin passcode, then continue setup."
+      message: "The Townlight admin passcode must be at least 10 characters.",
+      next_action: "Enter a 10-character or longer Townlight admin passcode, then continue setup."
     };
     render();
     return;
@@ -5754,7 +5818,7 @@ async function handleModuleAction(action, moduleId, { confirmed = false } = {}) 
       accepted: false,
       status: "Needs attention",
       message: String(error),
-      next_action: "Sign in as the CivicSuite admin and try the module action again."
+      next_action: "Sign in as the Townlight admin and try the module action again."
     };
   }
   render();
@@ -5767,7 +5831,7 @@ async function handleModelAction(action) {
       action,
       status: "Sign in required",
       message: modelSetupLockMessage(),
-      next_action: "Sign in as the CivicSuite admin before changing local model setup."
+      next_action: "Sign in as the Townlight admin before changing local model setup."
     };
     render();
     return;
@@ -5800,8 +5864,8 @@ async function handleModelAction(action) {
         ? "Downloading the local AI model. This is a one-time download that can take up to an hour."
         : "Running local model setup from the desktop app.",
       next_action: isDownload
-        ? "CivicSuite may look frozen while it downloads — please do not close the app. It resumes where it left off if interrupted."
-        : "Keep CivicSuite open while this finishes."
+        ? "Townlight may look frozen while it downloads — please do not close the app. It resumes where it left off if interrupted."
+        : "Keep Townlight open while this finishes."
     };
     render();
     state.modelActionResult = await invoke("model_action", { action });
@@ -5835,7 +5899,7 @@ async function handleSupervisorAction(action, serviceId, { confirmed = false } =
     accepted: true,
     status: "Working",
     message: `Running ${supervisorActionLabel(action)} from the desktop app.`,
-    next_action: "Keep CivicSuite open while the local action completes."
+    next_action: "Keep Townlight open while the local action completes."
   };
   render();
   if (!hasTauriBridge()) {
@@ -5982,7 +6046,7 @@ async function handleChooseFolderPath(field) {
       status: isAdminGate ? "Sign in required" : "Needs attention",
       message: raw,
       next_action: isAdminGate
-        ? "Sign in as the CivicSuite admin, then choose the folder again."
+        ? "Sign in as the Townlight admin, then choose the folder again."
         : "Try Choose Folder again, or type the folder path directly."
     };
   }
@@ -6068,7 +6132,7 @@ async function handleAuthAction(action, payloadOverride = null) {
       next_action: lockedOut
         ? "Wait the number of seconds shown above, then try again — repeated attempts restart the wait."
         : disabledUser
-          ? "Ask a CivicSuite admin to re-enable this user — retrying the passcode will not help."
+          ? "Ask a Townlight admin to re-enable this user — retrying the passcode will not help."
           : "Check the email and local passcode, then try again."
     };
   }
@@ -6664,7 +6728,7 @@ async function handleCityWorkAction(action, { confirmed = false, overridePayload
       accepted: true,
       status: state.searchResults.length > 0 ? "Answer ready" : "No cited answer",
       message: state.searchResults.length > 0
-        ? "Browser preview answered from local code source text. The desktop app records a CivicCode audit entry."
+        ? "Browser preview answered from local code source text. The desktop app records a Townlight Code audit entry."
         : "No current cited code source matched the question.",
       next_action: "Review the cited source or refine the question."
     };

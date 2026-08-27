@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "profile": "windows-local-1.0",
-  "profile_label": "City Core",
+  "profile_label": "Townlight Records",
   "local_only": true,
   "operator_path": {
     "requires_docker": false,
@@ -42,9 +42,9 @@
       "label": "Module selection",
       "surface": "Installer",
       "required": true,
-      "summary": "City Core is selected by default and CivicCore is locked on.",
-      "detail": "You can choose your own set of modules, but only modules that have finished testing for this version of CivicSuite can be added.",
-      "next_action": "Review the City Core module set.",
+      "summary": "Townlight Records is selected by default and Townlight Core is locked on.",
+      "detail": "You can choose another profile, but only modules that have finished testing for this Townlight version can be added.",
+      "next_action": "Review the Townlight Records module set.",
       "action": "select-modules"
     },
     {
@@ -62,7 +62,7 @@
       "label": "First admin user",
       "surface": "First run",
       "required": true,
-      "summary": "Create the first CivicSuite admin before staff work begins.",
+      "summary": "Create the first Townlight admin before staff work begins.",
       "detail": "The first admin owns setup, model download, users, roles, backup settings, and recovery contact information.",
       "next_action": "Create the first admin user, then sign in with that local passcode before continuing setup.",
       "action": "create-admin"
@@ -83,8 +83,8 @@
       "surface": "First run",
       "required": true,
       "summary": "Download the local AI model files this app needs.",
-      "detail": "A signed-in CivicSuite admin downloads the pinned Gemma 4 12B model, with a resumable download, checksum verification, and local-only default behavior.",
-      "next_action": "Sign in as the CivicSuite admin, then download and verify the pinned local model weights.",
+      "detail": "A signed-in Townlight admin downloads the pinned Gemma 4 12B model, with a resumable download, checksum verification, and local-only default behavior.",
+      "next_action": "Sign in as the Townlight admin, then download and verify the pinned local model weights.",
       "action": "download-model"
     },
     {
@@ -102,9 +102,9 @@
       "label": "Finish and lifecycle entry points",
       "surface": "First run",
       "required": true,
-      "summary": "Open CivicSuite and keep repair, backup, and uninstall reachable.",
+      "summary": "Open Townlight and keep repair, backup, and uninstall reachable.",
       "detail": "The finish screen links the app, System Health, repair, backup, and uninstall so the same product surface owns the lifecycle.",
-      "next_action": "Open CivicSuite after all setup checks pass.",
+      "next_action": "Open Townlight after all setup checks pass.",
       "action": "open-app"
     }
   ]

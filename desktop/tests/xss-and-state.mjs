@@ -65,7 +65,7 @@ const appEl = makeElement("app");
 const elements = { app: appEl };
 
 const documentStub = {
-  title: "CivicSuite",
+  title: "Townlight",
   activeElement: null,
   getElementById(id) {
     if (!elements[id]) elements[id] = makeElement(id);
@@ -217,9 +217,9 @@ const FIRST_RUN_APP = {
       { id: "locations", label: "Choose local folders", status: "current", detail: "", actions: [] }
     ],
     locations: {
-      install_root: "C:/CivicSuite/App",
-      data_root: "C:/CivicSuite/Data",
-      backup_root: "C:/CivicSuite/Backups"
+      install_root: "C:/Townlight/App",
+      data_root: "C:/Townlight/Data",
+      backup_root: "C:/Townlight/Backups"
     }
   }
 };
@@ -232,7 +232,7 @@ const wizard = t.renderFirstRunWizard();
 if (!wizard.includes("City Clerk Core setup checklist")) {
   fail("T7: wizard must render '${profile_label} setup checklist'");
 }
-for (const loc of ["C:/CivicSuite/App", "C:/CivicSuite/Data", "C:/CivicSuite/Backups"]) {
+for (const loc of ["C:/Townlight/App", "C:/Townlight/Data", "C:/Townlight/Backups"]) {
   if (!wizard.includes(loc)) fail(`T7: wizard must render location ${loc}`);
 }
 
@@ -526,7 +526,7 @@ function finishedBase() {
   }
   // The raw contract string may appear ONLY inside a title="" tooltip, never as
   // the visible <small> body text.
-  if (!wiz.includes('title="Module civiczone must target CivicCore 1.2.0 for Windows Local 1.0"')) {
+  if (!wiz.includes('title="Module civiczone must target Townlight Core 1.2.0 for Windows Local 1.0"')) {
     fail("T15b: the raw contract reason must be preserved as a hover tooltip for support");
   }
   if (wiz.includes("- Not ready for Windows Local 1.0: Module civiczone")) {
@@ -534,4 +534,58 @@ function finishedBase() {
   }
 }
 
-console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12 + T13 + T14 + T15) checks passed");
+// ===========================================================================
+// T16 — canonical demo-town controls are explicit and unmistakable. An empty
+// local-admin Records surface offers the opt-in loader; once the backend state
+// carries a fixture marker, both the fictional-town name and watermark render.
+// ===========================================================================
+{
+  const adminAccess = {
+    ...t.fallbackState.access,
+    configured: true,
+    signed_in: true,
+    role: "local-admin"
+  };
+  const emptyApp = {
+    ...finishedBase(),
+    access: adminAccess,
+    city_work: { ...t.fallbackState.city_work, demo_fixture: null }
+  };
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? emptyApp : {});
+  await t.loadAppState();
+  t.state.activeArea = "records";
+  t.render();
+  if (!appEl.innerHTML.includes('data-work-action="load-demo-town"')) {
+    fail("T16a: an empty local-admin Records surface must offer the explicit demo loader");
+  }
+  if (!appEl.innerHTML.includes("Loading is never automatic")) {
+    fail("T16b: the demo loader must explain that loading is never automatic");
+  }
+
+  const demoApp = {
+    ...emptyApp,
+    city_work: {
+      ...emptyApp.city_work,
+      demo_fixture: {
+        fixture_id: "redstone-valley-records-demo",
+        fixture_version: "1.0.0",
+        fixture_sha256: "a9c242a3f2618a69d7effb1d0d17d2df06f6744c8c351bba4065d315c94575b4",
+        municipality_name: "Town of Redstone Valley (Fictional)",
+        watermark: "SYNTHETIC DEMONSTRATION DATA - NOT A REAL MUNICIPAL RECORD",
+        loaded_at_unix_seconds: 1786992000
+      }
+    }
+  };
+  invokeImpl = async (cmd) => (cmd === "get_app_state" ? demoApp : {});
+  await t.loadAppState();
+  t.state.activeArea = "records";
+  t.render();
+  if (!appEl.innerHTML.includes("Town of Redstone Valley (Fictional)")) {
+    fail("T16c: loaded demo state must visibly name the fictional municipality");
+  }
+  if (!appEl.innerHTML.includes("SYNTHETIC DEMONSTRATION DATA - NOT A REAL MUNICIPAL RECORD")) {
+    fail("T16d: loaded demo state must visibly carry the canonical watermark");
+  }
+}
+
+console.log("PASS: xss-and-state (T4 + T7 + T8 + T9 + T10 + T11 + T12 + T13 + T14 + T15 + T16) checks passed");

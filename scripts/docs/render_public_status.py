@@ -70,7 +70,7 @@ def cross_check(status: dict, modules: dict) -> list[str]:
 
     # Compat matrix rows: | moduleid | repo | version | ...
     compat = COMPAT_MD.read_text(encoding="utf-8")
-    for row in re.finditer(r"^\|\s*([a-z0-9-]+)\s*\|\s*CivicSuite/[a-z0-9-]+\s*\|\s*([0-9.]+)\s*\|",
+    for row in re.finditer(r"^\|\s*([a-z0-9-]+)\s*\|\s*(?:CivicSuite|townlight)/[a-z0-9-]+\s*\|\s*([0-9.]+)\s*\|",
                            compat, re.MULTILINE):
         mid, ver = row.group(1), row.group(2)
         if mid in st_by_id and st_by_id[mid].get("current_version") not in (None, ver):
@@ -102,8 +102,10 @@ def status_md_block(status: dict) -> str:
     lines = [MD_BEGIN, "",
              "## Status Legend", "",
              "Status labels below are the suite's shared status set, generated from",
-             "[`installer/modules.public-status.json`](installer/modules.public-status.json)"
-             " — the same source the [module explorer](docs/module-explorer.html) renders.", ""]
+             (
+                 "[`installer/modules.public-status.json`](installer/modules.public-status.json)"
+                 " — the same source the [module explorer](docs/module-explorer.html) renders."
+             ), ""]
     for g in status["grade_order"]:
         lines.append(f"- **{status['grade_labels'][g]}:** {status['grade_desc'][g]}")
     lines += ["", "## Module Status (all 28)", "",

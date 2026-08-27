@@ -466,7 +466,7 @@ fn persist_city_profile(payload: Option<&serde_json::Value>) -> Result<(), Strin
     write_json_file(config_dir().join("city-profile.json"), &profile)
 }
 
-/// Minimum length for the first CivicSuite admin passcode.
+/// Minimum length for the first Townlight admin passcode.
 /// Mirrored client-side in desktop/src/main.js and matched by the staff
 /// passcode rule in auth.rs.
 pub(crate) const MINIMUM_ADMIN_PASSCODE_LENGTH: usize = 10;
@@ -475,7 +475,7 @@ fn persist_first_admin(payload: Option<&serde_json::Value>) -> Result<(), String
     let passcode = payload_string(payload, "adminPasscode")?;
     if passcode.chars().count() < MINIMUM_ADMIN_PASSCODE_LENGTH {
         return Err(format!(
-            "The CivicSuite admin passcode must be at least {MINIMUM_ADMIN_PASSCODE_LENGTH} characters."
+            "The Townlight admin passcode must be at least {MINIMUM_ADMIN_PASSCODE_LENGTH} characters."
         ));
     }
     let (passcode_salt, passcode_hash) = hash_argon2id_local_passcode(&passcode)?;
@@ -561,9 +561,9 @@ pub(crate) fn verify_admin_passcode(
     passcode: &str,
 ) -> Result<SavedFirstAdmin, String> {
     let record = saved_admin_record()?
-        .ok_or_else(|| "Create the first CivicSuite admin before signing in.".to_string())?;
+        .ok_or_else(|| "Create the first Townlight admin before signing in.".to_string())?;
     if !record.email.eq_ignore_ascii_case(email.trim()) {
-        return Err("The CivicSuite admin email does not match.".to_string());
+        return Err("The Townlight admin email does not match.".to_string());
     }
     let verified = match record.passcode_algorithm.as_str() {
         PASSCODE_ALGORITHM_ARGON2ID => {
@@ -578,13 +578,11 @@ pub(crate) fn verify_admin_passcode(
             verified
         }
         _ => {
-            return Err(
-                "The CivicSuite admin passcode hash uses an unsupported format.".to_string(),
-            )
+            return Err("The Townlight admin passcode hash uses an unsupported format.".to_string())
         }
     };
     if !verified {
-        return Err("The CivicSuite admin passcode did not match.".to_string());
+        return Err("The Townlight admin passcode did not match.".to_string());
     }
     Ok(SavedFirstAdmin {
         display_name: record.display_name,
@@ -711,7 +709,7 @@ pub fn first_run_action(
             step_id: Some(target_step_id),
             status: "Setup incomplete",
             message: format!(
-                "CivicSuite cannot continue this setup step until these required steps are complete: {}.",
+                "Townlight cannot continue this setup step until these required steps are complete: {}.",
                 missing_steps.join(", ")
             ),
             next_action: "Complete the current setup step before continuing.".to_string(),
@@ -749,8 +747,8 @@ pub fn first_run_action(
     if action == "create-admin" {
         action_completion = Some((
             "Saved",
-            "The first CivicSuite admin was saved for this Windows profile.".to_string(),
-            "Sign in with that CivicSuite admin account, then continue backup and local model setup."
+            "The first Townlight admin was saved for this Windows profile.".to_string(),
+            "Sign in with that Townlight admin account, then continue backup and local model setup."
                 .to_string(),
         ));
     }
@@ -813,9 +811,9 @@ pub fn first_run_action(
     if action == "open-app" {
         action_completion = Some((
             "Finished",
-            "CivicSuite setup is complete on this Windows profile. System Health keeps backup, repair, logs, restore, and uninstall available."
+            "Townlight setup is complete on this Windows profile. System Health keeps backup, repair, logs, restore, and uninstall available."
                 .to_string(),
-            "Start city work from Meetings & Notices, Records Requests, Code & Ordinances, or Search City Knowledge."
+            "Start city work from Records Requests, Public Notices, Accessibility, or Search City Knowledge."
                 .to_string(),
         ));
     }
@@ -829,7 +827,10 @@ pub fn first_run_action(
             persist_locations(payload, &locations)?;
         }
         "select-modules" => match payload_optional_string(payload, "profileId").as_deref() {
-            None | Some("city-core") => {
+            None | Some("records-beta") => {
+                module_registry::persist_profile_selection("records-beta")?;
+            }
+            Some("city-core") => {
                 module_registry::persist_profile_selection("city-core")?;
             }
             Some("custom") => {
@@ -1029,7 +1030,7 @@ mod tests {
             assert!(result.accepted);
             assert_eq!(result.status, "Finished");
             assert!(result.message.contains("setup is complete"));
-            assert!(result.next_action.contains("Meetings & Notices"));
+            assert!(result.next_action.contains("Records Requests"));
             let state = first_run_state(&[]).expect("state reads finished");
             assert!(state.finished);
             assert_eq!(state.status, "Finished");
@@ -1180,6 +1181,9 @@ mod tests {
                 .expect("module selection can be saved");
             assert!(result.accepted);
             assert!(root.join("config").join("module-selection.json").is_file());
+            let selection =
+                module_registry::module_selection_state().expect("selection state reads");
+            assert_eq!(selection.profile_id, "records-beta");
         });
     }
 

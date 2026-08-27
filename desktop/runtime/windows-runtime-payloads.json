@@ -35,15 +35,20 @@
         "Lib/site-packages/civiccore/migrations/alembic.ini",
         "Lib/site-packages/civiccore/migrations/versions/civiccore_0003_local_task_queue.py",
         "Lib/site-packages/app/main.py",
-        "Lib/site-packages/civicclerk/main.py",
-        "Lib/site-packages/civiccode/main.py",
         "Lib/site-packages/civicnotice/main.py",
         "Lib/site-packages/civicaccess/main.py",
         "Lib/site-packages/civicsuite_runtime/__init__.py",
         "Lib/site-packages/civicsuite_runtime/migrate.py",
         "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic.ini",
         "Lib/site-packages/civicsuite_runtime/civicrecords_alembic/alembic/env.py"
-      ]
+      ],
+      "profile_required_files": {
+        "records-beta": [],
+        "city-core": [
+          "Lib/site-packages/civicclerk/main.py",
+          "Lib/site-packages/civiccode/main.py"
+        ]
+      }
     },
     {
       "id": "ollama-runtime",

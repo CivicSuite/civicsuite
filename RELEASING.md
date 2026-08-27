@@ -1,27 +1,81 @@
-# Releasing the Windows-Local MSI
+# Releasing the Townlight Records Windows MSI
 
-The repeatable process for publishing a CivicSuite Windows-Local (`civicsuite-windows-local-vX.Y.Z`) beta release. Closes the "no release automation / hand-published MSI" and "lightweight vs annotated tag" gaps.
+This is the fail-closed release path for a tag such as
+`townlight-records-v1.1.0-beta.1`.
 
-## Versioning
+## Version contract
 
-- The desktop build version (`desktop/src-tauri/tauri.conf.json`, `desktop/package.json`, `desktop/src-tauri/Cargo.toml`) MUST match the release `vX.Y.Z`. ARP / Add-Remove Programs shows this version. Bump all three (and regenerate `package-lock.json` + the `civicsuite-desktop` entry in `Cargo.lock`) in the release PR.
-- Patch (security/bugfix) = `Z`; new feature within the beta line = `Y`.
+The public release version is `1.1.0-beta.1`, and the annotated tag is
+`townlight-records-v1.1.0-beta.1`.
 
-## Steps
+Windows Installer cannot consume that textual prerelease directly. The
+synchronized build manifests therefore use the MSI-safe prerelease
+`1.1.0-1`, which Tauri maps to WiX ProductVersion `1.1.0.1`. The following
+files must agree on `1.1.0-1`:
 
-1. **Land the code** on `main` (PR, green CI). Merging desktop changes to `main` auto-triggers the `desktop-windows-msi` workflow, which builds + integration-tests + lifecycle-tests the MSI and uploads it as the `civicsuite-windows-local-msi` artifact.
-2. **Clean-machine validation (QA-B1).** Validate that exact MSI on a pristine Windows VM/Sandbox: install -> launch (window renders) -> first-run wizard -> model download + checksum + Ollama load + one real completion -> backup/restore -> uninstall. (Beelink Sandbox harness under `test-comms/vmhost-beelink/`.)
-3. **Verify the artifact hash** matches the build evidence (`CivicSuite-msi-evidence.txt` `SHA256=`).
-4. **Push an ANNOTATED tag** (not lightweight) so the release tag carries authorship/date metadata:
+- `desktop/package.json` and `desktop/package-lock.json`
+- `desktop/src-tauri/Cargo.toml` and the desktop entry in `Cargo.lock`
+- `desktop/src-tauri/tauri.conf.json`
+
+This numeric compatibility mapping does not change the public beta label. The
+tag-to-artifact trust boundary is the exact commit SHA, signed run, artifact
+hash, and Authenticode evidence—not textual equality between the public tag
+and WiX ProductVersion.
+
+Public display strings use Townlight. Internal artifact names and stable
+application identifiers may retain `civicsuite` as documented compatibility
+identities.
+
+## Candidate and publication gates
+
+1. Land the exact Core and Sunshine changes that the candidate consumes.
+2. Pin their accepted commits in the Townlight installer registry and workflow.
+3. Open or update the Townlight release PR. PR CI must build the MSI, run the
+   real embedded-runtime integration, install it, launch the installed
+   executable, exercise first run, repair, backup/restore, and uninstall, and
+   prove that the artifact is unsigned and non-publishable.
+4. Review and merge only after all required PR checks are green. Development
+   work may continue while human review happens, but the signed candidate must
+   come from the final merged `main` SHA.
+5. Dispatch the publication-signing lane on that exact `main` commit:
+
+   ```powershell
+   gh workflow run desktop-windows-msi.yml --repo townlight/townlight --ref main -f sign_for_publication=true
    ```
-   git tag -a civicsuite-windows-local-vX.Y.Z -m "CivicSuite Windows Local X.Y.Z"
-   git push origin civicsuite-windows-local-vX.Y.Z
+
+   This is the only lane that reads the Townlight organization Azure secrets.
+   It signs through Azure Artifact Signing with the fixed account/profile and
+   must independently pass `signtool verify /pa /v` and
+   `Get-AuthenticodeSignature`, require `CN=Scott Converse`, and require an
+   RFC3161 timestamp.
+6. Download that exact signed artifact and verify it independently. Record the
+   unsigned and signed SHA-256 values, signer subject, certificate thumbprint,
+   timestamp status, workflow run URL, and evidence-file cross-check.
+7. Run the signed clean-machine beta journey: signature, install, launch,
+   first-run setup, explicit demo-town load, complete request-to-release
+   workflow, offline restart/use, repair, backup/restore, upgrade preservation
+   where applicable, and uninstall with no unintended user-data leakage.
+8. Create an annotated tag at the signed run's exact SHA:
+
+   ```powershell
+   git tag -a townlight-records-v1.1.0-beta.1 -m "Townlight Records 1.1.0-beta.1"
+   git push origin townlight-records-v1.1.0-beta.1
    ```
-5. The **`release-windows-msi` workflow** fires on that tag: it downloads the MSI from the latest successful `main` build and attaches it (plus evidence) to the release, creating the release as a prerelease if it does not exist yet.
-6. **Finalize**: edit the release notes (security fixes, validation evidence, SHA-256), then promote from prerelease to Latest.
-7. **Retire** any superseded release candidate (mark `[RETIRED]`, prerelease, remove its unpatched assets).
 
-## Notes
+9. `release-windows-msi.yml` accepts only a successful manual signing run on
+   `main` whose head SHA matches the tag, then rechecks the signature, signer,
+   timestamp, MSI hash, and `PublicationAllowed=true` evidence before attaching
+   the MSI to a **draft prerelease**. The workflow must not make the draft
+   public.
+10. Scott reviews the evidence and release notes and decides whether to publish
+    the draft as a prerelease. Never publish an unsigned artifact.
 
-- The MSI is Authenticode code-signed via Azure Trusted Signing (in CI, HSM-held certificate; see CODE_SIGNING_POLICY.md).
-- Always release the EXACT artifact `main` built and CI/clean-machine validated -- never a separate ad-hoc rebuild.
+## Signing identity
+
+- Endpoint: `https://wcus.codesigning.azure.net`
+- Account: `scottconverse-signing`
+- Certificate profile: `ScottConversePublic`
+- Required signer subject: `CN=Scott Converse`
+
+The Azure credentials already exist as Townlight organization secrets. Do not
+print, copy, rotate, or reprovision them as part of a routine release.

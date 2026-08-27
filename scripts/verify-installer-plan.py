@@ -455,12 +455,12 @@ def check_clerk_core_staff_mode_contract() -> list[str]:
     return errors
 
 
-def check_cleanroom_workflow() -> list[str]:
+def check_cleanroom_workflow(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if not INSTALLER_CLEANROOM_WORKFLOW.is_file():
         return [fail(f"missing {INSTALLER_CLEANROOM_WORKFLOW.relative_to(ROOT)}")]
     text = INSTALLER_CLEANROOM_WORKFLOW.read_text(encoding="utf-8")
-    required_phrases = (
+    required_phrases = [
         "workflow_dispatch",
         "pull_request:",
         "concurrency:",
@@ -469,23 +469,33 @@ def check_cleanroom_workflow() -> list[str]:
         "ci-linux-package-lifecycle",
         "actions/upload-artifact@v4",
         "retention-days:",
-        "repository: CivicSuite/civicrecords-ai",
-        "path: modules/civicrecords-ai",
-        "repository: CivicSuite/civicclerk",
-        "path: modules/civicclerk",
-        "repository: CivicSuite/civiccode",
-        "path: modules/civiccode",
-        "repository: CivicSuite/civicnotice",
-        "path: modules/civicnotice",
-        "repository: CivicSuite/civicaccess",
-        "path: modules/civicaccess",
-        "2bf0c9d7b764af84cd042657a972e84213a261d5",
-        "7b24516fd89584d84c12394b9385eddd1e8c6897",
         "--profile \"${{ matrix.profile }}\"",
         "CivicSuite-city-core-linux-0.1.2.tar.gz",
         "--staff-mode bearer --workflow-proof",
         "workflow proof",
+    ]
+    cleanroom_module_ids = (
+        "civicrecords-ai",
+        "civicclerk",
+        "civiccode",
+        "civicnotice",
+        "civicaccess",
     )
+    modules = data.get("modules", [])
+    module_by_id = {
+        str(module.get("id")): module
+        for module in modules
+        if isinstance(module, dict)
+    }
+    for module_id in cleanroom_module_ids:
+        module = module_by_id.get(module_id, {})
+        required_phrases.extend(
+            (
+                f"repository: {module.get('repo')}",
+                f"ref: {module.get('source_commit')}",
+                f"path: modules/{module_id}",
+            )
+        )
     for phrase in required_phrases:
         if phrase not in text:
             errors.append(
@@ -686,10 +696,11 @@ def check_manifest(data: dict[str, object]) -> list[str]:
         "city_core_implemented_pending_ci_and_audit_full",
         "city_core_implemented_pending_browser_qa_and_audit_full",
         "city_core_implemented_pending_audit_full",
+        "townlight_records_beta_candidate",
     }:
         errors.append(
             fail(
-                "installer_status must be clerk_core_public_use_starter_v0_1_0_published, city_core_beta_ready_truth_reconciled, city_core_implemented_pending_ci_and_audit_full, city_core_implemented_pending_browser_qa_and_audit_full, or city_core_implemented_pending_audit_full"
+                "installer_status must describe an accepted published, implementation, or Townlight Records beta candidate state"
             )
         )
 
@@ -795,6 +806,12 @@ def check_module_manifest_contract() -> list[str]:
 
 def check_planner(data: dict[str, object]) -> list[str]:
     errors: list[str] = []
+    modules = data.get("modules", [])
+    module_by_id = {
+        str(module.get("id")): module
+        for module in modules
+        if isinstance(module, dict)
+    }
     if not PLANNER.is_file():
         return [fail(f"missing {PLANNER.relative_to(ROOT)}")]
     if not CLEANROOM_RUNNER.is_file():
@@ -1919,10 +1936,16 @@ def check_planner(data: dict[str, object]) -> list[str]:
                 ]
                 for action in install_actions:
                     module_id = action.get("module")
-                    if module_id in set(expected_launcher_modules) and action.get("civiccore_requirement") != "1.2.0":
+                    expected_requirement = module_by_id.get(str(module_id), {}).get(
+                        "civiccore_requirement"
+                    )
+                    if (
+                        module_id in set(expected_launcher_modules)
+                        and action.get("civiccore_requirement") != expected_requirement
+                    ):
                         errors.append(
                             fail(
-                                f"city-core package {platform_id} {module_id} must install against CivicCore 1.2.0"
+                                f"city-core package {platform_id} {module_id} must install against CivicCore {expected_requirement}"
                             )
                         )
             launcher_path = package_dir / launcher
@@ -2506,11 +2529,11 @@ def main() -> int:
                 errors.extend(check_module_manifest_contract())
                 errors.extend(check_planner(manifest))
                 errors.extend(check_launchers())
+                errors.extend(check_cleanroom_workflow(manifest))
             except Exception as exc:
                 errors.append(fail(f"could not parse manifest: {exc}"))
         errors.extend(check_docs())
         errors.extend(check_clerk_core_staff_mode_contract())
-        errors.extend(check_cleanroom_workflow())
         require_package_reports = (
             args.require_package_cleanroom_evidence
             or os.environ.get("CIVICSUITE_REQUIRE_PACKAGE_CLEANROOM_EVIDENCE") == "1"
